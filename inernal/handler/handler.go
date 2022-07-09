@@ -104,7 +104,8 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 	for h, v2 := range resp.Header {
 		if strings.ToLower(h) != "set-cookie" {
 			for _, v := range v2 {
-				if strings.ToLower(h) == "location" 					v = strings.ReplaceAll(v, rh.target, rh.origin2)
+				if strings.ToLower(h) == "location" {
+					v = strings.ReplaceAll(v, rh.target, rh.origin2)
 					v = strings.ReplaceAll(v, "https", "http")
 				}
 				w.Header().Add(h, v)
@@ -114,10 +115,9 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 
 	w.WriteHeader(resp.StatusCode)
 
-	wr, err := io.Copy(w, resp.Body)
+	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		log.Println(wr, err)
-	} else {
-		log.Print("Written", wr, "bytes")
+		log.Println(err)
+		return
 	}
 }
