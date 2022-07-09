@@ -13,6 +13,7 @@ type RequestHandeler struct {
 	target   string
 	protocol string
 	origin   string
+	origin2  string
 }
 
 func NewRequestHandler(options ...RequestHandelerOptions) *RequestHandeler {
@@ -55,25 +56,39 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	req, err := http.NewRequest(req.Method, url, req.Body)
+	req2, err := http.NewRequest(req.Method, url, req.Body)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
 	for n, h := range req.Header {
-		for _, h := range h {
-			req.Header.Add(n, h)
+		if strings.ToLower(n) != "cookie" {
+			for _, h := range h {
+				req2.Header.Add(n, h)
+			}
 		}
 	}
+	for _, cookie := range req.Cookies() {
+		cookie.Secure = true
+		req2.AddCookie(cookie)
+	}
 
-	client := http.Client{}
-	if req.TLS != nil {
+	req2.Header.Set("origin", "https://github.com")
+	req2.Header.Set("referer", "https://github.com/")
+
+	client := http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	if req2.TLS != nil {
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 	}
-	resp, err := client.Do(req)
+	req2.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko")
+	resp, err := client.Do(req2)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -81,9 +96,19 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	for h, v := range resp.Header {
-		for _, v := range v {
-			w.Header().Add(h, v)
+	for _, cookie := range resp.Cookies() {
+		cookie.Secure = false
+		http.SetCookie(w, cookie)
+	}
+
+	for h, v2 := range resp.Header {
+		if strings.ToLower(h) != "set-cookie" {
+			for _, v := range v2 {
+				if strings.ToLower(h) == "location" 					v = strings.ReplaceAll(v, rh.target, rh.origin2)
+					v = strings.ReplaceAll(v, "https", "http")
+				}
+				w.Header().Add(h, v)
+			}
 		}
 	}
 

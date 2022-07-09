@@ -11,7 +11,7 @@ import (
 var (
 	target   = "github.com"
 	protocol = "https"
-	origin   = "localhost:4200"
+	origin   = "github.local.com:3000"
 )
 
 func main() {
@@ -29,6 +29,6 @@ func main() {
 
 	http.HandleFunc("/", reqHandler.HandleRequest)
 
-	log.Println("localhost:3000", "=>", target)
+	log.Println(origin, "=>", target)
 	http.ListenAndServe(":3000", nil)
 }
