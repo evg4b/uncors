@@ -17,5 +17,6 @@ func WithProtocol(protocol string) RequestHandelerOptions {
 func WithOrigin(origin string) RequestHandelerOptions {
 	return func(rh *RequestHandeler) {
 		rh.origin = origin
+		rh.origin2 = origin
 	}
 }
