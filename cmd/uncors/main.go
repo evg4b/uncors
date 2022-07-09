@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/inernal/handler"
+	"github.com/pterm/pterm"
+	"github.com/pterm/pterm/putils"
 )
 
 var (
@@ -20,6 +22,19 @@ func main() {
 	flag.StringVar(&origin, "origin", origin, "origin header to be used for the proxy request")
 
 	flag.Parse()
+
+	logoLetters := []pterm.Letters{
+		putils.LettersFromStringWithStyle("Un", pterm.NewStyle(pterm.FgRed)),
+		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
+	}
+
+	uncorsLogo, _ := pterm.DefaultBigText.
+		WithLetters(logoLetters...).
+		Srender()
+
+	pterm.Println()
+	pterm.Print(uncorsLogo)
+	pterm.Println()
 
 	reqHandler := handler.NewRequestHandler(
 		handler.WithOrigin(origin),
