@@ -4,8 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/evg4b/uncors/inernal/handler"
-	"github.com/evg4b/uncors/inernal/urlreplacer"
+	"github.com/evg4b/uncors/inernal/processor"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
@@ -29,15 +28,19 @@ func main() {
 	pterm.Print(uncorsLogo)
 	pterm.Println()
 
-	reqHandler := handler.NewRequestHandler(
-		handler.WithOrigin(source),
-		handler.WithTarget(target),
-		handler.WithUrlReplcaer(urlreplacer.NewSimpleReplacer(map[string]string{
-			source: target,
-		})),
-	)
+	rp := processor.NewRequestProcessor()
 
-	http.HandleFunc("/", reqHandler.HandleHttpRequest)
+	// reqHandler := handler.NewRequestHandler(
+	// 	handler.WithOrigin(source),
+	// 	handler.WithTarget(target),
+	// 	handler.WithUrlReplcaer(urlreplacer.NewSimpleReplacer(map[string]string{
+	// 		source: target,
+	// 	})),
+	// )
+
+	http.HandleFunc("/", rp.HandleRequest)
+
+	// http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(reqHandler.HandleRequest))
 	log.Println(source, "=>", target)
 	http.ListenAndServe(":3000", nil)
 }

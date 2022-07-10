@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"crypto/tls"
 	"io"
 	"log"
@@ -27,18 +26,9 @@ func NewRequestHandler(options ...RequestHandelerOptions) *RequestHandeler {
 
 	return handler
 }
-func (rh *RequestHandeler) HandleHttpRequest(w http.ResponseWriter, req *http.Request) {
-	ctx := context.WithValue(req.Context(), "protocol", "http")
-	rh.HandleRequest(w, req.WithContext(ctx))
-}
-
-func (rh *RequestHandeler) HandleHttpsRequest(w http.ResponseWriter, req *http.Request) {
-	ctx := context.WithValue(req.Context(), "protocol", "https")
-	rh.HandleRequest(w, req.WithContext(ctx))
-}
 
 func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	url, _ := rh.replcaer.ToTarget(getUrl(req))
+	url, _ := rh.replcaer.ToTarget(req.URL.String())
 
 	pterm.Success.Println(url)
 
@@ -52,9 +42,9 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 
 	header := w.Header()
 
-	header.Add("Access-Control-Allow-Origin", rh.origin)
-	header.Add("Access-Control-Allow-Credentials", "true")
-	header.Add("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
+	header.Set("Access-Control-Allow-Origin", "*")
+	header.Set("Access-Control-Allow-Credentials", "true")
+	header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
 
 	if req.Method == "OPTIONS" {
 		log.Print("CORS asked for ", url)
