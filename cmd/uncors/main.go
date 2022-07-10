@@ -37,7 +37,7 @@ func main() {
 		})),
 	)
 
-	http.HandleFunc("/", reqHandler.HandleRequest)
+	http.HandleFunc("/", reqHandler.HandleHttpRequest)
 	log.Println(source, "=>", target)
 	http.ListenAndServe(":3000", nil)
 }
