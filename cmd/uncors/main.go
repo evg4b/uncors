@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/evg4b/uncors/inernal/processor"
+	"github.com/evg4b/uncors/internal/processor"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )

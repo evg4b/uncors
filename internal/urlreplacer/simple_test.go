@@ -3,7 +3,7 @@ package urlreplacer_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/inernal/urlreplacer"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,7 +3,7 @@ package proxy
 import (
 	"net/http"
 
-	"github.com/evg4b/uncors/inernal/infrastrucure"
+	"github.com/evg4b/uncors/internal/infrastrucure"
 )
 
 type ProxyMiddleware struct {
