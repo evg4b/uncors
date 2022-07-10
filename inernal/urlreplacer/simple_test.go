@@ -7,46 +7,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestToTarget(t *testing.T) {
-	r := urlreplacer.NewSimpleReplacer("http://localhost:8080", "https://test.com")
+func TestSimpleReplacer_ToTarget(t *testing.T) {
+	r := urlreplacer.NewSimpleReplacer(map[string]string{
+		"http://localhost:3000": "https://test.com",
+		"//host1:8080":          "//api.test.com",
+		"//host2:8080":          "http//api.test2.com",
+	})
 
-	tests := []struct {
-		name        string
-		url         string
-		expected    string
-		expectedErr string
-	}{
-		{
-			name:     "correctly transform root url",
-			url:      "http://localhost:8080/",
-			expected: "https://test.com/",
-		},
-		{
-			name:     "correctly transform root url without slash",
-			url:      "http://localhost:8080",
-			expected: "https://test.com",
-		},
-		{
-			name:     "correctly transform clear path",
-			url:      "http://localhost:8080/api/info",
-			expected: "https://test.com/api/info",
-		},
-		{
-			name:     "correctly transform url with hash",
-			url:      "http://localhost:8080/api/info#ancor",
-			expected: "https://test.com/api/info#ancor",
-		},
-		{
-			name:     "correctly transform url query params",
-			url:      "http://localhost:8080/api/info?query=test",
-			expected: "https://test.com/api/info?query=test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			actual, _ := r.ToTarget(tt.url)
+	t.Run("should return for not registred host", func(t *testing.T) {
+		actual, err := r.ToTarget("https://not-registred-host:3000")
 
-			assert.Equal(t, tt.expected, actual)
+		assert.EqualError(t, err, "failed to find mapping for host 'not-registred-host:3000'")
+		assert.Empty(t, actual)
+	})
+
+	t.Run("should return for no registred scheme", func(t *testing.T) {
+		actual, err := r.ToTarget("https://localhost:3000")
+
+		assert.EqualError(t, err, "failed to find mapping for scheme 'https' and host 'localhost:3000'")
+		assert.Empty(t, actual)
+	})
+
+	t.Run("ToTarget", func(t *testing.T) {
+		t.Run("when mappong has scheme", func(t *testing.T) {
+
 		})
-	}
+
+		tests := []struct {
+			name        string
+			url         string
+			expected    string
+			expectedErr string
+		}{
+			{
+				name:     "correctly transform http url mapping without scheme",
+				url:      "http://host2:8080/",
+				expected: "http://api.test2.com/",
+			},
+			{
+				name:     "correctly transform https url in mapping without scheme",
+				url:      "https://host2:8080/",
+				expected: "https://api.test2.com/",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				actual, err := r.ToTarget(tt.url)
+
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, actual)
+			})
+		}
+	})
+
 }

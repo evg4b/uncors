@@ -1,30 +1,23 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 
 	"github.com/evg4b/uncors/inernal/handler"
+	"github.com/evg4b/uncors/inernal/urlreplacer"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
 
 var (
-	target   = "github.com"
-	protocol = "https"
-	origin   = "github.local.com:3000"
+	target = "github.com"
+	source = "localhost:3000"
 )
 
 func main() {
-	flag.StringVar(&target, "target", target, "host:port to proxy requests to")
-	flag.StringVar(&protocol, "protocol", protocol, "protocol used by the target")
-	flag.StringVar(&origin, "origin", origin, "origin header to be used for the proxy request")
-
-	flag.Parse()
-
 	logoLetters := []pterm.Letters{
-		putils.LettersFromStringWithStyle("Un", pterm.NewStyle(pterm.FgRed)),
+		putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
 		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
 	}
 
@@ -37,13 +30,14 @@ func main() {
 	pterm.Println()
 
 	reqHandler := handler.NewRequestHandler(
-		handler.WithOrigin(origin),
-		handler.WithProtocol(protocol),
+		handler.WithOrigin(source),
 		handler.WithTarget(target),
+		handler.WithUrlReplcaer(urlreplacer.NewSimpleReplacer(map[string]string{
+			source: target,
+		})),
 	)
 
 	http.HandleFunc("/", reqHandler.HandleRequest)
-
-	log.Println(origin, "=>", target)
+	log.Println(source, "=>", target)
 	http.ListenAndServe(":3000", nil)
 }
