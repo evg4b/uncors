@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/inernal/infrastrucure"
+	"github.com/evg4b/uncors/internal/infrastrucure"
 )
 
 type HandlingMiddleware interface {
@@ -17,7 +17,9 @@ type RequestProcessor struct {
 
 func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {
 	processor := &RequestProcessor{handlerFunc: finalFandler}
-	for _, option := range options {
+
+	for i := len(options) - 1; i >= 0; i-- {
+		option := options[i]
 		option(processor)
 	}
 
