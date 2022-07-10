@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/pterm/pterm"
 )
 
 type RequestHandeler struct {
+	replcaer Replcaer
 	target   string
-	protocol string
 	origin   string
 	origin2  string
 }
@@ -27,8 +29,8 @@ func NewRequestHandler(options ...RequestHandelerOptions) *RequestHandeler {
 }
 
 func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	url := fmt.Sprintf("%s://%s%s", rh.protocol, rh.target, req.URL.String())
-	log.Println("Requset: ", url)
+	url := fmt.Sprintf("%s%s", rh.target, req.URL.String())
+	pterm.Success.Println(url)
 
 	for n, h := range req.Header {
 		if strings.Contains(n, "Origin") {
@@ -37,6 +39,7 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 			}
 		}
 	}
+
 	header := w.Header()
 
 	header.Add("Access-Control-Allow-Origin", rh.origin)
@@ -87,10 +90,9 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 	}
-	req2.Header.Set("user-agent", "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko")
+
 	resp, err := client.Do(req2)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -105,8 +107,10 @@ func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Reques
 		if strings.ToLower(h) != "set-cookie" {
 			for _, v := range v2 {
 				if strings.ToLower(h) == "location" {
-					v = strings.ReplaceAll(v, rh.target, rh.origin2)
-					v = strings.ReplaceAll(v, "https", "http")
+					v, err = rh.replcaer.ToSource(v, req.Host)
+					if err != nil {
+						panic(err)
+					}
 				}
 				w.Header().Add(h, v)
 			}

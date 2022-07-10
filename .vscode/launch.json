@@ -13,7 +13,8 @@
             "env": {
                 "GOARCH": "arm64",
                 "GOOS": "darwin"
-            }
+            },
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

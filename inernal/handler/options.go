@@ -1,5 +1,10 @@
 package handler
 
+type Replcaer interface {
+	ToTarget(targetUrl string) (string, error)
+	ToSource(targetUrl string, host string) (string, error)
+}
+
 type RequestHandelerOptions = func(*RequestHandeler)
 
 func WithTarget(target string) RequestHandelerOptions {
@@ -8,9 +13,9 @@ func WithTarget(target string) RequestHandelerOptions {
 	}
 }
 
-func WithProtocol(protocol string) RequestHandelerOptions {
+func WithUrlReplcaer(replcaer Replcaer) RequestHandelerOptions {
 	return func(rh *RequestHandeler) {
-		rh.protocol = protocol
+		rh.replcaer = replcaer
 	}
 }
 
