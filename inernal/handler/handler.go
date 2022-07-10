@@ -1,8 +1,8 @@
 package handler
 
 import (
+	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -27,9 +27,19 @@ func NewRequestHandler(options ...RequestHandelerOptions) *RequestHandeler {
 
 	return handler
 }
+func (rh *RequestHandeler) HandleHttpRequest(w http.ResponseWriter, req *http.Request) {
+	ctx := context.WithValue(req.Context(), "protocol", "http")
+	rh.HandleRequest(w, req.WithContext(ctx))
+}
+
+func (rh *RequestHandeler) HandleHttpsRequest(w http.ResponseWriter, req *http.Request) {
+	ctx := context.WithValue(req.Context(), "protocol", "https")
+	rh.HandleRequest(w, req.WithContext(ctx))
+}
 
 func (rh *RequestHandeler) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	url := fmt.Sprintf("%s%s", rh.target, req.URL.String())
+	url, _ := rh.replcaer.ToTarget(getUrl(req))
+
 	pterm.Success.Println(url)
 
 	for n, h := range req.Header {
