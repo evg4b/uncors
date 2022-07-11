@@ -11,7 +11,7 @@ func TestSimpleReplacer_ToTarget(t *testing.T) {
 	r := urlreplacer.NewSimpleReplacer(map[string]string{
 		"http://localhost:3000": "https://test.com",
 		"//host1:8080":          "//api.test.com",
-		"//host2:8080":          "http//api.test2.com",
+		"//host2:8080":          "https://api.test2.com",
 	})
 
 	t.Run("should return for not registred host", func(t *testing.T) {
@@ -29,10 +29,6 @@ func TestSimpleReplacer_ToTarget(t *testing.T) {
 	})
 
 	t.Run("ToTarget", func(t *testing.T) {
-		t.Run("when mappong has scheme", func(t *testing.T) {
-
-		})
-
 		tests := []struct {
 			name        string
 			url         string
@@ -42,7 +38,7 @@ func TestSimpleReplacer_ToTarget(t *testing.T) {
 			{
 				name:     "correctly transform http url mapping without scheme",
 				url:      "http://host2:8080/",
-				expected: "http://api.test2.com/",
+				expected: "https://api.test2.com/",
 			},
 			{
 				name:     "correctly transform https url in mapping without scheme",

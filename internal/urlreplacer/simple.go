@@ -17,27 +17,21 @@ type SimpleReplacer struct {
 func NewSimpleReplacer(mapping map[string]string) *SimpleReplacer {
 	mappings := map[string]urlMepping{}
 
-	for source, target := range mapping {
-		sourceUri, err := url.Parse(source)
+	for sourceUrl, targetUrl := range mapping {
+		source, err := url.Parse(sourceUrl)
 		if err != nil {
 			panic(err)
 		}
 
-		targetUri, err := url.Parse(target)
+		target, err := url.Parse(targetUrl)
 		if err != nil {
 			panic(err)
 		}
 
-		mappings[sourceUri.Host] = urlMepping{
-			source: sourceUri,
-			target: targetUri,
-		}
-
+		mappings[source.Host] = urlMepping{source, target}
 	}
 
-	return &SimpleReplacer{
-		mappings: mappings,
-	}
+	return &SimpleReplacer{mappings}
 }
 
 func sourceUrlGetter(mapping urlMepping) *url.URL {
@@ -45,7 +39,7 @@ func sourceUrlGetter(mapping urlMepping) *url.URL {
 }
 
 func targetUrlGetter(mapping urlMepping) *url.URL {
-	return mapping.source
+	return mapping.target
 }
 
 func (r *SimpleReplacer) ToTarget(targetUrl string) (string, error) {
@@ -66,21 +60,24 @@ func (r *SimpleReplacer) ToSource(targetUrl string, host string) (string, error)
 	return r.transformUrl(parsedUrl, host, sourceUrlGetter)
 }
 
-func (r *SimpleReplacer) transformUrl(target *url.URL, host string, getter func(mapping urlMepping) *url.URL) (string, error) {
-
-	urtMapping, ok := r.mappings[host]
+func (r *SimpleReplacer) transformUrl(current *url.URL, host string, getter func(mapping urlMepping) *url.URL) (string, error) {
+	urlMapping, ok := r.mappings[host]
 	if !ok {
-		return "", fmt.Errorf("failed to find mapping for host '%s'", target.Host)
+		return "", fmt.Errorf("failed to find mapping for host '%s'", current.Host)
 	}
 
-	targetSource := getter(urtMapping)
+	sourceScheme := urlMapping.source.Scheme
+	target := getter(urlMapping)
 
-	if urtMapping.source.Scheme != targetSource.Scheme {
-		return "", fmt.Errorf("failed to find mapping for scheme '%s' and host '%s'", target.Scheme, target.Host)
+	if len(sourceScheme) > 0 && sourceScheme != current.Scheme {
+		return "", fmt.Errorf("failed to find mapping for scheme '%s' and host '%s'", current.Scheme, current.Host)
 	}
 
-	target.Scheme = targetSource.Scheme
-	target.Host = targetSource.Host
+	if len(target.Scheme) > 0 {
+		current.Scheme = target.Scheme
+	}
 
-	return target.String(), nil
+	current.Host = target.Host
+
+	return current.String(), nil
 }
