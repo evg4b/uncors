@@ -31,10 +31,6 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		header := w.Header()
 
-		header.Set("Access-Control-Allow-Origin", "*")
-		header.Set("Access-Control-Allow-Credentials", "true")
-		header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
-
 		if req.Method == "OPTIONS" {
 			log.Print("CORS asked for ", url)
 			for n, h := range req.Header {
@@ -119,10 +115,14 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 							return
 						}
 					}
-					w.Header().Add(h, v)
+					header.Add(h, v)
 				}
 			}
 		}
+
+		header.Set("Access-Control-Allow-Origin", "*")
+		header.Set("Access-Control-Allow-Credentials", "true")
+		header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
 
 		w.WriteHeader(resp.StatusCode)
 
