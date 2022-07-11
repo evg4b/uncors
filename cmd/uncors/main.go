@@ -1,17 +1,19 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/infrastrucure"
 	"github.com/evg4b/uncors/internal/processor"
+	"github.com/evg4b/uncors/internal/proxy"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
 
 var (
-	target = "github.com"
-	source = "localhost:3000"
+	target = "https://github.com"
+	source = "http://localhost:3000"
 )
 
 func main() {
@@ -28,19 +30,18 @@ func main() {
 	pterm.Print(uncorsLogo)
 	pterm.Println()
 
-	rp := processor.NewRequestProcessor()
+	proxyMiddleware := proxy.NewProxyHandlingMiddleware(
+		proxy.WithUrlReplcaer(
+			urlreplacer.NewSimpleReplacer(map[string]string{
+				source: target,
+			}),
+		),
+	)
 
-	// reqHandler := handler.NewRequestHandler(
-	// 	handler.WithOrigin(source),
-	// 	handler.WithTarget(target),
-	// 	handler.WithUrlReplcaer(urlreplacer.NewSimpleReplacer(map[string]string{
-	// 		source: target,
-	// 	})),
-	// )
+	rp := processor.NewRequestProcessor(
+		processor.WithMiddleware(proxyMiddleware),
+	)
 
-	http.HandleFunc("/", rp.HandleRequest)
-
-	// http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(reqHandler.HandleRequest))
-	log.Println(source, "=>", target)
+	http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(rp.HandleRequest))
 	http.ListenAndServe(":3000", nil)
 }
