@@ -50,7 +50,10 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		req2, err := http.NewRequest(req.Method, url, req.Body)
 		if err != nil {
-			log.Print(err)
+			pterm.Error.Println(err)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 			return
 		}
 
@@ -60,7 +63,10 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 					if strings.ToLower(n) == "origin" || strings.ToLower(n) == "referer" {
 						h, err = pm.replcaer.ToTarget(h)
 						if err != nil {
-							panic(err)
+							pterm.Error.Println(err)
+
+							w.WriteHeader(http.StatusInternalServerError)
+							w.Write([]byte(err.Error()))
 						}
 					}
 
@@ -86,8 +92,11 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		resp, err := client.Do(req2)
 		if err != nil {
+			pterm.Error.Println(err)
+
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
+
 			return
 		}
 
@@ -102,7 +111,12 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 					if strings.ToLower(h) == "location" {
 						v, err = pm.replcaer.ToSource(v, req.Host)
 						if err != nil {
-							panic(err)
+							pterm.Error.Println(err)
+
+							w.WriteHeader(http.StatusInternalServerError)
+							w.Write([]byte(err.Error()))
+
+							return
 						}
 					}
 					w.Header().Add(h, v)
@@ -114,7 +128,11 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		_, err = io.Copy(w, resp.Body)
 		if err != nil {
-			log.Println(err)
+			pterm.Error.Println(err)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+
 			return
 		}
 
