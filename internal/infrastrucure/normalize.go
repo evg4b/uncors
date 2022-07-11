@@ -14,5 +14,6 @@ func normalizeReqDecorator(protocol string, handler func(http.ResponseWriter, *h
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Host = r.Host
 		r.URL.Scheme = protocol
+		handler(w, r)
 	}
 }
