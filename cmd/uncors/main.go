@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
@@ -11,12 +12,12 @@ import (
 	"github.com/pterm/pterm/putils"
 )
 
-var (
-	target = "https://github.com"
-	source = "http://localhost:3000"
-)
-
 func main() {
+	target := flag.String("target", "https://github.com", "Real target url (include https://)")
+	source := flag.String("source", "http://localhost:3000", "Local source url (include http://)")
+
+	flag.Parse()
+
 	logoLetters := []pterm.Letters{
 		putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
 		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
@@ -29,11 +30,12 @@ func main() {
 	pterm.Println()
 	pterm.Print(uncorsLogo)
 	pterm.Println()
+	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
 
 	proxyMiddleware := proxy.NewProxyHandlingMiddleware(
 		proxy.WithUrlReplcaer(
 			urlreplacer.NewSimpleReplacer(map[string]string{
-				source: target,
+				(*source): (*target),
 			}),
 		),
 	)
