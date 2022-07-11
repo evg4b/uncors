@@ -66,12 +66,7 @@ func (r *SimpleReplacer) transformUrl(current *url.URL, host string, getter func
 		return "", fmt.Errorf("failed to find mapping for host '%s'", current.Host)
 	}
 
-	sourceScheme := urlMapping.source.Scheme
 	target := getter(urlMapping)
-
-	if len(sourceScheme) > 0 && sourceScheme != current.Scheme {
-		return "", fmt.Errorf("failed to find mapping for scheme '%s' and host '%s'", current.Scheme, current.Host)
-	}
 
 	if len(target.Scheme) > 0 {
 		current.Scheme = target.Scheme
