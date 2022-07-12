@@ -80,7 +80,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		err = copyHeaders(resp.Header, header, map[string]func(string) (string, error){
 			"location": func(url string) (string, error) {
-				return pm.replcaer.ToSource(url, req.URL.Host)
+				return pm.replcaer.ToSource(url, req.URL.Hostname())
 			},
 		})
 

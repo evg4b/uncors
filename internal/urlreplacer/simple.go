@@ -28,7 +28,7 @@ func NewSimpleReplacer(mapping map[string]string) *SimpleReplacer {
 			panic(err)
 		}
 
-		mappings[source.Host] = urlMepping{source, target}
+		mappings[source.Hostname()] = urlMepping{source, target}
 	}
 
 	return &SimpleReplacer{mappings}
@@ -48,7 +48,7 @@ func (r *SimpleReplacer) ToTarget(targetUrl string) (string, error) {
 		return "", fmt.Errorf("failed parse url: '%s': %v", targetUrl, err)
 	}
 
-	return r.transformUrl(parsedUrl, parsedUrl.Host, targetUrlGetter)
+	return r.transformUrl(parsedUrl, parsedUrl.Hostname(), targetUrlGetter)
 }
 
 func (r *SimpleReplacer) ToSource(targetUrl string, host string) (string, error) {
