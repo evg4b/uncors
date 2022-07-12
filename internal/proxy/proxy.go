@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"crypto/tls"
 	"io"
 	"log"
 	"net/http"
@@ -13,9 +12,10 @@ import (
 
 type ProxyMiddleware struct {
 	replcaer Replcaer
+	http     http.Client
 }
 
-func NewProxyHandlingMiddleware(options ...ProxyMiddlewareOptions) *ProxyMiddleware {
+func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddleware {
 	middleware := &ProxyMiddleware{}
 
 	for _, option := range options {
@@ -72,18 +72,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			originRequet.AddCookie(cookie)
 		}
 
-		client := http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		if originRequet.TLS != nil {
-			client.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
-		}
-
-		resp, err := client.Do(originRequet)
+		resp, err := pm.http.Do(originRequet)
 		if err != nil {
 			pterm.Error.Println(err)
 
