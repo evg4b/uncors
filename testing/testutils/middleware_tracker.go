@@ -24,9 +24,9 @@ func NewMidelwaresTracker(t *testing.T) *midelwaresTracker {
 func (t *midelwaresTracker) MakeMidelware(name string) processor.HandlingMiddleware {
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
 		Set(func(next infrastrucure.HandlerFunc) (h1 infrastrucure.HandlerFunc) {
-			return func(w http.ResponseWriter, r *http.Request) {
+			return func(w http.ResponseWriter, r *http.Request) error {
 				t.CallsOrder = append(t.CallsOrder, name)
-				next(w, r)
+				return next(w, r)
 			}
 		})
 }
@@ -34,8 +34,9 @@ func (t *midelwaresTracker) MakeMidelware(name string) processor.HandlingMiddlew
 func (t *midelwaresTracker) MakeFinalMidelware(name string) processor.HandlingMiddleware {
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
 		Set(func(next infrastrucure.HandlerFunc) (h1 infrastrucure.HandlerFunc) {
-			return func(w http.ResponseWriter, r *http.Request) {
+			return func(w http.ResponseWriter, r *http.Request) error {
 				t.CallsOrder = append(t.CallsOrder, name)
+				return nil
 			}
 		})
 }

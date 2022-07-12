@@ -36,18 +36,4 @@ func TestRequestProcessor_HandleRequest(t *testing.T) {
 
 		assert.Equal(t, []string{"middleware1", "middleware2"}, tracker.CallsOrder)
 	})
-
-	t.Run("should skip midelwares where next not called", func(t *testing.T) {
-		tracker := testutils.NewMidelwaresTracker(t)
-
-		rp := processor.NewRequestProcessor(
-			processor.WithMiddleware(tracker.MakeMidelware("middleware1")),
-			processor.WithMiddleware(tracker.MakeMidelware("middleware2")),
-			processor.WithMiddleware(tracker.MakeMidelware("middleware3")),
-		)
-
-		rp.HandleRequest(nil, nil)
-
-		assert.Equal(t, []string{"middleware1", "middleware2"}, tracker.CallsOrder)
-	})
 }

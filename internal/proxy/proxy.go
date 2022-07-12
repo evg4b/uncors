@@ -26,7 +26,7 @@ func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddlew
 }
 
 func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) error {
 		url, _ := pm.replcaer.ToTarget(req.URL.String())
 
 		header := w.Header()
@@ -41,7 +41,8 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 					}
 				}
 			}
-			return
+
+			return nil
 		}
 
 		originRequet, err := http.NewRequest(req.Method, url, req.Body)
@@ -50,7 +51,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
-			return
+			return err
 		}
 
 		err = copyHeaders(req.Header, originRequet.Header, map[string]func(string) (string, error){
@@ -59,12 +60,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 		})
 
 		if err != nil {
-			pterm.Error.Println(err)
-
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-
-			return
+			return err
 		}
 
 		for _, cookie := range req.Cookies() {
@@ -74,12 +70,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		resp, err := pm.http.Do(originRequet)
 		if err != nil {
-			pterm.Error.Println(err)
-
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-
-			return
+			return err
 		}
 
 		for _, cookie := range resp.Cookies() {
@@ -94,11 +85,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 		})
 
 		if err != nil {
-			pterm.Error.Println(err)
-
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
+			return err
 		}
 
 		header.Set("Access-Control-Allow-Origin", "*")
@@ -109,15 +96,12 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		_, err = io.Copy(w, resp.Body)
 		if err != nil {
-			pterm.Error.Println(err)
-
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-
-			return
+			return err
 		}
 
 		pterm.Success.Println(url)
+
+		return nil
 	}
 }
 
