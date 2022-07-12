@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"net/http"
 
@@ -38,6 +39,14 @@ func main() {
 				(*source): (*target),
 			}),
 		),
+		proxy.WithHttpClient(http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}),
 	)
 
 	rp := processor.NewRequestProcessor(
