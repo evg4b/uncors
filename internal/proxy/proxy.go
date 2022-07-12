@@ -44,7 +44,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			return
 		}
 
-		req2, err := http.NewRequest(req.Method, url, req.Body)
+		originRequet, err := http.NewRequest(req.Method, url, req.Body)
 		if err != nil {
 			pterm.Error.Println(err)
 
@@ -53,26 +53,23 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			return
 		}
 
-		for n, h := range req.Header {
-			if strings.ToLower(n) != "cookie" {
-				for _, h := range h {
-					if strings.ToLower(n) == "origin" || strings.ToLower(n) == "referer" {
-						h, err = pm.replcaer.ToTarget(h)
-						if err != nil {
-							pterm.Error.Println(err)
+		err = copyHeaders(req.Header, originRequet.Header, map[string]func(string) (string, error){
+			"origin":  pm.targetUrlReplace,
+			"referer": pm.targetUrlReplace,
+		})
 
-							w.WriteHeader(http.StatusInternalServerError)
-							w.Write([]byte(err.Error()))
-						}
-					}
+		if err != nil {
+			pterm.Error.Println(err)
 
-					req2.Header.Add(n, h)
-				}
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+
+			return
 		}
+
 		for _, cookie := range req.Cookies() {
 			cookie.Secure = true
-			req2.AddCookie(cookie)
+			originRequet.AddCookie(cookie)
 		}
 
 		client := http.Client{
@@ -80,13 +77,13 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 				return http.ErrUseLastResponse
 			},
 		}
-		if req2.TLS != nil {
+		if originRequet.TLS != nil {
 			client.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
 		}
 
-		resp, err := client.Do(req2)
+		resp, err := client.Do(originRequet)
 		if err != nil {
 			pterm.Error.Println(err)
 
@@ -101,23 +98,18 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			http.SetCookie(w, cookie)
 		}
 
-		for h, v2 := range resp.Header {
-			if strings.ToLower(h) != "set-cookie" {
-				for _, v := range v2 {
-					if strings.ToLower(h) == "location" {
-						v, err = pm.replcaer.ToSource(v, req.Host)
-						if err != nil {
-							pterm.Error.Println(err)
+		err = copyHeaders(resp.Header, header, map[string]func(string) (string, error){
+			"location": func(url string) (string, error) {
+				return pm.replcaer.ToSource(url, req.URL.Host)
+			},
+		})
 
-							w.WriteHeader(http.StatusInternalServerError)
-							w.Write([]byte(err.Error()))
+		if err != nil {
+			pterm.Error.Println(err)
 
-							return
-						}
-					}
-					header.Add(h, v)
-				}
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
 		}
 
 		header.Set("Access-Control-Allow-Origin", "*")
@@ -138,4 +130,8 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		pterm.Success.Println(url)
 	}
+}
+
+func (pm *ProxyMiddleware) targetUrlReplace(url string) (string, error) {
+	return pm.replcaer.ToTarget(url)
 }
