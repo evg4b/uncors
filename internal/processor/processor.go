@@ -1,10 +1,12 @@
 package processor
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/pterm/pterm"
 )
 
 type HandlingMiddleware interface {
@@ -27,10 +29,16 @@ func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {
 }
 
 func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	rp.handlerFunc(w, req)
+	err := rp.handlerFunc(w, req)
+	if err != nil {
+		pterm.Error.Printfln("UNCORS error: %v", err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "UNCORS error:")
+		fmt.Fprintln(w, err.Error())
+	}
 }
 
-func finalFandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(500)
-	fmt.Fprintln(w, "Failed requset handler")
+func finalFandler(w http.ResponseWriter, r *http.Request) error {
+	return errors.New("UNCORS: Failed requset handler")
 }
