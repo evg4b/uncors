@@ -29,7 +29,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 	proxyWriter := pterm.PrefixPrinter{
 		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 		Prefix: pterm.Prefix{
-			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightMagenta},
+			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightBlue},
 			Text:  "PROXY",
 		},
 	}
