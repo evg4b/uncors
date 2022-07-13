@@ -1,3 +1,4 @@
 __debug_bin
 server.key
 server.crt
+dist/
