@@ -11,8 +11,9 @@ func noop(s string) (string, error) { return s, nil }
 
 func copyHeaders(from, to http.Header, modifications modificationsMap) error {
 	for headerKey, headerValues := range from {
-		if strings.ToLower(headerKey) != "cookie" && strings.ToLower(headerKey) != "set-cookie" {
-			modificationFunc, ok := modifications[headerKey]
+		transformedHeaderKey := strings.ToLower(headerKey)
+		if transformedHeaderKey != "cookie" && transformedHeaderKey != "set-cookie" {
+			modificationFunc, ok := modifications[transformedHeaderKey]
 			if !ok {
 				modificationFunc = noop
 			}
