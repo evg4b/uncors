@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/evg4b/uncors/internal/responceprinter"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
@@ -25,6 +26,14 @@ func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddlew
 }
 
 func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.HandlerFunc {
+	proxyWriter := pterm.PrefixPrinter{
+		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
+		Prefix: pterm.Prefix{
+			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightMagenta},
+			Text:  "PROXY",
+		},
+	}
+
 	return func(w http.ResponseWriter, req *http.Request) error {
 		replcaer, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
@@ -89,7 +98,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			return err
 		}
 
-		pterm.Success.Println(url)
+		proxyWriter.Println(responceprinter.PrintResponce(resp))
 
 		return nil
 	}
