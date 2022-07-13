@@ -3,7 +3,9 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
 	"github.com/evg4b/uncors/internal/processor"
@@ -15,7 +17,8 @@ import (
 
 func main() {
 	target := flag.String("target", "https://github.com", "Real target url (include https://)")
-	source := flag.String("source", "http://localhost:3000", "Local source url (include http://)")
+	source := flag.String("source", "http://localhost", "Local source url (include http://)")
+	port := flag.Int("port", 3000, "Local listening port (3000 by default)")
 
 	flag.Parse()
 
@@ -56,7 +59,8 @@ func main() {
 	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
 
 	http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(rp.HandleRequest))
-	if err = http.ListenAndServe(":3000", nil); err != nil {
+	addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
+	if err = http.ListenAndServe(addr, nil); err != nil {
 		pterm.Fatal.Println(err)
 		return
 	}
