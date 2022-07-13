@@ -1,6 +1,10 @@
 package proxy
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/evg4b/uncors/internal/urlreplacer"
+)
 
 type Replcaer interface {
 	ToTarget(targetUrl string) (string, error)
@@ -9,9 +13,9 @@ type Replcaer interface {
 
 type proxyMiddlewareOptions = func(*ProxyMiddleware)
 
-func WithUrlReplcaer(replcaer Replcaer) proxyMiddlewareOptions {
+func WithUrlReplacerFactory(replacerFactory *urlreplacer.UrlReplacerFactory) proxyMiddlewareOptions {
 	return func(pm *ProxyMiddleware) {
-		pm.replcaer = replcaer
+		pm.replacerFactory = replacerFactory
 	}
 }
 
