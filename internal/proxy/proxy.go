@@ -2,9 +2,7 @@ package proxy
 
 import (
 	"io"
-	"log"
 	"net/http"
-	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
 	"github.com/pterm/pterm"
@@ -27,22 +25,13 @@ func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddlew
 
 func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) error {
-		url, _ := pm.replcaer.ToTarget(req.URL.String())
-
-		header := w.Header()
-
 		if req.Method == "OPTIONS" {
-			log.Print("CORS asked for ", url)
-			for n, h := range req.Header {
-				if strings.Contains(n, "Access-Control-Request") {
-					for _, h := range h {
-						k := strings.Replace(n, "Request", "Allow", 1)
-						header.Add(k, h)
-					}
-				}
-			}
+			return pm.hadnleOptionsRequest(w, req)
+		}
 
-			return nil
+		url, err := pm.replcaer.ToTarget(req.URL.String())
+		if err != nil {
+			return err
 		}
 
 		originRequet, err := http.NewRequest(req.Method, url, req.Body)
@@ -78,6 +67,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 			http.SetCookie(w, cookie)
 		}
 
+		header := w.Header()
 		err = copyHeaders(resp.Header, header, map[string]func(string) (string, error){
 			"location": func(url string) (string, error) {
 				return pm.replcaer.ToSource(url, req.URL.Hostname())
