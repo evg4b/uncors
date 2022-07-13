@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
 
 type ProxyMiddleware struct {
-	replcaer Replcaer
-	http     http.Client
+	replacerFactory *urlreplacer.UrlReplacerFactory
+	http            http.Client
 }
 
 func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddleware {
@@ -25,15 +26,16 @@ func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddlew
 
 func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) error {
-		if req.Method == "OPTIONS" {
-			return pm.hadnleOptionsRequest(w, req)
-		}
-
-		url, err := pm.replcaer.ToTarget(req.URL.String())
+		replcaer, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
 			return err
 		}
 
+		if req.Method == "OPTIONS" {
+			return pm.hadnleOptionsRequest(w, req)
+		}
+
+		url, _ := replcaer.ToTarget(req.URL.String())
 		originRequet, err := http.NewRequest(req.Method, url, req.Body)
 		if err != nil {
 			pterm.Error.Println(err)
@@ -44,8 +46,8 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 		}
 
 		err = copyHeaders(req.Header, originRequet.Header, map[string]func(string) (string, error){
-			"origin":  pm.targetUrlReplace,
-			"referer": pm.targetUrlReplace,
+			"origin":  replcaer.ToTarget,
+			"referer": replcaer.ToTarget,
 		})
 
 		if err != nil {
@@ -69,9 +71,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		header := w.Header()
 		err = copyHeaders(resp.Header, header, map[string]func(string) (string, error){
-			"location": func(url string) (string, error) {
-				return pm.replcaer.ToSource(url, req.URL.Hostname())
-			},
+			"location": replcaer.ToSource,
 		})
 
 		if err != nil {
@@ -93,8 +93,4 @@ func (pm *ProxyMiddleware) Wrap(next infrastrucure.HandlerFunc) infrastrucure.Ha
 
 		return nil
 	}
-}
-
-func (pm *ProxyMiddleware) targetUrlReplace(url string) (string, error) {
-	return pm.replcaer.ToTarget(url)
 }

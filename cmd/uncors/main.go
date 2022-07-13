@@ -28,17 +28,14 @@ func main() {
 		WithLetters(logoLetters...).
 		Srender()
 
-	pterm.Println()
-	pterm.Print(uncorsLogo)
-	pterm.Println()
-	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
+	factory, err := urlreplacer.NewUrlReplacerFactory(map[string]string{(*source): (*target)})
+	if err != nil {
+		pterm.Fatal.Println(err)
+		return
+	}
 
 	proxyMiddleware := proxy.NewProxyHandlingMiddleware(
-		proxy.WithUrlReplcaer(
-			urlreplacer.NewSimpleReplacer(map[string]string{
-				(*source): (*target),
-			}),
-		),
+		proxy.WithUrlReplacerFactory(factory),
 		proxy.WithHttpClient(http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
@@ -53,9 +50,14 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
+	pterm.Println()
+	pterm.Print(uncorsLogo)
+	pterm.Println()
+	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
+
 	http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(rp.HandleRequest))
-	err := http.ListenAndServe(":3000", nil)
-	if err != nil {
+	if err = http.ListenAndServe(":3000", nil); err != nil {
 		pterm.Fatal.Println(err)
+		return
 	}
 }
