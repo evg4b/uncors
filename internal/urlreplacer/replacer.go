@@ -5,59 +5,59 @@ import (
 	"net/url"
 )
 
-type replceData struct {
+type urlData struct {
 	hostname string
 	host     string
 	scheme   string
 }
 
 type replacer struct {
-	source replceData
-	target replceData
+	source urlData
+	target urlData
 }
 
-func (r *replacer) ToSource(rawTargetUrl string) (string, error) {
-	targetUrl, err := url.Parse(rawTargetUrl)
+func (r *replacer) ToSource(rawUrl string) (string, error) {
+	targetUrl, err := url.Parse(rawUrl)
 	if err != nil {
-		return "", fmt.Errorf("filed transform url %s to source: %v", rawTargetUrl, err)
+		return "", fmt.Errorf("filed transform url %s to source: %v", rawUrl, err)
 	}
 
 	return r.UrlToSource(targetUrl)
 }
 
-func (r *replacer) UrlToSource(targetUrl *url.URL) (string, error) {
+func (r *replacer) UrlToSource(parsedUrl *url.URL) (string, error) {
 	expectedScheme := r.target.scheme
-	if len(expectedScheme) > 0 && expectedScheme != targetUrl.Scheme {
-		return "", fmt.Errorf("target url scheme in mapping (%s) and in query (%s) are not equal", expectedScheme, targetUrl.Scheme)
+	if len(expectedScheme) > 0 && expectedScheme != parsedUrl.Scheme {
+		return "", fmt.Errorf("target url scheme in mapping (%s) and in query (%s) are not equal", expectedScheme, parsedUrl.Scheme)
 	}
 
-	targetUrl.Host = r.source.host
+	parsedUrl.Host = r.source.host
 	if len(r.source.scheme) > 0 {
-		targetUrl.Scheme = r.source.scheme
+		parsedUrl.Scheme = r.source.scheme
 	}
 
-	return targetUrl.String(), nil
+	return parsedUrl.String(), nil
 }
 
-func (r *replacer) ToTarget(rawTargetUrl string) (string, error) {
-	targetUrl, err := url.Parse(rawTargetUrl)
+func (r *replacer) ToTarget(rawUrl string) (string, error) {
+	targetUrl, err := url.Parse(rawUrl)
 	if err != nil {
-		return "", fmt.Errorf("filed transform url %s to target: %v", rawTargetUrl, err)
+		return "", fmt.Errorf("filed transform url %s to target: %v", rawUrl, err)
 	}
 
 	return r.UrlToTarget(targetUrl)
 }
 
-func (r *replacer) UrlToTarget(targetUrl *url.URL) (string, error) {
+func (r *replacer) UrlToTarget(parsedUrl *url.URL) (string, error) {
 	expectedScheme := r.source.scheme
-	if len(expectedScheme) > 0 && expectedScheme != targetUrl.Scheme {
-		return "", fmt.Errorf("target url scheme in mapping (%s) and in query (%s) are not equal", expectedScheme, targetUrl.Scheme)
+	if len(expectedScheme) > 0 && expectedScheme != parsedUrl.Scheme {
+		return "", fmt.Errorf("target url scheme in mapping (%s) and in query (%s) are not equal", expectedScheme, parsedUrl.Scheme)
 	}
 
-	targetUrl.Host = r.target.host
+	parsedUrl.Host = r.target.host
 	if len(r.target.scheme) > 0 {
-		targetUrl.Scheme = r.target.scheme
+		parsedUrl.Scheme = r.target.scheme
 	}
 
-	return targetUrl.String(), nil
+	return parsedUrl.String(), nil
 }

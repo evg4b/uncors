@@ -28,11 +28,9 @@ func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {
 	return processor
 }
 
-func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	err := rp.handlerFunc(w, req)
-	if err != nil {
+func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, r *http.Request) {
+	if err := rp.handlerFunc(w, r); err != nil {
 		pterm.Error.Printfln("UNCORS error: %v", err)
-
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(w, "UNCORS error:")
 		fmt.Fprintln(w, err.Error())
