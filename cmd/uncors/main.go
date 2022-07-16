@@ -22,15 +22,6 @@ func main() {
 
 	flag.Parse()
 
-	logoLetters := []pterm.Letters{
-		putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
-	}
-
-	uncorsLogo, _ := pterm.DefaultBigText.
-		WithLetters(logoLetters...).
-		Srender()
-
 	factory, err := urlreplacer.NewUrlReplacerFactory(map[string]string{(*source): (*target)})
 	if err != nil {
 		pterm.Fatal.Println(err)
@@ -40,7 +31,7 @@ func main() {
 	proxyMiddleware := proxy.NewProxyHandlingMiddleware(
 		proxy.WithUrlReplacerFactory(factory),
 		proxy.WithHttpClient(http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			CheckRedirect: func(r *http.Request, v []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 			Transport: &http.Transport{
@@ -53,10 +44,20 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
+	logoLetters := []pterm.Letters{
+		putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
+		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
+	}
+
+	uncorsLogo, _ := pterm.DefaultBigText.
+		WithLetters(logoLetters...).
+		Srender()
+
 	pterm.Println()
 	pterm.Print(uncorsLogo)
 	pterm.Println()
 	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
+	pterm.Println()
 
 	http.HandleFunc("/", infrastructure.NormalizeHttpReqDecorator(rp.HandleRequest))
 	addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))

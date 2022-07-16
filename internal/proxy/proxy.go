@@ -15,7 +15,7 @@ type ProxyMiddleware struct {
 	http            http.Client
 }
 
-func NewProxyHandlingMiddleware(options ...proxyMiddlewareOptions) *ProxyMiddleware {
+func NewProxyHandlingMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
 	middleware := &ProxyMiddleware{}
 
 	for _, option := range options {
@@ -34,18 +34,18 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		},
 	}
 
-	return func(w http.ResponseWriter, req *http.Request) error {
-		replcaer, err := pm.replacerFactory.Make(req.URL)
+	return func(w http.ResponseWriter, r *http.Request) error {
+		replacer, err := pm.replacerFactory.Make(r.URL)
 		if err != nil {
 			return err
 		}
 
-		if req.Method == "OPTIONS" {
-			return pm.hadnleOptionsRequest(w, req)
+		if r.Method == "OPTIONS" {
+			return pm.hadnleOptionsRequest(w, r)
 		}
 
-		url, _ := replcaer.ToTarget(req.URL.String())
-		originRequet, err := http.NewRequest(req.Method, url, req.Body)
+		url, _ := replacer.ToTarget(r.URL.String())
+		targetReq, err := http.NewRequest(r.Method, url, r.Body)
 		if err != nil {
 			pterm.Error.Println(err)
 
@@ -54,33 +54,33 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return err
 		}
 
-		err = copyHeaders(req.Header, originRequet.Header, map[string]func(string) (string, error){
-			"origin":  replcaer.ToTarget,
-			"referer": replcaer.ToTarget,
+		err = copyHeaders(r.Header, targetReq.Header, map[string]func(string) (string, error){
+			"origin":  replacer.ToTarget,
+			"referer": replacer.ToTarget,
 		})
 
 		if err != nil {
 			return err
 		}
 
-		for _, cookie := range req.Cookies() {
+		for _, cookie := range r.Cookies() {
 			cookie.Secure = true
-			originRequet.AddCookie(cookie)
+			targetReq.AddCookie(cookie)
 		}
 
-		resp, err := pm.http.Do(originRequet)
+		targetResp, err := pm.http.Do(targetReq)
 		if err != nil {
 			return err
 		}
 
-		for _, cookie := range resp.Cookies() {
+		for _, cookie := range targetResp.Cookies() {
 			cookie.Secure = false
 			http.SetCookie(w, cookie)
 		}
 
 		header := w.Header()
-		err = copyHeaders(resp.Header, header, map[string]func(string) (string, error){
-			"location": replcaer.ToSource,
+		err = copyHeaders(targetResp.Header, header, map[string]func(string) (string, error){
+			"location": replacer.ToSource,
 		})
 
 		if err != nil {
@@ -91,14 +91,14 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		header.Set("Access-Control-Allow-Credentials", "true")
 		header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
 
-		w.WriteHeader(resp.StatusCode)
+		w.WriteHeader(targetResp.StatusCode)
 
-		_, err = io.Copy(w, resp.Body)
+		_, err = io.Copy(w, targetResp.Body)
 		if err != nil {
 			return err
 		}
 
-		proxyWriter.Println(responceprinter.PrintResponce(resp))
+		proxyWriter.Println(responceprinter.PrintResponce(targetResp))
 
 		return nil
 	}

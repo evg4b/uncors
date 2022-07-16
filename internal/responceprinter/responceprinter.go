@@ -10,6 +10,7 @@ import (
 func PrintResponce(responce *http.Response) string {
 	prefix := fmt.Sprintf("%d %s", responce.StatusCode, responce.Request.Method)
 	printer := getPrefixPrinter(responce.StatusCode, prefix)
+
 	return printer.Sprint(responce.Request.URL.String())
 }
 
