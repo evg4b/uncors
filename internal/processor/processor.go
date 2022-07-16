@@ -9,6 +9,8 @@ import (
 	"github.com/pterm/pterm"
 )
 
+var ErrFailedRequset = errors.New("UNCORS: Failed requset handler")
+
 type HandlingMiddleware interface {
 	Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc
 }
@@ -38,5 +40,5 @@ func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, r *http.Request
 }
 
 func finalFandler(w http.ResponseWriter, r *http.Request) error {
-	return errors.New("UNCORS: Failed requset handler")
+	return ErrFailedRequset
 }

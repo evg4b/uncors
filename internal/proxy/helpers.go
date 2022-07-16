@@ -9,8 +9,8 @@ type modificationsMap = map[string]func(string) (string, error)
 
 func noop(s string) (string, error) { return s, nil }
 
-func copyHeaders(from, to http.Header, modifications modificationsMap) error {
-	for key, values := range from {
+func copyHeaders(source, dest http.Header, modifications modificationsMap) error {
+	for key, values := range source {
 		transformedKey := strings.ToLower(key)
 		if transformedKey != "cookie" && transformedKey != "set-cookie" {
 			modificationFunc, ok := modifications[transformedKey]
@@ -24,7 +24,7 @@ func copyHeaders(from, to http.Header, modifications modificationsMap) error {
 					return err
 				}
 
-				to.Add(key, modifiedValue)
+				dest.Add(key, modifiedValue)
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package options_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestOptionsMiddlewareWrap(t *testing.T) {
-	middleware := options.NewOptionsMiddlewareMiddleware()
+	middleware := options.NewOptionsMiddleware()
 
 	testMethods := []struct {
 		name   string
@@ -27,15 +28,15 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		{name: "should skip CONNECT requst", method: "CONNECT"},
 		{name: "should skip TRACE requst", method: "TRACE"},
 	}
-	for _, tt := range testMethods {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range testMethods {
+		t.Run(testCase.name, func(t *testing.T) {
 			tracker := testutils.NewMidelwaresTracker(t)
 			proc := processor.NewRequestProcessor(
 				processor.WithMiddleware(middleware),
 				processor.WithMiddleware(tracker.MakeFinalMidelware("final")),
 			)
 
-			req, err := http.NewRequest(tt.method, "/", nil)
+			req, err := http.NewRequestWithContext(context.TODO(), testCase.method, "/", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -54,7 +55,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 			processor.WithMiddleware(tracker.MakeFinalMidelware("final")),
 		)
 
-		req, err := http.NewRequest("OPTIONS", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), "OPTIONS", "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,7 +66,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		assert.Equal(t, []string{}, tracker.CallsOrder)
 	})
 
-	t.Run("demo", func(t *testing.T) {
+	t.Run("should correctly create respoce", func(t *testing.T) {
 		testMethods := []struct {
 			name     string
 			headers  http.Header
@@ -97,22 +98,22 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 				},
 			},
 		}
-		for _, tt := range testMethods {
-			t.Run(tt.name, func(t *testing.T) {
+		for _, testCase := range testMethods {
+			t.Run(testCase.name, func(t *testing.T) {
 				proc := processor.NewRequestProcessor(processor.WithMiddleware(middleware))
-				req, err := http.NewRequest("OPTIONS", "/", nil)
+				req, err := http.NewRequestWithContext(context.TODO(), "OPTIONS", "/", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				req.Header = tt.headers
+				req.Header = testCase.headers
 
 				rr := httptest.NewRecorder()
 				http.HandlerFunc(proc.HandleRequest).
 					ServeHTTP(rr, req)
 
 				assert.Equal(t, http.StatusOK, rr.Code)
-				assert.Equal(t, tt.expected, rr.Header())
+				assert.Equal(t, testCase.expected, rr.Header())
 			})
 		}
 	})

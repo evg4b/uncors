@@ -1,3 +1,4 @@
+// nolint: lll, dupl
 package urlreplacer_test
 
 import (
@@ -9,7 +10,7 @@ import (
 )
 
 func TestReplacerToSource(t *testing.T) {
-	factory, _ := urlreplacer.NewUrlReplacerFactory(map[string]string{
+	factory, _ := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
 		"//demo.localhost.com":         "https://demo.api.com",
@@ -20,13 +21,13 @@ func TestReplacerToSource(t *testing.T) {
 	t.Run("should correctly map url", func(t *testing.T) {
 		tests := []struct {
 			name      string
-			requerUrl *url.URL
+			requerURL *url.URL
 			url       string
 			expected  string
 		}{
 			{
 				name: "from https to http",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "premium.localhost.com",
 					Scheme: "http",
 				},
@@ -35,7 +36,7 @@ func TestReplacerToSource(t *testing.T) {
 			},
 			{
 				name: "from http to https",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "base.localhost.com",
 					Scheme: "https",
 				},
@@ -44,7 +45,7 @@ func TestReplacerToSource(t *testing.T) {
 			},
 			{
 				name: "from http to https with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "base.localhost.com:4200",
 					Scheme: "https",
 				},
@@ -53,7 +54,7 @@ func TestReplacerToSource(t *testing.T) {
 			},
 			{
 				name: "from https to http with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "premium.localhost.com:3000",
 					Scheme: "http",
 				},
@@ -62,7 +63,7 @@ func TestReplacerToSource(t *testing.T) {
 			},
 			{
 				name: "from https to http with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "custompost.localhost.com:3000",
 					Scheme: "http",
 				},
@@ -70,14 +71,14 @@ func TestReplacerToSource(t *testing.T) {
 				expected: "http://custompost.localhost.com:3000/api/info",
 			},
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				r, _ := factory.Make(tt.requerUrl)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				r, _ := factory.Make(testCase.requerURL)
 
-				actual, err := r.ToSource(tt.url)
+				actual, err := r.ToSource(testCase.url)
 
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})
@@ -85,22 +86,22 @@ func TestReplacerToSource(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
 			name          string
-			requerUrl     *url.URL
+			requerURL     *url.URL
 			url           string
 			expectedError string
 		}{
 			{
 				name: "scheme in mapping and in url are not equal",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "demo.localhost.com",
 					Scheme: "http",
 				},
 				url:           "http://demo.api.com",
-				expectedError: "target url scheme in mapping (https) and in query (http) are not equal",
+				expectedError: "failed to transform url from https to http: scheme in mapping and query not matched",
 			},
 			{
 				name: "url is invalid",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "demo.localhost.com",
 					Scheme: "http",
 				},
@@ -109,21 +110,21 @@ func TestReplacerToSource(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				r, _ := factory.Make(tt.requerUrl)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				r, _ := factory.Make(testCase.requerURL)
 
-				actual, err := r.ToSource(tt.url)
+				actual, err := r.ToSource(testCase.url)
 
 				assert.Empty(t, actual)
-				assert.EqualError(t, err, tt.expectedError)
+				assert.EqualError(t, err, testCase.expectedError)
 			})
 		}
 	})
 }
 
 func TestReplacerToTarget(t *testing.T) {
-	factory, _ := urlreplacer.NewUrlReplacerFactory(map[string]string{
+	factory, _ := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
 		"//demo.localhost.com":         "https://demo.api.com",
@@ -134,13 +135,13 @@ func TestReplacerToTarget(t *testing.T) {
 	t.Run("should correctly map url", func(t *testing.T) {
 		tests := []struct {
 			name      string
-			requerUrl *url.URL
+			requerURL *url.URL
 			url       string
 			expected  string
 		}{
 			{
 				name: "from https to https",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "premium.localhost.com",
 					Scheme: "http",
 				},
@@ -149,7 +150,7 @@ func TestReplacerToTarget(t *testing.T) {
 			},
 			{
 				name: "from http to https",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "base.localhost.com",
 					Scheme: "https",
 				},
@@ -158,7 +159,7 @@ func TestReplacerToTarget(t *testing.T) {
 			},
 			{
 				name: "from http to https with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "base.localhost.com:4200",
 					Scheme: "https",
 				},
@@ -167,7 +168,7 @@ func TestReplacerToTarget(t *testing.T) {
 			},
 			{
 				name: "from https to http with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "premium.localhost.com:3000",
 					Scheme: "http",
 				},
@@ -176,7 +177,7 @@ func TestReplacerToTarget(t *testing.T) {
 			},
 			{
 				name: "from https to http with custom port",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "custompost.localhost.com:3000",
 					Scheme: "http",
 				},
@@ -184,14 +185,14 @@ func TestReplacerToTarget(t *testing.T) {
 				expected: "https://customdomain.com:8080/api/info",
 			},
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				r, _ := factory.Make(tt.requerUrl)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				r, _ := factory.Make(testCase.requerURL)
 
-				actual, err := r.ToTarget(tt.url)
+				actual, err := r.ToTarget(testCase.url)
 
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})
@@ -199,22 +200,22 @@ func TestReplacerToTarget(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
 			name          string
-			requerUrl     *url.URL
+			requerURL     *url.URL
 			url           string
 			expectedError string
 		}{
 			{
 				name: "scheme in mapping and in url are not equal",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "base.localhost.com",
 					Scheme: "https",
 				},
 				url:           "http://base.localhost.com/api/info",
-				expectedError: "target url scheme in mapping (https) and in query (http) are not equal",
+				expectedError: "failed to transform url from https to http: scheme in mapping and query not matched",
 			},
 			{
 				name: "url is invalid",
-				requerUrl: &url.URL{
+				requerURL: &url.URL{
 					Host:   "demo.localhost.com",
 					Scheme: "http",
 				},
@@ -223,14 +224,14 @@ func TestReplacerToTarget(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				r, _ := factory.Make(tt.requerUrl)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				r, _ := factory.Make(testCase.requerURL)
 
-				actual, err := r.ToTarget(tt.url)
+				actual, err := r.ToTarget(testCase.url)
 
 				assert.Empty(t, actual)
-				assert.EqualError(t, err, tt.expectedError)
+				assert.EqualError(t, err, testCase.expectedError)
 			})
 		}
 	})

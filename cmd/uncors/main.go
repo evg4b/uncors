@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/options"
@@ -20,34 +21,44 @@ import (
 
 var Version = "X.X.X"
 
+const (
+	defaulTimeout = 5 * time.Minute
+	defaultPort   = 3000
+)
+
 func main() {
 	target := flag.String("target", "https://github.com", "Real target url (include https://)")
 	source := flag.String("source", "http://localhost", "Local source url (include http://)")
-	port := flag.Int("port", 3000, "Local listening port (3000 by default)")
+	port := flag.Int("port", defaultPort, "Local listening port (3000 by default)")
 
 	flag.Parse()
 
-	factory, err := urlreplacer.NewUrlReplacerFactory(map[string]string{(*source): (*target)})
+	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{(*source): (*target)})
 	if err != nil {
 		pterm.Fatal.Println(err)
+
 		return
 	}
 
-	optionsMiddleware := options.NewOptionsMiddlewareMiddleware()
-
-	proxyMiddleware := proxy.NewProxyHandlingMiddleware(
-		proxy.WithUrlReplacerFactory(factory),
-		proxy.WithHttpClient(http.Client{
+	optionsMiddleware := options.NewOptionsMiddleware()
+	proxyMiddleware := proxy.NewProxyMiddleware(
+		proxy.WithURLReplacerFactory(factory),
+		proxy.WithHTTPClient(http.Client{
 			CheckRedirect: func(r *http.Request, v []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				TLSClientConfig: &tls.Config{
+					// nolint: gosec
+					InsecureSkipVerify: true,
+				},
 			},
+			Jar:     nil,
+			Timeout: defaulTimeout,
 		}),
 	)
 
-	rp := processor.NewRequestProcessor(
+	requestProcessor := processor.NewRequestProcessor(
 		processor.WithMiddleware(optionsMiddleware),
 		processor.WithMiddleware(proxyMiddleware),
 	)
@@ -55,12 +66,11 @@ func main() {
 	printLogo()
 	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
 	pterm.Println()
+	http.HandleFunc("/", infrastructure.NormalizeHTTPReqDecorator(requestProcessor.HandleRequest))
+	address := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
 
-	http.HandleFunc("/", infrastructure.NormalizeHttpReqDecorator(rp.HandleRequest))
-	addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
-	if err = http.ListenAndServe(addr, nil); err != nil {
+	if err = http.ListenAndServe(address, nil); err != nil {
 		pterm.Fatal.Println(err)
-		return
 	}
 }
 
@@ -73,7 +83,7 @@ func printLogo() {
 	logo, _ := pterm.DefaultBigText.
 		WithLetters(
 			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
+			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), // nolint: gomnd
 		).
 		Srender()
 
@@ -81,5 +91,4 @@ func printLogo() {
 	pterm.Print(logo)
 	pterm.Println(versionPreffix + versionSuffix)
 	pterm.Println()
-
 }

@@ -2,15 +2,15 @@ package infrastructure
 
 import "net/http"
 
-func NormalizeHttpReqDecorator(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func NormalizeHTTPReqDecorator(handler baseHandlerFunc) baseHandlerFunc {
 	return normalizeReqDecorator("http", handler)
 }
 
-func NormalizeHttpsReqDecorator(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func NormalizeHTTPSReqDecorator(handler baseHandlerFunc) baseHandlerFunc {
 	return normalizeReqDecorator("https", handler)
 }
 
-func normalizeReqDecorator(protocol string, handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func normalizeReqDecorator(protocol string, handler baseHandlerFunc) baseHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Host = r.Host
 		r.URL.Scheme = protocol
