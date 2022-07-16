@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/testing/mocks"
 )
@@ -23,7 +23,7 @@ func NewMidelwaresTracker(t *testing.T) *midelwaresTracker {
 
 func (t *midelwaresTracker) MakeMidelware(name string) processor.HandlingMiddleware {
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
-		Set(func(next infrastrucure.HandlerFunc) (h1 infrastrucure.HandlerFunc) {
+		Set(func(next infrastructure.HandlerFunc) (h1 infrastructure.HandlerFunc) {
 			return func(w http.ResponseWriter, r *http.Request) error {
 				t.CallsOrder = append(t.CallsOrder, name)
 				return next(w, r)
@@ -33,7 +33,7 @@ func (t *midelwaresTracker) MakeMidelware(name string) processor.HandlingMiddlew
 
 func (t *midelwaresTracker) MakeFinalMidelware(name string) processor.HandlingMiddleware {
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
-		Set(func(next infrastrucure.HandlerFunc) (h1 infrastrucure.HandlerFunc) {
+		Set(func(next infrastructure.HandlerFunc) (h1 infrastructure.HandlerFunc) {
 			return func(w http.ResponseWriter, r *http.Request) error {
 				t.CallsOrder = append(t.CallsOrder, name)
 				return nil

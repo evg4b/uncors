@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -58,7 +58,7 @@ func main() {
 	pterm.Println()
 	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
 
-	http.HandleFunc("/", infrastrucure.NormalizeHttpReqDecorator(rp.HandleRequest))
+	http.HandleFunc("/", infrastructure.NormalizeHttpReqDecorator(rp.HandleRequest))
 	addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
 	if err = http.ListenAndServe(addr, nil); err != nil {
 		pterm.Fatal.Println(err)
