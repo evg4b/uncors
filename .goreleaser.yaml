@@ -10,7 +10,7 @@ builds:
       - darwin
     main: ./cmd/uncors
     ldflags:
-      - -s -w
+      - -s -w -X main.Version={{.Version}}
 archives:
   - replacements:
       darwin: MacOS

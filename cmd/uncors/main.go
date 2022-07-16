@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/processor"
@@ -14,6 +16,8 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
+
+var Version = "X.X.X"
 
 func main() {
 	target := flag.String("target", "https://github.com", "Real target url (include https://)")
@@ -44,18 +48,7 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
-	logoLetters := []pterm.Letters{
-		putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-		putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
-	}
-
-	uncorsLogo, _ := pterm.DefaultBigText.
-		WithLetters(logoLetters...).
-		Srender()
-
-	pterm.Println()
-	pterm.Print(uncorsLogo)
-	pterm.Println()
+	printLogo()
 	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
 	pterm.Println()
 
@@ -65,4 +58,24 @@ func main() {
 		pterm.Fatal.Println(err)
 		return
 	}
+}
+
+func printLogo() {
+	logoLength := 51
+	versionLine := strings.Repeat(" ", logoLength)
+	versionSuffix := fmt.Sprintf("version: %s", Version)
+	versionPreffix := versionLine[:logoLength-len(versionSuffix)]
+
+	logo, _ := pterm.DefaultBigText.
+		WithLetters(
+			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
+			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)),
+		).
+		Srender()
+
+	pterm.Println()
+	pterm.Print(logo)
+	pterm.Println(versionPreffix + versionSuffix)
+	pterm.Println()
+
 }
