@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/infrastrucure"
+	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/pterm/pterm"
 )
 
 type HandlingMiddleware interface {
-	Wrap(next infrastrucure.HandlerFunc) infrastrucure.HandlerFunc
+	Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc
 }
 
 type RequestProcessor struct {
-	handlerFunc infrastrucure.HandlerFunc
+	handlerFunc infrastructure.HandlerFunc
 }
 
 func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {

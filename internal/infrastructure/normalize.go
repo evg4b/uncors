@@ -1,4 +1,4 @@
-package infrastrucure
+package infrastructure
 
 import "net/http"
 
