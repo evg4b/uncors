@@ -30,7 +30,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 		Prefix: pterm.Prefix{
 			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightBlue},
-			Text:  "PROXY",
+			Text:  " PROXY ",
 		},
 	}
 
@@ -38,10 +38,6 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		replacer, err := pm.replacerFactory.Make(r.URL)
 		if err != nil {
 			return err
-		}
-
-		if r.Method == "OPTIONS" {
-			return pm.hadnleOptionsRequest(w, r)
 		}
 
 		url, _ := replacer.ToTarget(r.URL.String())
