@@ -8,13 +8,13 @@ import (
 
 type proxyMiddlewareOption = func(*ProxyMiddleware)
 
-func WithUrlReplacerFactory(replacerFactory *urlreplacer.UrlReplacerFactory) proxyMiddlewareOption {
+func WithURLReplacerFactory(replacerFactory *urlreplacer.URLReplacerFactory) proxyMiddlewareOption {
 	return func(pm *ProxyMiddleware) {
 		pm.replacerFactory = replacerFactory
 	}
 }
 
-func WithHttpClient(http http.Client) proxyMiddlewareOption {
+func WithHTTPClient(http http.Client) proxyMiddlewareOption {
 	return func(pm *ProxyMiddleware) {
 		pm.http = http
 	}

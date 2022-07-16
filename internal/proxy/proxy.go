@@ -1,21 +1,23 @@
 package proxy
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/evg4b/uncors/internal/responceprinter"
+	"github.com/evg4b/uncors/internal/responseprinter"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
 
+// nolint: revive
 type ProxyMiddleware struct {
-	replacerFactory *urlreplacer.UrlReplacerFactory
+	replacerFactory *urlreplacer.URLReplacerFactory
 	http            http.Client
 }
 
-func NewProxyHandlingMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
+func NewProxyMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
 	middleware := &ProxyMiddleware{}
 
 	for _, option := range options {
@@ -34,23 +36,26 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		},
 	}
 
-	return func(w http.ResponseWriter, r *http.Request) error {
-		replacer, err := pm.replacerFactory.Make(r.URL)
+	return func(resp http.ResponseWriter, req *http.Request) error {
+		replacer, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to transform general url: %w", err)
 		}
 
-		url, _ := replacer.ToTarget(r.URL.String())
-		targetReq, err := http.NewRequest(r.Method, url, r.Body)
+		url, _ := replacer.ToTarget(req.URL.String())
+		targetReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 		if err != nil {
 			pterm.Error.Println(err)
+			resp.WriteHeader(http.StatusInternalServerError)
+			_, wErr := resp.Write([]byte(err.Error()))
+			if wErr != nil {
+				panic(wErr)
+			}
 
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return err
+			return fmt.Errorf("failed to make requst to original server: %w", err)
 		}
 
-		err = copyHeaders(r.Header, targetReq.Header, map[string]func(string) (string, error){
+		err = copyHeaders(req.Header, targetReq.Header, map[string]func(string) (string, error){
 			"origin":  replacer.ToTarget,
 			"referer": replacer.ToTarget,
 		})
@@ -59,22 +64,24 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return err
 		}
 
-		for _, cookie := range r.Cookies() {
+		for _, cookie := range req.Cookies() {
 			cookie.Secure = true
 			targetReq.AddCookie(cookie)
 		}
 
 		targetResp, err := pm.http.Do(targetReq)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to recive response from original server: %w", err)
 		}
+
+		defer targetResp.Body.Close()
 
 		for _, cookie := range targetResp.Cookies() {
 			cookie.Secure = false
-			http.SetCookie(w, cookie)
+			http.SetCookie(resp, cookie)
 		}
 
-		header := w.Header()
+		header := resp.Header()
 		err = copyHeaders(targetResp.Header, header, map[string]func(string) (string, error){
 			"location": replacer.ToSource,
 		})
@@ -87,14 +94,14 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		header.Set("Access-Control-Allow-Credentials", "true")
 		header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
 
-		w.WriteHeader(targetResp.StatusCode)
+		resp.WriteHeader(targetResp.StatusCode)
 
-		_, err = io.Copy(w, targetResp.Body)
+		_, err = io.Copy(resp, targetResp.Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to copy body to response: %w", err)
 		}
 
-		proxyWriter.Println(responceprinter.PrintResponce(targetResp))
+		proxyWriter.Println(responseprinter.Printresponse(targetResp))
 
 		return nil
 	}

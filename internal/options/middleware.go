@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/evg4b/uncors/internal/responceprinter"
+	"github.com/evg4b/uncors/internal/responseprinter"
 	"github.com/pterm/pterm"
 )
 
-type OptionsMiddleware struct{}
+type OptionsMiddleware struct{} // nolint: revive
 
-func NewOptionsMiddlewareMiddleware(options ...optionsMiddlewareOption) *OptionsMiddleware {
+func NewOptionsMiddleware(options ...optionsMiddlewareOption) *OptionsMiddleware {
 	middleware := &OptionsMiddleware{}
 
 	for _, option := range options {
@@ -30,13 +30,13 @@ func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructur
 		},
 	}
 
-	return func(w http.ResponseWriter, r *http.Request) error {
-		if r.Method != "OPTIONS" {
-			return next(w, r)
+	return func(w http.ResponseWriter, req *http.Request) error {
+		if req.Method != "OPTIONS" {
+			return next(w, req)
 		}
 
 		header := w.Header()
-		for key, values := range r.Header {
+		for key, values := range req.Header {
 			lowerKey := strings.ToLower(key)
 			if strings.Contains(lowerKey, "access-control-request") {
 				for _, value := range values {
@@ -46,9 +46,9 @@ func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructur
 			}
 		}
 
-		optionsWriter.Printfln(responceprinter.PrintResponce(&http.Response{
+		optionsWriter.Printfln(responseprinter.Printresponse(&http.Response{
 			StatusCode: http.StatusOK,
-			Request:    r,
+			Request:    req,
 		}))
 
 		return nil

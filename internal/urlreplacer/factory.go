@@ -11,25 +11,26 @@ type urlMapping struct {
 	target *url.URL
 }
 
-type UrlReplacerFactory struct {
+type URLReplacerFactory struct { // nolint: revive
 	mappings map[string]urlMapping
 }
 
 var ErrMappingNotFound = errors.New("mapping not found")
+var ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 
-func NewUrlReplacerFactory(mappings map[string]string) (*UrlReplacerFactory, error) {
+func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, error) {
 	if len(mappings) < 1 {
-		return nil, fmt.Errorf("you must specify at least one mapping")
+		return nil, ErrMappingNotSpecified
 	}
 
 	urlMappings := map[string]urlMapping{}
-	for sourceUrl, targetUrl := range mappings {
-		source, err := parseSourceUrl(sourceUrl)
+	for sourceURL, targetURL := range mappings {
+		source, err := parseSourceURL(sourceURL)
 		if err != nil {
 			return nil, err
 		}
 
-		target, err := parseTargetUrl(targetUrl)
+		target, err := parseTargetURL(targetURL)
 		if err != nil {
 			return nil, err
 		}
@@ -37,22 +38,22 @@ func NewUrlReplacerFactory(mappings map[string]string) (*UrlReplacerFactory, err
 		urlMappings[source.Hostname()] = urlMapping{source, target}
 	}
 
-	return &UrlReplacerFactory{urlMappings}, nil
+	return &URLReplacerFactory{urlMappings}, nil
 }
 
-func (f *UrlReplacerFactory) Make(requetUrl *url.URL) (*replacer, error) {
-	hostname := requetUrl.Hostname()
+func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
+	hostname := requestURL.Hostname()
 	mapping, ok := f.mappings[hostname]
 
-	if !ok || (len(mapping.source.Scheme) > 0 && mapping.source.Scheme != requetUrl.Scheme) {
+	if !ok || (len(mapping.source.Scheme) > 0 && mapping.source.Scheme != requestURL.Scheme) {
 		return nil, ErrMappingNotFound
 	}
 
-	return &replacer{
+	return &Replacer{
 		source: urlData{
 			hostname: hostname,
-			host:     requetUrl.Host,
-			scheme:   requetUrl.Scheme,
+			host:     requestURL.Host,
+			scheme:   requestURL.Scheme,
 		},
 		target: urlData{
 			hostname: mapping.target.Hostname(),
@@ -62,19 +63,19 @@ func (f *UrlReplacerFactory) Make(requetUrl *url.URL) (*replacer, error) {
 	}, nil
 }
 
-func parseSourceUrl(sourceUrl string) (*url.URL, error) {
-	source, err := url.Parse(sourceUrl)
+func parseSourceURL(sourceURL string) (*url.URL, error) {
+	source, err := url.Parse(sourceURL)
 	if err != nil {
-		return nil, fmt.Errorf("falied to parse source url: %v", err)
+		return nil, fmt.Errorf("falied to parse source url: %w", err)
 	}
 
 	return source, nil
 }
 
-func parseTargetUrl(targetUrl string) (*url.URL, error) {
-	source, err := url.Parse(targetUrl)
+func parseTargetURL(targetURL string) (*url.URL, error) {
+	source, err := url.Parse(targetURL)
 	if err != nil {
-		return nil, fmt.Errorf("falied to parse target url: %v", err)
+		return nil, fmt.Errorf("falied to parse target url: %w", err)
 	}
 
 	return source, nil
