@@ -57,11 +57,11 @@ func TestPrintresponse(t *testing.T) {
 				expected: "\x1b[30;101m\x1b[30;101m 500 POST \x1b[0m\x1b[0m \x1b[91m\x1b[91mhttps://api.domain.com/\x1b[0m\x1b[0m",
 			},
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				actual := responseprinter.Printresponse(tt.response)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				actual := responseprinter.Printresponse(testCase.response)
 
-				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})

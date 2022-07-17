@@ -35,12 +35,12 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 				errorMesasge: "falied to parse target url: parse \"\\u007f\": net/url: invalid control character in URL",
 			},
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				actual, err := urlreplacer.NewURLReplacerFactory(tt.mapping)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				actual, err := urlreplacer.NewURLReplacerFactory(testCase.mapping)
 
 				assert.Nil(t, actual)
-				assert.EqualError(t, err, tt.errorMesasge)
+				assert.EqualError(t, err, testCase.errorMesasge)
 			})
 		}
 	})
