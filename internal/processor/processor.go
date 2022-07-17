@@ -34,8 +34,7 @@ func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, r *http.Request
 	if err := rp.handlerFunc(w, r); err != nil {
 		pterm.Error.Printfln("UNCORS error: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "UNCORS error:")
-		fmt.Fprintln(w, err.Error())
+		fmt.Fprintln(w, "UNCORS error:", err.Error())
 	}
 }
 

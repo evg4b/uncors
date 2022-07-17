@@ -43,7 +43,7 @@ func main() {
 	optionsMiddleware := options.NewOptionsMiddleware()
 	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
-		proxy.WithHTTPClient(http.Client{
+		proxy.WithHTTPClient(&http.Client{
 			CheckRedirect: func(r *http.Request, v []*http.Request) error {
 				return http.ErrUseLastResponse
 			},

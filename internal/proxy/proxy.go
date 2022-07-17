@@ -7,14 +7,13 @@ import (
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/responseprinter"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
 
 // nolint: revive
 type ProxyMiddleware struct {
-	replacerFactory *urlreplacer.URLReplacerFactory
-	http            http.Client
+	replacerFactory URLReplacerFactory
+	http            *http.Client
 }
 
 func NewProxyMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
@@ -45,13 +44,6 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		url, _ := replacer.ToTarget(req.URL.String())
 		targetReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 		if err != nil {
-			pterm.Error.Println(err)
-			resp.WriteHeader(http.StatusInternalServerError)
-			_, wErr := resp.Write([]byte(err.Error()))
-			if wErr != nil {
-				panic(wErr)
-			}
-
 			return fmt.Errorf("failed to make requst to original server: %w", err)
 		}
 
