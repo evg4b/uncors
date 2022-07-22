@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gojuno/minimock/v3 v3.0.10
-	github.com/pterm/pterm v0.12.42
+	github.com/pterm/pterm v0.12.43
 	github.com/stretchr/testify v1.8.0
 )
 
