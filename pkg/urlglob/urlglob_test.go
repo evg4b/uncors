@@ -95,7 +95,7 @@ func TestURLGlob_Match(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "33333",
+			name:     "scheme mispatch",
 			pattern:  "https://base.localhost.com",
 			URL:      "http://base.localhost.com/api/info",
 			expected: false,
