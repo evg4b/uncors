@@ -117,86 +117,138 @@ func TestURLGlob_Match(t *testing.T) {
 }
 
 func TestURLGlob_ReplaceAllString(t *testing.T) {
-	tests := []struct {
-		name     string
-		pattern  string
-		URL      string
-		repl     string
-		expected string
-	}{
-		{
-			name:     "correctly transform http to https",
-			pattern:  "http://*.my.cc",
-			URL:      "http://test.my.cc/404",
-			repl:     "https://*.realapi.com",
-			expected: "https://test.realapi.com/404",
-		},
-		{
-			name:     "correctly transform https to http",
-			pattern:  "https://*.my.cc",
-			URL:      "https://test.my.cc/cc",
-			repl:     "http://*.realapi.com",
-			expected: "http://test.realapi.com/cc",
-		},
-		{
-			name:     "correctly copy scheme from original url",
-			pattern:  "https://*.my.cc",
-			URL:      "https://test.my.cc/api/test",
-			repl:     "//*.realapi.com",
-			expected: "https://test.realapi.com/api/test",
-		},
-		{
-			name:     "correctly replace when repl has no wildcard",
-			pattern:  "https://*.my.cc",
-			URL:      "https://test.my.cc/api/info",
-			repl:     "https://static.com",
-			expected: "https://static.com/api/info",
-		},
-		{
-			name:     "correctly remove port",
-			pattern:  "http://*.my.cc:3000",
-			URL:      "http://test.my.cc:3000",
-			repl:     "https://*.realapi.com",
-			expected: "https://test.realapi.com",
-		},
-		{
-			name:     "correctly add port",
-			pattern:  "http://*.my.cc",
-			URL:      "http://test.my.cc/test.html",
-			repl:     "https://*.realapi.com:8080",
-			expected: "https://test.realapi.com:8080/test.html",
-		},
-		{
-			name:     "correctly change port",
-			pattern:  "http://*.my.cc:7600",
-			URL:      "http://test.my.cc:7600/test.html",
-			repl:     "https://*.realapi.com:8080",
-			expected: "https://test.realapi.com:8080/test.html",
-		},
-		{
-			name:     "correctly handle dinamic port",
-			pattern:  "http://*.my.cc",
-			URL:      "http://test.my.cc:7600/test.html",
-			repl:     "https://*.realapi.com",
-			expected: "https://test.realapi.com/test.html",
-		},
-	}
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			glob, err := urlglob.NewURLGlob(testCase.pattern)
-			if err != nil {
-				t.Fatal(err)
-			}
+	t.Run("base config", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			pattern  string
+			URL      string
+			repl     string
+			expected string
+		}{
+			{
+				name:     "correctly transform http to https",
+				pattern:  "http://*.my.cc",
+				URL:      "http://test.my.cc/404",
+				repl:     "https://*.realapi.com",
+				expected: "https://test.realapi.com/404",
+			},
+			{
+				name:     "correctly transform https to http",
+				pattern:  "https://*.my.cc",
+				URL:      "https://test.my.cc/cc",
+				repl:     "http://*.realapi.com",
+				expected: "http://test.realapi.com/cc",
+			},
+			{
+				name:     "correctly copy scheme from original url",
+				pattern:  "https://*.my.cc",
+				URL:      "https://test.my.cc/api/test",
+				repl:     "//*.realapi.com",
+				expected: "https://test.realapi.com/api/test",
+			},
+			{
+				name:     "correctly replace when repl has no wildcard",
+				pattern:  "https://*.my.cc",
+				URL:      "https://test.my.cc/api/info",
+				repl:     "https://static.com",
+				expected: "https://static.com/api/info",
+			},
+			{
+				name:     "correctly remove port",
+				pattern:  "http://*.my.cc:3000",
+				URL:      "http://test.my.cc:3000",
+				repl:     "https://*.realapi.com",
+				expected: "https://test.realapi.com",
+			},
+			{
+				name:     "correctly add port",
+				pattern:  "http://*.my.cc",
+				URL:      "http://test.my.cc/test.html",
+				repl:     "https://*.realapi.com:8080",
+				expected: "https://test.realapi.com:8080/test.html",
+			},
+			{
+				name:     "correctly change port",
+				pattern:  "http://*.my.cc:7600",
+				URL:      "http://test.my.cc:7600/test.html",
+				repl:     "https://*.realapi.com:8080",
+				expected: "https://test.realapi.com:8080/test.html",
+			},
+			{
+				name:     "correctly handle dinamic port",
+				pattern:  "http://*.my.cc",
+				URL:      "http://test.my.cc:7600/test.html",
+				repl:     "https://*.realapi.com",
+				expected: "https://test.realapi.com/test.html",
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				glob, err := urlglob.NewURLGlob(testCase.pattern)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			repl, err := urlglob.NewReplacePatternString(testCase.repl)
-			if err != nil {
-				t.Fatal(err)
-			}
+				repl, err := urlglob.NewReplacePatternString(testCase.repl)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			actual, err := glob.ReplaceAllString(testCase.URL, repl)
+				actual, err := glob.ReplaceAllString(testCase.URL, repl)
 
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.expected, actual)
-		})
-	}
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expected, actual)
+			})
+		}
+	})
+
+	t.Run("save source port", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			pattern  string
+			URL      string
+			repl     string
+			expected string
+		}{
+			{
+				name:     "correctly add port",
+				pattern:  "http://*.my.cc",
+				URL:      "http://test.my.cc/test.html",
+				repl:     "https://*.realapi.com:8080",
+				expected: "https://test.realapi.com:8080/test.html",
+			},
+			{
+				name:     "correctly change port",
+				pattern:  "http://*.my.cc:7600",
+				URL:      "http://test.my.cc:7600/test.html",
+				repl:     "https://*.realapi.com:8080",
+				expected: "https://test.realapi.com:8080/test.html",
+			},
+			{
+				name:     "correctly handle dinamic port",
+				pattern:  "http://*.my.cc",
+				URL:      "http://test.my.cc:7600/test.html",
+				repl:     "https://*.realapi.com:7600",
+				expected: "https://test.realapi.com:7600/test.html",
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				glob, err := urlglob.NewURLGlob(testCase.pattern, urlglob.SaveOriginalPort())
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				repl, err := urlglob.NewReplacePatternString(testCase.repl)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				actual, err := glob.ReplaceAllString(testCase.URL, repl)
+
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expected, actual)
+			})
+		}
+	})
 }

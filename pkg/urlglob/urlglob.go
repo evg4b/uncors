@@ -9,11 +9,13 @@ import (
 )
 
 type URLGlob struct {
-	regexp         *regexp.Regexp
 	ReplacePattern ReplacePattern
 	WildCardCount  int
 	Port           string
 	Scheme         string
+
+	regexp   *regexp.Regexp
+	savePort bool
 }
 
 var (
@@ -48,6 +50,7 @@ func NewURLGlob(rawURL string, options ...urlGloboption) (*URLGlob, error) {
 		WildCardCount:  count,
 		Scheme:         parsedPattern.Scheme,
 		Port:           parsedPattern.Port(),
+		savePort:       false,
 	}
 
 	for _, option := range options {
@@ -96,9 +99,14 @@ func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (string
 		return "", ErrTooManyWildcards
 	}
 
+	port := repl.port
+	if glob.savePort && len(port) == 0 {
+		port = parsedURL.Port()
+	}
+
 	hostname := glob.regexp.ReplaceAllString(parsedURL.Hostname(), repl.pattern)
-	if len(repl.port) > 0 {
-		parsedURL.Host = fmt.Sprintf("%s:%s", hostname, repl.port)
+	if len(port) > 0 {
+		parsedURL.Host = fmt.Sprintf("%s:%s", hostname, port)
 	} else {
 		parsedURL.Host = hostname
 	}
