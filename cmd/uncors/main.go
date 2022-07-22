@@ -33,7 +33,11 @@ func main() {
 
 	flag.Parse()
 
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{(*source): (*target)})
+	mappings := map[string]string{
+		(*source): (*target),
+	}
+
+	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
 	if err != nil {
 		pterm.Fatal.Println(err)
 
@@ -64,8 +68,7 @@ func main() {
 	)
 
 	printLogo()
-	pterm.Info.Printfln("PROXY: %s => %s", *source, *target)
-	pterm.Println()
+	printMappings(mappings, *port)
 	http.HandleFunc("/", infrastructure.NormalizeHTTPReqDecorator(requestProcessor.HandleRequest))
 	address := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
 
@@ -91,4 +94,12 @@ func printLogo() {
 	pterm.Print(logo)
 	pterm.Println(versionPreffix + versionSuffix)
 	pterm.Println()
+}
+
+func printMappings(mappings map[string]string, port int) {
+	builder := strings.Builder{}
+	for source, target := range mappings {
+		builder.WriteString(fmt.Sprintf("PROXY: %s:%d => %s\n", source, port, target))
+	}
+	pterm.Info.Printfln(builder.String())
 }
