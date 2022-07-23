@@ -1,9 +1,17 @@
 package urlglob
 
-type urlGloboption = func(glob *URLGlob)
+type urlGlobOption = func(glob *URLGlob)
 
-func SaveOriginalPort() urlGloboption {
-	return func(glob *URLGlob) {
-		glob.savePort = true
+type replacePatternOption = func(pattern *ReplacePattern)
+
+func UsePort(port string) replacePatternOption {
+	return func(pattern *ReplacePattern) {
+		pattern.port = port
+	}
+}
+
+func UseScheme(scheme string) replacePatternOption {
+	return func(pattern *ReplacePattern) {
+		pattern.scheme = scheme
 	}
 }

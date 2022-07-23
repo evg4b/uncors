@@ -9,16 +9,18 @@ import (
 )
 
 type Replacer struct {
-	rawSource string
-	rawTarget string
-	source    *urlglob.URLGlob
-	target    *urlglob.URLGlob
+	rawSource            string
+	rawTarget            string
+	source               *urlglob.URLGlob
+	sourceReplacePattern urlglob.ReplacePattern
+	target               *urlglob.URLGlob
+	targetReplacePattern urlglob.ReplacePattern
 }
 
 var ErrSchemeNotMatched = errors.New("scheme in mapping and query not matched")
 
 func (r *Replacer) ToSource(rawURL string) (string, error) {
-	replcedURL, err := r.target.ReplaceAllString(rawURL, r.source.ReplacePattern)
+	replcedURL, err := r.target.ReplaceAllString(rawURL, r.sourceReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to source url:  %w", rawURL, err)
 	}
@@ -27,7 +29,7 @@ func (r *Replacer) ToSource(rawURL string) (string, error) {
 }
 
 func (r *Replacer) URLToSource(parsedURL *url.URL) (string, error) {
-	replcedURL, err := r.target.ReplaceAll(parsedURL, r.source.ReplacePattern)
+	replcedURL, err := r.target.ReplaceAll(parsedURL, r.sourceReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to source url:  %w", parsedURL.String(), err)
 	}
@@ -36,7 +38,7 @@ func (r *Replacer) URLToSource(parsedURL *url.URL) (string, error) {
 }
 
 func (r *Replacer) ToTarget(rawURL string) (string, error) {
-	replcedURL, err := r.source.ReplaceAllString(rawURL, r.target.ReplacePattern)
+	replcedURL, err := r.source.ReplaceAllString(rawURL, r.targetReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to target url:  %w", rawURL, err)
 	}
@@ -45,7 +47,7 @@ func (r *Replacer) ToTarget(rawURL string) (string, error) {
 }
 
 func (r *Replacer) URLToTarget(parsedURL *url.URL) (string, error) {
-	replcedURL, err := r.source.ReplaceAll(parsedURL, r.target.ReplacePattern)
+	replcedURL, err := r.source.ReplaceAll(parsedURL, r.targetReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to target url:  %w", parsedURL.String(), err)
 	}

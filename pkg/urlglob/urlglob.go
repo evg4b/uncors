@@ -9,13 +9,11 @@ import (
 )
 
 type URLGlob struct {
-	ReplacePattern ReplacePattern
-	WildCardCount  int
-	Port           string
-	Scheme         string
+	WildCardCount int
+	Port          string
+	Scheme        string
 
-	regexp   *regexp.Regexp
-	savePort bool
+	regexp *regexp.Regexp
 }
 
 var (
@@ -25,10 +23,11 @@ var (
 	ErrTooManyWildcards    = errors.New("replcace pattern contains too many wildcards")
 )
 
-func NewURLGlob(rawURL string, options ...urlGloboption) (*URLGlob, error) {
+func NewURLGlob(rawURL string, options ...urlGlobOption) (*URLGlob, error) {
 	if len(rawURL) == 0 {
 		return nil, ErrEmptyURL
 	}
+
 	parsedPattern, err := parsePattern(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to craete glob from '%s': %w", rawURL, err)
@@ -39,18 +38,11 @@ func NewURLGlob(rawURL string, options ...urlGloboption) (*URLGlob, error) {
 		return nil, err
 	}
 
-	replacePattern, err := NewReplacePattern(parsedPattern)
-	if err != nil {
-		return nil, err
-	}
-
 	glob := &URLGlob{
-		regexp:         regexp,
-		ReplacePattern: replacePattern,
-		WildCardCount:  count,
-		Scheme:         parsedPattern.Scheme,
-		Port:           parsedPattern.Port(),
-		savePort:       false,
+		regexp:        regexp,
+		WildCardCount: count,
+		Scheme:        parsedPattern.Scheme,
+		Port:          parsedPattern.Port(),
 	}
 
 	for _, option := range options {
@@ -99,14 +91,9 @@ func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (string
 		parsedURL.Scheme = repl.scheme
 	}
 
-	port := repl.port
-	if glob.savePort && len(port) == 0 {
-		port = parsedURL.Port()
-	}
-
 	hostname := glob.regexp.ReplaceAllString(parsedURL.Hostname(), repl.pattern)
-	if len(port) > 0 {
-		parsedURL.Host = fmt.Sprintf("%s:%s", hostname, port)
+	if len(repl.port) > 0 {
+		parsedURL.Host = fmt.Sprintf("%s:%s", hostname, repl.port)
 	} else {
 		parsedURL.Host = hostname
 	}
