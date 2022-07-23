@@ -1,7 +1,5 @@
 package urlglob
 
-type urlGlobOption = func(glob *URLGlob)
-
 type replacePatternOption = func(pattern *ReplacePattern)
 
 func UsePort(port string) replacePatternOption {

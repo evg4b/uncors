@@ -23,7 +23,7 @@ var (
 	ErrTooManyWildcards    = errors.New("replcace pattern contains too many wildcards")
 )
 
-func NewURLGlob(rawURL string, options ...urlGlobOption) (*URLGlob, error) {
+func NewURLGlob(rawURL string) (*URLGlob, error) {
 	if len(rawURL) == 0 {
 		return nil, ErrEmptyURL
 	}
@@ -43,10 +43,6 @@ func NewURLGlob(rawURL string, options ...urlGlobOption) (*URLGlob, error) {
 		WildCardCount: count,
 		Scheme:        parsedPattern.Scheme,
 		Port:          parsedPattern.Port(),
-	}
-
-	for _, option := range options {
-		option(glob)
 	}
 
 	return glob, nil
