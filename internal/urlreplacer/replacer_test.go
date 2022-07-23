@@ -140,24 +140,24 @@ func TestReplacerToTarget(t *testing.T) {
 			url       string
 			expected  string
 		}{
-			// {
-			// 	name: "from https to https",
-			// 	requerURL: &url.URL{
-			// 		Host:   "premium.localhost.com",
-			// 		Scheme: "http",
-			// 	},
-			// 	url:      "http://premium.localhost.com/api/info",
-			// 	expected: "https://premium.api.com/api/info",
-			// },
-			// {
-			// 	name: "from http to https",
-			// 	requerURL: &url.URL{
-			// 		Host:   "base.localhost.com",
-			// 		Scheme: "https",
-			// 	},
-			// 	url:      "https://base.localhost.com/api/info",
-			// 	expected: "http://base.api.com/api/info",
-			// },
+			{
+				name: "from https to https",
+				requerURL: &url.URL{
+					Host:   "premium.localhost.com",
+					Scheme: "http",
+				},
+				url:      "http://premium.localhost.com/api/info",
+				expected: "https://premium.api.com/api/info",
+			},
+			{
+				name: "from http to https",
+				requerURL: &url.URL{
+					Host:   "base.localhost.com",
+					Scheme: "https",
+				},
+				url:      "https://base.localhost.com/api/info",
+				expected: "http://base.api.com/api/info",
+			},
 			{
 				name: "from http to https with custom port",
 				requerURL: &url.URL{
@@ -165,7 +165,7 @@ func TestReplacerToTarget(t *testing.T) {
 					Scheme: "https",
 				},
 				url:      "https://base.localhost.com:4200/api/info",
-				expected: "http://base.api.com/api/info", // TODO: fix
+				expected: "http://base.api.com/api/info",
 			},
 			{
 				name: "from https to http with custom port",
@@ -174,7 +174,7 @@ func TestReplacerToTarget(t *testing.T) {
 					Scheme: "http",
 				},
 				url:      "http://premium.localhost.com:3000/api/info",
-				expected: "https://premium.api.com/api/info", // TODO: fix
+				expected: "https://premium.api.com/api/info",
 			},
 			{
 				name: "from https to http with custom port",
@@ -183,7 +183,7 @@ func TestReplacerToTarget(t *testing.T) {
 					Scheme: "http",
 				},
 				url:      "http://custompost.localhost.com:3000/api/info",
-				expected: "https://customdomain.com:8080/api/info", // TODO: fix
+				expected: "https://customdomain.com:8080/api/info",
 			},
 			{
 				name: "* matcher",
@@ -192,7 +192,7 @@ func TestReplacerToTarget(t *testing.T) {
 					Scheme: "http",
 				},
 				url:      "http://test.star.com:3000/api/info",
-				expected: "http://test.com:3000/api/info", // fix
+				expected: "http://test.com/api/info",
 			},
 		}
 		for _, testCase := range tests {
@@ -211,7 +211,6 @@ func TestReplacerToTarget(t *testing.T) {
 	})
 
 	t.Run("should return error when", func(t *testing.T) {
-		t.SkipNow()
 		tests := []struct {
 			name      string
 			requerURL *url.URL

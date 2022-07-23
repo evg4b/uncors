@@ -9,10 +9,12 @@ import (
 )
 
 type urlMapping struct {
-	rawSource  string
-	sourceGlob *urlglob.URLGlob
-	rawTarget  string
-	targetGlob *urlglob.URLGlob
+	rawSource            string
+	sourceGlob           *urlglob.URLGlob
+	sourceReplacePattern urlglob.ReplacePattern
+	rawTarget            string
+	targetGlob           *urlglob.URLGlob
+	targetReplacePattern urlglob.ReplacePattern
 }
 
 type URLReplacerFactory struct { // nolint: revive
@@ -34,7 +36,17 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 			return nil, fmt.Errorf("failed to configure mappings: %w", err)
 		}
 
-		targetGlob, err := urlglob.NewURLGlob(targetURL, urlglob.SaveOriginalPort())
+		sourceReplacePattern, err := urlglob.NewReplacePatternString(sourceURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+		}
+
+		targetGlob, err := urlglob.NewURLGlob(targetURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+		}
+
+		targetReplacePattern, err := urlglob.NewReplacePatternString(targetURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to configure mappings: %w", err)
 		}
@@ -44,10 +56,12 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 		}
 
 		urlMappings = append(urlMappings, urlMapping{
-			rawSource:  sourceURL,
-			sourceGlob: sourceGlob,
-			rawTarget:  targetURL,
-			targetGlob: targetGlob,
+			rawSource:            sourceURL,
+			sourceGlob:           sourceGlob,
+			sourceReplacePattern: sourceReplacePattern,
+			rawTarget:            targetURL,
+			targetGlob:           targetGlob,
+			targetReplacePattern: targetReplacePattern,
 		})
 	}
 
@@ -55,26 +69,37 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 }
 
 func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
-	mapping := f.findMapping(requestURL)
+	mapping, err := f.findMapping(requestURL)
+	if err != nil {
+		return nil, err
+	}
 
-	if mapping == nil || (len(mapping.sourceGlob.Scheme) > 0 && mapping.sourceGlob.Scheme != requestURL.Scheme) {
+	if len(mapping.sourceGlob.Scheme) > 0 && mapping.sourceGlob.Scheme != requestURL.Scheme {
 		return nil, ErrMappingNotFound
 	}
 
+	urlglob.PatchReplacePattern(
+		&mapping.sourceReplacePattern,
+		urlglob.UsePort(requestURL.Port()),
+		urlglob.UseScheme(requestURL.Scheme),
+	)
+
 	return &Replacer{
-		rawSource: mapping.rawSource,
-		source:    mapping.sourceGlob,
-		rawTarget: mapping.rawTarget,
-		target:    mapping.targetGlob,
+		rawSource:            mapping.rawSource,
+		source:               mapping.sourceGlob,
+		sourceReplacePattern: mapping.sourceReplacePattern,
+		rawTarget:            mapping.rawTarget,
+		target:               mapping.targetGlob,
+		targetReplacePattern: mapping.targetReplacePattern,
 	}, nil
 }
 
-func (f *URLReplacerFactory) findMapping(requestURL *url.URL) *urlMapping {
+func (f *URLReplacerFactory) findMapping(requestURL *url.URL) (urlMapping, error) {
 	for _, imapping := range f.mappings {
 		if imapping.sourceGlob.Match(requestURL) {
-			return &imapping
+			return imapping, nil
 		}
 	}
 
-	return nil
+	return urlMapping{}, ErrMappingNotFound
 }

@@ -12,25 +12,35 @@ type ReplacePattern struct {
 	port          string
 }
 
-func NewReplacePatternString(rawURL string) (ReplacePattern, error) {
+func NewReplacePatternString(rawURL string, options ...replacePatternOption) (ReplacePattern, error) {
 	parsedPattern, err := parsePattern(rawURL)
 	if err != nil {
 		return ReplacePattern{}, fmt.Errorf("failed to craete glob from '%s': %w", rawURL, err)
 	}
 
-	return NewReplacePattern(parsedPattern)
+	return NewReplacePattern(parsedPattern, options...)
 }
 
-func NewReplacePattern(parsedPattern *url.URL) (ReplacePattern, error) {
-	replacePattern, wildCardCount, err := wildCardToReplacePattern(parsedPattern)
+func NewReplacePattern(parsedPattern *url.URL, options ...replacePatternOption) (ReplacePattern, error) {
+	rattern, wildCardCount, err := wildCardToReplacePattern(parsedPattern)
 	if err != nil {
 		return ReplacePattern{}, err
 	}
 
-	return ReplacePattern{
-		pattern:       replacePattern,
+	replacePattern := ReplacePattern{
+		pattern:       rattern,
 		wildCardCount: wildCardCount,
 		scheme:        parsedPattern.Scheme,
 		port:          parsedPattern.Port(),
-	}, nil
+	}
+
+	PatchReplacePattern(&replacePattern, options...)
+
+	return replacePattern, nil
+}
+
+func PatchReplacePattern(replacePattern *ReplacePattern, options ...replacePatternOption) {
+	for _, option := range options {
+		option(replacePattern)
+	}
 }
