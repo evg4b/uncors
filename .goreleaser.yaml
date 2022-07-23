@@ -1,5 +1,4 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
+project_name: uncors
 before:
   hooks:
     - go mod tidy
@@ -10,7 +9,7 @@ builds:
       - darwin
     main: ./cmd/uncors
     ldflags:
-      - -s -w -X main.Version={{.Version}}
+      - -s -w -X main.Version={{ .Version }}
 archives:
   - replacements:
       darwin: MacOS
@@ -30,3 +29,39 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+dockers:
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "evg4b/{{ .ProjectName }}:{{ .Version }}"
+      - "evg4b/{{ .ProjectName }}:latest"
+      - "ghcr.io/evg4b/{{ .ProjectName }}:{{ .Version }}"
+      - "ghcr.io/evg4b/{{ .ProjectName }}:latest"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "evg4b/{{ .ProjectName }}:{{ .Version }}"
+      - "evg4b/{{ .ProjectName }}:latest"
+      - "ghcr.io/evg4b/{{ .ProjectName }}:{{ .Version }}"
+      - "ghcr.io/evg4b/{{ .ProjectName }}:latest"
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+docker_manifests:
+  - name_template: evg4b/{{ .ProjectName }}:{{ .Version }}
+    image_templates:
+      - evg4b/{{ .ProjectName }}:{{ .Version }}
+  - name_template: evg4b/{{ .ProjectName }}:latest
+    image_templates:
+      - evg4b/{{ .ProjectName }}:latest
