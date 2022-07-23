@@ -11,14 +11,8 @@ import (
 
 type OptionsMiddleware struct{} // nolint: revive
 
-func NewOptionsMiddleware(options ...optionsMiddlewareOption) *OptionsMiddleware {
-	middleware := &OptionsMiddleware{}
-
-	for _, option := range options {
-		option(middleware)
-	}
-
-	return middleware
+func NewOptionsMiddleware() *OptionsMiddleware {
+	return &OptionsMiddleware{}
 }
 
 func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
