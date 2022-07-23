@@ -4,15 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+
+	"github.com/evg4b/uncors/pkg/urlglob"
 )
 
 type urlMapping struct {
-	source *url.URL
-	target *url.URL
+	rawSource  string
+	sourceGlob *urlglob.URLGlob
+	rawTarget  string
+	targetGlob *urlglob.URLGlob
 }
 
 type URLReplacerFactory struct { // nolint: revive
-	mappings map[string]urlMapping
+	mappings []urlMapping
 }
 
 var ErrMappingNotFound = errors.New("mapping not found")
@@ -23,60 +27,54 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 		return nil, ErrMappingNotSpecified
 	}
 
-	urlMappings := map[string]urlMapping{}
+	urlMappings := []urlMapping{}
 	for sourceURL, targetURL := range mappings {
-		source, err := parseSourceURL(sourceURL)
+		sourceGlob, err := urlglob.NewURLGlob(sourceURL)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to configure mappings: %w", err)
 		}
 
-		target, err := parseTargetURL(targetURL)
+		targetGlob, err := urlglob.NewURLGlob(targetURL, urlglob.SaveOriginalPort())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to configure mappings: %w", err)
 		}
 
-		urlMappings[source.Hostname()] = urlMapping{source, target}
+		if sourceGlob.WildCardCount != targetGlob.WildCardCount {
+			return nil, urlglob.ErrTooManyWildcards
+		}
+
+		urlMappings = append(urlMappings, urlMapping{
+			rawSource:  sourceURL,
+			sourceGlob: sourceGlob,
+			rawTarget:  targetURL,
+			targetGlob: targetGlob,
+		})
 	}
 
 	return &URLReplacerFactory{urlMappings}, nil
 }
 
 func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
-	hostname := requestURL.Hostname()
-	mapping, ok := f.mappings[hostname]
+	mapping := f.findMapping(requestURL)
 
-	if !ok || (len(mapping.source.Scheme) > 0 && mapping.source.Scheme != requestURL.Scheme) {
+	if mapping == nil || (len(mapping.sourceGlob.Scheme) > 0 && mapping.sourceGlob.Scheme != requestURL.Scheme) {
 		return nil, ErrMappingNotFound
 	}
 
 	return &Replacer{
-		source: urlData{
-			hostname: hostname,
-			host:     requestURL.Host,
-			scheme:   requestURL.Scheme,
-		},
-		target: urlData{
-			hostname: mapping.target.Hostname(),
-			host:     mapping.target.Host,
-			scheme:   mapping.target.Scheme,
-		},
+		rawSource: mapping.rawSource,
+		source:    mapping.sourceGlob,
+		rawTarget: mapping.rawTarget,
+		target:    mapping.targetGlob,
 	}, nil
 }
 
-func parseSourceURL(sourceURL string) (*url.URL, error) {
-	source, err := url.Parse(sourceURL)
-	if err != nil {
-		return nil, fmt.Errorf("falied to parse source url: %w", err)
+func (f *URLReplacerFactory) findMapping(requestURL *url.URL) *urlMapping {
+	for _, imapping := range f.mappings {
+		if imapping.sourceGlob.Match(requestURL) {
+			return &imapping
+		}
 	}
 
-	return source, nil
-}
-
-func parseTargetURL(targetURL string) (*url.URL, error) {
-	source, err := url.Parse(targetURL)
-	if err != nil {
-		return nil, fmt.Errorf("falied to parse target url: %w", err)
-	}
-
-	return source, nil
+	return nil
 }

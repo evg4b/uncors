@@ -4,73 +4,51 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+
+	"github.com/evg4b/uncors/pkg/urlglob"
 )
 
-type urlData struct {
-	hostname string
-	host     string
-	scheme   string
-}
-
 type Replacer struct {
-	source urlData
-	target urlData
+	rawSource string
+	rawTarget string
+	source    *urlglob.URLGlob
+	target    *urlglob.URLGlob
 }
 
 var ErrSchemeNotMatched = errors.New("scheme in mapping and query not matched")
 
 func (r *Replacer) ToSource(rawURL string) (string, error) {
-	targetURL, err := url.Parse(rawURL)
+	replcedURL, err := r.target.ReplaceAllString(rawURL, r.source.ReplacePattern)
 	if err != nil {
-		return "", fmt.Errorf("filed transform url %s to source: %w", rawURL, err)
+		return "", fmt.Errorf("filed transform '%s' to source url:  %w", rawURL, err)
 	}
 
-	return r.URLToSource(targetURL)
+	return replcedURL, nil
 }
 
 func (r *Replacer) URLToSource(parsedURL *url.URL) (string, error) {
-	expectedScheme := r.target.scheme
-	if len(expectedScheme) > 0 && expectedScheme != parsedURL.Scheme {
-		return "", fmt.Errorf(
-			"failed to transform url from %s to %s: %w",
-			expectedScheme,
-			parsedURL.Scheme,
-			ErrSchemeNotMatched,
-		)
+	replcedURL, err := r.target.ReplaceAll(parsedURL, r.source.ReplacePattern)
+	if err != nil {
+		return "", fmt.Errorf("filed transform '%s' to source url:  %w", parsedURL.String(), err)
 	}
 
-	parsedURL.Host = r.source.host
-	if len(r.source.scheme) > 0 {
-		parsedURL.Scheme = r.source.scheme
-	}
-
-	return parsedURL.String(), nil
+	return replcedURL, nil
 }
 
 func (r *Replacer) ToTarget(rawURL string) (string, error) {
-	targetURL, err := url.Parse(rawURL)
+	replcedURL, err := r.source.ReplaceAllString(rawURL, r.target.ReplacePattern)
 	if err != nil {
-		return "", fmt.Errorf("filed transform url %s to target: %w", rawURL, err)
+		return "", fmt.Errorf("filed transform '%s' to target url:  %w", rawURL, err)
 	}
 
-	return r.URLToTarget(targetURL)
+	return replcedURL, nil
 }
 
 func (r *Replacer) URLToTarget(parsedURL *url.URL) (string, error) {
-	expectedScheme := r.source.scheme
-	if len(expectedScheme) > 0 && expectedScheme != parsedURL.Scheme {
-		return "", fmt.Errorf(
-			"failed to transform url from %s to %s: %w",
-			expectedScheme,
-			parsedURL.Scheme,
-			ErrSchemeNotMatched,
-		)
+	replcedURL, err := r.source.ReplaceAll(parsedURL, r.target.ReplacePattern)
+	if err != nil {
+		return "", fmt.Errorf("filed transform '%s' to target url:  %w", parsedURL.String(), err)
 	}
 
-	parsedURL.Host = r.target.host
-	if len(r.target.scheme) > 0 {
-		parsedURL.Scheme = r.target.scheme
-	}
-
-	return parsedURL.String(), nil
+	return replcedURL, nil
 }
