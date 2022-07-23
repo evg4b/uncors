@@ -44,6 +44,7 @@ dockers:
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source='https://github.com/evg4b/uncors'"
   - use: buildx
     goos: linux
     goarch: arm64
@@ -58,6 +59,7 @@ dockers:
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.source='https://github.com/evg4b/uncors'"
 docker_manifests:
   - name_template: evg4b/{{ .ProjectName }}:{{ .Version }}
     image_templates:
