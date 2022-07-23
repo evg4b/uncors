@@ -11,28 +11,24 @@ import (
 func TestNewUrlReplacerFactory(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
-			name         string
-			mapping      map[string]string
-			errorMesasge string
+			name    string
+			mapping map[string]string
 		}{
 			{
-				name:         "mappings is empty",
-				mapping:      make(map[string]string),
-				errorMesasge: "you must specify at least one mapping",
+				name:    "mappings is empty",
+				mapping: make(map[string]string),
 			},
 			{
 				name: "source url is incorrect",
 				mapping: map[string]string{
 					string(rune(0x7f)): "https://github.com",
 				},
-				errorMesasge: "falied to parse source url: parse \"\\u007f\": net/url: invalid control character in URL",
 			},
 			{
 				name: "target url is incorrect ",
 				mapping: map[string]string{
 					"locahost": string(rune(0x7f)),
 				},
-				errorMesasge: "falied to parse target url: parse \"\\u007f\": net/url: invalid control character in URL",
 			},
 		}
 		for _, testCase := range tests {
@@ -40,14 +36,14 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 				actual, err := urlreplacer.NewURLReplacerFactory(testCase.mapping)
 
 				assert.Nil(t, actual)
-				assert.EqualError(t, err, testCase.errorMesasge)
+				assert.Error(t, err)
 			})
 		}
 	})
 
 	t.Run("shodul return replacer", func(t *testing.T) {
 		actual, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-			"localhost": "https://github.com",
+			"//localhost": "https://github.com",
 		})
 
 		assert.NotNil(t, actual)

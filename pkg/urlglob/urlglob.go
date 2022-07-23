@@ -87,16 +87,16 @@ func (glob *URLGlob) ReplaceAllString(rawURL string, repl ReplacePattern) (strin
 }
 
 func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (string, error) {
-	if !strings.EqualFold(glob.Scheme, parsedURL.Scheme) {
+	if len(glob.Scheme) > 0 && !strings.EqualFold(glob.Scheme, parsedURL.Scheme) {
 		return "", ErrSchemeMismatch
+	}
+
+	if repl.wildCardCount > glob.WildCardCount {
+		return "", ErrTooManyWildcards
 	}
 
 	if len(repl.scheme) > 0 {
 		parsedURL.Scheme = repl.scheme
-	}
-
-	if glob.WildCardCount < repl.wildCardCount {
-		return "", ErrTooManyWildcards
 	}
 
 	port := repl.port
