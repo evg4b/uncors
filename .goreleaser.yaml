@@ -45,6 +45,7 @@ dockers:
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
       - "--label=org.opencontainers.image.source='https://github.com/evg4b/uncors'"
+      - "--label=org.opencontainers.image.description='A simple dev HTTP/HTTPS proxy for replacing CORS headers.'"
   - use: buildx
     goos: linux
     goarch: arm64
