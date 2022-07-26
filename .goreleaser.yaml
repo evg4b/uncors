@@ -7,7 +7,7 @@ builds:
       - linux
       - windows
       - darwin
-    main: ./cmd/uncors
+    main: '.'
     ldflags:
       - -s -w -X main.Version={{ .Version }}
 archives:

@@ -28,7 +28,7 @@ jobs:
         version: latest
 
     - name: Build
-      run: go build -v ./cmd/uncors/main.go
+      run: go build -v .
 
     - name: Test
       run: go test -json -v -coverprofile=coverage.out ./... > test-report.out
