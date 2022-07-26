@@ -33,10 +33,44 @@
     </a>
 </p>
 
-## Usage
+# Quick Install 
+
+## Binary (Cross-platform) 
+
+Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
+
+Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/local/bin` is the most probable location.
+
+## Docker 
+
+We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
+
+## Source 
+
+**Prerequisite Tools**
+- Git
+- Go (at least Go 1.11)
+
+**Fetch from GitHub** 
+
+UNCORS uses the Go Modules support built into Go 1.11 to build. The easiest way to get started is to clone UNCORS source code in a directory outside of the GOPATH, as in the following example:
+
+```
+mkdir $HOME/src
+cd $HOME/src
+git clone https://github.com/evg4b/uncors.git
+cd uncors
+go install
+```
+
+If you are a Windows user, substitute the $HOME environment variable above with `%USERPROFILE%`.
+
+# Usage
 ```
 ./uncors --port 8080 --target 'https://github.com' --source 'http://localhost'
 ```
+
+
 
 ## Parameters
 
