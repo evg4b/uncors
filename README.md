@@ -70,10 +70,32 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 ./uncors --port 8080 --target 'https://github.com' --source 'http://localhost'
 ```
 
-
-
 ## Parameters
 
 * `--port` - Local HTTP linthing port. 
 * `--target` - Url with protocol for to the resource to be proxyed.
 * `--source` - Url with protocol for to the resource from which proxying will take place.
+
+## How it works 
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Uncors
+    participant Server
+
+
+    alt Handling OPTIONS queries 
+        Client ->> Uncors: Access-Control-Request
+        Uncors ->> Client: Allow-Control-Request
+    end
+    
+    alt Handling Data queries 
+      Client ->> Uncors: GET, POST, PUT... query
+      Note over Uncors: Replacing url with target<br/> in headers and cookies
+      Uncors-->>Server: Real GET, POST, PUT... query
+      Server->>Uncors: Real responce
+      Note over Uncors: Replacing url with source<br/> in headers and cookies
+      Uncors-->>Client: Data responce
+    end
+```
