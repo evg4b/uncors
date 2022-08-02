@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/cmd/uncors/main.go",
+            "program": "${workspaceFolder}/main.go",
             "env": {
                 "GOARCH": "arm64",
                 "GOOS": "darwin"
