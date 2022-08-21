@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/pterm/pterm"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,10 +32,7 @@ const (
 	defaultHTTPSPort = 443
 )
 
-const readTimeout = 1 * time.Second
-const writeTimeout = 1 * time.Second
-const idleTimeout = 30 * time.Second
-const readHeaderTimeout = 2 * time.Second
+const readHeaderTimeout = 30 * time.Second
 
 func NewServer(options ...serverOption) *Server {
 	appServer := &Server{
@@ -50,9 +46,6 @@ func NewServer(options ...serverOption) *Server {
 
 	address := net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
 	appServer.http = http.Server{
-		ReadTimeout:       readTimeout,
-		WriteTimeout:      writeTimeout,
-		IdleTimeout:       idleTimeout,
 		ReadHeaderTimeout: readHeaderTimeout,
 		Addr:              address,
 		Handler: http.HandlerFunc(
@@ -63,9 +56,6 @@ func NewServer(options ...serverOption) *Server {
 	if appServer.isHTTPSAvialable() {
 		address = net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
 		appServer.https = http.Server{
-			ReadTimeout:       readTimeout,
-			WriteTimeout:      writeTimeout,
-			IdleTimeout:       idleTimeout,
 			ReadHeaderTimeout: readHeaderTimeout,
 			Addr:              address,
 			Handler: http.HandlerFunc(
@@ -81,8 +71,8 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	rungroup, ctx := errgroup.WithContext(ctx)
 
 	rungroup.Go(func() error {
-		if err := s.http.ListenAndServe(); err != nil {
-			pterm.Fatal.Println(err)
+		if err := s.http.ListenAndServe(); !isSucessClosed(err) {
+			return fmt.Errorf("http server stoped with error: %w", err)
 		}
 
 		return nil
@@ -90,8 +80,8 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 
 	if s.isHTTPSAvialable() {
 		rungroup.Go(func() error {
-			if err := s.https.ListenAndServeTLS(s.cert, s.key); err != nil {
-				pterm.Fatal.Println(err)
+			if err := s.https.ListenAndServeTLS(s.cert, s.key); !isSucessClosed(err) {
+				return fmt.Errorf("https server stoped with error: %w", err)
 			}
 
 			return nil
@@ -103,7 +93,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	rungroup.Go(func() error {
 		<-ctx.Done()
 		if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
-			return fmt.Errorf("shutdown http server %w", err)
+			return fmt.Errorf("shutdown http server error %w", err)
 		}
 
 		return nil
@@ -114,7 +104,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 			<-ctx.Done()
 
 			if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
-				return fmt.Errorf("shutdown http server %w", err)
+				return fmt.Errorf("shutdown http server error %w", err)
 			}
 
 			return nil

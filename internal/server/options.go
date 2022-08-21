@@ -12,7 +12,7 @@ func WithHTTPPort(port int) serverOption {
 
 func WithHTTPSPort(port int) serverOption {
 	return func(s *Server) {
-		s.httpPort = port
+		s.httpsPort = port
 	}
 }
 
