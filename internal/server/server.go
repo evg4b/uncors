@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/pterm/pterm"
@@ -32,6 +33,11 @@ const (
 	defaultHTTPSPort = 443
 )
 
+const readTimeout = 1 * time.Second
+const writeTimeout = 1 * time.Second
+const idleTimeout = 30 * time.Second
+const readHeaderTimeout = 2 * time.Second
+
 func NewServer(options ...serverOption) *Server {
 	appServer := &Server{
 		httpPort:  defaultHTTPPort,
@@ -44,7 +50,11 @@ func NewServer(options ...serverOption) *Server {
 
 	address := net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
 	appServer.http = http.Server{
-		Addr: address,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		Addr:              address,
 		Handler: http.HandlerFunc(
 			infrastructure.NormalizeHTTPReqDecorator(appServer.handler),
 		),
@@ -53,7 +63,11 @@ func NewServer(options ...serverOption) *Server {
 	if appServer.isHTTPSAvialable() {
 		address = net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
 		appServer.https = http.Server{
-			Addr: address,
+			ReadTimeout:       readTimeout,
+			WriteTimeout:      writeTimeout,
+			IdleTimeout:       idleTimeout,
+			ReadHeaderTimeout: readHeaderTimeout,
+			Addr:              address,
 			Handler: http.HandlerFunc(
 				infrastructure.NormalizeHTTPSReqDecorator(appServer.handler),
 			),
