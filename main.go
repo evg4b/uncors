@@ -77,11 +77,12 @@ func main() {
 	)
 
 	printLogo()
-
 	printMappings(mappings, *httpPort, *httpsPort, len(*certFile) > 0 && len(*keyFile) > 0)
 
 	if err = uncorsServer.ListenAndServe(ctx); err != nil {
 		pterm.Fatal.Println(err)
+	} else {
+		pterm.Info.Print("Server was stopped")
 	}
 }
 

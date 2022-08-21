@@ -84,9 +84,11 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		})
 	}
 
+	shutdownCtx := context.Background()
+
 	rungroup.Go(func() error {
 		<-ctx.Done()
-		if err := s.http.Shutdown(context.Background()); isSucessClosed(err) {
+		if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
 			return fmt.Errorf("shutdown http server %w", err)
 		}
 
@@ -97,7 +99,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		rungroup.Go(func() error {
 			<-ctx.Done()
 
-			if err := s.http.Shutdown(context.Background()); isSucessClosed(err) {
+			if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
 				return fmt.Errorf("shutdown http server %w", err)
 			}
 
@@ -105,7 +107,11 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		})
 	}
 
-	return rungroup.Wait()
+	if err := rungroup.Wait(); err != nil {
+		return fmt.Errorf("Server was stopperd with error: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Server) isHTTPSAvialable() bool {
@@ -113,5 +119,5 @@ func (s *Server) isHTTPSAvialable() bool {
 }
 
 func isSucessClosed(err error) bool {
-	return err != nil && !errors.Is(err, http.ErrServerClosed)
+	return err == nil || errors.Is(err, http.ErrServerClosed)
 }
