@@ -1,19 +1,18 @@
 package main
 
 import (
-	"crypto/tls"
+	"context"
 	"flag"
 	"fmt"
-	"net"
-	"net/http"
-	"strconv"
+	"os/signal"
 	"strings"
-	"time"
+	"syscall"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/options"
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
@@ -22,14 +21,28 @@ import (
 var Version = "X.X.X"
 
 const (
-	defaulTimeout = 5 * time.Minute
-	defaultPort   = 3000
+	defaultHTTPPort  = 80
+	defaultHTTPSPort = 443
 )
 
 func main() {
 	target := flag.String("target", "https://github.com", "Real target url (include https://)")
-	source := flag.String("source", "http://localhost", "Local source url (include http://)")
-	port := flag.Int("port", defaultPort, "Local listening port (3000 by default)")
+	source := flag.String("source", "//localhost", "Local source url (include http://)")
+	httpPort := flag.Int("port", defaultHTTPPort, "Local listening port (3000 by default)")
+	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local listening port (443 by default)")
+	certFile := flag.String("cert-file", "", "Local listening port (443 by default)")
+	keyFile := flag.String("key-file", "", "Local listening port (443 by default)")
+
+	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(
+		ctx,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
+
+	defer cancel()
 
 	flag.Parse()
 
@@ -47,19 +60,7 @@ func main() {
 	optionsMiddleware := options.NewOptionsMiddleware()
 	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
-		proxy.WithHTTPClient(&http.Client{
-			CheckRedirect: func(r *http.Request, v []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					// nolint: gosec
-					InsecureSkipVerify: true,
-				},
-			},
-			Jar:     nil,
-			Timeout: defaulTimeout,
-		}),
+		proxy.WithHTTPClient(&infrastructure.HTTPCLient),
 	)
 
 	requestProcessor := processor.NewRequestProcessor(
@@ -67,12 +68,19 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
-	printLogo()
-	printMappings(mappings, *port)
-	http.HandleFunc("/", infrastructure.NormalizeHTTPReqDecorator(requestProcessor.HandleRequest))
-	address := net.JoinHostPort("0.0.0.0", strconv.Itoa(*port))
+	uncorsServer := server.NewServer(
+		server.WithHTTPPort(*httpPort),
+		server.WithHTTPSPort(*httpsPort),
+		server.WithSslCert(*certFile),
+		server.WithSslKey(*keyFile),
+		server.WithRequstPropceessor(requestProcessor),
+	)
 
-	if err = http.ListenAndServe(address, nil); err != nil {
+	printLogo()
+
+	printMappings(mappings, *httpPort, *httpsPort, len(*certFile) > 0 && len(*keyFile) > 0)
+
+	if err = uncorsServer.ListenAndServe(ctx); err != nil {
 		pterm.Fatal.Println(err)
 	}
 }
@@ -96,10 +104,21 @@ func printLogo() {
 	pterm.Println()
 }
 
-func printMappings(mappings map[string]string, port int) {
+func printMappings(mappings map[string]string, port int, httpsPort int, hasHTTPS bool) {
 	builder := strings.Builder{}
 	for source, target := range mappings {
-		builder.WriteString(fmt.Sprintf("PROXY: %s:%d => %s\n", source, port, target))
+		if port == defaultHTTPPort {
+			builder.WriteString(fmt.Sprintf("PROXY: http://%s => %s\n", source, target))
+		} else {
+			builder.WriteString(fmt.Sprintf("PROXY: http://%s:%d => %s\n", source, port, target))
+		}
+		if hasHTTPS {
+			if httpsPort == defaultHTTPSPort {
+				builder.WriteString(fmt.Sprintf("PROXY: https://%s => %s\n", source, target))
+			} else {
+				builder.WriteString(fmt.Sprintf("PROXY: https://%s:%d => %s\n", source, httpsPort, target))
+			}
+		}
 	}
 	pterm.Info.Printfln(builder.String())
 }

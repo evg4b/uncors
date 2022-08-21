@@ -47,7 +47,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return fmt.Errorf("failed to make requst to original server: %w", err)
 		}
 
-		err = copyHeaders(req.Header, targetReq.Header, map[string]func(string) (string, error){
+		err = copyHeaders(req.Header, targetReq.Header, modificationsMap{
 			"origin":  replacer.ToTarget,
 			"referer": replacer.ToTarget,
 		})
@@ -74,7 +74,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 		}
 
 		header := resp.Header()
-		err = copyHeaders(targetResp.Header, header, map[string]func(string) (string, error){
+		err = copyHeaders(targetResp.Header, header, modificationsMap{
 			"location": replacer.ToSource,
 		})
 
