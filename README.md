@@ -45,6 +45,10 @@ Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/loca
 
 We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
 
+```bash
+docker run -p 3000:3000 evg4b/uncors --source http://local.github.com --target //github.com
+```
+
 ## Source 
 
 **Prerequisite Tools**
