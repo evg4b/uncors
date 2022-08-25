@@ -19,14 +19,14 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		name   string
 		method string
 	}{
-		{name: "should skip POST requst", method: "POST"},
-		{name: "should skip GET requst", method: "GET"},
-		{name: "should skip PATCH requst", method: "PATCH"},
-		{name: "should skip DELETE requst", method: "DELETE"},
-		{name: "should skip HEAD requst", method: "HEAD"},
-		{name: "should skip PUT requst", method: "PUT"},
-		{name: "should skip CONNECT requst", method: "CONNECT"},
-		{name: "should skip TRACE requst", method: "TRACE"},
+		{name: "should skip POST requst", method: http.MethodPost},
+		{name: "should skip GET requst", method: http.MethodGet},
+		{name: "should skip PATCH requst", method: http.MethodPatch},
+		{name: "should skip DELETE requst", method: http.MethodDelete},
+		{name: "should skip HEAD requst", method: http.MethodHead},
+		{name: "should skip PUT requst", method: http.MethodPut},
+		{name: "should skip CONNECT requst", method: http.MethodConnect},
+		{name: "should skip TRACE requst", method: http.MethodTrace},
 	}
 	for _, testCase := range testMethods {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 			processor.WithMiddleware(tracker.MakeFinalMidelware("final")),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), "OPTIONS", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,18 +90,18 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 				name: "should allow all access-control-request-* headers",
 				headers: http.Header{
 					"Access-Control-Request-Headers": {"X-PINGOTHER, Content-Type"},
-					"Access-Control-Request-Method":  {"POST", "DELETE"},
+					"Access-Control-Request-Method":  {http.MethodPost, http.MethodDelete},
 				},
 				expected: http.Header{
 					"Access-Control-Allow-Headers": {"X-PINGOTHER, Content-Type"},
-					"Access-Control-Allow-Method":  {"POST", "DELETE"},
+					"Access-Control-Allow-Method":  {http.MethodPost, http.MethodDelete},
 				},
 			},
 		}
 		for _, testCase := range testMethods {
 			t.Run(testCase.name, func(t *testing.T) {
 				proc := processor.NewRequestProcessor(processor.WithMiddleware(middleware))
-				req, err := http.NewRequestWithContext(context.TODO(), "OPTIONS", "/", nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
 				if err != nil {
 					t.Fatal(err)
 				}

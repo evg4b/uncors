@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRequestProcessor_HandleRequest(t *testing.T) {
+func TestRequestProcessorHandleRequest(t *testing.T) {
 	t.Run("should have correct calling order", func(t *testing.T) {
 		tracker := testutils.NewMidelwaresTracker(t)
 
@@ -24,7 +24,7 @@ func TestRequestProcessor_HandleRequest(t *testing.T) {
 			processor.WithMiddleware(tracker.MakeFinalMidelware("middleware3")),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), "POST", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,7 +49,7 @@ func TestRequestProcessor_HandleRequest(t *testing.T) {
 			processor.WithMiddleware(tracker.MakeMidelware("middleware3")),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), "POST", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +76,7 @@ func TestRequestProcessor_HandleRequest(t *testing.T) {
 			),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), "POST", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

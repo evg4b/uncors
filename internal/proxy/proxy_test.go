@@ -72,7 +72,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 					)),
 				)
 
-				req, err := http.NewRequestWithContext(context.TODO(), "POST", targetURL.Path, nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -113,7 +113,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{
-						Status:     "200 OK",
+						Status:     http.StatusText(http.StatusOK),
 						StatusCode: http.StatusOK,
 						Header: http.Header{
 							testCase.headerKey: {testCase.URL},
@@ -131,7 +131,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 					)),
 				)
 
-				req, err := http.NewRequestWithContext(context.TODO(), "POST", expectedURL.Path, nil)
+				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -153,7 +153,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 	t.Run("should write allow CORS headers", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
-				Status:        "200 OK",
+				Status:        http.StatusText(http.StatusOK),
 				StatusCode:    http.StatusOK,
 				Header:        http.Header{},
 				Body:          io.NopCloser(strings.NewReader("")),
@@ -169,7 +169,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 			)),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), "POST", "/", nil)
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

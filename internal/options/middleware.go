@@ -25,7 +25,7 @@ func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructur
 	}
 
 	return func(w http.ResponseWriter, req *http.Request) error {
-		if req.Method != "OPTIONS" {
+		if !strings.EqualFold(req.Method, http.MethodOptions) {
 			return next(w, req)
 		}
 

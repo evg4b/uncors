@@ -57,7 +57,7 @@ func TestNewURLGlob(t *testing.T) {
 	})
 }
 
-func TestURLGlob_Match(t *testing.T) {
+func TestURLGlobMatch(t *testing.T) {
 	tests := []struct {
 		name     string
 		pattern  string
@@ -116,7 +116,7 @@ func TestURLGlob_Match(t *testing.T) {
 	}
 }
 
-func TestURLGlob_ReplaceAllString(t *testing.T) {
+func TestURLGlobReplaceAllString(t *testing.T) {
 	t.Run("base config", func(t *testing.T) {
 		tests := []struct {
 			name     string

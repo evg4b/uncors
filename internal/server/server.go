@@ -25,7 +25,7 @@ type Server struct {
 	handler func(http.ResponseWriter, *http.Request)
 }
 
-const addr = "0.0.0.0"
+const baseAddress = "0.0.0.0"
 
 const (
 	defaultHTTPPort  = 80
@@ -44,7 +44,7 @@ func NewServer(options ...serverOption) *Server {
 		option(appServer)
 	}
 
-	address := net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
+	address := net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpPort))
 	appServer.http = http.Server{
 		ReadHeaderTimeout: readHeaderTimeout,
 		Addr:              address,
@@ -54,7 +54,7 @@ func NewServer(options ...serverOption) *Server {
 	}
 
 	if appServer.isHTTPSAvialable() {
-		address = net.JoinHostPort(addr, strconv.Itoa(appServer.httpPort))
+		address = net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpPort))
 		appServer.https = http.Server{
 			ReadHeaderTimeout: readHeaderTimeout,
 			Addr:              address,
@@ -89,33 +89,28 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	}
 
 	shutdownCtx := context.Background()
-
-	rungroup.Go(func() error {
-		<-ctx.Done()
-		if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
-			return fmt.Errorf("shutdown http server error %w", err)
-		}
-
-		return nil
-	})
-
+	rungroup.Go(shutdownHandler(ctx, shutdownCtx, &s.http))
 	if s.isHTTPSAvialable() {
-		rungroup.Go(func() error {
-			<-ctx.Done()
-
-			if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
-				return fmt.Errorf("shutdown http server error %w", err)
-			}
-
-			return nil
-		})
+		rungroup.Go(shutdownHandler(ctx, shutdownCtx, &s.https))
 	}
 
 	if err := rungroup.Wait(); err != nil {
-		return fmt.Errorf("Server was stopperd with error: %w", err)
+		return fmt.Errorf("uncors server was stopperd with error: %w", err)
 	}
 
 	return nil
+}
+
+func shutdownHandler(ctx, shutdownCtx context.Context, server *http.Server) func() error {
+	return func() error {
+		<-ctx.Done()
+
+		if err := server.Shutdown(shutdownCtx); !isSucessClosed(err) {
+			return err // nolint: wrapcheck
+		}
+
+		return nil
+	}
 }
 
 func (s *Server) isHTTPSAvialable() bool {
