@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -32,6 +33,12 @@ func main() {
 	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
 	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
 	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
+
+	flag.Usage = func() {
+		printLogo()
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(
