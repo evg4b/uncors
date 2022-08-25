@@ -5,13 +5,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,7 +47,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				targetURL, err := url.Parse(testCase.URL)
+				targetURL, err := urlx.Parse(testCase.URL)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -106,7 +106,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				expectedURL, err := url.Parse(testCase.expectedURL)
+				expectedURL, err := urlx.Parse(testCase.expectedURL)
 				if err != nil {
 					t.Fatal(err)
 				}

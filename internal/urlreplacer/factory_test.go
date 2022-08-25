@@ -1,10 +1,10 @@
 package urlreplacer_test
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +43,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 
 	t.Run("shodul return replacer", func(t *testing.T) {
 		actual, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-			"//localhost": "https://github.com",
+			"localhost": "https://github.com",
 		})
 
 		assert.NotNil(t, actual)
@@ -57,7 +57,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 	})
 
 	t.Run("shoduld return error when mapping not found", func(t *testing.T) {
-		parsedURL, _ := url.Parse("http://unknow.com")
+		parsedURL, _ := urlx.Parse("http://unknow.com")
 
 		actual, err := factory.Make(parsedURL)
 
@@ -66,7 +66,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 	})
 
 	t.Run("shoduld return replacer wihout error", func(t *testing.T) {
-		parsedURL, _ := url.Parse("http://localhost")
+		parsedURL, _ := urlx.Parse("http://localhost")
 
 		actual, err := factory.Make(parsedURL)
 
@@ -75,7 +75,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 	})
 
 	t.Run("shoduld return error when requst sheme and mapping sheme not equal", func(t *testing.T) {
-		parsedURL, err := url.Parse("https://localhost")
+		parsedURL, err := urlx.Parse("https://localhost")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/evg4b/uncors/pkg/urlx"
 )
 
 type URLGlob struct {
@@ -49,7 +51,7 @@ func NewURLGlob(rawURL string) (*URLGlob, error) {
 }
 
 func (glob *URLGlob) MatchString(rawURL string) (bool, error) {
-	parsedURL, err := url.Parse(rawURL)
+	parsedURL, err := urlx.Parse(rawURL)
 	if err != nil {
 		return false, fmt.Errorf("filed parse url for matching: %w", err)
 	}
@@ -66,7 +68,7 @@ func (glob *URLGlob) Match(parsedURL *url.URL) bool {
 }
 
 func (glob *URLGlob) ReplaceAllString(rawURL string, repl ReplacePattern) (string, error) {
-	parsedURL, err := url.Parse(rawURL)
+	parsedURL, err := urlx.Parse(rawURL)
 	if err != nil {
 		return "", fmt.Errorf("filed parse url for replacing: %w", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +14,9 @@ func TestReplacerToSourceMapping(t *testing.T) {
 	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
-		"//demo.localhost.com":         "https://demo.api.com",
-		"//custom.domain":              "http://customdomain.com",
-		"//custompost.localhost.com":   "https://customdomain.com:8080",
+		"demo.localhost.com":           "https://demo.api.com",
+		"custom.domain":                "http://customdomain.com",
+		"custompost.localhost.com":     "https://customdomain.com:8080",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +62,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			parsedURL, err := url.Parse(testCase.requerURL)
+			parsedURL, err := urlx.Parse(testCase.requerURL)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -79,7 +80,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 			})
 
 			t.Run("ToSourceURL", func(t *testing.T) {
-				parsedTargetURL, err := url.Parse(testCase.url)
+				parsedTargetURL, err := urlx.Parse(testCase.url)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -97,9 +98,9 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
-		"//demo.localhost.com":         "https://demo.api.com",
-		"//custom.domain":              "http://customdomain.com",
-		"//custompost.localhost.com":   "https://customdomain.com:8080",
+		"demo.localhost.com":           "https://demo.api.com",
+		"custom.domain":                "http://customdomain.com",
+		"custompost.localhost.com":     "https://customdomain.com:8080",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -128,7 +129,7 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := url.Parse(testCase.requerURL)
+				parsedURL, err := urlx.Parse(testCase.requerURL)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -163,7 +164,7 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := url.Parse(testCase.requerURL)
+				parsedURL, err := urlx.Parse(testCase.requerURL)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -173,7 +174,7 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				parsedTargetURL, err := url.Parse(testCase.requerURL)
+				parsedTargetURL, err := urlx.Parse(testCase.requerURL)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -191,10 +192,10 @@ func TestReplacerToTargetMapping(t *testing.T) {
 	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
-		"//demo.localhost.com":         "https://demo.api.com",
-		"//custom.domain":              "http://customdomain.com",
-		"//custompost.localhost.com":   "https://customdomain.com:8080",
-		"//*.star.com":                 "//*.com",
+		"demo.localhost.com":           "https://demo.api.com",
+		"custom.domain":                "http://customdomain.com",
+		"custompost.localhost.com":     "https://customdomain.com:8080",
+		"*.star.com":                   "*.com",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -280,10 +281,10 @@ func TestReplacerToTargetMappingErrors(t *testing.T) {
 	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.localhost.com": "https://premium.api.com",
 		"https://base.localhost.com":   "http://base.api.com",
-		"//demo.localhost.com":         "https://demo.api.com",
-		"//custom.domain":              "http://customdomain.com",
-		"//custompost.localhost.com":   "https://customdomain.com:8080",
-		"//*.star.com":                 "//*.com",
+		"demo.localhost.com":           "https://demo.api.com",
+		"custom.domain":                "http://customdomain.com",
+		"custompost.localhost.com":     "https://customdomain.com:8080",
+		"*.star.com":                   "*.com",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -309,7 +310,7 @@ func TestReplacerToTargetMappingErrors(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := url.Parse(testCase.requerURL)
+				parsedURL, err := urlx.Parse(testCase.requerURL)
 				if err != nil {
 					t.Fatal(err)
 				}

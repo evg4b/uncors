@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/evg4b/uncors/pkg/urlx"
 )
 
 func wildCardToReplacePattern(parsedPttern *url.URL) (string, int, error) {
@@ -53,7 +55,7 @@ func wildCardToRegexp(parsedPttern *url.URL) (*regexp.Regexp, int, error) {
 }
 
 func parsePattern(pattern string) (*url.URL, error) {
-	parsedPttern, err := url.Parse(pattern)
+	parsedPttern, err := urlx.Parse(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("invalid url: %w", err)
 	}

@@ -15,7 +15,7 @@ type ReplacePattern struct {
 func NewReplacePatternString(rawURL string, options ...replacePatternOption) (ReplacePattern, error) {
 	parsedPattern, err := parsePattern(rawURL)
 	if err != nil {
-		return ReplacePattern{}, fmt.Errorf("failed to craete glob from '%s': %w", rawURL, err)
+		return ReplacePattern{}, fmt.Errorf("failed to craete replace pattern from '%s': %w", rawURL, err)
 	}
 
 	return NewReplacePattern(parsedPattern, options...)

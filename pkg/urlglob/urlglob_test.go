@@ -23,7 +23,7 @@ func TestNewURLGlob(t *testing.T) {
 			{
 				name:     "url is invalid",
 				rawURL:   "&*%",
-				errorMsg: "failed to craete glob from '&*%': invalid url: parse \"&*%\": invalid URL escape \"%\"",
+				errorMsg: "failed to craete glob from '&*%': invalid url: parse \"//&*%\": invalid URL escape \"%\"",
 			},
 			{
 				name:     "sheme contains wildcard",
@@ -84,13 +84,13 @@ func TestURLGlobMatch(t *testing.T) {
 		},
 		{
 			name:     "not matched http for pattern withut scheme",
-			pattern:  "//demo.com",
+			pattern:  "demo.com",
 			URL:      "http://demo.com/demo/test",
 			expected: true,
 		},
 		{
 			name:     "not matched https for pattern withut scheme",
-			pattern:  "//demo.com",
+			pattern:  "demo.com",
 			URL:      "https://demo.com/demo/test",
 			expected: true,
 		},
@@ -143,7 +143,7 @@ func TestURLGlobReplaceAllString(t *testing.T) {
 				name:     "correctly copy scheme from original url",
 				pattern:  "https://*.my.cc",
 				URL:      "https://test.my.cc/api/test",
-				repl:     "//*.realapi.com",
+				repl:     "https://*.realapi.com",
 				expected: "https://test.realapi.com/api/test",
 			},
 			{

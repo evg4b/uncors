@@ -28,7 +28,7 @@ const (
 
 func main() {
 	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxyed")
-	source := flag.String("source", "//localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
+	source := flag.String("source", "localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
 	httpPort := flag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
 	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
 	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
