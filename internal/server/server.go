@@ -70,22 +70,14 @@ func NewServer(options ...serverOption) *Server {
 func (s *Server) ListenAndServe(ctx context.Context) error {
 	rungroup, ctx := errgroup.WithContext(ctx)
 
-	rungroup.Go(func() error {
-		if err := s.http.ListenAndServe(); !isSucessClosed(err) {
-			return fmt.Errorf("http server stoped with error: %w", err)
-		}
-
-		return nil
-	})
+	rungroup.Go(serveHandler(func() error {
+		return s.http.ListenAndServe() // nolint: wrapcheck
+	}))
 
 	if s.isHTTPSAvialable() {
-		rungroup.Go(func() error {
-			if err := s.https.ListenAndServeTLS(s.cert, s.key); !isSucessClosed(err) {
-				return fmt.Errorf("https server stoped with error: %w", err)
-			}
-
-			return nil
-		})
+		rungroup.Go(serveHandler(func() error {
+			return s.https.ListenAndServeTLS(s.cert, s.key) // nolint: wrapcheck
+		}))
 	}
 
 	shutdownCtx := context.Background()
@@ -106,6 +98,16 @@ func shutdownHandler(ctx, shutdownCtx context.Context, server *http.Server) func
 		<-ctx.Done()
 
 		if err := server.Shutdown(shutdownCtx); !isSucessClosed(err) {
+			return err // nolint: wrapcheck
+		}
+
+		return nil
+	}
+}
+
+func serveHandler(handler func() error) func() error {
+	return func() error {
+		if err := handler(); !isSucessClosed(err) {
 			return err // nolint: wrapcheck
 		}
 
