@@ -76,9 +76,13 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 
 ## Parameters
 
-* `--port` - Local HTTP linthing port. 
-* `--target` - Url with protocol for to the resource to be proxyed.
-* `--source` - Url with protocol for to the resource from which proxying will take place.
+* `--source` - Local host with protocol for to the resource from which proxying will take place.
+* `--target` - Target host with protocol for to the resource to be proxyed.
+* `--http-port` - Local HTTP linthing port.
+* `--https-port` - Local HTTPS linthing port. 
+* `--cert-file` - Path to HTTPS certificate file.
+* `--key-file` - Path to matching for certificate private key.
+
 
 ## How it works 
 

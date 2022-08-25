@@ -26,12 +26,12 @@ const (
 )
 
 func main() {
-	target := flag.String("target", "https://github.com", "Real target url (include https://)")
-	source := flag.String("source", "//localhost", "Local source url (include http://)")
-	httpPort := flag.Int("port", defaultHTTPPort, "Local listening port (3000 by default)")
-	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local listening port (443 by default)")
-	certFile := flag.String("cert-file", "", "Local listening port (443 by default)")
-	keyFile := flag.String("key-file", "", "Local listening port (443 by default)")
+	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxyed")
+	source := flag.String("source", "//localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
+	httpPort := flag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
+	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
+	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
+	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
 
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(
