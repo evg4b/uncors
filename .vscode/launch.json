@@ -10,7 +10,10 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--port=3000"
+            ]
         },
         {
             "name": "Launch http/https",
@@ -20,8 +23,10 @@
             "program": "${workspaceFolder}/main.go",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--cert-file=server.crt",
-                "--key-file=server.key"
+                "--port=8080",
+                "--https-port=8443",
+                "--cert-file=./server.crt",
+                "--key-file=./server.key"
             ]
         }
     ]

@@ -54,7 +54,7 @@ func NewServer(options ...serverOption) *Server {
 	}
 
 	if appServer.isHTTPSAvialable() {
-		address = net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpPort))
+		address = net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpsPort))
 		appServer.https = http.Server{
 			ReadHeaderTimeout: readHeaderTimeout,
 			Addr:              address,
