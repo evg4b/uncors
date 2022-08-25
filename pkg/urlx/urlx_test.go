@@ -180,8 +180,7 @@ func TestURLNormalize(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		u, _ := urlx.Parse(testCase.in)
-		url, err := urlx.Normalize(u)
+		url, err := urlx.NormalizeString(testCase.in)
 
 		if !testCase.err {
 			assert.NoError(t, err)
@@ -205,8 +204,7 @@ func TestURLResolve(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		parsedURL, _ := urlx.Parse(testCase.in)
-		ipAddess, err := urlx.Resolve(parsedURL)
+		ipAddess, err := urlx.ResolveString(testCase.in)
 
 		if !testCase.err {
 			assert.NoError(t, err)
