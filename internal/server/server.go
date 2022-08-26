@@ -2,14 +2,12 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -48,9 +46,7 @@ func NewServer(options ...serverOption) *Server {
 	appServer.http = http.Server{
 		ReadHeaderTimeout: readHeaderTimeout,
 		Addr:              address,
-		Handler: http.HandlerFunc(
-			infrastructure.NormalizeHTTPReqDecorator(appServer.handler),
-		),
+		Handler:           http.HandlerFunc(appServer.handler),
 	}
 
 	if appServer.isHTTPSAvialable() {
@@ -58,9 +54,7 @@ func NewServer(options ...serverOption) *Server {
 		appServer.https = http.Server{
 			ReadHeaderTimeout: readHeaderTimeout,
 			Addr:              address,
-			Handler: http.HandlerFunc(
-				infrastructure.NormalizeHTTPSReqDecorator(appServer.handler),
-			),
+			Handler:           http.HandlerFunc(appServer.handler),
 		}
 	}
 
@@ -91,34 +85,4 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func shutdownHandler(ctx, shutdownCtx context.Context, server *http.Server) func() error {
-	return func() error {
-		<-ctx.Done()
-
-		if err := server.Shutdown(shutdownCtx); !isSucessClosed(err) {
-			return err // nolint: wrapcheck
-		}
-
-		return nil
-	}
-}
-
-func serveHandler(handler func() error) func() error {
-	return func() error {
-		if err := handler(); !isSucessClosed(err) {
-			return err // nolint: wrapcheck
-		}
-
-		return nil
-	}
-}
-
-func (s *Server) isHTTPSAvialable() bool {
-	return len(s.cert) > 0 && len(s.key) > 0
-}
-
-func isSucessClosed(err error) bool {
-	return err == nil || errors.Is(err, http.ErrServerClosed)
 }

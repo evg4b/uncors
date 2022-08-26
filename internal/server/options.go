@@ -30,6 +30,6 @@ func WithSslKey(key string) serverOption {
 
 func WithRequstPropceessor(requestProcessor *processor.RequestProcessor) serverOption {
 	return func(s *Server) {
-		s.handler = requestProcessor.HandleRequest
+		s.handler = requestProcessor.ServeHTTP
 	}
 }

@@ -30,11 +30,23 @@ func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {
 	return processor
 }
 
-func (rp *RequestProcessor) HandleRequest(w http.ResponseWriter, r *http.Request) {
-	if err := rp.handlerFunc(w, r); err != nil {
+func (rp *RequestProcessor) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	updateRequest(request)
+
+	if err := rp.handlerFunc(response, request); err != nil {
 		pterm.Error.Printfln("UNCORS error: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "UNCORS error:", err.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(response, "UNCORS error:", err.Error())
+	}
+}
+
+func updateRequest(request *http.Request) {
+	request.URL.Host = request.Host
+
+	if request.TLS != nil {
+		request.URL.Scheme = "https"
+	} else {
+		request.URL.Scheme = "http"
 	}
 }
 

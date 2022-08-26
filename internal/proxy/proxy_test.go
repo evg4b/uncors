@@ -78,13 +78,12 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 				}
 
 				req.URL.Scheme = targetURL.Scheme
-				req.URL.Host = targetURL.Host
+				req.Host = targetURL.Host
 				req.URL.Path = targetURL.Path
 
 				req.Header.Add(testCase.headerKey, testCase.URL)
 
-				http.HandlerFunc(proc.HandleRequest).
-					ServeHTTP(httptest.NewRecorder(), req)
+				proc.ServeHTTP(httptest.NewRecorder(), req)
 			})
 		}
 	})
@@ -137,13 +136,12 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 				}
 
 				req.URL.Scheme = expectedURL.Scheme
-				req.URL.Host = expectedURL.Host
+				req.Host = expectedURL.Host
 				req.URL.Path = expectedURL.Path
 
 				recorder := httptest.NewRecorder()
 
-				http.HandlerFunc(proc.HandleRequest).
-					ServeHTTP(recorder, req)
+				proc.ServeHTTP(recorder, req)
 
 				assert.Equal(t, testCase.expectedURL, recorder.Header().Get(testCase.headerKey))
 			})
@@ -175,12 +173,11 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 		}
 
 		req.URL.Scheme = "http"
-		req.URL.Host = "premium.local.com"
+		req.Host = "premium.local.com"
 
 		recorder := httptest.NewRecorder()
 
-		http.HandlerFunc(proc.HandleRequest).
-			ServeHTTP(recorder, req)
+		proc.ServeHTTP(recorder, req)
 
 		headers := recorder.Header()
 

@@ -41,7 +41,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			http.HandlerFunc(proc.HandleRequest).
+			http.HandlerFunc(proc.ServeHTTP).
 				ServeHTTP(httptest.NewRecorder(), req)
 
 			assert.Equal(t, []string{"final"}, tracker.CallsOrder)
@@ -60,7 +60,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		http.HandlerFunc(proc.HandleRequest).
+		http.HandlerFunc(proc.ServeHTTP).
 			ServeHTTP(httptest.NewRecorder(), req)
 
 		assert.Equal(t, []string{}, tracker.CallsOrder)
@@ -109,7 +109,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 				req.Header = testCase.headers
 
 				rr := httptest.NewRecorder()
-				http.HandlerFunc(proc.HandleRequest).
+				http.HandlerFunc(proc.ServeHTTP).
 					ServeHTTP(rr, req)
 
 				assert.Equal(t, http.StatusOK, rr.Code)

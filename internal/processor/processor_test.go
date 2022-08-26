@@ -2,6 +2,7 @@ package processor_test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"net/http"
@@ -30,8 +31,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		}
 
 		recorder := httptest.NewRecorder()
-		http.HandlerFunc(requetProcessor.HandleRequest).
-			ServeHTTP(recorder, req)
+		requetProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -55,8 +55,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		}
 
 		recorder := httptest.NewRecorder()
-		http.HandlerFunc(requetProcessor.HandleRequest).
-			ServeHTTP(recorder, req)
+		requetProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -82,8 +81,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		}
 
 		recorder := httptest.NewRecorder()
-		http.HandlerFunc(requetProcessor.HandleRequest).
-			ServeHTTP(recorder, req)
+		requetProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -95,5 +93,48 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.Contains(t, string(body), expectedErr.Error())
+	})
+
+	t.Run("should provide correct scheme", func(t *testing.T) {
+		t.Run("http", func(t *testing.T) {
+			requetProcessor := processor.NewRequestProcessor(
+				processor.WithMiddleware(
+					mocks.NewHandlingMiddlewareMock(t).WrapMock.
+						Return(func(w http.ResponseWriter, r *http.Request) error {
+							assert.Equal(t, "http", r.URL.Scheme)
+
+							return nil
+						}),
+				),
+			)
+
+			req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)
+		})
+
+		t.Run("https", func(t *testing.T) {
+			requetProcessor := processor.NewRequestProcessor(
+				processor.WithMiddleware(
+					mocks.NewHandlingMiddlewareMock(t).WrapMock.
+						Return(func(w http.ResponseWriter, r *http.Request) error {
+							assert.Equal(t, "https", r.URL.Scheme)
+
+							return nil
+						}),
+				),
+			)
+
+			req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.TLS = &tls.ConnectionState{}
+
+			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)
+		})
 	})
 }
