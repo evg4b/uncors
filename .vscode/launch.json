@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/main.go",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--port=3000"
+                "--http-port=3000"
             ]
         },
         {
@@ -23,7 +23,7 @@
             "program": "${workspaceFolder}/main.go",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--port=8080",
+                "--http-port=8080",
                 "--https-port=8443",
                 "--cert-file=./server.crt",
                 "--key-file=./server.key"

@@ -24,6 +24,7 @@ var Version = "X.X.X"
 const (
 	defaultHTTPPort  = 80
 	defaultHTTPSPort = 443
+	baseAddress      = "0.0.0.0"
 )
 
 func main() {
@@ -76,8 +77,8 @@ func main() {
 	)
 
 	uncorsServer := server.NewServer(
-		server.WithHTTPPort(*httpPort),
-		server.WithHTTPSPort(*httpsPort),
+		server.WithHTTP(baseAddress, *httpPort),
+		server.WithHTTPS(baseAddress, *httpsPort),
 		server.WithSslCert(*certFile),
 		server.WithSslKey(*keyFile),
 		server.WithRequstPropceessor(requestProcessor),

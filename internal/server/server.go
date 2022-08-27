@@ -3,59 +3,34 @@ package server
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
-	http     http.Server
-	httpPort int
-
-	https     http.Server
-	httpsPort int
-	cert      string
-	key       string
-
-	handler func(http.ResponseWriter, *http.Request)
+	http    Listner
+	https   Listner
+	cert    string
+	key     string
+	handler http.Handler
 }
 
-const baseAddress = "0.0.0.0"
-
-const (
-	defaultHTTPPort  = 80
-	defaultHTTPSPort = 443
-)
+type Listner interface {
+	ListenAndServe() error
+	ListenAndServeTLS(certFile, keyFile string) error
+	Shutdown(ctx context.Context) error
+}
 
 const readHeaderTimeout = 30 * time.Second
 
 func NewServer(options ...serverOption) *Server {
-	appServer := &Server{
-		httpPort:  defaultHTTPPort,
-		httpsPort: defaultHTTPSPort,
-	}
+	appServer := &Server{}
 
 	for _, option := range options {
 		option(appServer)
-	}
-
-	address := net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpPort))
-	appServer.http = http.Server{
-		ReadHeaderTimeout: readHeaderTimeout,
-		Addr:              address,
-		Handler:           http.HandlerFunc(appServer.handler),
-	}
-
-	if appServer.isHTTPSAvialable() {
-		address = net.JoinHostPort(baseAddress, strconv.Itoa(appServer.httpsPort))
-		appServer.https = http.Server{
-			ReadHeaderTimeout: readHeaderTimeout,
-			Addr:              address,
-			Handler:           http.HandlerFunc(appServer.handler),
-		}
 	}
 
 	return appServer
@@ -64,23 +39,35 @@ func NewServer(options ...serverOption) *Server {
 func (s *Server) ListenAndServe(ctx context.Context) error {
 	rungroup, ctx := errgroup.WithContext(ctx)
 
-	rungroup.Go(serveHandler(func() error {
+	rungroup.Go(func() error {
 		return s.http.ListenAndServe() // nolint: wrapcheck
-	}))
+	})
 
 	if s.isHTTPSAvialable() {
-		rungroup.Go(serveHandler(func() error {
+		rungroup.Go(func() error {
 			return s.https.ListenAndServeTLS(s.cert, s.key) // nolint: wrapcheck
-		}))
+		})
 	}
 
 	shutdownCtx := context.Background()
-	rungroup.Go(shutdownHandler(ctx, shutdownCtx, &s.http))
-	if s.isHTTPSAvialable() {
-		rungroup.Go(shutdownHandler(ctx, shutdownCtx, &s.https))
-	}
+	rungroup.Go(func() error {
+		<-ctx.Done()
+		var multiError *multierror.Error
 
-	if err := rungroup.Wait(); err != nil {
+		if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
+			multiError = multierror.Append(multiError, err)
+		}
+
+		if s.isHTTPSAvialable() {
+			if err := s.https.Shutdown(shutdownCtx); !isSucessClosed(err) {
+				multiError = multierror.Append(multiError, err)
+			}
+		}
+
+		return multiError.ErrorOrNil() // nolint: wrapcheck
+	})
+
+	if err := rungroup.Wait(); !isSucessClosed(err) {
 		return fmt.Errorf("uncors server was stopperd with error: %w", err)
 	}
 
