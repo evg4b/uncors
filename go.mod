@@ -9,7 +9,6 @@ require (
 	github.com/pterm/pterm v0.12.43
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
 require (

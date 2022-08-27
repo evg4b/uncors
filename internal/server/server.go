@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evg4b/uncors/pkg/pool"
 	"github.com/hashicorp/go-multierror"
-	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
@@ -37,20 +37,20 @@ func NewServer(options ...serverOption) *Server {
 }
 
 func (s *Server) ListenAndServe(ctx context.Context) error {
-	rungroup, ctx := errgroup.WithContext(ctx)
+	pool, ctx := pool.WithContext(ctx)
 
-	rungroup.Go(func() error {
+	pool.Go(func() error {
 		return s.http.ListenAndServe() // nolint: wrapcheck
 	})
 
 	if s.isHTTPSAvialable() {
-		rungroup.Go(func() error {
+		pool.Go(func() error {
 			return s.https.ListenAndServeTLS(s.cert, s.key) // nolint: wrapcheck
 		})
 	}
 
 	shutdownCtx := context.Background()
-	rungroup.Go(func() error {
+	pool.Go(func() error {
 		<-ctx.Done()
 		var multiError *multierror.Error
 
@@ -67,7 +67,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		return multiError.ErrorOrNil() // nolint: wrapcheck
 	})
 
-	if err := rungroup.Wait(); !isSucessClosed(err) {
+	if err := pool.Wait(); !isSucessClosed(err) {
 		return fmt.Errorf("uncors server was stopperd with error: %w", err)
 	}
 

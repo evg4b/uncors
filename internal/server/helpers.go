@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"net/http"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 func (s *Server) isHTTPSAvialable() bool {
@@ -10,5 +12,19 @@ func (s *Server) isHTTPSAvialable() bool {
 }
 
 func isSucessClosed(err error) bool {
-	return err == nil || errors.Is(err, http.ErrServerClosed)
+	if err == nil {
+		return true
+	}
+
+	if merr, ok := err.(*multierror.Error); ok { // nolint: errorlint
+		for _, wrappedError := range merr.Errors {
+			if !errors.Is(wrappedError, http.ErrServerClosed) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	return errors.Is(err, http.ErrServerClosed)
 }

@@ -1,7 +1,9 @@
+// nolint: goerr113
 package server_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -44,6 +46,29 @@ func TestServerListenAndServe(t *testing.T) {
 		err := server.ListenAndServe(context.Background())
 
 		assert.NoError(t, err)
+	})
+
+	t.Run("should return error where http shoutdown return error", func(t *testing.T) {
+		testError := errors.New("test error")
+
+		httpMock := mocks.NewListnerMock(t).
+			ListenAndServeMock.Return(nil).
+			ShutdownMock.Return(testError)
+
+		httpsMock := mocks.NewListnerMock(t).
+			ListenAndServeTLSMock.Expect("cert.pem", "key.pem").Return(http.ErrServerClosed).
+			ShutdownMock.Return(testError)
+
+		server := server.NewServer(
+			server.WithHTTPListner(httpMock),
+			server.WithHTTPSListner(httpsMock),
+			server.WithSslCert("cert.pem"),
+			server.WithSslKey("key.pem"),
+		)
+
+		err := server.ListenAndServe(context.Background())
+
+		assert.Error(t, err)
 	})
 
 	t.Run("should return run https server where cert and key are not configured", func(t *testing.T) {
