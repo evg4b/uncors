@@ -32,7 +32,6 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - godox
     - goerr113
     - gofmt
     - goheader

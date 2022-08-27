@@ -299,3 +299,163 @@ func TestReplacerToTargetMappingErrors(t *testing.T) {
 		}
 	})
 }
+
+func TestReplacerSecure(t *testing.T) {
+	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
+		"http://localhost.com":  "https://premium.api.com",
+		"https://localhost.net": "http://test.api.com",
+		"localhost.us":          "http://api.us",
+		"localhost.dev":         "https://api.dev",
+		"http://localhost.biz":  "api.biz",
+		"https://localhost.io":  "api.io",
+		"demo.xyz":              "api.xyz",
+	})
+	testutils.CheckNoError(t, err)
+
+	t.Run("IsSourceSecure", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			requerURL string
+			expected  bool
+		}{
+			{
+				name:      "should be false for http source mapping",
+				requerURL: "http://localhost.com/api",
+				expected:  false,
+			},
+			{
+				name:      "should be true for https source mapping",
+				requerURL: "https://localhost.net/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted source mapping called via https",
+				requerURL: "https://localhost.us/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted source mapping called via http",
+				requerURL: "http://localhost.us/api",
+				expected:  false,
+			},
+			{
+				name:      "should be true for unseeted source mapping called via https",
+				requerURL: "https://localhost.dev/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted source mapping called via http",
+				requerURL: "http://localhost.dev/api",
+				expected:  false,
+			},
+			{
+				name:      "should be false for http source mapping called via http",
+				requerURL: "http://localhost.biz/api",
+				expected:  false,
+			},
+			{
+				name:      "should be true for https source mapping called via https",
+				requerURL: "https://localhost.io/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted both mappings called via https",
+				requerURL: "https://demo.xyz/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted both mappings called via http",
+				requerURL: "http://demo.xyz/api",
+				expected:  false,
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				parsedURL, err := urlx.Parse(testCase.requerURL)
+				testutils.CheckNoError(t, err)
+
+				replacer, err := factory.Make(parsedURL)
+				testutils.CheckNoError(t, err)
+
+				actual := replacer.IsSourceSecure()
+
+				assert.Equal(t, testCase.expected, actual)
+			})
+		}
+	})
+
+	t.Run("IsTargetSecure", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			requerURL string
+			url       string
+			expected  bool
+		}{
+			{
+				name:      "should be true for https target mapping",
+				requerURL: "http://localhost.com/api",
+				expected:  true,
+			},
+			{
+				name:      "should be false for http target mapping",
+				requerURL: "https://localhost.net/api",
+				expected:  false,
+			},
+			{
+				name:      "should be false for http taget mapping called via https",
+				requerURL: "https://localhost.us/api",
+				expected:  false,
+			},
+			{
+				name:      "should be false for http taget mapping called via http",
+				requerURL: "http://localhost.us/api",
+				expected:  false,
+			},
+			{
+				name:      "should be true for https taget mapping called via https",
+				requerURL: "https://localhost.dev/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for https taget mapping called via http",
+				requerURL: "http://localhost.dev/api",
+				expected:  true,
+			},
+			{
+				name:      "should be false for unseeted taget mapping called via http",
+				requerURL: "http://localhost.biz/api",
+				expected:  false,
+			},
+			{
+				name:      "should be true for unseeted taget mapping called via https",
+				requerURL: "https://localhost.io/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted both mappings called via https",
+				requerURL: "https://demo.xyz/api",
+				expected:  true,
+			},
+			{
+				name:      "should be true for unseeted both mappings called via http",
+				requerURL: "http://demo.xyz/api",
+				expected:  false,
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				parsedURL, err := urlx.Parse(testCase.requerURL)
+				testutils.CheckNoError(t, err)
+
+				replacer, err := factory.Make(parsedURL)
+				testutils.CheckNoError(t, err)
+
+				actual := replacer.IsTargetSecure()
+
+				assert.Equal(t, testCase.expected, actual)
+			})
+		}
+	})
+}

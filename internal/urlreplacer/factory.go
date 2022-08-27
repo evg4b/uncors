@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/evg4b/uncors/pkg/urlglob"
 )
@@ -88,10 +89,24 @@ func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
 		rawSource:            mapping.rawSource,
 		source:               mapping.sourceGlob,
 		sourceReplacePattern: mapping.sourceReplacePattern,
+		sourceHasTLS:         isSourceSecure(requestURL),
 		rawTarget:            mapping.rawTarget,
 		target:               mapping.targetGlob,
 		targetReplacePattern: mapping.targetReplacePattern,
+		targetHasTLS:         isTargetSecure(mapping, requestURL),
 	}, nil
+}
+
+func isTargetSecure(mapping urlMapping, requestURL *url.URL) bool {
+	if strings.EqualFold(mapping.targetGlob.Scheme, "https") {
+		return true
+	}
+
+	return len(mapping.targetGlob.Scheme) == 0 && strings.EqualFold(requestURL.Scheme, "https")
+}
+
+func isSourceSecure(requestURL *url.URL) bool {
+	return strings.EqualFold(requestURL.Scheme, "https")
 }
 
 func (f *URLReplacerFactory) findMapping(requestURL *url.URL) (urlMapping, error) {

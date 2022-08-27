@@ -13,8 +13,10 @@ type Replacer struct {
 	rawTarget            string
 	source               *urlglob.URLGlob
 	sourceReplacePattern urlglob.ReplacePattern
+	sourceHasTLS         bool
 	target               *urlglob.URLGlob
 	targetReplacePattern urlglob.ReplacePattern
+	targetHasTLS         bool
 }
 
 var ErrSchemeNotMatched = errors.New("scheme in mapping and query not matched")
@@ -53,4 +55,12 @@ func (r *Replacer) URLToTarget(parsedURL *url.URL) (string, error) {
 	}
 
 	return replcedURL, nil
+}
+
+func (r *Replacer) IsSourceSecure() bool {
+	return r.sourceHasTLS
+}
+
+func (r *Replacer) IsTargetSecure() bool {
+	return r.targetHasTLS
 }

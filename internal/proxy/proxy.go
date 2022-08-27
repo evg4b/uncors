@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/responseprinter"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
 
@@ -56,9 +57,8 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return err
 		}
 
-		for _, cookie := range req.Cookies() {
-			cookie.Secure = true
-			targetReq.AddCookie(cookie)
+		if err = copyCookiesToTarget(req, replacer, targetReq); err != nil {
+			return fmt.Errorf("failed to copy cookies in request: %w", err)
 		}
 
 		targetResp, err := pm.http.Do(targetReq)
@@ -68,9 +68,8 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 
 		defer targetResp.Body.Close()
 
-		for _, cookie := range targetResp.Cookies() {
-			cookie.Secure = false
-			http.SetCookie(resp, cookie)
+		if err = copyCookiesToSource(targetResp, replacer, resp); err != nil {
+			return fmt.Errorf("failed to copy cookies in request: %w", err)
 		}
 
 		header := resp.Header()
@@ -82,19 +81,48 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return err
 		}
 
-		header.Set("Access-Control-Allow-Origin", "*")
-		header.Set("Access-Control-Allow-Credentials", "true")
-		header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
-
-		resp.WriteHeader(targetResp.StatusCode)
-
-		_, err = io.Copy(resp, targetResp.Body)
-		if err != nil {
-			return fmt.Errorf("failed to copy body to response: %w", err)
+		if err = copyResponceData(header, resp, targetResp); err != nil {
+			return err
 		}
 
 		proxyWriter.Println(responseprinter.Printresponse(targetResp))
 
 		return nil
 	}
+}
+
+// nolint: unparam
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, soure http.ResponseWriter) error {
+	for _, cookie := range target.Cookies() {
+		cookie.Secure = replacer.IsSourceSecure()
+		// TODO: Replace domain in cookie
+		http.SetCookie(soure, cookie)
+	}
+
+	return nil
+}
+
+// nolint: unparam
+func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) error {
+	for _, cookie := range source.Cookies() {
+		cookie.Secure = replacer.IsTargetSecure()
+		// TODO: Replace domain in cookie
+		target.AddCookie(cookie)
+	}
+
+	return nil
+}
+
+func copyResponceData(header http.Header, resp http.ResponseWriter, targetResp *http.Response) error {
+	header.Set("Access-Control-Allow-Origin", "*")
+	header.Set("Access-Control-Allow-Credentials", "true")
+	header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
+
+	resp.WriteHeader(targetResp.StatusCode)
+
+	if _, err := io.Copy(resp, targetResp.Body); err != nil {
+		return fmt.Errorf("failed to copy body to response: %w", err)
+	}
+
+	return nil
 }
