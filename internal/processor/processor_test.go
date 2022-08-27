@@ -26,9 +26,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
 		requetProcessor.ServeHTTP(recorder, req)
@@ -50,9 +48,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
 		requetProcessor.ServeHTTP(recorder, req)
@@ -76,9 +72,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
 		requetProcessor.ServeHTTP(recorder, req)
@@ -87,9 +81,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		assert.Contains(t, string(body), expectedErr.Error())
@@ -109,9 +101,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 			)
 
 			req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
 			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)
 		})
@@ -129,9 +119,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 			)
 
 			req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 			req.TLS = &tls.ConnectionState{}
 
 			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)

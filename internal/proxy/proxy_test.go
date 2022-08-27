@@ -20,9 +20,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 	replacerFactory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.local.com": "https://premium.api.com",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutils.CheckNoError(t, err)
 
 	t.Run("should correctly replce headers in request to target resource", func(t *testing.T) {
 		tests := []struct {
@@ -48,9 +46,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				targetURL, err := urlx.Parse(testCase.URL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 					assert.Equal(t, testCase.expectedURL, req.Header.Get(testCase.headerKey))
@@ -73,9 +69,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				req.URL.Scheme = targetURL.Scheme
 				req.Host = targetURL.Host
@@ -106,9 +100,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				expectedURL, err := urlx.Parse(testCase.expectedURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{
@@ -131,9 +123,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
@@ -168,9 +158,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		req.URL.Scheme = "http"
 		req.Host = "premium.local.com"

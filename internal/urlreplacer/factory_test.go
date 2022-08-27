@@ -5,6 +5,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,9 +77,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 
 	t.Run("shoduld return error when requst sheme and mapping sheme not equal", func(t *testing.T) {
 		parsedURL, err := urlx.Parse("https://localhost")
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
 		actual, err := factory.Make(parsedURL)
 

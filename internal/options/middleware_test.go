@@ -37,12 +37,9 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 			)
 
 			req, err := http.NewRequestWithContext(context.TODO(), testCase.method, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
-			http.HandlerFunc(proc.ServeHTTP).
-				ServeHTTP(httptest.NewRecorder(), req)
+			proc.ServeHTTP(httptest.NewRecorder(), req)
 
 			assert.Equal(t, []string{"final"}, tracker.CallsOrder)
 		})
@@ -56,12 +53,9 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		testutils.CheckNoError(t, err)
 
-		http.HandlerFunc(proc.ServeHTTP).
-			ServeHTTP(httptest.NewRecorder(), req)
+		proc.ServeHTTP(httptest.NewRecorder(), req)
 
 		assert.Equal(t, []string{}, tracker.CallsOrder)
 	})
@@ -102,18 +96,15 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				proc := processor.NewRequestProcessor(processor.WithMiddleware(middleware))
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				req.Header = testCase.headers
 
-				rr := httptest.NewRecorder()
-				http.HandlerFunc(proc.ServeHTTP).
-					ServeHTTP(rr, req)
+				recoder := httptest.NewRecorder()
+				proc.ServeHTTP(recoder, req)
 
-				assert.Equal(t, http.StatusOK, rr.Code)
-				assert.Equal(t, testCase.expected, rr.Header())
+				assert.Equal(t, http.StatusOK, recoder.Code)
+				assert.Equal(t, testCase.expected, recoder.Header())
 			})
 		}
 	})

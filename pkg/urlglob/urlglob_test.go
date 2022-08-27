@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/pkg/urlglob"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,9 +105,7 @@ func TestURLGlobMatch(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			glob, err := urlglob.NewURLGlob(testCase.pattern)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
 			actual, err := glob.MatchString(testCase.URL)
 
@@ -185,14 +184,10 @@ func TestURLGlobReplaceAllString(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				glob, err := urlglob.NewURLGlob(testCase.pattern)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				repl, err := urlglob.NewReplacePatternString(testCase.repl)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				actual, err := glob.ReplaceAllString(testCase.URL, repl)
 

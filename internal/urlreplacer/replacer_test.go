@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,9 +19,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 		"custom.domain":                "http://customdomain.com",
 		"custompost.localhost.com":     "https://customdomain.com:8080",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutils.CheckNoError(t, err)
 
 	tests := []struct {
 		name      string
@@ -63,14 +62,10 @@ func TestReplacerToSourceMapping(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			parsedURL, err := urlx.Parse(testCase.requerURL)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
 			replacer, err := factory.Make(parsedURL)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
 			t.Run("ToSource", func(t *testing.T) {
 				actual, err := replacer.ToSource(testCase.url)
@@ -81,9 +76,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 
 			t.Run("ToSourceURL", func(t *testing.T) {
 				parsedTargetURL, err := urlx.Parse(testCase.url)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				actual, err := replacer.URLToSource(parsedTargetURL)
 
@@ -102,9 +95,7 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 		"custom.domain":                "http://customdomain.com",
 		"custompost.localhost.com":     "https://customdomain.com:8080",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutils.CheckNoError(t, err)
 
 	t.Run("ToSource", func(t *testing.T) {
 		tests := []struct {
@@ -130,14 +121,10 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				parsedURL, err := urlx.Parse(testCase.requerURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				replacer, err := factory.Make(parsedURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				actual, err := replacer.ToSource(testCase.url)
 
@@ -165,19 +152,13 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				parsedURL, err := urlx.Parse(testCase.requerURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				replacer, err := factory.Make(parsedURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				parsedTargetURL, err := urlx.Parse(testCase.requerURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				actual, err := replacer.URLToSource(parsedTargetURL)
 
@@ -197,9 +178,7 @@ func TestReplacerToTargetMapping(t *testing.T) {
 		"custompost.localhost.com":     "https://customdomain.com:8080",
 		"*.star.com":                   "*.com",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutils.CheckNoError(t, err)
 
 	tests := []struct {
 		name      string
@@ -265,9 +244,7 @@ func TestReplacerToTargetMapping(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			replacer, err := factory.Make(testCase.requerURL)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testutils.CheckNoError(t, err)
 
 			actual, err := replacer.ToTarget(testCase.url)
 
@@ -286,9 +263,7 @@ func TestReplacerToTargetMappingErrors(t *testing.T) {
 		"custompost.localhost.com":     "https://customdomain.com:8080",
 		"*.star.com":                   "*.com",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutils.CheckNoError(t, err)
 
 	t.Run("ToTarget", func(t *testing.T) {
 		tests := []struct {
@@ -311,14 +286,10 @@ func TestReplacerToTargetMappingErrors(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				parsedURL, err := urlx.Parse(testCase.requerURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				replacer, err := factory.Make(parsedURL)
-				if err != nil {
-					t.Fatal(err)
-				}
+				testutils.CheckNoError(t, err)
 
 				actual, err := replacer.ToTarget(testCase.url)
 
