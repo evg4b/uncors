@@ -97,6 +97,10 @@ func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
 	}, nil
 }
 
+func (f *URLReplacerFactory) MakeV2(requestURL *url.URL) (*ReplacerV2, error) {
+	return &ReplacerV2{}, nil
+}
+
 func isTargetSecure(mapping urlMapping, requestURL *url.URL) bool {
 	if strings.EqualFold(mapping.targetGlob.Scheme, "https") {
 		return true
