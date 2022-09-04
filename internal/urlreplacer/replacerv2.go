@@ -57,6 +57,10 @@ func (r *ReplacerV2) Replace(source string) (string, error) {
 		return "", err
 	}
 
+	if isHost(source) {
+		return transformed.Host, nil
+	}
+
 	return transformed.String(), nil
 }
 
