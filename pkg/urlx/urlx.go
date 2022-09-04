@@ -70,10 +70,9 @@ func defaultScheme(rawURL, scheme string) string {
 		if len(scheme) > 0 {
 			// Missing scheme. Force http.
 			return scheme + "://" + rawURL
-		} else {
-			// Missing scheme. Force http.
-			return "//" + rawURL
 		}
+
+		return "//" + rawURL
 	}
 
 	return rawURL

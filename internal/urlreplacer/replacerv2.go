@@ -2,8 +2,10 @@ package urlreplacer
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/evg4b/uncors/pkg/urlx"
 )
@@ -13,12 +15,16 @@ var ErrEmptyTargetURL = errors.New("target url should not be empty")
 
 var ErrInvalidSourceURL = errors.New("source url is invalid")
 var ErrInvalidTargetURL = errors.New("target url is invalid")
+var ErrURLNotMached = errors.New("is not matched")
+
+type hook = func(string) string
 
 type ReplacerV2 struct {
 	source  *url.URL
 	target  *url.URL
 	regexp  *regexp.Regexp
 	pattern string
+	hooks   map[string]hook
 }
 
 func NewReplacerV2(source, target string) (*ReplacerV2, error) {
@@ -31,46 +37,50 @@ func NewReplacerV2(source, target string) (*ReplacerV2, error) {
 	}
 
 	var err error
-	replacer := ReplacerV2{}
-	if replacer.source, err = url.Parse(source); err != nil {
+	replacer := ReplacerV2{hooks: map[string]func(string) string{}}
+	if replacer.source, err = urlx.Parse(source); err != nil {
 		return nil, ErrInvalidSourceURL
 	}
 
-	if replacer.target, err = url.Parse(target); err != nil {
+	if replacer.target, err = urlx.Parse(target); err != nil {
 		return nil, ErrInvalidSourceURL
 	}
 
-	replacer.regexp, _, _ = wildCardToRegexp(replacer.source)
-	replacer.pattern, _, _ = wildCardToReplacePattern(replacer.target)
+	if replacer.regexp, _, err = wildCardToRegexp(replacer.source); err != nil {
+		return nil, err
+	}
+
+	if replacer.pattern, _, _ = wildCardToReplacePattern(replacer.target); err != nil {
+		return nil, err
+	}
+
+	if len(replacer.target.Scheme) > 0 {
+		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
+	}
 
 	return &replacer, nil
 }
 
 func (r *ReplacerV2) Replace(source string) (string, error) {
-	parsed, err := urlx.Parse(source)
-	if err != nil {
-		return "", err
+	matches := r.regexp.FindStringSubmatch(source)
+	if len(matches) < 1 {
+		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMached)
 	}
 
-	transformed, err := r.ReplaceURL(parsed)
-	if err != nil {
-		return "", err
+	replaced := strings.Clone(r.pattern)
+
+	for _, subexpName := range r.regexp.SubexpNames() {
+		if len(subexpName) > 0 {
+			partPattern := fmt.Sprintf("${%s}", subexpName)
+			partIndex := r.regexp.SubexpIndex(subexpName)
+			value := matches[partIndex]
+			if hook, ok := r.hooks[subexpName]; ok {
+				value = hook(value)
+			}
+
+			replaced = strings.ReplaceAll(replaced, partPattern, value)
+		}
 	}
 
-	if isHost(source) {
-		return transformed.Host, nil
-	}
-
-	return transformed.String(), nil
-}
-
-func (r *ReplacerV2) ReplaceURL(source *url.URL) (*url.URL, error) {
-	target := *source
-	hostname := r.regexp.ReplaceAllString(source.Host, r.pattern)
-	target.Host = hostname
-	if len(r.target.Scheme) > 0 {
-		target.Scheme = r.target.Scheme
-	}
-
-	return &target, nil
+	return replaced, nil
 }
