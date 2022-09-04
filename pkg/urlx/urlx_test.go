@@ -30,6 +30,8 @@ func TestParse(t *testing.T) {
 		{in: "HTTPS://example.com", out: "https://example.com"},
 		{in: "ssh://example.com:22", out: "ssh://example.com:22"},
 		{in: "jabber://example.com:5222", out: "jabber://example.com:5222"},
+		{in: "//example.com:22", out: "//example.com:22"},
+		{in: "//example.com", out: "//example.com"},
 
 		// // Empty scheme
 		{in: "localhost", out: "//localhost"},

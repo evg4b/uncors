@@ -60,15 +60,19 @@ func defaultScheme(rawURL, scheme string) string {
 	// put both host and path into the (relative) path.
 	if strings.Index(rawURL, "//") == 0 {
 		// Leading double slashes (any scheme). Force http.
-		rawURL = scheme + ":" + rawURL
+		if len(scheme) > 0 {
+			return scheme + ":" + rawURL
+		}
+
+		return rawURL
 	}
 	if !strings.Contains(rawURL, "://") {
 		if len(scheme) > 0 {
 			// Missing scheme. Force http.
-			rawURL = scheme + "://" + rawURL
+			return scheme + "://" + rawURL
 		} else {
 			// Missing scheme. Force http.
-			rawURL = "//" + rawURL
+			return "//" + rawURL
 		}
 	}
 
