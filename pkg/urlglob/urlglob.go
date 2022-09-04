@@ -67,22 +67,22 @@ func (glob *URLGlob) Match(parsedURL *url.URL) bool {
 	return glob.regexp.MatchString(parsedURL.Host)
 }
 
-func (glob *URLGlob) ReplaceAllString(rawURL string, repl ReplacePattern) (string, error) {
+func (glob *URLGlob) ReplaceAllString(rawURL string, repl ReplacePattern) (*url.URL, error) {
 	parsedURL, err := urlx.Parse(rawURL)
 	if err != nil {
-		return "", fmt.Errorf("filed parse url for replacing: %w", err)
+		return nil, fmt.Errorf("filed parse url for replacing: %w", err)
 	}
 
 	return glob.ReplaceAll(parsedURL, repl)
 }
 
-func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (string, error) {
+func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (*url.URL, error) {
 	if len(glob.Scheme) > 0 && !strings.EqualFold(glob.Scheme, parsedURL.Scheme) {
-		return "", ErrSchemeMismatch
+		return nil, ErrSchemeMismatch
 	}
 
 	if repl.wildCardCount > glob.WildCardCount {
-		return "", ErrTooManyWildcards
+		return nil, ErrTooManyWildcards
 	}
 
 	if len(repl.scheme) > 0 {
@@ -96,5 +96,5 @@ func (glob *URLGlob) ReplaceAll(parsedURL *url.URL, repl ReplacePattern) (string
 		parsedURL.Host = hostname
 	}
 
-	return parsedURL.String(), nil
+	return parsedURL, nil
 }

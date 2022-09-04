@@ -192,7 +192,7 @@ func TestURLGlobReplaceAllString(t *testing.T) {
 				actual, err := glob.ReplaceAllString(testCase.URL, repl)
 
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.expected, actual)
+				assert.Equal(t, testCase.expected, actual.String())
 			})
 		}
 	})

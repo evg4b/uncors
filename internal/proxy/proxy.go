@@ -74,7 +74,7 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 
 		header := resp.Header()
 		err = copyHeaders(targetResp.Header, header, modificationsMap{
-			"location": replacer.ToSource,
+			"location": replacer.StringToSource,
 		})
 
 		if err != nil {

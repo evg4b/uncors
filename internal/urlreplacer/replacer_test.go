@@ -68,7 +68,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 			testutils.CheckNoError(t, err)
 
 			t.Run("ToSource", func(t *testing.T) {
-				actual, err := replacer.ToSource(testCase.url)
+				actual, err := replacer.StringToSource(testCase.url)
 
 				assert.NoError(t, err)
 				assert.Equal(t, testCase.expected, actual)
@@ -81,7 +81,7 @@ func TestReplacerToSourceMapping(t *testing.T) {
 				actual, err := replacer.URLToSource(parsedTargetURL)
 
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.expected, actual)
+				assert.Equal(t, testCase.expected, actual.String())
 			})
 		})
 	}
@@ -126,7 +126,7 @@ func TestReplacerToSourceMappingError(t *testing.T) {
 				replacer, err := factory.Make(parsedURL)
 				testutils.CheckNoError(t, err)
 
-				actual, err := replacer.ToSource(testCase.url)
+				actual, err := replacer.StringToSource(testCase.url)
 
 				assert.Empty(t, actual)
 				assert.EqualError(t, err, testCase.expectedError)
