@@ -76,7 +76,7 @@ brews:
     folder: Formula
     tap:
       owner: evg4b
-      name: homebrew-uncors
+      name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     test:
       system "#{bin}/uncors", "--help"

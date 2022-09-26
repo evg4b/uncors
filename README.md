@@ -40,7 +40,7 @@
 If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install Hugo with the following one-liner:
 
 ```bash 
-brew install evg4b/uncors/uncors
+brew install evg4b/tap/uncors
 ```
 
 ## Binary (Cross-platform) 
