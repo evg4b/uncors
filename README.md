@@ -35,6 +35,14 @@
 
 # Quick Install 
 
+## Homebrew (macOS | Linux)
+
+If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install Hugo with the following one-liner:
+
+```bash 
+brew install evg4b/uncors/uncors
+```
+
 ## Binary (Cross-platform) 
 
 Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
