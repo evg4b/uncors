@@ -68,3 +68,18 @@ docker_manifests:
   - name_template: evg4b/{{ .ProjectName }}:latest
     image_templates:
       - evg4b/{{ .ProjectName }}:latest
+brews:
+  - name: uncors
+    description: A simple dev HTTP/HTTPS proxy for replacing CORS headers.
+    license: MIT
+    homepage: https://github.com/evg4b/uncors
+    folder: Formula
+    tap:
+      owner: evg4b
+      name: homebrew-uncors
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    test:
+      system "#{bin}/uncors", "--help"
+    commit_author:
+      name: Evgeny Abramovich
+      email: evg.abramovitch@gmail.com
