@@ -3,7 +3,6 @@ package processor_test
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,19 +16,19 @@ import (
 
 func TestRequestProcessorHandleRequest(t *testing.T) {
 	t.Run("should have correct calling order", func(t *testing.T) {
-		tracker := testutils.NewMidelwaresTracker(t)
+		tracker := testutils.NewMiddlewaresTracker(t)
 
-		requetProcessor := processor.NewRequestProcessor(
-			processor.WithMiddleware(tracker.MakeMidelware("middleware1")),
-			processor.WithMiddleware(tracker.MakeMidelware("middleware2")),
-			processor.WithMiddleware(tracker.MakeFinalMidelware("middleware3")),
+		requestProcessor := processor.NewRequestProcessor(
+			processor.WithMiddleware(tracker.MakeMiddleware("middleware1")),
+			processor.WithMiddleware(tracker.MakeMiddleware("middleware2")),
+			processor.WithMiddleware(tracker.MakeFinalMiddleware("middleware3")),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
-		requetProcessor.ServeHTTP(recorder, req)
+		requestProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -38,20 +37,20 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("should skip midelwares where next not called", func(t *testing.T) {
-		tracker := testutils.NewMidelwaresTracker(t)
+	t.Run("should skip middlewares where next not called", func(t *testing.T) {
+		tracker := testutils.NewMiddlewaresTracker(t)
 
-		requetProcessor := processor.NewRequestProcessor(
-			processor.WithMiddleware(tracker.MakeMidelware("middleware1")),
-			processor.WithMiddleware(tracker.MakeFinalMidelware("middleware2")),
-			processor.WithMiddleware(tracker.MakeMidelware("middleware3")),
+		requestProcessor := processor.NewRequestProcessor(
+			processor.WithMiddleware(tracker.MakeMiddleware("middleware1")),
+			processor.WithMiddleware(tracker.MakeFinalMiddleware("middleware2")),
+			processor.WithMiddleware(tracker.MakeMiddleware("middleware3")),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
-		requetProcessor.ServeHTTP(recorder, req)
+		requestProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -60,13 +59,12 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("should send error to response from midelware", func(t *testing.T) {
-		expectedErr := errors.New("Test error") // nolint: goerr113
-		requetProcessor := processor.NewRequestProcessor(
+	t.Run("should send error to response from middleware", func(t *testing.T) {
+		requestProcessor := processor.NewRequestProcessor(
 			processor.WithMiddleware(
 				mocks.NewHandlingMiddlewareMock(t).WrapMock.
 					Return(func(w http.ResponseWriter, r *http.Request) error {
-						return expectedErr
+						return assert.AnError
 					}),
 			),
 		)
@@ -75,7 +73,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		testutils.CheckNoError(t, err)
 
 		recorder := httptest.NewRecorder()
-		requetProcessor.ServeHTTP(recorder, req)
+		requestProcessor.ServeHTTP(recorder, req)
 
 		resp := recorder.Result()
 		defer resp.Body.Close()
@@ -84,12 +82,12 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 		testutils.CheckNoError(t, err)
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		assert.Contains(t, string(body), expectedErr.Error())
+		assert.Contains(t, string(body), assert.AnError.Error())
 	})
 
 	t.Run("should provide correct scheme", func(t *testing.T) {
 		t.Run("http", func(t *testing.T) {
-			requetProcessor := processor.NewRequestProcessor(
+			requestProcessor := processor.NewRequestProcessor(
 				processor.WithMiddleware(
 					mocks.NewHandlingMiddlewareMock(t).WrapMock.
 						Return(func(w http.ResponseWriter, r *http.Request) error {
@@ -103,11 +101,11 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 			req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 			testutils.CheckNoError(t, err)
 
-			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)
+			requestProcessor.ServeHTTP(httptest.NewRecorder(), req)
 		})
 
 		t.Run("https", func(t *testing.T) {
-			requetProcessor := processor.NewRequestProcessor(
+			requestProcessor := processor.NewRequestProcessor(
 				processor.WithMiddleware(
 					mocks.NewHandlingMiddlewareMock(t).WrapMock.
 						Return(func(w http.ResponseWriter, r *http.Request) error {
@@ -122,7 +120,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 			testutils.CheckNoError(t, err)
 			req.TLS = &tls.ConnectionState{}
 
-			requetProcessor.ServeHTTP(httptest.NewRecorder(), req)
+			requestProcessor.ServeHTTP(httptest.NewRecorder(), req)
 		})
 	})
 }

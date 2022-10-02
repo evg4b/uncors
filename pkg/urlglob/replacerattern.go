@@ -12,23 +12,23 @@ type ReplacePattern struct {
 	port          string
 }
 
-func NewReplacePatternString(rawURL string, options ...replacePatternOption) (ReplacePattern, error) {
+func NewReplacePatternString(rawURL string, options ...ReplacePatternOption) (ReplacePattern, error) {
 	parsedPattern, err := parsePattern(rawURL)
 	if err != nil {
-		return ReplacePattern{}, fmt.Errorf("failed to craete replace pattern from '%s': %w", rawURL, err)
+		return ReplacePattern{}, fmt.Errorf("failed to create replace pattern from '%s': %w", rawURL, err)
 	}
 
 	return NewReplacePattern(parsedPattern, options...)
 }
 
-func NewReplacePattern(parsedPattern *url.URL, options ...replacePatternOption) (ReplacePattern, error) {
-	rattern, wildCardCount, err := wildCardToReplacePattern(parsedPattern)
+func NewReplacePattern(parsedPattern *url.URL, options ...ReplacePatternOption) (ReplacePattern, error) {
+	pattern, wildCardCount, err := wildCardToReplacePattern(parsedPattern)
 	if err != nil {
 		return ReplacePattern{}, err
 	}
 
 	replacePattern := ReplacePattern{
-		pattern:       rattern,
+		pattern:       pattern,
 		wildCardCount: wildCardCount,
 		scheme:        parsedPattern.Scheme,
 		port:          parsedPattern.Port(),
@@ -39,7 +39,7 @@ func NewReplacePattern(parsedPattern *url.URL, options ...replacePatternOption) 
 	return replacePattern, nil
 }
 
-func PatchReplacePattern(replacePattern *ReplacePattern, options ...replacePatternOption) {
+func PatchReplacePattern(replacePattern *ReplacePattern, options ...ReplacePatternOption) {
 	for _, option := range options {
 		option(replacePattern)
 	}

@@ -107,7 +107,7 @@ func checkHost(host string) error {
 
 // SplitHostPort splits network address of the form "host:port" into
 // host and port. Unlike net.SplitHostPort(), it doesn't remove brackets
-// from [IPv6] host and it accepts net/url.URL struct instead of a string.
+// from [IPv6] host, and it accepts net/url.URL struct instead of a string.
 func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	if parsedURL == nil {
 		return "", "", &url.Error{Op: "host", URL: "", Err: ErrEmptyURL}
@@ -141,7 +141,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	return host, port, nil
 }
 
-const normalizeFlags purell.NormalizationFlags = purell.FlagRemoveDefaultPort |
+const normalizeFlags = purell.FlagRemoveDefaultPort |
 	purell.FlagDecodeDWORDHost | purell.FlagDecodeOctalHost | purell.FlagDecodeHexHost |
 	purell.FlagRemoveUnnecessaryHostDots | purell.FlagRemoveDotSegments | purell.FlagRemoveDuplicateSlashes |
 	purell.FlagUppercaseEscapes | purell.FlagDecodeUnnecessaryEscapes | purell.FlagEncodeNecessaryEscapes |
@@ -207,7 +207,7 @@ func Resolve(parsedURL *url.URL) (*net.IPAddr, error) {
 	return addr, nil
 }
 
-// Resolve resolves the URL host to its IP address.
+// ResolveString resolves the URL host to its IP address.
 // It's a shortcut for Parse() and Resolve() funcs.
 func ResolveString(rawURL string) (*net.IPAddr, error) {
 	u, err := Parse(rawURL)

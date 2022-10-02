@@ -19,21 +19,21 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		name   string
 		method string
 	}{
-		{name: "should skip POST requst", method: http.MethodPost},
-		{name: "should skip GET requst", method: http.MethodGet},
-		{name: "should skip PATCH requst", method: http.MethodPatch},
-		{name: "should skip DELETE requst", method: http.MethodDelete},
-		{name: "should skip HEAD requst", method: http.MethodHead},
-		{name: "should skip PUT requst", method: http.MethodPut},
-		{name: "should skip CONNECT requst", method: http.MethodConnect},
-		{name: "should skip TRACE requst", method: http.MethodTrace},
+		{name: "should skip POST request", method: http.MethodPost},
+		{name: "should skip GET request", method: http.MethodGet},
+		{name: "should skip PATCH request", method: http.MethodPatch},
+		{name: "should skip DELETE request", method: http.MethodDelete},
+		{name: "should skip HEAD request", method: http.MethodHead},
+		{name: "should skip PUT request", method: http.MethodPut},
+		{name: "should skip CONNECT request", method: http.MethodConnect},
+		{name: "should skip TRACE request", method: http.MethodTrace},
 	}
 	for _, testCase := range testMethods {
 		t.Run(testCase.name, func(t *testing.T) {
-			tracker := testutils.NewMidelwaresTracker(t)
+			tracker := testutils.NewMiddlewaresTracker(t)
 			proc := processor.NewRequestProcessor(
 				processor.WithMiddleware(middleware),
-				processor.WithMiddleware(tracker.MakeFinalMidelware("final")),
+				processor.WithMiddleware(tracker.MakeFinalMiddleware("final")),
 			)
 
 			req, err := http.NewRequestWithContext(context.TODO(), testCase.method, "/", nil)
@@ -45,11 +45,11 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		})
 	}
 
-	t.Run("shoud handle OPTIONS requst", func(t *testing.T) {
-		tracker := testutils.NewMidelwaresTracker(t)
+	t.Run("shoud handle OPTIONS request", func(t *testing.T) {
+		tracker := testutils.NewMiddlewaresTracker(t)
 		proc := processor.NewRequestProcessor(
 			processor.WithMiddleware(middleware),
-			processor.WithMiddleware(tracker.MakeFinalMidelware("final")),
+			processor.WithMiddleware(tracker.MakeFinalMiddleware("final")),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
@@ -60,7 +60,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 		assert.Equal(t, []string{}, tracker.CallsOrder)
 	})
 
-	t.Run("should correctly create respoce", func(t *testing.T) {
+	t.Run("should correctly create response", func(t *testing.T) {
 		testMethods := []struct {
 			name     string
 			headers  http.Header
@@ -100,11 +100,11 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 
 				req.Header = testCase.headers
 
-				recoder := httptest.NewRecorder()
-				proc.ServeHTTP(recoder, req)
+				recorder := httptest.NewRecorder()
+				proc.ServeHTTP(recorder, req)
 
-				assert.Equal(t, http.StatusOK, recoder.Code)
-				assert.Equal(t, testCase.expected, recoder.Header())
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, testCase.expected, recorder.Header())
 			})
 		}
 	})

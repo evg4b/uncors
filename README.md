@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/evg4b/uncors" title="uncors">
-    <img width="80%" src="https://raw.githubusercontent.com/evg4b/uncors/main/.github/logo.png">
+    <img alt="UNCORS logo" width="80%" src="https://raw.githubusercontent.com/evg4b/uncors/main/.github/logo.png">
   </a>
 </p>
 <p align="center">
@@ -45,7 +45,9 @@ brew install evg4b/tap/uncors
 
 ## Binary (Cross-platform) 
 
-Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
+Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases).
+Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location.
+This works well for shared hosts and other systems where you don’t have a privileged account.
 
 Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/local/bin` is the most probable location.
 
@@ -65,7 +67,8 @@ docker run -p 3000:3000 evg4b/uncors --source http://local.github.com --target /
 
 **Fetch from GitHub** 
 
-UNCORS uses the Go Modules support built into Go 1.11 to build. The easiest way to get started is to clone UNCORS source code in a directory outside of the GOPATH, as in the following example:
+UNCORS uses the Go Modules support built into Go 1.11 to build. The easiest way to get started is to clone
+UNCORS source code in a directory outside the GOPATH, as in the following example:
 
 ```
 mkdir $HOME/src
@@ -85,9 +88,9 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 ## Parameters
 
 * `--source` - Local host with protocol for to the resource from which proxying will take place.
-* `--target` - Target host with protocol for to the resource to be proxyed.
-* `--http-port` - Local HTTP linthing port.
-* `--https-port` - Local HTTPS linthing port. 
+* `--target` - Target host with protocol for to the resource to be proxy.
+* `--http-port` - Local HTTP listened port.
+* `--https-port` - Local HTTPS listened port. 
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
 

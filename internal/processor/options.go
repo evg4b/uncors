@@ -1,8 +1,8 @@
 package processor
 
-type requestProcessorOption = func(rp *RequestProcessor)
+type RequestProcessorOption = func(rp *RequestProcessor)
 
-func WithMiddleware(middleware HandlingMiddleware) requestProcessorOption {
+func WithMiddleware(middleware HandlingMiddleware) RequestProcessorOption {
 	return func(rp *RequestProcessor) {
 		rp.handlerFunc = middleware.Wrap(rp.handlerFunc)
 	}

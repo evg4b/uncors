@@ -35,7 +35,7 @@ func TestZeroGroup(t *testing.T) {
 		assert.ErrorIs(t, err, err4)
 	})
 
-	t.Run("should return nill where no gourutines", func(t *testing.T) {
+	t.Run("should return nil where no goroutines", func(t *testing.T) {
 		goPool, _ := pool.WithContext(context.Background())
 
 		err := goPool.Wait()
@@ -43,7 +43,7 @@ func TestZeroGroup(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should return nill where no erorors", func(t *testing.T) {
+	t.Run("should return nil where no errors", func(t *testing.T) {
 		goPool, _ := pool.WithContext(context.Background())
 		goPool.Go(func() error { return nil })
 		goPool.Go(func() error { return nil })

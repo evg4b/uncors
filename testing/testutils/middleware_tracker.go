@@ -8,21 +8,21 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 )
 
-type MidelwaresTracker struct {
+type MiddlewaresTracker struct {
 	CallsOrder []string
 	t          *testing.T
 }
 
-func NewMidelwaresTracker(t *testing.T) *MidelwaresTracker {
+func NewMiddlewaresTracker(t *testing.T) *MiddlewaresTracker {
 	t.Helper()
 
-	return &MidelwaresTracker{
+	return &MiddlewaresTracker{
 		CallsOrder: []string{},
 		t:          t,
 	}
 }
 
-func (t *MidelwaresTracker) MakeMidelware(name string) *mocks.HandlingMiddlewareMock {
+func (t *MiddlewaresTracker) MakeMiddleware(name string) *mocks.HandlingMiddlewareMock {
 	t.t.Helper()
 
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
@@ -38,7 +38,7 @@ func (t *MidelwaresTracker) MakeMidelware(name string) *mocks.HandlingMiddleware
 		})
 }
 
-func (t *MidelwaresTracker) MakeFinalMidelware(name string) *mocks.HandlingMiddlewareMock {
+func (t *MiddlewaresTracker) MakeFinalMiddleware(name string) *mocks.HandlingMiddlewareMock {
 	t.t.Helper()
 
 	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.

@@ -110,9 +110,9 @@ func isSourceSecure(requestURL *url.URL) bool {
 }
 
 func (f *URLReplacerFactory) findMapping(requestURL *url.URL) (urlMapping, error) {
-	for _, imapping := range f.mappings {
-		if imapping.sourceGlob.Match(requestURL) {
-			return imapping, nil
+	for _, mapping := range f.mappings {
+		if mapping.sourceGlob.Match(requestURL) {
+			return mapping, nil
 		}
 	}
 

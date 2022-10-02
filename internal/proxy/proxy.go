@@ -17,7 +17,7 @@ type ProxyMiddleware struct {
 	http            *http.Client
 }
 
-func NewProxyMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
+func NewProxyMiddleware(options ...MiddlewareOption) *ProxyMiddleware {
 	middleware := &ProxyMiddleware{}
 
 	for _, option := range options {
@@ -27,7 +27,7 @@ func NewProxyMiddleware(options ...proxyMiddlewareOption) *ProxyMiddleware {
 	return middleware
 }
 
-func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
+func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.HandlerFunc {
 	proxyWriter := pterm.PrefixPrinter{
 		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 		Prefix: pterm.Prefix{
@@ -81,22 +81,22 @@ func (pm *ProxyMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.
 			return err
 		}
 
-		if err = copyResponceData(header, resp, targetResp); err != nil {
+		if err = copyResponseData(header, resp, targetResp); err != nil {
 			return err
 		}
 
-		proxyWriter.Println(responseprinter.Printresponse(targetResp))
+		proxyWriter.Println(responseprinter.PrintResponse(targetResp))
 
 		return nil
 	}
 }
 
 // nolint: unparam
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, soure http.ResponseWriter) error {
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsSourceSecure()
 		// TODO: Replace domain in cookie
-		http.SetCookie(soure, cookie)
+		http.SetCookie(source, cookie)
 	}
 
 	return nil
@@ -113,7 +113,7 @@ func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, t
 	return nil
 }
 
-func copyResponceData(header http.Header, resp http.ResponseWriter, targetResp *http.Response) error {
+func copyResponseData(header http.Header, resp http.ResponseWriter, targetResp *http.Response) error {
 	header.Set("Access-Control-Allow-Origin", "*")
 	header.Set("Access-Control-Allow-Credentials", "true")
 	header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")

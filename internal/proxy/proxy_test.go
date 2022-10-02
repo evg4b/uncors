@@ -22,7 +22,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 	})
 	testutils.CheckNoError(t, err)
 
-	t.Run("should correctly replce headers in request to target resource", func(t *testing.T) {
+	t.Run("should correctly replace headers in request to target resource", func(t *testing.T) {
 		tests := []struct {
 			name        string
 			URL         string
@@ -82,7 +82,7 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 		}
 	})
 
-	t.Run("should correctly replce headers in response", func(t *testing.T) {
+	t.Run("should correctly replace headers in response", func(t *testing.T) {
 		tests := []struct {
 			name        string
 			URL         string

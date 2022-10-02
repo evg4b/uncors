@@ -7,11 +7,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-func (s *Server) isHTTPSAvialable() bool {
+func (s *Server) isHTTPSAvailable() bool {
 	return len(s.cert) > 0 && len(s.key) > 0
 }
 
-func isSucessClosed(err error) bool {
+func isSuccessClosed(err error) bool {
 	if err == nil {
 		return true
 	}

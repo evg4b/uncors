@@ -7,7 +7,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func Printresponse(response *http.Response) string {
+func PrintResponse(response *http.Response) string {
 	prefix := fmt.Sprintf("%d %s", response.StatusCode, response.Request.Method)
 	printer := getPrefixPrinter(response.StatusCode, prefix)
 

@@ -11,14 +11,14 @@ import (
 )
 
 type Server struct {
-	http    Listner
-	https   Listner
+	http    Listener
+	https   Listener
 	cert    string
 	key     string
 	handler http.Handler
 }
 
-type Listner interface {
+type Listener interface {
 	ListenAndServe() error
 	ListenAndServeTLS(certFile, keyFile string) error
 	Shutdown(ctx context.Context) error
@@ -26,7 +26,7 @@ type Listner interface {
 
 const readHeaderTimeout = 30 * time.Second
 
-func NewServer(options ...serverOption) *Server {
+func NewServer(options ...Option) *Server {
 	appServer := &Server{}
 
 	for _, option := range options {
@@ -37,29 +37,29 @@ func NewServer(options ...serverOption) *Server {
 }
 
 func (s *Server) ListenAndServe(ctx context.Context) error {
-	pool, ctx := pool.WithContext(ctx)
+	instance, ctx := pool.WithContext(ctx)
 
-	pool.Go(func() error {
+	instance.Go(func() error {
 		return s.http.ListenAndServe() // nolint: wrapcheck
 	})
 
-	if s.isHTTPSAvialable() {
-		pool.Go(func() error {
+	if s.isHTTPSAvailable() {
+		instance.Go(func() error {
 			return s.https.ListenAndServeTLS(s.cert, s.key) // nolint: wrapcheck
 		})
 	}
 
 	shutdownCtx := context.Background()
-	pool.Go(func() error {
+	instance.Go(func() error {
 		<-ctx.Done()
 		var multiError *multierror.Error
 
-		if err := s.http.Shutdown(shutdownCtx); !isSucessClosed(err) {
+		if err := s.http.Shutdown(shutdownCtx); !isSuccessClosed(err) {
 			multiError = multierror.Append(multiError, err)
 		}
 
-		if s.isHTTPSAvialable() {
-			if err := s.https.Shutdown(shutdownCtx); !isSucessClosed(err) {
+		if s.isHTTPSAvailable() {
+			if err := s.https.Shutdown(shutdownCtx); !isSuccessClosed(err) {
 				multiError = multierror.Append(multiError, err)
 			}
 		}
@@ -67,7 +67,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		return multiError.ErrorOrNil() // nolint: wrapcheck
 	})
 
-	if err := pool.Wait(); !isSucessClosed(err) {
+	if err := instance.Wait(); !isSuccessClosed(err) {
 		return fmt.Errorf("uncors server was stopperd with error: %w", err)
 	}
 

@@ -1,7 +1,6 @@
 package urlreplacer
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -19,42 +18,40 @@ type Replacer struct {
 	targetHasTLS         bool
 }
 
-var ErrSchemeNotMatched = errors.New("scheme in mapping and query not matched")
-
 func (r *Replacer) StringToSource(rawURL string) (string, error) {
-	replcedURL, err := r.target.ReplaceAllString(rawURL, r.sourceReplacePattern)
+	replacedURL, err := r.target.ReplaceAllString(rawURL, r.sourceReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to source url:  %w", rawURL, err)
 	}
 
-	return replcedURL.String(), nil
+	return replacedURL.String(), nil
 }
 
 func (r *Replacer) URLToSource(parsedURL *url.URL) (*url.URL, error) {
-	replcedURL, err := r.target.ReplaceAll(parsedURL, r.sourceReplacePattern)
+	replacedURL, err := r.target.ReplaceAll(parsedURL, r.sourceReplacePattern)
 	if err != nil {
 		return nil, fmt.Errorf("filed transform '%s' to source url:  %w", parsedURL.String(), err)
 	}
 
-	return replcedURL, nil
+	return replacedURL, nil
 }
 
 func (r *Replacer) ToTarget(rawURL string) (string, error) {
-	replcedURL, err := r.source.ReplaceAllString(rawURL, r.targetReplacePattern)
+	replacedURL, err := r.source.ReplaceAllString(rawURL, r.targetReplacePattern)
 	if err != nil {
 		return "", fmt.Errorf("filed transform '%s' to target url:  %w", rawURL, err)
 	}
 
-	return replcedURL.String(), nil
+	return replacedURL.String(), nil
 }
 
 func (r *Replacer) URLToTarget(parsedURL *url.URL) (*url.URL, error) {
-	replcedURL, err := r.source.ReplaceAll(parsedURL, r.targetReplacePattern)
+	replacedURL, err := r.source.ReplaceAll(parsedURL, r.targetReplacePattern)
 	if err != nil {
 		return nil, fmt.Errorf("filed transform '%s' to target url:  %w", parsedURL.String(), err)
 	}
 
-	return replcedURL, nil
+	return replacedURL, nil
 }
 
 func (r *Replacer) IsSourceSecure() bool {

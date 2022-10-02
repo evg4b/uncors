@@ -28,7 +28,7 @@ const (
 )
 
 func main() {
-	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxyed")
+	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxy")
 	source := flag.String("source", "localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
 	httpPort := flag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
 	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
@@ -55,7 +55,7 @@ func main() {
 	flag.Parse()
 
 	mappings := map[string]string{
-		(*source): (*target),
+		*source: *target,
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
@@ -68,7 +68,7 @@ func main() {
 	optionsMiddleware := options.NewOptionsMiddleware()
 	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
-		proxy.WithHTTPClient(&infrastructure.HTTPCLient),
+		proxy.WithHTTPClient(&infrastructure.HTTPClient),
 	)
 
 	requestProcessor := processor.NewRequestProcessor(
@@ -81,7 +81,7 @@ func main() {
 		server.WithHTTPS(baseAddress, *httpsPort),
 		server.WithSslCert(*certFile),
 		server.WithSslKey(*keyFile),
-		server.WithRequstPropceessor(requestProcessor),
+		server.WithRequestProcessor(requestProcessor),
 	)
 
 	printLogo()
@@ -98,7 +98,7 @@ func printLogo() {
 	logoLength := 51
 	versionLine := strings.Repeat(" ", logoLength)
 	versionSuffix := fmt.Sprintf("version: %s", Version)
-	versionPreffix := versionLine[:logoLength-len(versionSuffix)]
+	versionPrefix := versionLine[:logoLength-len(versionSuffix)]
 
 	logo, _ := pterm.DefaultBigText.
 		WithLetters(
@@ -109,7 +109,7 @@ func printLogo() {
 
 	pterm.Println()
 	pterm.Print(logo)
-	pterm.Println(versionPreffix + versionSuffix)
+	pterm.Println(versionPrefix + versionSuffix)
 	pterm.Println()
 }
 

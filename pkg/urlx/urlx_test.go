@@ -175,8 +175,6 @@ func TestURLNormalize(t *testing.T) {
 		{in: "http:///www.google.com", err: true},
 		{in: "javascript:void(0)", err: true},
 		{in: "<script>", err: true},
-
-		// ..more robust test cases covered by Purell
 	}
 
 	for _, testCase := range tests {
@@ -204,7 +202,7 @@ func TestURLResolve(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		ipAddess, err := urlx.ResolveString(testCase.in)
+		ipAdders, err := urlx.ResolveString(testCase.in)
 
 		if !testCase.err {
 			assert.NoError(t, err)
@@ -213,7 +211,7 @@ func TestURLResolve(t *testing.T) {
 			assert.Error(t, err)
 		}
 		if testCase.out != "" {
-			assert.Equal(t, testCase.out, ipAddess.String())
+			assert.Equal(t, testCase.out, ipAdders.String())
 		}
 	}
 }

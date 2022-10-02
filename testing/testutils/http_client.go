@@ -10,6 +10,6 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-func NewTestClient(respoceCreator RoundTripFunc) *http.Client {
-	return &http.Client{Transport: respoceCreator}
+func NewTestClient(responseCreator RoundTripFunc) *http.Client {
+	return &http.Client{Transport: responseCreator}
 }

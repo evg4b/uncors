@@ -28,7 +28,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 			{
 				name: "target url is incorrect ",
 				mapping: map[string]string{
-					"locahost": string(rune(0x7f)),
+					"localhost": string(rune(0x7f)),
 				},
 			},
 		}
@@ -42,7 +42,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 		}
 	})
 
-	t.Run("shodul return replacer", func(t *testing.T) {
+	t.Run("should return replacer", func(t *testing.T) {
 		actual, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 			"localhost": "https://github.com",
 		})
@@ -57,7 +57,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 		"http://localhost": "https://github.com",
 	})
 
-	t.Run("shoduld return error when mapping not found", func(t *testing.T) {
+	t.Run("should return error when mapping not found", func(t *testing.T) {
 		parsedURL, _ := urlx.Parse("http://unknow.com")
 
 		actual, err := factory.Make(parsedURL)
@@ -66,7 +66,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 		assert.EqualError(t, err, "mapping not found")
 	})
 
-	t.Run("shoduld return replacer wihout error", func(t *testing.T) {
+	t.Run("should return replacer without error", func(t *testing.T) {
 		parsedURL, _ := urlx.Parse("http://localhost")
 
 		actual, err := factory.Make(parsedURL)
@@ -75,7 +75,7 @@ func TestUrlReplacerFactoryMake(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("shoduld return error when requst sheme and mapping sheme not equal", func(t *testing.T) {
+	t.Run("should return error when request scheme and mapping scheme not equal", func(t *testing.T) {
 		parsedURL, err := urlx.Parse("https://localhost")
 		testutils.CheckNoError(t, err)
 

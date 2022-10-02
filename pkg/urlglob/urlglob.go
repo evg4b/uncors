@@ -20,9 +20,9 @@ type URLGlob struct {
 
 var (
 	ErrEmptyURL            = errors.New("url should not be empty")
-	ErrPatterntContinsData = errors.New("url pattern should not contain path, query or fragment")
+	ErrPatternContainsData = errors.New("url pattern should not contain path, query or fragment")
 	ErrSchemeMismatch      = errors.New("url scheme and mapping scheme is not equal")
-	ErrTooManyWildcards    = errors.New("replcace pattern contains too many wildcards")
+	ErrTooManyWildcards    = errors.New("replace pattern contains too many wildcards")
 )
 
 func NewURLGlob(rawURL string) (*URLGlob, error) {
@@ -32,16 +32,16 @@ func NewURLGlob(rawURL string) (*URLGlob, error) {
 
 	parsedPattern, err := parsePattern(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to craete glob from '%s': %w", rawURL, err)
+		return nil, fmt.Errorf("failed to create glob from '%s': %w", rawURL, err)
 	}
 
-	regexp, count, err := wildCardToRegexp(parsedPattern)
+	regx, count, err := wildCardToRegexp(parsedPattern)
 	if err != nil {
 		return nil, err
 	}
 
 	glob := &URLGlob{
-		regexp:        regexp,
+		regexp:        regx,
 		WildCardCount: count,
 		Scheme:        parsedPattern.Scheme,
 		Port:          parsedPattern.Port(),

@@ -40,7 +40,7 @@ func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructur
 			}
 		}
 
-		optionsWriter.Printfln(responseprinter.Printresponse(&http.Response{
+		optionsWriter.Printfln(responseprinter.PrintResponse(&http.Response{
 			StatusCode: http.StatusOK,
 			Request:    req,
 		}))

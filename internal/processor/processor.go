@@ -9,7 +9,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-var ErrFailedRequset = errors.New("UNCORS: Failed requset handler")
+var ErrFailedRequest = errors.New("UNCORS: Failed request handler")
 
 type HandlingMiddleware interface {
 	Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc
@@ -19,8 +19,8 @@ type RequestProcessor struct {
 	handlerFunc infrastructure.HandlerFunc
 }
 
-func NewRequestProcessor(options ...requestProcessorOption) *RequestProcessor {
-	processor := &RequestProcessor{handlerFunc: finalFandler}
+func NewRequestProcessor(options ...RequestProcessorOption) *RequestProcessor {
+	processor := &RequestProcessor{handlerFunc: finalHandler}
 
 	for i := len(options) - 1; i >= 0; i-- {
 		option := options[i]
@@ -50,6 +50,6 @@ func updateRequest(request *http.Request) {
 	}
 }
 
-func finalFandler(w http.ResponseWriter, r *http.Request) error {
-	return ErrFailedRequset
+func finalHandler(_ http.ResponseWriter, _ *http.Request) error {
+	return ErrFailedRequest
 }

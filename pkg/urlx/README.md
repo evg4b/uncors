@@ -3,7 +3,7 @@
 Repository forked from [goware/urlx](https://github.com/goware/urlx) specifically for [uncors](https://github.com/evg4b/uncors) project.
 
 ## Changes:
- - Removed defalut http scheme
+ - Removed default http scheme
  - Symbol * allowed in urls
 
 ## License

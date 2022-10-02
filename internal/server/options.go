@@ -8,9 +8,9 @@ import (
 	"github.com/evg4b/uncors/internal/processor"
 )
 
-type serverOption = func(s *Server)
+type Option = func(s *Server)
 
-func WithHTTP(baseAddress string, port int) serverOption {
+func WithHTTP(baseAddress string, port int) Option {
 	address := net.JoinHostPort(baseAddress, strconv.Itoa(port))
 
 	return func(server *Server) {
@@ -24,13 +24,13 @@ func WithHTTP(baseAddress string, port int) serverOption {
 	}
 }
 
-func WithHTTPListner(listner Listner) serverOption {
+func WithHTTPListener(listener Listener) Option {
 	return func(server *Server) {
-		server.http = listner
+		server.http = listener
 	}
 }
 
-func WithHTTPS(baseAddress string, port int) serverOption {
+func WithHTTPS(baseAddress string, port int) Option {
 	address := net.JoinHostPort(baseAddress, strconv.Itoa(port))
 
 	return func(server *Server) {
@@ -44,25 +44,25 @@ func WithHTTPS(baseAddress string, port int) serverOption {
 	}
 }
 
-func WithHTTPSListner(listner Listner) serverOption {
+func WithHTTPSListener(listener Listener) Option {
 	return func(server *Server) {
-		server.https = listner
+		server.https = listener
 	}
 }
 
-func WithSslCert(cert string) serverOption {
+func WithSslCert(cert string) Option {
 	return func(s *Server) {
 		s.cert = cert
 	}
 }
 
-func WithSslKey(key string) serverOption {
+func WithSslKey(key string) Option {
 	return func(s *Server) {
 		s.key = key
 	}
 }
 
-func WithRequstPropceessor(requestProcessor *processor.RequestProcessor) serverOption {
+func WithRequestProcessor(requestProcessor *processor.RequestProcessor) Option {
 	return func(s *Server) {
 		s.handler = requestProcessor
 	}

@@ -24,27 +24,27 @@ func TestNewURLGlob(t *testing.T) {
 			{
 				name:     "url is invalid",
 				rawURL:   "&*%",
-				errorMsg: "failed to craete glob from '&*%': invalid url: parse \"//&*%\": invalid URL escape \"%\"",
+				errorMsg: "failed to create glob from '&*%': invalid url: parse \"//&*%\": invalid URL escape \"%\"",
 			},
 			{
-				name:     "sheme contains wildcard",
+				name:     "scheme contains wildcard",
 				rawURL:   "http*://demo.com",
-				errorMsg: "failed to craete glob from 'http*://demo.com': invalid url: parse \"http*://demo.com\": first path segment in URL cannot contain colon",
+				errorMsg: "failed to create glob from 'http*://demo.com': invalid url: parse \"http*://demo.com\": first path segment in URL cannot contain colon",
 			},
 			{
 				name:     "pattern contains path",
 				rawURL:   "https://demo.com/api/info",
-				errorMsg: "failed to craete glob from 'https://demo.com/api/info': url pattern should not contain path, query or fragment",
+				errorMsg: "failed to create glob from 'https://demo.com/api/info': url pattern should not contain path, query or fragment",
 			},
 			{
 				name:     "pattern contains query",
 				rawURL:   "https://demo.com?demo=data",
-				errorMsg: "failed to craete glob from 'https://demo.com?demo=data': url pattern should not contain path, query or fragment",
+				errorMsg: "failed to create glob from 'https://demo.com?demo=data': url pattern should not contain path, query or fragment",
 			},
 			{
 				name:     "pattern contains fragment",
 				rawURL:   "https://demo.com#target",
-				errorMsg: "failed to craete glob from 'https://demo.com#target': url pattern should not contain path, query or fragment",
+				errorMsg: "failed to create glob from 'https://demo.com#target': url pattern should not contain path, query or fragment",
 			},
 		}
 		for _, tt := range tests {
@@ -84,19 +84,19 @@ func TestURLGlobMatch(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "not matched http for pattern withut scheme",
+			name:     "not matched http for pattern without scheme",
 			pattern:  "demo.com",
 			URL:      "http://demo.com/demo/test",
 			expected: true,
 		},
 		{
-			name:     "not matched https for pattern withut scheme",
+			name:     "not matched https for pattern without scheme",
 			pattern:  "demo.com",
 			URL:      "https://demo.com/demo/test",
 			expected: true,
 		},
 		{
-			name:     "scheme mispatch",
+			name:     "scheme mismatch",
 			pattern:  "https://base.localhost.com",
 			URL:      "http://base.localhost.com/api/info",
 			expected: false,
@@ -174,7 +174,7 @@ func TestURLGlobReplaceAllString(t *testing.T) {
 				expected: "https://test.realapi.com:8080/test.html",
 			},
 			{
-				name:     "correctly handle dinamic port",
+				name:     "correctly handle dynamic port",
 				pattern:  "http://*.my.cc",
 				URL:      "http://test.my.cc:7600/test.html",
 				repl:     "https://*.realapi.com",

@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-const defaulTimeout = 5 * time.Minute
+const defaultTimeout = 5 * time.Minute
 
-var HTTPCLient = http.Client{
+var HTTPClient = http.Client{
 	CheckRedirect: func(r *http.Request, v []*http.Request) error {
 		return http.ErrUseLastResponse
 	},
@@ -18,5 +18,5 @@ var HTTPCLient = http.Client{
 		},
 	},
 	Jar:     nil,
-	Timeout: defaulTimeout,
+	Timeout: defaultTimeout,
 }
