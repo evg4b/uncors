@@ -10,7 +10,7 @@ import (
 func (pm *ProxyMiddleware) makeUncorsResponse(
 	originalResp *http.Response,
 	resp http.ResponseWriter,
-	replacer *urlreplacer.Replacer,
+	replacer *urlreplacer.ReplacerV2,
 ) error {
 	if err := copyCookiesToSource(originalResp, replacer, resp); err != nil {
 		return fmt.Errorf("failed to copy cookies in request: %w", err)
@@ -18,7 +18,7 @@ func (pm *ProxyMiddleware) makeUncorsResponse(
 
 	header := resp.Header()
 	err := copyHeaders(originalResp.Header, header, modificationsMap{
-		"location": replacer.StringToSource,
+		"location": replacer.Replace,
 	})
 
 	if err != nil {

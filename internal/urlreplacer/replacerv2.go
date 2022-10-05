@@ -37,7 +37,10 @@ func NewReplacerV2(source, target string) (*ReplacerV2, error) {
 	}
 
 	var err error
-	replacer := ReplacerV2{hooks: map[string]func(string) string{}}
+	replacer := ReplacerV2{
+		hooks: map[string]func(string) string{},
+	}
+
 	if replacer.source, err = urlx.Parse(source); err != nil {
 		return nil, ErrInvalidSourceURL
 	}
@@ -73,14 +76,38 @@ func (r *ReplacerV2) Replace(source string) (string, error) {
 		if len(subexpName) > 0 {
 			partPattern := fmt.Sprintf("${%s}", subexpName)
 			partIndex := r.regexp.SubexpIndex(subexpName)
-			value := matches[partIndex]
+			partValue := matches[partIndex]
 			if hook, ok := r.hooks[subexpName]; ok {
-				value = hook(value)
+				partValue = hook(partValue)
 			}
 
-			replaced = strings.ReplaceAll(replaced, partPattern, value)
+			replaced = strings.ReplaceAll(replaced, partPattern, partValue)
 		}
 	}
 
 	return replaced, nil
+}
+
+func (r *ReplacerV2) IsSourceSecure() bool {
+	if len(r.source.Scheme) > 0 {
+		return isSecure(r.source.Scheme)
+	}
+
+	return false
+}
+
+func (r *ReplacerV2) IsTargetSecure() bool {
+	if len(r.target.Scheme) > 0 {
+		return isSecure(r.source.Scheme)
+	}
+
+	return false
+}
+
+func (r *ReplacerV2) IsMatched(source string) bool {
+	return r.regexp.MatchString(source)
+}
+
+func isSecure(scheme string) bool {
+	return strings.EqualFold(scheme, "https")
 }

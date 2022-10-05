@@ -13,7 +13,7 @@ func wildCardToRegexp(parsedPttern *url.URL) (*regexp.Regexp, int, error) {
 
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
 
-	parts := strings.Split(parsedPttern.Hostname(), "*")
+	parts := strings.Split(parsedPttern.Host, "*")
 	for index, literal := range parts {
 		if index > 0 {
 			count++
@@ -45,7 +45,7 @@ func wildCardToReplacePattern(parsedPttern *url.URL) (string, int, error) {
 		return "", count, fmt.Errorf("filed to build url glob: %w", err)
 	}
 
-	for i, literal := range strings.Split(parsedPttern.Hostname(), "*") {
+	for i, literal := range strings.Split(parsedPttern.Host, "*") {
 		if i > 0 {
 			count++
 			fmt.Fprintf(result, "${part%d}", count)

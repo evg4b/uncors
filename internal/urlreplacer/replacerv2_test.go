@@ -29,7 +29,7 @@ func TestReplacerV2Replace(t *testing.T) {
 		})
 	})
 
-	t.Run("replace", func(t *testing.T) {
+	t.Run("Replace", func(t *testing.T) {
 		t.Run("where schemes given and", func(t *testing.T) {
 			t.Run("schemes are equal", func(t *testing.T) {
 				replacer, err := urlreplacer.NewReplacerV2("http://*.localhost.com", "http://api.*.com")

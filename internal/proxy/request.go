@@ -9,17 +9,17 @@ import (
 
 func (pm *ProxyMiddleware) makeOriginalRequest(
 	req *http.Request,
-	replacer *urlreplacer.Replacer,
+	replacer *urlreplacer.ReplacerV2,
 ) (*http.Request, error) {
-	url, _ := replacer.ToTarget(req.URL.String())
+	url, _ := replacer.Replace(req.URL.String())
 	originalReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make requst to original server: %w", err)
 	}
 
 	err = copyHeaders(req.Header, originalReq.Header, modificationsMap{
-		"origin":  replacer.ToTarget,
-		"referer": replacer.ToTarget,
+		"origin":  replacer.Replace,
+		"referer": replacer.Replace,
 	})
 
 	if err != nil {
