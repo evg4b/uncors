@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/evg4b/uncors/pkg/urlx"
 )
 
 func wildCardToRegexp(parsedPttern *url.URL) (*regexp.Regexp, int, error) {
@@ -13,7 +15,12 @@ func wildCardToRegexp(parsedPttern *url.URL) (*regexp.Regexp, int, error) {
 
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
 
-	parts := strings.Split(parsedPttern.Host, "*")
+	host, port, err := urlx.SplitHostPort(parsedPttern)
+	if err != nil {
+		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+	}
+
+	parts := strings.Split(host, "*")
 	for index, literal := range parts {
 		if index > 0 {
 			count++
@@ -23,6 +30,15 @@ func wildCardToRegexp(parsedPttern *url.URL) (*regexp.Regexp, int, error) {
 		_, err := result.WriteString(regexp.QuoteMeta(literal))
 		if err != nil {
 			return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		}
+	}
+
+	if len(port) > 0 {
+		// TODO: corectly handle default ports
+		if port == "80" || port == "443" {
+			fmt.Fprintf(&result, "(:%s)?", port)
+		} else {
+			fmt.Fprintf(&result, ":%s", port)
 		}
 	}
 
