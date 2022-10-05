@@ -42,50 +42,24 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 			return fmt.Errorf("failed to transform general url: %w", err)
 		}
 
-		url, _ := replacer.ToTarget(req.URL.String())
-		targetReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
-		if err != nil {
-			return fmt.Errorf("failed to make requst to original server: %w", err)
-		}
-
-		err = copyHeaders(req.Header, targetReq.Header, modificationsMap{
-			"origin":  replacer.ToTarget,
-			"referer": replacer.ToTarget,
-		})
-
-		if err != nil {
-			return err
-		}
-
-		if err = copyCookiesToTarget(req, replacer, targetReq); err != nil {
-			return fmt.Errorf("failed to copy cookies in request: %w", err)
-		}
-
-		targetResp, err := pm.http.Do(targetReq)
+		originalReq, err := pm.makeOriginalRequest(req, replacer)
 		if err != nil {
 			return fmt.Errorf("failed to recive response from original server: %w", err)
 		}
 
-		defer targetResp.Body.Close()
-
-		if err = copyCookiesToSource(targetResp, replacer, resp); err != nil {
-			return fmt.Errorf("failed to copy cookies in request: %w", err)
-		}
-
-		header := resp.Header()
-		err = copyHeaders(targetResp.Header, header, modificationsMap{
-			"location": replacer.StringToSource,
-		})
-
+		originalResp, err := pm.http.Do(originalReq)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to recive response from original server: %w", err)
 		}
 
-		if err = copyResponseData(header, resp, targetResp); err != nil {
-			return err
+		defer originalResp.Body.Close()
+
+		err = pm.makeUncorsResponse(originalResp, resp, replacer)
+		if err != nil {
+			return fmt.Errorf("failed to recive response from original server: %w", err)
 		}
 
-		proxyWriter.Println(responseprinter.PrintResponse(targetResp))
+		proxyWriter.Println(responseprinter.PrintResponse(originalResp))
 
 		return nil
 	}
