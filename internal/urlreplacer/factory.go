@@ -3,7 +3,6 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"strings"
 
@@ -78,14 +77,8 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 
 		parsedSource, err := urlx.Parse(sourceURL)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to configure mappings: %w", err)
 		}
-
-		var host string
-		if host, _, err = urlx.SplitHostPort(parsedSource); err != nil {
-			return nil, err
-		}
-		parsedSource.Host = net.JoinHostPort(host, "3000")
 
 		target, source, err := makeV2(parsedSource.String(), targetURL)
 		if err != nil {

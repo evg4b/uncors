@@ -54,8 +54,11 @@ func main() {
 
 	flag.Parse()
 
-	mappings := map[string]string{
-		*source: *target,
+	mappings, err := urlreplacer.NormaiseMappings(map[string]string{*source: *target}, *httpPort, *httpsPort)
+	if err != nil {
+		pterm.Fatal.Println(err)
+
+		return
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
@@ -85,7 +88,7 @@ func main() {
 	)
 
 	printLogo()
-	printMappings(mappings, *httpPort, *httpsPort, len(*certFile) > 0 && len(*keyFile) > 0)
+	printMappings(mappings)
 
 	if err = uncorsServer.ListenAndServe(ctx); err != nil {
 		pterm.Fatal.Println(err)
@@ -113,20 +116,16 @@ func printLogo() {
 	pterm.Println()
 }
 
-func printMappings(mappings map[string]string, port int, httpsPort int, hasHTTPS bool) {
+func printMappings(mappings map[string]string) {
 	builder := strings.Builder{}
 	for source, target := range mappings {
-		if port == defaultHTTPPort {
-			builder.WriteString(fmt.Sprintf("PROXY: http://%s => %s\n", source, target))
-		} else {
-			builder.WriteString(fmt.Sprintf("PROXY: http://%s:%d => %s\n", source, port, target))
+		if strings.HasPrefix(source, "https:") {
+			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
 		}
-		if hasHTTPS {
-			if httpsPort == defaultHTTPSPort {
-				builder.WriteString(fmt.Sprintf("PROXY: https://%s => %s\n", source, target))
-			} else {
-				builder.WriteString(fmt.Sprintf("PROXY: https://%s:%d => %s\n", source, httpsPort, target))
-			}
+	}
+	for source, target := range mappings {
+		if strings.HasPrefix(source, "http:") {
+			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
 		}
 	}
 	pterm.Info.Printfln(builder.String())
