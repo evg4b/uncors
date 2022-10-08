@@ -11,12 +11,12 @@ import (
 )
 
 const httpScheme = "http"
-const defaultHttpPort = 80
+const defaultHTTPPort = 80
 
 const httpsScheme = "https"
-const defaultHttpsPort = 443
+const defaultHTTPSPort = 443
 
-func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useHttps bool) (map[string]string, error) {
+func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useHTTPS bool) (map[string]string, error) {
 	processedMappings := map[string]string{}
 	for source, target := range mappings {
 		sourceURL, err := urlx.Parse(source)
@@ -24,7 +24,7 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 			return nil, ErrInvalidSourceURL
 		}
 
-		if strings.EqualFold(sourceURL.Scheme, httpScheme) || len(sourceURL.Scheme) == 0 {
+		if strings.EqualFold(sourceURL.Scheme, httpScheme) {
 			normalisedSource, err := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
 			if err != nil {
 				return nil, err
@@ -33,7 +33,7 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 			processedMappings[normalisedSource] = target
 		}
 
-		if useHttps && (strings.EqualFold(sourceURL.Scheme, httpsScheme) || len(sourceURL.Scheme) == 0) {
+		if useHTTPS && strings.EqualFold(sourceURL.Scheme, httpsScheme) {
 			normalisedSource, err := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
 			if err != nil {
 				return nil, err
@@ -46,23 +46,23 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 	return processedMappings, nil
 }
 
-func assignPortAndScheme(u url.URL, scheme string, port int) (string, error) {
-	host, _, err := urlx.SplitHostPort(&u)
+func assignPortAndScheme(parsedURL url.URL, scheme string, port int) (string, error) {
+	host, _, err := urlx.SplitHostPort(&parsedURL)
 	if err != nil {
-		return "", fmt.Errorf("failed split host and port: %v", err)
+		return "", fmt.Errorf("failed split host and port: %w", err)
 	}
 
-	u.Scheme = scheme
+	parsedURL.Scheme = scheme
 	if !(isDefaultPort(scheme, port)) {
-		u.Host = net.JoinHostPort(host, strconv.Itoa(port))
+		parsedURL.Host = net.JoinHostPort(host, strconv.Itoa(port))
 	} else {
-		u.Host = host
+		parsedURL.Host = host
 	}
 
-	return u.String(), nil
+	return parsedURL.String(), nil
 }
 
 func isDefaultPort(scheme string, port int) bool {
-	return strings.EqualFold(httpScheme, scheme) && port == defaultHttpPort ||
-		strings.EqualFold(httpsScheme, scheme) && port == defaultHttpsPort
+	return strings.EqualFold(httpScheme, scheme) && port == defaultHTTPPort ||
+		strings.EqualFold(httpsScheme, scheme) && port == defaultHTTPSPort
 }

@@ -1,3 +1,4 @@
+// nolint: dupl
 package urlreplacer_test
 
 import (
@@ -14,7 +15,7 @@ func TestNormaliseMappings(t *testing.T) {
 			name     string
 			mappings map[string]string
 			expected map[string]string
-			useHttps bool
+			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
@@ -25,7 +26,7 @@ func TestNormaliseMappings(t *testing.T) {
 					"http://localhost:3000":  "github.com",
 					"https://localhost:3001": "github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set http port",
@@ -35,7 +36,7 @@ func TestNormaliseMappings(t *testing.T) {
 				expected: map[string]string{
 					"http://localhost:3000": "https://github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
@@ -45,7 +46,7 @@ func TestNormaliseMappings(t *testing.T) {
 				expected: map[string]string{
 					"https://localhost:3001": "https://github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
@@ -63,7 +64,7 @@ func TestNormaliseMappings(t *testing.T) {
 					"http://host3:3000":  "http://api.github.com",
 					"https://host4:3001": "https://api.github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 		}
 		for _, testCase := range testsCases {
@@ -72,7 +73,7 @@ func TestNormaliseMappings(t *testing.T) {
 					testCase.mappings,
 					httpPort,
 					httpsPort,
-					testCase.useHttps,
+					testCase.useHTTPS,
 				)
 
 				assert.NoError(t, err)
@@ -86,7 +87,7 @@ func TestNormaliseMappings(t *testing.T) {
 			name     string
 			mappings map[string]string
 			expected map[string]string
-			useHttps bool
+			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
@@ -97,7 +98,7 @@ func TestNormaliseMappings(t *testing.T) {
 					"http://localhost":  "github.com",
 					"https://localhost": "github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set http port",
@@ -107,7 +108,7 @@ func TestNormaliseMappings(t *testing.T) {
 				expected: map[string]string{
 					"http://localhost": "https://github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
@@ -117,7 +118,7 @@ func TestNormaliseMappings(t *testing.T) {
 				expected: map[string]string{
 					"https://localhost": "https://github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
@@ -135,7 +136,7 @@ func TestNormaliseMappings(t *testing.T) {
 					"http://host3":  "http://api.github.com",
 					"https://host4": "https://api.github.com",
 				},
-				useHttps: true,
+				useHTTPS: true,
 			},
 		}
 		for _, testCase := range testsCases {
@@ -144,7 +145,7 @@ func TestNormaliseMappings(t *testing.T) {
 					testCase.mappings,
 					httpPort,
 					httpsPort,
-					testCase.useHttps,
+					testCase.useHTTPS,
 				)
 
 				assert.NoError(t, err)

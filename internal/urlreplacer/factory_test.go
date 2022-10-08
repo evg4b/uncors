@@ -40,7 +40,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 		}
 	})
 
-	t.Run("should return replacer", func(t *testing.T) {
+	t.Run("should return replacers", func(t *testing.T) {
 		actual, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 			"localhost": "https://github.com",
 		})

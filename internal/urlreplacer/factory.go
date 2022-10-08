@@ -3,8 +3,6 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
-	"github.com/evg4b/uncors/pkg/urlglob"
-	"github.com/evg4b/uncors/pkg/urlx"
 	"net/url"
 )
 
@@ -27,30 +25,11 @@ func NewURLReplacerFactory(urlMappings map[string]string) (*Factory, error) {
 		return nil, ErrMappingNotSpecified
 	}
 
-	var mappings []mapping
+	var mappings []mapping //nolint:prealloc
 	for sourceURL, targetURL := range urlMappings {
-		sourceGlob, err := urlglob.NewURLGlob(sourceURL)
+		target, source, err := replacers(sourceURL, targetURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
-		}
-
-		targetGlob, err := urlglob.NewURLGlob(targetURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
-		}
-
-		if sourceGlob.WildCardCount != targetGlob.WildCardCount {
-			return nil, urlglob.ErrTooManyWildcards
-		}
-
-		parsedSource, err := urlx.Parse(sourceURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
-		}
-
-		target, source, err := replacer(parsedSource.String(), targetURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
+			return nil, fmt.Errorf("failed to configure url mappings: %w", err)
 		}
 
 		mappings = append(mappings, mapping{
@@ -73,7 +52,7 @@ func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {
 	return mapping.target, mapping.source, nil
 }
 
-func replacer(rawSource, rawTarget string) (*Replacer, *Replacer, error) {
+func replacers(rawSource, rawTarget string) (*Replacer, *Replacer, error) {
 	target, err := NewReplacer(rawSource, rawTarget)
 	if err != nil {
 		return nil, nil, err
