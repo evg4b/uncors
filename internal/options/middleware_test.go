@@ -2,13 +2,13 @@ package options_test
 
 import (
 	"context"
-	"github.com/evg4b/uncors/testing/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/options"
 	"github.com/evg4b/uncors/internal/processor"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
