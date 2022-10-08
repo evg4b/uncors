@@ -24,7 +24,7 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 			return nil, ErrInvalidSourceURL
 		}
 
-		if strings.EqualFold(sourceURL.Scheme, httpScheme) {
+		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
 			normalisedSource, err := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
 			if err != nil {
 				return nil, err
@@ -33,7 +33,7 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 			processedMappings[normalisedSource] = target
 		}
 
-		if useHTTPS && strings.EqualFold(sourceURL.Scheme, httpsScheme) {
+		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
 			normalisedSource, err := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
 			if err != nil {
 				return nil, err
@@ -65,4 +65,8 @@ func assignPortAndScheme(parsedURL url.URL, scheme string, port int) (string, er
 func isDefaultPort(scheme string, port int) bool {
 	return strings.EqualFold(httpScheme, scheme) && port == defaultHTTPPort ||
 		strings.EqualFold(httpsScheme, scheme) && port == defaultHTTPSPort
+}
+
+func isApplicableScheme(scheme, expectedScheme string) bool {
+	return strings.EqualFold(scheme, expectedScheme) || len(scheme) == 0
 }
