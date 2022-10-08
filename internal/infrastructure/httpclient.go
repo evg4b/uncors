@@ -16,6 +16,7 @@ var HTTPClient = http.Client{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true, // nolint: gosec
 		},
+		Proxy: http.ProxyFromEnvironment,
 	},
 	Jar:     nil,
 	Timeout: defaultTimeout,
