@@ -68,7 +68,7 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 // nolint: unparam
 func copyCookiesToSource(target *http.Response, replacer *urlreplacer.ReplacerV2, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
-		// cookie.Secure = replacer.IsSourceSecure()
+		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie
 		http.SetCookie(source, cookie)
 	}
@@ -79,7 +79,7 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.ReplacerV2
 // nolint: unparam
 func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.ReplacerV2, target *http.Request) error {
 	for _, cookie := range source.Cookies() {
-		// cookie.Secure = replacer.IsTargetSecure()
+		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie
 		target.AddCookie(cookie)
 	}

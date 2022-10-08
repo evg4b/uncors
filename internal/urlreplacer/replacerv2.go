@@ -98,7 +98,7 @@ func (r *ReplacerV2) IsSourceSecure() bool {
 
 func (r *ReplacerV2) IsTargetSecure() bool {
 	if len(r.target.Scheme) > 0 {
-		return isSecure(r.source.Scheme)
+		return isSecure(r.target.Scheme)
 	}
 
 	return false
