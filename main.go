@@ -54,7 +54,12 @@ func main() {
 
 	flag.Parse()
 
-	mappings, err := urlreplacer.NormaiseMappings(map[string]string{*source: *target}, *httpPort, *httpsPort)
+	mappings, err := urlreplacer.NormaliseMappings(
+		map[string]string{*source: *target},
+		*httpPort,
+		*httpsPort,
+		len(*certFile) > 0 && len(*keyFile) > 0,
+	)
 	if err != nil {
 		pterm.Fatal.Println(err)
 
