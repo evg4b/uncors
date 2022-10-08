@@ -52,7 +52,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 	return regexp, count, nil
 }
 
-func wildCardToReplacePattern(parsedPttern *url.URL) (string, int, error) {
+func wildCardToReplacePattern(parsedPattern *url.URL) (string, int, error) {
 	result := &strings.Builder{}
 	var count int
 
@@ -61,7 +61,7 @@ func wildCardToReplacePattern(parsedPttern *url.URL) (string, int, error) {
 		return "", count, fmt.Errorf("filed to build url glob: %w", err)
 	}
 
-	for i, literal := range strings.Split(parsedPttern.Host, "*") {
+	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
 			fmt.Fprintf(result, "${part%d}", count)
