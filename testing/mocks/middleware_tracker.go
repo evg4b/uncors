@@ -1,11 +1,10 @@
-package testutils
+package mocks
 
 import (
 	"net/http"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/evg4b/uncors/testing/mocks"
 )
 
 type MiddlewaresTracker struct {
@@ -22,10 +21,10 @@ func NewMiddlewaresTracker(t *testing.T) *MiddlewaresTracker {
 	}
 }
 
-func (t *MiddlewaresTracker) MakeMiddleware(name string) *mocks.HandlingMiddlewareMock {
+func (t *MiddlewaresTracker) MakeMiddleware(name string) *HandlingMiddlewareMock {
 	t.t.Helper()
 
-	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
+	return NewHandlingMiddlewareMock(t.t).WrapMock.
 		Set(func(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
 			t.t.Helper()
 
@@ -38,10 +37,10 @@ func (t *MiddlewaresTracker) MakeMiddleware(name string) *mocks.HandlingMiddlewa
 		})
 }
 
-func (t *MiddlewaresTracker) MakeFinalMiddleware(name string) *mocks.HandlingMiddlewareMock {
+func (t *MiddlewaresTracker) MakeFinalMiddleware(name string) *HandlingMiddlewareMock {
 	t.t.Helper()
 
-	return mocks.NewHandlingMiddlewareMock(t.t).WrapMock.
+	return NewHandlingMiddlewareMock(t.t).WrapMock.
 		Set(func(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
 			t.t.Helper()
 

@@ -2,6 +2,7 @@ package options_test
 
 import (
 	"context"
+	"github.com/evg4b/uncors/testing/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,7 +31,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 	}
 	for _, testCase := range testMethods {
 		t.Run(testCase.name, func(t *testing.T) {
-			tracker := testutils.NewMiddlewaresTracker(t)
+			tracker := mocks.NewMiddlewaresTracker(t)
 			proc := processor.NewRequestProcessor(
 				processor.WithMiddleware(middleware),
 				processor.WithMiddleware(tracker.MakeFinalMiddleware("final")),
@@ -46,7 +47,7 @@ func TestOptionsMiddlewareWrap(t *testing.T) {
 	}
 
 	t.Run("shoud handle OPTIONS request", func(t *testing.T) {
-		tracker := testutils.NewMiddlewaresTracker(t)
+		tracker := mocks.NewMiddlewaresTracker(t)
 		proc := processor.NewRequestProcessor(
 			processor.WithMiddleware(middleware),
 			processor.WithMiddleware(tracker.MakeFinalMiddleware("final")),
