@@ -21,24 +21,16 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 	for source, target := range mappings {
 		sourceURL, err := urlx.Parse(source)
 		if err != nil {
-			return nil, ErrInvalidSourceURL
+			return nil, fmt.Errorf("failed to parse source url: %w", err)
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
-			normalisedSource, err := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
-			if err != nil {
-				return nil, err
-			}
-
+			normalisedSource := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
 			processedMappings[normalisedSource] = target
 		}
 
 		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
-			normalisedSource, err := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
-			if err != nil {
-				return nil, err
-			}
-
+			normalisedSource := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
 			processedMappings[normalisedSource] = target
 		}
 	}
@@ -46,20 +38,17 @@ func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useH
 	return processedMappings, nil
 }
 
-func assignPortAndScheme(parsedURL url.URL, scheme string, port int) (string, error) {
-	host, _, err := urlx.SplitHostPort(&parsedURL)
-	if err != nil {
-		return "", fmt.Errorf("failed split host and port: %w", err)
-	}
-
+func assignPortAndScheme(parsedURL url.URL, scheme string, port int) string {
+	host, _, _ := urlx.SplitHostPort(&parsedURL)
 	parsedURL.Scheme = scheme
+
 	if !(isDefaultPort(scheme, port)) {
 		parsedURL.Host = net.JoinHostPort(host, strconv.Itoa(port))
 	} else {
 		parsedURL.Host = host
 	}
 
-	return parsedURL.String(), nil
+	return parsedURL.String()
 }
 
 func isDefaultPort(scheme string, port int) bool {

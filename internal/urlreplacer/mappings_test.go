@@ -81,6 +81,7 @@ func TestNormaliseMappings(t *testing.T) {
 			})
 		}
 	})
+
 	t.Run("default port handling", func(t *testing.T) {
 		httpPort, httpsPort := 80, 443
 		testsCases := []struct {
@@ -150,6 +151,50 @@ func TestNormaliseMappings(t *testing.T) {
 
 				assert.NoError(t, err)
 				assert.EqualValues(t, testCase.expected, actual)
+			})
+		}
+	})
+
+	t.Run("incorrect mappings", func(t *testing.T) {
+		testsCases := []struct {
+			name        string
+			mappings    map[string]string
+			httpPort    int
+			httpsPort   int
+			useHTTPS    bool
+			expectedErr string
+		}{
+			{
+				name: "incorrect source url",
+				mappings: map[string]string{
+					"loca^host": "github.com",
+				},
+				httpPort:    3000,
+				httpsPort:   3001,
+				useHTTPS:    true,
+				expectedErr: "failed to parse source url: parse \"//loca^host\": invalid character \"^\" in host name",
+			},
+			{
+				name: "incorrect port in source url",
+				mappings: map[string]string{
+					"localhost:": "github.com",
+				},
+				httpPort:    -1,
+				httpsPort:   3001,
+				useHTTPS:    true,
+				expectedErr: "failed to parse source url: port \"//localhost:\": empty port",
+			},
+		}
+		for _, testCase := range testsCases {
+			t.Run(testCase.name, func(t *testing.T) {
+				_, err := urlreplacer.NormaliseMappings(
+					testCase.mappings,
+					testCase.httpPort,
+					testCase.httpsPort,
+					testCase.useHTTPS,
+				)
+
+				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
 	})
