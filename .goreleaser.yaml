@@ -7,6 +7,16 @@ builds:
       - linux
       - windows
       - darwin
+    goarch:
+      - '386'
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - '6'
+    ignore:
+      - goos: darwin
+        goarch: '386'
     main: '.'
     ldflags:
       - -s -w -X main.Version={{ .Version }}
@@ -15,7 +25,7 @@ archives:
       darwin: MacOS
       linux: Linux
       windows: Windows
-      386: i386
+      386: x86
       amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
