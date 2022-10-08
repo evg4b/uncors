@@ -18,11 +18,11 @@ import (
 type URLReplacerFactoryMock struct {
 	t minimock.Tester
 
-	funcMakeV2          func(requestURL *url.URL) (rp1 *urlreplacer.ReplacerV2, rp2 *urlreplacer.ReplacerV2, err error)
-	inspectFuncMakeV2   func(requestURL *url.URL)
-	afterMakeV2Counter  uint64
-	beforeMakeV2Counter uint64
-	MakeV2Mock          mURLReplacerFactoryMockMakeV2
+	funcMake          func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error)
+	inspectFuncMake   func(requestURL *url.URL)
+	afterMakeCounter  uint64
+	beforeMakeCounter uint64
+	MakeMock          mURLReplacerFactoryMockMake
 }
 
 // NewURLReplacerFactoryMock returns a mock for proxy.URLReplacerFactory
@@ -32,233 +32,233 @@ func NewURLReplacerFactoryMock(t minimock.Tester) *URLReplacerFactoryMock {
 		controller.RegisterMocker(m)
 	}
 
-	m.MakeV2Mock = mURLReplacerFactoryMockMakeV2{mock: m}
-	m.MakeV2Mock.callArgs = []*URLReplacerFactoryMockMakeV2Params{}
+	m.MakeMock = mURLReplacerFactoryMockMake{mock: m}
+	m.MakeMock.callArgs = []*URLReplacerFactoryMockMakeParams{}
 
 	return m
 }
 
-type mURLReplacerFactoryMockMakeV2 struct {
+type mURLReplacerFactoryMockMake struct {
 	mock               *URLReplacerFactoryMock
-	defaultExpectation *URLReplacerFactoryMockMakeV2Expectation
-	expectations       []*URLReplacerFactoryMockMakeV2Expectation
+	defaultExpectation *URLReplacerFactoryMockMakeExpectation
+	expectations       []*URLReplacerFactoryMockMakeExpectation
 
-	callArgs []*URLReplacerFactoryMockMakeV2Params
+	callArgs []*URLReplacerFactoryMockMakeParams
 	mutex    sync.RWMutex
 }
 
-// URLReplacerFactoryMockMakeV2Expectation specifies expectation struct of the URLReplacerFactory.MakeV2
-type URLReplacerFactoryMockMakeV2Expectation struct {
+// URLReplacerFactoryMockMakeExpectation specifies expectation struct of the URLReplacerFactory.Make
+type URLReplacerFactoryMockMakeExpectation struct {
 	mock    *URLReplacerFactoryMock
-	params  *URLReplacerFactoryMockMakeV2Params
-	results *URLReplacerFactoryMockMakeV2Results
+	params  *URLReplacerFactoryMockMakeParams
+	results *URLReplacerFactoryMockMakeResults
 	Counter uint64
 }
 
-// URLReplacerFactoryMockMakeV2Params contains parameters of the URLReplacerFactory.MakeV2
-type URLReplacerFactoryMockMakeV2Params struct {
+// URLReplacerFactoryMockMakeParams contains parameters of the URLReplacerFactory.Make
+type URLReplacerFactoryMockMakeParams struct {
 	requestURL *url.URL
 }
 
-// URLReplacerFactoryMockMakeV2Results contains results of the URLReplacerFactory.MakeV2
-type URLReplacerFactoryMockMakeV2Results struct {
-	rp1 *urlreplacer.ReplacerV2
-	rp2 *urlreplacer.ReplacerV2
+// URLReplacerFactoryMockMakeResults contains results of the URLReplacerFactory.Make
+type URLReplacerFactoryMockMakeResults struct {
+	rp1 *urlreplacer.Replacer
+	rp2 *urlreplacer.Replacer
 	err error
 }
 
-// Expect sets up expected params for URLReplacerFactory.MakeV2
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) Expect(requestURL *url.URL) *mURLReplacerFactoryMockMakeV2 {
-	if mmMakeV2.mock.funcMakeV2 != nil {
-		mmMakeV2.mock.t.Fatalf("URLReplacerFactoryMock.MakeV2 mock is already set by Set")
+// Expect sets up expected params for URLReplacerFactory.Make
+func (mmMake *mURLReplacerFactoryMockMake) Expect(requestURL *url.URL) *mURLReplacerFactoryMockMake {
+	if mmMake.mock.funcMake != nil {
+		mmMake.mock.t.Fatalf("URLReplacerFactoryMock.Make mock is already set by Set")
 	}
 
-	if mmMakeV2.defaultExpectation == nil {
-		mmMakeV2.defaultExpectation = &URLReplacerFactoryMockMakeV2Expectation{}
+	if mmMake.defaultExpectation == nil {
+		mmMake.defaultExpectation = &URLReplacerFactoryMockMakeExpectation{}
 	}
 
-	mmMakeV2.defaultExpectation.params = &URLReplacerFactoryMockMakeV2Params{requestURL}
-	for _, e := range mmMakeV2.expectations {
-		if minimock.Equal(e.params, mmMakeV2.defaultExpectation.params) {
-			mmMakeV2.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmMakeV2.defaultExpectation.params)
+	mmMake.defaultExpectation.params = &URLReplacerFactoryMockMakeParams{requestURL}
+	for _, e := range mmMake.expectations {
+		if minimock.Equal(e.params, mmMake.defaultExpectation.params) {
+			mmMake.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmMake.defaultExpectation.params)
 		}
 	}
 
-	return mmMakeV2
+	return mmMake
 }
 
-// Inspect accepts an inspector function that has same arguments as the URLReplacerFactory.MakeV2
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) Inspect(f func(requestURL *url.URL)) *mURLReplacerFactoryMockMakeV2 {
-	if mmMakeV2.mock.inspectFuncMakeV2 != nil {
-		mmMakeV2.mock.t.Fatalf("Inspect function is already set for URLReplacerFactoryMock.MakeV2")
+// Inspect accepts an inspector function that has same arguments as the URLReplacerFactory.Make
+func (mmMake *mURLReplacerFactoryMockMake) Inspect(f func(requestURL *url.URL)) *mURLReplacerFactoryMockMake {
+	if mmMake.mock.inspectFuncMake != nil {
+		mmMake.mock.t.Fatalf("Inspect function is already set for URLReplacerFactoryMock.Make")
 	}
 
-	mmMakeV2.mock.inspectFuncMakeV2 = f
+	mmMake.mock.inspectFuncMake = f
 
-	return mmMakeV2
+	return mmMake
 }
 
-// Return sets up results that will be returned by URLReplacerFactory.MakeV2
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) Return(rp1 *urlreplacer.ReplacerV2, rp2 *urlreplacer.ReplacerV2, err error) *URLReplacerFactoryMock {
-	if mmMakeV2.mock.funcMakeV2 != nil {
-		mmMakeV2.mock.t.Fatalf("URLReplacerFactoryMock.MakeV2 mock is already set by Set")
+// Return sets up results that will be returned by URLReplacerFactory.Make
+func (mmMake *mURLReplacerFactoryMockMake) Return(rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
+	if mmMake.mock.funcMake != nil {
+		mmMake.mock.t.Fatalf("URLReplacerFactoryMock.Make mock is already set by Set")
 	}
 
-	if mmMakeV2.defaultExpectation == nil {
-		mmMakeV2.defaultExpectation = &URLReplacerFactoryMockMakeV2Expectation{mock: mmMakeV2.mock}
+	if mmMake.defaultExpectation == nil {
+		mmMake.defaultExpectation = &URLReplacerFactoryMockMakeExpectation{mock: mmMake.mock}
 	}
-	mmMakeV2.defaultExpectation.results = &URLReplacerFactoryMockMakeV2Results{rp1, rp2, err}
-	return mmMakeV2.mock
+	mmMake.defaultExpectation.results = &URLReplacerFactoryMockMakeResults{rp1, rp2, err}
+	return mmMake.mock
 }
 
-//Set uses given function f to mock the URLReplacerFactory.MakeV2 method
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) Set(f func(requestURL *url.URL) (rp1 *urlreplacer.ReplacerV2, rp2 *urlreplacer.ReplacerV2, err error)) *URLReplacerFactoryMock {
-	if mmMakeV2.defaultExpectation != nil {
-		mmMakeV2.mock.t.Fatalf("Default expectation is already set for the URLReplacerFactory.MakeV2 method")
+//Set uses given function f to mock the URLReplacerFactory.Make method
+func (mmMake *mURLReplacerFactoryMockMake) Set(f func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error)) *URLReplacerFactoryMock {
+	if mmMake.defaultExpectation != nil {
+		mmMake.mock.t.Fatalf("Default expectation is already set for the URLReplacerFactory.Make method")
 	}
 
-	if len(mmMakeV2.expectations) > 0 {
-		mmMakeV2.mock.t.Fatalf("Some expectations are already set for the URLReplacerFactory.MakeV2 method")
+	if len(mmMake.expectations) > 0 {
+		mmMake.mock.t.Fatalf("Some expectations are already set for the URLReplacerFactory.Make method")
 	}
 
-	mmMakeV2.mock.funcMakeV2 = f
-	return mmMakeV2.mock
+	mmMake.mock.funcMake = f
+	return mmMake.mock
 }
 
-// When sets expectation for the URLReplacerFactory.MakeV2 which will trigger the result defined by the following
+// When sets expectation for the URLReplacerFactory.Make which will trigger the result defined by the following
 // Then helper
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) When(requestURL *url.URL) *URLReplacerFactoryMockMakeV2Expectation {
-	if mmMakeV2.mock.funcMakeV2 != nil {
-		mmMakeV2.mock.t.Fatalf("URLReplacerFactoryMock.MakeV2 mock is already set by Set")
+func (mmMake *mURLReplacerFactoryMockMake) When(requestURL *url.URL) *URLReplacerFactoryMockMakeExpectation {
+	if mmMake.mock.funcMake != nil {
+		mmMake.mock.t.Fatalf("URLReplacerFactoryMock.Make mock is already set by Set")
 	}
 
-	expectation := &URLReplacerFactoryMockMakeV2Expectation{
-		mock:   mmMakeV2.mock,
-		params: &URLReplacerFactoryMockMakeV2Params{requestURL},
+	expectation := &URLReplacerFactoryMockMakeExpectation{
+		mock:   mmMake.mock,
+		params: &URLReplacerFactoryMockMakeParams{requestURL},
 	}
-	mmMakeV2.expectations = append(mmMakeV2.expectations, expectation)
+	mmMake.expectations = append(mmMake.expectations, expectation)
 	return expectation
 }
 
-// Then sets up URLReplacerFactory.MakeV2 return parameters for the expectation previously defined by the When method
-func (e *URLReplacerFactoryMockMakeV2Expectation) Then(rp1 *urlreplacer.ReplacerV2, rp2 *urlreplacer.ReplacerV2, err error) *URLReplacerFactoryMock {
-	e.results = &URLReplacerFactoryMockMakeV2Results{rp1, rp2, err}
+// Then sets up URLReplacerFactory.Make return parameters for the expectation previously defined by the When method
+func (e *URLReplacerFactoryMockMakeExpectation) Then(rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
+	e.results = &URLReplacerFactoryMockMakeResults{rp1, rp2, err}
 	return e.mock
 }
 
-// MakeV2 implements proxy.URLReplacerFactory
-func (mmMakeV2 *URLReplacerFactoryMock) MakeV2(requestURL *url.URL) (rp1 *urlreplacer.ReplacerV2, rp2 *urlreplacer.ReplacerV2, err error) {
-	mm_atomic.AddUint64(&mmMakeV2.beforeMakeV2Counter, 1)
-	defer mm_atomic.AddUint64(&mmMakeV2.afterMakeV2Counter, 1)
+// Make implements proxy.URLReplacerFactory
+func (mmMake *URLReplacerFactoryMock) Make(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) {
+	mm_atomic.AddUint64(&mmMake.beforeMakeCounter, 1)
+	defer mm_atomic.AddUint64(&mmMake.afterMakeCounter, 1)
 
-	if mmMakeV2.inspectFuncMakeV2 != nil {
-		mmMakeV2.inspectFuncMakeV2(requestURL)
+	if mmMake.inspectFuncMake != nil {
+		mmMake.inspectFuncMake(requestURL)
 	}
 
-	mm_params := &URLReplacerFactoryMockMakeV2Params{requestURL}
+	mm_params := &URLReplacerFactoryMockMakeParams{requestURL}
 
 	// Record call args
-	mmMakeV2.MakeV2Mock.mutex.Lock()
-	mmMakeV2.MakeV2Mock.callArgs = append(mmMakeV2.MakeV2Mock.callArgs, mm_params)
-	mmMakeV2.MakeV2Mock.mutex.Unlock()
+	mmMake.MakeMock.mutex.Lock()
+	mmMake.MakeMock.callArgs = append(mmMake.MakeMock.callArgs, mm_params)
+	mmMake.MakeMock.mutex.Unlock()
 
-	for _, e := range mmMakeV2.MakeV2Mock.expectations {
+	for _, e := range mmMake.MakeMock.expectations {
 		if minimock.Equal(e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
 			return e.results.rp1, e.results.rp2, e.results.err
 		}
 	}
 
-	if mmMakeV2.MakeV2Mock.defaultExpectation != nil {
-		mm_atomic.AddUint64(&mmMakeV2.MakeV2Mock.defaultExpectation.Counter, 1)
-		mm_want := mmMakeV2.MakeV2Mock.defaultExpectation.params
-		mm_got := URLReplacerFactoryMockMakeV2Params{requestURL}
+	if mmMake.MakeMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmMake.MakeMock.defaultExpectation.Counter, 1)
+		mm_want := mmMake.MakeMock.defaultExpectation.params
+		mm_got := URLReplacerFactoryMockMakeParams{requestURL}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
-			mmMakeV2.t.Errorf("URLReplacerFactoryMock.MakeV2 got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+			mmMake.t.Errorf("URLReplacerFactoryMock.Make got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		mm_results := mmMakeV2.MakeV2Mock.defaultExpectation.results
+		mm_results := mmMake.MakeMock.defaultExpectation.results
 		if mm_results == nil {
-			mmMakeV2.t.Fatal("No results are set for the URLReplacerFactoryMock.MakeV2")
+			mmMake.t.Fatal("No results are set for the URLReplacerFactoryMock.Make")
 		}
 		return (*mm_results).rp1, (*mm_results).rp2, (*mm_results).err
 	}
-	if mmMakeV2.funcMakeV2 != nil {
-		return mmMakeV2.funcMakeV2(requestURL)
+	if mmMake.funcMake != nil {
+		return mmMake.funcMake(requestURL)
 	}
-	mmMakeV2.t.Fatalf("Unexpected call to URLReplacerFactoryMock.MakeV2. %v", requestURL)
+	mmMake.t.Fatalf("Unexpected call to URLReplacerFactoryMock.Make. %v", requestURL)
 	return
 }
 
-// MakeV2AfterCounter returns a count of finished URLReplacerFactoryMock.MakeV2 invocations
-func (mmMakeV2 *URLReplacerFactoryMock) MakeV2AfterCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmMakeV2.afterMakeV2Counter)
+// MakeAfterCounter returns a count of finished URLReplacerFactoryMock.Make invocations
+func (mmMake *URLReplacerFactoryMock) MakeAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmMake.afterMakeCounter)
 }
 
-// MakeV2BeforeCounter returns a count of URLReplacerFactoryMock.MakeV2 invocations
-func (mmMakeV2 *URLReplacerFactoryMock) MakeV2BeforeCounter() uint64 {
-	return mm_atomic.LoadUint64(&mmMakeV2.beforeMakeV2Counter)
+// MakeBeforeCounter returns a count of URLReplacerFactoryMock.Make invocations
+func (mmMake *URLReplacerFactoryMock) MakeBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmMake.beforeMakeCounter)
 }
 
-// Calls returns a list of arguments used in each call to URLReplacerFactoryMock.MakeV2.
+// Calls returns a list of arguments used in each call to URLReplacerFactoryMock.Make.
 // The list is in the same order as the calls were made (i.e. recent calls have a higher index)
-func (mmMakeV2 *mURLReplacerFactoryMockMakeV2) Calls() []*URLReplacerFactoryMockMakeV2Params {
-	mmMakeV2.mutex.RLock()
+func (mmMake *mURLReplacerFactoryMockMake) Calls() []*URLReplacerFactoryMockMakeParams {
+	mmMake.mutex.RLock()
 
-	argCopy := make([]*URLReplacerFactoryMockMakeV2Params, len(mmMakeV2.callArgs))
-	copy(argCopy, mmMakeV2.callArgs)
+	argCopy := make([]*URLReplacerFactoryMockMakeParams, len(mmMake.callArgs))
+	copy(argCopy, mmMake.callArgs)
 
-	mmMakeV2.mutex.RUnlock()
+	mmMake.mutex.RUnlock()
 
 	return argCopy
 }
 
-// MinimockMakeV2Done returns true if the count of the MakeV2 invocations corresponds
+// MinimockMakeDone returns true if the count of the Make invocations corresponds
 // the number of defined expectations
-func (m *URLReplacerFactoryMock) MinimockMakeV2Done() bool {
-	for _, e := range m.MakeV2Mock.expectations {
+func (m *URLReplacerFactoryMock) MinimockMakeDone() bool {
+	for _, e := range m.MakeMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
 			return false
 		}
 	}
 
 	// if default expectation was set then invocations count should be greater than zero
-	if m.MakeV2Mock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterMakeV2Counter) < 1 {
+	if m.MakeMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterMakeCounter) < 1 {
 		return false
 	}
 	// if func was set then invocations count should be greater than zero
-	if m.funcMakeV2 != nil && mm_atomic.LoadUint64(&m.afterMakeV2Counter) < 1 {
+	if m.funcMake != nil && mm_atomic.LoadUint64(&m.afterMakeCounter) < 1 {
 		return false
 	}
 	return true
 }
 
-// MinimockMakeV2Inspect logs each unmet expectation
-func (m *URLReplacerFactoryMock) MinimockMakeV2Inspect() {
-	for _, e := range m.MakeV2Mock.expectations {
+// MinimockMakeInspect logs each unmet expectation
+func (m *URLReplacerFactoryMock) MinimockMakeInspect() {
+	for _, e := range m.MakeMock.expectations {
 		if mm_atomic.LoadUint64(&e.Counter) < 1 {
-			m.t.Errorf("Expected call to URLReplacerFactoryMock.MakeV2 with params: %#v", *e.params)
+			m.t.Errorf("Expected call to URLReplacerFactoryMock.Make with params: %#v", *e.params)
 		}
 	}
 
 	// if default expectation was set then invocations count should be greater than zero
-	if m.MakeV2Mock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterMakeV2Counter) < 1 {
-		if m.MakeV2Mock.defaultExpectation.params == nil {
-			m.t.Error("Expected call to URLReplacerFactoryMock.MakeV2")
+	if m.MakeMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterMakeCounter) < 1 {
+		if m.MakeMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to URLReplacerFactoryMock.Make")
 		} else {
-			m.t.Errorf("Expected call to URLReplacerFactoryMock.MakeV2 with params: %#v", *m.MakeV2Mock.defaultExpectation.params)
+			m.t.Errorf("Expected call to URLReplacerFactoryMock.Make with params: %#v", *m.MakeMock.defaultExpectation.params)
 		}
 	}
 	// if func was set then invocations count should be greater than zero
-	if m.funcMakeV2 != nil && mm_atomic.LoadUint64(&m.afterMakeV2Counter) < 1 {
-		m.t.Error("Expected call to URLReplacerFactoryMock.MakeV2")
+	if m.funcMake != nil && mm_atomic.LoadUint64(&m.afterMakeCounter) < 1 {
+		m.t.Error("Expected call to URLReplacerFactoryMock.Make")
 	}
 }
 
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *URLReplacerFactoryMock) MinimockFinish() {
 	if !m.minimockDone() {
-		m.MinimockMakeV2Inspect()
+		m.MinimockMakeInspect()
 		m.t.FailNow()
 	}
 }
@@ -282,5 +282,5 @@ func (m *URLReplacerFactoryMock) MinimockWait(timeout mm_time.Duration) {
 func (m *URLReplacerFactoryMock) minimockDone() bool {
 	done := true
 	return done &&
-		m.MinimockMakeV2Done()
+		m.MinimockMakeDone()
 }

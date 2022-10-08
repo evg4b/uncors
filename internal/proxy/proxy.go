@@ -37,7 +37,7 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 	}
 
 	return func(resp http.ResponseWriter, req *http.Request) error {
-		targetR, sourceR, err := pm.replacerFactory.MakeV2(req.URL)
+		targetR, sourceR, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
 			return fmt.Errorf("failed to transform general url: %w", err)
 		}
@@ -66,7 +66,7 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 }
 
 // nolint: unparam
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.ReplacerV2, source http.ResponseWriter) error {
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie
@@ -77,7 +77,7 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.ReplacerV2
 }
 
 // nolint: unparam
-func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.ReplacerV2, target *http.Request) error {
+func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) error {
 	for _, cookie := range source.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie

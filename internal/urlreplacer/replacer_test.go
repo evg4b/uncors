@@ -17,13 +17,13 @@ type replacerTestCase struct {
 func TestReplacerV2Replace(t *testing.T) {
 	t.Run("url is not empty", func(t *testing.T) {
 		t.Run("source", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacerV2("", "http://github.com")
+			_, err := urlreplacer.NewReplacer("", "http://github.com")
 
 			assert.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
 		})
 
 		t.Run("target", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacerV2("localhost:3000", "")
+			_, err := urlreplacer.NewReplacer("localhost:3000", "")
 
 			assert.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
 		})
@@ -32,7 +32,7 @@ func TestReplacerV2Replace(t *testing.T) {
 	t.Run("Replace", func(t *testing.T) {
 		t.Run("where schemes given and", func(t *testing.T) {
 			t.Run("schemes are equal", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacerV2("http://*.localhost.com", "http://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "http://api.*.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -68,7 +68,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("mapped from http to https", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacerV2("http://*.localhost.com", "https://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "https://api.*.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -104,7 +104,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("mapped from https to http", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacerV2("https://*.localhost.com", "http://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("https://*.localhost.com", "http://api.*.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -180,7 +180,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			}
 
 			t.Run("where schemes are not given", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacerV2("*.localhost.com", "api.*.com")
+				replacer, err := urlreplacer.NewReplacer("*.localhost.com", "api.*.com")
 				testutils.CheckNoError(t, err)
 
 				for _, testsCase := range testsCases {
@@ -194,7 +194,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("where schemes setted as //", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacerV2("//*.localhost.com", "//api.*.com")
+				replacer, err := urlreplacer.NewReplacer("//*.localhost.com", "//api.*.com")
 				testutils.CheckNoError(t, err)
 				for _, testsCase := range testsCases {
 					t.Run(testsCase.name, func(t *testing.T) {

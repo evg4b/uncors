@@ -10,7 +10,7 @@ import (
 func (pm *ProxyMiddleware) makeUncorsResponse(
 	originalResp *http.Response,
 	resp http.ResponseWriter,
-	replacer *urlreplacer.ReplacerV2,
+	replacer *urlreplacer.Replacer,
 ) error {
 	if err := copyCookiesToSource(originalResp, replacer, resp); err != nil {
 		return fmt.Errorf("failed to copy cookies in request: %w", err)

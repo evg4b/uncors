@@ -14,7 +14,7 @@ import (
 
 func TestServerListenAndServe(t *testing.T) {
 	t.Run("should return no errors where http server closed", func(t *testing.T) {
-		httpMock := mocks.NewListnerMock(t).
+		httpMock := mocks.NewListenerMock(t).
 			ListenAndServeMock.Expect().Return(http.ErrServerClosed).
 			ShutdownMock.Expect(context.Background()).Return(nil)
 
@@ -28,11 +28,11 @@ func TestServerListenAndServe(t *testing.T) {
 	})
 
 	t.Run("should return no errors where https server closed", func(t *testing.T) {
-		httpMock := mocks.NewListnerMock(t).
+		httpMock := mocks.NewListenerMock(t).
 			ListenAndServeMock.Return(nil).
 			ShutdownMock.Return(nil)
 
-		httpsMock := mocks.NewListnerMock(t).
+		httpsMock := mocks.NewListenerMock(t).
 			ListenAndServeTLSMock.Expect("cert.pem", "key.pem").Return(http.ErrServerClosed).
 			ShutdownMock.Return(nil)
 
@@ -51,11 +51,11 @@ func TestServerListenAndServe(t *testing.T) {
 	t.Run("should return error where http shutdown return error", func(t *testing.T) {
 		testError := errors.New("test error")
 
-		httpMock := mocks.NewListnerMock(t).
+		httpMock := mocks.NewListenerMock(t).
 			ListenAndServeMock.Return(nil).
 			ShutdownMock.Return(testError)
 
-		httpsMock := mocks.NewListnerMock(t).
+		httpsMock := mocks.NewListenerMock(t).
 			ListenAndServeTLSMock.Expect("cert.pem", "key.pem").Return(http.ErrServerClosed).
 			ShutdownMock.Return(testError)
 
@@ -74,11 +74,11 @@ func TestServerListenAndServe(t *testing.T) {
 	t.Run("should return run https server where cert and key are not configured", func(t *testing.T) {
 		instance := server.NewServer(
 			server.WithHTTPListener(
-				mocks.NewListnerMock(t).
+				mocks.NewListenerMock(t).
 					ListenAndServeMock.Return(http.ErrServerClosed).
 					ShutdownMock.Return(nil),
 			),
-			server.WithHTTPSListener(mocks.NewListnerMock(t)),
+			server.WithHTTPSListener(mocks.NewListenerMock(t)),
 		)
 
 		err := instance.ListenAndServe(context.Background())

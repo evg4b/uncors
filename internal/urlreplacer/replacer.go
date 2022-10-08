@@ -19,7 +19,7 @@ var ErrURLNotMached = errors.New("is not matched")
 
 type hook = func(string) string
 
-type ReplacerV2 struct {
+type Replacer struct {
 	source  *url.URL
 	target  *url.URL
 	regexp  *regexp.Regexp
@@ -27,7 +27,7 @@ type ReplacerV2 struct {
 	hooks   map[string]hook
 }
 
-func NewReplacerV2(source, target string) (*ReplacerV2, error) {
+func NewReplacer(source, target string) (*Replacer, error) {
 	if len(source) < 1 {
 		return nil, ErrEmptySourceURL
 	}
@@ -37,7 +37,7 @@ func NewReplacerV2(source, target string) (*ReplacerV2, error) {
 	}
 
 	var err error
-	replacer := ReplacerV2{
+	replacer := Replacer{
 		hooks: map[string]func(string) string{},
 	}
 
@@ -64,7 +64,7 @@ func NewReplacerV2(source, target string) (*ReplacerV2, error) {
 	return &replacer, nil
 }
 
-func (r *ReplacerV2) Replace(source string) (string, error) {
+func (r *Replacer) Replace(source string) (string, error) {
 	matches := r.regexp.FindStringSubmatch(source)
 	if len(matches) < 1 {
 		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMached)
@@ -88,7 +88,7 @@ func (r *ReplacerV2) Replace(source string) (string, error) {
 	return replaced, nil
 }
 
-func (r *ReplacerV2) IsSourceSecure() bool {
+func (r *Replacer) IsSourceSecure() bool {
 	if len(r.source.Scheme) > 0 {
 		return isSecure(r.source.Scheme)
 	}
@@ -96,7 +96,7 @@ func (r *ReplacerV2) IsSourceSecure() bool {
 	return false
 }
 
-func (r *ReplacerV2) IsTargetSecure() bool {
+func (r *Replacer) IsTargetSecure() bool {
 	if len(r.target.Scheme) > 0 {
 		return isSecure(r.target.Scheme)
 	}
@@ -104,7 +104,7 @@ func (r *ReplacerV2) IsTargetSecure() bool {
 	return false
 }
 
-func (r *ReplacerV2) IsMatched(source string) bool {
+func (r *Replacer) IsMatched(source string) bool {
 	return r.regexp.MatchString(source)
 }
 

@@ -9,7 +9,7 @@ import (
 
 func (pm *ProxyMiddleware) makeOriginalRequest(
 	req *http.Request,
-	replacer *urlreplacer.ReplacerV2,
+	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {
 	url, _ := replacer.Replace(req.URL.String())
 	originalReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)

@@ -8,35 +8,35 @@ import (
 	"net/url"
 )
 
-type urlMappingV2 struct {
+type mapping struct {
 	rawSource string
-	source    *ReplacerV2
+	source    *Replacer
 	rawTarget string
-	target    *ReplacerV2
+	target    *Replacer
 }
 
-type URLReplacerFactory struct { // nolint: revive
-	mappingsV2 []urlMappingV2
+type Factory struct { // nolint: revive
+	mappings []mapping
 }
 
 var ErrMappingNotFound = errors.New("mapping not found")
 var ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 
-func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, error) {
-	if len(mappings) < 1 {
+func NewURLReplacerFactory(urlMappings map[string]string) (*Factory, error) {
+	if len(urlMappings) < 1 {
 		return nil, ErrMappingNotSpecified
 	}
 
-	urlMappingsV2 := []urlMappingV2{}
-	for sourceURL, targetURL := range mappings {
+	var mappings []mapping
+	for sourceURL, targetURL := range urlMappings {
 		sourceGlob, err := urlglob.NewURLGlob(sourceURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
 		}
 
 		targetGlob, err := urlglob.NewURLGlob(targetURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
 		}
 
 		if sourceGlob.WildCardCount != targetGlob.WildCardCount {
@@ -45,15 +45,15 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 
 		parsedSource, err := urlx.Parse(sourceURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
 		}
 
-		target, source, err := makeV2(parsedSource.String(), targetURL)
+		target, source, err := replacer(parsedSource.String(), targetURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+			return nil, fmt.Errorf("failed to configure urlMappings: %w", err)
 		}
 
-		urlMappingsV2 = append(urlMappingsV2, urlMappingV2{
+		mappings = append(mappings, mapping{
 			rawSource: sourceURL,
 			source:    source,
 			rawTarget: targetURL,
@@ -61,11 +61,11 @@ func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, err
 		})
 	}
 
-	return &URLReplacerFactory{urlMappingsV2}, nil
+	return &Factory{mappings}, nil
 }
 
-func (f *URLReplacerFactory) MakeV2(requestURL *url.URL) (*ReplacerV2, *ReplacerV2, error) {
-	mapping, err := f.findMappingV2(requestURL.String())
+func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {
+	mapping, err := f.findMapping(requestURL.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,13 +73,13 @@ func (f *URLReplacerFactory) MakeV2(requestURL *url.URL) (*ReplacerV2, *Replacer
 	return mapping.target, mapping.source, nil
 }
 
-func makeV2(rawSource, rawTarget string) (*ReplacerV2, *ReplacerV2, error) {
-	target, err := NewReplacerV2(rawSource, rawTarget)
+func replacer(rawSource, rawTarget string) (*Replacer, *Replacer, error) {
+	target, err := NewReplacer(rawSource, rawTarget)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	source, err := NewReplacerV2(rawTarget, rawSource)
+	source, err := NewReplacer(rawTarget, rawSource)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -87,12 +87,12 @@ func makeV2(rawSource, rawTarget string) (*ReplacerV2, *ReplacerV2, error) {
 	return target, source, nil
 }
 
-func (f *URLReplacerFactory) findMappingV2(requestURL string) (urlMappingV2, error) {
-	for _, imapping := range f.mappingsV2 {
-		if imapping.target.IsMatched(requestURL) {
-			return imapping, nil
+func (f *Factory) findMapping(requestURL string) (mapping, error) {
+	for _, mapping := range f.mappings {
+		if mapping.target.IsMatched(requestURL) {
+			return mapping, nil
 		}
 	}
 
-	return urlMappingV2{}, ErrMappingNotFound
+	return mapping{}, ErrMappingNotFound
 }
