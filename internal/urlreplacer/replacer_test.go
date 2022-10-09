@@ -208,3 +208,119 @@ func TestReplacerV2Replace(t *testing.T) {
 		})
 	})
 }
+
+var isSecureTestCases = []struct {
+	name     string
+	url      string
+	expected bool
+}{
+	{
+		name:     "url with http scheme",
+		url:      "http://localhost",
+		expected: false,
+	},
+	{
+		name:     "url with multiple scheme",
+		url:      "//localhost",
+		expected: false,
+	},
+	{
+		name:     "url without scheme",
+		url:      "localhost",
+		expected: false,
+	},
+	{
+		name:     "url with https scheme",
+		url:      "https://localhost",
+		expected: true,
+	},
+}
+
+func TestReplacerIsSourceSecure(t *testing.T) {
+	var makeReplacer = func(source string) *urlreplacer.Replacer {
+		t.Helper()
+		replacer, err := urlreplacer.NewReplacer(source, "https://github.com")
+		if err != nil {
+			t.Error(err)
+		}
+
+		return replacer
+	}
+
+	for _, testCase := range isSecureTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := makeReplacer(testCase.url).IsSourceSecure()
+
+			assert.Equal(t, testCase.expected, actual)
+		})
+	}
+}
+
+func TestReplacerIsTargetSecure(t *testing.T) {
+	var makeReplacer = func(target string) *urlreplacer.Replacer {
+		t.Helper()
+		replacer, err := urlreplacer.NewReplacer("https://github.com", target)
+		if err != nil {
+			t.Error(err)
+		}
+
+		return replacer
+	}
+
+	for _, testCase := range isSecureTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := makeReplacer(testCase.url).IsTargetSecure()
+
+			assert.Equal(t, testCase.expected, actual)
+		})
+	}
+}
+
+func TestReplacer_IsMatched(t *testing.T) {
+	replacer, err := urlreplacer.NewReplacer("*.my.cc:3000", "https://*.master-staging.com")
+	testutils.CheckNoError(t, err)
+
+	testsCases := []struct {
+		name     string
+		url      string
+		expected bool
+	}{
+		{
+			name:     "domain without scheme",
+			url:      "premium.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with different port",
+			url:      "premium.my.cc:2900",
+			expected: false,
+		},
+		{
+			name:     "matched domain without port",
+			url:      "standard.my.cc",
+			expected: false,
+		},
+		{
+			name:     "matched domain with same scheme and correct port",
+			url:      "//test.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with https scheme",
+			url:      "https//test.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with http scheme",
+			url:      "http//test.my.cc:3000",
+			expected: true,
+		},
+	}
+	for _, testsCase := range testsCases {
+		t.Run(testsCase.name, func(t *testing.T) {
+			actual := replacer.IsMatched(testsCase.url)
+
+			assert.Equal(t, testsCase.expected, actual)
+		})
+	}
+}

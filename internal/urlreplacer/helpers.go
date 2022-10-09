@@ -27,8 +27,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 			fmt.Fprintf(&result, "(?P<part%d>.+)", count)
 		}
 
-		_, err := result.WriteString(regexp.QuoteMeta(literal))
-		if err != nil {
+		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
 			return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
 		}
 	}
@@ -44,27 +43,28 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	result.WriteString(`(?P<path>[\/?].*)?$`)
 
-	regexp, err := regexp.Compile(result.String())
+	compiledRegexp, err := regexp.Compile(result.String())
 	if err != nil {
 		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
 	}
 
-	return regexp, count, nil
+	return compiledRegexp, count, nil
 }
 
 func wildCardToReplacePattern(parsedPattern *url.URL) (string, int, error) {
-	result := &strings.Builder{}
+	var result = &strings.Builder{}
 	var count int
 
-	_, err := fmt.Fprint(result, "${scheme}")
-	if err != nil {
+	if _, err := fmt.Fprint(result, "${scheme}"); err != nil {
 		return "", count, fmt.Errorf("filed to build url glob: %w", err)
 	}
 
 	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
-			fmt.Fprintf(result, "${part%d}", count)
+			if _, err := fmt.Fprintf(result, "${part%d}", count); err != nil {
+				return "", count, fmt.Errorf("filed to build url glob: %w", err)
+			}
 		}
 
 		_, err := fmt.Fprint(result, literal)
@@ -73,8 +73,7 @@ func wildCardToReplacePattern(parsedPattern *url.URL) (string, int, error) {
 		}
 	}
 
-	_, err = fmt.Fprint(result, "${path}")
-	if err != nil {
+	if _, err := fmt.Fprint(result, "${path}"); err != nil {
 		return "", count, fmt.Errorf("filed to build url glob: %w", err)
 	}
 
