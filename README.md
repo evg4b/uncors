@@ -93,6 +93,7 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 * `--https-port` - Local HTTPS listened port. 
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
+* `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
 
 
 ## How it works 

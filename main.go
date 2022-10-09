@@ -34,6 +34,7 @@ func main() {
 	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
 	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
 	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
+	proxyURL := flag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
 
 	flag.Usage = func() {
 		printLogo()
@@ -73,10 +74,17 @@ func main() {
 		return
 	}
 
+	httpClient, err := infrastructure.MakeHTTPClient(*proxyURL)
+	if err != nil {
+		pterm.Fatal.Println(err)
+
+		return
+	}
+
 	optionsMiddleware := options.NewOptionsMiddleware()
 	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
-		proxy.WithHTTPClient(&infrastructure.HTTPClient),
+		proxy.WithHTTPClient(httpClient),
 	)
 
 	requestProcessor := processor.NewRequestProcessor(
