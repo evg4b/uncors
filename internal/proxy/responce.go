@@ -18,7 +18,7 @@ func (pm *ProxyMiddleware) makeUncorsResponse(
 
 	header := resp.Header()
 	err := copyHeaders(originalResp.Header, header, modificationsMap{
-		"location": replacer.StringToSource,
+		"location": replacer.Replace,
 	})
 
 	if err != nil {

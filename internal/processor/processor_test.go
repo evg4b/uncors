@@ -16,7 +16,7 @@ import (
 
 func TestRequestProcessorHandleRequest(t *testing.T) {
 	t.Run("should have correct calling order", func(t *testing.T) {
-		tracker := testutils.NewMiddlewaresTracker(t)
+		tracker := mocks.NewMiddlewaresTracker(t)
 
 		requestProcessor := processor.NewRequestProcessor(
 			processor.WithMiddleware(tracker.MakeMiddleware("middleware1")),
@@ -38,7 +38,7 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 	})
 
 	t.Run("should skip middlewares where next not called", func(t *testing.T) {
-		tracker := testutils.NewMiddlewaresTracker(t)
+		tracker := mocks.NewMiddlewaresTracker(t)
 
 		requestProcessor := processor.NewRequestProcessor(
 			processor.WithMiddleware(tracker.MakeMiddleware("middleware1")),

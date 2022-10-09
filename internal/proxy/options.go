@@ -8,7 +8,7 @@ import (
 )
 
 type URLReplacerFactory interface {
-	Make(requestURL *url.URL) (*urlreplacer.Replacer, error)
+	Make(requestURL *url.URL) (*urlreplacer.Replacer, *urlreplacer.Replacer, error)
 }
 
 type MiddlewareOption = func(*ProxyMiddleware)

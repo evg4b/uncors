@@ -1,461 +1,326 @@
-// nolint: lll, dupl
 package urlreplacer_test
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReplacerToSourceMapping(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://premium.localhost.com": "https://premium.api.com",
-		"https://base.localhost.com":   "http://base.api.com",
-		"demo.localhost.com":           "https://demo.api.com",
-		"custom.domain":                "http://customdomain.com",
-		"custompost.localhost.com":     "https://customdomain.com:8080",
+type replacerTestCase struct {
+	name     string
+	source   string
+	expected string
+}
+
+func TestReplacerV2Replace(t *testing.T) {
+	t.Run("url is not empty", func(t *testing.T) {
+		t.Run("source", func(t *testing.T) {
+			_, err := urlreplacer.NewReplacer("", "http://github.com")
+
+			assert.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
+		})
+
+		t.Run("target", func(t *testing.T) {
+			_, err := urlreplacer.NewReplacer("localhost:3000", "")
+
+			assert.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
+		})
 	})
-	testutils.CheckNoError(t, err)
 
-	tests := []struct {
-		name       string
-		requestURL string
-		url        string
-		expected   string
-	}{
-		{
-			name:       "from https to http",
-			requestURL: "http://premium.localhost.com",
-			url:        "https://premium.api.com/api/info",
-			expected:   "http://premium.localhost.com/api/info",
-		},
-		{
-			name:       "from http to https",
-			requestURL: "https://base.localhost.com",
-			url:        "http://base.api.com/api/info",
-			expected:   "https://base.localhost.com/api/info",
-		},
-		{
-			name:       "from http to https with custom port",
-			requestURL: "https://base.localhost.com:4200",
-			url:        "http://base.api.com/api/info",
-			expected:   "https://base.localhost.com:4200/api/info",
-		},
-		{
-			name:       "from https to http with custom port",
-			requestURL: "http://premium.localhost.com:3000",
-			url:        "https://premium.api.com/api/info",
-			expected:   "http://premium.localhost.com:3000/api/info",
-		},
-		{
-			name:       "from https to http with custom port",
-			requestURL: "http://custompost.localhost.com:3000",
-			url:        "https://customdomain.com:8080/api/info",
-			expected:   "http://custompost.localhost.com:3000/api/info",
-		},
-	}
-
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			parsedURL, err := urlx.Parse(testCase.requestURL)
-			testutils.CheckNoError(t, err)
-
-			replacer, err := factory.Make(parsedURL)
-			testutils.CheckNoError(t, err)
-
-			t.Run("ToSource", func(t *testing.T) {
-				actual, err := replacer.StringToSource(testCase.url)
-
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expected, actual)
-			})
-
-			t.Run("ToSourceURL", func(t *testing.T) {
-				parsedTargetURL, err := urlx.Parse(testCase.url)
+	t.Run("Replace", func(t *testing.T) {
+		t.Run("where schemes given and", func(t *testing.T) {
+			t.Run("schemes are equal", func(t *testing.T) {
+				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "http://api.*.com")
 				testutils.CheckNoError(t, err)
 
-				actual, err := replacer.URLToSource(parsedTargetURL)
+				testsCases := []replacerTestCase{
+					{
+						name:     "url with sheme",
+						source:   "http://test.localhost.com",
+						expected: "http://api.test.com",
+					},
+					{
+						name:     "url with path",
+						source:   "http://test.localhost.com/api/config",
+						expected: "http://api.test.com/api/config",
+					},
+					{
+						name:     "url with path and query params",
+						source:   "http://test.localhost.com/api/config?data=lorem",
+						expected: "http://api.test.com/api/config?data=lorem",
+					},
+					{
+						name:     "host only",
+						source:   "test.localhost.com",
+						expected: "api.test.com",
+					},
+				}
+				for _, testsCase := range testsCases {
+					t.Run(testsCase.name, func(t *testing.T) {
+						actual, err := replacer.Replace(testsCase.source)
 
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expected, actual.String())
+						assert.NoError(t, err)
+						assert.Equal(t, testsCase.expected, actual)
+					})
+				}
+			})
+
+			t.Run("mapped from http to https", func(t *testing.T) {
+				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "https://api.*.com")
+				testutils.CheckNoError(t, err)
+
+				testsCases := []replacerTestCase{
+					{
+						name:     "url with sheme",
+						source:   "http://test.localhost.com",
+						expected: "https://api.test.com",
+					},
+					{
+						name:     "url with path",
+						source:   "http://test.localhost.com/api/config",
+						expected: "https://api.test.com/api/config",
+					},
+					{
+						name:     "url with path and query params",
+						source:   "http://test.localhost.com/api/config?data=lorem",
+						expected: "https://api.test.com/api/config?data=lorem",
+					},
+					{
+						name:     "host only",
+						source:   "test.localhost.com",
+						expected: "api.test.com",
+					},
+				}
+				for _, testsCase := range testsCases {
+					t.Run(testsCase.name, func(t *testing.T) {
+						actual, err := replacer.Replace(testsCase.source)
+
+						assert.NoError(t, err)
+						assert.Equal(t, testsCase.expected, actual)
+					})
+				}
+			})
+
+			t.Run("mapped from https to http", func(t *testing.T) {
+				replacer, err := urlreplacer.NewReplacer("https://*.localhost.com", "http://api.*.com")
+				testutils.CheckNoError(t, err)
+
+				testsCases := []replacerTestCase{
+					{
+						name:     "url with sheme",
+						source:   "https://test.localhost.com",
+						expected: "http://api.test.com",
+					},
+					{
+						name:     "url with path",
+						source:   "https://test.localhost.com/api/config",
+						expected: "http://api.test.com/api/config",
+					},
+					{
+						name:     "url with path and query params",
+						source:   "https://test.localhost.com/api/config?data=lorem",
+						expected: "http://api.test.com/api/config?data=lorem",
+					},
+					{
+						name:     "host only",
+						source:   "test.localhost.com",
+						expected: "api.test.com",
+					},
+				}
+				for _, testsCase := range testsCases {
+					t.Run(testsCase.name, func(t *testing.T) {
+						actual, err := replacer.Replace(testsCase.source)
+
+						assert.NoError(t, err)
+						assert.Equal(t, testsCase.expected, actual)
+					})
+				}
 			})
 		})
-	}
-}
 
-func TestReplacerToSourceMappingError(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://premium.localhost.com": "https://premium.api.com",
-		"https://base.localhost.com":   "http://base.api.com",
-		"demo.localhost.com":           "https://demo.api.com",
-		"custom.domain":                "http://customdomain.com",
-		"custompost.localhost.com":     "https://customdomain.com:8080",
-	})
-	testutils.CheckNoError(t, err)
+		t.Run("where schemes are not given", func(t *testing.T) {
+			testsCases := []replacerTestCase{
+				{
+					name:     "http url",
+					source:   "http://test.localhost.com",
+					expected: "http://api.test.com",
+				},
+				{
+					name:     "https url",
+					source:   "https://test.localhost.com",
+					expected: "https://api.test.com",
+				},
+				{
+					name:     "http url with path",
+					source:   "http://test.localhost.com/api/config",
+					expected: "http://api.test.com/api/config",
+				},
+				{
+					name:     "https url with path",
+					source:   "https://test.localhost.com/api/config",
+					expected: "https://api.test.com/api/config",
+				},
+				{
+					name:     "http url with path and query params",
+					source:   "http://test.localhost.com/api/config?data=lorem",
+					expected: "http://api.test.com/api/config?data=lorem",
+				},
+				{
+					name:     "https url with path and query params",
+					source:   "https://test.localhost.com/api/config?data=lorem",
+					expected: "https://api.test.com/api/config?data=lorem",
+				},
+				{
+					name:     "host only",
+					source:   "test.localhost.com",
+					expected: "api.test.com",
+				},
+			}
 
-	t.Run("ToSource", func(t *testing.T) {
-		tests := []struct {
-			name          string
-			requestURL    string
-			url           string
-			expectedError string
-		}{
-			{
-				name:          "scheme in mapping and in url are not equal",
-				requestURL:    "http://demo.localhost.com",
-				url:           "http://demo.api.com",
-				expectedError: "filed transform 'http://demo.api.com' to source url:  url scheme and mapping scheme is not equal",
-			},
-			{
-				name:          "url is invalid",
-				requestURL:    "http://demo.localhost.com",
-				url:           "http://demo:.:a:pi.com",
-				expectedError: "filed transform 'http://demo:.:a:pi.com' to source url:  filed parse url for replacing: parse \"http://demo:.:a:pi.com\": invalid port \":pi.com\" after host",
-			},
-		}
-
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := urlx.Parse(testCase.requestURL)
+			t.Run("where schemes are not given", func(t *testing.T) {
+				replacer, err := urlreplacer.NewReplacer("*.localhost.com", "api.*.com")
 				testutils.CheckNoError(t, err)
 
-				replacer, err := factory.Make(parsedURL)
-				testutils.CheckNoError(t, err)
+				for _, testsCase := range testsCases {
+					t.Run(testsCase.name, func(t *testing.T) {
+						actual, err := replacer.Replace(testsCase.source)
 
-				actual, err := replacer.StringToSource(testCase.url)
-
-				assert.Empty(t, actual)
-				assert.EqualError(t, err, testCase.expectedError)
+						assert.NoError(t, err)
+						assert.Equal(t, testsCase.expected, actual)
+					})
+				}
 			})
-		}
-	})
 
-	t.Run("URLToSource", func(t *testing.T) {
-		tests := []struct {
-			name          string
-			requestURL    string
-			url           string
-			expectedError string
-		}{
-			{
-				name:          "scheme in mapping and in url are not equal",
-				requestURL:    "http://demo.localhost.com",
-				url:           "http://demo.api.com",
-				expectedError: "filed transform 'http://demo.localhost.com' to source url:  url scheme and mapping scheme is not equal",
-			},
-		}
-
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := urlx.Parse(testCase.requestURL)
+			t.Run("where schemes setted as //", func(t *testing.T) {
+				replacer, err := urlreplacer.NewReplacer("//*.localhost.com", "//api.*.com")
 				testutils.CheckNoError(t, err)
+				for _, testsCase := range testsCases {
+					t.Run(testsCase.name, func(t *testing.T) {
+						actual, err := replacer.Replace(testsCase.source)
 
-				replacer, err := factory.Make(parsedURL)
-				testutils.CheckNoError(t, err)
-
-				parsedTargetURL, err := urlx.Parse(testCase.requestURL)
-				testutils.CheckNoError(t, err)
-
-				actual, err := replacer.URLToSource(parsedTargetURL)
-
-				assert.Empty(t, actual)
-				assert.EqualError(t, err, testCase.expectedError)
+						assert.NoError(t, err)
+						assert.Equal(t, testsCase.expected, actual)
+					})
+				}
 			})
-		}
+		})
 	})
 }
 
-func TestReplacerToTargetMapping(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://premium.localhost.com": "https://premium.api.com",
-		"https://base.localhost.com":   "http://base.api.com",
-		"demo.localhost.com":           "https://demo.api.com",
-		"custom.domain":                "http://customdomain.com",
-		"custompost.localhost.com":     "https://customdomain.com:8080",
-		"*.star.com":                   "*.com",
-	})
-	testutils.CheckNoError(t, err)
+var isSecureTestCases = []struct {
+	name     string
+	url      string
+	expected bool
+}{
+	{
+		name:     "url with http scheme",
+		url:      "http://localhost",
+		expected: false,
+	},
+	{
+		name:     "url with multiple scheme",
+		url:      "//localhost",
+		expected: false,
+	},
+	{
+		name:     "url without scheme",
+		url:      "localhost",
+		expected: false,
+	},
+	{
+		name:     "url with https scheme",
+		url:      "https://localhost",
+		expected: true,
+	},
+}
 
-	tests := []struct {
-		name       string
-		requestURL *url.URL
-		url        string
-		expected   string
-	}{
-		{
-			name: "from https to https",
-			requestURL: &url.URL{
-				Host:   "premium.localhost.com",
-				Scheme: "http",
-			},
-			url:      "http://premium.localhost.com/api/info",
-			expected: "https://premium.api.com/api/info",
-		},
-		{
-			name: "from http to https",
-			requestURL: &url.URL{
-				Host:   "base.localhost.com",
-				Scheme: "https",
-			},
-			url:      "https://base.localhost.com/api/info",
-			expected: "http://base.api.com/api/info",
-		},
-		{
-			name: "from http to https with custom port",
-			requestURL: &url.URL{
-				Host:   "base.localhost.com:4200",
-				Scheme: "https",
-			},
-			url:      "https://base.localhost.com:4200/api/info",
-			expected: "http://base.api.com/api/info",
-		},
-		{
-			name: "from https to http with custom port",
-			requestURL: &url.URL{
-				Host:   "premium.localhost.com:3000",
-				Scheme: "http",
-			},
-			url:      "http://premium.localhost.com:3000/api/info",
-			expected: "https://premium.api.com/api/info",
-		},
-		{
-			name: "from https to http with custom port",
-			requestURL: &url.URL{
-				Host:   "custompost.localhost.com:3000",
-				Scheme: "http",
-			},
-			url:      "http://custompost.localhost.com:3000/api/info",
-			expected: "https://customdomain.com:8080/api/info",
-		},
-		{
-			name: "* matcher",
-			requestURL: &url.URL{
-				Host:   "test.star.com:3000",
-				Scheme: "http",
-			},
-			url:      "http://test.star.com:3000/api/info",
-			expected: "http://test.com/api/info",
-		},
+func TestReplacerIsSourceSecure(t *testing.T) {
+	var makeReplacer = func(source string) *urlreplacer.Replacer {
+		t.Helper()
+		replacer, err := urlreplacer.NewReplacer(source, "https://github.com")
+		if err != nil {
+			t.Error(err)
+		}
+
+		return replacer
 	}
-	for _, testCase := range tests {
+
+	for _, testCase := range isSecureTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			replacer, err := factory.Make(testCase.requestURL)
-			testutils.CheckNoError(t, err)
+			actual := makeReplacer(testCase.url).IsSourceSecure()
 
-			actual, err := replacer.ToTarget(testCase.url)
-
-			assert.NoError(t, err)
 			assert.Equal(t, testCase.expected, actual)
 		})
 	}
 }
 
-func TestReplacerToTargetMappingErrors(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://premium.localhost.com": "https://premium.api.com",
-		"https://base.localhost.com":   "http://base.api.com",
-		"demo.localhost.com":           "https://demo.api.com",
-		"custom.domain":                "http://customdomain.com",
-		"custompost.localhost.com":     "https://customdomain.com:8080",
-		"*.star.com":                   "*.com",
-	})
-	testutils.CheckNoError(t, err)
-
-	t.Run("ToTarget", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			requestURL string
-			url        string
-		}{
-			{
-				name:       "scheme in mapping and in url are not equal",
-				requestURL: "https://base.localhost.com",
-				url:        "http://base.localhost.com/api/info",
-			},
-			{
-				name:       "url is invalid",
-				requestURL: "http://demo.localhost.com",
-				url:        "http://demo.localh::$ost.com",
-			},
+func TestReplacerIsTargetSecure(t *testing.T) {
+	var makeReplacer = func(target string) *urlreplacer.Replacer {
+		t.Helper()
+		replacer, err := urlreplacer.NewReplacer("https://github.com", target)
+		if err != nil {
+			t.Error(err)
 		}
 
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := urlx.Parse(testCase.requestURL)
-				testutils.CheckNoError(t, err)
+		return replacer
+	}
 
-				replacer, err := factory.Make(parsedURL)
-				testutils.CheckNoError(t, err)
+	for _, testCase := range isSecureTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := makeReplacer(testCase.url).IsTargetSecure()
 
-				actual, err := replacer.ToTarget(testCase.url)
-
-				assert.Empty(t, actual)
-				assert.Error(t, err)
-			})
-		}
-	})
+			assert.Equal(t, testCase.expected, actual)
+		})
+	}
 }
 
-func TestReplacerSecure(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://localhost.com":  "https://premium.api.com",
-		"https://localhost.net": "http://test.api.com",
-		"localhost.us":          "http://api.us",
-		"localhost.dev":         "https://api.dev",
-		"http://localhost.biz":  "api.biz",
-		"https://localhost.io":  "api.io",
-		"demo.xyz":              "api.xyz",
-	})
+func TestReplacerIsMatched(t *testing.T) {
+	replacer, err := urlreplacer.NewReplacer("*.my.cc:3000", "https://*.master-staging.com")
 	testutils.CheckNoError(t, err)
 
-	t.Run("IsSourceSecure", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			requestURL string
-			expected   bool
-		}{
-			{
-				name:       "should be false for http source mapping",
-				requestURL: "http://localhost.com/api",
-				expected:   false,
-			},
-			{
-				name:       "should be true for https source mapping",
-				requestURL: "https://localhost.net/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set source mapping called via https",
-				requestURL: "https://localhost.us/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set source mapping called via http",
-				requestURL: "http://localhost.us/api",
-				expected:   false,
-			},
-			{
-				name:       "should be true for not set source mapping called via https",
-				requestURL: "https://localhost.dev/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set source mapping called via http",
-				requestURL: "http://localhost.dev/api",
-				expected:   false,
-			},
-			{
-				name:       "should be false for http source mapping called via http",
-				requestURL: "http://localhost.biz/api",
-				expected:   false,
-			},
-			{
-				name:       "should be true for https source mapping called via https",
-				requestURL: "https://localhost.io/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set both mappings called via https",
-				requestURL: "https://demo.xyz/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set both mappings called via http",
-				requestURL: "http://demo.xyz/api",
-				expected:   false,
-			},
-		}
+	testsCases := []struct {
+		name     string
+		url      string
+		expected bool
+	}{
+		{
+			name:     "domain without scheme",
+			url:      "premium.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with different port",
+			url:      "premium.my.cc:2900",
+			expected: false,
+		},
+		{
+			name:     "matched domain without port",
+			url:      "standard.my.cc",
+			expected: false,
+		},
+		{
+			name:     "matched domain with same scheme and correct port",
+			url:      "//test.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with https scheme",
+			url:      "https//test.my.cc:3000",
+			expected: true,
+		},
+		{
+			name:     "matched domain with http scheme",
+			url:      "http//test.my.cc:3000",
+			expected: true,
+		},
+	}
+	for _, testsCase := range testsCases {
+		t.Run(testsCase.name, func(t *testing.T) {
+			actual := replacer.IsMatched(testsCase.url)
 
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := urlx.Parse(testCase.requestURL)
-				testutils.CheckNoError(t, err)
-
-				replacer, err := factory.Make(parsedURL)
-				testutils.CheckNoError(t, err)
-
-				actual := replacer.IsSourceSecure()
-
-				assert.Equal(t, testCase.expected, actual)
-			})
-		}
-	})
-
-	t.Run("IsTargetSecure", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			requestURL string
-			url        string
-			expected   bool
-		}{
-			{
-				name:       "should be true for https target mapping",
-				requestURL: "http://localhost.com/api",
-				expected:   true,
-			},
-			{
-				name:       "should be false for http target mapping",
-				requestURL: "https://localhost.net/api",
-				expected:   false,
-			},
-			{
-				name:       "should be false for http taget mapping called via https",
-				requestURL: "https://localhost.us/api",
-				expected:   false,
-			},
-			{
-				name:       "should be false for http taget mapping called via http",
-				requestURL: "http://localhost.us/api",
-				expected:   false,
-			},
-			{
-				name:       "should be true for https taget mapping called via https",
-				requestURL: "https://localhost.dev/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for https taget mapping called via http",
-				requestURL: "http://localhost.dev/api",
-				expected:   true,
-			},
-			{
-				name:       "should be false for not set taget mapping called via http",
-				requestURL: "http://localhost.biz/api",
-				expected:   false,
-			},
-			{
-				name:       "should be true for not set taget mapping called via https",
-				requestURL: "https://localhost.io/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set both mappings called via https",
-				requestURL: "https://demo.xyz/api",
-				expected:   true,
-			},
-			{
-				name:       "should be true for not set both mappings called via http",
-				requestURL: "http://demo.xyz/api",
-				expected:   false,
-			},
-		}
-
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				parsedURL, err := urlx.Parse(testCase.requestURL)
-				testutils.CheckNoError(t, err)
-
-				replacer, err := factory.Make(parsedURL)
-				testutils.CheckNoError(t, err)
-
-				actual := replacer.IsTargetSecure()
-
-				assert.Equal(t, testCase.expected, actual)
-			})
-		}
-	})
+			assert.Equal(t, testsCase.expected, actual)
+		})
+	}
 }

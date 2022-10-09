@@ -1,63 +1,113 @@
 package urlreplacer
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
+	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlglob"
+	"github.com/evg4b/uncors/pkg/urlx"
 )
 
+var ErrEmptySourceURL = errors.New("source url should not be empty")
+var ErrEmptyTargetURL = errors.New("target url should not be empty")
+
+var ErrInvalidSourceURL = errors.New("source url is invalid")
+var ErrInvalidTargetURL = errors.New("target url is invalid")
+var ErrURLNotMached = errors.New("is not matched")
+
+type hook = func(string) string
+
 type Replacer struct {
-	rawSource            string
-	rawTarget            string
-	source               *urlglob.URLGlob
-	sourceReplacePattern urlglob.ReplacePattern
-	sourceHasTLS         bool
-	target               *urlglob.URLGlob
-	targetReplacePattern urlglob.ReplacePattern
-	targetHasTLS         bool
+	source  *url.URL
+	target  *url.URL
+	regexp  *regexp.Regexp
+	pattern string
+	hooks   map[string]hook
 }
 
-func (r *Replacer) StringToSource(rawURL string) (string, error) {
-	replacedURL, err := r.target.ReplaceAllString(rawURL, r.sourceReplacePattern)
-	if err != nil {
-		return "", fmt.Errorf("filed transform '%s' to source url:  %w", rawURL, err)
+func NewReplacer(source, target string) (*Replacer, error) {
+	if len(source) < 1 {
+		return nil, ErrEmptySourceURL
 	}
 
-	return replacedURL.String(), nil
+	if len(target) < 1 {
+		return nil, ErrEmptyTargetURL
+	}
+
+	var err error
+	replacer := Replacer{
+		hooks: map[string]func(string) string{},
+	}
+
+	if replacer.source, err = urlx.Parse(source); err != nil {
+		return nil, ErrInvalidSourceURL
+	}
+
+	if replacer.target, err = urlx.Parse(target); err != nil {
+		return nil, ErrInvalidSourceURL
+	}
+
+	if replacer.regexp, _, err = wildCardToRegexp(replacer.source); err != nil {
+		return nil, err
+	}
+
+	if replacer.pattern, _, _ = wildCardToReplacePattern(replacer.target); err != nil {
+		return nil, err
+	}
+
+	if len(replacer.target.Scheme) > 0 {
+		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
+	}
+
+	return &replacer, nil
 }
 
-func (r *Replacer) URLToSource(parsedURL *url.URL) (*url.URL, error) {
-	replacedURL, err := r.target.ReplaceAll(parsedURL, r.sourceReplacePattern)
-	if err != nil {
-		return nil, fmt.Errorf("filed transform '%s' to source url:  %w", parsedURL.String(), err)
+func (r *Replacer) Replace(source string) (string, error) {
+	matches := r.regexp.FindStringSubmatch(source)
+	if len(matches) < 1 {
+		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMached)
 	}
 
-	return replacedURL, nil
-}
+	replaced := strings.Clone(r.pattern)
 
-func (r *Replacer) ToTarget(rawURL string) (string, error) {
-	replacedURL, err := r.source.ReplaceAllString(rawURL, r.targetReplacePattern)
-	if err != nil {
-		return "", fmt.Errorf("filed transform '%s' to target url:  %w", rawURL, err)
+	for _, subexpName := range r.regexp.SubexpNames() {
+		if len(subexpName) > 0 {
+			partPattern := fmt.Sprintf("${%s}", subexpName)
+			partIndex := r.regexp.SubexpIndex(subexpName)
+			partValue := matches[partIndex]
+			if hook, ok := r.hooks[subexpName]; ok {
+				partValue = hook(partValue)
+			}
+
+			replaced = strings.ReplaceAll(replaced, partPattern, partValue)
+		}
 	}
 
-	return replacedURL.String(), nil
-}
-
-func (r *Replacer) URLToTarget(parsedURL *url.URL) (*url.URL, error) {
-	replacedURL, err := r.source.ReplaceAll(parsedURL, r.targetReplacePattern)
-	if err != nil {
-		return nil, fmt.Errorf("filed transform '%s' to target url:  %w", parsedURL.String(), err)
-	}
-
-	return replacedURL, nil
+	return replaced, nil
 }
 
 func (r *Replacer) IsSourceSecure() bool {
-	return r.sourceHasTLS
+	if len(r.source.Scheme) > 0 {
+		return isSecure(r.source.Scheme)
+	}
+
+	return false
 }
 
 func (r *Replacer) IsTargetSecure() bool {
-	return r.targetHasTLS
+	if len(r.target.Scheme) > 0 {
+		return isSecure(r.target.Scheme)
+	}
+
+	return false
+}
+
+func (r *Replacer) IsMatched(source string) bool {
+	return r.regexp.MatchString(source)
+}
+
+func isSecure(scheme string) bool {
+	return strings.EqualFold(scheme, "https")
 }

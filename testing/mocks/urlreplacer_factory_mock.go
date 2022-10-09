@@ -18,7 +18,7 @@ import (
 type URLReplacerFactoryMock struct {
 	t minimock.Tester
 
-	funcMake          func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, err error)
+	funcMake          func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error)
 	inspectFuncMake   func(requestURL *url.URL)
 	afterMakeCounter  uint64
 	beforeMakeCounter uint64
@@ -63,6 +63,7 @@ type URLReplacerFactoryMockMakeParams struct {
 // URLReplacerFactoryMockMakeResults contains results of the URLReplacerFactory.Make
 type URLReplacerFactoryMockMakeResults struct {
 	rp1 *urlreplacer.Replacer
+	rp2 *urlreplacer.Replacer
 	err error
 }
 
@@ -98,7 +99,7 @@ func (mmMake *mURLReplacerFactoryMockMake) Inspect(f func(requestURL *url.URL)) 
 }
 
 // Return sets up results that will be returned by URLReplacerFactory.Make
-func (mmMake *mURLReplacerFactoryMockMake) Return(rp1 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
+func (mmMake *mURLReplacerFactoryMockMake) Return(rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
 	if mmMake.mock.funcMake != nil {
 		mmMake.mock.t.Fatalf("URLReplacerFactoryMock.Make mock is already set by Set")
 	}
@@ -106,12 +107,12 @@ func (mmMake *mURLReplacerFactoryMockMake) Return(rp1 *urlreplacer.Replacer, err
 	if mmMake.defaultExpectation == nil {
 		mmMake.defaultExpectation = &URLReplacerFactoryMockMakeExpectation{mock: mmMake.mock}
 	}
-	mmMake.defaultExpectation.results = &URLReplacerFactoryMockMakeResults{rp1, err}
+	mmMake.defaultExpectation.results = &URLReplacerFactoryMockMakeResults{rp1, rp2, err}
 	return mmMake.mock
 }
 
 //Set uses given function f to mock the URLReplacerFactory.Make method
-func (mmMake *mURLReplacerFactoryMockMake) Set(f func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, err error)) *URLReplacerFactoryMock {
+func (mmMake *mURLReplacerFactoryMockMake) Set(f func(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error)) *URLReplacerFactoryMock {
 	if mmMake.defaultExpectation != nil {
 		mmMake.mock.t.Fatalf("Default expectation is already set for the URLReplacerFactory.Make method")
 	}
@@ -140,13 +141,13 @@ func (mmMake *mURLReplacerFactoryMockMake) When(requestURL *url.URL) *URLReplace
 }
 
 // Then sets up URLReplacerFactory.Make return parameters for the expectation previously defined by the When method
-func (e *URLReplacerFactoryMockMakeExpectation) Then(rp1 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
-	e.results = &URLReplacerFactoryMockMakeResults{rp1, err}
+func (e *URLReplacerFactoryMockMakeExpectation) Then(rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) *URLReplacerFactoryMock {
+	e.results = &URLReplacerFactoryMockMakeResults{rp1, rp2, err}
 	return e.mock
 }
 
 // Make implements proxy.URLReplacerFactory
-func (mmMake *URLReplacerFactoryMock) Make(requestURL *url.URL) (rp1 *urlreplacer.Replacer, err error) {
+func (mmMake *URLReplacerFactoryMock) Make(requestURL *url.URL) (rp1 *urlreplacer.Replacer, rp2 *urlreplacer.Replacer, err error) {
 	mm_atomic.AddUint64(&mmMake.beforeMakeCounter, 1)
 	defer mm_atomic.AddUint64(&mmMake.afterMakeCounter, 1)
 
@@ -164,7 +165,7 @@ func (mmMake *URLReplacerFactoryMock) Make(requestURL *url.URL) (rp1 *urlreplace
 	for _, e := range mmMake.MakeMock.expectations {
 		if minimock.Equal(e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return e.results.rp1, e.results.err
+			return e.results.rp1, e.results.rp2, e.results.err
 		}
 	}
 
@@ -180,7 +181,7 @@ func (mmMake *URLReplacerFactoryMock) Make(requestURL *url.URL) (rp1 *urlreplace
 		if mm_results == nil {
 			mmMake.t.Fatal("No results are set for the URLReplacerFactoryMock.Make")
 		}
-		return (*mm_results).rp1, (*mm_results).err
+		return (*mm_results).rp1, (*mm_results).rp2, (*mm_results).err
 	}
 	if mmMake.funcMake != nil {
 		return mmMake.funcMake(requestURL)

@@ -37,26 +37,26 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 	}
 
 	return func(resp http.ResponseWriter, req *http.Request) error {
-		replacer, err := pm.replacerFactory.Make(req.URL)
+		targetR, sourceR, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
 			return fmt.Errorf("failed to transform general url: %w", err)
 		}
 
-		originalReq, err := pm.makeOriginalRequest(req, replacer)
+		originalReq, err := pm.makeOriginalRequest(req, targetR)
 		if err != nil {
-			return fmt.Errorf("failed to recive response from original server: %w", err)
+			return fmt.Errorf("failed to create reuest to original source: %w", err)
 		}
 
 		originalResp, err := pm.http.Do(originalReq)
 		if err != nil {
-			return fmt.Errorf("failed to recive response from original server: %w", err)
+			return fmt.Errorf("failed to do reuest: %w", err)
 		}
 
 		defer originalResp.Body.Close()
 
-		err = pm.makeUncorsResponse(originalResp, resp, replacer)
+		err = pm.makeUncorsResponse(originalResp, resp, sourceR)
 		if err != nil {
-			return fmt.Errorf("failed to recive response from original server: %w", err)
+			return fmt.Errorf("failed to make uncors response: %w", err)
 		}
 
 		proxyWriter.Println(responseprinter.PrintResponse(originalResp))
@@ -68,7 +68,7 @@ func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.Han
 // nolint: unparam
 func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
-		cookie.Secure = replacer.IsSourceSecure()
+		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie
 		http.SetCookie(source, cookie)
 	}

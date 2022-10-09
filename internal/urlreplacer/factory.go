@@ -4,117 +4,74 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
-
-	"github.com/evg4b/uncors/pkg/urlglob"
 )
 
-type urlMapping struct {
-	rawSource            string
-	sourceGlob           *urlglob.URLGlob
-	sourceReplacePattern urlglob.ReplacePattern
-	rawTarget            string
-	targetGlob           *urlglob.URLGlob
-	targetReplacePattern urlglob.ReplacePattern
+type mapping struct {
+	rawSource string
+	source    *Replacer
+	rawTarget string
+	target    *Replacer
 }
 
-type URLReplacerFactory struct { // nolint: revive
-	mappings []urlMapping
+type Factory struct { // nolint: revive
+	mappings []mapping
 }
 
 var ErrMappingNotFound = errors.New("mapping not found")
 var ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 
-func NewURLReplacerFactory(mappings map[string]string) (*URLReplacerFactory, error) {
-	if len(mappings) < 1 {
+func NewURLReplacerFactory(urlMappings map[string]string) (*Factory, error) {
+	if len(urlMappings) < 1 {
 		return nil, ErrMappingNotSpecified
 	}
 
-	urlMappings := []urlMapping{}
-	for sourceURL, targetURL := range mappings {
-		sourceGlob, err := urlglob.NewURLGlob(sourceURL)
+	var mappings []mapping //nolint:prealloc
+	for sourceURL, targetURL := range urlMappings {
+		target, source, err := replacers(sourceURL, targetURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
+			return nil, fmt.Errorf("failed to configure url mappings: %w", err)
 		}
 
-		sourceReplacePattern, err := urlglob.NewReplacePatternString(sourceURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
-		}
-
-		targetGlob, err := urlglob.NewURLGlob(targetURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
-		}
-
-		targetReplacePattern, err := urlglob.NewReplacePatternString(targetURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to configure mappings: %w", err)
-		}
-
-		if sourceGlob.WildCardCount != targetGlob.WildCardCount {
-			return nil, urlglob.ErrTooManyWildcards
-		}
-
-		urlMappings = append(urlMappings, urlMapping{
-			rawSource:            sourceURL,
-			sourceGlob:           sourceGlob,
-			sourceReplacePattern: sourceReplacePattern,
-			rawTarget:            targetURL,
-			targetGlob:           targetGlob,
-			targetReplacePattern: targetReplacePattern,
+		mappings = append(mappings, mapping{
+			rawSource: sourceURL,
+			source:    source,
+			rawTarget: targetURL,
+			target:    target,
 		})
 	}
 
-	return &URLReplacerFactory{urlMappings}, nil
+	return &Factory{mappings}, nil
 }
 
-func (f *URLReplacerFactory) Make(requestURL *url.URL) (*Replacer, error) {
-	mapping, err := f.findMapping(requestURL)
+func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {
+	mapping, err := f.findMapping(requestURL.String())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if len(mapping.sourceGlob.Scheme) > 0 && mapping.sourceGlob.Scheme != requestURL.Scheme {
-		return nil, ErrMappingNotFound
+	return mapping.target, mapping.source, nil
+}
+
+func replacers(rawSource, rawTarget string) (*Replacer, *Replacer, error) {
+	target, err := NewReplacer(rawSource, rawTarget)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	urlglob.PatchReplacePattern(
-		&mapping.sourceReplacePattern,
-		urlglob.UsePort(requestURL.Port()),
-		urlglob.UseScheme(requestURL.Scheme),
-	)
-
-	return &Replacer{
-		rawSource:            mapping.rawSource,
-		source:               mapping.sourceGlob,
-		sourceReplacePattern: mapping.sourceReplacePattern,
-		sourceHasTLS:         isSourceSecure(requestURL),
-		rawTarget:            mapping.rawTarget,
-		target:               mapping.targetGlob,
-		targetReplacePattern: mapping.targetReplacePattern,
-		targetHasTLS:         isTargetSecure(mapping, requestURL),
-	}, nil
-}
-
-func isTargetSecure(mapping urlMapping, requestURL *url.URL) bool {
-	if strings.EqualFold(mapping.targetGlob.Scheme, "https") {
-		return true
+	source, err := NewReplacer(rawTarget, rawSource)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return len(mapping.targetGlob.Scheme) == 0 && strings.EqualFold(requestURL.Scheme, "https")
+	return target, source, nil
 }
 
-func isSourceSecure(requestURL *url.URL) bool {
-	return strings.EqualFold(requestURL.Scheme, "https")
-}
-
-func (f *URLReplacerFactory) findMapping(requestURL *url.URL) (urlMapping, error) {
+func (f *Factory) findMapping(requestURL string) (mapping, error) {
 	for _, mapping := range f.mappings {
-		if mapping.sourceGlob.Match(requestURL) {
+		if mapping.target.IsMatched(requestURL) {
 			return mapping, nil
 		}
 	}
 
-	return urlMapping{}, ErrMappingNotFound
+	return mapping{}, ErrMappingNotFound
 }
