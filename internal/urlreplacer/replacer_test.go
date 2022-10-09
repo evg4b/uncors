@@ -276,7 +276,7 @@ func TestReplacerIsTargetSecure(t *testing.T) {
 	}
 }
 
-func TestReplacer_IsMatched(t *testing.T) {
+func TestReplacerIsMatched(t *testing.T) {
 	replacer, err := urlreplacer.NewReplacer("*.my.cc:3000", "https://*.master-staging.com")
 	testutils.CheckNoError(t, err)
 
