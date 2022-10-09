@@ -1,6 +1,6 @@
 module github.com/evg4b/uncors
 
-go 1.17
+go 1.19
 
 require (
 	github.com/PuerkitoBio/purell v1.2.0
