@@ -9,7 +9,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-var ErrFailedRequest = errors.New("UNCORS: Failed request handler")
+var ErrFailedRequest = errors.New("failed request handler")
 
 type HandlingMiddleware interface {
 	Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc

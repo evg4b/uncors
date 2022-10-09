@@ -123,4 +123,16 @@ func TestRequestProcessorHandleRequest(t *testing.T) {
 			requestProcessor.ServeHTTP(httptest.NewRecorder(), req)
 		})
 	})
+
+	t.Run("call default handler by default", func(t *testing.T) {
+		requestProcessor := processor.NewRequestProcessor()
+
+		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
+		testutils.CheckNoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		requestProcessor.ServeHTTP(recorder, req)
+
+		assert.Equal(t, "UNCORS error: failed request handler\n", recorder.Body.String())
+	})
 }
