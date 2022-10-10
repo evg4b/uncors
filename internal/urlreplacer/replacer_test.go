@@ -293,12 +293,12 @@ func TestReplacerIsMatched(t *testing.T) {
 		{
 			name:     "matched domain with different port",
 			url:      "premium.my.cc:2900",
-			expected: false,
+			expected: true,
 		},
 		{
 			name:     "matched domain without port",
 			url:      "standard.my.cc",
-			expected: false,
+			expected: true,
 		},
 		{
 			name:     "matched domain with same scheme and correct port",
@@ -314,6 +314,11 @@ func TestReplacerIsMatched(t *testing.T) {
 			name:     "matched domain with http scheme",
 			url:      "http//test.my.cc:3000",
 			expected: true,
+		},
+		{
+			name:     "not matched to different domain",
+			url:      "http//localhost",
+			expected: false,
 		},
 	}
 	for _, testsCase := range testsCases {

@@ -15,7 +15,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
 
-	host, port, err := urlx.SplitHostPort(parsedPattern)
+	host, _, err := urlx.SplitHostPort(parsedPattern)
 	if err != nil {
 		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
 	}
@@ -32,15 +32,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 		}
 	}
 
-	if len(port) > 0 {
-		// TODO: correctly handle default ports
-		if port == "80" || port == "443" {
-			fmt.Fprintf(&result, "(:%s)?", port)
-		} else {
-			fmt.Fprintf(&result, ":%s", port)
-		}
-	}
-
+	result.WriteString(`(:\d+)?`)
 	result.WriteString(`(?P<path>[\/?].*)?$`)
 
 	compiledRegexp, err := regexp.Compile(result.String())
