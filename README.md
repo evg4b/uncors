@@ -37,10 +37,19 @@
 
 ## Homebrew (macOS | Linux)
 
-If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install Hugo with the following one-liner:
+If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install uncors with the following one-liner:
 
 ```bash 
 brew install evg4b/tap/uncors
+```
+
+## Scoop (Windows) 
+
+If you are on Windows and using [Scoop](https://scoop.sh/), you can install uncors with the following commands:
+
+```bash
+scoop bucket add evg4b https://github.com/evg4b/scoop-bucket.git
+scoop install evg4b/uncors
 ```
 
 ## Binary (Cross-platform) 
