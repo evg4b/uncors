@@ -11,16 +11,16 @@ type URLReplacerFactory interface {
 	Make(requestURL *url.URL) (*urlreplacer.Replacer, *urlreplacer.Replacer, error)
 }
 
-type MiddlewareOption = func(*ProxyMiddleware)
+type HandlerOption = func(*Handler)
 
-func WithURLReplacerFactory(replacerFactory URLReplacerFactory) MiddlewareOption {
-	return func(pm *ProxyMiddleware) {
+func WithURLReplacerFactory(replacerFactory URLReplacerFactory) HandlerOption {
+	return func(pm *Handler) {
 		pm.replacerFactory = replacerFactory
 	}
 }
 
-func WithHTTPClient(http *http.Client) MiddlewareOption {
-	return func(pm *ProxyMiddleware) {
+func WithHTTPClient(http *http.Client) HandlerOption {
+	return func(pm *Handler) {
 		pm.http = http
 	}
 }

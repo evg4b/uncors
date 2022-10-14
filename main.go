@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
@@ -66,17 +65,13 @@ func main() {
 		pterm.Fatal.Println(err)
 	}
 
-	proxyMiddleware := proxy.NewProxyMiddleware(
+	proxyHandler := proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(factory),
 		proxy.WithHTTPClient(httpClient),
 	)
 
-	requestProcessor := processor.NewRequestProcessor(
-		processor.WithMiddleware(proxyMiddleware),
-	)
-
-	router.NotFoundHandler = requestProcessor
-	router.MethodNotAllowedHandler = requestProcessor
+	router.NotFoundHandler = proxyHandler
+	router.MethodNotAllowedHandler = proxyHandler
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
@@ -88,7 +83,7 @@ func main() {
 		}
 	}()
 
-	if certFile != nil && keyFile != nil {
+	if len(*certFile) > 0 && len(*keyFile) > 0 {
 		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, router)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {

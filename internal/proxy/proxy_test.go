@@ -8,16 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxyMiddlewareWrap(t *testing.T) {
+func TestProxyHandler(t *testing.T) {
 	replacerFactory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.local.com": "https://premium.api.com",
 	})
@@ -62,11 +60,9 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 					}
 				})
 
-				proc := processor.NewRequestProcessor(
-					processor.WithMiddleware(proxy.NewProxyMiddleware(
-						proxy.WithHTTPClient(httpClient),
-						proxy.WithURLReplacerFactory(replacerFactory),
-					)),
+				proc := proxy.NewProxyHandler(
+					proxy.WithHTTPClient(httpClient),
+					proxy.WithURLReplacerFactory(replacerFactory),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
@@ -116,11 +112,9 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 					}
 				})
 
-				proc := processor.NewRequestProcessor(
-					processor.WithMiddleware(proxy.NewProxyMiddleware(
-						proxy.WithHTTPClient(httpClient),
-						proxy.WithURLReplacerFactory(replacerFactory),
-					)),
+				proc := proxy.NewProxyHandler(
+					proxy.WithHTTPClient(httpClient),
+					proxy.WithURLReplacerFactory(replacerFactory),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
@@ -151,11 +145,9 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 			}
 		})
 
-		proc := processor.NewRequestProcessor(
-			processor.WithMiddleware(proxy.NewProxyMiddleware(
-				proxy.WithHTTPClient(httpClient),
-				proxy.WithURLReplacerFactory(replacerFactory),
-			)),
+		proc := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
@@ -178,72 +170,56 @@ func TestProxyMiddlewareWrap(t *testing.T) {
 			headers.Get("Access-Control-Allow-Methods"),
 		)
 	})
-}
 
-func TestOptionsMiddlewareWrap(t *testing.T) {
-	middleware := proxy.NewProxyMiddleware()
+	t.Run("OPTIONS request handling", func(t *testing.T) {
+		handler := proxy.NewProxyHandler()
 
-	t.Run("should handle OPTIONS request", func(t *testing.T) {
-		tracker := mocks.NewMiddlewaresTracker(t)
-		proc := processor.NewRequestProcessor(
-			processor.WithMiddleware(middleware),
-			processor.WithMiddleware(tracker.MakeFinalMiddleware("final")),
-		)
-
-		req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
-		testutils.CheckNoError(t, err)
-
-		proc.ServeHTTP(httptest.NewRecorder(), req)
-
-		assert.Equal(t, []string{}, tracker.CallsOrder)
-	})
-
-	t.Run("should correctly create response", func(t *testing.T) {
-		testMethods := []struct {
-			name     string
-			headers  http.Header
-			expected http.Header
-		}{
-			{
-				name:     "should do not change empty headers",
-				headers:  http.Header(map[string][]string{}),
-				expected: http.Header(map[string][]string{}),
-			},
-			{
-				name: "should do not skip not access-control-request-* headers",
-				headers: http.Header{
-					"Host":          {"www.host.com"},
-					"Content-Type":  {"application/json"},
-					"Authorization": {"Bearer Token"},
+		t.Run("should correctly create response", func(t *testing.T) {
+			testMethods := []struct {
+				name     string
+				headers  http.Header
+				expected http.Header
+			}{
+				{
+					name:     "should do not change empty headers",
+					headers:  http.Header(map[string][]string{}),
+					expected: http.Header(map[string][]string{}),
 				},
-				expected: http.Header{},
-			},
-			{
-				name: "should allow all access-control-request-* headers",
-				headers: http.Header{
-					"Access-Control-Request-Headers": {"X-PINGOTHER, Content-Type"},
-					"Access-Control-Request-Method":  {http.MethodPost, http.MethodDelete},
+				{
+					name: "should do not skip not access-control-request-* headers",
+					headers: http.Header{
+						"Host":          {"www.host.com"},
+						"Content-Type":  {"application/json"},
+						"Authorization": {"Bearer Token"},
+					},
+					expected: http.Header{},
 				},
-				expected: http.Header{
-					"Access-Control-Allow-Headers": {"X-PINGOTHER, Content-Type"},
-					"Access-Control-Allow-Method":  {http.MethodPost, http.MethodDelete},
+				{
+					name: "should allow all access-control-request-* headers",
+					headers: http.Header{
+						"Access-Control-Request-Headers": {"X-PINGOTHER, Content-Type"},
+						"Access-Control-Request-Method":  {http.MethodPost, http.MethodDelete},
+					},
+					expected: http.Header{
+						"Access-Control-Allow-Headers": {"X-PINGOTHER, Content-Type"},
+						"Access-Control-Allow-Method":  {http.MethodPost, http.MethodDelete},
+					},
 				},
-			},
-		}
-		for _, testCase := range testMethods {
-			t.Run(testCase.name, func(t *testing.T) {
-				proc := processor.NewRequestProcessor(processor.WithMiddleware(middleware))
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
-				testutils.CheckNoError(t, err)
+			}
+			for _, testCase := range testMethods {
+				t.Run(testCase.name, func(t *testing.T) {
+					req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
+					testutils.CheckNoError(t, err)
 
-				req.Header = testCase.headers
+					req.Header = testCase.headers
 
-				recorder := httptest.NewRecorder()
-				proc.ServeHTTP(recorder, req)
+					recorder := httptest.NewRecorder()
+					handler.ServeHTTP(recorder, req)
 
-				assert.Equal(t, http.StatusOK, recorder.Code)
-				assert.Equal(t, testCase.expected, recorder.Header())
-			})
-		}
+					assert.Equal(t, http.StatusOK, recorder.Code)
+					assert.Equal(t, testCase.expected, recorder.Header())
+				})
+			}
+		})
 	})
 }

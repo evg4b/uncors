@@ -7,7 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
-func (pm *ProxyMiddleware) makeOriginalRequest(
+func (handler *Handler) makeOriginalRequest(
 	req *http.Request,
 	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {
