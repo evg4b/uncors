@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/evg4b/uncors/internal/mock"
 	"net/http"
 	"os"
 	"strings"
@@ -44,6 +45,16 @@ func main() {
 	flag.Parse()
 
 	router := mux.NewRouter()
+
+	mock.MakeMockedRoutes(router, []mock.Mock{
+		{
+			Path: "/enterprise",
+			Response: mock.Response{
+				RawContent: `{"demo": "test"}`,
+				Code:       200,
+			},
+		},
+	})
 
 	mappings, err := urlreplacer.NormaliseMappings(
 		map[string]string{*source: *target},
