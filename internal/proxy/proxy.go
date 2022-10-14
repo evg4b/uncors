@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/responseprinter"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
@@ -27,7 +27,7 @@ func NewProxyMiddleware(options ...MiddlewareOption) *ProxyMiddleware {
 	return middleware
 }
 
-func (pm *ProxyMiddleware) Wrap(_ infrastructure.HandlerFunc) infrastructure.HandlerFunc {
+func (pm *ProxyMiddleware) Wrap(_ processor.HandlerFunc) processor.HandlerFunc {
 	proxyWriter := pterm.PrefixPrinter{
 		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 		Prefix: pterm.Prefix{

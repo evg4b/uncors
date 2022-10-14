@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/pterm/pterm"
 )
 
 var ErrFailedRequest = errors.New("failed request handler")
 
+type HandlerFunc = func(http.ResponseWriter, *http.Request) error
+
 type HandlingMiddleware interface {
-	Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc
+	Wrap(next HandlerFunc) HandlerFunc
 }
 
 type RequestProcessor struct {
-	handlerFunc infrastructure.HandlerFunc
+	handlerFunc HandlerFunc
 }
 
 func NewRequestProcessor(options ...RequestProcessorOption) *RequestProcessor {

@@ -1,20 +1,20 @@
+// nolint: cyclop
 package main
 
 import (
-	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/options"
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/pseidemann/finish"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
@@ -42,17 +42,6 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	ctx := context.Background()
-	ctx, cancel := signal.NotifyContext(
-		ctx,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT,
-	)
-
-	defer cancel()
-
 	flag.Parse()
 
 	mappings, err := urlreplacer.NormaliseMappings(
@@ -63,22 +52,16 @@ func main() {
 	)
 	if err != nil {
 		pterm.Fatal.Println(err)
-
-		return
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
 	if err != nil {
 		pterm.Fatal.Println(err)
-
-		return
 	}
 
 	httpClient, err := infrastructure.MakeHTTPClient(*proxyURL)
 	if err != nil {
 		pterm.Fatal.Println(err)
-
-		return
 	}
 
 	optionsMiddleware := options.NewOptionsMiddleware()
@@ -92,22 +75,32 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
-	uncorsServer := server.NewServer(
-		server.WithHTTP(baseAddress, *httpPort),
-		server.WithHTTPS(baseAddress, *httpsPort),
-		server.WithSslCert(*certFile),
-		server.WithSslKey(*keyFile),
-		server.WithRequestProcessor(requestProcessor),
-	)
+	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
+
+	httpServer := infrastructure.NewServer(baseAddress, *httpPort, requestProcessor)
+	finisher.Add(httpServer, finish.WithName("http"))
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			pterm.Error.Println(err)
+		}
+	}()
+
+	if certFile != nil && keyFile != nil {
+		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, requestProcessor)
+		finisher.Add(httpsServer, finish.WithName("https"))
+		go func() {
+			if err := httpsServer.ListenAndServeTLS(*certFile, *keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				pterm.Error.Println(err)
+			}
+		}()
+	}
 
 	printLogo()
 	printMappings(mappings)
 
-	if err = uncorsServer.ListenAndServe(ctx); err != nil {
-		pterm.Fatal.Println(err)
-	} else {
-		pterm.Info.Print("Server was stopped")
-	}
+	finisher.Wait()
+
+	pterm.Info.Print("Server was stopped")
 }
 
 func printLogo() {

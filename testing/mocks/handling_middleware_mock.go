@@ -5,11 +5,11 @@ package mocks
 //go:generate minimock -i github.com/evg4b/uncors/internal/processor.HandlingMiddleware -o ./handling_middleware_mock.go -n HandlingMiddlewareMock
 
 import (
+	"github.com/evg4b/uncors/internal/processor"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/gojuno/minimock/v3"
 )
 
@@ -17,8 +17,8 @@ import (
 type HandlingMiddlewareMock struct {
 	t minimock.Tester
 
-	funcWrap          func(next infrastructure.HandlerFunc) (h1 infrastructure.HandlerFunc)
-	inspectFuncWrap   func(next infrastructure.HandlerFunc)
+	funcWrap          func(next processor.HandlerFunc) (h1 processor.HandlerFunc)
+	inspectFuncWrap   func(next processor.HandlerFunc)
 	afterWrapCounter  uint64
 	beforeWrapCounter uint64
 	WrapMock          mHandlingMiddlewareMockWrap
@@ -56,16 +56,16 @@ type HandlingMiddlewareMockWrapExpectation struct {
 
 // HandlingMiddlewareMockWrapParams contains parameters of the HandlingMiddleware.Wrap
 type HandlingMiddlewareMockWrapParams struct {
-	next infrastructure.HandlerFunc
+	next processor.HandlerFunc
 }
 
 // HandlingMiddlewareMockWrapResults contains results of the HandlingMiddleware.Wrap
 type HandlingMiddlewareMockWrapResults struct {
-	h1 infrastructure.HandlerFunc
+	h1 processor.HandlerFunc
 }
 
 // Expect sets up expected params for HandlingMiddleware.Wrap
-func (mmWrap *mHandlingMiddlewareMockWrap) Expect(next infrastructure.HandlerFunc) *mHandlingMiddlewareMockWrap {
+func (mmWrap *mHandlingMiddlewareMockWrap) Expect(next processor.HandlerFunc) *mHandlingMiddlewareMockWrap {
 	if mmWrap.mock.funcWrap != nil {
 		mmWrap.mock.t.Fatalf("HandlingMiddlewareMock.Wrap mock is already set by Set")
 	}
@@ -85,7 +85,7 @@ func (mmWrap *mHandlingMiddlewareMockWrap) Expect(next infrastructure.HandlerFun
 }
 
 // Inspect accepts an inspector function that has same arguments as the HandlingMiddleware.Wrap
-func (mmWrap *mHandlingMiddlewareMockWrap) Inspect(f func(next infrastructure.HandlerFunc)) *mHandlingMiddlewareMockWrap {
+func (mmWrap *mHandlingMiddlewareMockWrap) Inspect(f func(next processor.HandlerFunc)) *mHandlingMiddlewareMockWrap {
 	if mmWrap.mock.inspectFuncWrap != nil {
 		mmWrap.mock.t.Fatalf("Inspect function is already set for HandlingMiddlewareMock.Wrap")
 	}
@@ -96,7 +96,7 @@ func (mmWrap *mHandlingMiddlewareMockWrap) Inspect(f func(next infrastructure.Ha
 }
 
 // Return sets up results that will be returned by HandlingMiddleware.Wrap
-func (mmWrap *mHandlingMiddlewareMockWrap) Return(h1 infrastructure.HandlerFunc) *HandlingMiddlewareMock {
+func (mmWrap *mHandlingMiddlewareMockWrap) Return(h1 processor.HandlerFunc) *HandlingMiddlewareMock {
 	if mmWrap.mock.funcWrap != nil {
 		mmWrap.mock.t.Fatalf("HandlingMiddlewareMock.Wrap mock is already set by Set")
 	}
@@ -109,7 +109,7 @@ func (mmWrap *mHandlingMiddlewareMockWrap) Return(h1 infrastructure.HandlerFunc)
 }
 
 //Set uses given function f to mock the HandlingMiddleware.Wrap method
-func (mmWrap *mHandlingMiddlewareMockWrap) Set(f func(next infrastructure.HandlerFunc) (h1 infrastructure.HandlerFunc)) *HandlingMiddlewareMock {
+func (mmWrap *mHandlingMiddlewareMockWrap) Set(f func(next processor.HandlerFunc) (h1 processor.HandlerFunc)) *HandlingMiddlewareMock {
 	if mmWrap.defaultExpectation != nil {
 		mmWrap.mock.t.Fatalf("Default expectation is already set for the HandlingMiddleware.Wrap method")
 	}
@@ -124,7 +124,7 @@ func (mmWrap *mHandlingMiddlewareMockWrap) Set(f func(next infrastructure.Handle
 
 // When sets expectation for the HandlingMiddleware.Wrap which will trigger the result defined by the following
 // Then helper
-func (mmWrap *mHandlingMiddlewareMockWrap) When(next infrastructure.HandlerFunc) *HandlingMiddlewareMockWrapExpectation {
+func (mmWrap *mHandlingMiddlewareMockWrap) When(next processor.HandlerFunc) *HandlingMiddlewareMockWrapExpectation {
 	if mmWrap.mock.funcWrap != nil {
 		mmWrap.mock.t.Fatalf("HandlingMiddlewareMock.Wrap mock is already set by Set")
 	}
@@ -138,13 +138,13 @@ func (mmWrap *mHandlingMiddlewareMockWrap) When(next infrastructure.HandlerFunc)
 }
 
 // Then sets up HandlingMiddleware.Wrap return parameters for the expectation previously defined by the When method
-func (e *HandlingMiddlewareMockWrapExpectation) Then(h1 infrastructure.HandlerFunc) *HandlingMiddlewareMock {
+func (e *HandlingMiddlewareMockWrapExpectation) Then(h1 processor.HandlerFunc) *HandlingMiddlewareMock {
 	e.results = &HandlingMiddlewareMockWrapResults{h1}
 	return e.mock
 }
 
 // Wrap implements processor.HandlingMiddleware
-func (mmWrap *HandlingMiddlewareMock) Wrap(next infrastructure.HandlerFunc) (h1 infrastructure.HandlerFunc) {
+func (mmWrap *HandlingMiddlewareMock) Wrap(next processor.HandlerFunc) (h1 processor.HandlerFunc) {
 	mm_atomic.AddUint64(&mmWrap.beforeWrapCounter, 1)
 	defer mm_atomic.AddUint64(&mmWrap.afterWrapCounter, 1)
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/responseprinter"
 	"github.com/pterm/pterm"
 )
@@ -15,7 +15,7 @@ func NewOptionsMiddleware() *OptionsMiddleware {
 	return &OptionsMiddleware{}
 }
 
-func (pm *OptionsMiddleware) Wrap(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
+func (pm *OptionsMiddleware) Wrap(next processor.HandlerFunc) processor.HandlerFunc {
 	optionsWriter := pterm.PrefixPrinter{
 		MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 		Prefix: pterm.Prefix{

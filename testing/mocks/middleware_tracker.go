@@ -1,10 +1,9 @@
 package mocks
 
 import (
+	"github.com/evg4b/uncors/internal/processor"
 	"net/http"
 	"testing"
-
-	"github.com/evg4b/uncors/internal/infrastructure"
 )
 
 type MiddlewaresTracker struct {
@@ -25,7 +24,7 @@ func (t *MiddlewaresTracker) MakeMiddleware(name string) *HandlingMiddlewareMock
 	t.t.Helper()
 
 	return NewHandlingMiddlewareMock(t.t).WrapMock.
-		Set(func(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
+		Set(func(next processor.HandlerFunc) processor.HandlerFunc {
 			t.t.Helper()
 
 			return func(w http.ResponseWriter, r *http.Request) error {
@@ -41,7 +40,7 @@ func (t *MiddlewaresTracker) MakeFinalMiddleware(name string) *HandlingMiddlewar
 	t.t.Helper()
 
 	return NewHandlingMiddlewareMock(t.t).WrapMock.
-		Set(func(next infrastructure.HandlerFunc) infrastructure.HandlerFunc {
+		Set(func(next processor.HandlerFunc) processor.HandlerFunc {
 			t.t.Helper()
 
 			return func(w http.ResponseWriter, r *http.Request) error {
