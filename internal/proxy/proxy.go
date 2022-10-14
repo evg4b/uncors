@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/responseprinter"
@@ -37,6 +38,10 @@ func (pm *ProxyMiddleware) Wrap(_ processor.HandlerFunc) processor.HandlerFunc {
 	}
 
 	return func(resp http.ResponseWriter, req *http.Request) error {
+		if strings.EqualFold(req.Method, http.MethodOptions) {
+			return makeOptionsResponse(proxyWriter, resp, req)
+		}
+
 		targetR, sourceR, err := pm.replacerFactory.Make(req.URL)
 		if err != nil {
 			return fmt.Errorf("failed to transform general url: %w", err)

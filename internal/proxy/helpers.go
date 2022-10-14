@@ -3,6 +3,9 @@ package proxy
 import (
 	"net/http"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/responseprinter"
+	"github.com/pterm/pterm"
 )
 
 type modificationsMap = map[string]func(string) (string, error)
@@ -27,6 +30,26 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) error
 			}
 		}
 	}
+
+	return nil
+}
+
+func makeOptionsResponse(printer pterm.PrefixPrinter, writer http.ResponseWriter, req *http.Request) error {
+	header := writer.Header()
+	for key, values := range req.Header {
+		lowerKey := strings.ToLower(key)
+		if strings.Contains(lowerKey, "access-control-request") {
+			for _, value := range values {
+				transformedKey := strings.Replace(lowerKey, "request", "allow", 1)
+				header.Add(transformedKey, value)
+			}
+		}
+	}
+
+	printer.Printfln(responseprinter.PrintResponse(&http.Response{
+		StatusCode: http.StatusOK,
+		Request:    req,
+	}))
 
 	return nil
 }

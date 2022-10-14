@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/evg4b/uncors/internal/options"
 	"github.com/evg4b/uncors/internal/processor"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -67,14 +66,12 @@ func main() {
 		pterm.Fatal.Println(err)
 	}
 
-	optionsMiddleware := options.NewOptionsMiddleware()
 	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
 		proxy.WithHTTPClient(httpClient),
 	)
 
 	requestProcessor := processor.NewRequestProcessor(
-		processor.WithMiddleware(optionsMiddleware),
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
