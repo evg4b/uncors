@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"os"
 	"strings"
@@ -44,6 +45,8 @@ func main() {
 
 	flag.Parse()
 
+	router := mux.NewRouter()
+
 	mappings, err := urlreplacer.NormaliseMappings(
 		map[string]string{*source: *target},
 		*httpPort,
@@ -75,9 +78,12 @@ func main() {
 		processor.WithMiddleware(proxyMiddleware),
 	)
 
+	router.NotFoundHandler = requestProcessor
+	router.MethodNotAllowedHandler = requestProcessor
+
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, *httpPort, requestProcessor)
+	httpServer := infrastructure.NewServer(baseAddress, *httpPort, router)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -86,7 +92,7 @@ func main() {
 	}()
 
 	if certFile != nil && keyFile != nil {
-		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, requestProcessor)
+		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, router)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
 			if err := httpsServer.ListenAndServeTLS(*certFile, *keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
