@@ -5,12 +5,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/evg4b/uncors/internal/mock"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
@@ -49,9 +49,19 @@ func main() {
 	mock.MakeMockedRoutes(router, []mock.Mock{
 		{
 			Path: "/enterprise",
+			Queries: map[string]string{
+				"demo": "true",
+			},
+			Response: mock.Response{
+				RawContent: `{"demo": "lololo"}`,
+				Code:       http.StatusOK,
+			},
+		},
+		{
+			Path: "/enterprise",
 			Response: mock.Response{
 				RawContent: `{"demo": "test"}`,
-				Code:       200,
+				Code:       http.StatusOK,
 			},
 		},
 	})

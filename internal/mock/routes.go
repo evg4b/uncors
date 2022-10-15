@@ -21,6 +21,7 @@ func MakeMockedRoutes(router *mux.Router, mocks []Mock) {
 			}
 		}
 
-		route.Handler(&Handler{mock: mock})
+		handler := NewMockHandler(WithMock(mock))
+		route.Handler(handler)
 	}
 }
