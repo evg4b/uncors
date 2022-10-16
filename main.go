@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
 	"github.com/pseidemann/finish"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
+	"gopkg.in/yaml.v3"
 )
 
 var Version = "X.X.X"
@@ -34,6 +36,7 @@ func main() {
 	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
 	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
 	proxyURL := flag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
+	mocksFile := flag.String("mocks", "", "File with configured mocks")
 
 	flag.Usage = func() {
 		printLogo()
@@ -44,6 +47,21 @@ func main() {
 	flag.Parse()
 
 	router := mux.NewRouter()
+
+	var mocksDefs []mock.Mock
+	if len(*mocksFile) > 0 {
+		file, err := os.Open(*mocksFile)
+		if err != nil {
+			pterm.Fatal.Println(err)
+		}
+
+		decoder := yaml.NewDecoder(file)
+		if err = decoder.Decode(&mocksDefs); err != nil {
+			pterm.Fatal.Println(err)
+		}
+	}
+
+	mock.MakeMockedRoutes(router, mocksDefs)
 
 	mappings, err := urlreplacer.NormaliseMappings(
 		map[string]string{*source: *target},
@@ -94,7 +112,7 @@ func main() {
 	}
 
 	printLogo()
-	printMappings(mappings)
+	printMappings(mappings, mocksDefs)
 
 	finisher.Wait()
 
@@ -120,7 +138,7 @@ func printLogo() {
 	pterm.Println()
 }
 
-func printMappings(mappings map[string]string) {
+func printMappings(mappings map[string]string, mocksDefs []mock.Mock) {
 	builder := strings.Builder{}
 	for source, target := range mappings {
 		if strings.HasPrefix(source, "https:") {
@@ -132,5 +150,9 @@ func printMappings(mappings map[string]string) {
 			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
 		}
 	}
+	if len(mocksDefs) > 0 {
+		builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mocksDefs)))
+	}
+	builder.WriteString("\n")
 	pterm.Info.Printfln(builder.String())
 }
