@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"github.com/pseidemann/finish"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
+	"gopkg.in/yaml.v3"
 )
 
 var Version = "X.X.X"
