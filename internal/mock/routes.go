@@ -3,13 +3,28 @@ package mock
 import "github.com/gorilla/mux"
 
 func MakeMockedRoutes(router *mux.Router, mocks []Mock) {
+	var defaultMocks []Mock
+
 	for _, mock := range mocks {
+		if len(mock.Queries) > 0 || len(mock.Headers) > 0 || len(mock.Method) > 0 {
+			route := router.NewRoute()
+
+			setPath(route, mock.Path)
+			setMethod(route, mock.Method)
+			setQueries(route, mock.Queries)
+			setHeaders(route, mock.Headers)
+
+			handler := NewMockHandler(WithMock(mock))
+			route.Handler(handler)
+		} else {
+			defaultMocks = append(defaultMocks, mock)
+		}
+	}
+
+	for _, mock := range defaultMocks {
 		route := router.NewRoute()
 
 		setPath(route, mock.Path)
-		setMethod(route, mock.Method)
-		setQueries(route, mock.Queries)
-		setHeaders(route, mock.Headers)
 
 		handler := NewMockHandler(WithMock(mock))
 		route.Handler(handler)
