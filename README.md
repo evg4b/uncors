@@ -103,7 +103,45 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
 * `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
+* `--mocks` - File with defined [mocks](#mocks)
 
+## Mocks
+
+Uncors has endpoint mocks mechanism.
+All mocks should be defined in yaml file and passed as parameter `--mocks`.
+Currently available path, method, queries and headers filters
+(for more information see [gorilla/mux](https://github.com/gorilla/mux#matching-routes) route matching) . 
+
+**Mocks file example:**
+
+```yaml
+- path: /hello
+  response:
+    code: 200
+    raw-content: '
+      Hello word
+    '
+- path: /word
+  method: POST
+  queries:
+    param1: param 1 value
+    param2: param 1 value
+  headers:
+    header1: header 1 value
+    header2: header 2 value
+  response:
+    code: 200
+    headers:
+      header1: header 1 value
+      header2: header 2 value
+    raw-content: '
+      { "status": "ok" }
+    '
+```
+
+At the moment supported only raw response content.
+Content should be defined as multiline string (see more [here](https://yaml-multiline.info/)). 
+`Content-Type` will be set automatically, but you can specify custom content type via headers section.
 
 ## How it works 
 
