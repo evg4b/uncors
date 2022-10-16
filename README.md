@@ -65,7 +65,7 @@ Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/loca
 We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
 
 ```bash
-docker run -p 3000:3000 evg4b/uncors --source http://local.github.com --target //github.com
+docker run -p 3000:3000 evg4b/uncors --source 'http://local.github.com' --target '//github.com'
 ```
 
 ## Source 
@@ -91,7 +91,7 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 
 # Usage
 ```
-./uncors --port 8080 --target 'https://github.com' --source 'http://localhost'
+./uncors --http-port 8080 --target 'https://github.com' --source 'http://localhost'
 ```
 
 ## Parameters
