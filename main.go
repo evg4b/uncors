@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -52,12 +53,12 @@ func main() {
 	if len(*mocksFile) > 0 {
 		file, err := os.Open(*mocksFile)
 		if err != nil {
-			pterm.Fatal.Println(err)
+			log.Fatal(err)
 		}
 
 		decoder := yaml.NewDecoder(file)
 		if err = decoder.Decode(&mocksDefs); err != nil {
-			pterm.Fatal.Println(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -70,17 +71,17 @@ func main() {
 		len(*certFile) > 0 && len(*keyFile) > 0,
 	)
 	if err != nil {
-		pterm.Fatal.Println(err)
+		log.Fatal(err)
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
 	if err != nil {
-		pterm.Fatal.Println(err)
+		log.Fatal(err)
 	}
 
 	httpClient, err := infrastructure.MakeHTTPClient(*proxyURL)
 	if err != nil {
-		pterm.Fatal.Println(err)
+		log.Fatal(err)
 	}
 
 	proxyHandler := proxy.NewProxyHandler(
@@ -97,7 +98,7 @@ func main() {
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			pterm.Error.Println(err)
+			log.Error(err)
 		}
 	}()
 
@@ -106,7 +107,7 @@ func main() {
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
 			if err := httpsServer.ListenAndServeTLS(*certFile, *keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				pterm.Error.Println(err)
+				log.Error(err)
 			}
 		}()
 	}
@@ -116,7 +117,7 @@ func main() {
 
 	finisher.Wait()
 
-	pterm.Info.Print("Server was stopped")
+	log.Info("Server was stopped")
 }
 
 func printLogo() {
@@ -154,5 +155,5 @@ func printMappings(mappings map[string]string, mocksDefs []mock.Mock) {
 		builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mocksDefs)))
 	}
 	builder.WriteString("\n")
-	pterm.Info.Printfln(builder.String())
+	log.Info(builder.String())
 }
