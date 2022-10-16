@@ -7,17 +7,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/internal/proxy"
+	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
 	"github.com/pseidemann/finish"
-	"github.com/pterm/pterm"
-	"github.com/pterm/pterm/putils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,14 +36,19 @@ func main() {
 	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
 	proxyURL := flag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
 	mocksFile := flag.String("mocks", "", "File with configured mocks")
+	debug := flag.Bool("debug", false, "Show debug output")
 
 	flag.Usage = func() {
-		printLogo()
+		ui.Logo(Version)
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
+
+	if *debug {
+		log.EnableDebugMessages()
+	}
 
 	router := mux.NewRouter()
 
@@ -112,48 +115,10 @@ func main() {
 		}()
 	}
 
-	printLogo()
-	printMappings(mappings, mocksDefs)
+	log.Print(ui.Logo(Version))
+	log.Info(ui.Mappings(mappings, mocksDefs))
 
 	finisher.Wait()
 
 	log.Info("Server was stopped")
-}
-
-func printLogo() {
-	logoLength := 51
-	versionLine := strings.Repeat(" ", logoLength)
-	versionSuffix := fmt.Sprintf("version: %s", Version)
-	versionPrefix := versionLine[:logoLength-len(versionSuffix)]
-
-	logo, _ := pterm.DefaultBigText.
-		WithLetters(
-			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), // nolint: gomnd
-		).
-		Srender()
-
-	pterm.Println()
-	pterm.Print(logo)
-	pterm.Println(versionPrefix + versionSuffix)
-	pterm.Println()
-}
-
-func printMappings(mappings map[string]string, mocksDefs []mock.Mock) {
-	builder := strings.Builder{}
-	for source, target := range mappings {
-		if strings.HasPrefix(source, "https:") {
-			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
-		}
-	}
-	for source, target := range mappings {
-		if strings.HasPrefix(source, "http:") {
-			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
-		}
-	}
-	if len(mocksDefs) > 0 {
-		builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mocksDefs)))
-	}
-	builder.WriteString("\n")
-	log.Info(builder.String())
 }

@@ -55,6 +55,10 @@ func Debugf(template string, a ...interface{}) {
 	pterm.Debug.Println(fmt.Sprintf(template, a...))
 }
 
+func Print(a ...interface{}) {
+	pterm.Print(a...)
+}
+
 func EnableDebugMessages() {
 	pterm.EnableDebugMessages()
 }
