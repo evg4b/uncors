@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
 	"strings"
@@ -35,6 +36,7 @@ func main() {
 	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
 	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
 	proxyURL := flag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
+	mocksFile := flag.String("mocks", "", "File with configured mocks")
 
 	flag.Usage = func() {
 		printLogo()
@@ -46,25 +48,20 @@ func main() {
 
 	router := mux.NewRouter()
 
-	mock.MakeMockedRoutes(router, []mock.Mock{
-		{
-			Path: "/enterprise",
-			Queries: map[string]string{
-				"demo": "true",
-			},
-			Response: mock.Response{
-				RawContent: `{"demo": "lololo"}`,
-				Code:       http.StatusOK,
-			},
-		},
-		{
-			Path: "/enterprise",
-			Response: mock.Response{
-				RawContent: `{"demo": "test"}`,
-				Code:       http.StatusOK,
-			},
-		},
-	})
+	var mocksDefs []mock.Mock
+	if len(*mocksFile) > 0 {
+		file, err := os.Open(*mocksFile)
+		if err != nil {
+			pterm.Fatal.Println(err)
+		}
+
+		decoder := yaml.NewDecoder(file)
+		if err = decoder.Decode(&mocksDefs); err != nil {
+			pterm.Fatal.Println(err)
+		}
+	}
+
+	mock.MakeMockedRoutes(router, mocksDefs)
 
 	mappings, err := urlreplacer.NormaliseMappings(
 		map[string]string{*source: *target},
@@ -115,7 +112,7 @@ func main() {
 	}
 
 	printLogo()
-	printMappings(mappings)
+	printMappings(mappings, mocksDefs)
 
 	finisher.Wait()
 
@@ -141,7 +138,7 @@ func printLogo() {
 	pterm.Println()
 }
 
-func printMappings(mappings map[string]string) {
+func printMappings(mappings map[string]string, mocksDefs []mock.Mock) {
 	builder := strings.Builder{}
 	for source, target := range mappings {
 		if strings.HasPrefix(source, "https:") {
@@ -153,5 +150,9 @@ func printMappings(mappings map[string]string) {
 			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
 		}
 	}
+	if len(mocksDefs) > 0 {
+		builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mocksDefs)))
+	}
+	builder.WriteString("\n")
 	pterm.Info.Printfln(builder.String())
 }

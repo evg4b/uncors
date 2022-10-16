@@ -1,16 +1,15 @@
 package mock
 
 type Response struct {
-	Code        int
-	Headers     map[string]string
-	RawContent  string
-	ContentFile string
+	Code       int               `yaml:"code"`
+	Headers    map[string]string `yaml:"headers"`
+	RawContent string            `yaml:"raw-content"` //nolint:tagliatelle
 }
 
 type Mock struct {
-	Path     string
-	Method   string
-	Queries  map[string]string
-	Headers  map[string]string
-	Response Response
+	Path     string            `yaml:"path"`
+	Method   string            `yaml:"method"`
+	Queries  map[string]string `yaml:"queries"`
+	Headers  map[string]string `yaml:"headers"`
+	Response Response          `yaml:"response"`
 }
