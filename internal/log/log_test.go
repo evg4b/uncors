@@ -13,6 +13,7 @@ const loggerResult = "this is test message"
 const loggerFResult = "this is %s message"
 
 func TestGlobalLogPackage(t *testing.T) {
+	log.EnableOutput()
 	log.DisableColor()
 
 	t.Run("error logging", func(t *testing.T) {
