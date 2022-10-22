@@ -20,40 +20,40 @@ type Logger interface {
 }
 
 func Fatal(a ...interface{}) {
-	pterm.Error.Println(a...)
+	Error(a...)
 	os.Exit(0)
 }
 
 func Error(a ...interface{}) {
-	pterm.Error.Println(a...)
+	errorPrinter.Println(a...)
 }
 
 func Errorf(template string, a ...interface{}) {
-	pterm.Error.Println(fmt.Sprintf(template, a...))
+	Error(fmt.Sprintf(template, a...))
 }
 
 func Warning(a ...interface{}) {
-	pterm.Warning.Println(a...)
+	warningPrinter.Println(a...)
 }
 
 func Warningf(template string, a ...interface{}) {
-	pterm.Warning.Println(fmt.Sprintf(template, a...))
+	Warning(fmt.Sprintf(template, a...))
 }
 
 func Info(a ...interface{}) {
-	pterm.Info.Println(a...)
+	infoPrinter.Println(a...)
 }
 
 func Infof(template string, a ...interface{}) {
-	pterm.Info.Println(fmt.Sprintf(template, a...))
+	Info(fmt.Sprintf(template, a...))
 }
 
 func Debug(a ...interface{}) {
-	pterm.Debug.Println(a...)
+	debugPrinter.Println(a...)
 }
 
 func Debugf(template string, a ...interface{}) {
-	pterm.Debug.Println(fmt.Sprintf(template, a...))
+	Debug(fmt.Sprintf(template, a...))
 }
 
 func Print(a ...interface{}) {
@@ -84,6 +84,6 @@ func EnableColor() {
 	pterm.EnableColor()
 }
 
-func SetLogger(output io.Writer) {
+func SetOutput(output io.Writer) {
 	pterm.SetDefaultOutput(output)
 }

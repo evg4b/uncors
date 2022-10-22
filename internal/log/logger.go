@@ -1,8 +1,6 @@
 package log
 
 import (
-	"os"
-
 	"github.com/pterm/pterm"
 )
 
@@ -13,7 +11,6 @@ type PrefixedLogger struct {
 func NewLogger(name string, options ...LoggerOption) *PrefixedLogger {
 	logger := &PrefixedLogger{
 		writer: &pterm.PrefixPrinter{
-			Writer:       os.Stdout,
 			MessageStyle: &pterm.ThemeDefault.DefaultText,
 			Prefix: pterm.Prefix{
 				Style: &pterm.ThemeDefault.DefaultText,
