@@ -1,6 +1,8 @@
 package log
 
 import (
+	"net/http"
+
 	"github.com/pterm/pterm"
 )
 
@@ -60,4 +62,8 @@ func (logger *PrefixedLogger) Debugf(template string, v ...interface{}) {
 	if pterm.PrintDebugMessages {
 		logger.writer.Println(debugPrinter.Sprintf(template, v...))
 	}
+}
+
+func (logger *PrefixedLogger) PrintResponse(response *http.Response) {
+	logger.writer.Println(PrintResponse(response))
 }

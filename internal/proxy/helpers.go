@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/responseprinter"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/pterm/pterm"
 )
 
@@ -46,7 +46,7 @@ func makeOptionsResponse(printer pterm.PrefixPrinter, writer http.ResponseWriter
 		}
 	}
 
-	printer.Printfln(responseprinter.PrintResponse(&http.Response{
+	printer.Printfln(log.PrintResponse(&http.Response{
 		StatusCode: http.StatusOK,
 		Request:    req,
 	}))

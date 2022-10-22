@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/responseprinter"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/pterm/pterm"
 )
 
@@ -35,7 +35,7 @@ func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	updateRequest(request)
 	writer.WriteHeader(handler.mock.Response.Code)
 	fmt.Fprint(writer, handler.mock.Response.RawContent)
-	handler.mockWriter.Println(responseprinter.PrintResponse(&http.Response{
+	handler.mockWriter.Println(log.PrintResponse(&http.Response{
 		Request:    request,
 		StatusCode: handler.mock.Response.Code,
 	}))

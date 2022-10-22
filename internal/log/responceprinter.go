@@ -1,4 +1,4 @@
-package responseprinter
+package log
 
 import (
 	"fmt"
