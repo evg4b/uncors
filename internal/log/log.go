@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/pterm/pterm"
@@ -81,4 +82,8 @@ func DisableColor() {
 
 func EnableColor() {
 	pterm.EnableColor()
+}
+
+func SetLogger(output io.Writer) {
+	pterm.SetDefaultOutput(output)
 }
