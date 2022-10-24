@@ -102,7 +102,7 @@ func TestPrefixedLogger(t *testing.T) {
 		assert.Equal(t, expected, output.String())
 	}))
 
-	t.Run("PrintResponse", func(t *testing.T) {
+	t.Run("printResponse", func(t *testing.T) {
 		log.EnableColor()
 		logger := log.NewLogger(prefix, log.WithStyle(&pterm.Style{pterm.FgBlack, pterm.BgLightBlue}))
 

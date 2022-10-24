@@ -1,8 +1,11 @@
 package mock
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/gorilla/mux"
+)
 
-func MakeMockedRoutes(router *mux.Router, mocks []Mock) {
+func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock) {
 	var defaultMocks []Mock
 
 	for _, mock := range mocks {
@@ -14,7 +17,7 @@ func MakeMockedRoutes(router *mux.Router, mocks []Mock) {
 			setQueries(route, mock.Queries)
 			setHeaders(route, mock.Headers)
 
-			handler := NewMockHandler(WithMock(mock))
+			handler := NewMockHandler(WithMock(mock), WithLogger(logger))
 			route.Handler(handler)
 		} else {
 			defaultMocks = append(defaultMocks, mock)
@@ -26,7 +29,7 @@ func MakeMockedRoutes(router *mux.Router, mocks []Mock) {
 
 		setPath(route, mock.Path)
 
-		handler := NewMockHandler(WithMock(mock))
+		handler := NewMockHandler(WithMock(mock), WithLogger(logger))
 		route.Handler(handler)
 	}
 }

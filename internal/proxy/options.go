@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
@@ -22,5 +23,11 @@ func WithURLReplacerFactory(replacerFactory URLReplacerFactory) HandlerOption {
 func WithHTTPClient(http *http.Client) HandlerOption {
 	return func(pm *Handler) {
 		pm.http = http
+	}
+}
+
+func WithLogger(logger contracts.Logger) HandlerOption {
+	return func(pm *Handler) {
+		pm.logger = logger
 	}
 }

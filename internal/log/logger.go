@@ -65,5 +65,5 @@ func (logger *PrefixedLogger) Debugf(template string, v ...interface{}) {
 }
 
 func (logger *PrefixedLogger) PrintResponse(response *http.Response) {
-	logger.writer.Println(PrintResponse(response))
+	logger.writer.Println(printResponse(response))
 }

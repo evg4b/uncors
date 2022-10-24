@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/mock"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -18,10 +19,12 @@ var mock3Body = `{"mock": "mock number 3"}`
 var mock4Body = `{"mock": "mock number 4"}`
 
 func TestMakeMockedRoutes(t *testing.T) {
+	logger := mocks.NewNoopLogger(t)
+
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			router := mux.NewRouter()
-			mock.MakeMockedRoutes(router, []mock.Mock{{
+			mock.MakeMockedRoutes(router, logger, []mock.Mock{{
 				Path: "/api",
 				Response: mock.Response{
 					Code:       http.StatusOK,
@@ -56,7 +59,7 @@ func TestMakeMockedRoutes(t *testing.T) {
 
 		t.Run("where method is set", func(t *testing.T) {
 			router := mux.NewRouter()
-			mock.MakeMockedRoutes(router, []mock.Mock{{
+			mock.MakeMockedRoutes(router, logger, []mock.Mock{{
 				Path:   "/api",
 				Method: http.MethodPut,
 				Response: mock.Response{
@@ -104,7 +107,7 @@ func TestMakeMockedRoutes(t *testing.T) {
 	t.Run("path handling", func(t *testing.T) {
 		router := mux.NewRouter()
 
-		mock.MakeMockedRoutes(router, []mock.Mock{
+		mock.MakeMockedRoutes(router, logger, []mock.Mock{
 			{
 				Path: "/api/user",
 				Response: mock.Response{
@@ -194,7 +197,7 @@ func TestMakeMockedRoutes(t *testing.T) {
 
 	t.Run("query handling", func(t *testing.T) {
 		router := mux.NewRouter()
-		mock.MakeMockedRoutes(router, []mock.Mock{
+		mock.MakeMockedRoutes(router, logger, []mock.Mock{
 			{
 				Path: "/api/user",
 				Response: mock.Response{
@@ -284,7 +287,7 @@ func TestMakeMockedRoutes(t *testing.T) {
 
 	t.Run("header handling", func(t *testing.T) {
 		router := mux.NewRouter()
-		mock.MakeMockedRoutes(router, []mock.Mock{
+		mock.MakeMockedRoutes(router, logger, []mock.Mock{
 			{
 				Path: "/api/user",
 				Response: mock.Response{

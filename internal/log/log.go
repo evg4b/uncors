@@ -8,17 +8,6 @@ import (
 	"github.com/pterm/pterm"
 )
 
-type Logger interface {
-	Error(a ...interface{})
-	Errorf(template string, a ...interface{})
-	Warning(a ...interface{})
-	Warningf(template string, a ...interface{})
-	Info(a ...interface{})
-	Infof(template string, a ...interface{})
-	Debug(a ...interface{})
-	Debugf(template string, a ...interface{})
-}
-
 func Fatal(a ...interface{}) {
 	Error(a...)
 	os.Exit(0)

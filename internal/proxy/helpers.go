@@ -3,9 +3,6 @@ package proxy
 import (
 	"net/http"
 	"strings"
-
-	"github.com/evg4b/uncors/internal/log"
-	"github.com/pterm/pterm"
 )
 
 type modificationsMap = map[string]func(string) (string, error)
@@ -34,7 +31,7 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) error
 	return nil
 }
 
-func makeOptionsResponse(printer pterm.PrefixPrinter, writer http.ResponseWriter, req *http.Request) error {
+func (handler *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
 	header := writer.Header()
 	for key, values := range req.Header {
 		lowerKey := strings.ToLower(key)
@@ -46,10 +43,10 @@ func makeOptionsResponse(printer pterm.PrefixPrinter, writer http.ResponseWriter
 		}
 	}
 
-	printer.Printfln(log.PrintResponse(&http.Response{
+	handler.logger.PrintResponse(&http.Response{
 		StatusCode: http.StatusOK,
 		Request:    req,
-	}))
+	})
 
 	return nil
 }
