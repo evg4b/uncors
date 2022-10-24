@@ -16,7 +16,6 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
 	"github.com/pseidemann/finish"
-	"github.com/pterm/pterm"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,16 +26,6 @@ const (
 	defaultHTTPSPort = 443
 	baseAddress      = "0.0.0.0"
 )
-
-var proxyLogger = log.NewLogger(" PROXY ", log.WithStyle(&pterm.Style{
-	pterm.FgBlack,
-	pterm.BgLightBlue,
-}))
-
-var mockLogger = log.NewLogger(" MOCK  ", log.WithStyle(&pterm.Style{
-	pterm.FgBlack,
-	pterm.BgLightMagenta,
-}))
 
 func main() {
 	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxy")
@@ -76,7 +65,7 @@ func main() {
 		}
 	}
 
-	mock.MakeMockedRoutes(router, mockLogger, mocksDefs)
+	mock.MakeMockedRoutes(router, ui.MockLogger, mocksDefs)
 
 	mappings, err := urlreplacer.NormaliseMappings(
 		map[string]string{*source: *target},
@@ -101,7 +90,7 @@ func main() {
 	proxyHandler := proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(factory),
 		proxy.WithHTTPClient(httpClient),
-		proxy.WithLogger(proxyLogger),
+		proxy.WithLogger(ui.ProxyLogger),
 	)
 
 	router.NotFoundHandler = proxyHandler
