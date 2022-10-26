@@ -48,6 +48,7 @@ func main() {
 
 	if *debug {
 		log.EnableDebugMessages()
+		log.Debug("Enabled debug messages")
 	}
 
 	router := mux.NewRouter()
@@ -59,6 +60,7 @@ func main() {
 			log.Fatal(err)
 		}
 
+		log.Debugf("Loaded file with mocks '%s'", *mocksFile)
 		decoder := yaml.NewDecoder(file)
 		if err = decoder.Decode(&mocksDefs); err != nil {
 			log.Fatal(err)
@@ -101,15 +103,18 @@ func main() {
 	httpServer := infrastructure.NewServer(baseAddress, *httpPort, router)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
+		log.Debugf("Starting http server on port %d", *httpPort)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error(err)
 		}
 	}()
 
 	if len(*certFile) > 0 && len(*keyFile) > 0 {
+		log.Debug("Found cert file and key file. Https server will be started")
 		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, router)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
+			log.Debugf("Starting https server on port %d", *httpsPort)
 			if err := httpsServer.ListenAndServeTLS(*certFile, *keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Error(err)
 			}

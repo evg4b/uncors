@@ -14,7 +14,6 @@ var ErrEmptySourceURL = errors.New("source url should not be empty")
 var ErrEmptyTargetURL = errors.New("target url should not be empty")
 
 var ErrInvalidSourceURL = errors.New("source url is invalid")
-var ErrInvalidTargetURL = errors.New("target url is invalid")
 var ErrURLNotMached = errors.New("is not matched")
 
 type hook = func(string) string
