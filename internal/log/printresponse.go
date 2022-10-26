@@ -1,4 +1,4 @@
-package responseprinter
+package log
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func PrintResponse(response *http.Response) string {
+func printResponse(response *http.Response) string {
 	prefix := fmt.Sprintf("%d %s", response.StatusCode, response.Request.Method)
 	printer := getPrefixPrinter(response.StatusCode, prefix)
 

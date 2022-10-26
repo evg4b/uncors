@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -63,6 +64,7 @@ func TestProxyHandler(t *testing.T) {
 				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
+					proxy.WithLogger(mocks.NewNoopLogger(t)),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
@@ -115,6 +117,7 @@ func TestProxyHandler(t *testing.T) {
 				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
+					proxy.WithLogger(mocks.NewNoopLogger(t)),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
@@ -148,6 +151,7 @@ func TestProxyHandler(t *testing.T) {
 		proc := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithLogger(mocks.NewNoopLogger(t)),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
@@ -172,7 +176,9 @@ func TestProxyHandler(t *testing.T) {
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
-		handler := proxy.NewProxyHandler()
+		handler := proxy.NewProxyHandler(
+			proxy.WithLogger(mocks.NewNoopLogger(t)),
+		)
 
 		t.Run("should correctly create response", func(t *testing.T) {
 			testMethods := []struct {

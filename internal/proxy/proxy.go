@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/responseprinter"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
@@ -14,19 +14,11 @@ import (
 type Handler struct {
 	replacerFactory URLReplacerFactory
 	http            *http.Client
-	proxyWriter     pterm.PrefixPrinter
+	logger          contracts.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	handler := &Handler{
-		proxyWriter: pterm.PrefixPrinter{
-			MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
-			Prefix: pterm.Prefix{
-				Style: &pterm.Style{pterm.FgBlack, pterm.BgLightBlue},
-				Text:  " PROXY ",
-			},
-		},
-	}
+	handler := &Handler{}
 
 	for _, option := range options {
 		option(handler)
@@ -47,7 +39,7 @@ func (handler *Handler) ServeHTTP(response http.ResponseWriter, request *http.Re
 
 func (handler *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
-		return makeOptionsResponse(handler.proxyWriter, resp, req)
+		return handler.makeOptionsResponse(resp, req)
 	}
 
 	targetR, sourceR, err := handler.replacerFactory.Make(req.URL)
@@ -72,7 +64,7 @@ func (handler *Handler) handle(resp http.ResponseWriter, req *http.Request) erro
 		return fmt.Errorf("failed to make uncors response: %w", err)
 	}
 
-	handler.proxyWriter.Println(responseprinter.PrintResponse(originalResp))
+	handler.logger.PrintResponse(originalResp)
 
 	return nil
 }
