@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
@@ -16,16 +17,16 @@ func (handler *Handler) makeUncorsResponse(
 		return fmt.Errorf("failed to copy cookies in request: %w", err)
 	}
 
-	header := resp.Header()
-	err := copyHeaders(originalResp.Header, header, modificationsMap{
+	err := copyHeaders(originalResp.Header, resp.Header(), modificationsMap{
 		"location": replacer.Replace,
 	})
-
 	if err != nil {
 		return err
 	}
 
-	if err = copyResponseData(header, resp, originalResp); err != nil {
+	infrastructure.WriteCorsHeaders(resp)
+
+	if err = copyResponseData(resp, originalResp); err != nil {
 		return err
 	}
 

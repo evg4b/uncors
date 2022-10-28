@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/infrastructure"
 )
 
 type Handler struct {
@@ -25,6 +26,7 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	updateRequest(request)
 	writer.WriteHeader(handler.mock.Response.Code)
+	infrastructure.WriteCorsHeaders(writer)
 	fmt.Fprint(writer, handler.mock.Response.RawContent)
 	handler.logger.PrintResponse(&http.Response{
 		Request:    request,
