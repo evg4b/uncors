@@ -8,8 +8,11 @@ import (
 	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
+
+const textPlain = "text/plain; charset=utf-8"
 
 func TestHandler(t *testing.T) {
 	logger := mocks.NewNoopLogger(t)
@@ -23,12 +26,12 @@ func TestHandler(t *testing.T) {
 			{
 				name:     "plain text",
 				body:     `status: ok`,
-				expected: "text/plain; charset=utf-8",
+				expected: textPlain,
 			},
 			{
 				name:     "json",
 				body:     `{ "status": "ok" }`,
-				expected: "text/plain; charset=utf-8",
+				expected: textPlain,
 			},
 			{
 				name:     "html",
@@ -58,7 +61,7 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(recorder, request)
 
 				header := testutils.ReadHeader(t, recorder)
-				assert.EqualValues(t, testCase.expected, header.Get("Content-Type"))
+				assert.EqualValues(t, testCase.expected, header.Get(headers.ContentType))
 			})
 		}
 	})
@@ -76,10 +79,10 @@ func TestHandler(t *testing.T) {
 					RawContent: "test content",
 				},
 				expected: map[string][]string{
-					"Access-Control-Allow-Origin":      {"*"},
-					"Access-Control-Allow-Credentials": {"true"},
-					"Content-Type":                     {"text/plain; charset=utf-8"},
-					"Access-Control-Allow-Methods": {
+					headers.AccessControlAllowOrigin:      {"*"},
+					headers.AccessControlAllowCredentials: {"true"},
+					headers.ContentType:                   {textPlain},
+					headers.AccessControlAllowMethods: {
 						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 					},
 				},
@@ -91,10 +94,10 @@ func TestHandler(t *testing.T) {
 					RawContent: "test content",
 				},
 				expected: map[string][]string{
-					"Access-Control-Allow-Origin":      {"*"},
-					"Access-Control-Allow-Credentials": {"true"},
-					"Content-Type":                     {"text/plain; charset=utf-8"},
-					"Access-Control-Allow-Methods": {
+					headers.AccessControlAllowOrigin:      {"*"},
+					headers.AccessControlAllowCredentials: {"true"},
+					headers.ContentType:                   {textPlain},
+					headers.AccessControlAllowMethods: {
 						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 					},
 				},
@@ -109,11 +112,11 @@ func TestHandler(t *testing.T) {
 					RawContent: "test content",
 				},
 				expected: map[string][]string{
-					"Access-Control-Allow-Origin":      {"*"},
-					"Access-Control-Allow-Credentials": {"true"},
-					"Content-Type":                     {"text/plain; charset=utf-8"},
-					"X-Key":                            {"X-Key-Value"},
-					"Access-Control-Allow-Methods": {
+					headers.AccessControlAllowOrigin:      {"*"},
+					headers.AccessControlAllowCredentials: {"true"},
+					headers.ContentType:                   {textPlain},
+					"X-Key":                               {"X-Key-Value"},
+					headers.AccessControlAllowMethods: {
 						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 					},
 				},
@@ -123,17 +126,17 @@ func TestHandler(t *testing.T) {
 				response: mock.Response{
 					Code: 200,
 					Headers: map[string]string{
-						"Access-Control-Allow-Origin":      "localhost",
-						"Access-Control-Allow-Credentials": "false",
-						"Content-Type":                     "none",
+						headers.AccessControlAllowOrigin:      "localhost",
+						headers.AccessControlAllowCredentials: "false",
+						headers.ContentType:                   "none",
 					},
 					RawContent: "test content",
 				},
 				expected: map[string][]string{
-					"Access-Control-Allow-Origin":      {"localhost"},
-					"Access-Control-Allow-Credentials": {"false"},
-					"Content-Type":                     {"none"},
-					"Access-Control-Allow-Methods": {
+					headers.AccessControlAllowOrigin:      {"localhost"},
+					headers.AccessControlAllowCredentials: {"false"},
+					headers.ContentType:                   {"none"},
+					headers.AccessControlAllowMethods: {
 						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 					},
 				},

@@ -5,8 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-http-utils/headers"
+
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,9 +23,9 @@ func TestWriteCorsHeaders(t *testing.T) {
 			name:            "should append data in empty writer",
 			recorderFactory: httptest.NewRecorder,
 			expected: map[string][]string{
-				"Access-Control-Allow-Origin":      {"*"},
-				"Access-Control-Allow-Credentials": {"true"},
-				"Access-Control-Allow-Methods": {
+				headers.AccessControlAllowOrigin:      {"*"},
+				headers.AccessControlAllowCredentials: {"true"},
+				headers.AccessControlAllowMethods: {
 					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 				},
 			},
@@ -37,11 +40,11 @@ func TestWriteCorsHeaders(t *testing.T) {
 				return writer
 			},
 			expected: map[string][]string{
-				"Test-Header":                      {"true"},
-				"X-Hey-Header":                     {"123"},
-				"Access-Control-Allow-Origin":      {"*"},
-				"Access-Control-Allow-Credentials": {"true"},
-				"Access-Control-Allow-Methods": {
+				"Test-Header":                         {"true"},
+				"X-Hey-Header":                        {"123"},
+				headers.AccessControlAllowOrigin:      {"*"},
+				headers.AccessControlAllowCredentials: {"true"},
+				headers.AccessControlAllowMethods: {
 					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 				},
 			},
@@ -51,15 +54,15 @@ func TestWriteCorsHeaders(t *testing.T) {
 			recorderFactory: func() *httptest.ResponseRecorder {
 				writer := httptest.NewRecorder()
 				writer.Header().Set("Test-Header", "true")
-				writer.Header().Set("Access-Control-Allow-Origin", "localhost:3000")
+				writer.Header().Set(headers.AccessControlAllowOrigin, "localhost:3000")
 
 				return writer
 			},
 			expected: map[string][]string{
-				"Test-Header":                      {"true"},
-				"Access-Control-Allow-Origin":      {"*"},
-				"Access-Control-Allow-Credentials": {"true"},
-				"Access-Control-Allow-Methods": {
+				"Test-Header":                         {"true"},
+				headers.AccessControlAllowOrigin:      {"*"},
+				headers.AccessControlAllowCredentials: {"true"},
+				headers.AccessControlAllowMethods: {
 					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
 				},
 			},

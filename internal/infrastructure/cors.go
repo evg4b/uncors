@@ -1,9 +1,13 @@
 package infrastructure
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/go-http-utils/headers"
+)
 
 func WriteCorsHeaders(header http.Header) {
-	header.Set("Access-Control-Allow-Origin", "*")
-	header.Set("Access-Control-Allow-Credentials", "true")
-	header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
+	header.Set(headers.AccessControlAllowOrigin, "*")
+	header.Set(headers.AccessControlAllowCredentials, "true")
+	header.Set(headers.AccessControlAllowMethods, "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/go-http-utils/headers"
 )
 
 type Handler struct {
@@ -24,16 +25,15 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 }
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	updateRequest(request)
 	response := handler.response
 	header := writer.Header()
 	infrastructure.WriteCorsHeaders(header)
-	if len(header.Get("Content-Type")) == 0 {
-		contentType := http.DetectContentType([]byte(response.RawContent))
-		header.Set("Content-Type", contentType)
-	}
 	for key, value := range response.Headers {
 		header.Set(key, value)
+	}
+	if len(header.Get(headers.ContentType)) == 0 {
+		contentType := http.DetectContentType([]byte(response.RawContent))
+		header.Set(headers.ContentType, contentType)
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
@@ -53,14 +53,4 @@ func normaliseCode(code int) int {
 	}
 
 	return code
-}
-
-func updateRequest(request *http.Request) {
-	request.URL.Host = request.Host
-
-	if request.TLS != nil {
-		request.URL.Scheme = "https"
-	} else {
-		request.URL.Scheme = "http"
-	}
 }

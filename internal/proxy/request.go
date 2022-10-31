@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-http-utils/headers"
+
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/go-http-utils/headers"
 )
 
 func (handler *Handler) makeOriginalRequest(
@@ -18,8 +21,8 @@ func (handler *Handler) makeOriginalRequest(
 	}
 
 	err = copyHeaders(req.Header, originalReq.Header, modificationsMap{
-		"origin":  replacer.Replace,
-		"referer": replacer.Replace,
+		headers.Origin:  replacer.Replace,
+		headers.Referer: replacer.Replace,
 	})
 
 	if err != nil {

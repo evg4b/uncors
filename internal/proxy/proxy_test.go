@@ -8,11 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-http-utils/headers"
+
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,13 +36,13 @@ func TestProxyHandler(t *testing.T) {
 				name:        "transform Origin",
 				URL:         "http://premium.local.com/app",
 				expectedURL: "https://premium.api.com/app",
-				headerKey:   "Origin",
+				headerKey:   headers.Origin,
 			},
 			{
 				name:        "transform Referer",
 				URL:         "http://premium.local.com/info",
 				expectedURL: "https://premium.api.com/info",
-				headerKey:   "Referer",
+				headerKey:   headers.Referer,
 			},
 		}
 
@@ -92,7 +95,7 @@ func TestProxyHandler(t *testing.T) {
 				name:        "transform Location",
 				URL:         "https://premium.api.com/app",
 				expectedURL: "http://premium.local.com/app",
-				headerKey:   "Location",
+				headerKey:   headers.Location,
 			},
 		}
 
@@ -164,14 +167,13 @@ func TestProxyHandler(t *testing.T) {
 
 		proc.ServeHTTP(recorder, req)
 
-		headers := recorder.Header()
-
-		assert.Equal(t, "*", headers.Get("Access-Control-Allow-Origin"))
-		assert.Equal(t, "true", headers.Get("Access-Control-Allow-Credentials"))
+		header := recorder.Header()
+		assert.Equal(t, "*", header.Get(headers.AccessControlAllowOrigin))
+		assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
 		assert.Equal(
 			t,
 			"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-			headers.Get("Access-Control-Allow-Methods"),
+			header.Get(headers.AccessControlAllowMethods),
 		)
 	})
 
@@ -194,21 +196,21 @@ func TestProxyHandler(t *testing.T) {
 				{
 					name: "should do not skip not access-control-request-* headers",
 					headers: http.Header{
-						"Host":          {"www.host.com"},
-						"Content-Type":  {"application/json"},
-						"Authorization": {"Bearer Token"},
+						"Host":                {"www.host.com"},
+						headers.ContentType:   {"application/json"},
+						headers.Authorization: {"Bearer Token"},
 					},
 					expected: http.Header{},
 				},
 				{
 					name: "should allow all access-control-request-* headers",
 					headers: http.Header{
-						"Access-Control-Request-Headers": {"X-PINGOTHER, Content-Type"},
-						"Access-Control-Request-Method":  {http.MethodPost, http.MethodDelete},
+						headers.AccessControlRequestHeaders: {"X-PINGOTHER, Content-Type"},
+						headers.AccessControlRequestMethod:  {http.MethodPost, http.MethodDelete},
 					},
 					expected: http.Header{
-						"Access-Control-Allow-Headers": {"X-PINGOTHER, Content-Type"},
-						"Access-Control-Allow-Method":  {http.MethodPost, http.MethodDelete},
+						headers.AccessControlAllowHeaders: {"X-PINGOTHER, Content-Type"},
+						headers.AccessControlAllowMethods: {http.MethodPost, http.MethodDelete},
 					},
 				},
 			}
