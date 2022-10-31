@@ -9,8 +9,8 @@ import (
 )
 
 type Handler struct {
-	mock   Mock
-	logger contracts.Logger
+	response Response
+	logger   contracts.Logger
 }
 
 func NewMockHandler(options ...HandlerOption) *Handler {
@@ -25,23 +25,34 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	updateRequest(request)
-
+	response := handler.response
 	header := writer.Header()
 	infrastructure.WriteCorsHeaders(header)
 	if len(header.Get("Content-Type")) == 0 {
-		contentType := http.DetectContentType([]byte(handler.mock.Response.RawContent))
+		contentType := http.DetectContentType([]byte(response.RawContent))
 		header.Set("Content-Type", contentType)
 	}
+	for key, value := range response.Headers {
+		header.Set(key, value)
+	}
 
-	writer.WriteHeader(handler.mock.Response.Code)
-	if _, err := fmt.Fprint(writer, handler.mock.Response.RawContent); err != nil {
+	writer.WriteHeader(normaliseCode(response.Code))
+	if _, err := fmt.Fprint(writer, response.RawContent); err != nil {
 		return // TODO: add error handler
 	}
 
 	handler.logger.PrintResponse(&http.Response{
 		Request:    request,
-		StatusCode: handler.mock.Response.Code,
+		StatusCode: response.Code,
 	})
+}
+
+func normaliseCode(code int) int {
+	if code == 0 {
+		return http.StatusOK
+	}
+
+	return code
 }
 
 func updateRequest(request *http.Request) {

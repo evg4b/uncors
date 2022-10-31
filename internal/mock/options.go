@@ -4,9 +4,9 @@ import "github.com/evg4b/uncors/internal/contracts"
 
 type HandlerOption = func(*Handler)
 
-func WithMock(mock Mock) HandlerOption {
+func WithResponse(response Response) HandlerOption {
 	return func(handler *Handler) {
-		handler.mock = mock
+		handler.response = response
 	}
 }
 
