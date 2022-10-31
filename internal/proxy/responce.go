@@ -24,7 +24,7 @@ func (handler *Handler) makeUncorsResponse(
 		return err
 	}
 
-	infrastructure.WriteCorsHeaders(resp)
+	infrastructure.WriteCorsHeaders(resp.Header())
 
 	if err = copyResponseData(resp, originalResp); err != nil {
 		return err

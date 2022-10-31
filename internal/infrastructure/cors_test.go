@@ -68,7 +68,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			resp := testCase.recorderFactory()
-			infrastructure.WriteCorsHeaders(resp)
+			infrastructure.WriteCorsHeaders(resp.Header())
 
 			response := resp.Result()
 			defer testutils.CheckNoError(t, response.Body.Close())

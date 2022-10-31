@@ -25,9 +25,19 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	updateRequest(request)
+
+	header := writer.Header()
+	infrastructure.WriteCorsHeaders(header)
+	if len(header.Get("Content-Type")) == 0 {
+		contentType := http.DetectContentType([]byte(handler.mock.Response.RawContent))
+		header.Set("Content-Type", contentType)
+	}
+
 	writer.WriteHeader(handler.mock.Response.Code)
-	infrastructure.WriteCorsHeaders(writer)
-	fmt.Fprint(writer, handler.mock.Response.RawContent)
+	if _, err := fmt.Fprint(writer, handler.mock.Response.RawContent); err != nil {
+		return // TODO: add error handler
+	}
+
 	handler.logger.PrintResponse(&http.Response{
 		Request:    request,
 		StatusCode: handler.mock.Response.Code,
