@@ -6,6 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/go-http-utils/headers"
 )
 
 func (handler *Handler) makeUncorsResponse(
@@ -18,7 +19,7 @@ func (handler *Handler) makeUncorsResponse(
 	}
 
 	err := copyHeaders(originalResp.Header, resp.Header(), modificationsMap{
-		"location": replacer.Replace,
+		headers.Location: replacer.Replace,
 	})
 	if err != nil {
 		return err

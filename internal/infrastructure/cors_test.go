@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-http-utils/headers"
-
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"

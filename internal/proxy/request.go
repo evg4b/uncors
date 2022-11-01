@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-http-utils/headers"
-
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
 )
