@@ -17,7 +17,7 @@ func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock)
 			setQueries(route, mock.Queries)
 			setHeaders(route, mock.Headers)
 
-			handler := NewMockHandler(WithMock(mock), WithLogger(logger))
+			handler := NewMockHandler(WithResponse(mock.Response), WithLogger(logger))
 			route.Handler(handler)
 		} else {
 			defaultMocks = append(defaultMocks, mock)
@@ -29,7 +29,7 @@ func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock)
 
 		setPath(route, mock.Path)
 
-		handler := NewMockHandler(WithMock(mock), WithLogger(logger))
+		handler := NewMockHandler(WithResponse(mock.Response), WithLogger(logger))
 		route.Handler(handler)
 	}
 }

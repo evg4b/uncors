@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/go-http-utils/headers"
 )
 
 type Handler struct {
-	mock   Mock
-	logger contracts.Logger
+	response Response
+	logger   contracts.Logger
 }
 
 func NewMockHandler(options ...HandlerOption) *Handler {
@@ -23,21 +25,32 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 }
 
 func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	updateRequest(request)
-	writer.WriteHeader(handler.mock.Response.Code)
-	fmt.Fprint(writer, handler.mock.Response.RawContent)
+	response := handler.response
+	header := writer.Header()
+	infrastructure.WriteCorsHeaders(header)
+	for key, value := range response.Headers {
+		header.Set(key, value)
+	}
+	if len(header.Get(headers.ContentType)) == 0 {
+		contentType := http.DetectContentType([]byte(response.RawContent))
+		header.Set(headers.ContentType, contentType)
+	}
+
+	writer.WriteHeader(normaliseCode(response.Code))
+	if _, err := fmt.Fprint(writer, response.RawContent); err != nil {
+		return // TODO: add error handler
+	}
+
 	handler.logger.PrintResponse(&http.Response{
 		Request:    request,
-		StatusCode: handler.mock.Response.Code,
+		StatusCode: response.Code,
 	})
 }
 
-func updateRequest(request *http.Request) {
-	request.URL.Host = request.Host
-
-	if request.TLS != nil {
-		request.URL.Scheme = "https"
-	} else {
-		request.URL.Scheme = "http"
+func normaliseCode(code int) int {
+	if code == 0 {
+		return http.StatusOK
 	}
+
+	return code
 }

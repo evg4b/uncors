@@ -91,11 +91,7 @@ func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, t
 	return nil
 }
 
-func copyResponseData(header http.Header, resp http.ResponseWriter, targetResp *http.Response) error {
-	header.Set("Access-Control-Allow-Origin", "*")
-	header.Set("Access-Control-Allow-Credentials", "true")
-	header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS")
-
+func copyResponseData(resp http.ResponseWriter, targetResp *http.Response) error {
 	resp.WriteHeader(targetResp.StatusCode)
 
 	if _, err := io.Copy(resp, targetResp.Body); err != nil {
