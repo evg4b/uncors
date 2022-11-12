@@ -1,6 +1,8 @@
 package contracts
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Logger interface {
 	Error(a ...interface{})

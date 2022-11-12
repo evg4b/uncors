@@ -13,12 +13,12 @@ func (handler *Handler) makeOriginalRequest(
 	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {
 	url, _ := replacer.Replace(req.URL.String())
-	originalReq, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
+	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make requst to original server: %w", err)
 	}
 
-	err = copyHeaders(req.Header, originalReq.Header, modificationsMap{
+	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{
 		headers.Origin:  replacer.Replace,
 		headers.Referer: replacer.Replace,
 	})
@@ -27,9 +27,9 @@ func (handler *Handler) makeOriginalRequest(
 		return nil, err
 	}
 
-	if err = copyCookiesToTarget(req, replacer, originalReq); err != nil {
+	if err = copyCookiesToTarget(req, replacer, originalRequest); err != nil {
 		return nil, fmt.Errorf("failed to copy cookies in request: %w", err)
 	}
 
-	return originalReq, nil
+	return originalRequest, nil
 }

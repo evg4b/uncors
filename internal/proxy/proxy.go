@@ -2,19 +2,19 @@ package proxy
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pterm/pterm"
 )
 
 type Handler struct {
-	replacerFactory URLReplacerFactory
-	http            *http.Client
-	logger          contracts.Logger
+	replacers contracts.URLReplacerFactory
+	http      *http.Client
+	logger    contracts.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
@@ -23,6 +23,10 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	for _, option := range options {
 		option(handler)
 	}
+
+	helpers.AssertIsDefined(handler.replacers, "ProxyHandler: ReplacerFactory is not configured")
+	helpers.AssertIsDefined(handler.logger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(handler.http, "ProxyHandler: Http client is not configured")
 
 	return handler
 }
@@ -42,31 +46,39 @@ func (handler *Handler) handle(resp http.ResponseWriter, req *http.Request) erro
 		return handler.makeOptionsResponse(resp, req)
 	}
 
-	targetR, sourceR, err := handler.replacerFactory.Make(req.URL)
+	targetRreplacer, sourceReplacer, err := handler.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
 	}
 
-	originalReq, err := handler.makeOriginalRequest(req, targetR)
+	originalRequest, err := handler.makeOriginalRequest(req, targetRreplacer)
 	if err != nil {
 		return fmt.Errorf("failed to create reuest to original source: %w", err)
 	}
 
-	originalResp, err := handler.http.Do(originalReq)
+	originalResponse, err := handler.executeQuery(originalRequest)
 	if err != nil {
-		return fmt.Errorf("failed to do reuest: %w", err)
+		return err
 	}
 
-	defer originalResp.Body.Close()
+	defer originalResponse.Body.Close()
 
-	err = handler.makeUncorsResponse(originalResp, resp, sourceR)
+	err = handler.makeUncorsResponse(originalResponse, resp, sourceReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to make uncors response: %w", err)
 	}
 
-	handler.logger.PrintResponse(originalResp)
-
 	return nil
+}
+
+func (handler *Handler) executeQuery(request *http.Request) (*http.Response, error) {
+	originalResponse, err := handler.http.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to do reuest: %w", err)
+	}
+	handler.logger.PrintResponse(originalResponse)
+
+	return originalResponse, nil
 }
 
 // nolint: unparam
@@ -86,16 +98,6 @@ func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, t
 		cookie.Secure = replacer.IsTargetSecure()
 		// TODO: Replace domain in cookie
 		target.AddCookie(cookie)
-	}
-
-	return nil
-}
-
-func copyResponseData(resp http.ResponseWriter, targetResp *http.Response) error {
-	resp.WriteHeader(targetResp.StatusCode)
-
-	if _, err := io.Copy(resp, targetResp.Body); err != nil {
-		return fmt.Errorf("failed to copy body to response: %w", err)
 	}
 
 	return nil

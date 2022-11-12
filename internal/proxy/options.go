@@ -2,21 +2,15 @@ package proxy
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 )
-
-type URLReplacerFactory interface {
-	Make(requestURL *url.URL) (*urlreplacer.Replacer, *urlreplacer.Replacer, error)
-}
 
 type HandlerOption = func(*Handler)
 
-func WithURLReplacerFactory(replacerFactory URLReplacerFactory) HandlerOption {
+func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) HandlerOption {
 	return func(pm *Handler) {
-		pm.replacerFactory = replacerFactory
+		pm.replacers = replacerFactory
 	}
 }
 
