@@ -3,7 +3,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,6 +15,8 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gorilla/mux"
 	"github.com/pseidemann/finish"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,25 +29,35 @@ const (
 )
 
 func main() {
-	target := flag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxy")
-	source := flag.String("source", "localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
-	httpPort := flag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
-	httpsPort := flag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
-	certFile := flag.String("cert-file", "", "Path to HTTPS certificate file")
-	keyFile := flag.String("key-file", "", "Path to matching for certificate private key")
-	proxyURL := flag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
-	mocksFile := flag.String("mocks", "", "File with configured mocks")
-	debug := flag.Bool("debug", false, "Show debug output")
+	pflag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxy")
+	pflag.String("source", "localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
+	pflag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
+	pflag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
+	pflag.String("cert-file", "", "Path to HTTPS certificate file")
+	pflag.String("key-file", "", "Path to matching for certificate private key")
+	pflag.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
+	pflag.String("mocks", "", "File with configured mocks")
+	pflag.Bool("debug", false, "Show debug output")
 
-	flag.Usage = func() {
+	pflag.Usage = func() {
 		ui.Logo(Version)
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
+		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		pflag.PrintDefaults()
 	}
 
-	flag.Parse()
+	pflag.Parse()
+	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
+		log.Fatal(err)
+	}
 
-	if *debug {
+	httpPort := viper.GetInt("http-port")
+	httpsPort := viper.GetInt("https-port")
+	certFile := viper.GetString("cert-file")
+	keyFile := viper.GetString("key-file")
+	mocksFile := viper.GetString("mocks")
+
+	if viper.GetBool("debug") {
+		viper.Debug()
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
 	}
@@ -54,13 +65,13 @@ func main() {
 	router := mux.NewRouter()
 
 	var mocksDefs []mock.Mock
-	if len(*mocksFile) > 0 {
-		file, err := os.Open(*mocksFile)
+	if len(mocksFile) > 0 {
+		file, err := os.Open(mocksFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Debugf("Loaded file with mocks '%s'", *mocksFile)
+		log.Debugf("Loaded file with mocks '%s'", mocksFile)
 		decoder := yaml.NewDecoder(file)
 		if err = decoder.Decode(&mocksDefs); err != nil {
 			log.Fatal(err)
@@ -70,10 +81,10 @@ func main() {
 	mock.MakeMockedRoutes(router, ui.MockLogger, mocksDefs)
 
 	mappings, err := urlreplacer.NormaliseMappings(
-		map[string]string{*source: *target},
-		*httpPort,
-		*httpsPort,
-		len(*certFile) > 0 && len(*keyFile) > 0,
+		map[string]string{viper.GetString("source"): viper.GetString("target")},
+		httpPort,
+		httpsPort,
+		len(certFile) > 0 && len(keyFile) > 0,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -84,7 +95,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpClient, err := infrastructure.MakeHTTPClient(*proxyURL)
+	httpClient, err := infrastructure.MakeHTTPClient(viper.GetString("proxy"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,22 +111,22 @@ func main() {
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, *httpPort, router)
+	httpServer := infrastructure.NewServer(baseAddress, httpPort, router)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
-		log.Debugf("Starting http server on port %d", *httpPort)
+		log.Debugf("Starting http server on port %d", httpPort)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error(err)
 		}
 	}()
 
-	if len(*certFile) > 0 && len(*keyFile) > 0 {
+	if len(certFile) > 0 && len(keyFile) > 0 {
 		log.Debug("Found cert file and key file. Https server will be started")
-		httpsServer := infrastructure.NewServer(baseAddress, *httpsPort, router)
+		httpsServer := infrastructure.NewServer(baseAddress, httpsPort, router)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
-			log.Debugf("Starting https server on port %d", *httpsPort)
-			if err := httpsServer.ListenAndServeTLS(*certFile, *keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Debugf("Starting https server on port %d", httpsPort)
+			if err := httpsServer.ListenAndServeTLS(certFile, keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Error(err)
 			}
 		}()
