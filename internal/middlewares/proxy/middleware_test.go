@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/proxy"
+	"github.com/evg4b/uncors/internal/middlewares/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxyHandler(t *testing.T) {
+func TestProxyMiddleware(t *testing.T) {
 	replacerFactory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.local.com": "https://premium.api.com",
 	})
@@ -62,7 +62,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				proc := proxy.NewProxyMiddleware(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -115,7 +115,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				proc := proxy.NewProxyMiddleware(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -149,7 +149,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		proc := proxy.NewProxyHandler(
+		proc := proxy.NewProxyMiddleware(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -176,52 +176,68 @@ func TestProxyHandler(t *testing.T) {
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
-		t.Skip()
-		handler := proxy.NewProxyHandler(
+		middleware := proxy.NewProxyMiddleware(
+			proxy.WithHTTPClient(http.DefaultClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
 		)
 
 		t.Run("should correctly create response", func(t *testing.T) {
-			testMethods := []struct {
-				name     string
-				headers  http.Header
-				expected http.Header
+			tests := []struct {
+				name            string
+				recorderFactory func() *httptest.ResponseRecorder
+				expected        http.Header
 			}{
 				{
-					name:     "should do not change empty headers",
-					headers:  http.Header(map[string][]string{}),
-					expected: http.Header(map[string][]string{}),
+					name:            "should append data in empty writer",
+					recorderFactory: httptest.NewRecorder,
+					expected: map[string][]string{
+						headers.AccessControlAllowOrigin:      {"*"},
+						headers.AccessControlAllowCredentials: {"true"},
+						headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					},
 				},
 				{
-					name: "should do not skip not access-control-request-* headers",
-					headers: http.Header{
-						"Host":                {"www.host.com"},
-						headers.ContentType:   {"application/json"},
-						headers.Authorization: {"Bearer Token"},
+					name: "should append data in filled writer",
+					recorderFactory: func() *httptest.ResponseRecorder {
+						writer := httptest.NewRecorder()
+						writer.Header().Set("Test-Header", "true")
+						writer.Header().Set("X-Hey-Header", "123")
+
+						return writer
 					},
-					expected: http.Header{},
+					expected: map[string][]string{
+						"Test-Header":                         {"true"},
+						"X-Hey-Header":                        {"123"},
+						headers.AccessControlAllowOrigin:      {"*"},
+						headers.AccessControlAllowCredentials: {"true"},
+						headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					},
 				},
 				{
-					name: "should allow all access-control-request-* headers",
-					headers: http.Header{
-						headers.AccessControlRequestHeaders: {"X-PINGOTHER, Content-Type"},
-						headers.AccessControlRequestMethod:  {http.MethodPost, http.MethodDelete},
+					name: "should override same headers",
+					recorderFactory: func() *httptest.ResponseRecorder {
+						writer := httptest.NewRecorder()
+						writer.Header().Set("Custom-Header", "true")
+						writer.Header().Set(headers.AccessControlAllowOrigin, "localhost:3000")
+
+						return writer
 					},
-					expected: http.Header{
-						headers.AccessControlAllowHeaders: {"X-PINGOTHER, Content-Type"},
-						headers.AccessControlAllowMethods: {http.MethodPost, http.MethodDelete},
+					expected: map[string][]string{
+						"Custom-Header":                       {"true"},
+						headers.AccessControlAllowOrigin:      {"*"},
+						headers.AccessControlAllowCredentials: {"true"},
+						headers.AccessControlAllowMethods:     {mocks.AllMethods},
 					},
 				},
 			}
-			for _, testCase := range testMethods {
+			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
+					recorder := testCase.recorderFactory()
 					req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
-					req.Header = testCase.headers
-
-					recorder := httptest.NewRecorder()
-					handler.ServeHTTP(recorder, req)
+					middleware.ServeHTTP(recorder, req)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())

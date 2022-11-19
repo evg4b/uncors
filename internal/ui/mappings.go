@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/mock"
+	"github.com/evg4b/uncors/internal/middlewares/mock"
 )
 
 func Mappings(mappings map[string]string, mocksDefs []mock.Mock) string {

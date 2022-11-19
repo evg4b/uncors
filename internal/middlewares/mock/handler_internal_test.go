@@ -1,11 +1,10 @@
-package mock_test
+package mock
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -53,10 +52,13 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(mock.WithLogger(logger), mock.WithResponse(mock.Response{
-					Code:       200,
-					RawContent: testCase.body,
-				}))
+				handler := internalHandler{
+					logger: logger,
+					response: Response{
+						Code:       200,
+						RawContent: testCase.body,
+					},
+				}
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -71,12 +73,12 @@ func TestHandler(t *testing.T) {
 	t.Run("headers settings", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response mock.Response
+			response Response
 			expected http.Header
 		}{
 			{
 				name: "should put default CORS headers",
-				response: mock.Response{
+				response: Response{
 					Code:       200,
 					RawContent: testContent,
 				},
@@ -89,7 +91,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should set response code",
-				response: mock.Response{
+				response: Response{
 					Code:       200,
 					RawContent: testContent,
 				},
@@ -102,7 +104,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should set custom headers",
-				response: mock.Response{
+				response: Response{
 					Code: 200,
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
@@ -119,7 +121,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should override default headers",
-				response: mock.Response{
+				response: Response{
 					Code: 200,
 					Headers: map[string]string{
 						headers.AccessControlAllowOrigin:      "localhost",
@@ -138,10 +140,10 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
-					mock.WithLogger(logger),
-				)
+				handler := internalHandler{
+					logger:   logger,
+					response: testCase.response,
+				}
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -157,35 +159,35 @@ func TestHandler(t *testing.T) {
 	t.Run("status code", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response mock.Response
+			response Response
 			expected int
 		}{
 			{
 				name: "provide 201 code",
-				response: mock.Response{
+				response: Response{
 					Code: 201,
 				},
 				expected: 201,
 			},
 			{
 				name: "provide 503 code",
-				response: mock.Response{
+				response: Response{
 					Code: 503,
 				},
 				expected: 503,
 			},
 			{
 				name:     "automatically provide 200 code",
-				response: mock.Response{},
+				response: Response{},
 				expected: 200,
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
-					mock.WithLogger(logger),
-				)
+				handler := internalHandler{
+					logger:   logger,
+					response: testCase.response,
+				}
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
