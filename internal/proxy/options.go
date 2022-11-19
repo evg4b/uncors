@@ -6,22 +6,22 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-type MiddelwareOption = func(*Middelware)
+type MiddlewareOption = func(*Middleware)
 
-func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) MiddelwareOption {
-	return func(m *Middelware) {
+func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) MiddlewareOption {
+	return func(m *Middleware) {
 		m.replacers = replacerFactory
 	}
 }
 
-func WithHTTPClient(http *http.Client) MiddelwareOption {
-	return func(m *Middelware) {
+func WithHTTPClient(http *http.Client) MiddlewareOption {
+	return func(m *Middleware) {
 		m.http = http
 	}
 }
 
-func WithLogger(logger contracts.Logger) MiddelwareOption {
-	return func(m *Middelware) {
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(m *Middleware) {
 		m.logger = logger
 	}
 }

@@ -100,21 +100,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxyMiddelware := proxy.NewProxyMiddelware(
+	proxyMiddleware := proxy.NewProxyMiddleware(
 		proxy.WithURLReplacerFactory(factory),
 		proxy.WithHTTPClient(httpClient),
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	mockMiddelware := mock.NewMockMiddelware(
+	mockMiddleware := mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
-		mock.WithNextMiddelware(proxyMiddelware),
+		mock.WithNextMiddleware(proxyMiddleware),
 		mock.WithMocks(mocksDefs),
 	)
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, httpPort, mockMiddelware)
+	httpServer := infrastructure.NewServer(baseAddress, httpPort, mockMiddleware)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
 		log.Debugf("Starting http server on port %d", httpPort)
@@ -125,7 +125,7 @@ func main() {
 
 	if len(certFile) > 0 && len(keyFile) > 0 {
 		log.Debug("Found cert file and key file. Https server will be started")
-		httpsServer := infrastructure.NewServer(baseAddress, httpsPort, mockMiddelware)
+		httpsServer := infrastructure.NewServer(baseAddress, httpsPort, mockMiddleware)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
 			log.Debugf("Starting https server on port %d", httpsPort)

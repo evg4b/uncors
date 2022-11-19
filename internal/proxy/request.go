@@ -8,7 +8,7 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-func (m *Middelware) makeOriginalRequest(
+func (m *Middleware) makeOriginalRequest(
 	req *http.Request,
 	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {

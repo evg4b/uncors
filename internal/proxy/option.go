@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (m *Middelware) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
+func (m *Middleware) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
 	header := writer.Header()
 	for key, values := range req.Header {
 		lowerKey := strings.ToLower(key)

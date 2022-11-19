@@ -11,27 +11,27 @@ import (
 	"github.com/pterm/pterm"
 )
 
-type Middelware struct {
+type Middleware struct {
 	replacers contracts.URLReplacerFactory
 	http      *http.Client
 	logger    contracts.Logger
 }
 
-func NewProxyMiddelware(options ...MiddelwareOption) *Middelware {
-	middelware := &Middelware{}
+func NewProxyMiddleware(options ...MiddlewareOption) *Middleware {
+	middleware := &Middleware{}
 
 	for _, option := range options {
-		option(middelware)
+		option(middleware)
 	}
 
-	helpers.AssertIsDefined(middelware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middelware.logger, "ProxyHandler: Logger is not configured")
-	helpers.AssertIsDefined(middelware.http, "ProxyHandler: Http client is not configured")
+	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
+	helpers.AssertIsDefined(middleware.logger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
 
-	return middelware
+	return middleware
 }
 
-func (m *Middelware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (m *Middleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	updateRequest(request)
 
 	if err := m.handle(response, request); err != nil {
@@ -41,7 +41,7 @@ func (m *Middelware) ServeHTTP(response http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (m *Middelware) handle(resp http.ResponseWriter, req *http.Request) error {
+func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
 		return m.makeOptionsResponse(resp, req)
 	}
@@ -71,7 +71,7 @@ func (m *Middelware) handle(resp http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-func (m *Middelware) executeQuery(request *http.Request) (*http.Response, error) {
+func (m *Middleware) executeQuery(request *http.Request) (*http.Response, error) {
 	originalResponse, err := m.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)

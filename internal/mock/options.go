@@ -6,22 +6,22 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-type MiddelwareOption = func(*Middelware)
+type MiddlewareOption = func(*Middleware)
 
-func WithLogger(logger contracts.Logger) MiddelwareOption {
-	return func(m *Middelware) {
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(m *Middleware) {
 		m.logger = logger
 	}
 }
 
-func WithNextMiddelware(next http.Handler) MiddelwareOption {
-	return func(m *Middelware) {
+func WithNextMiddleware(next http.Handler) MiddlewareOption {
+	return func(m *Middleware) {
 		m.next = next
 	}
 }
 
-func WithMocks(mocks []Mock) MiddelwareOption {
-	return func(m *Middelware) {
+func WithMocks(mocks []Mock) MiddlewareOption {
+	return func(m *Middleware) {
 		m.mocks = mocks
 	}
 }

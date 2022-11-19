@@ -21,12 +21,12 @@ var (
 
 var notFoundBody = "404 page not found\n"
 
-func TestMockMiddelware(t *testing.T) {
+func TestMockMiddleware(t *testing.T) {
 	logger := mocks.NewNoopLogger(t)
 
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
-			middelware := mock.NewMockMiddelware(
+			middleware := mock.NewMockMiddleware(
 				mock.WithLogger(logger),
 				mock.WithMocks([]mock.Mock{{
 					Path: "/api",
@@ -53,7 +53,7 @@ func TestMockMiddelware(t *testing.T) {
 					request := httptest.NewRequest(method, "http://localhost/api", nil)
 					recorder := httptest.NewRecorder()
 
-					middelware.ServeHTTP(recorder, request)
+					middleware.ServeHTTP(recorder, request)
 
 					body := testutils.ReadBody(t, recorder)
 					assert.Equal(t, http.StatusOK, recorder.Code)
@@ -63,7 +63,7 @@ func TestMockMiddelware(t *testing.T) {
 		})
 
 		t.Run("where method is set", func(t *testing.T) {
-			middelware := mock.NewMockMiddelware(
+			middleware := mock.NewMockMiddleware(
 				mock.WithLogger(logger),
 				mock.WithMocks([]mock.Mock{{
 					Path:   "/api",
@@ -91,7 +91,7 @@ func TestMockMiddelware(t *testing.T) {
 						request := httptest.NewRequest(method, "http://localhost/api", nil)
 						recorder := httptest.NewRecorder()
 
-						middelware.ServeHTTP(recorder, request)
+						middleware.ServeHTTP(recorder, request)
 
 						assert.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
 					})
@@ -102,7 +102,7 @@ func TestMockMiddelware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPut, "http://localhost/api", nil)
 				recorder := httptest.NewRecorder()
 
-				middelware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -112,7 +112,7 @@ func TestMockMiddelware(t *testing.T) {
 	})
 
 	t.Run("path handling", func(t *testing.T) {
-		middelware := mock.NewMockMiddelware(
+		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
 			mock.WithMocks([]mock.Mock{
 				{
@@ -194,7 +194,7 @@ func TestMockMiddelware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middelware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -204,7 +204,7 @@ func TestMockMiddelware(t *testing.T) {
 	})
 
 	t.Run("query handling", func(t *testing.T) {
-		middelware := mock.NewMockMiddelware(
+		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
 			mock.WithMocks([]mock.Mock{
 				{
@@ -286,7 +286,7 @@ func TestMockMiddelware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middelware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -296,7 +296,7 @@ func TestMockMiddelware(t *testing.T) {
 	})
 
 	t.Run("header handling", func(t *testing.T) {
-		middelware := mock.NewMockMiddelware(
+		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
 			mock.WithMocks([]mock.Mock{
 				{
@@ -400,7 +400,7 @@ func TestMockMiddelware(t *testing.T) {
 				}
 				recorder := httptest.NewRecorder()
 
-				middelware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
