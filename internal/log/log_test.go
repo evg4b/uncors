@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const loggerResult = "this is test message"
-const loggerFResult = "this is %s message"
+const (
+	loggerResult  = "this is test message"
+	loggerFResult = "this is %s message"
+)
 
 func TestGlobalLogPackage(t *testing.T) {
 	log.EnableOutput()

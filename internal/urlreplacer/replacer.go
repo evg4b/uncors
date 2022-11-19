@@ -10,11 +10,15 @@ import (
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
-var ErrEmptySourceURL = errors.New("source url should not be empty")
-var ErrEmptyTargetURL = errors.New("target url should not be empty")
+var (
+	ErrEmptySourceURL = errors.New("source url should not be empty")
+	ErrEmptyTargetURL = errors.New("target url should not be empty")
+)
 
-var ErrInvalidSourceURL = errors.New("source url is invalid")
-var ErrURLNotMached = errors.New("is not matched")
+var (
+	ErrInvalidSourceURL = errors.New("source url is invalid")
+	ErrURLNotMached     = errors.New("is not matched")
+)
 
 type hook = func(string) string
 

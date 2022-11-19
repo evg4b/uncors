@@ -10,11 +10,15 @@ import (
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
-const httpScheme = "http"
-const defaultHTTPPort = 80
+const (
+	httpScheme      = "http"
+	defaultHTTPPort = 80
+)
 
-const httpsScheme = "https"
-const defaultHTTPSPort = 443
+const (
+	httpsScheme      = "https"
+	defaultHTTPSPort = 443
+)
 
 func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useHTTPS bool) (map[string]string, error) {
 	processedMappings := map[string]string{}

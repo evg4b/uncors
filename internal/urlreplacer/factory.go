@@ -13,12 +13,14 @@ type mapping struct {
 	target    *Replacer
 }
 
-type Factory struct { // nolint: revive
+type Factory struct {
 	mappings []mapping
 }
 
-var ErrMappingNotFound = errors.New("mapping not found")
-var ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
+var (
+	ErrMappingNotFound     = errors.New("mapping not found")
+	ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
+)
 
 func NewURLReplacerFactory(urlMappings map[string]string) (*Factory, error) {
 	if len(urlMappings) < 1 {

@@ -1,4 +1,3 @@
-//nolint:lll
 package ui_test
 
 import (

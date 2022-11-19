@@ -237,7 +237,7 @@ var isSecureTestCases = []struct {
 }
 
 func TestReplacerIsSourceSecure(t *testing.T) {
-	var makeReplacer = func(source string) *urlreplacer.Replacer {
+	makeReplacer := func(source string) *urlreplacer.Replacer {
 		t.Helper()
 		replacer, err := urlreplacer.NewReplacer(source, "https://github.com")
 		if err != nil {
@@ -257,7 +257,7 @@ func TestReplacerIsSourceSecure(t *testing.T) {
 }
 
 func TestReplacerIsTargetSecure(t *testing.T) {
-	var makeReplacer = func(target string) *urlreplacer.Replacer {
+	makeReplacer := func(target string) *urlreplacer.Replacer {
 		t.Helper()
 		replacer, err := urlreplacer.NewReplacer("https://github.com", target)
 		if err != nil {

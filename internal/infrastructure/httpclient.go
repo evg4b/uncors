@@ -17,7 +17,7 @@ var defaultHTTPClient = http.Client{
 	},
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, // nolint: gosec
+			InsecureSkipVerify: true, //nolint: gosec
 		},
 		Proxy: http.ProxyFromEnvironment,
 	},
@@ -36,7 +36,7 @@ func MakeHTTPClient(proxy string) (*http.Client, error) {
 
 		httpClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, // nolint: gosec
+				InsecureSkipVerify: true, //nolint: gosec
 			},
 			Proxy: http.ProxyURL(parsedURL),
 		}

@@ -13,9 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testMessage = "this is test message"
-const testFMessage = "this is %s message"
-const prefix = " Test "
+const (
+	testMessage  = "this is test message"
+	testFMessage = "this is %s message"
+	prefix       = " Test "
+)
 
 func TestPrefixedLogger(t *testing.T) {
 	log.EnableOutput()
@@ -75,7 +77,7 @@ func TestPrefixedLogger(t *testing.T) {
 	})
 
 	t.Run("custom output", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-		var buffer = &bytes.Buffer{}
+		buffer := &bytes.Buffer{}
 
 		logger := log.NewLogger(prefix, log.WithOutput(buffer))
 

@@ -44,7 +44,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 }
 
 func wildCardToReplacePattern(parsedPattern *url.URL) (string, int, error) {
-	var result = &strings.Builder{}
+	result := &strings.Builder{}
 	var count int
 
 	if _, err := fmt.Fprint(result, "${scheme}"); err != nil {

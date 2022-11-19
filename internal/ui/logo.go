@@ -18,7 +18,7 @@ func Logo(version string) string {
 	logo, _ := pterm.DefaultBigText.
 		WithLetters(
 			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), // nolint: gomnd
+			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), //nolint: gomnd
 		).
 		Srender()
 

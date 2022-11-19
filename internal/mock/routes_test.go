@@ -13,10 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var mock1Body = `{"mock": "mock number 1"}`
-var mock2Body = `{"mock": "mock number 2"}`
-var mock3Body = `{"mock": "mock number 3"}`
-var mock4Body = `{"mock": "mock number 4"}`
+var (
+	mock1Body = `{"mock": "mock number 1"}`
+	mock2Body = `{"mock": "mock number 2"}`
+	mock3Body = `{"mock": "mock number 3"}`
+	mock4Body = `{"mock": "mock number 4"}`
+)
 
 var notFoundBody = "404 page not found\n"
 

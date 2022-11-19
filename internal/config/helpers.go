@@ -13,7 +13,7 @@ var (
 
 func ReadURLMapping(config *viper.Viper) (map[string]string, error) {
 	urlMappings := map[string]string{}
-	from, to := config.GetStringSlice("from"), config.GetStringSlice("to") // nolint: varnamelen
+	from, to := config.GetStringSlice("from"), config.GetStringSlice("to") //nolint: varnamelen
 
 	if len(from) > len(to) {
 		return nil, ErrNoToPair

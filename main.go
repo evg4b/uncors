@@ -31,7 +31,7 @@ const (
 
 func main() {
 	pflag.StringSlice("to", []string{}, "Target host with protocol for to the resource to be proxy")
-	pflag.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
+	pflag.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
 	pflag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
 	pflag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
 	pflag.String("cert-file", "", "Path to HTTPS certificate file")
