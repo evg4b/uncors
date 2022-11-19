@@ -14,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/proxy"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/gorilla/mux"
 	"github.com/pseidemann/finish"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -63,8 +62,6 @@ func main() {
 		log.Debug("Enabled debug messages")
 	}
 
-	router := mux.NewRouter()
-
 	var mocksDefs []mock.Mock
 	if len(mocksFile) > 0 {
 		file, err := os.Open(mocksFile)
@@ -78,8 +75,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	mock.MakeMockedRoutes(router, ui.MockLogger, mocksDefs)
 
 	urlMappings, err := config.ReadURLMapping(viper.GetViper())
 	if err != nil {
@@ -111,12 +106,15 @@ func main() {
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	router.NotFoundHandler = proxyMiddelware
-	router.MethodNotAllowedHandler = proxyMiddelware
+	mockMiddelware := mock.NewMockMiddelware(
+		mock.WithLogger(ui.MockLogger),
+		mock.WithNextMiddelware(proxyMiddelware),
+		mock.WithMocks(mocksDefs),
+	)
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, httpPort, router)
+	httpServer := infrastructure.NewServer(baseAddress, httpPort, mockMiddelware)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
 		log.Debugf("Starting http server on port %d", httpPort)
@@ -127,7 +125,7 @@ func main() {
 
 	if len(certFile) > 0 && len(keyFile) > 0 {
 		log.Debug("Found cert file and key file. Https server will be started")
-		httpsServer := infrastructure.NewServer(baseAddress, httpsPort, router)
+		httpsServer := infrastructure.NewServer(baseAddress, httpsPort, mockMiddelware)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
 			log.Debugf("Starting https server on port %d", httpsPort)

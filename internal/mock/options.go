@@ -1,17 +1,27 @@
 package mock
 
-import "github.com/evg4b/uncors/internal/contracts"
+import (
+	"net/http"
 
-type HandlerOption = func(*Handler)
+	"github.com/evg4b/uncors/internal/contracts"
+)
 
-func WithResponse(response Response) HandlerOption {
-	return func(handler *Handler) {
-		handler.response = response
+type MiddelwareOption = func(*Middelware)
+
+func WithLogger(logger contracts.Logger) MiddelwareOption {
+	return func(m *Middelware) {
+		m.logger = logger
 	}
 }
 
-func WithLogger(logger contracts.Logger) HandlerOption {
-	return func(handler *Handler) {
-		handler.logger = logger
+func WithNextMiddelware(next http.Handler) MiddelwareOption {
+	return func(m *Middelware) {
+		m.next = next
+	}
+}
+
+func WithMocks(mocks []Mock) MiddelwareOption {
+	return func(m *Middelware) {
+		m.mocks = mocks
 	}
 }

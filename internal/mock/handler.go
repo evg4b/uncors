@@ -9,22 +9,12 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-type Handler struct {
+type internalHandler struct {
 	response Response
 	logger   contracts.Logger
 }
 
-func NewMockHandler(options ...HandlerOption) *Handler {
-	handler := &Handler{}
-
-	for _, option := range options {
-		option(handler)
-	}
-
-	return handler
-}
-
-func (handler *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	response := handler.response
 	header := writer.Header()
 	infrastructure.WriteCorsHeaders(header)

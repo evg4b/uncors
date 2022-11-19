@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock) {
+func makeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock) {
 	var defaultMocks []Mock
 
 	for _, mock := range mocks {
@@ -17,8 +17,10 @@ func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock)
 			setQueries(route, mock.Queries)
 			setHeaders(route, mock.Headers)
 
-			handler := NewMockHandler(WithResponse(mock.Response), WithLogger(logger))
-			route.Handler(handler)
+			route.Handler(&internalHandler{
+				response: mock.Response,
+				logger:   logger,
+			})
 		} else {
 			defaultMocks = append(defaultMocks, mock)
 		}
@@ -29,8 +31,10 @@ func MakeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock)
 
 		setPath(route, mock.Path)
 
-		handler := NewMockHandler(WithResponse(mock.Response), WithLogger(logger))
-		route.Handler(handler)
+		route.Handler(&internalHandler{
+			response: mock.Response,
+			logger:   logger,
+		})
 	}
 }
 
