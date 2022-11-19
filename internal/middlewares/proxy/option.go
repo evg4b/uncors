@@ -2,21 +2,12 @@ package proxy
 
 import (
 	"net/http"
-	"strings"
+
+	"github.com/evg4b/uncors/internal/infrastructure"
 )
 
 func (m *Middleware) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
-	header := writer.Header()
-	for key, values := range req.Header {
-		lowerKey := strings.ToLower(key)
-		if strings.Contains(lowerKey, "access-control-request") {
-			for _, value := range values {
-				transformedKey := strings.Replace(lowerKey, "request", "allow", 1)
-				header.Add(transformedKey, value)
-			}
-		}
-	}
-
+	infrastructure.WriteCorsHeaders(writer.Header())
 	m.logger.PrintResponse(&http.Response{
 		StatusCode: http.StatusOK,
 		Request:    req,
