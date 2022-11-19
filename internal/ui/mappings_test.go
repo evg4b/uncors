@@ -4,7 +4,7 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/mock"
+	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
