@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (handler *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
+func (m *Middelware) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
 	header := writer.Header()
 	for key, values := range req.Header {
 		lowerKey := strings.ToLower(key)
@@ -17,7 +17,7 @@ func (handler *Handler) makeOptionsResponse(writer http.ResponseWriter, req *htt
 		}
 	}
 
-	handler.logger.PrintResponse(&http.Response{
+	m.logger.PrintResponse(&http.Response{
 		StatusCode: http.StatusOK,
 		Request:    req,
 	})

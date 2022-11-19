@@ -10,7 +10,7 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-func (handler *Handler) makeUncorsResponse(
+func (m *Middelware) makeUncorsResponse(
 	original *http.Response,
 	target http.ResponseWriter,
 	replacer *urlreplacer.Replacer,

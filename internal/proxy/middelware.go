@@ -11,59 +11,59 @@ import (
 	"github.com/pterm/pterm"
 )
 
-type Handler struct {
+type Middelware struct {
 	replacers contracts.URLReplacerFactory
 	http      *http.Client
 	logger    contracts.Logger
 }
 
-func NewProxyHandler(options ...HandlerOption) *Handler {
-	handler := &Handler{}
+func NewProxyMiddelware(options ...MiddelwareOption) *Middelware {
+	middelware := &Middelware{}
 
 	for _, option := range options {
-		option(handler)
+		option(middelware)
 	}
 
-	helpers.AssertIsDefined(handler.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(handler.logger, "ProxyHandler: Logger is not configured")
-	helpers.AssertIsDefined(handler.http, "ProxyHandler: Http client is not configured")
+	helpers.AssertIsDefined(middelware.replacers, "ProxyHandler: ReplacerFactory is not configured")
+	helpers.AssertIsDefined(middelware.logger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middelware.http, "ProxyHandler: Http client is not configured")
 
-	return handler
+	return middelware
 }
 
-func (handler *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (m *Middelware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	updateRequest(request)
 
-	if err := handler.handle(response, request); err != nil {
+	if err := m.handle(response, request); err != nil {
 		pterm.Error.Printfln("UNCORS error: %v", err)
 		response.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(response, "UNCORS error:", err.Error())
 	}
 }
 
-func (handler *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
+func (m *Middelware) handle(resp http.ResponseWriter, req *http.Request) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
-		return handler.makeOptionsResponse(resp, req)
+		return m.makeOptionsResponse(resp, req)
 	}
 
-	targetRreplacer, sourceReplacer, err := handler.replacers.Make(req.URL)
+	targetRreplacer, sourceReplacer, err := m.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
 	}
 
-	originalRequest, err := handler.makeOriginalRequest(req, targetRreplacer)
+	originalRequest, err := m.makeOriginalRequest(req, targetRreplacer)
 	if err != nil {
 		return fmt.Errorf("failed to create reuest to original source: %w", err)
 	}
 
-	originalResponse, err := handler.executeQuery(originalRequest)
+	originalResponse, err := m.executeQuery(originalRequest)
 	if err != nil {
 		return err
 	}
 
 	defer originalResponse.Body.Close()
 
-	err = handler.makeUncorsResponse(originalResponse, resp, sourceReplacer)
+	err = m.makeUncorsResponse(originalResponse, resp, sourceReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to make uncors response: %w", err)
 	}
@@ -71,12 +71,12 @@ func (handler *Handler) handle(resp http.ResponseWriter, req *http.Request) erro
 	return nil
 }
 
-func (handler *Handler) executeQuery(request *http.Request) (*http.Response, error) {
-	originalResponse, err := handler.http.Do(request)
+func (m *Middelware) executeQuery(request *http.Request) (*http.Response, error) {
+	originalResponse, err := m.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	handler.logger.PrintResponse(originalResponse)
+	m.logger.PrintResponse(originalResponse)
 
 	return originalResponse, nil
 }

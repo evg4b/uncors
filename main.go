@@ -105,14 +105,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxyHandler := proxy.NewProxyHandler(
+	proxyMiddelware := proxy.NewProxyMiddelware(
 		proxy.WithURLReplacerFactory(factory),
 		proxy.WithHTTPClient(httpClient),
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	router.NotFoundHandler = proxyHandler
-	router.MethodNotAllowedHandler = proxyHandler
+	router.NotFoundHandler = proxyMiddelware
+	router.MethodNotAllowedHandler = proxyMiddelware
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxyHandler(t *testing.T) {
+func TestProxyMiddelware(t *testing.T) {
 	replacerFactory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
 		"http://premium.local.com": "https://premium.api.com",
 	})
@@ -62,7 +62,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				proc := proxy.NewProxyMiddelware(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -115,7 +115,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				proc := proxy.NewProxyMiddelware(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -149,7 +149,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		proc := proxy.NewProxyHandler(
+		proc := proxy.NewProxyMiddelware(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -177,7 +177,7 @@ func TestProxyHandler(t *testing.T) {
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
 		t.Skip()
-		handler := proxy.NewProxyHandler(
+		middelware := proxy.NewProxyMiddelware(
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
 		)
 
@@ -221,7 +221,7 @@ func TestProxyHandler(t *testing.T) {
 					req.Header = testCase.headers
 
 					recorder := httptest.NewRecorder()
-					handler.ServeHTTP(recorder, req)
+					middelware.ServeHTTP(recorder, req)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())
