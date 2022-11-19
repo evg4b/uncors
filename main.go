@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/mock"
@@ -29,8 +30,8 @@ const (
 )
 
 func main() {
-	pflag.String("target", "https://github.com", "Target host with protocol for to the resource to be proxy")
-	pflag.String("source", "localhost", "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
+	pflag.StringSlice("to", []string{}, "Target host with protocol for to the resource to be proxy")
+	pflag.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") // nolint: lll
 	pflag.Int("http-port", defaultHTTPPort, "Local HTTP listening port")
 	pflag.Int("https-port", defaultHTTPSPort, "Local HTTPS listening port")
 	pflag.String("cert-file", "", "Path to HTTPS certificate file")
@@ -80,8 +81,12 @@ func main() {
 
 	mock.MakeMockedRoutes(router, ui.MockLogger, mocksDefs)
 
+	urlMappings, err := config.ReadURLMapping(viper.GetViper())
+	if err != nil {
+		panic(err)
+	}
 	mappings, err := urlreplacer.NormaliseMappings(
-		map[string]string{viper.GetString("source"): viper.GetString("target")},
+		urlMappings,
 		httpPort,
 		httpsPort,
 		len(certFile) > 0 && len(keyFile) > 0,
