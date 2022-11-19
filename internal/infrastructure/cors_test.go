@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -23,9 +24,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			expected: map[string][]string{
 				headers.AccessControlAllowOrigin:      {"*"},
 				headers.AccessControlAllowCredentials: {"true"},
-				headers.AccessControlAllowMethods: {
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-				},
+				headers.AccessControlAllowMethods:     {mocks.AllMethods},
 			},
 		},
 		{
@@ -42,27 +41,23 @@ func TestWriteCorsHeaders(t *testing.T) {
 				"X-Hey-Header":                        {"123"},
 				headers.AccessControlAllowOrigin:      {"*"},
 				headers.AccessControlAllowCredentials: {"true"},
-				headers.AccessControlAllowMethods: {
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-				},
+				headers.AccessControlAllowMethods:     {mocks.AllMethods},
 			},
 		},
 		{
 			name: "should override same headers",
 			recorderFactory: func() *httptest.ResponseRecorder {
 				writer := httptest.NewRecorder()
-				writer.Header().Set("Test-Header", "true")
+				writer.Header().Set("Custom-Header", "true")
 				writer.Header().Set(headers.AccessControlAllowOrigin, "localhost:3000")
 
 				return writer
 			},
 			expected: map[string][]string{
-				"Test-Header":                         {"true"},
+				"Custom-Header":                       {"true"},
 				headers.AccessControlAllowOrigin:      {"*"},
 				headers.AccessControlAllowCredentials: {"true"},
-				headers.AccessControlAllowMethods: {
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-				},
+				headers.AccessControlAllowMethods:     {mocks.AllMethods},
 			},
 		},
 	}

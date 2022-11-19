@@ -14,6 +14,8 @@ import (
 
 const textPlain = "text/plain; charset=utf-8"
 
+const testContent = "test content"
+
 func TestHandler(t *testing.T) {
 	logger := mocks.NewNoopLogger(t)
 
@@ -76,30 +78,26 @@ func TestHandler(t *testing.T) {
 				name: "should put default CORS headers",
 				response: mock.Response{
 					Code:       200,
-					RawContent: "test content",
+					RawContent: testContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
-					headers.AccessControlAllowMethods: {
-						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-					},
+					headers.AccessControlAllowMethods:     {mocks.AllMethods},
 				},
 			},
 			{
 				name: "should set response code",
 				response: mock.Response{
 					Code:       200,
-					RawContent: "test content",
+					RawContent: testContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
-					headers.AccessControlAllowMethods: {
-						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-					},
+					headers.AccessControlAllowMethods:     {mocks.AllMethods},
 				},
 			},
 			{
@@ -109,16 +107,14 @@ func TestHandler(t *testing.T) {
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
 					},
-					RawContent: "test content",
+					RawContent: testContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
 					"X-Key":                               {"X-Key-Value"},
-					headers.AccessControlAllowMethods: {
-						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-					},
+					headers.AccessControlAllowMethods:     {mocks.AllMethods},
 				},
 			},
 			{
@@ -130,15 +126,13 @@ func TestHandler(t *testing.T) {
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
-					RawContent: "test content",
+					RawContent: testContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"localhost"},
 					headers.AccessControlAllowCredentials: {"false"},
 					headers.ContentType:                   {"none"},
-					headers.AccessControlAllowMethods: {
-						"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
-					},
+					headers.AccessControlAllowMethods:     {mocks.AllMethods},
 				},
 			},
 		}

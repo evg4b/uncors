@@ -18,6 +18,8 @@ var mock2Body = `{"mock": "mock number 2"}`
 var mock3Body = `{"mock": "mock number 3"}`
 var mock4Body = `{"mock": "mock number 4"}`
 
+var notFoundBody = "404 page not found\n"
+
 func TestMakeMockedRoutes(t *testing.T) {
 	logger := mocks.NewNoopLogger(t)
 
@@ -153,7 +155,7 @@ func TestMakeMockedRoutes(t *testing.T) {
 			{
 				name:       "direct path with ending slash",
 				url:        "https://localhost/api/user/",
-				expected:   "404 page not found\n",
+				expected:   notFoundBody,
 				statusCode: http.StatusNotFound,
 			},
 			{
@@ -165,13 +167,13 @@ func TestMakeMockedRoutes(t *testing.T) {
 			{
 				name:       "direct path with incorrect parameter",
 				url:        "https://localhost/api/user/unknow",
-				expected:   "404 page not found\n",
+				expected:   notFoundBody,
 				statusCode: http.StatusNotFound,
 			},
 			{
 				name:       "path with subpath to single matching param",
 				url:        "https://localhost/api/some-path/with-some-subpath/demo",
-				expected:   "404 page not found\n",
+				expected:   notFoundBody,
 				statusCode: http.StatusNotFound,
 			},
 			{

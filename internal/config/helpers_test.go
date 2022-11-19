@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,9 +18,9 @@ func TestReadURLMapping(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, map[string]string{
-			"host1": "target-host1",
-			"host2": "target-host2",
-			"host3": "target-host3",
+			mocks.SourceHost1: mocks.TargetHost1,
+			mocks.SourceHost2: mocks.TargetHost2,
+			mocks.SourceHost3: mocks.TargetHost3,
 		}, actual)
 	})
 
@@ -32,26 +33,26 @@ func TestReadURLMapping(t *testing.T) {
 		}{
 			{
 				name:        "from is not set",
-				from:        []string{"host1"},
+				from:        []string{mocks.SourceHost1},
 				to:          []string{},
 				expectedErr: "`to` values are not set for every `from`",
 			},
 			{
 				name:        "to is not set",
 				from:        []string{},
-				to:          []string{"target-host1"},
+				to:          []string{mocks.TargetHost1},
 				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
 				name:        "count of from values greath then count of to",
-				from:        []string{"host1", "host2"},
-				to:          []string{"target-host1"},
+				from:        []string{mocks.SourceHost1, mocks.SourceHost2},
+				to:          []string{mocks.TargetHost1},
 				expectedErr: "`to` values are not set for every `from`",
 			},
 			{
 				name:        "count of to values greath then count of from",
-				from:        []string{"host1"},
-				to:          []string{"target-host1", "target-host2"},
+				from:        []string{mocks.SourceHost1},
+				to:          []string{mocks.TargetHost1, mocks.TargetHost2},
 				expectedErr: "`from` values are not set for every `to`",
 			},
 		}

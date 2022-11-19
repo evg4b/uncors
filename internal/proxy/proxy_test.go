@@ -170,7 +170,7 @@ func TestProxyHandler(t *testing.T) {
 		assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
 		assert.Equal(
 			t,
-			"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+			mocks.AllMethods,
 			header.Get(headers.AccessControlAllowMethods),
 		)
 	})
