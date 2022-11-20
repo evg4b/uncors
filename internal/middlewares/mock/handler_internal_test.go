@@ -20,7 +20,6 @@ const (
 	textContent = "status: ok"
 	jsonContent = `{ "test": "ok" }`
 	htmlContent = "<html></html>"
-	xmlContent  = "<?xml />"
 	pngContent  = "\x89PNG\x0D\x0A\x1A\x0A"
 )
 
@@ -28,7 +27,6 @@ const (
 	textFile = "test.txt"
 	jsonFile = "test.json"
 	htmlFile = "test.html"
-	xmlFile  = "test.xml"
 	pngFile  = "test.png"
 )
 
@@ -37,7 +35,6 @@ func TestHandler(t *testing.T) {
 		textFile: textContent,
 		jsonFile: jsonContent,
 		htmlFile: htmlContent,
-		xmlFile:  xmlContent,
 		pngFile:  pngContent,
 	})
 
@@ -48,13 +45,14 @@ func TestHandler(t *testing.T) {
 			fs:       fileSystem,
 		}
 	}
+
 	t.Run("content type detection", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			response Response
 			expected string
 		}{
-			// raw conetn
+			// raw content
 			{
 				name:     "raw content with plain text",
 				response: Response{RawContent: textContent},
@@ -71,16 +69,11 @@ func TestHandler(t *testing.T) {
 				expected: "text/html; charset=utf-8",
 			},
 			{
-				name:     "raw content with xml",
-				response: Response{RawContent: xmlContent},
-				expected: "text/xml; charset=utf-8",
-			},
-			{
 				name:     "raw content with png",
 				response: Response{RawContent: pngContent},
 				expected: imagePng,
 			},
-			// file conetn
+			// file content
 			{
 				name:     "file with plain text",
 				response: Response{File: textFile},
@@ -95,11 +88,6 @@ func TestHandler(t *testing.T) {
 				name:     "file with html",
 				response: Response{File: htmlFile},
 				expected: "text/html; charset=utf-8",
-			},
-			{
-				name:     "file with xml",
-				response: Response{File: xmlFile},
-				expected: "application/xml",
 			},
 			{
 				name:     "file with png",
