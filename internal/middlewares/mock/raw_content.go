@@ -17,7 +17,7 @@ func (handler *internalHandler) serveRawContent(writer http.ResponseWriter) erro
 
 	writer.WriteHeader(normaliseCode(response.Code))
 	if _, err := fmt.Fprint(writer, response.RawContent); err != nil {
-		return err
+		return fmt.Errorf("failed to write mock content: %w", err)
 	}
 
 	return nil
