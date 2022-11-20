@@ -1,17 +1,17 @@
 package mock
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infrastructure"
-	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 )
 
 type internalHandler struct {
 	response Response
 	logger   contracts.Logger
+	fs       afero.Fs
 }
 
 func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -21,14 +21,17 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	for key, value := range response.Headers {
 		header.Set(key, value)
 	}
-	if len(header.Get(headers.ContentType)) == 0 {
-		contentType := http.DetectContentType([]byte(response.RawContent))
-		header.Set(headers.ContentType, contentType)
+
+	var err error
+	if len(handler.response.File) > 0 {
+		err = handler.serveFile(writer, request)
+	} else {
+		err = handler.serveRawContent(writer)
 	}
 
-	writer.WriteHeader(normaliseCode(response.Code))
-	if _, err := fmt.Fprint(writer, response.RawContent); err != nil {
-		return // TODO: add error handler
+	if err != nil {
+		// TODO: add error handling
+		return
 	}
 
 	handler.logger.PrintResponse(&http.Response{

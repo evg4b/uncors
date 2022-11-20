@@ -1,41 +1,34 @@
 package mock
 
 import (
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/gorilla/mux"
 )
 
-func makeMockedRoutes(router *mux.Router, logger contracts.Logger, mocks []Mock) {
+func (m *Middleware) makeMockedRoutes() {
 	var defaultMocks []Mock
 
-	for _, mock := range mocks {
+	for _, mock := range m.mocks {
 		if len(mock.Queries) > 0 || len(mock.Headers) > 0 || len(mock.Method) > 0 {
-			route := router.NewRoute()
-
+			route := m.router.NewRoute()
 			setPath(route, mock.Path)
 			setMethod(route, mock.Method)
 			setQueries(route, mock.Queries)
 			setHeaders(route, mock.Headers)
-
-			route.Handler(&internalHandler{
-				response: mock.Response,
-				logger:   logger,
-			})
+			route.Handler(m.makeHandler(mock.Response))
 		} else {
 			defaultMocks = append(defaultMocks, mock)
 		}
 	}
 
 	for _, mock := range defaultMocks {
-		route := router.NewRoute()
-
+		route := m.router.NewRoute()
 		setPath(route, mock.Path)
-
-		route.Handler(&internalHandler{
-			response: mock.Response,
-			logger:   logger,
-		})
+		route.Handler(m.makeHandler(mock.Response))
 	}
+}
+
+func (m *Middleware) makeHandler(response Response) *internalHandler {
+	return &internalHandler{response, m.logger, m.fs}
 }
 
 func setPath(route *mux.Route, path string) {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/spf13/afero"
 )
 
 type MiddlewareOption = func(*Middleware)
@@ -23,5 +24,11 @@ func WithNextMiddleware(next http.Handler) MiddlewareOption {
 func WithMocks(mocks []Mock) MiddlewareOption {
 	return func(m *Middleware) {
 		m.mocks = mocks
+	}
+}
+
+func WithFileSystem(fs afero.Fs) MiddlewareOption {
+	return func(m *Middleware) {
+		m.fs = fs
 	}
 }
