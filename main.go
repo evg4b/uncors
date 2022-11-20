@@ -16,6 +16,7 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pseidemann/finish"
 	"github.com/pterm/pterm"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -112,10 +113,13 @@ func main() {
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
+	fileSystem := afero.NewOsFs()
+
 	mockMiddleware := mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
 		mock.WithNextMiddleware(proxyMiddleware),
 		mock.WithMocks(mocksDefs),
+		mock.WithFileSystem(fileSystem),
 	)
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
 )
 
 type Middleware struct {
@@ -12,6 +13,7 @@ type Middleware struct {
 	next   http.Handler
 	logger contracts.Logger
 	mocks  []Mock
+	fs     afero.Fs
 }
 
 func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
@@ -22,7 +24,7 @@ func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
 		option(middleware)
 	}
 
-	makeMockedRoutes(middleware.router, middleware.logger, middleware.mocks)
+	middleware.makeMockedRoutes()
 	router.NotFoundHandler = middleware.next
 	router.MethodNotAllowedHandler = middleware.next
 

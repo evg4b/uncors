@@ -11,54 +11,122 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const textPlain = "text/plain; charset=utf-8"
+const (
+	textPlain = "text/plain; charset=utf-8"
+	imagePng  = "image/png"
+)
 
-const testContent = "test content"
+const (
+	textContent = "status: ok"
+	jsonContent = `{ "test": "ok" }`
+	htmlContent = "<html></html>"
+	pngContent  = "\x89PNG\x0D\x0A\x1A\x0A"
+)
+
+const (
+	textFile = "test.txt"
+	jsonFile = "test.json"
+	htmlFile = "test.html"
+	pngFile  = "test.png"
+)
 
 func TestHandler(t *testing.T) {
-	logger := mocks.NewNoopLogger(t)
+	fileSystem := testutils.FsFromMap(t, map[string]string{
+		textFile: textContent,
+		jsonFile: jsonContent,
+		htmlFile: htmlContent,
+		pngFile:  pngContent,
+	})
 
-	t.Run("content type setting", func(t *testing.T) {
+	var makeHandler = func(t *testing.T, response Response) *internalHandler {
+		return &internalHandler{
+			logger:   mocks.NewNoopLogger(t),
+			response: response,
+			fs:       fileSystem,
+		}
+	}
+
+	t.Run("mock content", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			body     string
+			response Response
 			expected string
 		}{
 			{
-				name:     "plain text",
-				body:     `status: ok`,
-				expected: textPlain,
+				name:     "raw content",
+				response: Response{RawContent: jsonContent},
+				expected: jsonContent,
 			},
 			{
-				name:     "json",
-				body:     `{ "status": "ok" }`,
-				expected: textPlain,
-			},
-			{
-				name:     "html",
-				body:     `<html></html>`,
-				expected: "text/html; charset=utf-8",
-			},
-			{
-				name:     "xml",
-				body:     `<?xml />`,
-				expected: "text/xml; charset=utf-8",
-			},
-			{
-				name:     "png",
-				body:     "\x89PNG\x0D\x0A\x1A\x0A",
-				expected: "image/png",
+				name:     "file content",
+				response: Response{File: jsonFile},
+				expected: jsonContent,
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger: logger,
-					response: Response{
-						Code:       200,
-						RawContent: testCase.body,
-					},
-				}
+				handler := makeHandler(t, testCase.response)
+
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				handler.ServeHTTP(recorder, request)
+
+				body := testutils.ReadBody(t, recorder)
+				assert.EqualValues(t, testCase.expected, body)
+			})
+		}
+	})
+
+	t.Run("content type detection", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			response Response
+			expected string
+		}{
+			{
+				name:     "raw content with plain text",
+				response: Response{RawContent: textContent},
+				expected: textPlain,
+			},
+			{
+				name:     "raw content with json",
+				response: Response{RawContent: jsonContent},
+				expected: textPlain,
+			},
+			{
+				name:     "raw content with html",
+				response: Response{RawContent: htmlContent},
+				expected: "text/html; charset=utf-8",
+			},
+			{
+				name:     "raw content with png",
+				response: Response{RawContent: pngContent},
+				expected: imagePng,
+			},
+			{
+				name:     "file with plain text",
+				response: Response{File: textFile},
+				expected: textPlain,
+			},
+			{
+				name:     "file with json",
+				response: Response{File: jsonFile},
+				expected: "application/json",
+			},
+			{
+				name:     "file with html",
+				response: Response{File: htmlFile},
+				expected: "text/html; charset=utf-8",
+			},
+			{
+				name:     "file with png",
+				response: Response{File: pngFile},
+				expected: imagePng,
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := makeHandler(t, testCase.response)
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -79,8 +147,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should put default CORS headers",
 				response: Response{
-					Code:       200,
-					RawContent: testContent,
+					Code:       http.StatusOK,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -92,8 +160,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should set response code",
 				response: Response{
-					Code:       200,
-					RawContent: testContent,
+					Code:       http.StatusOK,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -105,11 +173,11 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should set custom headers",
 				response: Response{
-					Code: 200,
+					Code: http.StatusOK,
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
 					},
-					RawContent: testContent,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -122,13 +190,13 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should override default headers",
 				response: Response{
-					Code: 200,
+					Code: http.StatusOK,
 					Headers: map[string]string{
 						headers.AccessControlAllowOrigin:      "localhost",
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
-					RawContent: testContent,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"localhost"},
@@ -140,10 +208,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger:   logger,
-					response: testCase.response,
-				}
+				handler := makeHandler(t, testCase.response)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -151,7 +216,7 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(recorder, request)
 
 				assert.EqualValues(t, testCase.expected, testutils.ReadHeader(t, recorder))
-				assert.Equal(t, 200, recorder.Code)
+				assert.Equal(t, http.StatusOK, recorder.Code)
 			})
 		}
 	})
@@ -165,29 +230,26 @@ func TestHandler(t *testing.T) {
 			{
 				name: "provide 201 code",
 				response: Response{
-					Code: 201,
+					Code: http.StatusCreated,
 				},
-				expected: 201,
+				expected: http.StatusCreated,
 			},
 			{
 				name: "provide 503 code",
 				response: Response{
-					Code: 503,
+					Code: http.StatusServiceUnavailable,
 				},
-				expected: 503,
+				expected: http.StatusServiceUnavailable,
 			},
 			{
 				name:     "automatically provide 200 code",
 				response: Response{},
-				expected: 200,
+				expected: http.StatusOK,
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger:   logger,
-					response: testCase.response,
-				}
+				handler := makeHandler(t, testCase.response)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()

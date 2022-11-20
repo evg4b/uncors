@@ -4,6 +4,7 @@ type Response struct {
 	Code       int               `yaml:"code"`
 	Headers    map[string]string `yaml:"headers"`
 	RawContent string            `yaml:"raw-content"` //nolint:tagliatelle
+	File       string            `yaml:"file"`
 }
 
 type Mock struct {
