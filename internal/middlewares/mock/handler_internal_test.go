@@ -8,16 +8,38 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
-const textPlain = "text/plain; charset=utf-8"
+const (
+	textPlain = "text/plain; charset=utf-8"
+	imagePng  = "image/png"
+)
 
-const testContent = "test content"
+const (
+	textContent = "status: ok"
+	jsonContent = `{ "test": "ok" }`
+	htmlContent = "<html></html>"
+	xmlContent  = "<?xml />"
+	pngContent  = "\x89PNG\x0D\x0A\x1A\x0A"
+)
+
+const (
+	textFile = "test.txt"
+	jsonFile = "test.json"
+	htmlFile = "test.html"
+	xmlFile  = "test.xml"
+	pngFile  = "test.png"
+)
 
 func TestHandler(t *testing.T) {
-	fileSystem := afero.NewMemMapFs()
+	fileSystem := testutils.FsFromMap(t, map[string]string{
+		textFile: textContent,
+		jsonFile: jsonContent,
+		htmlFile: htmlContent,
+		xmlFile:  xmlContent,
+		pngFile:  pngContent,
+	})
 
 	var makeHandler = func(t *testing.T, response Response) *internalHandler {
 		return &internalHandler{
@@ -26,45 +48,68 @@ func TestHandler(t *testing.T) {
 			fs:       fileSystem,
 		}
 	}
-
-	t.Run("content type setting", func(t *testing.T) {
+	t.Run("content type detection", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			body     string
+			response Response
 			expected string
 		}{
+			// raw conetn
 			{
-				name:     "plain text",
-				body:     `status: ok`,
+				name:     "raw content with plain text",
+				response: Response{RawContent: textContent},
 				expected: textPlain,
 			},
 			{
-				name:     "json",
-				body:     `{ "status": "ok" }`,
+				name:     "raw content with json",
+				response: Response{RawContent: jsonContent},
 				expected: textPlain,
 			},
 			{
-				name:     "html",
-				body:     `<html></html>`,
+				name:     "raw content with html",
+				response: Response{RawContent: htmlContent},
 				expected: "text/html; charset=utf-8",
 			},
 			{
-				name:     "xml",
-				body:     `<?xml />`,
+				name:     "raw content with xml",
+				response: Response{RawContent: xmlContent},
 				expected: "text/xml; charset=utf-8",
 			},
 			{
-				name:     "png",
-				body:     "\x89PNG\x0D\x0A\x1A\x0A",
-				expected: "image/png",
+				name:     "raw content with png",
+				response: Response{RawContent: pngContent},
+				expected: imagePng,
+			},
+			// file conetn
+			{
+				name:     "file with plain text",
+				response: Response{File: textFile},
+				expected: textPlain,
+			},
+			{
+				name:     "file with json",
+				response: Response{File: jsonFile},
+				expected: "application/json",
+			},
+			{
+				name:     "file with html",
+				response: Response{File: htmlFile},
+				expected: "text/html; charset=utf-8",
+			},
+			{
+				name:     "file with xml",
+				response: Response{File: xmlFile},
+				expected: "application/xml",
+			},
+			{
+				name:     "file with png",
+				response: Response{File: pngFile},
+				expected: imagePng,
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := makeHandler(t, Response{
-					Code:       200,
-					RawContent: testCase.body,
-				})
+				handler := makeHandler(t, testCase.response)
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -85,8 +130,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should put default CORS headers",
 				response: Response{
-					Code:       200,
-					RawContent: testContent,
+					Code:       http.StatusOK,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -98,8 +143,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should set response code",
 				response: Response{
-					Code:       200,
-					RawContent: testContent,
+					Code:       http.StatusOK,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -111,11 +156,11 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should set custom headers",
 				response: Response{
-					Code: 200,
+					Code: http.StatusOK,
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
 					},
-					RawContent: testContent,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -128,13 +173,13 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should override default headers",
 				response: Response{
-					Code: 200,
+					Code: http.StatusOK,
 					Headers: map[string]string{
 						headers.AccessControlAllowOrigin:      "localhost",
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
-					RawContent: testContent,
+					RawContent: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"localhost"},
@@ -154,7 +199,7 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(recorder, request)
 
 				assert.EqualValues(t, testCase.expected, testutils.ReadHeader(t, recorder))
-				assert.Equal(t, 200, recorder.Code)
+				assert.Equal(t, http.StatusOK, recorder.Code)
 			})
 		}
 	})
@@ -168,21 +213,21 @@ func TestHandler(t *testing.T) {
 			{
 				name: "provide 201 code",
 				response: Response{
-					Code: 201,
+					Code: http.StatusCreated,
 				},
-				expected: 201,
+				expected: http.StatusCreated,
 			},
 			{
 				name: "provide 503 code",
 				response: Response{
-					Code: 503,
+					Code: http.StatusServiceUnavailable,
 				},
-				expected: 503,
+				expected: http.StatusServiceUnavailable,
 			},
 			{
 				name:     "automatically provide 200 code",
 				response: Response{},
-				expected: 200,
+				expected: http.StatusOK,
 			},
 		}
 		for _, testCase := range tests {
