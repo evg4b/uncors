@@ -146,8 +146,11 @@ func main() {
 	}
 
 	log.Print(ui.Logo(Version))
+	log.Print("\n")
 	log.Warning(ui.DisclamerMesssage)
+	log.Print("\n")
 	log.Info(ui.Mappings(mappings, mocksDefs))
+	log.Print("\n")
 
 	finisher.Wait()
 
