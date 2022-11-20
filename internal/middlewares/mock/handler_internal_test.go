@@ -46,13 +46,43 @@ func TestHandler(t *testing.T) {
 		}
 	}
 
+	t.Run("mock content", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			response Response
+			expected string
+		}{
+			{
+				name:     "raw content",
+				response: Response{RawContent: jsonContent},
+				expected: jsonContent,
+			},
+			{
+				name:     "file content",
+				response: Response{File: jsonFile},
+				expected: jsonContent,
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := makeHandler(t, testCase.response)
+
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				handler.ServeHTTP(recorder, request)
+
+				body := testutils.ReadBody(t, recorder)
+				assert.EqualValues(t, testCase.expected, body)
+			})
+		}
+	})
+
 	t.Run("content type detection", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			response Response
 			expected string
 		}{
-			// raw content
 			{
 				name:     "raw content with plain text",
 				response: Response{RawContent: textContent},
@@ -73,7 +103,6 @@ func TestHandler(t *testing.T) {
 				response: Response{RawContent: pngContent},
 				expected: imagePng,
 			},
-			// file content
 			{
 				name:     "file with plain text",
 				response: Response{File: textFile},
