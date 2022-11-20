@@ -24,7 +24,7 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 
 	var err error
 	if len(handler.response.File) > 0 {
-		err = handler.serveFile(writer, request)
+		err = handler.serveFileContent(writer, request)
 	} else {
 		err = handler.serveRawContent(writer)
 	}

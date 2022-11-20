@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,15 @@ const textPlain = "text/plain; charset=utf-8"
 const testContent = "test content"
 
 func TestHandler(t *testing.T) {
-	logger := mocks.NewNoopLogger(t)
+	fileSystem := afero.NewMemMapFs()
+
+	var makeHandler = func(t *testing.T, response Response) *internalHandler {
+		return &internalHandler{
+			logger:   mocks.NewNoopLogger(t),
+			response: response,
+			fs:       fileSystem,
+		}
+	}
 
 	t.Run("content type setting", func(t *testing.T) {
 		tests := []struct {
@@ -52,13 +61,10 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger: logger,
-					response: Response{
-						Code:       200,
-						RawContent: testCase.body,
-					},
-				}
+				handler := makeHandler(t, Response{
+					Code:       200,
+					RawContent: testCase.body,
+				})
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -140,10 +146,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger:   logger,
-					response: testCase.response,
-				}
+				handler := makeHandler(t, testCase.response)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -184,10 +187,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := internalHandler{
-					logger:   logger,
-					response: testCase.response,
-				}
+				handler := makeHandler(t, testCase.response)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()

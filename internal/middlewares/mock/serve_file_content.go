@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func (handler *internalHandler) serveFile(writer http.ResponseWriter, request *http.Request) error {
+func (handler *internalHandler) serveFileContent(writer http.ResponseWriter, request *http.Request) error {
 	fileName := handler.response.File
 	file, err := handler.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
 	if err != nil {
