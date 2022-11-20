@@ -28,10 +28,10 @@ jobs:
         version: v1.50.1
 
     - name: Build
-      run: go build -v .
+      run: go build -tags release -v .
 
     - name: Test
-      run: go test -json -v -coverprofile=coverage.out ./... > test-report.out
+      run: go test -tags release -json -v -coverprofile=coverage.out ./... > test-report.out
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master

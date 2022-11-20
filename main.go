@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pseidemann/finish"
+	"github.com/pterm/pterm"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -39,6 +40,11 @@ func main() {
 	pflag.String("mocks", "", "File with configured mocks")
 	pflag.Bool("debug", false, "Show debug output")
 
+	defer infrastructure.PanicInterceptor(func(value interface{}) {
+		pterm.Error.Println(value)
+		os.Exit(1)
+	})
+
 	pflag.Usage = func() {
 		ui.Logo(Version)
 		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
@@ -47,7 +53,7 @@ func main() {
 
 	pflag.Parse()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	httpPort := viper.GetInt("http-port")
@@ -66,13 +72,13 @@ func main() {
 	if len(mocksFile) > 0 {
 		file, err := os.Open(mocksFile)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 
 		log.Debugf("Loaded file with mocks '%s'", mocksFile)
 		decoder := yaml.NewDecoder(file)
 		if err = decoder.Decode(&mocksDefs); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 
@@ -87,17 +93,17 @@ func main() {
 		len(certFile) > 0 && len(keyFile) > 0,
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	httpClient, err := infrastructure.MakeHTTPClient(viper.GetString("proxy"))
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	proxyMiddleware := proxy.NewProxyMiddleware(
