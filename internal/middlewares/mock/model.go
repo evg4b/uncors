@@ -3,7 +3,7 @@ package mock
 type Response struct {
 	Code       int               `yaml:"code"`
 	Headers    map[string]string `yaml:"headers"`
-	RawContent string            `yaml:"raw-content"` //nolint:tagliatelle
+	RawContent string            `yaml:"raw-content"`
 	File       string            `yaml:"file"`
 }
 

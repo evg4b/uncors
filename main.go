@@ -152,6 +152,8 @@ func main() {
 	log.Info(ui.Mappings(mappings, mocksDefs))
 	log.Print("\n")
 
+	go ui.CheckLastVersion(httpClient, Version)
+
 	finisher.Wait()
 
 	log.Info("Server was stopped")

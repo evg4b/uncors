@@ -29,6 +29,7 @@ linters:
     - gofmt
     - gofumpt
     - nolintlint
+    - tagliatelle
 presets:
     - bugs
     - comment

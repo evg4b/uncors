@@ -1,8 +1,6 @@
 package proxy
 
 import (
-	"net/http"
-
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
@@ -14,7 +12,7 @@ func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) Middle
 	}
 }
 
-func WithHTTPClient(http *http.Client) MiddlewareOption {
+func WithHTTPClient(http contracts.HTTPClient) MiddlewareOption {
 	return func(m *Middleware) {
 		m.http = http
 	}

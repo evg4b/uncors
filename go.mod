@@ -7,6 +7,7 @@ require (
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/gojuno/minimock/v3 v3.0.10
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/pseidemann/finish v1.2.0
 	github.com/pterm/pterm v0.12.49
 	github.com/spf13/afero v1.9.3

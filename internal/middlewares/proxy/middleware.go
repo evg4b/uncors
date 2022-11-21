@@ -13,7 +13,7 @@ import (
 
 type Middleware struct {
 	replacers contracts.URLReplacerFactory
-	http      *http.Client
+	http      contracts.HTTPClient
 	logger    contracts.Logger
 }
 
