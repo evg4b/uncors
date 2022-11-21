@@ -65,7 +65,7 @@ Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/loca
 We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
 
 ```bash
-docker run -p 3000:3000 evg4b/uncors --source 'http://local.github.com' --target '//github.com'
+docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
 ```
 
 ## Source 
@@ -84,44 +84,49 @@ mkdir $HOME/src
 cd $HOME/src
 git clone https://github.com/evg4b/uncors.git
 cd uncors
-go install
+go install -tags release
 ```
 
 If you are a Windows user, substitute the $HOME environment variable above with `%USERPROFILE%`.
 
 # Usage
 ```
-./uncors --http-port 8080 --target 'https://github.com' --source 'http://localhost'
+uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 ```
 
 ## Parameters
 
-* `--source` - Local host with protocol for to the resource from which proxying will take place.
-* `--target` - Target host with protocol for to the resource to be proxy.
+* `--from` - Local host with protocol for to the resource from which proxying will take place.
+* `--to` - Target host with protocol for to the resource to be proxy.
 * `--http-port` - Local HTTP listened port.
 * `--https-port` - Local HTTPS listened port. 
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
 * `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
 * `--mocks` - File with defined [mocks](#mocks)
+* `--debug` - Show debug output.
 
 ## Mocks
 
 Uncors has endpoint mocks mechanism.
 All mocks should be defined in yaml file and passed as parameter `--mocks`.
 Currently available path, method, queries and headers filters
-(for more information see [gorilla/mux](https://github.com/gorilla/mux#matching-routes) route matching) . 
+(for more information see [gorilla/mux](https://github.com/gorilla/mux#matching-routes) route matching).
 
 **Mocks file example:**
 
 ```yaml
-- path: /hello
+- path: /raw-content-endpont
   response:
     code: 200
     raw-content: '
       Hello word
     '
-- path: /word
+- path: /file-content-endpont
+  response:
+    code: 200
+    file: ~/hello-word.json
+- path: /raw-content-endpont
   method: POST
   queries:
     param1: param 1 value
@@ -137,11 +142,21 @@ Currently available path, method, queries and headers filters
     raw-content: '
       { "status": "ok" }
     '
+- path: /file-content-endpont
+  method: POST
+  queries:
+    param1: param 1 value
+    param2: param 1 value
+  headers:
+    header1: header 1 value
+    header2: header 2 value
+  response:
+    code: 200
+    headers:
+      header1: header 1 value
+      header2: header 2 value
+    file: ~/hello-word.json
 ```
-
-At the moment supported only raw response content.
-Content should be defined as multiline string (see more [here](https://yaml-multiline.info/)). 
-`Content-Type` will be set automatically, but you can specify custom content type via headers section.
 
 ## How it works 
 
