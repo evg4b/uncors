@@ -52,6 +52,22 @@ scoop bucket add evg4b https://github.com/evg4b/scoop-bucket.git
 scoop install evg4b/uncors
 ```
 
+## NPM (Cross-platform)
+
+You can install uncors as node package in yout project with the following commands:
+
+Via npm: 
+
+```bash
+npm install uncors --save-dev
+```
+
+Via yarn:
+
+```bash
+yarn add uncors --dev
+```
+
 ## Binary (Cross-platform) 
 
 Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases).
