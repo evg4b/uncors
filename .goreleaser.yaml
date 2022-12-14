@@ -21,13 +21,6 @@ builds:
     ldflags:
       - -s -w -X main.Version={{ .Version }}
     tags: [release]
-archives:
-  - replacements:
-      darwin: MacOS
-      linux: Linux
-      windows: Windows
-      386: x86
-      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 source:
