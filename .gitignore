@@ -4,3 +4,4 @@ server.crt
 dist/
 uncors
 .idea
+node_modules
