@@ -18,12 +18,12 @@ type versionInfo struct {
 	Version string `json:"tag_name"`
 }
 
-func CheckLastVersion(client contracts.HTTPClient, rewCurrectVersion string) {
+func CheckLastVersion(client contracts.HTTPClient, reCurrentVersion string) {
 	log.Debug("Checking new version")
 
-	currectVersion, err := version.NewVersion(rewCurrectVersion)
+	currentVersion, err := version.NewVersion(reCurrentVersion)
 	if err != nil {
-		log.Debugf("failed to parse currect version: %v", err)
+		log.Debugf("failed to parse current version: %v", err)
 
 		return
 	}
@@ -31,7 +31,7 @@ func CheckLastVersion(client contracts.HTTPClient, rewCurrectVersion string) {
 	url, _ := url.Parse(lastVersionUrl)
 	response, err := client.Do(&http.Request{URL: url})
 	if err != nil {
-		log.Debugf("http error ocupted: %v", err)
+		log.Debugf("http error occupied: %v", err)
 
 		return
 	}
@@ -42,7 +42,7 @@ func CheckLastVersion(client contracts.HTTPClient, rewCurrectVersion string) {
 	lastVersionInfo := versionInfo{}
 	err = decoder.Decode(&lastVersionInfo)
 	if err != nil {
-		log.Debugf("failed to parse last version respoce: %v", err)
+		log.Debugf("failed to parse last version response: %v", err)
 
 		return
 	}
@@ -54,8 +54,8 @@ func CheckLastVersion(client contracts.HTTPClient, rewCurrectVersion string) {
 		return
 	}
 
-	if lastVersion.GreaterThan(currectVersion) {
-		log.Infof(NewVersionIsAvailable, currectVersion.String(), lastVersion.String())
+	if lastVersion.GreaterThan(currentVersion) {
+		log.Infof(NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
 		log.Print("\n")
 	} else {
 		log.Debug("Version is up to date")

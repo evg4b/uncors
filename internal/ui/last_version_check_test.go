@@ -31,17 +31,17 @@ func TestCheckLastVersion(t *testing.T) {
 			expected string
 		}{
 			{
-				name:     "currect version is not correct",
+				name:     "current version is not correct",
 				client:   mocks.NewHttpClientMock(t),
 				version:  "#",
-				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse currect version: Malformed version: #\n",
+				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse current version: Malformed version: #\n",
 			},
 			{
-				name: "http error is occuped",
+				name: "http error is occupied",
 				client: mocks.NewHttpClientMock(t).
 					DoMock.Return(nil, errors.New("some http error")),
 				version:  "0.0.3",
-				expected: "   DEBUG  Checking new version\n   DEBUG  http error ocupted: some http error\n",
+				expected: "   DEBUG  Checking new version\n   DEBUG  http error occupied: some http error\n",
 			},
 			{
 				name: "invalid json received",
@@ -50,7 +50,7 @@ func TestCheckLastVersion(t *testing.T) {
 					Body: io.NopCloser(strings.NewReader(`{ "version"`)),
 				}, nil),
 				version:  "0.0.3",
-				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse last version respoce: unexpected EOF\n",
+				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse last version response: unexpected EOF\n",
 			},
 			{
 				name: "incorrect json from api received",

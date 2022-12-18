@@ -15,17 +15,17 @@ func TestAssertIsDefined(t *testing.T) {
 			expected string
 		}{
 			{
-				name:     "shiuld panic with default message where message is not set",
+				name:     "should panic with default message where message is not set",
 				message:  []string{},
-				expected: "Requared variable is not defined",
+				expected: "Required variable is not defined",
 			},
 			{
-				name:     "shiuld panic with custom message where it is set",
-				message:  []string{"Cusom message"},
-				expected: "Cusom message",
+				name:     "should panic with custom message where it is set",
+				message:  []string{"Custom message"},
+				expected: "Custom message",
 			},
 			{
-				name:     "shiuld panic with concatanetion of all passed messages",
+				name:     "should panic with concatenation of all passed messages",
 				message:  []string{"This", "is", "custom", "message"},
 				expected: "This is custom message",
 			},

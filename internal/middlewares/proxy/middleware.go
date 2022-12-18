@@ -46,12 +46,12 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) error {
 		return m.makeOptionsResponse(resp, req)
 	}
 
-	targetRreplacer, sourceReplacer, err := m.replacers.Make(req.URL)
+	targetReplacer, sourceReplacer, err := m.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
 	}
 
-	originalRequest, err := m.makeOriginalRequest(req, targetRreplacer)
+	originalRequest, err := m.makeOriginalRequest(req, targetReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to create reuest to original source: %w", err)
 	}

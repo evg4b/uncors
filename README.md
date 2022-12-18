@@ -1,3 +1,4 @@
+<!--suppress HtmlDeprecatedAttribute -->
 <p align="center">
   <a href="https://github.com/evg4b/uncors" title="uncors">
     <img alt="UNCORS logo" width="80%" src="https://raw.githubusercontent.com/evg4b/uncors/main/.github/logo.png">
@@ -33,17 +34,18 @@
     </a>
 </p>
 
-# Quick Install 
+# Quick Install
 
 ## Homebrew (macOS | Linux)
 
-If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install uncors with the following one-liner:
+If you are on macOS or Linux and using [Homebrew](https://brew.sh/), you can install uncors with the following
+one-liner:
 
 ```bash 
 brew install evg4b/tap/uncors
 ```
 
-## Scoop (Windows) 
+## Scoop (Windows)
 
 If you are on Windows and using [Scoop](https://scoop.sh/), you can install uncors with the following commands:
 
@@ -56,7 +58,7 @@ scoop install evg4b/uncors
 
 You can install uncors as node package in yout project with the following commands:
 
-Via npm: 
+Via npm:
 
 ```bash
 npm install uncors --save-dev
@@ -68,15 +70,16 @@ Via yarn:
 yarn add uncors --dev
 ```
 
-## Binary (Cross-platform) 
+## Binary (Cross-platform)
 
-Download the appropriate version for your platform from [UNCORS releases page](https://github.com/evg4b/uncors/releases).
+Download the appropriate version for your platform
+from [UNCORS releases page](https://github.com/evg4b/uncors/releases).
 Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location.
 This works well for shared hosts and other systems where you don’t have a privileged account.
 
 Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/local/bin` is the most probable location.
 
-## Docker 
+## Docker
 
 We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
 
@@ -84,13 +87,14 @@ We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
 docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
 ```
 
-## Source 
+## Source
 
 **Prerequisite Tools**
+
 - Git
 - Go (at least Go 1.11)
 
-**Fetch from GitHub** 
+**Fetch from GitHub**
 
 UNCORS uses the Go Modules support built into Go 1.11 to build. The easiest way to get started is to clone
 UNCORS source code in a directory outside the GOPATH, as in the following example:
@@ -106,6 +110,7 @@ go install -tags release
 If you are a Windows user, substitute the $HOME environment variable above with `%USERPROFILE%`.
 
 # Usage
+
 ```
 uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 ```
@@ -115,7 +120,7 @@ uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 * `--from` - Local host with protocol for to the resource from which proxying will take place.
 * `--to` - Target host with protocol for to the resource to be proxy.
 * `--http-port` - Local HTTP listened port.
-* `--https-port` - Local HTTPS listened port. 
+* `--https-port` - Local HTTPS listened port.
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
 * `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
@@ -174,7 +179,7 @@ Currently available path, method, queries and headers filters
     file: ~/hello-word.json
 ```
 
-## How it works 
+## How it works
 
 ```mermaid
 sequenceDiagram

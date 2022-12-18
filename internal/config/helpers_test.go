@@ -44,13 +44,13 @@ func TestReadURLMapping(t *testing.T) {
 				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
-				name:        "count of from values greath then count of to",
+				name:        "count of from values great then count of to",
 				from:        []string{mocks.SourceHost1, mocks.SourceHost2},
 				to:          []string{mocks.TargetHost1},
 				expectedErr: "`to` values are not set for every `from`",
 			},
 			{
-				name:        "count of to values greath then count of from",
+				name:        "count of to values great then count of from",
 				from:        []string{mocks.SourceHost1},
 				to:          []string{mocks.TargetHost1, mocks.TargetHost2},
 				expectedErr: "`from` values are not set for every `to`",
