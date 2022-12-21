@@ -11,21 +11,20 @@ var (
 	ErrNoFromPair = errors.New("`from` values are not set for every `to`")
 )
 
-func ReadURLMapping(config *viper.Viper) (map[string]string, error) {
-	urlMappings := map[string]string{}
+func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	from, to := config.GetStringSlice("from"), config.GetStringSlice("to") //nolint: varnamelen
 
 	if len(from) > len(to) {
-		return nil, ErrNoToPair
+		return ErrNoToPair
 	}
 
 	if len(to) > len(from) {
-		return nil, ErrNoFromPair
+		return ErrNoFromPair
 	}
 
 	for index, key := range from {
-		urlMappings[key] = to[index]
+		configuration.Mappings[key] = to[index]
 	}
 
-	return urlMappings, nil
+	return nil
 }

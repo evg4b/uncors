@@ -1,9 +1,8 @@
-package config_test
+package config
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -14,14 +13,15 @@ func TestReadURLMapping(t *testing.T) {
 		viperConfig := viper.New()
 		viperConfig.Set("from", []string{"host1", "host2", "host3"})
 		viperConfig.Set("to", []string{"target-host1", "target-host2", "target-host3"})
-		actual, err := config.ReadURLMapping(viperConfig)
+		configuration := UncorsConfig{Mappings: map[string]string{}}
+		err := readURLMapping(viperConfig, &configuration)
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, map[string]string{
 			mocks.SourceHost1: mocks.TargetHost1,
 			mocks.SourceHost2: mocks.TargetHost2,
 			mocks.SourceHost3: mocks.TargetHost3,
-		}, actual)
+		}, configuration.Mappings)
 	})
 
 	t.Run("incorrect pairs", func(t *testing.T) {
@@ -62,9 +62,8 @@ func TestReadURLMapping(t *testing.T) {
 				viperConfig.Set("from", testCase.from)
 				viperConfig.Set("to", testCase.to)
 
-				actual, err := config.ReadURLMapping(viperConfig)
+				err := readURLMapping(viperConfig, &UncorsConfig{Mappings: map[string]string{}})
 
-				assert.Nil(t, actual)
 				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
