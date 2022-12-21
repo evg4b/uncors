@@ -18,10 +18,10 @@ type versionInfo struct {
 	Version string `json:"tag_name"`
 }
 
-func CheckLastVersion(client contracts.HTTPClient, reCurrentVersion string) {
+func CheckLastVersion(client contracts.HTTPClient, rawCurrentVersion string) {
 	log.Debug("Checking new version")
 
-	currentVersion, err := version.NewVersion(reCurrentVersion)
+	currentVersion, err := version.NewVersion(rawCurrentVersion)
 	if err != nil {
 		log.Debugf("failed to parse current version: %v", err)
 

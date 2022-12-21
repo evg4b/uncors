@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -33,16 +35,16 @@ func LoadConfiguration(viperInstance *viper.Viper) (*UncorsConfig, error) {
 	defineFlags()
 	pflag.Parse()
 	if err := viperInstance.BindPFlags(pflag.CommandLine); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("filed parsing flags: %w", err)
 	}
 
 	configuration := &UncorsConfig{}
 	if err := viperInstance.Unmarshal(configuration); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("filed parsing configuraion: %w", err)
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("recognize url mapping: %w", err)
 	}
 
 	return configuration, nil
