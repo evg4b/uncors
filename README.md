@@ -124,7 +124,7 @@ uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 * `--cert-file` - Path to HTTPS certificate file.
 * `--key-file` - Path to matching for certificate private key.
 * `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
-* `--mocks` - File with defined [mocks](#mocks)
+* `--config` - Configuration file with defined [mocks](#mocks)
 * `--debug` - Show debug output.
 
 ## Mocks

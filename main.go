@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/configuration"
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/middlewares/mock"
@@ -37,22 +37,26 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	configuration, err := config.LoadConfiguration(viper.GetViper())
+	config, err := configuration.LoadConfiguration(viper.GetViper(), os.Args)
 	if err != nil {
 		panic(err)
 	}
 
-	if configuration.Debug {
+	if err = configuration.Validate(config); err != nil {
+		panic(err)
+	}
+
+	if config.Debug {
 		viper.Debug()
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
 	}
 
 	mappings, err := urlreplacer.NormaliseMappings(
-		configuration.Mappings,
-		configuration.HTTPPort,
-		configuration.HTTPSPort,
-		configuration.IsHTTPSEnabled(),
+		config.Mappings,
+		config.HTTPPort,
+		config.HTTPSPort,
+		config.IsHTTPSEnabled(),
 	)
 	if err != nil {
 		panic(err)
@@ -79,28 +83,28 @@ func main() {
 	mockMiddleware := mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
 		mock.WithNextMiddleware(proxyMiddleware),
-		mock.WithMocks(configuration.Mocks),
+		mock.WithMocks(config.Mocks),
 		mock.WithFileSystem(fileSystem),
 	)
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, configuration.HTTPPort, mockMiddleware)
+	httpServer := infrastructure.NewServer(baseAddress, config.HTTPPort, mockMiddleware)
 	finisher.Add(httpServer, finish.WithName("http"))
 	go func() {
-		log.Debugf("Starting http server on port %d", configuration.HTTPPort)
+		log.Debugf("Starting http server on port %d", config.HTTPPort)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error(err)
 		}
 	}()
 
-	if configuration.IsHTTPSEnabled() {
+	if config.IsHTTPSEnabled() {
 		log.Debug("Found cert file and key file. Https server will be started")
-		httpsServer := infrastructure.NewServer(baseAddress, configuration.HTTPSPort, mockMiddleware)
+		httpsServer := infrastructure.NewServer(baseAddress, config.HTTPSPort, mockMiddleware)
 		finisher.Add(httpsServer, finish.WithName("https"))
 		go func() {
-			log.Debugf("Starting https server on port %d", configuration.HTTPSPort)
-			err := httpsServer.ListenAndServeTLS(configuration.CertFile, configuration.KeyFile)
+			log.Debugf("Starting https server on port %d", config.HTTPSPort)
+			err := httpsServer.ListenAndServeTLS(config.CertFile, config.KeyFile)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Error(err)
 			}
@@ -111,7 +115,7 @@ func main() {
 	log.Print("\n")
 	log.Warning(ui.DisclaimerMessage)
 	log.Print("\n")
-	log.Info(ui.Mappings(mappings, configuration.Mocks))
+	log.Info(ui.Mappings(mappings, config.Mocks))
 	log.Print("\n")
 
 	go ui.CheckLastVersion(httpClient, Version)
