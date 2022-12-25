@@ -33,7 +33,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 		panic(ErrMappingNotSpecified)
 	}
 
-	var mappings []mapping //nolint:prealloc
+	mappings := make([]mapping, 0, len(urlMappings))
 	for _, urlMapping := range urlMappings {
 		target, source, err := replacers(urlMapping.From, urlMapping.To)
 		if err != nil {

@@ -1,7 +1,7 @@
 package errordef
 
 import (
-	errors "errors"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
