@@ -2,7 +2,7 @@ package helpers
 
 import "strings"
 
-func AssertIsDefined(value interface{}, message ...string) {
+func AssertIsDefined(value any, message ...string) {
 	if value == nil {
 		message := strings.Join(message, " ")
 		if len(message) == 0 {

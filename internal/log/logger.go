@@ -28,37 +28,37 @@ func NewLogger(name string, options ...LoggerOption) *PrefixedLogger {
 	return logger
 }
 
-func (logger *PrefixedLogger) Error(v ...interface{}) {
+func (logger *PrefixedLogger) Error(v ...any) {
 	logger.writer.Println(errorPrinter.Sprint(v...))
 }
 
-func (logger *PrefixedLogger) Errorf(template string, v ...interface{}) {
+func (logger *PrefixedLogger) Errorf(template string, v ...any) {
 	logger.writer.Println(errorPrinter.Sprintf(template, v...))
 }
 
-func (logger *PrefixedLogger) Warning(v ...interface{}) {
+func (logger *PrefixedLogger) Warning(v ...any) {
 	logger.writer.Println(warningPrinter.Sprint(v...))
 }
 
-func (logger *PrefixedLogger) Warningf(template string, v ...interface{}) {
+func (logger *PrefixedLogger) Warningf(template string, v ...any) {
 	logger.writer.Println(warningPrinter.Sprintf(template, v...))
 }
 
-func (logger *PrefixedLogger) Info(v ...interface{}) {
+func (logger *PrefixedLogger) Info(v ...any) {
 	logger.writer.Println(infoPrinter.Sprint(v...))
 }
 
-func (logger *PrefixedLogger) Infof(template string, v ...interface{}) {
+func (logger *PrefixedLogger) Infof(template string, v ...any) {
 	logger.writer.Println(infoPrinter.Sprintf(template, v...))
 }
 
-func (logger *PrefixedLogger) Debug(v ...interface{}) {
+func (logger *PrefixedLogger) Debug(v ...any) {
 	if pterm.PrintDebugMessages {
 		logger.writer.Println(debugPrinter.Sprint(v...))
 	}
 }
 
-func (logger *PrefixedLogger) Debugf(template string, v ...interface{}) {
+func (logger *PrefixedLogger) Debugf(template string, v ...any) {
 	if pterm.PrintDebugMessages {
 		logger.writer.Println(debugPrinter.Sprintf(template, v...))
 	}

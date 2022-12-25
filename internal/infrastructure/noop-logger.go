@@ -2,6 +2,6 @@ package infrastructure
 
 type NoopLogger struct{}
 
-func (n NoopLogger) Infof(string, ...interface{}) {}
+func (n NoopLogger) Infof(string, ...any) {}
 
-func (n NoopLogger) Errorf(string, ...interface{}) {}
+func (n NoopLogger) Errorf(string, ...any) {}

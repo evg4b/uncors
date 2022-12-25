@@ -5,13 +5,13 @@ import (
 )
 
 type Logger interface {
-	Error(a ...interface{})
-	Errorf(template string, a ...interface{})
-	Warning(a ...interface{})
-	Warningf(template string, a ...interface{})
-	Info(a ...interface{})
-	Infof(template string, a ...interface{})
-	Debug(a ...interface{})
-	Debugf(template string, a ...interface{})
+	Error(a ...any)
+	Errorf(template string, a ...any)
+	Warning(a ...any)
+	Warningf(template string, a ...any)
+	Info(a ...any)
+	Infof(template string, a ...any)
+	Debug(a ...any)
+	Debugf(template string, a ...any)
 	PrintResponse(response *http.Response)
 }

@@ -12,7 +12,7 @@ import (
 func TestPanicInterceptor(t *testing.T) {
 	tests := []struct {
 		name           string
-		panicData      interface{}
+		panicData      any
 		shouldBeCalled bool
 	}{
 		{
@@ -36,7 +36,7 @@ func TestPanicInterceptor(t *testing.T) {
 			called := false
 
 			assert.NotPanics(t, func() {
-				defer PanicInterceptor(func(data interface{}) {
+				defer PanicInterceptor(func(data any) {
 					called = true
 					assert.Equal(t, tt.panicData, data)
 				})

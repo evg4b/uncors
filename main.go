@@ -41,7 +41,7 @@ func main() {
 	pflag.String("mocks", "", "File with configured mocks")
 	pflag.Bool("debug", false, "Show debug output")
 
-	defer infrastructure.PanicInterceptor(func(value interface{}) {
+	defer infrastructure.PanicInterceptor(func(value any) {
 		pterm.Error.Println(value)
 		os.Exit(1)
 	})

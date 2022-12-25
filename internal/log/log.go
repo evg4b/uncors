@@ -8,44 +8,44 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func Fatal(a ...interface{}) {
+func Fatal(a ...any) {
 	Error(a...)
 	os.Exit(0)
 }
 
-func Error(a ...interface{}) {
+func Error(a ...any) {
 	errorPrinter.Println(a...)
 }
 
-func Errorf(template string, a ...interface{}) {
+func Errorf(template string, a ...any) {
 	Error(fmt.Sprintf(template, a...))
 }
 
-func Warning(a ...interface{}) {
+func Warning(a ...any) {
 	warningPrinter.Println(a...)
 }
 
-func Warningf(template string, a ...interface{}) {
+func Warningf(template string, a ...any) {
 	Warning(fmt.Sprintf(template, a...))
 }
 
-func Info(a ...interface{}) {
+func Info(a ...any) {
 	infoPrinter.Println(a...)
 }
 
-func Infof(template string, a ...interface{}) {
+func Infof(template string, a ...any) {
 	Info(fmt.Sprintf(template, a...))
 }
 
-func Debug(a ...interface{}) {
+func Debug(a ...any) {
 	debugPrinter.Println(a...)
 }
 
-func Debugf(template string, a ...interface{}) {
+func Debugf(template string, a ...any) {
 	Debug(fmt.Sprintf(template, a...))
 }
 
-func Print(a ...interface{}) {
+func Print(a ...any) {
 	pterm.Print(a...)
 }
 

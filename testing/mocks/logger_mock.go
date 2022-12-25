@@ -17,38 +17,38 @@ import (
 type LoggerMock struct {
 	t minimock.Tester
 
-	funcDebug          func(a ...interface{})
-	inspectFuncDebug   func(a ...interface{})
+	funcDebug          func(a ...any)
+	inspectFuncDebug   func(a ...any)
 	afterDebugCounter  uint64
 	beforeDebugCounter uint64
 	DebugMock          mLoggerMockDebug
 
-	funcDebugf          func(template string, a ...interface{})
-	inspectFuncDebugf   func(template string, a ...interface{})
+	funcDebugf          func(template string, a ...any)
+	inspectFuncDebugf   func(template string, a ...any)
 	afterDebugfCounter  uint64
 	beforeDebugfCounter uint64
 	DebugfMock          mLoggerMockDebugf
 
-	funcError          func(a ...interface{})
-	inspectFuncError   func(a ...interface{})
+	funcError          func(a ...any)
+	inspectFuncError   func(a ...any)
 	afterErrorCounter  uint64
 	beforeErrorCounter uint64
 	ErrorMock          mLoggerMockError
 
-	funcErrorf          func(template string, a ...interface{})
-	inspectFuncErrorf   func(template string, a ...interface{})
+	funcErrorf          func(template string, a ...any)
+	inspectFuncErrorf   func(template string, a ...any)
 	afterErrorfCounter  uint64
 	beforeErrorfCounter uint64
 	ErrorfMock          mLoggerMockErrorf
 
-	funcInfo          func(a ...interface{})
-	inspectFuncInfo   func(a ...interface{})
+	funcInfo          func(a ...any)
+	inspectFuncInfo   func(a ...any)
 	afterInfoCounter  uint64
 	beforeInfoCounter uint64
 	InfoMock          mLoggerMockInfo
 
-	funcInfof          func(template string, a ...interface{})
-	inspectFuncInfof   func(template string, a ...interface{})
+	funcInfof          func(template string, a ...any)
+	inspectFuncInfof   func(template string, a ...any)
 	afterInfofCounter  uint64
 	beforeInfofCounter uint64
 	InfofMock          mLoggerMockInfof
@@ -59,14 +59,14 @@ type LoggerMock struct {
 	beforePrintResponseCounter uint64
 	PrintResponseMock          mLoggerMockPrintResponse
 
-	funcWarning          func(a ...interface{})
-	inspectFuncWarning   func(a ...interface{})
+	funcWarning          func(a ...any)
+	inspectFuncWarning   func(a ...any)
 	afterWarningCounter  uint64
 	beforeWarningCounter uint64
 	WarningMock          mLoggerMockWarning
 
-	funcWarningf          func(template string, a ...interface{})
-	inspectFuncWarningf   func(template string, a ...interface{})
+	funcWarningf          func(template string, a ...any)
+	inspectFuncWarningf   func(template string, a ...any)
 	afterWarningfCounter  uint64
 	beforeWarningfCounter uint64
 	WarningfMock          mLoggerMockWarningf
@@ -128,11 +128,11 @@ type LoggerMockDebugExpectation struct {
 
 // LoggerMockDebugParams contains parameters of the Logger.Debug
 type LoggerMockDebugParams struct {
-	a []interface{}
+	a []any
 }
 
 // Expect sets up expected params for Logger.Debug
-func (mmDebug *mLoggerMockDebug) Expect(a ...interface{}) *mLoggerMockDebug {
+func (mmDebug *mLoggerMockDebug) Expect(a ...any) *mLoggerMockDebug {
 	if mmDebug.mock.funcDebug != nil {
 		mmDebug.mock.t.Fatalf("LoggerMock.Debug mock is already set by Set")
 	}
@@ -152,7 +152,7 @@ func (mmDebug *mLoggerMockDebug) Expect(a ...interface{}) *mLoggerMockDebug {
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Debug
-func (mmDebug *mLoggerMockDebug) Inspect(f func(a ...interface{})) *mLoggerMockDebug {
+func (mmDebug *mLoggerMockDebug) Inspect(f func(a ...any)) *mLoggerMockDebug {
 	if mmDebug.mock.inspectFuncDebug != nil {
 		mmDebug.mock.t.Fatalf("Inspect function is already set for LoggerMock.Debug")
 	}
@@ -176,7 +176,7 @@ func (mmDebug *mLoggerMockDebug) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Debug method
-func (mmDebug *mLoggerMockDebug) Set(f func(a ...interface{})) *LoggerMock {
+func (mmDebug *mLoggerMockDebug) Set(f func(a ...any)) *LoggerMock {
 	if mmDebug.defaultExpectation != nil {
 		mmDebug.mock.t.Fatalf("Default expectation is already set for the Logger.Debug method")
 	}
@@ -190,7 +190,7 @@ func (mmDebug *mLoggerMockDebug) Set(f func(a ...interface{})) *LoggerMock {
 }
 
 // Debug implements contracts.Logger
-func (mmDebug *LoggerMock) Debug(a ...interface{}) {
+func (mmDebug *LoggerMock) Debug(a ...any) {
 	mm_atomic.AddUint64(&mmDebug.beforeDebugCounter, 1)
 	defer mm_atomic.AddUint64(&mmDebug.afterDebugCounter, 1)
 
@@ -316,11 +316,11 @@ type LoggerMockDebugfExpectation struct {
 // LoggerMockDebugfParams contains parameters of the Logger.Debugf
 type LoggerMockDebugfParams struct {
 	template string
-	a        []interface{}
+	a        []any
 }
 
 // Expect sets up expected params for Logger.Debugf
-func (mmDebugf *mLoggerMockDebugf) Expect(template string, a ...interface{}) *mLoggerMockDebugf {
+func (mmDebugf *mLoggerMockDebugf) Expect(template string, a ...any) *mLoggerMockDebugf {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
 	}
@@ -340,7 +340,7 @@ func (mmDebugf *mLoggerMockDebugf) Expect(template string, a ...interface{}) *mL
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Debugf
-func (mmDebugf *mLoggerMockDebugf) Inspect(f func(template string, a ...interface{})) *mLoggerMockDebugf {
+func (mmDebugf *mLoggerMockDebugf) Inspect(f func(template string, a ...any)) *mLoggerMockDebugf {
 	if mmDebugf.mock.inspectFuncDebugf != nil {
 		mmDebugf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Debugf")
 	}
@@ -364,7 +364,7 @@ func (mmDebugf *mLoggerMockDebugf) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Debugf method
-func (mmDebugf *mLoggerMockDebugf) Set(f func(template string, a ...interface{})) *LoggerMock {
+func (mmDebugf *mLoggerMockDebugf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmDebugf.defaultExpectation != nil {
 		mmDebugf.mock.t.Fatalf("Default expectation is already set for the Logger.Debugf method")
 	}
@@ -378,7 +378,7 @@ func (mmDebugf *mLoggerMockDebugf) Set(f func(template string, a ...interface{})
 }
 
 // Debugf implements contracts.Logger
-func (mmDebugf *LoggerMock) Debugf(template string, a ...interface{}) {
+func (mmDebugf *LoggerMock) Debugf(template string, a ...any) {
 	mm_atomic.AddUint64(&mmDebugf.beforeDebugfCounter, 1)
 	defer mm_atomic.AddUint64(&mmDebugf.afterDebugfCounter, 1)
 
@@ -503,11 +503,11 @@ type LoggerMockErrorExpectation struct {
 
 // LoggerMockErrorParams contains parameters of the Logger.Error
 type LoggerMockErrorParams struct {
-	a []interface{}
+	a []any
 }
 
 // Expect sets up expected params for Logger.Error
-func (mmError *mLoggerMockError) Expect(a ...interface{}) *mLoggerMockError {
+func (mmError *mLoggerMockError) Expect(a ...any) *mLoggerMockError {
 	if mmError.mock.funcError != nil {
 		mmError.mock.t.Fatalf("LoggerMock.Error mock is already set by Set")
 	}
@@ -527,7 +527,7 @@ func (mmError *mLoggerMockError) Expect(a ...interface{}) *mLoggerMockError {
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Error
-func (mmError *mLoggerMockError) Inspect(f func(a ...interface{})) *mLoggerMockError {
+func (mmError *mLoggerMockError) Inspect(f func(a ...any)) *mLoggerMockError {
 	if mmError.mock.inspectFuncError != nil {
 		mmError.mock.t.Fatalf("Inspect function is already set for LoggerMock.Error")
 	}
@@ -551,7 +551,7 @@ func (mmError *mLoggerMockError) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Error method
-func (mmError *mLoggerMockError) Set(f func(a ...interface{})) *LoggerMock {
+func (mmError *mLoggerMockError) Set(f func(a ...any)) *LoggerMock {
 	if mmError.defaultExpectation != nil {
 		mmError.mock.t.Fatalf("Default expectation is already set for the Logger.Error method")
 	}
@@ -565,7 +565,7 @@ func (mmError *mLoggerMockError) Set(f func(a ...interface{})) *LoggerMock {
 }
 
 // Error implements contracts.Logger
-func (mmError *LoggerMock) Error(a ...interface{}) {
+func (mmError *LoggerMock) Error(a ...any) {
 	mm_atomic.AddUint64(&mmError.beforeErrorCounter, 1)
 	defer mm_atomic.AddUint64(&mmError.afterErrorCounter, 1)
 
@@ -691,11 +691,11 @@ type LoggerMockErrorfExpectation struct {
 // LoggerMockErrorfParams contains parameters of the Logger.Errorf
 type LoggerMockErrorfParams struct {
 	template string
-	a        []interface{}
+	a        []any
 }
 
 // Expect sets up expected params for Logger.Errorf
-func (mmErrorf *mLoggerMockErrorf) Expect(template string, a ...interface{}) *mLoggerMockErrorf {
+func (mmErrorf *mLoggerMockErrorf) Expect(template string, a ...any) *mLoggerMockErrorf {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
 	}
@@ -715,7 +715,7 @@ func (mmErrorf *mLoggerMockErrorf) Expect(template string, a ...interface{}) *mL
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Errorf
-func (mmErrorf *mLoggerMockErrorf) Inspect(f func(template string, a ...interface{})) *mLoggerMockErrorf {
+func (mmErrorf *mLoggerMockErrorf) Inspect(f func(template string, a ...any)) *mLoggerMockErrorf {
 	if mmErrorf.mock.inspectFuncErrorf != nil {
 		mmErrorf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Errorf")
 	}
@@ -739,7 +739,7 @@ func (mmErrorf *mLoggerMockErrorf) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Errorf method
-func (mmErrorf *mLoggerMockErrorf) Set(f func(template string, a ...interface{})) *LoggerMock {
+func (mmErrorf *mLoggerMockErrorf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmErrorf.defaultExpectation != nil {
 		mmErrorf.mock.t.Fatalf("Default expectation is already set for the Logger.Errorf method")
 	}
@@ -753,7 +753,7 @@ func (mmErrorf *mLoggerMockErrorf) Set(f func(template string, a ...interface{})
 }
 
 // Errorf implements contracts.Logger
-func (mmErrorf *LoggerMock) Errorf(template string, a ...interface{}) {
+func (mmErrorf *LoggerMock) Errorf(template string, a ...any) {
 	mm_atomic.AddUint64(&mmErrorf.beforeErrorfCounter, 1)
 	defer mm_atomic.AddUint64(&mmErrorf.afterErrorfCounter, 1)
 
@@ -878,11 +878,11 @@ type LoggerMockInfoExpectation struct {
 
 // LoggerMockInfoParams contains parameters of the Logger.Info
 type LoggerMockInfoParams struct {
-	a []interface{}
+	a []any
 }
 
 // Expect sets up expected params for Logger.Info
-func (mmInfo *mLoggerMockInfo) Expect(a ...interface{}) *mLoggerMockInfo {
+func (mmInfo *mLoggerMockInfo) Expect(a ...any) *mLoggerMockInfo {
 	if mmInfo.mock.funcInfo != nil {
 		mmInfo.mock.t.Fatalf("LoggerMock.Info mock is already set by Set")
 	}
@@ -902,7 +902,7 @@ func (mmInfo *mLoggerMockInfo) Expect(a ...interface{}) *mLoggerMockInfo {
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Info
-func (mmInfo *mLoggerMockInfo) Inspect(f func(a ...interface{})) *mLoggerMockInfo {
+func (mmInfo *mLoggerMockInfo) Inspect(f func(a ...any)) *mLoggerMockInfo {
 	if mmInfo.mock.inspectFuncInfo != nil {
 		mmInfo.mock.t.Fatalf("Inspect function is already set for LoggerMock.Info")
 	}
@@ -926,7 +926,7 @@ func (mmInfo *mLoggerMockInfo) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Info method
-func (mmInfo *mLoggerMockInfo) Set(f func(a ...interface{})) *LoggerMock {
+func (mmInfo *mLoggerMockInfo) Set(f func(a ...any)) *LoggerMock {
 	if mmInfo.defaultExpectation != nil {
 		mmInfo.mock.t.Fatalf("Default expectation is already set for the Logger.Info method")
 	}
@@ -940,7 +940,7 @@ func (mmInfo *mLoggerMockInfo) Set(f func(a ...interface{})) *LoggerMock {
 }
 
 // Info implements contracts.Logger
-func (mmInfo *LoggerMock) Info(a ...interface{}) {
+func (mmInfo *LoggerMock) Info(a ...any) {
 	mm_atomic.AddUint64(&mmInfo.beforeInfoCounter, 1)
 	defer mm_atomic.AddUint64(&mmInfo.afterInfoCounter, 1)
 
@@ -1066,11 +1066,11 @@ type LoggerMockInfofExpectation struct {
 // LoggerMockInfofParams contains parameters of the Logger.Infof
 type LoggerMockInfofParams struct {
 	template string
-	a        []interface{}
+	a        []any
 }
 
 // Expect sets up expected params for Logger.Infof
-func (mmInfof *mLoggerMockInfof) Expect(template string, a ...interface{}) *mLoggerMockInfof {
+func (mmInfof *mLoggerMockInfof) Expect(template string, a ...any) *mLoggerMockInfof {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
 	}
@@ -1090,7 +1090,7 @@ func (mmInfof *mLoggerMockInfof) Expect(template string, a ...interface{}) *mLog
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Infof
-func (mmInfof *mLoggerMockInfof) Inspect(f func(template string, a ...interface{})) *mLoggerMockInfof {
+func (mmInfof *mLoggerMockInfof) Inspect(f func(template string, a ...any)) *mLoggerMockInfof {
 	if mmInfof.mock.inspectFuncInfof != nil {
 		mmInfof.mock.t.Fatalf("Inspect function is already set for LoggerMock.Infof")
 	}
@@ -1114,7 +1114,7 @@ func (mmInfof *mLoggerMockInfof) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Infof method
-func (mmInfof *mLoggerMockInfof) Set(f func(template string, a ...interface{})) *LoggerMock {
+func (mmInfof *mLoggerMockInfof) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmInfof.defaultExpectation != nil {
 		mmInfof.mock.t.Fatalf("Default expectation is already set for the Logger.Infof method")
 	}
@@ -1128,7 +1128,7 @@ func (mmInfof *mLoggerMockInfof) Set(f func(template string, a ...interface{})) 
 }
 
 // Infof implements contracts.Logger
-func (mmInfof *LoggerMock) Infof(template string, a ...interface{}) {
+func (mmInfof *LoggerMock) Infof(template string, a ...any) {
 	mm_atomic.AddUint64(&mmInfof.beforeInfofCounter, 1)
 	defer mm_atomic.AddUint64(&mmInfof.afterInfofCounter, 1)
 
@@ -1440,11 +1440,11 @@ type LoggerMockWarningExpectation struct {
 
 // LoggerMockWarningParams contains parameters of the Logger.Warning
 type LoggerMockWarningParams struct {
-	a []interface{}
+	a []any
 }
 
 // Expect sets up expected params for Logger.Warning
-func (mmWarning *mLoggerMockWarning) Expect(a ...interface{}) *mLoggerMockWarning {
+func (mmWarning *mLoggerMockWarning) Expect(a ...any) *mLoggerMockWarning {
 	if mmWarning.mock.funcWarning != nil {
 		mmWarning.mock.t.Fatalf("LoggerMock.Warning mock is already set by Set")
 	}
@@ -1464,7 +1464,7 @@ func (mmWarning *mLoggerMockWarning) Expect(a ...interface{}) *mLoggerMockWarnin
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Warning
-func (mmWarning *mLoggerMockWarning) Inspect(f func(a ...interface{})) *mLoggerMockWarning {
+func (mmWarning *mLoggerMockWarning) Inspect(f func(a ...any)) *mLoggerMockWarning {
 	if mmWarning.mock.inspectFuncWarning != nil {
 		mmWarning.mock.t.Fatalf("Inspect function is already set for LoggerMock.Warning")
 	}
@@ -1488,7 +1488,7 @@ func (mmWarning *mLoggerMockWarning) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Warning method
-func (mmWarning *mLoggerMockWarning) Set(f func(a ...interface{})) *LoggerMock {
+func (mmWarning *mLoggerMockWarning) Set(f func(a ...any)) *LoggerMock {
 	if mmWarning.defaultExpectation != nil {
 		mmWarning.mock.t.Fatalf("Default expectation is already set for the Logger.Warning method")
 	}
@@ -1502,7 +1502,7 @@ func (mmWarning *mLoggerMockWarning) Set(f func(a ...interface{})) *LoggerMock {
 }
 
 // Warning implements contracts.Logger
-func (mmWarning *LoggerMock) Warning(a ...interface{}) {
+func (mmWarning *LoggerMock) Warning(a ...any) {
 	mm_atomic.AddUint64(&mmWarning.beforeWarningCounter, 1)
 	defer mm_atomic.AddUint64(&mmWarning.afterWarningCounter, 1)
 
@@ -1628,11 +1628,11 @@ type LoggerMockWarningfExpectation struct {
 // LoggerMockWarningfParams contains parameters of the Logger.Warningf
 type LoggerMockWarningfParams struct {
 	template string
-	a        []interface{}
+	a        []any
 }
 
 // Expect sets up expected params for Logger.Warningf
-func (mmWarningf *mLoggerMockWarningf) Expect(template string, a ...interface{}) *mLoggerMockWarningf {
+func (mmWarningf *mLoggerMockWarningf) Expect(template string, a ...any) *mLoggerMockWarningf {
 	if mmWarningf.mock.funcWarningf != nil {
 		mmWarningf.mock.t.Fatalf("LoggerMock.Warningf mock is already set by Set")
 	}
@@ -1652,7 +1652,7 @@ func (mmWarningf *mLoggerMockWarningf) Expect(template string, a ...interface{})
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.Warningf
-func (mmWarningf *mLoggerMockWarningf) Inspect(f func(template string, a ...interface{})) *mLoggerMockWarningf {
+func (mmWarningf *mLoggerMockWarningf) Inspect(f func(template string, a ...any)) *mLoggerMockWarningf {
 	if mmWarningf.mock.inspectFuncWarningf != nil {
 		mmWarningf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Warningf")
 	}
@@ -1676,7 +1676,7 @@ func (mmWarningf *mLoggerMockWarningf) Return() *LoggerMock {
 }
 
 // Set uses given function f to mock the Logger.Warningf method
-func (mmWarningf *mLoggerMockWarningf) Set(f func(template string, a ...interface{})) *LoggerMock {
+func (mmWarningf *mLoggerMockWarningf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmWarningf.defaultExpectation != nil {
 		mmWarningf.mock.t.Fatalf("Default expectation is already set for the Logger.Warningf method")
 	}
@@ -1690,7 +1690,7 @@ func (mmWarningf *mLoggerMockWarningf) Set(f func(template string, a ...interfac
 }
 
 // Warningf implements contracts.Logger
-func (mmWarningf *LoggerMock) Warningf(template string, a ...interface{}) {
+func (mmWarningf *LoggerMock) Warningf(template string, a ...any) {
 	mm_atomic.AddUint64(&mmWarningf.beforeWarningfCounter, 1)
 	defer mm_atomic.AddUint64(&mmWarningf.afterWarningfCounter, 1)
 
