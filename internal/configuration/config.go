@@ -2,6 +2,9 @@ package configuration
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/evg4b/uncors/internal/log"
 
 	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/spf13/pflag"
@@ -24,7 +27,7 @@ type UncorsConfig struct {
 	CertFile  string `mapstructure:"cert-file"`
 	KeyFile   string `mapstructure:"key-file"`
 	// Mocks config_test_data
-	Mocks []mock.Mock
+	Mocks []mock.Mock `mapstructure:"mocks"`
 }
 
 func (config *UncorsConfig) IsHTTPSEnabled() bool {
@@ -32,8 +35,7 @@ func (config *UncorsConfig) IsHTTPSEnabled() bool {
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig, error) {
-	flags := pflag.NewFlagSet("uncors", pflag.ExitOnError)
-	defineFlags(flags)
+	flags := defineFlags()
 	if err := flags.Parse(args); err != nil {
 		return nil, fmt.Errorf("filed parsing flags: %w", err)
 	}
@@ -66,7 +68,11 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	return configuration, nil
 }
 
-func defineFlags(flags *pflag.FlagSet) {
+func defineFlags() *pflag.FlagSet {
+	flags := pflag.NewFlagSet("uncors", pflag.ContinueOnError)
+	flags.Usage = func() {
+		log.Errorf("Usage of %s:\n%s\n", os.Args[0], flags.FlagUsages())
+	}
 	flags.StringSlice("to", []string{}, "Target host with protocol for to the resource to be proxy")
 	flags.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
 	flags.Uint("http-port", defaultHTTPPort, "Local HTTP listening port")
@@ -76,4 +82,6 @@ func defineFlags(flags *pflag.FlagSet) {
 	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.String("config", "", "Show debug output")
+
+	return flags
 }

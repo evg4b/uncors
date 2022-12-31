@@ -25,7 +25,7 @@ func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 	return fs
 }
 
-func CreateFsForTest(t *testing.T, folder string) afero.Fs {
+func PrepareFsForTests(t *testing.T, folder string) afero.Fs {
 	t.Helper()
 	_, filename, _, _ := runtime.Caller(1)
 	dirname := filepath.Join(filepath.Dir(filename), folder)

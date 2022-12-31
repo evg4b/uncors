@@ -1,0 +1,3 @@
+http-port: 8080
+mappings&
+  http://demo: https://demo.com

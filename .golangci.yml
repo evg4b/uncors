@@ -30,6 +30,11 @@ linters:
     - gofumpt
     - nolintlint
     - tagliatelle
+linters-settings:
+  varnamelen:
+    ignore-names:
+      - form
+      - to
 presets:
   - bugs
   - comment

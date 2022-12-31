@@ -12,7 +12,7 @@ var (
 )
 
 func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
-	from, to := config.GetStringSlice("from"), config.GetStringSlice("to") //nolint: varnamelen
+	from, to := config.GetStringSlice("from"), config.GetStringSlice("to")
 
 	if len(from) > len(to) {
 		return ErrNoToPair
