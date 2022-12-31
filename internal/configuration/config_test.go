@@ -17,14 +17,6 @@ func TestLoadConfiguration(t *testing.T) {
 	viperInstance := viper.New()
 	viperInstance.SetFs(fs)
 
-	t.Run("return error when incorrect flag provided", func(t *testing.T) {
-		config, err := configuration.LoadConfiguration(viperInstance, []string{
-			"--incorrect-flag",
-		})
-		assert.Error(t, err)
-		assert.Nil(t, config)
-	})
-
 	t.Run("correctly parse configuration", func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -151,6 +143,13 @@ func TestLoadConfiguration(t *testing.T) {
 			expected string
 		}{
 			{
+				name: "incorrect flag provided",
+				args: []string{
+					"--incorrect-flag",
+				},
+				expected: "filed parsing flags: unknown flag: --incorrect-flag",
+			},
+			{
 				name: "return default config",
 				args: []string{
 					"--to", mocks.TargetHost1,
@@ -189,6 +188,22 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: "filed to read config file '/corrupted-config.yaml': " +
 					"While parsing config: yaml: line 2: could not find expected ':'",
+			},
+			{
+				name: "incorrect param type",
+				args: []string{
+					"--http-port", "xxx",
+				},
+				expected: "filed parsing flags: invalid argument \"xxx\" for \"--http-port\" flag: " +
+					"strconv.ParseUint: parsing \"xxx\": invalid syntax",
+			},
+			{
+				name: "incorrect type in config file",
+				args: []string{
+					"--config", "/incorrect-config.yaml",
+				},
+				expected: "filed parsing configuraion: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
+					" strconv.ParseInt: parsing \"xxx\": invalid syntax",
 			},
 		}
 		for _, testCase := range tests {
