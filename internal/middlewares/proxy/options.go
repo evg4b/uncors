@@ -6,7 +6,7 @@ import (
 
 type MiddlewareOption = func(*Middleware)
 
-func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) MiddlewareOption {
+func WithURLReplacerFactory(replacerFactory URLReplacerFactory) MiddlewareOption {
 	return func(m *Middleware) {
 		m.replacers = replacerFactory
 	}
