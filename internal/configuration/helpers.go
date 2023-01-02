@@ -3,6 +3,8 @@ package configuration
 import (
 	"errors"
 
+	"github.com/evg4b/uncors/internal/log"
+
 	"github.com/spf13/viper"
 )
 
@@ -23,7 +25,12 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	}
 
 	for index, key := range from {
-		configuration.Mappings[key] = to[index]
+		value := to[index]
+		if prev, ok := configuration.Mappings[key]; ok {
+			log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
+		}
+
+		configuration.Mappings[key] = value
 	}
 
 	return nil
