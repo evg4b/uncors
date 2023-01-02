@@ -2,9 +2,6 @@ package configuration
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/evg4b/uncors/internal/log"
 
 	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/spf13/pflag"
@@ -70,9 +67,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 
 func defineFlags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("uncors", pflag.ContinueOnError)
-	flags.Usage = func() {
-		log.Errorf("Usage of %s:\n%s\n", os.Args[0], flags.FlagUsages())
-	}
+	flags.Usage = pflag.Usage
 	flags.StringSlice("to", []string{}, "Target host with protocol for to the resource to be proxy")
 	flags.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
 	flags.Uint("http-port", defaultHTTPPort, "Local HTTP listening port")
