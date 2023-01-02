@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "mappings": {
+      "type": "array",
+      "description": "A list of mappings that describe how to forward requests.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Mapping"
+      }
+    },
+    "http-port": {
+      "type": "integer",
+      "description": "Local HTTP listened port",
+      "default": 80,
+      "format": "int32"
+    },
+    "https-port": {
+      "type": "integer",
+      "description": "Local HTTPS listened port",
+      "default": 443,
+      "format": "int32"
+    },
+    "cert-file": {
+      "type": "string",
+      "description": "Path to HTTPS certificate file"
+    },
+    "key-file": {
+      "type": "string",
+      "description": "Path to matching for certificate private key"
+    },
+    "debug": {
+      "type": "boolean",
+      "description": "Show debug output",
+      "default": false
+    },
+    "proxy": {
+      "type": "string",
+      "description": "HTTP/HTTPS proxy to provide requests to real server (used system by default)",
+      "format": "uri"
+    },
+    "cache-config": {
+      "description": "Global cache configuration",
+      "type": "object",
+      "properties": {
+        "expiration-time": {
+          "description": "Cache expiration time",
+          "type": "string"
+        },
+        "clear-time": {
+          "description": "Expired cache clear time",
+          "type": "string"
+        },
+        "methods": {
+          "description": "List of http methods with can be cached",
+          "default": [
+            "GET"
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Method"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "mappings"
+  ],
+  "definitions": {
+    "Mapping": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "sadasdasdasda das asd asd ",
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "### sadasdasdasda das asd asd ",
+          "type": "object",
+          "properties": {
+            "from": {
+              "description": "ds af dskf ssdf sdf  jgfdg",
+              "type": "string"
+            },
+            "to": {
+              "description": "ds gkldf jgfdg",
+              "type": "string"
+            },
+            "cache": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "mocks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Mock"
+              },
+              "minItems": 1
+            },
+            "static": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StaticDirectory"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Mock": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "method": {
+          "$ref": "#/definitions/Method"
+        },
+        "queries": {
+          "$ref": "#/definitions/Queries",
+          "description": "demo"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "demo"
+        },
+        "response": {
+          "description": "Mock response definition",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/RawMockResponse"
+            },
+            {
+              "$ref": "#/definitions/FileMockResponse"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "response"
+      ]
+    },
+    "RawMockResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "description": "HTTP response status code"
+        },
+        "delay": {
+          "$ref": "#/definitions/Duration",
+          "description": "Delay before sending the mock response"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "HTTP headers which will be sent in the mock response"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content which will be sent in the mock response"
+        }
+      },
+      "required": [
+        "code",
+        "raw"
+      ],
+      "additionalProperties": false
+    },
+    "FileMockResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "description": "HTTP response status code"
+        },
+        "delay": {
+          "$ref": "#/definitions/Duration",
+          "description": "Delay before sending the mock response"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "HTTP headers which will be sent in the mock response"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to the file whose content will be sent in the mock response"
+        }
+      },
+      "required": [
+        "code",
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "StaticDirectory": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "Headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "minProperties": 1
+    },
+    "Queries": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "minProperties": 1
+    },
+    "Method": {
+      "type": "string",
+      "enum": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "DELETE",
+        "CONNECT",
+        "OPTIONS",
+        "TRACE",
+        "PATCH"
+      ]
+    },
+    "Duration": {
+      "type": "string",
+      "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$"
+    }
+  }
+}
