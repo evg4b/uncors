@@ -70,13 +70,13 @@ func defineFlags() *pflag.FlagSet {
 	flags.Usage = pflag.Usage
 	flags.StringSlice("to", []string{}, "Target host with protocol for to the resource to be proxy")
 	flags.StringSlice("from", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
-	flags.Uint("http-port", defaultHTTPPort, "Local HTTP listening port")
-	flags.Uint("https-port", defaultHTTPSPort, "Local HTTPS listening port")
+	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
+	flags.UintP("https-port", "s", defaultHTTPSPort, "Local HTTPS listening port")
 	flags.String("cert-file", "", "Path to HTTPS certificate file")
 	flags.String("key-file", "", "Path to matching for certificate private key")
 	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
 	flags.Bool("debug", false, "Show debug output")
-	flags.String("config", "", "Show debug output")
+	flags.StringP("config", "c", "", "Show debug output")
 
 	return flags
 }
