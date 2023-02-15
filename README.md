@@ -127,10 +127,34 @@ uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 * `--config` - Configuration file with defined [mocks](#mocks)
 * `--debug` - Show debug output.
 
+
+## Configuration
+
+```yaml
+# Base configuration
+http-port: 8080 # Local HTTP listened port.
+mappings:
+  http://localhost:3000: https://githib.com
+debug: false # Show debug output.
+proxy: localhost:8080
+
+# HTTPS configuration
+https-port: 8081 # Local HTTPS listened port.
+cert-file: ~/server.crt # Path to HTTPS certificate file.
+key-file: ~/server.key # Path to matching for certificate private key.
+
+#Mocks
+mocks:
+  - path: /hello-word
+    response:
+      code: 200
+      raw-content: 'Hello word'
+```
+
 ## Mocks
 
 Uncors has endpoint mocks mechanism.
-All mocks should be defined in yaml file and passed as parameter `--mocks`.
+All mocks should be defined in yaml config file and passed as parameter `--mocks`.
 Currently available path, method, queries and headers filters
 (for more information see [gorilla/mux](https://github.com/gorilla/mux#matching-routes) route matching).
 
