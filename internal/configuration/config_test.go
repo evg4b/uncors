@@ -172,16 +172,15 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: "recognize url mapping: `from` values are not set for every `to`",
 			},
-			// TODO: Update errors for this test
-			// {
-			//	name: "configuration file doesn't exist",
-			//	args: []string{
-			//		"--config", "/not-exist-config.yaml",
-			//	},
-			//	expected: "filed to read config file '/not-exist-config.yaml': " +
-			//		"open /Users/evg4b/Documents/uncors/internal/configuration/config_" +
-			//		"test_data/not-exist-config.yaml: no such file or directory",
-			// },
+			{
+				name: "configuration file doesn't exist",
+				args: []string{
+					"--config", "/not-exist-config.yaml",
+				},
+				expected: "filed to read config file '/not-exist-config.yaml': " +
+					"open /Users/evg4b/Documents/uncors/internal/configuration/config_" +
+					"test_data/not-exist-config.yaml: no such file or directory",
+			},
 			{
 				name: "configuration file is corrupted",
 				args: []string{
@@ -195,7 +194,7 @@ func TestLoadConfiguration(t *testing.T) {
 				args: []string{
 					"--http-port", "xxx",
 				},
-				expected: "filed parsing flags: invalid argument \"xxx\" for \"--http-port\" flag: " +
+				expected: "filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
 					"strconv.ParseUint: parsing \"xxx\": invalid syntax",
 			},
 			{
