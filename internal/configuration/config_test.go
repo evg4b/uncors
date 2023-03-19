@@ -3,11 +3,11 @@ package configuration_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/testing/mocks"
-
 	"github.com/evg4b/uncors/internal/configuration"
 	"github.com/evg4b/uncors/internal/middlewares/mock"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/evg4b/uncors/testing/testutils/params"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +35,7 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 			{
 				name: "minimal config is set",
-				args: []string{"--config", "/minimal-config.yaml"},
+				args: []string{params.Config, "/minimal-config.yaml"},
 				expected: &configuration.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
@@ -47,7 +47,7 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 			{
 				name: "read all fields from config file config is set",
-				args: []string{"--config", "/full-config.yaml"},
+				args: []string{params.Config, "/full-config.yaml"},
 				expected: &configuration.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: map[string]string{
@@ -84,10 +84,10 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "read all fields from config file config is set",
 				args: []string{
-					"--config", "/full-config.yaml",
-					"--from", mocks.SourceHost1, "--to", mocks.TargetHost1,
-					"--from", mocks.SourceHost2, "--to", mocks.TargetHost2,
-					"--from", mocks.SourceHost3, "--to", mocks.TargetHost3,
+					params.Config, "/full-config.yaml",
+					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
+					params.From, mocks.SourceHost2, params.To, mocks.TargetHost2,
+					params.From, mocks.SourceHost3, params.To, mocks.TargetHost3,
 				},
 				expected: &configuration.UncorsConfig{
 					HTTPPort: 8080,
@@ -154,7 +154,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "return default config",
 				args: []string{
-					"--to", mocks.TargetHost1,
+					params.To, mocks.TargetHost1,
 				},
 				expected: []string{
 					"recognize url mapping: `from` values are not set for every `to`",
@@ -163,8 +163,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of from values great then count of to",
 				args: []string{
-					"--from", mocks.SourceHost1, "--to", mocks.TargetHost1,
-					"--from", mocks.SourceHost2,
+					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
+					params.From, mocks.SourceHost2,
 				},
 				expected: []string{
 					"recognize url mapping: `to` values are not set for every `from`",
@@ -173,8 +173,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of to values great then count of from",
 				args: []string{
-					"--from", mocks.SourceHost1, "--to", mocks.TargetHost1,
-					"--to", mocks.TargetHost2,
+					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
+					params.To, mocks.TargetHost2,
 				},
 				expected: []string{
 					"recognize url mapping: `from` values are not set for every `to`",
@@ -183,7 +183,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "configuration file doesn't exist",
 				args: []string{
-					"--config", "/not-exist-config.yaml",
+					params.Config, "/not-exist-config.yaml",
 				},
 				expected: []string{
 					"filed to read config file '/not-exist-config.yaml': open ",
@@ -193,7 +193,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "configuration file is corrupted",
 				args: []string{
-					"--config", "/corrupted-config.yaml",
+					params.Config, "/corrupted-config.yaml",
 				},
 				expected: []string{
 					"filed to read config file '/corrupted-config.yaml': " +
@@ -203,7 +203,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "incorrect param type",
 				args: []string{
-					"--http-port", "xxx",
+					params.HttpPort, "xxx",
 				},
 				expected: []string{
 					"filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
@@ -213,7 +213,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "incorrect type in config file",
 				args: []string{
-					"--config", "/incorrect-config.yaml",
+					params.Config, "/incorrect-config.yaml",
 				},
 				expected: []string{
 					"filed parsing configuraion: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
@@ -234,7 +234,7 @@ func TestLoadConfiguration(t *testing.T) {
 	})
 }
 
-func TestUncorsConfig_IsHTTPSEnabled(t *testing.T) {
+func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
 		config   *configuration.UncorsConfig
