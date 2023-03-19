@@ -1,6 +1,8 @@
 package mock
 
-import "time"
+import (
+	"time"
+)
 
 type Response struct {
 	Code       int               `mapstructure:"code"`

@@ -13,7 +13,7 @@ type internalHandler struct {
 	response Response
 	logger   contracts.Logger
 	fs       afero.Fs
-	sleep    func(duration time.Duration)
+	after    func(duration time.Duration) <-chan time.Time
 }
 
 func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -25,8 +25,13 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	}
 
 	if response.Delay > 0 {
-		handler.logger.Debugf("Delay %s: ", response.Delay)
-		handler.sleep(response.Delay)
+		handler.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
+		ctx := request.Context()
+		select {
+		case <-ctx.Done():
+			handler.logger.Debugf("Delay for %s canceled", request.URL.RequestURI())
+		case <-handler.after(response.Delay):
+		}
 	}
 
 	var err error

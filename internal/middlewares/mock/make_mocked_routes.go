@@ -1,8 +1,9 @@
 package mock
 
 import (
-	"github.com/gorilla/mux"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func (m *Middleware) makeMockedRoutes() {
@@ -29,7 +30,7 @@ func (m *Middleware) makeMockedRoutes() {
 }
 
 func (m *Middleware) makeHandler(response Response) *internalHandler {
-	return &internalHandler{response, m.logger, m.fs, time.Sleep}
+	return &internalHandler{response, m.logger, m.fs, time.After}
 }
 
 func setPath(route *mux.Route, path string) {

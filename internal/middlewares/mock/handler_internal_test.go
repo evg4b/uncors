@@ -31,7 +31,7 @@ const (
 	pngFile  = "test.png"
 )
 
-func TestHandler(t *testing.T) {
+func TestHandler(t *testing.T) { //nolint:maintidx
 	fileSystem := testutils.FsFromMap(t, map[string]string{
 		textFile: textContent,
 		jsonFile: jsonContent,
@@ -44,7 +44,9 @@ func TestHandler(t *testing.T) {
 			logger:   mocks.NewNoopLogger(t),
 			response: response,
 			fs:       fileSystem,
-			sleep:    func(duration time.Duration) {},
+			after: func(duration time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			},
 		}
 	}
 
@@ -316,9 +318,11 @@ func TestHandler(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				called := false
 				handler := makeHandler(t, testCase.response)
-				handler.sleep = func(duration time.Duration) {
+				handler.after = func(duration time.Duration) <-chan time.Time {
 					assert.Equal(t, duration, testCase.expected)
 					called = true
+
+					return time.After(time.Nanosecond)
 				}
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
