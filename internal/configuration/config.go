@@ -57,6 +57,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	}
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		hooks.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
 	))
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing configuraion: %w", err)
