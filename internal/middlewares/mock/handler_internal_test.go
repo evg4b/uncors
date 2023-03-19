@@ -31,7 +31,7 @@ const (
 	pngFile  = "test.png"
 )
 
-func TestHandler(t *testing.T) { //nolint:maintidx
+func TestHandler(t *testing.T) {
 	fileSystem := testutils.FsFromMap(t, map[string]string{
 		textFile: textContent,
 		jsonFile: jsonContent,

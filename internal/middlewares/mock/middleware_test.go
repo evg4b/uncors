@@ -1,4 +1,3 @@
-//nolint:maintidx
 package mock_test
 
 import (
