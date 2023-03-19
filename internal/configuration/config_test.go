@@ -140,21 +140,25 @@ func TestLoadConfiguration(t *testing.T) {
 		tests := []struct {
 			name     string
 			args     []string
-			expected string
+			expected []string
 		}{
 			{
 				name: "incorrect flag provided",
 				args: []string{
 					"--incorrect-flag",
 				},
-				expected: "filed parsing flags: unknown flag: --incorrect-flag",
+				expected: []string{
+					"filed parsing flags: unknown flag: --incorrect-flag",
+				},
 			},
 			{
 				name: "return default config",
 				args: []string{
 					"--to", mocks.TargetHost1,
 				},
-				expected: "recognize url mapping: `from` values are not set for every `to`",
+				expected: []string{
+					"recognize url mapping: `from` values are not set for every `to`",
+				},
 			},
 			{
 				name: "count of from values great then count of to",
@@ -162,7 +166,9 @@ func TestLoadConfiguration(t *testing.T) {
 					"--from", mocks.SourceHost1, "--to", mocks.TargetHost1,
 					"--from", mocks.SourceHost2,
 				},
-				expected: "recognize url mapping: `to` values are not set for every `from`",
+				expected: []string{
+					"recognize url mapping: `to` values are not set for every `from`",
+				},
 			},
 			{
 				name: "count of to values great then count of from",
@@ -170,40 +176,49 @@ func TestLoadConfiguration(t *testing.T) {
 					"--from", mocks.SourceHost1, "--to", mocks.TargetHost1,
 					"--to", mocks.TargetHost2,
 				},
-				expected: "recognize url mapping: `from` values are not set for every `to`",
+				expected: []string{
+					"recognize url mapping: `from` values are not set for every `to`",
+				},
 			},
 			{
 				name: "configuration file doesn't exist",
 				args: []string{
 					"--config", "/not-exist-config.yaml",
 				},
-				expected: "filed to read config file '/not-exist-config.yaml': " +
-					"open /Users/evg4b/Documents/uncors/internal/configuration/config_" +
+				expected: []string{
+					"filed to read config file '/not-exist-config.yaml': open ",
 					"test_data/not-exist-config.yaml: no such file or directory",
+				},
 			},
 			{
 				name: "configuration file is corrupted",
 				args: []string{
 					"--config", "/corrupted-config.yaml",
 				},
-				expected: "filed to read config file '/corrupted-config.yaml': " +
-					"While parsing config: yaml: line 2: could not find expected ':'",
+				expected: []string{
+					"filed to read config file '/corrupted-config.yaml': " +
+						"While parsing config: yaml: line 2: could not find expected ':'",
+				},
 			},
 			{
 				name: "incorrect param type",
 				args: []string{
 					"--http-port", "xxx",
 				},
-				expected: "filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
-					"strconv.ParseUint: parsing \"xxx\": invalid syntax",
+				expected: []string{
+					"filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
+						"strconv.ParseUint: parsing \"xxx\": invalid syntax",
+				},
 			},
 			{
 				name: "incorrect type in config file",
 				args: []string{
 					"--config", "/incorrect-config.yaml",
 				},
-				expected: "filed parsing configuraion: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
-					" strconv.ParseInt: parsing \"xxx\": invalid syntax",
+				expected: []string{
+					"filed parsing configuraion: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
+						" strconv.ParseInt: parsing \"xxx\": invalid syntax",
+				},
 			},
 		}
 		for _, testCase := range tests {
@@ -211,7 +226,9 @@ func TestLoadConfiguration(t *testing.T) {
 				config, err := configuration.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.Nil(t, config)
-				assert.EqualError(t, err, testCase.expected)
+				for _, expected := range testCase.expected {
+					assert.ErrorContains(t, err, expected)
+				}
 			})
 		}
 	})
