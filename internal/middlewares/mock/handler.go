@@ -19,19 +19,23 @@ type internalHandler struct {
 func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	response := handler.response
 	header := writer.Header()
-	infrastructure.WriteCorsHeaders(header)
-	for key, value := range response.Headers {
-		header.Set(key, value)
-	}
 
 	if response.Delay > 0 {
 		handler.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
 		select {
 		case <-ctx.Done():
+			writer.WriteHeader(http.StatusServiceUnavailable)
 			handler.logger.Debugf("Delay for %s canceled", request.URL.RequestURI())
+
+			return
 		case <-handler.after(response.Delay):
 		}
+	}
+
+	infrastructure.WriteCorsHeaders(header)
+	for key, value := range response.Headers {
+		header.Set(key, value)
 	}
 
 	var err error
