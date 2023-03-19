@@ -2,6 +2,7 @@ package mock
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infrastructure"
@@ -12,6 +13,7 @@ type internalHandler struct {
 	response Response
 	logger   contracts.Logger
 	fs       afero.Fs
+	sleep    func(duration time.Duration)
 }
 
 func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -20,6 +22,11 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	infrastructure.WriteCorsHeaders(header)
 	for key, value := range response.Headers {
 		header.Set(key, value)
+	}
+
+	if response.Delay > 0 {
+		handler.logger.Debugf("Delay %s: ", response.Delay)
+		handler.sleep(response.Delay)
 	}
 
 	var err error

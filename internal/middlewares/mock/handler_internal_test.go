@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -43,6 +44,7 @@ func TestHandler(t *testing.T) {
 			logger:   mocks.NewNoopLogger(t),
 			response: response,
 			fs:       fileSystem,
+			sleep:    func(duration time.Duration) {},
 		}
 	}
 
@@ -257,6 +259,74 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(recorder, request)
 
 				assert.Equal(t, testCase.expected, recorder.Code)
+			})
+		}
+	})
+
+	t.Run("mock response delay", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			response       Response
+			shouldBeCalled bool
+			expected       time.Duration
+		}{
+			{
+				name: "3s delay",
+				response: Response{
+					Code:  http.StatusCreated,
+					Delay: 3 * time.Second,
+				},
+				shouldBeCalled: true,
+				expected:       3 * time.Second,
+			},
+			{
+				name: "15h delay",
+				response: Response{
+					Code:  http.StatusCreated,
+					Delay: 15 * time.Hour,
+				},
+				shouldBeCalled: true,
+				expected:       15 * time.Hour,
+			},
+			{
+				name: "0s delay",
+				response: Response{
+					Code:  http.StatusCreated,
+					Delay: 0 * time.Second,
+				},
+				shouldBeCalled: false,
+			},
+			{
+				name: "delay is not set",
+				response: Response{
+					Code: http.StatusCreated,
+				},
+				shouldBeCalled: false,
+			},
+			{
+				name: "incorrect delay",
+				response: Response{
+					Code:  http.StatusCreated,
+					Delay: -13 * time.Minute,
+				},
+				shouldBeCalled: false,
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				called := false
+				handler := makeHandler(t, testCase.response)
+				handler.sleep = func(duration time.Duration) {
+					assert.Equal(t, duration, testCase.expected)
+					called = true
+				}
+
+				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				recorder := httptest.NewRecorder()
+
+				handler.ServeHTTP(recorder, request)
+
+				assert.Equal(t, called, testCase.shouldBeCalled)
 			})
 		}
 	})
