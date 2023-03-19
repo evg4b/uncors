@@ -1,9 +1,12 @@
 package mock
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -43,6 +46,9 @@ func TestHandler(t *testing.T) {
 			logger:   mocks.NewNoopLogger(t),
 			response: response,
 			fs:       fileSystem,
+			after: func(duration time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			},
 		}
 	}
 
@@ -259,5 +265,104 @@ func TestHandler(t *testing.T) {
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
 		}
+	})
+
+	t.Run("mock response delay", func(t *testing.T) {
+		t.Run("correctly handle delay", func(t *testing.T) {
+			tests := []struct {
+				name           string
+				response       Response
+				shouldBeCalled bool
+				expected       time.Duration
+			}{
+				{
+					name: "3s delay",
+					response: Response{
+						Code:  http.StatusCreated,
+						Delay: 3 * time.Second,
+					},
+					shouldBeCalled: true,
+					expected:       3 * time.Second,
+				},
+				{
+					name: "15h delay",
+					response: Response{
+						Code:  http.StatusCreated,
+						Delay: 15 * time.Hour,
+					},
+					shouldBeCalled: true,
+					expected:       15 * time.Hour,
+				},
+				{
+					name: "0s delay",
+					response: Response{
+						Code:  http.StatusCreated,
+						Delay: 0 * time.Second,
+					},
+					shouldBeCalled: false,
+				},
+				{
+					name: "delay is not set",
+					response: Response{
+						Code: http.StatusCreated,
+					},
+					shouldBeCalled: false,
+				},
+				{
+					name: "incorrect delay",
+					response: Response{
+						Code:  http.StatusCreated,
+						Delay: -13 * time.Minute,
+					},
+					shouldBeCalled: false,
+				},
+			}
+			for _, testCase := range tests {
+				t.Run(testCase.name, func(t *testing.T) {
+					called := false
+					handler := makeHandler(t, testCase.response)
+					handler.after = func(duration time.Duration) <-chan time.Time {
+						assert.Equal(t, duration, testCase.expected)
+						called = true
+
+						return time.After(time.Nanosecond)
+					}
+
+					request := httptest.NewRequest(http.MethodGet, "/", nil)
+					recorder := httptest.NewRecorder()
+
+					handler.ServeHTTP(recorder, request)
+
+					assert.Equal(t, called, testCase.shouldBeCalled)
+				})
+			}
+		})
+
+		t.Run("correctly cancel delay", func(t *testing.T) {
+			handler := makeHandler(t, Response{
+				Code:       http.StatusOK,
+				Delay:      1 * time.Hour,
+				RawContent: "Text content",
+			})
+			handler.after = time.After
+
+			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			ctx, cancel := context.WithCancel(context.Background())
+			recorder := httptest.NewRecorder()
+
+			var waitGroup sync.WaitGroup
+			waitGroup.Add(1)
+			go func() {
+				defer waitGroup.Done()
+				handler.ServeHTTP(recorder, request.WithContext(ctx))
+			}()
+
+			cancel()
+
+			waitGroup.Wait()
+
+			assert.Equal(t, testutils.ReadBody(t, recorder), "")
+			assert.Equal(t, recorder.Code, http.StatusServiceUnavailable)
+		})
 	})
 }

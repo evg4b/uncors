@@ -3,7 +3,9 @@ package configuration
 import (
 	"fmt"
 
+	"github.com/evg4b/uncors/internal/configuration/hooks"
 	"github.com/evg4b/uncors/internal/middlewares/mock"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -53,8 +55,11 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 			return nil, fmt.Errorf("filed to read config file '%s': %w", configPath, err)
 		}
 	}
-
-	if err := viperInstance.Unmarshal(configuration); err != nil {
+	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
+		hooks.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+	))
+	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing configuraion: %w", err)
 	}
 
