@@ -1,8 +1,7 @@
 {
   "name": "uncors",
-  "version": "0.0.8-beta",
+  "version": "0.0.8",
   "description": "A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.",
-  "main": "index.js",
   "repository": "git@github.com:evg4b/uncors.git",
   "author": "Evgeny Abramovich <evg.abramovitch@gmail.com>",
   "license": "MIT",
