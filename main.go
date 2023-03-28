@@ -4,8 +4,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
+
+	"github.com/evg4b/uncors/internal/server"
+	"golang.org/x/net/context"
 
 	"github.com/evg4b/uncors/internal/configuration"
 	"github.com/evg4b/uncors/internal/infrastructure"
@@ -23,7 +28,7 @@ import (
 
 var Version = "X.X.X"
 
-const baseAddress = "0.0.0.0"
+const baseAddress = "127.0.0.1"
 
 func main() {
 	defer infrastructure.PanicInterceptor(func(value any) {
@@ -47,7 +52,6 @@ func main() {
 	}
 
 	if config.Debug {
-		viper.Debug()
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
 	}
@@ -89,25 +93,26 @@ func main() {
 
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
-	httpServer := infrastructure.NewServer(baseAddress, config.HTTPPort, mockMiddleware)
-	finisher.Add(httpServer, finish.WithName("http"))
+	ctx := context.Background()
+
+	uncorsServer := server.NewUncorsServer(ctx, mockMiddleware)
+	finisher.Add(uncorsServer)
 	go func() {
 		log.Debugf("Starting http server on port %d", config.HTTPPort)
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error(err)
-		}
+		addr := net.JoinHostPort(baseAddress, strconv.Itoa(config.HTTPPort))
+		err := uncorsServer.ListenAndServe(addr)
+		handleHTTPServerError("HTTP", err)
+		finisher.Trigger()
 	}()
 
 	if config.IsHTTPSEnabled() {
 		log.Debug("Found cert file and key file. Https server will be started")
-		httpsServer := infrastructure.NewServer(baseAddress, config.HTTPSPort, mockMiddleware)
-		finisher.Add(httpsServer, finish.WithName("https"))
+		addr := net.JoinHostPort(baseAddress, strconv.Itoa(config.HTTPSPort))
 		go func() {
 			log.Debugf("Starting https server on port %d", config.HTTPSPort)
-			err := httpsServer.ListenAndServeTLS(config.CertFile, config.KeyFile)
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Error(err)
-			}
+			err := uncorsServer.ListenAndServeTLS(addr, config.CertFile, config.KeyFile)
+			handleHTTPServerError("HTTPS", err)
+			finisher.Trigger()
 		}()
 	}
 
@@ -123,4 +128,16 @@ func main() {
 	finisher.Wait()
 
 	log.Info("Server was stopped")
+}
+
+func handleHTTPServerError(serverName string, err error) {
+	if err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			log.Error(err)
+		} else {
+			log.Debugf("%s server was stopped with error %s", serverName, err)
+		}
+	} else {
+		log.Debugf("%s server was stopped without errors", serverName)
+	}
 }

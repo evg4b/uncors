@@ -5,10 +5,12 @@ go 1.19
 require (
 	github.com/PuerkitoBio/purell v1.2.0
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
-	github.com/go-playground/validator/v10 v10.11.2
-	github.com/gojuno/minimock/v3 v3.1.1
+	github.com/go-playground/assert/v2 v2.2.0
+	github.com/go-playground/validator/v10 v10.12.0
+	github.com/gojuno/minimock/v3 v3.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.6.0
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pseidemann/finish v1.2.0
 	github.com/pterm/pterm v0.12.56
 	github.com/spf13/afero v1.9.5
@@ -26,13 +28,12 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/gookit/color v1.5.2 // indirect
+	github.com/gookit/color v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/lithammer/fuzzysearch v1.1.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
