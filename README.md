@@ -56,7 +56,7 @@ scoop install evg4b/uncors
 
 ## NPM (Cross-platform)
 
-You can install uncors as node package in yout project with the following commands:
+You can install uncors as node package in your project with the following commands:
 
 Via npm:
 
@@ -161,17 +161,17 @@ Currently available path, method, queries and headers filters
 **Mocks file example:**
 
 ```yaml
-- path: /raw-content-endpont
+- path: /raw-content-endpoint
   response:
     code: 200
     raw-content: '
       Hello word
     '
-- path: /file-content-endpont
+- path: /file-content-endpoint
   response:
     code: 200
     file: ~/hello-word.json
-- path: /raw-content-endpont
+- path: /raw-content-endpoint
   method: POST
   queries:
     param1: param 1 value
@@ -187,7 +187,7 @@ Currently available path, method, queries and headers filters
     raw-content: '
       { "status": "ok" }
     '
-- path: /file-content-endpont
+- path: /file-content-endpoint
   method: POST
   queries:
     param1: param 1 value
@@ -221,8 +221,8 @@ sequenceDiagram
       Client ->> Uncors: GET, POST, PUT... query
       Note over Uncors: Replacing url with target<br/> in headers and cookies
       Uncors-->>Server: Real GET, POST, PUT... query
-      Server->>Uncors: Real responce
+      Server->>Uncors: Real response
       Note over Uncors: Replacing url with source<br/> in headers and cookies
-      Uncors-->>Client: Data responce
+      Uncors-->>Client: Data response
     end
 ```

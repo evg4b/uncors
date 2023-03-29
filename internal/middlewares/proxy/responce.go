@@ -28,11 +28,7 @@ func (m *Middleware) makeUncorsResponse(
 
 	infrastructure.WriteCorsHeaders(target.Header())
 
-	if err = copyResponseData(target, original); err != nil {
-		return err
-	}
-
-	return nil
+	return copyResponseData(target, original)
 }
 
 func copyResponseData(resp http.ResponseWriter, targetResp *http.Response) error {

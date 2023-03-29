@@ -72,7 +72,7 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 		t.Run("string to []string", func(t *testing.T) {
 			viperInstance.Set(key, "value,value2")
 
-			stringValue := []string{}
+			var stringValue []string
 			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
 			testutils.CheckNoError(t, err)
 

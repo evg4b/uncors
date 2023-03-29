@@ -7,6 +7,6 @@ import (
 	"github.com/evg4b/uncors/internal/log"
 )
 
-func CheckLastVersion(client contracts.HTTPClient, reCurrentVersion string) {
+func CheckLastVersion(_ contracts.HTTPClient, _ string) {
 	log.Debug("Check new version stub")
 }

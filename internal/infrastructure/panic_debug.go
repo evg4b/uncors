@@ -2,6 +2,6 @@
 
 package infrastructure
 
-func PanicInterceptor(action func(any)) {
+func PanicInterceptor(_ func(any)) {
 	// stub method
 }

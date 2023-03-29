@@ -37,7 +37,7 @@ func TestReplacerV2Replace(t *testing.T) {
 
 				testsCases := []replacerTestCase{
 					{
-						name:     "url with sheme",
+						name:     "url with scheme",
 						source:   "http://test.localhost.com",
 						expected: "http://api.test.com",
 					},
@@ -73,7 +73,7 @@ func TestReplacerV2Replace(t *testing.T) {
 
 				testsCases := []replacerTestCase{
 					{
-						name:     "url with sheme",
+						name:     "url with scheme",
 						source:   "http://test.localhost.com",
 						expected: "https://api.test.com",
 					},
@@ -109,7 +109,7 @@ func TestReplacerV2Replace(t *testing.T) {
 
 				testsCases := []replacerTestCase{
 					{
-						name:     "url with sheme",
+						name:     "url with scheme",
 						source:   "https://test.localhost.com",
 						expected: "http://api.test.com",
 					},
@@ -193,7 +193,7 @@ func TestReplacerV2Replace(t *testing.T) {
 				}
 			})
 
-			t.Run("where schemes setted as //", func(t *testing.T) {
+			t.Run("where schemes set as //", func(t *testing.T) {
 				replacer, err := urlreplacer.NewReplacer("//*.localhost.com", "//api.*.com")
 				testutils.CheckNoError(t, err)
 				for _, testsCase := range testsCases {

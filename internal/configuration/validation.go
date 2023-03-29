@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	validator "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 )
 
 func Validate(config *UncorsConfig) error {
