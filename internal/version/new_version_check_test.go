@@ -4,6 +4,7 @@ package version_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"github.com/evg4b/uncors/internal/version"
 	"io"
@@ -65,7 +66,7 @@ func TestCheckNewVersion(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 				assert.NotPanics(t, func() {
-					version.CheckNewVersion(testCase.client, testCase.version)
+					version.CheckNewVersion(context.Background(), testCase.client, testCase.version)
 
 					outputData, err := ioutil.ReadAll(output)
 					testutils.CheckNoError(t, err)
@@ -81,7 +82,7 @@ func TestCheckNewVersion(t *testing.T) {
 			httpClient := mocks.NewHttpClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
-			version.CheckNewVersion(httpClient, "0.0.4")
+			version.CheckNewVersion(context.Background(), httpClient, "0.0.4")
 
 			outputData, err := ioutil.ReadAll(output)
 			testutils.CheckNoError(t, err)
@@ -98,7 +99,7 @@ func TestCheckNewVersion(t *testing.T) {
 			httpClient := mocks.NewHttpClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
-			version.CheckNewVersion(httpClient, "0.0.7")
+			version.CheckNewVersion(context.Background(), httpClient, "0.0.7")
 
 			outputData, err := ioutil.ReadAll(output)
 			testutils.CheckNoError(t, err)
