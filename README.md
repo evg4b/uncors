@@ -56,7 +56,7 @@ scoop install evg4b/uncors
 
 ## NPM (Cross-platform)
 
-You can install uncors as node package in your project with the following commands:
+To install uncors as a node package in your project, you can use the following commands:
 
 Via npm:
 
@@ -81,13 +81,13 @@ Ideally, you should install it somewhere in your `PATH` for easy use. `/usr/loca
 
 ## Docker
 
-We currently offer images for Docker https://hub.docker.com/r/evg4b/uncors
+We currently offer images for [Docker](https://hub.docker.com/r/evg4b/uncors)
 
 ```bash
 docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
 ```
 
-## Source
+## Build from source
 
 **Prerequisite Tools**
 
@@ -111,24 +111,33 @@ If you are a Windows user, substitute the $HOME environment variable above with 
 
 # Usage
 
+The following command can be used to start the Uncors proxy server:
+
 ```
 uncors --http-port 8080 --to 'https://github.com' --from 'http://localhost'
 ```
 
-## Parameters
+## CLI Parameters
 
-* `--from` - Local host with protocol for to the resource from which proxying will take place.
-* `--to` - Target host with protocol for to the resource to be proxy.
-* `--http-port` - Local HTTP listened port.
-* `--https-port` - Local HTTPS listened port.
-* `--cert-file` - Path to HTTPS certificate file.
-* `--key-file` - Path to matching for certificate private key.
-* `--proxy` - HTTP/HTTPS proxy to provide requests to real server (used system by default).
-* `--config` - Configuration file with defined [mocks](#mocks)
-* `--debug` - Show debug output.
+The following command-line parameters can be used to configure the Uncors proxy server:
 
+* `--from` - Specifies the local host with protocol for the resource from which proxying will take place.
+* `--to` - Specifies the target host with protocol for the resource to be proxied.
+* `--http-port` or `-p` - Specifies the local HTTP listening port.
+* `--https-port` or `-s` - Specifies the local HTTPS listening port.
+* `--cert-file` - Specifies the path to the HTTPS certificate file.
+* `--key-file` - Specifies the path to the matching certificate private key.
+* `--proxy` - Specifies the HTTP/HTTPS proxy to provide requests to the real server (system default is used by default).
+* `--config` - Specifies the path to the [configuration file](#configuration-file).
+* `--debug` - Enables debug output.
 
-## Configuration
+Any configuration parameters passed via CLI (except for `--from` and `--to`) will override the corresponding
+parameters specified in the configuration file. The `--from` and `--to` parameters will add an additional mapping
+to the configuration.
+
+## Configuration file
+
+Uncors supports a YAML file configuration with the following options:
 
 ```yaml
 # Base configuration
@@ -143,7 +152,7 @@ https-port: 8081 # Local HTTPS listened port.
 cert-file: ~/server.crt # Path to HTTPS certificate file.
 key-file: ~/server.key # Path to matching for certificate private key.
 
-#Mocks
+# Mock definitions are used to generate fake responses for certain endpoints.
 mocks:
   - path: /hello-word
     response:
@@ -151,57 +160,70 @@ mocks:
       raw-content: 'Hello word'
 ```
 
-## Mocks
+#### Mocks configuration
 
-Uncors has endpoint mocks mechanism.
-All mocks should be defined in yaml config file and passed as parameter `--mocks`.
-Currently available path, method, queries and headers filters
-(for more information see [gorilla/mux](https://github.com/gorilla/mux#matching-routes) route matching).
+The mocks configuration section in Uncors allows you to define specific endpoints to be mocked, including the response
+data and other parameters. Currently, mocks are defined globally for all mappings. Available path, method, queries, and headers filters,
+which utilize the [gorilla/mux route matching system](https://github.com/gorilla/mux#matching-routes).
 
-**Mocks file example:**
+Each endpoint mock requires a path parameter, which defines the URL path for the endpoint. You can also use the method
+parameter to define a specific HTTP method for the endpoint.
+
+The queries and headers parameters can be used to specify more detailed URLs that will be mocked. The queries parameter
+allows you to define specific query parameters for the URL, while the headers parameter allows you to define specific
+HTTP headers.
+
+Here is the structure of the mock configuration:
 
 ```yaml
-- path: /raw-content-endpoint
-  response:
-    code: 200
-    raw-content: '
-      Hello word
-    '
-- path: /file-content-endpoint
-  response:
-    code: 200
-    file: ~/hello-word.json
-- path: /raw-content-endpoint
-  method: POST
-  queries:
-    param1: param 1 value
-    param2: param 1 value
-  headers:
-    header1: header 1 value
-    header2: header 2 value
-  response:
-    code: 200
+mocks:
+  - path: <string>
+    method: <string>
+    queries:
+      <string>: <string>
+      # ...
     headers:
-      header1: header 1 value
-      header2: header 2 value
-    raw-content: '
-      { "status": "ok" }
-    '
-- path: /file-content-endpoint
-  method: POST
-  queries:
-    param1: param 1 value
-    param2: param 1 value
-  headers:
-    header1: header 1 value
-    header2: header 2 value
-  response:
-    code: 200
-    headers:
-      header1: header 1 value
-      header2: header 2 value
-    file: ~/hello-word.json
+      <string>: <string>
+      # ...
+    response:
+      code: <int>
+      headers:
+        <string>: <string>
+        # ...
+      delay: <string>
+      raw-content: <string>
+      file: <string>
 ```
+
+- `path` (required) - This property is used to define the URL path that should be mocked. The value should be a string,
+  such as `/example`. The path can include variables, such as `/users/{id}`, which will match any URL that starts
+  with `/users/` and has a variable `id` in it.
+- `method` (optional) - This property is used to define the HTTP method that should be mocked.
+  The value should be a string. If this property is not specified, the mock will match any HTTP method.
+- `queries` (optional) - This property is used to define specific query parameters that should be matched against the
+  request URL. The value should be a mapping of query parameters and their values, such as `{"param1": "value1", "
+  param2": "value2"}`. If this property is not specified, the mock will match any query parameter.
+- `headers` (optional): This property is used to define specific HTTP headers that should be matched against the request
+  headers. The value should be a mapping of header names and their values, such as `{"Content-Type": "application/json"}`.
+  If this property is not specified, the mock will match any HTTP header.
+- `response` (required): This property is used to define the mock response. It should be a mapping that contains the
+  following properties:
+  - `code` (optional): This property is used to define the HTTP status code that should be returned in the mock
+    response. The value should be an integer, such as 200 or 404. If this property is not specified, the mock will use
+    200 OK status code.
+  - `headers` (optional): This property is used to define specific HTTP headers that should be returned in the mock
+    response. The value should be a mapping of header names and their values, such as `{"Content-Type": "
+    application/json"}`. If this property is not specified, the mock response will have no extra headers.
+  - `delay` (optional): This property is used to define a delay before sending the mock response. The value should be a
+    string in the format `<number><unit> <nunmber><units> ...`, where `<number>` is a positive integer and `<unit>` is time units.
+    Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, `h`. For example, `1m 30s` would delay the response by 1 minute and 30
+    seconds. If this property is not specified, the mock response will be sent immediately.
+  - `raw-content` (optional): This property is used to define the raw content that should be returned in the mock
+    response. The value should be a string, such as `Hello, world!`. If this property is not specified, the mock
+    response will be empty.
+  - `file` (optional): This property is used to define the path to a file that contains the mock response content. The
+    file content will be used as the response content. The value should be a string that specifies the file path, such
+    as `~/mocks/example.json`. If this property is not specified, the mock response will be empty.
 
 ## How it works
 
