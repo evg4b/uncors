@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pseidemann/finish v1.2.0
-	github.com/pterm/pterm v0.12.56
+	github.com/pterm/pterm v0.12.57
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
