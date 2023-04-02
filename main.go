@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/evg4b/uncors/internal/version"
+
 	"github.com/evg4b/uncors/internal/server"
 	"golang.org/x/net/context"
 
@@ -123,7 +125,7 @@ func main() {
 	log.Info(ui.Mappings(mappings, config.Mocks))
 	log.Print("\n")
 
-	go ui.CheckLastVersion(httpClient, Version)
+	go version.CheckNewVersion(ctx, httpClient, Version)
 
 	finisher.Wait()
 

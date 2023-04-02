@@ -1,24 +1,25 @@
 //go:build release
 
-package ui
+package version
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/log"
-	version "github.com/hashicorp/go-version"
+	"github.com/evg4b/uncors/internal/ui"
+	"github.com/hashicorp/go-version"
 )
 
-const lastVersionUrl = "https://api.github.com/repos/evg4b/uncors/releases/latest"
+const lastVersionURL = "https://api.github.com/repos/evg4b/uncors/releases/latest"
 
 type versionInfo struct {
 	Version string `json:"tag_name"`
 }
 
-func CheckLastVersion(client contracts.HTTPClient, rawCurrentVersion string) {
+func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurrentVersion string) {
 	log.Debug("Checking new version")
 
 	currentVersion, err := version.NewVersion(rawCurrentVersion)
@@ -28,8 +29,14 @@ func CheckLastVersion(client contracts.HTTPClient, rawCurrentVersion string) {
 		return
 	}
 
-	url, _ := url.Parse(lastVersionUrl)
-	response, err := client.Do(&http.Request{URL: url})
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
+	if err != nil {
+		log.Debugf("failed to generate new version check request: %v", err)
+
+		return
+	}
+
+	response, err := client.Do(request)
 	if err != nil {
 		log.Debugf("http error occupied: %v", err)
 
@@ -55,8 +62,8 @@ func CheckLastVersion(client contracts.HTTPClient, rawCurrentVersion string) {
 	}
 
 	if lastVersion.GreaterThan(currentVersion) {
-		log.Infof(NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		log.Print("\n")
+		log.Infof(ui.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
+		log.Info("\n")
 	} else {
 		log.Debug("Version is up to date")
 	}
