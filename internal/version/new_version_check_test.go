@@ -90,7 +90,7 @@ func TestCheckNewVersion(t *testing.T) {
     INFO  NEW VERSION IS Available!
           0.0.4 is not latest, you should upgrade to 0.0.7.
           See more information on https://github.com/evg4b/uncors/releases
-
+    INFO  
 `
 			assert.Equal(t, expected, string(outputData))
 		}))
