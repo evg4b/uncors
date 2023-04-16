@@ -34,6 +34,18 @@
     </a>
 </p>
 
+# Core features
+
+- CORS header replacement
+- HTTPS support
+- Wildcard URL request mapping
+- Simple request/response mocking
+- HTTP/HTTPS proxy support
+- *Static file serving ([coming soon...](./ROADMAP.md))*
+- *Response caching ([coming soon...](./ROADMAP.md))*
+
+Other new features you can find in [UNCORS roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md)
+
 # Quick Install
 
 ## Homebrew (macOS | Linux)
