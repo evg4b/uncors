@@ -53,6 +53,7 @@ func (srv *UncorsServer) ListenAndServe(addr string) error {
 
 	defer listener.Close()
 
+	srv.Addr = listener.Addr().String()
 	err = srv.Serve(listener)
 	if err != nil {
 		srv.internalShutdown()
@@ -77,6 +78,7 @@ func (srv *UncorsServer) ListenAndServeTLS(addr string, certFile, keyFile string
 
 	defer listener.Close()
 
+	srv.Addr = listener.Addr().String()
 	err = srv.ServeTLS(listener, certFile, keyFile)
 	if err != nil {
 		srv.internalShutdown()
