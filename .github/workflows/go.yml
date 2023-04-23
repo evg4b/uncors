@@ -83,7 +83,7 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@octocat'
-      - run: npm version $(echo "${GITHUB_REF##*/}" | tr -d 'v')
+      - run: npm version $(echo "${GITHUB_REF##*/}" | tr -d 'v') --git-tag-version=false
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

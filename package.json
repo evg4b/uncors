@@ -1,6 +1,6 @@
 {
   "name": "uncors",
-  "version": "0.0.8",
+  "version": "0.0.0",
   "description": "A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.",
   "keywords": [
     "cors",
