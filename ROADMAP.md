@@ -51,18 +51,20 @@
 
 - [X] [NPM package](https://www.npmjs.com/package/uncors) - [PR](https://github.com/evg4b/uncors/pull/8)
 
-## Next Release
+
+## [0.0.9 Release](https://github.com/evg4b/uncors/releases/tag/v0.0.9)
 
 - [X] Moced responce delay - [PR](https://github.com/evg4b/uncors/pull/11)
 - [X] File configuration - [PR](https://github.com/evg4b/uncors/pull/9)
-- [ ] Stable NPM package deploying
+- [X] Stable NPM package deploying
 
+## Next Release
+- [ ] Static file serving
 
 ## Future features
 
 - [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
 - [ ] Separetad mock for each url mapping
 - [ ] Occupied port handling
-- [ ] Static file serving
 - [ ] Response caching
 - [ ] Content URl replacing (HTML, JOSON, TEXT and other)
