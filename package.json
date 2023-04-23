@@ -2,19 +2,45 @@
   "name": "uncors",
   "version": "0.0.8",
   "description": "A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.",
-  "repository": "git@github.com:evg4b/uncors.git",
-  "author": "Evgeny Abramovich <evg.abramovitch@gmail.com>",
-  "license": "MIT",
-  "scripts": {
-    "postinstall": "go-npm install",
-    "preuninstall": "go-npm uninstall"
+  "keywords": [
+    "cors",
+    "proxy",
+    "reverse-proxy",
+    "http",
+    "https",
+    "cli",
+    "devtool"
+  ],
+  "homepage": "https://github.com/evg4b/uncors#readme",
+  "bugs": {
+    "url": "https://github.com/evg4b/uncors/issues"
   },
-  "goBinary": {
+  "license": "MIT",
+  "author": "Evgeny Abramovich <evg.abramovitch@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:evg4b/uncors.git"
+  },
+  "scripts": {
+    "postinstall": "npm-go-bin install",
+    "preuninstall": "npm-go-bin uninstall"
+  },
+  "go-bin": {
     "name": "uncors",
-    "path": "./bin",
     "url": "https://github.com/evg4b/uncors/releases/download/v{{version}}/uncors_{{version}}_{{platform}}_{{arch}}.tar.gz"
   },
   "dependencies": {
-    "@go-task/go-npm": "^0.1.17"
-  }
+    "npm-go-bin": "^0.0.1-beta.1"
+  },
+  "cpu": [
+    "x64",
+    "ia32",
+    "arm",
+    "arm64"
+  ],
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ]
 }
