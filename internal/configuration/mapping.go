@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
@@ -13,15 +12,8 @@ type URLMapping struct {
 	To   string `mapstructure:"to"`
 }
 
-const FromKey = "from"
-const ToKey = "to"
-
 var urlMappingType = reflect.TypeOf(URLMapping{})
 var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
-
-var ErrNoRequiredFields = errors.New("fields 'from' and 'to' are required")
-var ErrFromShouldBeStrign = errors.New("fields 'from' and 'to' are required")
-var ErrToShouldBeStrign = errors.New("fields 'from' and 'to' are required")
 
 func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
@@ -29,48 +21,29 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 			return rawData, nil
 		}
 
-		data, ok := rawData.(map[string]any)
-		if !ok {
-			return rawData, nil
-		}
-
-		actualKeys := lo.Keys(data)
-		incorrectFiles, missedFields := lo.Difference(actualKeys, urlMappingFields)
-		if len(data) == 1 && len(incorrectFiles) == 1 {
-			from := incorrectFiles[0]
-			to, ok := data[incorrectFiles[0]].(string)
-			if !ok {
-				return nil, ErrToShouldBeStrign
+		if data, ok := rawData.(map[string]any); ok {
+			availableFields, _ := lo.Difference(lo.Keys(data), urlMappingFields)
+			if len(data) == 1 && len(availableFields) == 1 {
+				return URLMapping{
+					From: availableFields[0],
+					To:   data[availableFields[0]].(string), // nolint: forcetypeassert
+				}, nil
 			}
 
-			return URLMapping{From: from, To: to}, nil
+			mapping := URLMapping{}
+			err := mapstructure.Decode(data, &mapping)
+
+			return mapping, err //nolint:wrapcheck
 		}
 
-		if lo.Contains(missedFields, FromKey) || lo.Contains(missedFields, ToKey) {
-			return nil, ErrNoRequiredFields
-		}
-
-		from, ok := data[FromKey].(string)
-		if !ok {
-			return nil, ErrFromShouldBeStrign
-		}
-
-		to, ok := data[ToKey].(string)
-		if !ok {
-			return nil, ErrToShouldBeStrign
-		}
-
-		return URLMapping{From: from, To: to}, nil
+		return rawData, nil
 	}
 }
 
 func getTagValues(typeValue reflect.Type, tag string) []string {
-	var fields []string
-	lo.ForEach(reflect.VisibleFields(typeValue), func(field reflect.StructField, index int) {
-		if tag, ok := field.Tag.Lookup(tag); ok {
-			fields = append(fields, tag)
-		}
-	})
+	fields := reflect.VisibleFields(typeValue)
 
-	return fields
+	return lo.FilterMap(fields, func(field reflect.StructField, index int) (string, bool) {
+		return field.Tag.Lookup(tag)
+	})
 }
