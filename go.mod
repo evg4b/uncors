@@ -6,13 +6,14 @@ require (
 	github.com/PuerkitoBio/purell v1.2.0
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/go-playground/assert/v2 v2.2.0
-	github.com/go-playground/validator/v10 v10.12.0
+	github.com/go-playground/validator/v10 v10.13.0
 	github.com/gojuno/minimock/v3 v3.1.3
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pseidemann/finish v1.2.0
 	github.com/pterm/pterm v0.12.59
+	github.com/samber/lo v1.38.1
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
@@ -42,6 +43,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.8.0 // indirect
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
