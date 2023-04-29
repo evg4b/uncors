@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/evg4b/uncors/internal/version"
 
 	"github.com/evg4b/uncors/internal/server"
@@ -58,7 +60,7 @@ func main() {
 		log.Debug("Enabled debug messages")
 	}
 
-	mappings, err := urlreplacer.NormaliseMappings(
+	mappings, err := helpers.NormaliseMappings(
 		config.Mappings,
 		config.HTTPPort,
 		config.HTTPSPort,

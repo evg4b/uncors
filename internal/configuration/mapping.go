@@ -1,0 +1,49 @@
+package configuration
+
+import (
+	"reflect"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/samber/lo"
+)
+
+type URLMapping struct {
+	From string `mapstructure:"from"`
+	To   string `mapstructure:"to"`
+}
+
+var urlMappingType = reflect.TypeOf(URLMapping{})
+var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
+
+func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
+		if t != urlMappingType || f.Kind() != reflect.Map {
+			return rawData, nil
+		}
+
+		if data, ok := rawData.(map[string]any); ok {
+			availableFields, _ := lo.Difference(lo.Keys(data), urlMappingFields)
+			if len(data) == 1 && len(availableFields) == 1 {
+				return URLMapping{
+					From: availableFields[0],
+					To:   data[availableFields[0]].(string), // nolint: forcetypeassert
+				}, nil
+			}
+
+			mapping := URLMapping{}
+			err := mapstructure.Decode(data, &mapping)
+
+			return mapping, err //nolint:wrapcheck
+		}
+
+		return rawData, nil
+	}
+}
+
+func getTagValues(typeValue reflect.Type, tag string) []string {
+	fields := reflect.VisibleFields(typeValue)
+
+	return lo.FilterMap(fields, func(field reflect.StructField, index int) (string, bool) {
+		return field.Tag.Lookup(tag)
+	})
+}

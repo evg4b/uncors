@@ -16,7 +16,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "invalid http-port",
 			config: &configuration.UncorsConfig{
-				Mappings: map[string]string{},
+				Mappings: []configuration.URLMapping{},
 			},
 			expected: "Key: 'UncorsConfig.HTTPPort' Error:Field validation for 'HTTPPort' failed on the 'required' tag",
 		},

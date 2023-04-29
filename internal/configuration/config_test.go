@@ -29,7 +29,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &configuration.UncorsConfig{
 					HTTPPort:  80,
 					HTTPSPort: 443,
-					Mappings:  map[string]string{},
+					Mappings:  []configuration.URLMapping{},
 					Mocks:     []mock.Mock{},
 				},
 			},
@@ -39,8 +39,8 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &configuration.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
-					Mappings: map[string]string{
-						"http://demo": "https://demo.com",
+					Mappings: []configuration.URLMapping{
+						{From: "http://demo", To: "https://demo.com"},
 					},
 					Mocks: []mock.Mock{},
 				},
@@ -50,9 +50,9 @@ func TestLoadConfiguration(t *testing.T) {
 				args: []string{params.Config, "/full-config.yaml"},
 				expected: &configuration.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: map[string]string{
-						"http://demo1":       "https://demo1.com",
-						"http://other-demo2": "https://demo2.io",
+					Mappings: []configuration.URLMapping{
+						{From: "http://demo1", To: "https://demo1.com"},
+						{From: "http://other-demo2", To: "https://demo2.io"},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,
@@ -91,12 +91,12 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: &configuration.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: map[string]string{
-						"http://demo1":       "https://demo1.com",
-						"http://other-demo2": "https://demo2.io",
-						mocks.SourceHost1:    mocks.TargetHost1,
-						mocks.SourceHost2:    mocks.TargetHost2,
-						mocks.SourceHost3:    mocks.TargetHost3,
+					Mappings: []configuration.URLMapping{
+						{From: "http://demo1", To: "https://demo1.com"},
+						{From: "http://other-demo2", To: "https://demo2.io"},
+						{From: mocks.SourceHost1, To: mocks.TargetHost1},
+						{From: mocks.SourceHost2, To: mocks.TargetHost2},
+						{From: mocks.SourceHost3, To: mocks.TargetHost3},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,

@@ -1,4 +1,4 @@
-package urlreplacer
+package helpers
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/configuration"
 
 	"github.com/evg4b/uncors/pkg/urlx"
 )
@@ -20,22 +22,27 @@ const (
 	defaultHTTPSPort = 443
 )
 
-func NormaliseMappings(mappings map[string]string, httpPort, httpsPort int, useHTTPS bool) (map[string]string, error) {
+func NormaliseMappings(
+	mappings []configuration.URLMapping,
+	httpPort,
+	httpsPort int,
+	useHTTPS bool,
+) (map[string]string, error) {
 	processedMappings := map[string]string{}
-	for source, target := range mappings {
-		sourceURL, err := urlx.Parse(source)
+	for _, mapping := range mappings {
+		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse source url: %w", err)
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
 			normalisedSource := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
-			processedMappings[normalisedSource] = target
+			processedMappings[normalisedSource] = mapping.To
 		}
 
 		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
 			normalisedSource := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
-			processedMappings[normalisedSource] = target
+			processedMappings[normalisedSource] = mapping.To
 		}
 	}
 

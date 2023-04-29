@@ -2,6 +2,9 @@ package configuration
 
 import (
 	"errors"
+	"strings"
+
+	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/log"
 
@@ -26,11 +29,19 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 
 	for index, key := range from {
 		value := to[index]
-		if prev, ok := configuration.Mappings[key]; ok {
-			log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
-		}
+		prev, ok := lo.Find(configuration.Mappings, func(item URLMapping) bool {
+			return strings.EqualFold(item.From, key)
+		})
 
-		configuration.Mappings[key] = value
+		if ok {
+			log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
+			prev.To = value
+		} else {
+			configuration.Mappings = append(configuration.Mappings, URLMapping{
+				From: key,
+				To:   value,
+			})
+		}
 	}
 
 	return nil

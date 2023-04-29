@@ -1,10 +1,12 @@
 // nolint: dupl
-package urlreplacer_test
+package helpers_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,14 +15,14 @@ func TestNormaliseMappings(t *testing.T) {
 		httpPort, httpsPort := 3000, 3001
 		testsCases := []struct {
 			name     string
-			mappings map[string]string
+			mappings []configuration.URLMapping
 			expected map[string]string
 			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
-				mappings: map[string]string{
-					"localhost": "github.com",
+				mappings: []configuration.URLMapping{
+					{From: "localhost", To: "github.com"},
 				},
 				expected: map[string]string{
 					"http://localhost:3000":  "github.com",
@@ -30,8 +32,8 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set http port",
-				mappings: map[string]string{
-					"http://localhost": "https://github.com",
+				mappings: []configuration.URLMapping{
+					{From: "http://localhost", To: "https://github.com"},
 				},
 				expected: map[string]string{
 					"http://localhost:3000": "https://github.com",
@@ -40,8 +42,8 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set https port",
-				mappings: map[string]string{
-					"https://localhost": "https://github.com",
+				mappings: []configuration.URLMapping{
+					{From: "https://localhost", To: "https://github.com"},
 				},
 				expected: map[string]string{
 					"https://localhost:3001": "https://github.com",
@@ -50,11 +52,11 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set mixed schemes",
-				mappings: map[string]string{
-					"host1":         "https://github.com",
-					"host2":         "http://github.com",
-					"http://host3":  "http://api.github.com",
-					"https://host4": "https://api.github.com",
+				mappings: []configuration.URLMapping{
+					{From: "host1", To: "https://github.com"},
+					{From: "host2", To: "http://github.com"},
+					{From: "http://host3", To: "http://api.github.com"},
+					{From: "https://host4", To: "https://api.github.com"},
 				},
 				expected: map[string]string{
 					"http://host1:3000":  "https://github.com",
@@ -69,7 +71,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := urlreplacer.NormaliseMappings(
+				actual, err := helpers.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
@@ -86,14 +88,14 @@ func TestNormaliseMappings(t *testing.T) {
 		httpPort, httpsPort := 80, 443
 		testsCases := []struct {
 			name     string
-			mappings map[string]string
+			mappings []configuration.URLMapping
 			expected map[string]string
 			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
-				mappings: map[string]string{
-					"localhost": "github.com",
+				mappings: []configuration.URLMapping{
+					{From: "localhost", To: "github.com"},
 				},
 				expected: map[string]string{
 					"http://localhost":  "github.com",
@@ -103,8 +105,8 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set http port",
-				mappings: map[string]string{
-					"http://localhost": "https://github.com",
+				mappings: []configuration.URLMapping{
+					{From: "http://localhost", To: "https://github.com"},
 				},
 				expected: map[string]string{
 					"http://localhost": "https://github.com",
@@ -113,8 +115,8 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set https port",
-				mappings: map[string]string{
-					"https://localhost": "https://github.com",
+				mappings: []configuration.URLMapping{
+					{From: "https://localhost", To: "https://github.com"},
 				},
 				expected: map[string]string{
 					"https://localhost": "https://github.com",
@@ -123,11 +125,11 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set mixed schemes",
-				mappings: map[string]string{
-					"host1":         "https://github.com",
-					"host2":         "http://github.com",
-					"http://host3":  "http://api.github.com",
-					"https://host4": "https://api.github.com",
+				mappings: []configuration.URLMapping{
+					{From: "host1", To: "https://github.com"},
+					{From: "host2", To: "http://github.com"},
+					{From: "http://host3", To: "http://api.github.com"},
+					{From: "https://host4", To: "https://api.github.com"},
 				},
 				expected: map[string]string{
 					"http://host1":  "https://github.com",
@@ -142,7 +144,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := urlreplacer.NormaliseMappings(
+				actual, err := helpers.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
@@ -158,7 +160,7 @@ func TestNormaliseMappings(t *testing.T) {
 	t.Run("incorrect mappings", func(t *testing.T) {
 		testsCases := []struct {
 			name        string
-			mappings    map[string]string
+			mappings    []configuration.URLMapping
 			httpPort    int
 			httpsPort   int
 			useHTTPS    bool
@@ -166,8 +168,8 @@ func TestNormaliseMappings(t *testing.T) {
 		}{
 			{
 				name: "incorrect source url",
-				mappings: map[string]string{
-					"loca^host": "github.com",
+				mappings: []configuration.URLMapping{
+					{From: "loca^host", To: "github.com"},
 				},
 				httpPort:    3000,
 				httpsPort:   3001,
@@ -176,8 +178,8 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "incorrect port in source url",
-				mappings: map[string]string{
-					"localhost:": "github.com",
+				mappings: []configuration.URLMapping{
+					{From: "localhost:", To: "github.com"},
 				},
 				httpPort:    -1,
 				httpsPort:   3001,
@@ -187,7 +189,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, err := urlreplacer.NormaliseMappings(
+				_, err := helpers.NormaliseMappings(
 					testCase.mappings,
 					testCase.httpPort,
 					testCase.httpsPort,

@@ -1,3 +1,3 @@
 http-port: xxx
 mappings:
-  http://demo: https://demo.com
+  - http://demo: https://demo.com
