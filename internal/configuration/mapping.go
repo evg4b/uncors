@@ -2,19 +2,26 @@ package configuration
 
 import (
 	"errors"
+	"reflect"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
-	"reflect"
 )
 
 type URLMapping struct {
-	From  string   `mapstructure:"from"`
-	To    string   `mapstructure:"to"`
-	Mocks []string `mapstructure:"mocks"`
+	From string `mapstructure:"from"`
+	To   string `mapstructure:"to"`
 }
 
+const FromKey = "from"
+const ToKey = "to"
+
 var urlMappingType = reflect.TypeOf(URLMapping{})
-var urlMappingFields = getTagValues()
+var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
+
+var ErrNoRequiredFields = errors.New("fields 'from' and 'to' are required")
+var ErrFromShouldBeStrign = errors.New("fields 'from' and 'to' are required")
+var ErrToShouldBeStrign = errors.New("fields 'from' and 'to' are required")
 
 func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
@@ -30,40 +37,40 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 		actualKeys := lo.Keys(data)
 		incorrectFiles, missedFields := lo.Difference(actualKeys, urlMappingFields)
 		if len(data) == 1 && len(incorrectFiles) == 1 {
-			return URLMapping{
-				From:  incorrectFiles[0],
-				To:    data[incorrectFiles[0]].(string),
-				Mocks: []string{},
-			}, nil
+			from := incorrectFiles[0]
+			to, ok := data[incorrectFiles[0]].(string)
+			if !ok {
+				return nil, ErrToShouldBeStrign
+			}
+
+			return URLMapping{From: from, To: to}, nil
 		}
 
-		if lo.Contains(missedFields, "from") || lo.Contains(missedFields, "to") {
-			return nil, errors.New("dlkasjdl")
+		if lo.Contains(missedFields, FromKey) || lo.Contains(missedFields, ToKey) {
+			return nil, ErrNoRequiredFields
 		}
 
-		mocks := []string{}
-		if !lo.Contains(missedFields, "mocks") {
-			mocks = lo.Map(data["mocks"].([]any), func(item any, index int) string {
-				return item.(string)
-			})
+		from, ok := data[FromKey].(string)
+		if !ok {
+			return nil, ErrFromShouldBeStrign
 		}
 
-		return URLMapping{
-			From:  data["from"].(string),
-			To:    data["to"].(string),
-			Mocks: mocks,
-		}, nil
+		to, ok := data[ToKey].(string)
+		if !ok {
+			return nil, ErrToShouldBeStrign
+		}
+
+		return URLMapping{From: from, To: to}, nil
 	}
 }
 
-func getTagValues() []string {
-	fields := []string{}
-	typeValue := urlMappingType
-	for i := 0; i < typeValue.NumField(); i++ {
-		field := typeValue.Field(i)
-		if tag, ok := field.Tag.Lookup("mapstructure"); ok {
+func getTagValues(typeValue reflect.Type, tag string) []string {
+	var fields []string
+	lo.ForEach(reflect.VisibleFields(typeValue), func(field reflect.StructField, index int) {
+		if tag, ok := field.Tag.Lookup(tag); ok {
 			fields = append(fields, tag)
 		}
-	}
+	})
+
 	return fields
 }
