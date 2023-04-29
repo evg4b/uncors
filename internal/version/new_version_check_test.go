@@ -33,20 +33,20 @@ func TestCheckNewVersion(t *testing.T) {
 		}{
 			{
 				name:     "current version is not correct",
-				client:   mocks.NewHttpClientMock(t),
+				client:   mocks.NewHTTPClientMock(t),
 				version:  "#",
 				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse current version: Malformed version: #\n",
 			},
 			{
 				name: "http error is occupied",
-				client: mocks.NewHttpClientMock(t).
+				client: mocks.NewHTTPClientMock(t).
 					DoMock.Return(nil, errors.New("some http error")),
 				version:  "0.0.3",
 				expected: "   DEBUG  Checking new version\n   DEBUG  http error occupied: some http error\n",
 			},
 			{
 				name: "invalid json received",
-				client: mocks.NewHttpClientMock(t).
+				client: mocks.NewHTTPClientMock(t).
 					DoMock.Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader(`{ "version"`)),
 				}, nil),
@@ -55,7 +55,7 @@ func TestCheckNewVersion(t *testing.T) {
 			},
 			{
 				name: "incorrect json from api received",
-				client: mocks.NewHttpClientMock(t).
+				client: mocks.NewHTTPClientMock(t).
 					DoMock.Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader(`{ "tag_name": "#" }`)),
 				}, nil),
@@ -79,7 +79,7 @@ func TestCheckNewVersion(t *testing.T) {
 
 	t.Run("should print ", func(t *testing.T) {
 		t.Run("prop1", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-			httpClient := mocks.NewHttpClientMock(t).
+			httpClient := mocks.NewHTTPClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
 			version.CheckNewVersion(context.Background(), httpClient, "0.0.4")
@@ -96,7 +96,7 @@ func TestCheckNewVersion(t *testing.T) {
 		}))
 
 		t.Run("prop2", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-			httpClient := mocks.NewHttpClientMock(t).
+			httpClient := mocks.NewHTTPClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
 			version.CheckNewVersion(context.Background(), httpClient, "0.0.7")
