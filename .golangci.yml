@@ -37,6 +37,7 @@ linters-settings:
       - form
       - to
       - ok
+      - fs
 presets:
   - bugs
   - comment

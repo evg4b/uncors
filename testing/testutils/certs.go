@@ -87,10 +87,10 @@ func certSetup(t *testing.T) *Certs {
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 	}
 
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	certPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	CheckNoError(t, err)
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivateKey)
+	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivateKey.PublicKey, caPrivateKey)
 	CheckNoError(t, err)
 
 	certPEM := pem.EncodeToMemory(&pem.Block{
@@ -108,7 +108,7 @@ func certSetup(t *testing.T) *Certs {
 
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
+		Bytes: x509.MarshalPKCS1PrivateKey(certPrivateKey),
 	})
 	CheckNoError(t, err)
 

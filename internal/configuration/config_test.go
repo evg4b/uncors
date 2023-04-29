@@ -203,7 +203,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "incorrect param type",
 				args: []string{
-					params.HttpPort, "xxx",
+					params.HTTPPort, "xxx",
 				},
 				expected: []string{
 					"filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
@@ -216,7 +216,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, "/incorrect-config.yaml",
 				},
 				expected: []string{
-					"filed parsing configuraion: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
+					"filed parsing configuration: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
 						" strconv.ParseInt: parsing \"xxx\": invalid syntax",
 				},
 			},

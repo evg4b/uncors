@@ -11,4 +11,4 @@ for [uncors](https://github.com/evg4b/uncors) project.
 
 ## License
 
-`github.com/evg4b/uncors/pkg/urlx` is licensed under the [MIT License](./LICENSE).
+`github.com/evg4b/uncors/pkg/urlx` is licensed under the [MIT License](LICENSE).

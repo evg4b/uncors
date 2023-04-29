@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/evg4b/uncors/internal/version"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -68,7 +67,7 @@ func TestCheckNewVersion(t *testing.T) {
 				assert.NotPanics(t, func() {
 					version.CheckNewVersion(context.Background(), testCase.client, testCase.version)
 
-					outputData, err := ioutil.ReadAll(output)
+					outputData, err := io.ReadAll(output)
 					testutils.CheckNoError(t, err)
 
 					assert.Equal(t, testCase.expected, string(outputData))
@@ -84,7 +83,7 @@ func TestCheckNewVersion(t *testing.T) {
 
 			version.CheckNewVersion(context.Background(), httpClient, "0.0.4")
 
-			outputData, err := ioutil.ReadAll(output)
+			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
 			expected := `   DEBUG  Checking new version
     INFO  NEW VERSION IS Available!
@@ -101,7 +100,7 @@ func TestCheckNewVersion(t *testing.T) {
 
 			version.CheckNewVersion(context.Background(), httpClient, "0.0.7")
 
-			outputData, err := ioutil.ReadAll(output)
+			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
 			expected := "   DEBUG  Checking new version\n   DEBUG  Version is up to date\n"
 			assert.Equal(t, expected, string(outputData))
