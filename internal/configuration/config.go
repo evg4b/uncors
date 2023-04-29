@@ -17,10 +17,10 @@ const (
 
 type UncorsConfig struct {
 	// Base config_test_data
-	HTTPPort int               `mapstructure:"http-port" validate:"required"`
-	Mappings map[string]string `mapstructure:"mappings" validate:"required"`
-	Proxy    string            `mapstructure:"proxy"`
-	Debug    bool              `mapstructure:"debug"`
+	HTTPPort int          `mapstructure:"http-port" validate:"required"`
+	Mappings []URLMapping `mapstructure:"mappings" validate:"required"`
+	Proxy    string       `mapstructure:"proxy"`
+	Debug    bool         `mapstructure:"debug"`
 	// HTTPS config_test_data
 	HTTPSPort int    `mapstructure:"https-port"`
 	CertFile  string `mapstructure:"cert-file"`
@@ -44,7 +44,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	}
 
 	configuration := &UncorsConfig{
-		Mappings: map[string]string{},
+		Mappings: []URLMapping{},
 		Mocks:    []mock.Mock{},
 	}
 
@@ -58,6 +58,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		hooks.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
+		URLMappingHookFunc(),
 	))
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing configuraion: %w", err)

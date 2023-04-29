@@ -175,7 +175,7 @@ func (mmDebug *mLoggerMockDebug) Return() *LoggerMock {
 	return mmDebug.mock
 }
 
-// Set uses given function f to mock the Logger.Debug method
+//Set uses given function f to mock the Logger.Debug method
 func (mmDebug *mLoggerMockDebug) Set(f func(a ...any)) *LoggerMock {
 	if mmDebug.defaultExpectation != nil {
 		mmDebug.mock.t.Fatalf("Default expectation is already set for the Logger.Debug method")
@@ -363,7 +363,7 @@ func (mmDebugf *mLoggerMockDebugf) Return() *LoggerMock {
 	return mmDebugf.mock
 }
 
-// Set uses given function f to mock the Logger.Debugf method
+//Set uses given function f to mock the Logger.Debugf method
 func (mmDebugf *mLoggerMockDebugf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmDebugf.defaultExpectation != nil {
 		mmDebugf.mock.t.Fatalf("Default expectation is already set for the Logger.Debugf method")
@@ -550,7 +550,7 @@ func (mmError *mLoggerMockError) Return() *LoggerMock {
 	return mmError.mock
 }
 
-// Set uses given function f to mock the Logger.Error method
+//Set uses given function f to mock the Logger.Error method
 func (mmError *mLoggerMockError) Set(f func(a ...any)) *LoggerMock {
 	if mmError.defaultExpectation != nil {
 		mmError.mock.t.Fatalf("Default expectation is already set for the Logger.Error method")
@@ -738,7 +738,7 @@ func (mmErrorf *mLoggerMockErrorf) Return() *LoggerMock {
 	return mmErrorf.mock
 }
 
-// Set uses given function f to mock the Logger.Errorf method
+//Set uses given function f to mock the Logger.Errorf method
 func (mmErrorf *mLoggerMockErrorf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmErrorf.defaultExpectation != nil {
 		mmErrorf.mock.t.Fatalf("Default expectation is already set for the Logger.Errorf method")
@@ -925,7 +925,7 @@ func (mmInfo *mLoggerMockInfo) Return() *LoggerMock {
 	return mmInfo.mock
 }
 
-// Set uses given function f to mock the Logger.Info method
+//Set uses given function f to mock the Logger.Info method
 func (mmInfo *mLoggerMockInfo) Set(f func(a ...any)) *LoggerMock {
 	if mmInfo.defaultExpectation != nil {
 		mmInfo.mock.t.Fatalf("Default expectation is already set for the Logger.Info method")
@@ -1113,7 +1113,7 @@ func (mmInfof *mLoggerMockInfof) Return() *LoggerMock {
 	return mmInfof.mock
 }
 
-// Set uses given function f to mock the Logger.Infof method
+//Set uses given function f to mock the Logger.Infof method
 func (mmInfof *mLoggerMockInfof) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmInfof.defaultExpectation != nil {
 		mmInfof.mock.t.Fatalf("Default expectation is already set for the Logger.Infof method")
@@ -1300,7 +1300,7 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Return() *LoggerMock {
 	return mmPrintResponse.mock
 }
 
-// Set uses given function f to mock the Logger.PrintResponse method
+//Set uses given function f to mock the Logger.PrintResponse method
 func (mmPrintResponse *mLoggerMockPrintResponse) Set(f func(response *http.Response)) *LoggerMock {
 	if mmPrintResponse.defaultExpectation != nil {
 		mmPrintResponse.mock.t.Fatalf("Default expectation is already set for the Logger.PrintResponse method")
@@ -1487,7 +1487,7 @@ func (mmWarning *mLoggerMockWarning) Return() *LoggerMock {
 	return mmWarning.mock
 }
 
-// Set uses given function f to mock the Logger.Warning method
+//Set uses given function f to mock the Logger.Warning method
 func (mmWarning *mLoggerMockWarning) Set(f func(a ...any)) *LoggerMock {
 	if mmWarning.defaultExpectation != nil {
 		mmWarning.mock.t.Fatalf("Default expectation is already set for the Logger.Warning method")
@@ -1675,7 +1675,7 @@ func (mmWarningf *mLoggerMockWarningf) Return() *LoggerMock {
 	return mmWarningf.mock
 }
 
-// Set uses given function f to mock the Logger.Warningf method
+//Set uses given function f to mock the Logger.Warningf method
 func (mmWarningf *mLoggerMockWarningf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmWarningf.defaultExpectation != nil {
 		mmWarningf.mock.t.Fatalf("Default expectation is already set for the Logger.Warningf method")
