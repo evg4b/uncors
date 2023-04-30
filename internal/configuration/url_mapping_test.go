@@ -1,8 +1,6 @@
 package configuration_test
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/configuration"
@@ -12,6 +10,8 @@ import (
 )
 
 func TestURLMappingHookFunc(t *testing.T) {
+	const configFile = "config.yaml"
+
 	t.Run("positive cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -37,13 +37,12 @@ func TestURLMappingHookFunc(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				configFile := filepath.Join(t.TempDir(), "config.yaml")
-				err := os.WriteFile(configFile, []byte(testCase.config), os.ModePerm)
-				testutils.CheckNoError(t, err)
-
 				viperInstance := viper.GetViper()
+				viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
+					configFile: testCase.config,
+				}))
 				viperInstance.SetConfigFile(configFile)
-				err = viperInstance.ReadInConfig()
+				err := viperInstance.ReadInConfig()
 				testutils.CheckNoError(t, err)
 
 				actual := configuration.URLMapping{}

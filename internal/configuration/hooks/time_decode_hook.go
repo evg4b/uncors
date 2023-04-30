@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil

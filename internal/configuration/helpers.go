@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/log"
@@ -45,4 +47,10 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	}
 
 	return nil
+}
+
+func decodeConfig[T any](data any, mapping T) (T, error) {
+	err := mapstructure.Decode(data, &mapping)
+
+	return mapping, err //nolint:wrapcheck
 }

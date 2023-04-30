@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
@@ -11,13 +10,13 @@ type StaticDirMappings = []StaticDirMapping
 
 type StaticDirMapping struct {
 	Path    string `mapstructure:"path"`
-	Dir     string `mapstructure:"folder"`
+	Dir     string `mapstructure:"dir"`
 	Default string `mapstructure:"default"`
 }
 
 var staticDirMappingsType = reflect.TypeOf(StaticDirMappings{})
 
-func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != staticDirMappingsType || f.Kind() != reflect.Map {
 			return rawData, nil
@@ -35,17 +34,13 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 					continue
 				}
 
-				if def, ok := mappingDef.(map[string]string); ok {
-					mappings = append(mappings, StaticDirMapping{
-						Path:    path,
-						Dir:     def["dir"],
-						Default: def["default"],
-					})
-
-					continue
+				mapping, err := decodeConfig(mappingDef, StaticDirMapping{})
+				if err != nil {
+					return nil, err
 				}
 
-				return nil, errors.New("FAIL")
+				mapping.Path = path
+				mappings = append(mappings, mapping)
 			}
 
 			return mappings, nil

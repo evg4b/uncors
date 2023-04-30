@@ -16,7 +16,7 @@ type URLMapping struct {
 var urlMappingType = reflect.TypeOf(URLMapping{})
 var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
 
-func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != urlMappingType || f.Kind() != reflect.Map {
 			return rawData, nil
@@ -31,10 +31,7 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 				}, nil
 			}
 
-			mapping := URLMapping{}
-			err := mapstructure.Decode(data, &mapping)
-
-			return mapping, err //nolint:wrapcheck
+			return decodeConfig(data, URLMapping{})
 		}
 
 		return rawData, nil
