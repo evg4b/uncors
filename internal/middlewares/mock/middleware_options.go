@@ -3,6 +3,8 @@ package mock
 import (
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/spf13/afero"
 )
@@ -21,7 +23,7 @@ func WithNextMiddleware(next http.Handler) MiddlewareOption {
 	}
 }
 
-func WithMocks(mocks []Mock) MiddlewareOption {
+func WithMocks(mocks []configuration.Mock) MiddlewareOption {
 	return func(m *Middleware) {
 		m.mocks = mocks
 	}

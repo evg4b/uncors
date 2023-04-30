@@ -3,11 +3,13 @@ package mock
 import (
 	"time"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/gorilla/mux"
 )
 
 func (m *Middleware) makeMockedRoutes() {
-	var defaultMocks []Mock
+	var defaultMocks []configuration.Mock
 
 	for _, mock := range m.mocks {
 		if len(mock.Queries) > 0 || len(mock.Headers) > 0 || len(mock.Method) > 0 {
@@ -29,7 +31,7 @@ func (m *Middleware) makeMockedRoutes() {
 	}
 }
 
-func (m *Middleware) makeHandler(response Response) *internalHandler {
+func (m *Middleware) makeHandler(response configuration.Response) *internalHandler {
 	return &internalHandler{response, m.logger, m.fs, time.After}
 }
 

@@ -27,8 +27,8 @@ func NormaliseMappings(
 	httpPort,
 	httpsPort int,
 	useHTTPS bool,
-) (map[string]string, error) {
-	processedMappings := map[string]string{}
+) ([]configuration.URLMapping, error) {
+	var processedMappings []configuration.URLMapping
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {
@@ -36,13 +36,17 @@ func NormaliseMappings(
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
-			normalisedSource := assignPortAndScheme(*sourceURL, httpScheme, httpPort)
-			processedMappings[normalisedSource] = mapping.To
+			processedMappings = append(processedMappings, configuration.URLMapping{
+				From: assignPortAndScheme(*sourceURL, httpScheme, httpPort),
+				To:   mapping.To,
+			})
 		}
 
 		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
-			normalisedSource := assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
-			processedMappings[normalisedSource] = mapping.To
+			processedMappings = append(processedMappings, configuration.URLMapping{
+				From: assignPortAndScheme(*sourceURL, httpsScheme, httpsPort),
+				To:   mapping.To,
+			})
 		}
 	}
 

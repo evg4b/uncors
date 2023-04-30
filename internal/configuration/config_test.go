@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/configuration"
-	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
@@ -30,7 +29,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  80,
 					HTTPSPort: 443,
 					Mappings:  []configuration.URLMapping{},
-					Mocks:     []mock.Mock{},
+					Mocks:     []configuration.Mock{},
 				},
 			},
 			{
@@ -42,7 +41,7 @@ func TestLoadConfiguration(t *testing.T) {
 					Mappings: []configuration.URLMapping{
 						{From: "http://demo", To: "https://demo.com"},
 					},
-					Mocks: []mock.Mock{},
+					Mocks: []configuration.Mock{},
 				},
 			},
 			{
@@ -59,7 +58,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []mock.Mock{
+					Mocks: []configuration.Mock{
 						{
 							Path:   "/demo",
 							Method: "POST",
@@ -69,7 +68,7 @@ func TestLoadConfiguration(t *testing.T) {
 							Headers: map[string]string{
 								"accept-encoding": "deflate",
 							},
-							Response: mock.Response{
+							Response: configuration.Response{
 								Code: 201,
 								Headers: map[string]string{
 									"accept-encoding": "deflate",
@@ -103,7 +102,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []mock.Mock{
+					Mocks: []configuration.Mock{
 						{
 							Path:   "/demo",
 							Method: "POST",
@@ -113,7 +112,7 @@ func TestLoadConfiguration(t *testing.T) {
 							Headers: map[string]string{
 								"accept-encoding": "deflate",
 							},
-							Response: mock.Response{
+							Response: configuration.Response{
 								Code: 201,
 								Headers: map[string]string{
 									"accept-encoding": "deflate",

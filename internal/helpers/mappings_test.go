@@ -16,7 +16,7 @@ func TestNormaliseMappings(t *testing.T) {
 		testsCases := []struct {
 			name     string
 			mappings []configuration.URLMapping
-			expected map[string]string
+			expected []configuration.URLMapping
 			useHTTPS bool
 		}{
 			{
@@ -24,9 +24,9 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "localhost", To: "github.com"},
 				},
-				expected: map[string]string{
-					"http://localhost:3000":  "github.com",
-					"https://localhost:3001": "github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://localhost:3000", To: "github.com"},
+					{From: "https://localhost:3001", To: "github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -35,8 +35,8 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "http://localhost", To: "https://github.com"},
 				},
-				expected: map[string]string{
-					"http://localhost:3000": "https://github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://localhost:3000", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -45,8 +45,8 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "https://localhost", To: "https://github.com"},
 				},
-				expected: map[string]string{
-					"https://localhost:3001": "https://github.com",
+				expected: []configuration.URLMapping{
+					{From: "https://localhost:3001", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -58,13 +58,13 @@ func TestNormaliseMappings(t *testing.T) {
 					{From: "http://host3", To: "http://api.github.com"},
 					{From: "https://host4", To: "https://api.github.com"},
 				},
-				expected: map[string]string{
-					"http://host1:3000":  "https://github.com",
-					"https://host1:3001": "https://github.com",
-					"http://host2:3000":  "http://github.com",
-					"https://host2:3001": "http://github.com",
-					"http://host3:3000":  "http://api.github.com",
-					"https://host4:3001": "https://api.github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://host1:3000", To: "https://github.com"},
+					{From: "https://host1:3001", To: "https://github.com"},
+					{From: "http://host2:3000", To: "http://github.com"},
+					{From: "https://host2:3001", To: "http://github.com"},
+					{From: "http://host3:3000", To: "http://api.github.com"},
+					{From: "https://host4:3001", To: "https://api.github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -89,7 +89,7 @@ func TestNormaliseMappings(t *testing.T) {
 		testsCases := []struct {
 			name     string
 			mappings []configuration.URLMapping
-			expected map[string]string
+			expected []configuration.URLMapping
 			useHTTPS bool
 		}{
 			{
@@ -97,9 +97,9 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "localhost", To: "github.com"},
 				},
-				expected: map[string]string{
-					"http://localhost":  "github.com",
-					"https://localhost": "github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://localhost", To: "github.com"},
+					{From: "https://localhost", To: "github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -108,8 +108,8 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "http://localhost", To: "https://github.com"},
 				},
-				expected: map[string]string{
-					"http://localhost": "https://github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://localhost", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -118,8 +118,8 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: []configuration.URLMapping{
 					{From: "https://localhost", To: "https://github.com"},
 				},
-				expected: map[string]string{
-					"https://localhost": "https://github.com",
+				expected: []configuration.URLMapping{
+					{From: "https://localhost", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -131,13 +131,13 @@ func TestNormaliseMappings(t *testing.T) {
 					{From: "http://host3", To: "http://api.github.com"},
 					{From: "https://host4", To: "https://api.github.com"},
 				},
-				expected: map[string]string{
-					"http://host1":  "https://github.com",
-					"https://host1": "https://github.com",
-					"http://host2":  "http://github.com",
-					"https://host2": "http://github.com",
-					"http://host3":  "http://api.github.com",
-					"https://host4": "https://api.github.com",
+				expected: []configuration.URLMapping{
+					{From: "http://host1", To: "https://github.com"},
+					{From: "https://host1", To: "https://github.com"},
+					{From: "http://host2", To: "http://github.com"},
+					{From: "https://host2", To: "http://github.com"},
+					{From: "http://host3", To: "http://api.github.com"},
+					{From: "https://host4", To: "https://api.github.com"},
 				},
 				useHTTPS: true,
 			},

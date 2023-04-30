@@ -4,7 +4,8 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/middlewares/mock"
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,8 +13,8 @@ import (
 func TestMappings(t *testing.T) {
 	tests := []struct {
 		name      string
-		mappings  map[string]string
-		mocksDefs []mock.Mock
+		mappings  []configuration.URLMapping
+		mocksDefs []configuration.Mock
 		expected  string
 	}{
 		{
@@ -22,40 +23,40 @@ func TestMappings(t *testing.T) {
 		},
 		{
 			name: "http mapping only",
-			mappings: map[string]string{
-				"http://localhost": "https://github.com",
+			mappings: []configuration.URLMapping{
+				{From: "http://localhost", To: "https://github.com"},
 			},
 			expected: "PROXY: http://localhost => https://github.com\n\n",
 		},
 		{
 			name: "http and https mappings",
-			mappings: map[string]string{
-				"http://localhost":  "https://github.com",
-				"https://localhost": "https://github.com",
+			mappings: []configuration.URLMapping{
+				{From: "http://localhost", To: "https://github.com"},
+				{From: "https://localhost", To: "https://github.com"},
 			},
 			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\n\n",
 		},
 		{
 			name: "one mock only",
-			mocksDefs: []mock.Mock{
+			mocksDefs: []configuration.Mock{
 				{},
 			},
 			expected: "MOCKS: 1 mock(s) registered\n",
 		},
 		{
 			name: "2 mocks only",
-			mocksDefs: []mock.Mock{
+			mocksDefs: []configuration.Mock{
 				{}, {}, {},
 			},
 			expected: "MOCKS: 3 mock(s) registered\n",
 		},
 		{
 			name: "mapping and mocks",
-			mappings: map[string]string{
-				"http://localhost":  "https://github.com",
-				"https://localhost": "https://github.com",
+			mappings: []configuration.URLMapping{
+				{From: "http://localhost", To: "https://github.com"},
+				{From: "https://localhost", To: "https://github.com"},
 			},
-			mocksDefs: []mock.Mock{
+			mocksDefs: []configuration.Mock{
 				{}, {}, {},
 			},
 			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\nMOCKS: 3 mock(s) registered\n",

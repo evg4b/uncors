@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+
+	"github.com/evg4b/uncors/internal/configuration"
 )
 
 type mapping struct {
@@ -22,22 +24,22 @@ var (
 	ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 )
 
-func NewURLReplacerFactory(urlMappings map[string]string) (*Factory, error) {
+func NewURLReplacerFactory(urlMappings []configuration.URLMapping) (*Factory, error) {
 	if len(urlMappings) < 1 {
 		return nil, ErrMappingNotSpecified
 	}
 
 	var mappings []mapping //nolint:prealloc
-	for sourceURL, targetURL := range urlMappings {
-		target, source, err := replacers(sourceURL, targetURL)
+	for _, urlMapping := range urlMappings {
+		target, source, err := replacers(urlMapping.From, urlMapping.To)
 		if err != nil {
 			return nil, fmt.Errorf("failed to configure url mappings: %w", err)
 		}
 
 		mappings = append(mappings, mapping{
-			rawSource: sourceURL,
+			rawSource: urlMapping.From,
 			source:    source,
-			rawTarget: targetURL,
+			rawTarget: urlMapping.To,
 			target:    target,
 		})
 	}

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -41,7 +43,7 @@ func TestHandler(t *testing.T) {
 		pngFile:  pngContent,
 	})
 
-	var makeHandler = func(t *testing.T, response Response) *internalHandler {
+	var makeHandler = func(t *testing.T, response configuration.Response) *internalHandler {
 		return &internalHandler{
 			logger:   mocks.NewNoopLogger(t),
 			response: response,
@@ -55,17 +57,17 @@ func TestHandler(t *testing.T) {
 	t.Run("mock content", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response Response
+			response configuration.Response
 			expected string
 		}{
 			{
 				name:     "raw content",
-				response: Response{RawContent: jsonContent},
+				response: configuration.Response{RawContent: jsonContent},
 				expected: jsonContent,
 			},
 			{
 				name:     "file content",
-				response: Response{File: jsonFile},
+				response: configuration.Response{File: jsonFile},
 				expected: jsonContent,
 			},
 		}
@@ -86,47 +88,47 @@ func TestHandler(t *testing.T) {
 	t.Run("content type detection", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response Response
+			response configuration.Response
 			expected string
 		}{
 			{
 				name:     "raw content with plain text",
-				response: Response{RawContent: textContent},
+				response: configuration.Response{RawContent: textContent},
 				expected: textPlain,
 			},
 			{
 				name:     "raw content with json",
-				response: Response{RawContent: jsonContent},
+				response: configuration.Response{RawContent: jsonContent},
 				expected: textPlain,
 			},
 			{
 				name:     "raw content with html",
-				response: Response{RawContent: htmlContent},
+				response: configuration.Response{RawContent: htmlContent},
 				expected: "text/html; charset=utf-8",
 			},
 			{
 				name:     "raw content with png",
-				response: Response{RawContent: pngContent},
+				response: configuration.Response{RawContent: pngContent},
 				expected: imagePng,
 			},
 			{
 				name:     "file with plain text",
-				response: Response{File: textFile},
+				response: configuration.Response{File: textFile},
 				expected: textPlain,
 			},
 			{
 				name:     "file with json",
-				response: Response{File: jsonFile},
+				response: configuration.Response{File: jsonFile},
 				expected: "application/json",
 			},
 			{
 				name:     "file with html",
-				response: Response{File: htmlFile},
+				response: configuration.Response{File: htmlFile},
 				expected: "text/html; charset=utf-8",
 			},
 			{
 				name:     "file with png",
-				response: Response{File: pngFile},
+				response: configuration.Response{File: pngFile},
 				expected: imagePng,
 			},
 		}
@@ -147,12 +149,12 @@ func TestHandler(t *testing.T) {
 	t.Run("headers settings", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response Response
+			response configuration.Response
 			expected http.Header
 		}{
 			{
 				name: "should put default CORS headers",
-				response: Response{
+				response: configuration.Response{
 					Code:       http.StatusOK,
 					RawContent: textContent,
 				},
@@ -165,7 +167,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should set response code",
-				response: Response{
+				response: configuration.Response{
 					Code:       http.StatusOK,
 					RawContent: textContent,
 				},
@@ -178,7 +180,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should set custom headers",
-				response: Response{
+				response: configuration.Response{
 					Code: http.StatusOK,
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
@@ -195,7 +197,7 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "should override default headers",
-				response: Response{
+				response: configuration.Response{
 					Code: http.StatusOK,
 					Headers: map[string]string{
 						headers.AccessControlAllowOrigin:      "localhost",
@@ -230,26 +232,26 @@ func TestHandler(t *testing.T) {
 	t.Run("status code", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			response Response
+			response configuration.Response
 			expected int
 		}{
 			{
 				name: "provide 201 code",
-				response: Response{
+				response: configuration.Response{
 					Code: http.StatusCreated,
 				},
 				expected: http.StatusCreated,
 			},
 			{
 				name: "provide 503 code",
-				response: Response{
+				response: configuration.Response{
 					Code: http.StatusServiceUnavailable,
 				},
 				expected: http.StatusServiceUnavailable,
 			},
 			{
 				name:     "automatically provide 200 code",
-				response: Response{},
+				response: configuration.Response{},
 				expected: http.StatusOK,
 			},
 		}
@@ -271,13 +273,13 @@ func TestHandler(t *testing.T) {
 		t.Run("correctly handle delay", func(t *testing.T) {
 			tests := []struct {
 				name           string
-				response       Response
+				response       configuration.Response
 				shouldBeCalled bool
 				expected       time.Duration
 			}{
 				{
 					name: "3s delay",
-					response: Response{
+					response: configuration.Response{
 						Code:  http.StatusCreated,
 						Delay: 3 * time.Second,
 					},
@@ -286,7 +288,7 @@ func TestHandler(t *testing.T) {
 				},
 				{
 					name: "15h delay",
-					response: Response{
+					response: configuration.Response{
 						Code:  http.StatusCreated,
 						Delay: 15 * time.Hour,
 					},
@@ -295,7 +297,7 @@ func TestHandler(t *testing.T) {
 				},
 				{
 					name: "0s delay",
-					response: Response{
+					response: configuration.Response{
 						Code:  http.StatusCreated,
 						Delay: 0 * time.Second,
 					},
@@ -303,14 +305,14 @@ func TestHandler(t *testing.T) {
 				},
 				{
 					name: "delay is not set",
-					response: Response{
+					response: configuration.Response{
 						Code: http.StatusCreated,
 					},
 					shouldBeCalled: false,
 				},
 				{
 					name: "incorrect delay",
-					response: Response{
+					response: configuration.Response{
 						Code:  http.StatusCreated,
 						Delay: -13 * time.Minute,
 					},
@@ -339,7 +341,7 @@ func TestHandler(t *testing.T) {
 		})
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
-			handler := makeHandler(t, Response{
+			handler := makeHandler(t, configuration.Response{
 				Code:       http.StatusOK,
 				Delay:      1 * time.Hour,
 				RawContent: "Text content",

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/evg4b/uncors/internal/configuration/hooks"
-	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -26,7 +25,7 @@ type UncorsConfig struct {
 	CertFile  string `mapstructure:"cert-file"`
 	KeyFile   string `mapstructure:"key-file"`
 	// Mocks config_test_data
-	Mocks []mock.Mock `mapstructure:"mocks"`
+	Mocks []Mock `mapstructure:"mocks"`
 }
 
 func (config *UncorsConfig) IsHTTPSEnabled() bool {
@@ -45,7 +44,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 
 	configuration := &UncorsConfig{
 		Mappings: []URLMapping{},
-		Mocks:    []mock.Mock{},
+		Mocks:    []Mock{},
 	}
 
 	configPath := viperInstance.GetString("config")

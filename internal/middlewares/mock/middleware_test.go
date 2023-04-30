@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/middlewares/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -27,9 +29,9 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			middleware := mock.NewMockMiddleware(
 				mock.WithLogger(logger),
-				mock.WithMocks([]mock.Mock{{
+				mock.WithMocks([]configuration.Mock{{
 					Path: "/api",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -64,10 +66,10 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where method is set", func(t *testing.T) {
 			middleware := mock.NewMockMiddleware(
 				mock.WithLogger(logger),
-				mock.WithMocks([]mock.Mock{{
+				mock.WithMocks([]configuration.Mock{{
 					Path:   "/api",
 					Method: http.MethodPut,
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -113,31 +115,31 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("path handling", func(t *testing.T) {
 		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
-			mock.WithMocks([]mock.Mock{
+			mock.WithMocks([]configuration.Mock{
 				{
 					Path: "/api/user",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
 				},
 				{
 					Path: "/api/user/{id:[0-9]+}",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock2Body,
 					},
 				},
 				{
 					Path: "/api/{single-path/demo",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusBadRequest,
 						RawContent: mock3Body,
 					},
 				},
 				{
 					Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock4Body,
 					},
@@ -205,10 +207,10 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("query handling", func(t *testing.T) {
 		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
-			mock.WithMocks([]mock.Mock{
+			mock.WithMocks([]configuration.Mock{
 				{
 					Path: "/api/user",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -218,7 +220,7 @@ func TestMockMiddleware(t *testing.T) {
 					Queries: map[string]string{
 						"id": "17",
 					},
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock2Body,
 					},
@@ -229,7 +231,7 @@ func TestMockMiddleware(t *testing.T) {
 						"id":    "99",
 						"token": "fe145b54563d9be1b2a476f56b0a412b",
 					},
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock3Body,
 					},
@@ -297,10 +299,10 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("header handling", func(t *testing.T) {
 		middleware := mock.NewMockMiddleware(
 			mock.WithLogger(logger),
-			mock.WithMocks([]mock.Mock{
+			mock.WithMocks([]configuration.Mock{
 				{
 					Path: "/api/user",
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -310,7 +312,7 @@ func TestMockMiddleware(t *testing.T) {
 					Headers: map[string]string{
 						"Token": "de4e27987d054577b0edc0e828851724",
 					},
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock2Body,
 					},
@@ -321,7 +323,7 @@ func TestMockMiddleware(t *testing.T) {
 						"User-Id": "99",
 						"Token":   "fe145b54563d9be1b2a476f56b0a412b",
 					},
-					Response: mock.Response{
+					Response: configuration.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock3Body,
 					},

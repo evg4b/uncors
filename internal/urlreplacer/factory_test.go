@@ -3,6 +3,8 @@ package urlreplacer_test
 import (
 	"testing"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -13,22 +15,22 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
 			name    string
-			mapping map[string]string
+			mapping []configuration.URLMapping
 		}{
 			{
 				name:    "mappings is empty",
-				mapping: make(map[string]string),
+				mapping: make([]configuration.URLMapping, 0),
 			},
 			{
 				name: "source url is incorrect",
-				mapping: map[string]string{
-					string(rune(0x7f)): "https://github.com",
+				mapping: []configuration.URLMapping{
+					{From: string(rune(0x7f)), To: "https://github.com"},
 				},
 			},
 			{
 				name: "target url is incorrect ",
-				mapping: map[string]string{
-					"localhost": string(rune(0x7f)),
+				mapping: []configuration.URLMapping{
+					{From: "localhost", To: string(rune(0x7f))},
 				},
 			},
 		}
@@ -43,8 +45,8 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	})
 
 	t.Run("should return replacers", func(t *testing.T) {
-		actual, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-			"localhost": "https://github.com",
+		actual, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+			{From: "localhost", To: "https://github.com"},
 		})
 
 		assert.NotNil(t, actual)
@@ -53,9 +55,9 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 }
 
 func TestFactoryMake(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://server1.com":  "https://mappedserver1.com",
-		"https://server2.com": "https://mappedserver2.com",
+	factory, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+		{From: "http://server1.com", To: "https://mappedserver1.com"},
+		{From: "https://server2.com", To: "https://mappedserver2.com"},
 	})
 	testutils.CheckNoError(t, err)
 

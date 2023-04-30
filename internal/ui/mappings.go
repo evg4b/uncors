@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/middlewares/mock"
+	"github.com/evg4b/uncors/internal/configuration"
 )
 
-func Mappings(mappings map[string]string, mocksDefs []mock.Mock) string {
+func Mappings(mappings []configuration.URLMapping, mocksDefs []configuration.Mock) string {
 	var builder strings.Builder
 
-	for source, target := range mappings {
-		if strings.HasPrefix(source, "https:") {
-			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
+	for _, mapping := range mappings {
+		if strings.HasPrefix(mapping.From, "https:") {
+			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", mapping.From, mapping.To))
 		}
 	}
-	for source, target := range mappings {
-		if strings.HasPrefix(source, "http:") {
-			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", source, target))
+	for _, mapping := range mappings {
+		if strings.HasPrefix(mapping.From, "http:") {
+			builder.WriteString(fmt.Sprintf("PROXY: %s => %s\n", mapping.From, mapping.To))
 		}
 	}
 	if len(mocksDefs) > 0 {

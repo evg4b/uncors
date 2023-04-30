@@ -4,13 +4,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/spf13/afero"
 )
 
 type internalHandler struct {
-	response Response
+	response configuration.Response
 	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/configuration"
+
 	"github.com/evg4b/uncors/internal/middlewares/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
@@ -18,8 +20,8 @@ import (
 )
 
 func TestProxyMiddleware(t *testing.T) {
-	replacerFactory, err := urlreplacer.NewURLReplacerFactory(map[string]string{
-		"http://premium.local.com": "https://premium.api.com",
+	replacerFactory, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+		{From: "http://premium.local.com", To: "https://premium.api.com"},
 	})
 	testutils.CheckNoError(t, err)
 
