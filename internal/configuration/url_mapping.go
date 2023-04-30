@@ -8,8 +8,9 @@ import (
 )
 
 type URLMapping struct {
-	From string `mapstructure:"from"`
-	To   string `mapstructure:"to"`
+	From    string            `mapstructure:"from"`
+	To      string            `mapstructure:"to"`
+	Statics StaticDirMappings `mapstructure:"statics"`
 }
 
 var urlMappingType = reflect.TypeOf(URLMapping{})
