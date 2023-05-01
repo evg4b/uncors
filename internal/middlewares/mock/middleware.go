@@ -3,25 +3,30 @@ package mock
 import (
 	"net/http"
 
+	"github.com/spf13/afero"
+
 	"github.com/evg4b/uncors/internal/configuration"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/gorilla/mux"
-	"github.com/spf13/afero"
 )
 
 type Middleware struct {
 	router   *mux.Router
-	next     http.Handler
-	logger   contracts.Logger
-	mocks    []configuration.Mock
 	fs       afero.Fs
+	logger   contracts.Logger
+	next     http.Handler
+	mocks    []configuration.Mock
 	mappings []configuration.URLMapping
 }
 
 func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
 	router := mux.NewRouter()
-	middleware := &Middleware{router: router, mocks: []configuration.Mock{}}
+	middleware := &Middleware{
+		router:   router,
+		mocks:    []configuration.Mock{},
+		mappings: []configuration.URLMapping{},
+	}
 
 	for _, option := range options {
 		option(middleware)
