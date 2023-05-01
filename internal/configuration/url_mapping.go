@@ -17,9 +17,12 @@ func (u URLMapping) Clone() URLMapping {
 	return URLMapping{
 		From: u.From,
 		To:   u.To,
-		Statics: lo.Map(u.Statics, func(item StaticDirMapping, index int) StaticDirMapping {
-			return item.Clone()
-		}),
+		Statics: lo.If(u.Statics == nil, StaticDirMappings(nil)).
+			ElseF(func() StaticDirMappings {
+				return lo.Map(u.Statics, func(item StaticDirMapping, index int) StaticDirMapping {
+					return item.Clone()
+				})
+			}),
 	}
 }
 

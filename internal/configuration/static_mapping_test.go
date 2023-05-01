@@ -90,3 +90,36 @@ statics:
 		})
 	}
 }
+
+func TestStaticDirMappingClone(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected configuration.StaticDirMapping
+	}{
+		{
+			name:     "empty structure",
+			expected: configuration.StaticDirMapping{},
+		},
+		{
+			name: "structure with 1 field",
+			expected: configuration.StaticDirMapping{
+				Dir: "dir",
+			},
+		},
+		{
+			name: "structure with 2 field",
+			expected: configuration.StaticDirMapping{
+				Dir:  "dir",
+				Path: "/path",
+			},
+		},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := testCase.expected.Clone()
+
+			assert.NotSame(t, testCase.expected, actual)
+			assert.Equal(t, testCase.expected, actual)
+		})
+	}
+}

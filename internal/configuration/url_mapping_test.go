@@ -57,3 +57,47 @@ func TestURLMappingHookFunc(t *testing.T) {
 		}
 	})
 }
+
+func TestURLMappingClone(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected configuration.URLMapping
+	}{
+		{
+			name:     "empty structure",
+			expected: configuration.URLMapping{},
+		},
+		{
+			name: "structure with 1 field",
+			expected: configuration.URLMapping{
+				From: "http://localhost",
+			},
+		},
+		{
+			name: "structure with 2 field",
+			expected: configuration.URLMapping{
+				From: "http://localhost",
+				To:   "https://localhost:9090",
+			},
+		},
+		{
+			name: "structure with inner collections",
+			expected: configuration.URLMapping{
+				From: "http://localhost",
+				To:   "https://localhost:9090",
+				Statics: []configuration.StaticDirMapping{
+					{Path: "/cc", Dir: "cc"},
+				},
+			},
+		},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := testCase.expected.Clone()
+
+			assert.NotSame(t, testCase.expected, actual)
+			assert.Equal(t, testCase.expected, actual)
+			assert.NotSame(t, testCase.expected.Statics, actual.Statics)
+		})
+	}
+}
