@@ -14,9 +14,17 @@ type StaticDirMapping struct {
 	Default string `mapstructure:"default"`
 }
 
+func (s StaticDirMapping) Clone() StaticDirMapping {
+	return StaticDirMapping{
+		Path:    s.Path,
+		Dir:     s.Dir,
+		Default: s.Default,
+	}
+}
+
 var staticDirMappingsType = reflect.TypeOf(StaticDirMappings{})
 
-func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc {
+func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != staticDirMappingsType || f.Kind() != reflect.Map {
 			return rawData, nil
@@ -34,7 +42,8 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc {
 					continue
 				}
 
-				mapping, err := decodeConfig(mappingDef, StaticDirMapping{})
+				mapping := StaticDirMapping{}
+				err := decodeConfig(mappingDef, &mapping)
 				if err != nil {
 					return nil, err
 				}

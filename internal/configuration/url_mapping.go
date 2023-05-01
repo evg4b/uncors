@@ -13,6 +13,16 @@ type URLMapping struct {
 	Statics StaticDirMappings `mapstructure:"statics"`
 }
 
+func (u URLMapping) Clone() URLMapping {
+	return URLMapping{
+		From: u.From,
+		To:   u.To,
+		Statics: lo.Map(u.Statics, func(item StaticDirMapping, index int) StaticDirMapping {
+			return item.Clone()
+		}),
+	}
+}
+
 var urlMappingType = reflect.TypeOf(URLMapping{})
 var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
 
@@ -31,7 +41,10 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 				}, nil
 			}
 
-			return decodeConfig(data, URLMapping{})
+			mapping := URLMapping{}
+			err := decodeConfig(data, &mapping, StaticDirMappingHookFunc())
+
+			return mapping, err
 		}
 
 		return rawData, nil

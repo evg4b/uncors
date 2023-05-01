@@ -36,17 +36,15 @@ func NormaliseMappings(
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
-			processedMappings = append(processedMappings, configuration.URLMapping{
-				From: assignPortAndScheme(*sourceURL, httpScheme, httpPort),
-				To:   mapping.To,
-			})
+			httpMapping := mapping.Clone()
+			httpMapping.From = assignPortAndScheme(*sourceURL, httpScheme, httpPort)
+			processedMappings = append(processedMappings, httpMapping)
 		}
 
 		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
-			processedMappings = append(processedMappings, configuration.URLMapping{
-				From: assignPortAndScheme(*sourceURL, httpsScheme, httpsPort),
-				To:   mapping.To,
-			})
+			httpsMapping := mapping.Clone()
+			httpsMapping.From = assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
+			processedMappings = append(processedMappings, httpsMapping)
 		}
 	}
 

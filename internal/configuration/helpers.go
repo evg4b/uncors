@@ -49,8 +49,23 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	return nil
 }
 
-func decodeConfig[T any](data any, mapping T) (T, error) {
-	err := mapstructure.Decode(data, &mapping)
+func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.DecodeHookFunc) error {
+	hook := mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToSliceHookFunc(","),
+		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
+	)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:               mapping,
+		DecodeHook:           hook,
+		ErrorUnused:          true,
+		IgnoreUntaggedFields: true,
+	})
 
-	return mapping, err //nolint:wrapcheck
+	if err != nil {
+		return err //nolint:wrapcheck
+	}
+
+	err = decoder.Decode(data)
+
+	return err //nolint:wrapcheck
 }
