@@ -34,3 +34,9 @@ func WithFileSystem(fs afero.Fs) MiddlewareOption {
 		m.fs = fs
 	}
 }
+
+func WithMappings(mappings []configuration.URLMapping) MiddlewareOption {
+	return func(m *Middleware) {
+		m.mappings = mappings
+	}
+}

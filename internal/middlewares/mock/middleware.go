@@ -11,11 +11,12 @@ import (
 )
 
 type Middleware struct {
-	router *mux.Router
-	next   http.Handler
-	logger contracts.Logger
-	mocks  []configuration.Mock
-	fs     afero.Fs
+	router   *mux.Router
+	next     http.Handler
+	logger   contracts.Logger
+	mocks    []configuration.Mock
+	fs       afero.Fs
+	mappings []configuration.URLMapping
 }
 
 func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
@@ -26,6 +27,7 @@ func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
 		option(middleware)
 	}
 
+	middleware.makeStaticRoutes()
 	middleware.makeMockedRoutes()
 	router.NotFoundHandler = middleware.next
 	router.MethodNotAllowedHandler = middleware.next

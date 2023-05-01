@@ -89,6 +89,7 @@ func main() {
 	fileSystem := afero.NewOsFs()
 
 	mockMiddleware := mock.NewMockMiddleware(
+		mock.WithMappings(mappings),
 		mock.WithLogger(ui.MockLogger),
 		mock.WithNextMiddleware(proxyMiddleware),
 		mock.WithMocks(config.Mocks),
