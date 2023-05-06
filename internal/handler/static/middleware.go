@@ -8,21 +8,22 @@ import (
 	"path"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/contracts"
+
 	"github.com/spf13/afero"
 )
 
 type Middleware struct {
-	fs    afero.Fs
-	next  http.Handler
-	index string
+	fs     afero.Fs
+	next   http.Handler
+	index  string
+	logger contracts.Logger
 }
 
 var errNorHandled = errors.New("request is not handled")
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{
-		index: "index.html",
-	}
+	middleware := &Middleware{}
 
 	for _, option := range options {
 		option(middleware)
@@ -49,11 +50,13 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		request.URL.Path = upath
 	}
 
-	m.serveFile(writer, request, path.Clean(upath))
-}
+	file, stat, err := m.openFile(path.Clean(upath))
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
 
-func (m *Middleware) serveFile(writer http.ResponseWriter, request *http.Request, name string) {
-	file, stat, err := m.openFile(name)
 	if err != nil {
 		if errors.Is(err, errNorHandled) {
 			m.next.ServeHTTP(writer, request)
@@ -61,8 +64,9 @@ func (m *Middleware) serveFile(writer http.ResponseWriter, request *http.Request
 			msg, code := toHTTPError(err)
 			http.Error(writer, msg, code)
 		}
+
+		return
 	}
-	defer file.Close()
 
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 }
@@ -70,11 +74,7 @@ func (m *Middleware) serveFile(writer http.ResponseWriter, request *http.Request
 func (m *Middleware) openFile(name string) (afero.File, os.FileInfo, error) {
 	file, err := m.fs.Open(name)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
-		if len(m.index) == 0 {
-			return nil, nil, errNorHandled
-		}
-
-		indexFile, err := m.fs.Open(m.index)
+		indexFile, err := m.openIndexFile()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -88,20 +88,32 @@ func (m *Middleware) openFile(name string) (afero.File, os.FileInfo, error) {
 	}
 
 	if stat.IsDir() {
-		if len(m.index) == 0 {
-			return nil, nil, errNorHandled
+		indexFile, err := m.openIndexFile()
+		if err != nil {
+			return nil, nil, err
 		}
 
-		if indexFile, err := m.fs.Open(m.index); err == nil {
-			indexFileStat, err := indexFile.Stat()
-			if err != nil {
-				return nil, nil, err
-			}
-
-			stat = indexFileStat
-			file = indexFile
+		indexFileStat, err := indexFile.Stat()
+		if err != nil {
+			return nil, nil, err
 		}
+
+		file = indexFile
+		stat = indexFileStat
 	}
 
 	return file, stat, nil
+}
+
+func (m *Middleware) openIndexFile() (afero.File, error) {
+	if len(m.index) == 0 {
+		return nil, errNorHandled
+	}
+
+	file, err := m.fs.Open(m.index)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }

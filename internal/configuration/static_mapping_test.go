@@ -52,8 +52,8 @@ statics:
   /another-path: { dir: /another-static-dir, default: default.html }
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/path", Dir: "/static-dir", Default: "index.html"},
-				{Path: "/another-path", Dir: "/another-static-dir", Default: "default.html"},
+				{Path: "/path", Dir: "/static-dir", Index: "index.html"},
+				{Path: "/another-path", Dir: "/another-static-dir", Index: "default.html"},
 			},
 		},
 		{
@@ -64,7 +64,7 @@ statics:
   /another-path: /another-static-dir
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/path", Dir: "/static-dir", Default: "index.html"},
+				{Path: "/path", Dir: "/static-dir", Index: "index.html"},
 				{Path: "/another-path", Dir: "/another-static-dir"},
 			},
 		},

@@ -4,15 +4,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/ui"
+
 	"github.com/evg4b/uncors/internal/handler/static"
 
 	"github.com/spf13/afero"
 )
 
 func (m *UncorsRequestHandler) makeStaticRoutes(next http.Handler) {
-	for _, mapping := range m.mappings {
-		for _, staticDirMapping := range mapping.Statics {
-			clearPath := strings.TrimSuffix(staticDirMapping.Path, "/")
+	for _, urlMapping := range m.mappings {
+		for _, staticDir := range urlMapping.Statics {
+			clearPath := strings.TrimSuffix(staticDir.Path, "/")
 			path := clearPath + "/"
 
 			redirect := m.router.NewRoute()
@@ -21,9 +23,10 @@ func (m *UncorsRequestHandler) makeStaticRoutes(next http.Handler) {
 
 			route := m.router.NewRoute()
 			handler := static.NewStaticMiddleware(
-				static.WithFileSystem(afero.NewBasePathFs(m.fs, staticDirMapping.Dir)),
-				static.WithIndex("index.html"),
+				static.WithFileSystem(afero.NewBasePathFs(m.fs, staticDir.Dir)),
+				static.WithIndex(staticDir.Index),
 				static.WithNext(next),
+				static.WithLogger(ui.StaticLogger),
 			)
 
 			route.PathPrefix(path).

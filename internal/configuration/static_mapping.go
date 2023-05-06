@@ -9,16 +9,16 @@ import (
 type StaticDirMappings = []StaticDirMapping
 
 type StaticDirMapping struct {
-	Path    string `mapstructure:"path"`
-	Dir     string `mapstructure:"dir"`
-	Default string `mapstructure:"default"`
+	Path  string `mapstructure:"path"`
+	Dir   string `mapstructure:"dir"`
+	Index string `mapstructure:"index"`
 }
 
 func (s StaticDirMapping) Clone() StaticDirMapping {
 	return StaticDirMapping{
-		Path:    s.Path,
-		Dir:     s.Dir,
-		Default: s.Default,
+		Path:  s.Path,
+		Dir:   s.Dir,
+		Index: s.Index,
 	}
 }
 

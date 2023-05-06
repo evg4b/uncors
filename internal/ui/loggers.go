@@ -14,3 +14,8 @@ var MockLogger = log.NewLogger(" MOCK  ", log.WithStyle(&pterm.Style{
 	pterm.FgBlack,
 	pterm.BgLightMagenta,
 }))
+
+var StaticLogger = log.NewLogger("STATIC ", log.WithStyle(&pterm.Style{
+	pterm.FgBlack,
+	pterm.BgLightYellow,
+}))
