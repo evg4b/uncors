@@ -10,7 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/configuration"
 
-	"github.com/evg4b/uncors/internal/middlewares/proxy"
+	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -64,7 +64,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyMiddleware(
+				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -117,7 +117,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyMiddleware(
+				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -151,7 +151,7 @@ func TestProxyMiddleware(t *testing.T) {
 			}
 		})
 
-		proc := proxy.NewProxyMiddleware(
+		proc := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -178,7 +178,7 @@ func TestProxyMiddleware(t *testing.T) {
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
-		middleware := proxy.NewProxyMiddleware(
+		middleware := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),

@@ -11,14 +11,14 @@ import (
 	"github.com/pterm/pterm"
 )
 
-type Middleware struct {
-	replacers URLReplacerFactory
+type Handler struct {
+	replacers contracts.URLReplacerFactory
 	http      contracts.HTTPClient
 	logger    contracts.Logger
 }
 
-func NewProxyMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{}
+func NewProxyHandler(options ...HandlerOption) *Handler {
+	middleware := &Handler{}
 
 	for _, option := range options {
 		option(middleware)
@@ -31,9 +31,7 @@ func NewProxyMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	updateRequest(request)
-
+func (m *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	if err := m.handle(response, request); err != nil {
 		pterm.Error.Printfln("UNCORS error: %v", err)
 		response.WriteHeader(http.StatusInternalServerError)
@@ -41,7 +39,7 @@ func (m *Middleware) ServeHTTP(response http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) error {
+func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
 		return m.makeOptionsResponse(resp, req)
 	}
@@ -71,7 +69,7 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-func (m *Middleware) executeQuery(request *http.Request) (*http.Response, error) {
+func (m *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	originalResponse, err := m.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
@@ -101,14 +99,4 @@ func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, t
 	}
 
 	return nil
-}
-
-func updateRequest(request *http.Request) {
-	request.URL.Host = request.Host
-
-	if request.TLS != nil {
-		request.URL.Scheme = "https"
-	} else {
-		request.URL.Scheme = "http"
-	}
 }

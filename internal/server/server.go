@@ -27,8 +27,11 @@ func NewUncorsServer(ctx context.Context, handler http.Handler) *UncorsServer {
 			return globalCtx
 		},
 		ReadHeaderTimeout: readHeaderTimeout,
-		Handler:           handler,
-		ErrorLog:          log.StandardErrorLogAdapter(),
+		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			patchRequest(request)
+			handler.ServeHTTP(writer, request)
+		}),
+		ErrorLog: log.StandardErrorLogAdapter(),
 	}
 	server.RegisterOnShutdown(globalCtxCancel)
 
@@ -116,5 +119,15 @@ func (srv *UncorsServer) internalShutdown() {
 		}
 	} else {
 		log.Debug("finish: UNCORS server closed")
+	}
+}
+
+func patchRequest(request *http.Request) {
+	request.URL.Host = request.Host
+
+	if request.TLS != nil {
+		request.URL.Scheme = "https"
+	} else {
+		request.URL.Scheme = "http"
 	}
 }

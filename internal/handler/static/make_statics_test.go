@@ -1,4 +1,4 @@
-package mock_test
+package static_test
 
 import (
 	"net/http"
@@ -7,8 +7,7 @@ import (
 
 	"github.com/go-http-utils/headers"
 
-	"github.com/evg4b/uncors/internal/configuration"
-	"github.com/evg4b/uncors/internal/middlewares/mock"
+	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -24,13 +23,13 @@ func TestMiddlewareStaticRoutes(t *testing.T) {
 			"cc/demo.txt":        `txt file`,
 			"other/default.html": `<html><body>test</body></html>`,
 		})),
-		mock.WithMappings([]configuration.URLMapping{
-			{Statics: []configuration.StaticDirMapping{
-				{Path: "/cc", Dir: "cc"},
-				{Path: "/static", Dir: "cc"},
-				{Path: "/lorem", Dir: "other"},
-			}},
-		}),
+		// mock.WithMappings([]configuration.URLMapping{
+		//	{Statics: []configuration.StaticDirMapping{
+		//		{Path: "/cc", Dir: "cc"},
+		//		{Path: "/static", Dir: "cc"},
+		//		{Path: "/lorem", Dir: "other"},
+		//	}},
+		// }),
 	)
 
 	t.Run("file content serving", func(t *testing.T) {

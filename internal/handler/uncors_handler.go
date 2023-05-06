@@ -1,0 +1,63 @@
+package handler
+
+import (
+	"net/http"
+
+	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/ui"
+	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
+)
+
+type UncorsRequestHandler struct {
+	router          *mux.Router
+	fs              afero.Fs
+	logger          contracts.Logger
+	mocks           []configuration.Mock
+	mappings        []configuration.URLMapping
+	replacerFactory contracts.URLReplacerFactory
+	httpClient      contracts.HTTPClient
+}
+
+func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsRequestHandler {
+	router := mux.NewRouter()
+	handler := &UncorsRequestHandler{
+		router:   router,
+		mocks:    []configuration.Mock{},
+		mappings: []configuration.URLMapping{},
+	}
+
+	for _, option := range options {
+		option(handler)
+	}
+
+	proxyHandler := proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(handler.replacerFactory),
+		proxy.WithHTTPClient(handler.httpClient),
+		proxy.WithLogger(ui.ProxyLogger),
+	)
+
+	handler.makeMockedRoutes(proxyHandler)
+	handler.makeStaticRoutes(proxyHandler)
+
+	router.NotFoundHandler = proxyHandler
+	router.MethodNotAllowedHandler = proxyHandler
+
+	return handler
+}
+
+func (m *UncorsRequestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	m.router.ServeHTTP(writer, request)
+}
+
+func (m *UncorsRequestHandler) createHandler(response configuration.Response, next http.Handler) *mock.Middleware {
+	return mock.NewMockMiddleware(
+		mock.WithLogger(ui.MockLogger),
+		mock.WithNextMiddleware(next),
+		mock.WithResponse(response),
+		mock.WithFileSystem(m.fs),
+	)
+}

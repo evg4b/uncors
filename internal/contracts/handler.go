@@ -1,4 +1,4 @@
-package proxy
+package contracts
 
 import (
 	"net/url"

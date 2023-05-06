@@ -11,27 +11,38 @@ import (
 	"github.com/spf13/afero"
 )
 
-type internalHandler struct {
+type Middleware struct {
 	response configuration.Response
 	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
+	next     http.Handler
 }
 
-func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	response := handler.response
+func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
+	middleware := &Middleware{}
+
+	for _, option := range options {
+		option(middleware)
+	}
+
+	return middleware
+}
+
+func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	response := m.response
 	header := writer.Header()
 
 	if response.Delay > 0 {
-		handler.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
+		m.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
 		select {
 		case <-ctx.Done():
 			writer.WriteHeader(http.StatusServiceUnavailable)
-			handler.logger.Debugf("Delay for %s canceled", request.URL.RequestURI())
+			m.logger.Debugf("Delay for %s canceled", request.URL.RequestURI())
 
 			return
-		case <-handler.after(response.Delay):
+		case <-m.after(response.Delay):
 		}
 	}
 
@@ -41,10 +52,10 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 	}
 
 	var err error
-	if len(handler.response.File) > 0 {
-		err = handler.serveFileContent(writer, request)
+	if len(m.response.File) > 0 {
+		err = m.serveFileContent(writer, request)
 	} else {
-		err = handler.serveRawContent(writer)
+		err = m.serveRawContent(writer)
 	}
 
 	if err != nil {
@@ -52,7 +63,7 @@ func (handler *internalHandler) ServeHTTP(writer http.ResponseWriter, request *h
 		return
 	}
 
-	handler.logger.PrintResponse(&http.Response{
+	m.logger.PrintResponse(&http.Response{
 		Request:    request,
 		StatusCode: response.Code,
 	})
