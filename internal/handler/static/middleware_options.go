@@ -14,9 +14,9 @@ func WithFileSystem(fs afero.Fs) MiddlewareOption {
 	}
 }
 
-func WithDir(prefix string) MiddlewareOption {
+func WithIndex(index string) MiddlewareOption {
 	return func(m *Middleware) {
-		m.prefix = prefix
+		m.index = index
 	}
 }
 

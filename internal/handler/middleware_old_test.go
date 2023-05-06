@@ -1,4 +1,4 @@
-package mock_test
+package handler_test
 
 //
 // import (
@@ -21,9 +21,9 @@ package mock_test
 //	mock4Body = `{"mock": "mock number 4"}`
 //)
 //
-//var notFoundBody = "404 page not found\n"
+// var notFoundBody = "404 page not found\n"
 //
-//func TestMockMiddleware(t *testing.T) {
+// func TestMockMiddleware(t *testing.T) {
 //	logger := mocks.NewNoopLogger(t)
 //
 //	t.Run("request method handling", func(t *testing.T) {

@@ -22,11 +22,12 @@ func (m *UncorsRequestHandler) makeStaticRoutes(next http.Handler) {
 			route := m.router.NewRoute()
 			handler := static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(m.fs, staticDirMapping.Dir)),
-				static.WithDir(path),
+				static.WithIndex("index.html"),
+				static.WithNext(next),
 			)
 
 			route.PathPrefix(path).
-				Handler(handler)
+				Handler(http.StripPrefix(path, handler))
 		}
 	}
 }
