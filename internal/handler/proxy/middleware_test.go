@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/evg4b/uncors/internal/configuration"
 
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -92,7 +94,7 @@ func TestProxyMiddleware(t *testing.T) {
 			headerKey   string
 		}{
 			{
-				name:        "transform Location",
+				name:        "transform location",
 				URL:         "https://premium.api.com/app",
 				expectedURL: "http://premium.local.com/app",
 				headerKey:   headers.Location,
@@ -125,10 +127,10 @@ func TestProxyMiddleware(t *testing.T) {
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
 				testutils.CheckNoError(t, err)
-
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
 				req.URL.Path = expectedURL.Path
+				helpers.NormaliseRequest(req)
 
 				recorder := httptest.NewRecorder()
 
@@ -159,9 +161,9 @@ func TestProxyMiddleware(t *testing.T) {
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
-
 		req.URL.Scheme = "http"
 		req.Host = "premium.local.com"
+		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
 

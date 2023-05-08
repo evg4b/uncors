@@ -1,6 +1,8 @@
 package handler
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/gorilla/mux"
+)
 
 func setPath(route *mux.Route, path string) {
 	if len(path) > 0 {

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/evg4b/uncors/internal/log"
 
 	"golang.org/x/net/context"
@@ -28,7 +30,7 @@ func NewUncorsServer(ctx context.Context, handler http.Handler) *UncorsServer {
 		},
 		ReadHeaderTimeout: readHeaderTimeout,
 		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			patchRequest(request)
+			helpers.NormaliseRequest(request)
 			handler.ServeHTTP(writer, request)
 		}),
 		ErrorLog: log.StandardErrorLogAdapter(),
@@ -119,15 +121,5 @@ func (srv *UncorsServer) internalShutdown() {
 		}
 	} else {
 		log.Debug("finish: UNCORS server closed")
-	}
-}
-
-func patchRequest(request *http.Request) {
-	request.URL.Host = request.Host
-
-	if request.TLS != nil {
-		request.URL.Scheme = "https"
-	} else {
-		request.URL.Scheme = "http"
 	}
 }
