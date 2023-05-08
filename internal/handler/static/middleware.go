@@ -2,6 +2,7 @@ package static
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -33,9 +34,6 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func toHTTPError(err error) (string, int) {
-	if errors.Is(err, fs.ErrNotExist) {
-		return http.StatusText(http.StatusNotFound), http.StatusNotFound
-	}
 	if errors.Is(err, fs.ErrPermission) {
 		return http.StatusText(http.StatusForbidden), http.StatusForbidden
 	}
@@ -84,18 +82,18 @@ func (m *Middleware) openFile(name string) (afero.File, os.FileInfo, error) {
 
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, nil, err
+		return file, nil, fmt.Errorf("filed to get information about file: %w", err)
 	}
 
 	if stat.IsDir() {
 		indexFile, err := m.openIndexFile()
 		if err != nil {
-			return nil, nil, err
+			return file, stat, err
 		}
 
 		indexFileStat, err := indexFile.Stat()
 		if err != nil {
-			return nil, nil, err
+			return file, stat, fmt.Errorf("filed to get information about index file: %w", err)
 		}
 
 		file = indexFile
@@ -112,7 +110,7 @@ func (m *Middleware) openIndexFile() (afero.File, error) {
 
 	file, err := m.fs.Open(m.index)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("filed to opend index file: %w", err)
 	}
 
 	return file, nil
