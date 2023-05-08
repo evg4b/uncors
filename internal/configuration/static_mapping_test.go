@@ -45,11 +45,11 @@ statics:
 			},
 		},
 		{
-			name: "decode object mappings with default",
+			name: "decode object mappings with index",
 			config: `
 statics:
-  /path: { dir: /static-dir, default: index.html }
-  /another-path: { dir: /another-static-dir, default: default.html }
+  /path: { dir: /static-dir, index: index.html }
+  /another-path: { dir: /another-static-dir, index: default.html }
 `,
 			expected: configuration.StaticDirMappings{
 				{Path: "/path", Dir: "/static-dir", Index: "index.html"},
@@ -57,10 +57,10 @@ statics:
 			},
 		},
 		{
-			name: "decode mixed mappings with default",
+			name: "decode mixed mappings with index",
 			config: `
 statics:
-  /path: { dir: /static-dir, default: index.html }
+  /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
 `,
 			expected: configuration.StaticDirMappings{
