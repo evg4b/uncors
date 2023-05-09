@@ -59,7 +59,8 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	}
 
 	if err != nil {
-		// TODO: add error handling
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
 		return
 	}
 

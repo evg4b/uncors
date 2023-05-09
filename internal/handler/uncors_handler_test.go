@@ -1,8 +1,11 @@
 package handler_test
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/helpers"
@@ -39,17 +42,31 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 	mockDefs := []configuration.Mock{
 		{
-			Path: "/mocks/1",
+			Path: "/api/mocks/1",
 			Response: configuration.Response{
 				Code:       http.StatusOK,
-				RawContent: "mocks-1",
+				RawContent: "mock-1",
 			},
 		},
 		{
-			Path: "/mocks/2",
+			Path: "/api/mocks/2",
 			Response: configuration.Response{
 				Code: http.StatusOK,
 				File: "/mock.json",
+			},
+		},
+		{
+			Path: "/api/mocks/3",
+			Response: configuration.Response{
+				Code:       http.StatusMultiStatus,
+				RawContent: "mock-3",
+			},
+		},
+		{
+			Path: "/api/mocks/4",
+			Response: configuration.Response{
+				Code: http.StatusOK,
+				File: "/unknown.json",
 			},
 		},
 	}
@@ -57,12 +74,30 @@ func TestUncorsRequestHandler(t *testing.T) {
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
 	testutils.CheckNoError(t, err)
 
+	httpResponseMapping := map[string]string{
+		"/img/original.png": "original.png",
+	}
+
+	httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(request *http.Request) (*http.Response, error) {
+		if response, ok := httpResponseMapping[request.URL.Path]; ok {
+			return &http.Response{
+				Body:       io.NopCloser(strings.NewReader(response)),
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Header:     http.Header{},
+				Request:    request,
+			}, nil
+		}
+
+		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
+	})
+
 	hand := handler.NewUncorsRequestHandler(
 		handler.WithLogger(mocks.NewLoggerMock(t)),
 		handler.WithMocks(mockDefs),
 		handler.WithFileSystem(fs),
 		handler.WithURLReplacerFactory(factory),
-		handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
+		handler.WithHTTPClient(httpMock),
 		handler.WithMappings(mappings),
 	)
 
@@ -158,6 +193,71 @@ func TestUncorsRequestHandler(t *testing.T) {
 					})
 				}
 			})
+
+			t.Run("should return original file", func(t *testing.T) {
+				t.Skip()
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
+				helpers.NormaliseRequest(request)
+
+				hand.ServeHTTP(recorder, request)
+
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
+			})
+		})
+	})
+
+	t.Run("mocks", func(t *testing.T) {
+		t.Run("should return mock with", func(t *testing.T) {
+			tests := []struct {
+				name         string
+				url          string
+				expected     string
+				expectedCode int
+			}{
+				{
+					name:         "raw content mock",
+					url:          "http://localhost/api/mocks/1",
+					expected:     "mock-1",
+					expectedCode: http.StatusOK,
+				},
+				{
+					name:         "file content mock",
+					url:          "http://localhost/api/mocks/2",
+					expected:     "mock.json",
+					expectedCode: http.StatusOK,
+				},
+				{
+					name:         "MultiStatus mock",
+					url:          "http://localhost/api/mocks/3",
+					expected:     "mock-3",
+					expectedCode: http.StatusMultiStatus,
+				},
+			}
+			for _, testCase := range tests {
+				t.Run(testCase.name, func(t *testing.T) {
+					recorder := httptest.NewRecorder()
+					request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+					helpers.NormaliseRequest(request)
+
+					hand.ServeHTTP(recorder, request)
+
+					assert.Equal(t, testCase.expectedCode, recorder.Code)
+					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
+				})
+			}
+		})
+
+		t.Run("should return error code when mock file doesn't exists", func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "http://localhost/api/mocks/4", nil)
+			helpers.NormaliseRequest(request)
+
+			hand.ServeHTTP(recorder, request)
+
+			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+			assert.Contains(t, testutils.ReadBody(t, recorder), "Internal Server Error")
 		})
 	})
 }
