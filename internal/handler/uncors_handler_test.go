@@ -22,6 +22,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		"/assets/js/index.js":    "index.js",
 		"/assets/css/styles.css": "styles.css",
 		"/assets/index.html":     "index.html",
+		"/mock.json":             "mock.json",
 	})
 
 	mappings := []configuration.URLMapping{
@@ -29,14 +30,28 @@ func TestUncorsRequestHandler(t *testing.T) {
 			From: "http://localhost",
 			To:   "https://localhost",
 			Statics: []configuration.StaticDirMapping{
-				{Dir: "/assets", Path: "/cc/", Index: "index.htm"},
+				{Dir: "/assets", Path: "/cc/", Index: "index.html"},
+				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},
 			},
 		},
 	}
 
 	mockDefs := []configuration.Mock{
-		{Path: "/mocks/1", Response: configuration.Response{Code: 200, RawContent: "mocks-1"}},
+		{
+			Path: "/mocks/1",
+			Response: configuration.Response{
+				Code:       http.StatusOK,
+				RawContent: "mocks-1",
+			},
+		},
+		{
+			Path: "/mocks/2",
+			Response: configuration.Response{
+				Code: http.StatusOK,
+				File: "/mock.json",
+			},
+		},
 	}
 
 	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
@@ -88,6 +103,28 @@ func TestUncorsRequestHandler(t *testing.T) {
 					})
 				}
 			})
+
+			t.Run("should return index file by default", func(t *testing.T) {
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "http://localhost/cc/unknown.html", nil)
+				helpers.NormaliseRequest(request)
+
+				hand.ServeHTTP(recorder, request)
+
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, "index.html", testutils.ReadBody(t, recorder))
+			})
+
+			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodGet, "http://localhost/pnp/unknown.html", nil)
+				helpers.NormaliseRequest(request)
+
+				hand.ServeHTTP(recorder, request)
+
+				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+				assert.Contains(t, testutils.ReadBody(t, recorder), "Internal Server Error")
+			})
 		})
 
 		t.Run("without index file", func(t *testing.T) {
@@ -116,7 +153,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 						hand.ServeHTTP(recorder, request)
 
-						assert.Equal(t, 200, recorder.Code)
+						assert.Equal(t, http.StatusOK, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
 					})
 				}
