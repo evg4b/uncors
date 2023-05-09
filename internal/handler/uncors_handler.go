@@ -23,9 +23,8 @@ type UncorsRequestHandler struct {
 }
 
 func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsRequestHandler {
-	router := mux.NewRouter()
 	handler := &UncorsRequestHandler{
-		router:   router,
+		router:   mux.NewRouter(),
 		mocks:    []configuration.Mock{},
 		mappings: []configuration.URLMapping{},
 	}
@@ -42,9 +41,7 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsReque
 
 	handler.makeMockedRoutes(proxyHandler)
 	handler.makeStaticRoutes(proxyHandler)
-
-	router.NotFoundHandler = proxyHandler
-	router.MethodNotAllowedHandler = proxyHandler
+	handler.setDefaultHandler(proxyHandler)
 
 	return handler
 }
@@ -60,4 +57,9 @@ func (m *UncorsRequestHandler) createHandler(response configuration.Response, ne
 		mock.WithResponse(response),
 		mock.WithFileSystem(m.fs),
 	)
+}
+
+func (m *UncorsRequestHandler) setDefaultHandler(handler http.Handler) {
+	m.router.NotFoundHandler = handler
+	m.router.MethodNotAllowedHandler = handler
 }
