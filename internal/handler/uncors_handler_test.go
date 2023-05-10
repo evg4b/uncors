@@ -195,7 +195,6 @@ func TestUncorsRequestHandler(t *testing.T) {
 			})
 
 			t.Run("should return original file", func(t *testing.T) {
-				t.Skip()
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
