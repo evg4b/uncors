@@ -27,10 +27,10 @@ func (m *UncorsRequestHandler) makeStaticRoutes(next http.Handler) {
 				static.WithIndex(staticDir.Index),
 				static.WithNext(next),
 				static.WithLogger(ui.StaticLogger),
+				static.WithPrefix(path),
 			)
 
-			route.PathPrefix(path).
-				Handler(http.StripPrefix(path, handler))
+			route.PathPrefix(path).Handler(handler)
 		}
 	}
 }

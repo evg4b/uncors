@@ -19,6 +19,7 @@ type Middleware struct {
 	next   http.Handler
 	index  string
 	logger contracts.Logger
+	prefix string
 }
 
 var errNorHandled = errors.New("request is not handled")
@@ -42,13 +43,9 @@ func toHTTPError(err error) (string, int) {
 }
 
 func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	upath := request.URL.Path
-	if !strings.HasPrefix(upath, "/") {
-		upath = "/" + upath
-		request.URL.Path = upath
-	}
+	filePath := m.extractFilePath(request)
 
-	file, stat, err := m.openFile(path.Clean(upath))
+	file, stat, err := m.openFile(filePath)
 	defer func() {
 		if file != nil {
 			file.Close()
@@ -69,8 +66,17 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 }
 
-func (m *Middleware) openFile(name string) (afero.File, os.FileInfo, error) {
-	file, err := m.fs.Open(name)
+func (m *Middleware) extractFilePath(request *http.Request) string {
+	filePath := strings.TrimPrefix(request.URL.Path, m.prefix)
+	if !strings.HasPrefix(filePath, "/") {
+		filePath = "/" + filePath
+	}
+
+	return path.Clean(filePath)
+}
+
+func (m *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
+	file, err := m.fs.Open(filePath)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		indexFile, err := m.openIndexFile()
 		if err != nil {

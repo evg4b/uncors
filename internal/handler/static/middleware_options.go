@@ -33,3 +33,9 @@ func WithLogger(logger contracts.Logger) MiddlewareOption {
 		m.logger = logger
 	}
 }
+
+func WithPrefix(prefix string) MiddlewareOption {
+	return func(m *Middleware) {
+		m.prefix = prefix
+	}
+}
