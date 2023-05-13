@@ -77,7 +77,11 @@ func (m *Middleware) extractFilePath(request *http.Request) string {
 
 func (m *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
 	file, err := m.fs.Open(filePath)
-	if err != nil && errors.Is(err, fs.ErrNotExist) {
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, nil, fmt.Errorf("filed to open file: %w", err)
+		}
+
 		indexFile, err := m.openIndexFile()
 		if err != nil {
 			return nil, nil, err
