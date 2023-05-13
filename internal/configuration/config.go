@@ -47,18 +47,19 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 		Mocks:    []Mock{},
 	}
 
-	configPath := viperInstance.GetString("config")
-	if len(configPath) > 0 {
+	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {
 		viperInstance.SetConfigFile(configPath)
 		if err := viperInstance.ReadInConfig(); err != nil {
 			return nil, fmt.Errorf("filed to read config file '%s': %w", configPath, err)
 		}
 	}
+
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
-		hooks.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
+		hooks.StringToTimeDurationHookFunc(),
 		URLMappingHookFunc(),
 	))
+
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing configuration: %w", err)
 	}

@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/evg4b/uncors/internal/configuration"
 
-	"github.com/evg4b/uncors/internal/middlewares/proxy"
+	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -64,7 +66,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyMiddleware(
+				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -92,7 +94,7 @@ func TestProxyMiddleware(t *testing.T) {
 			headerKey   string
 		}{
 			{
-				name:        "transform Location",
+				name:        "transform location",
 				URL:         "https://premium.api.com/app",
 				expectedURL: "http://premium.local.com/app",
 				headerKey:   headers.Location,
@@ -117,7 +119,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyMiddleware(
+				proc := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -125,10 +127,10 @@ func TestProxyMiddleware(t *testing.T) {
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
 				testutils.CheckNoError(t, err)
-
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
 				req.URL.Path = expectedURL.Path
+				helpers.NormaliseRequest(req)
 
 				recorder := httptest.NewRecorder()
 
@@ -151,7 +153,7 @@ func TestProxyMiddleware(t *testing.T) {
 			}
 		})
 
-		proc := proxy.NewProxyMiddleware(
+		proc := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -159,9 +161,9 @@ func TestProxyMiddleware(t *testing.T) {
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
-
 		req.URL.Scheme = "http"
 		req.Host = "premium.local.com"
+		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
 
@@ -178,7 +180,7 @@ func TestProxyMiddleware(t *testing.T) {
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
-		middleware := proxy.NewProxyMiddleware(
+		middleware := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),

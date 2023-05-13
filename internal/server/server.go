@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/evg4b/uncors/internal/log"
 
 	"golang.org/x/net/context"
@@ -27,8 +29,11 @@ func NewUncorsServer(ctx context.Context, handler http.Handler) *UncorsServer {
 			return globalCtx
 		},
 		ReadHeaderTimeout: readHeaderTimeout,
-		Handler:           handler,
-		ErrorLog:          log.StandardErrorLogAdapter(),
+		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			helpers.NormaliseRequest(request)
+			handler.ServeHTTP(writer, request)
+		}),
+		ErrorLog: log.StandardErrorLogAdapter(),
 	}
 	server.RegisterOnShutdown(globalCtxCancel)
 

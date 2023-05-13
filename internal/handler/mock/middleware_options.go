@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"net/http"
+	"time"
 
 	"github.com/evg4b/uncors/internal/configuration"
 
@@ -17,20 +17,20 @@ func WithLogger(logger contracts.Logger) MiddlewareOption {
 	}
 }
 
-func WithNextMiddleware(next http.Handler) MiddlewareOption {
+func WithResponse(response configuration.Response) MiddlewareOption {
 	return func(m *Middleware) {
-		m.next = next
-	}
-}
-
-func WithMocks(mocks []configuration.Mock) MiddlewareOption {
-	return func(m *Middleware) {
-		m.mocks = mocks
+		m.response = response
 	}
 }
 
 func WithFileSystem(fs afero.Fs) MiddlewareOption {
 	return func(m *Middleware) {
 		m.fs = fs
+	}
+}
+
+func WithAfter(after func(duration time.Duration) <-chan time.Time) MiddlewareOption {
+	return func(m *Middleware) {
+		m.after = after
 	}
 }

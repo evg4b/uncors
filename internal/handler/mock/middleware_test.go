@@ -1,4 +1,4 @@
-package mock
+package mock_test
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/evg4b/uncors/internal/handler/mock"
 
 	"github.com/evg4b/uncors/internal/configuration"
 
@@ -43,17 +45,6 @@ func TestHandler(t *testing.T) {
 		pngFile:  pngContent,
 	})
 
-	var makeHandler = func(t *testing.T, response configuration.Response) *internalHandler {
-		return &internalHandler{
-			logger:   mocks.NewNoopLogger(t),
-			response: response,
-			fs:       fileSystem,
-			after: func(duration time.Duration) <-chan time.Time {
-				return time.After(time.Nanosecond)
-			},
-		}
-	}
-
 	t.Run("mock content", func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -73,7 +64,14 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := makeHandler(t, testCase.response)
+				handler := mock.NewMockMiddleware(
+					mock.WithLogger(mocks.NewNoopLogger(t)),
+					mock.WithResponse(testCase.response),
+					mock.WithFileSystem(fileSystem),
+					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+						return time.After(time.Nanosecond)
+					}),
+				)
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -134,7 +132,14 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := makeHandler(t, testCase.response)
+				handler := mock.NewMockMiddleware(
+					mock.WithLogger(mocks.NewNoopLogger(t)),
+					mock.WithResponse(testCase.response),
+					mock.WithFileSystem(fileSystem),
+					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+						return time.After(time.Nanosecond)
+					}),
+				)
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -216,7 +221,14 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := makeHandler(t, testCase.response)
+				handler := mock.NewMockMiddleware(
+					mock.WithLogger(mocks.NewNoopLogger(t)),
+					mock.WithResponse(testCase.response),
+					mock.WithFileSystem(fileSystem),
+					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+						return time.After(time.Nanosecond)
+					}),
+				)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -257,7 +269,14 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := makeHandler(t, testCase.response)
+				handler := mock.NewMockMiddleware(
+					mock.WithLogger(mocks.NewNoopLogger(t)),
+					mock.WithResponse(testCase.response),
+					mock.WithFileSystem(fileSystem),
+					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+						return time.After(time.Nanosecond)
+					}),
+				)
 
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -322,13 +341,17 @@ func TestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
-					handler := makeHandler(t, testCase.response)
-					handler.after = func(duration time.Duration) <-chan time.Time {
-						assert.Equal(t, duration, testCase.expected)
-						called = true
+					handler := mock.NewMockMiddleware(
+						mock.WithLogger(mocks.NewNoopLogger(t)),
+						mock.WithResponse(testCase.response),
+						mock.WithFileSystem(fileSystem),
+						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+							assert.Equal(t, duration, testCase.expected)
+							called = true
 
-						return time.After(time.Nanosecond)
-					}
+							return time.After(time.Nanosecond)
+						}),
+					)
 
 					request := httptest.NewRequest(http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
@@ -341,12 +364,16 @@ func TestHandler(t *testing.T) {
 		})
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
-			handler := makeHandler(t, configuration.Response{
-				Code:       http.StatusOK,
-				Delay:      1 * time.Hour,
-				RawContent: "Text content",
-			})
-			handler.after = time.After
+			handler := mock.NewMockMiddleware(
+				mock.WithLogger(mocks.NewNoopLogger(t)),
+				mock.WithResponse(configuration.Response{
+					Code:       http.StatusOK,
+					Delay:      1 * time.Hour,
+					RawContent: "Text content",
+				}),
+				mock.WithFileSystem(fileSystem),
+				mock.WithAfter(time.After),
+			)
 
 			request := httptest.NewRequest(http.MethodGet, "/", nil)
 			ctx, cancel := context.WithCancel(context.Background())

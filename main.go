@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/evg4b/uncors/internal/handler"
+
 	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/evg4b/uncors/internal/version"
@@ -19,8 +21,6 @@ import (
 	"github.com/evg4b/uncors/internal/configuration"
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/log"
-	"github.com/evg4b/uncors/internal/middlewares/mock"
-	"github.com/evg4b/uncors/internal/middlewares/proxy"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/pseidemann/finish"
@@ -80,26 +80,20 @@ func main() {
 		panic(err)
 	}
 
-	proxyMiddleware := proxy.NewProxyMiddleware(
-		proxy.WithURLReplacerFactory(factory),
-		proxy.WithHTTPClient(httpClient),
-		proxy.WithLogger(ui.ProxyLogger),
-	)
-
-	fileSystem := afero.NewOsFs()
-
-	mockMiddleware := mock.NewMockMiddleware(
-		mock.WithLogger(ui.MockLogger),
-		mock.WithNextMiddleware(proxyMiddleware),
-		mock.WithMocks(config.Mocks),
-		mock.WithFileSystem(fileSystem),
-	)
-
 	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
 
 	ctx := context.Background()
 
-	uncorsServer := server.NewUncorsServer(ctx, mockMiddleware)
+	globalHandler := handler.NewUncorsRequestHandler(
+		handler.WithMappings(mappings),
+		handler.WithLogger(ui.MockLogger),
+		handler.WithMocks(config.Mocks),
+		handler.WithFileSystem(afero.NewOsFs()),
+		handler.WithURLReplacerFactory(factory),
+		handler.WithHTTPClient(httpClient),
+	)
+	uncorsServer := server.NewUncorsServer(ctx, globalHandler)
+
 	finisher.Add(uncorsServer)
 	go func() {
 		log.Debugf("Starting http server on port %d", config.HTTPPort)

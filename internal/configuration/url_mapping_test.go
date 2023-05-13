@@ -1,8 +1,6 @@
 package configuration_test
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/configuration"
@@ -11,7 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	localhost       = "http://localhost"
+	localhostSecure = "https://localhost:9090"
+)
+
 func TestURLMappingHookFunc(t *testing.T) {
+	const configFile = "config.yaml"
+
 	t.Run("positive cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -37,13 +42,12 @@ func TestURLMappingHookFunc(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				configFile := filepath.Join(t.TempDir(), "config.yaml")
-				err := os.WriteFile(configFile, []byte(testCase.config), os.ModePerm)
-				testutils.CheckNoError(t, err)
-
 				viperInstance := viper.GetViper()
+				viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
+					configFile: testCase.config,
+				}))
 				viperInstance.SetConfigFile(configFile)
-				err = viperInstance.ReadInConfig()
+				err := viperInstance.ReadInConfig()
 				testutils.CheckNoError(t, err)
 
 				actual := configuration.URLMapping{}
@@ -57,4 +61,48 @@ func TestURLMappingHookFunc(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestURLMappingClone(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected configuration.URLMapping
+	}{
+		{
+			name:     "empty structure",
+			expected: configuration.URLMapping{},
+		},
+		{
+			name: "structure with 1 field",
+			expected: configuration.URLMapping{
+				From: localhost,
+			},
+		},
+		{
+			name: "structure with 2 field",
+			expected: configuration.URLMapping{
+				From: localhost,
+				To:   localhostSecure,
+			},
+		},
+		{
+			name: "structure with inner collections",
+			expected: configuration.URLMapping{
+				From: localhost,
+				To:   localhostSecure,
+				Statics: []configuration.StaticDirMapping{
+					{Path: "/cc", Dir: "cc"},
+				},
+			},
+		},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := testCase.expected.Clone()
+
+			assert.NotSame(t, testCase.expected, actual)
+			assert.Equal(t, testCase.expected, actual)
+			assert.NotSame(t, testCase.expected.Statics, actual.Statics)
+		})
+	}
 }

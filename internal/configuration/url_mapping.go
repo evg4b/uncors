@@ -8,14 +8,28 @@ import (
 )
 
 type URLMapping struct {
-	From string `mapstructure:"from"`
-	To   string `mapstructure:"to"`
+	From    string            `mapstructure:"from"`
+	To      string            `mapstructure:"to"`
+	Statics StaticDirMappings `mapstructure:"statics"`
+}
+
+func (u URLMapping) Clone() URLMapping {
+	return URLMapping{
+		From: u.From,
+		To:   u.To,
+		Statics: lo.If(u.Statics == nil, StaticDirMappings(nil)).
+			ElseF(func() StaticDirMappings {
+				return lo.Map(u.Statics, func(item StaticDirMapping, index int) StaticDirMapping {
+					return item.Clone()
+				})
+			}),
+	}
 }
 
 var urlMappingType = reflect.TypeOf(URLMapping{})
 var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
 
-func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != urlMappingType || f.Kind() != reflect.Map {
 			return rawData, nil
@@ -31,9 +45,9 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 			}
 
 			mapping := URLMapping{}
-			err := mapstructure.Decode(data, &mapping)
+			err := decodeConfig(data, &mapping, StaticDirMappingHookFunc())
 
-			return mapping, err //nolint:wrapcheck
+			return mapping, err
 		}
 
 		return rawData, nil
