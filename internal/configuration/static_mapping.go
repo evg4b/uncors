@@ -30,31 +30,32 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 			return rawData, nil
 		}
 
-		if mappingsDefs, ok := rawData.(map[string]any); ok {
-			var mappings StaticDirMappings
-			for path, mappingDef := range mappingsDefs {
-				if def, ok := mappingDef.(string); ok {
-					mappings = append(mappings, StaticDirMapping{
-						Path: path,
-						Dir:  def,
-					})
-
-					continue
-				}
-
-				mapping := StaticDirMapping{}
-				err := decodeConfig(mappingDef, &mapping)
-				if err != nil {
-					return nil, err
-				}
-
-				mapping.Path = path
-				mappings = append(mappings, mapping)
-			}
-
-			return mappings, nil
+		mappingsDefs, ok := rawData.(map[string]any)
+		if !ok {
+			return rawData, nil
 		}
 
-		return rawData, nil
+		var mappings StaticDirMappings
+		for path, mappingDef := range mappingsDefs {
+			if def, ok := mappingDef.(string); ok {
+				mappings = append(mappings, StaticDirMapping{
+					Path: path,
+					Dir:  def,
+				})
+
+				continue
+			}
+
+			mapping := StaticDirMapping{}
+			err := decodeConfig(mappingDef, &mapping)
+			if err != nil {
+				return nil, err
+			}
+
+			mapping.Path = path
+			mappings = append(mappings, mapping)
+		}
+
+		return mappings, nil
 	}
 }

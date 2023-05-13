@@ -9,6 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	anotherStaticDir = "/another-static-dir"
+	anotherPath      = "/another-path"
+	path             = "/path"
+	staticDir        = "/static-dir"
+)
+
 func TestStaticDirMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
 	type testType struct {
@@ -28,8 +35,8 @@ statics:
   /another-path: /another-static-dir
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/another-path", Dir: "/another-static-dir"},
-				{Path: "/path", Dir: "/static-dir"},
+				{Path: anotherPath, Dir: anotherStaticDir},
+				{Path: path, Dir: staticDir},
 			},
 		},
 		{
@@ -40,8 +47,8 @@ statics:
   /another-path: { dir: /another-static-dir }
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/path", Dir: "/static-dir"},
-				{Path: "/another-path", Dir: "/another-static-dir"},
+				{Path: path, Dir: staticDir},
+				{Path: anotherPath, Dir: anotherStaticDir},
 			},
 		},
 		{
@@ -52,8 +59,8 @@ statics:
   /another-path: { dir: /another-static-dir, index: default.html }
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/path", Dir: "/static-dir", Index: "index.html"},
-				{Path: "/another-path", Dir: "/another-static-dir", Index: "default.html"},
+				{Path: path, Dir: staticDir, Index: "index.html"},
+				{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
 			},
 		},
 		{
@@ -64,8 +71,8 @@ statics:
   /another-path: /another-static-dir
 `,
 			expected: configuration.StaticDirMappings{
-				{Path: "/path", Dir: "/static-dir", Index: "index.html"},
-				{Path: "/another-path", Dir: "/another-static-dir"},
+				{Path: path, Dir: staticDir, Index: "index.html"},
+				{Path: anotherPath, Dir: anotherStaticDir},
 			},
 		},
 	}
@@ -110,7 +117,15 @@ func TestStaticDirMappingClone(t *testing.T) {
 			name: "structure with 2 field",
 			expected: configuration.StaticDirMapping{
 				Dir:  "dir",
-				Path: "/path",
+				Path: "/some-path",
+			},
+		},
+		{
+			name: "structure with all field",
+			expected: configuration.StaticDirMapping{
+				Dir:   "dir",
+				Path:  "/one-more-path",
+				Index: "index.html",
 			},
 		},
 	}

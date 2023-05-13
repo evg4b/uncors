@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-http-utils/headers"
+
 	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/evg4b/uncors/internal/configuration"
@@ -23,24 +25,41 @@ var (
 	mock2Body = `{"mock": "mock number 2"}`
 	mock3Body = `{"mock": "mock number 3"}`
 	mock4Body = `{"mock": "mock number 4"}`
+
+	localhost       = "http://localhost"
+	localhostSecure = "https://localhost"
+
+	backgroundPng = "background.png"
+	iconsSvg      = "icons.svg"
+	indexJS       = "index.js"
+	styleCSS      = "styles.css"
+	indexHTML     = "index.html"
+	mockJSON      = "mock.json"
+
+	api     = "http://localhost/api"
+	apiUser = "https://localhost/api/user"
+
+	userPath = "/api/user"
+
+	userIDHeader = "User-Id"
 )
 
 func TestUncorsRequestHandler(t *testing.T) {
 	fs := testutils.FsFromMap(t, map[string]string{
-		"/images/background.png": "background.png",
-		"/images/svg/icons.svg":  "icons.svg",
-		"/assets/js/index.js":    "index.js",
-		"/assets/css/styles.css": "styles.css",
-		"/assets/index.html":     "index.html",
-		"/mock.json":             "mock.json",
+		"/images/background.png": backgroundPng,
+		"/images/svg/icons.svg":  iconsSvg,
+		"/assets/js/index.js":    indexJS,
+		"/assets/css/styles.css": styleCSS,
+		"/assets/index.html":     indexHTML,
+		"/mock.json":             mockJSON,
 	})
 
 	mappings := []configuration.URLMapping{
 		{
-			From: "http://localhost",
-			To:   "https://localhost",
+			From: localhost,
+			To:   localhostSecure,
 			Statics: []configuration.StaticDirMapping{
-				{Dir: "/assets", Path: "/cc/", Index: "index.html"},
+				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},
 			},
@@ -117,19 +136,19 @@ func TestUncorsRequestHandler(t *testing.T) {
 					expected string
 				}{
 					{
-						name:     "index.html",
+						name:     indexHTML,
 						url:      "http://localhost/cc/index.html",
-						expected: "index.html",
+						expected: indexHTML,
 					},
 					{
-						name:     "index.js",
+						name:     indexJS,
 						url:      "http://localhost/cc/js/index.js",
-						expected: "index.js",
+						expected: indexJS,
 					},
 					{
-						name:     "styles.css",
+						name:     styleCSS,
 						url:      "http://localhost/cc/css/styles.css",
-						expected: "styles.css",
+						expected: styleCSS,
 					},
 				}
 				for _, testCase := range tests {
@@ -154,7 +173,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				hand.ServeHTTP(recorder, request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
-				assert.Equal(t, "index.html", testutils.ReadBody(t, recorder))
+				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
 			})
 
 			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
@@ -177,14 +196,14 @@ func TestUncorsRequestHandler(t *testing.T) {
 					expected string
 				}{
 					{
-						name:     "background.png",
+						name:     backgroundPng,
 						url:      "http://localhost/img/background.png",
-						expected: "background.png",
+						expected: backgroundPng,
 					},
 					{
-						name:     "icons.svg",
+						name:     iconsSvg,
 						url:      "http://localhost/img/svg/icons.svg",
-						expected: "icons.svg",
+						expected: iconsSvg,
 					},
 				}
 				for _, testCase := range tests {
@@ -231,7 +250,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				{
 					name:         "file content mock",
 					url:          "http://localhost/api/mocks/2",
-					expected:     "mock.json",
+					expected:     mockJSON,
 					expectedCode: http.StatusOK,
 				},
 				{
@@ -298,7 +317,7 @@ func TestMockMiddleware(t *testing.T) {
 
 			for _, method := range methods {
 				t.Run(method, func(t *testing.T) {
-					request := httptest.NewRequest(method, "http://localhost/api", nil)
+					request := httptest.NewRequest(method, api, nil)
 					recorder := httptest.NewRecorder()
 
 					middleware.ServeHTTP(recorder, request)
@@ -351,7 +370,7 @@ func TestMockMiddleware(t *testing.T) {
 
 				for _, method := range methods {
 					t.Run(method, func(t *testing.T) {
-						request := httptest.NewRequest(method, "http://localhost/api", nil)
+						request := httptest.NewRequest(method, api, nil)
 						recorder := httptest.NewRecorder()
 
 						middleware.ServeHTTP(recorder, request)
@@ -362,7 +381,7 @@ func TestMockMiddleware(t *testing.T) {
 				}
 
 				t.Run(http.MethodOptions, func(t *testing.T) {
-					request := httptest.NewRequest(http.MethodOptions, "http://localhost/api", nil)
+					request := httptest.NewRequest(http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
 					middleware.ServeHTTP(recorder, request)
@@ -373,7 +392,7 @@ func TestMockMiddleware(t *testing.T) {
 			})
 
 			t.Run("method is matched", func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodPut, "http://localhost/api", nil)
+				request := httptest.NewRequest(http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(recorder, request)
@@ -406,7 +425,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithLogger(logger),
 			handler.WithMocks([]configuration.Mock{
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
@@ -444,7 +463,7 @@ func TestMockMiddleware(t *testing.T) {
 		}{
 			{
 				name:       "direct path",
-				url:        "https://localhost/api/user",
+				url:        apiUser,
 				expected:   mock1Body,
 				statusCode: http.StatusOK,
 			},
@@ -500,14 +519,14 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithLogger(logger),
 			handler.WithMocks([]configuration.Mock{
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
 				},
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Queries: map[string]string{
 						"id": "17",
 					},
@@ -517,7 +536,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				},
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Queries: map[string]string{
 						"id":    "99",
 						"token": "fe145b54563d9be1b2a476f56b0a412b",
@@ -594,16 +613,16 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithLogger(logger),
 			handler.WithMocks([]configuration.Mock{
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Response: configuration.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
 				},
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Headers: map[string]string{
-						"Token": "de4e27987d054577b0edc0e828851724",
+						headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
 					},
 					Response: configuration.Response{
 						Code:       http.StatusCreated,
@@ -611,10 +630,10 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				},
 				{
-					Path: "/api/user",
+					Path: userPath,
 					Headers: map[string]string{
-						"User-Id": "99",
-						"Token":   "fe145b54563d9be1b2a476f56b0a412b",
+						userIDHeader:       "99",
+						headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
 					},
 					Response: configuration.Response{
 						Code:       http.StatusAccepted,
@@ -633,54 +652,54 @@ func TestMockMiddleware(t *testing.T) {
 		}{
 			{
 				name:       "headers is not set",
-				url:        "https://localhost/api/user",
+				url:        apiUser,
 				expected:   mock1Body,
 				statusCode: http.StatusOK,
 			},
 			{
 				name: "passed unsetted headers",
-				url:  "https://localhost/api/user",
+				url:  apiUser,
 				headers: map[string]string{
-					"Token": "55cc413b96026e833835a2c9a3f39c21",
+					headers.XCSRFToken: "55cc413b96026e833835a2c9a3f39c21",
 				},
 				expected:   mock1Body,
 				statusCode: http.StatusOK,
 			},
 			{
 				name: "passed defined header",
-				url:  "https://localhost/api/user",
+				url:  apiUser,
 				headers: map[string]string{
-					"Token": "de4e27987d054577b0edc0e828851724",
+					headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
 				},
 				expected:   mock2Body,
 				statusCode: http.StatusCreated,
 			},
 			{
 				name: "passed one of multiple headers",
-				url:  "https://localhost/api/user",
+				url:  apiUser,
 				headers: map[string]string{
-					"User-Id": "99",
+					userIDHeader: "99",
 				},
 				expected:   mock1Body,
 				statusCode: http.StatusOK,
 			},
 			{
 				name: "passed all of multiple headers",
-				url:  "https://localhost/api/user",
+				url:  apiUser,
 				headers: map[string]string{
-					"User-Id": "99",
-					"Token":   "fe145b54563d9be1b2a476f56b0a412b",
+					userIDHeader:       "99",
+					headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
 				},
 				expected:   mock3Body,
 				statusCode: http.StatusAccepted,
 			},
 			{
 				name: "passed extra headers",
-				url:  "https://localhost/api/user",
+				url:  apiUser,
 				headers: map[string]string{
-					"User-Id":         "99",
-					"Token":           "fe145b54563d9be1b2a476f56b0a412b",
-					"Accept-Encoding": "deflate",
+					userIDHeader:           "99",
+					headers.XCSRFToken:     "fe145b54563d9be1b2a476f56b0a412b",
+					headers.AcceptEncoding: "deflate",
 				},
 				expected:   mock3Body,
 				statusCode: http.StatusAccepted,

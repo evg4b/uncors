@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	localhost       = "http://localhost"
+	localhostSecure = "https://localhost:9090"
+)
+
 func TestURLMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
 
@@ -70,21 +75,21 @@ func TestURLMappingClone(t *testing.T) {
 		{
 			name: "structure with 1 field",
 			expected: configuration.URLMapping{
-				From: "http://localhost",
+				From: localhost,
 			},
 		},
 		{
 			name: "structure with 2 field",
 			expected: configuration.URLMapping{
-				From: "http://localhost",
-				To:   "https://localhost:9090",
+				From: localhost,
+				To:   localhostSecure,
 			},
 		},
 		{
 			name: "structure with inner collections",
 			expected: configuration.URLMapping{
-				From: "http://localhost",
-				To:   "https://localhost:9090",
+				From: localhost,
+				To:   localhostSecure,
 				Statics: []configuration.StaticDirMapping{
 					{Path: "/cc", Dir: "cc"},
 				},
