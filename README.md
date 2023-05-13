@@ -41,7 +41,7 @@
 - Wildcard URL request mapping
 - Simple request/response mocking
 - HTTP/HTTPS proxy support
-- *Static file serving ([coming soon...](./ROADMAP.md))*
+- Static file serving
 - *Response caching ([coming soon...](./ROADMAP.md))*
 
 Other new features you can find in [UNCORS roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md)
@@ -155,7 +155,12 @@ Uncors supports a YAML file configuration with the following options:
 # Base configuration
 http-port: 8080 # Local HTTP listened port.
 mappings:
-  http://localhost:3000: https://githib.com
+  - http://localhost: https://githib.com
+  - from: http://other.domain.com
+    to: https//example.com
+    statics:
+      /path: ./public
+      /another-path: ~/another-static-dir
 debug: false # Show debug output.
 proxy: localhost:8080
 
