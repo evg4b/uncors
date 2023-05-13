@@ -16,7 +16,6 @@ type Middleware struct {
 	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
-	next     http.Handler
 }
 
 func NewMockMiddleware(options ...MiddlewareOption) *Middleware {

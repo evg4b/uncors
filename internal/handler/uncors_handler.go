@@ -39,7 +39,7 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsReque
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	handler.makeMockedRoutes(proxyHandler)
+	handler.makeMockedRoutes()
 	handler.makeStaticRoutes(proxyHandler)
 	handler.setDefaultHandler(proxyHandler)
 
@@ -50,10 +50,9 @@ func (m *UncorsRequestHandler) ServeHTTP(writer http.ResponseWriter, request *ht
 	m.router.ServeHTTP(writer, request)
 }
 
-func (m *UncorsRequestHandler) createHandler(response configuration.Response, next http.Handler) *mock.Middleware {
+func (m *UncorsRequestHandler) createHandler(response configuration.Response) *mock.Middleware {
 	return mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
-		mock.WithNextMiddleware(next),
 		mock.WithResponse(response),
 		mock.WithFileSystem(m.fs),
 	)

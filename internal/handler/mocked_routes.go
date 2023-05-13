@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/evg4b/uncors/internal/configuration"
 )
 
-func (m *UncorsRequestHandler) makeMockedRoutes(next http.Handler) {
+func (m *UncorsRequestHandler) makeMockedRoutes() {
 	var defaultMocks []configuration.Mock
 
 	for _, mockDef := range m.mocks {
@@ -16,7 +14,7 @@ func (m *UncorsRequestHandler) makeMockedRoutes(next http.Handler) {
 			setMethod(route, mockDef.Method)
 			setQueries(route, mockDef.Queries)
 			setHeaders(route, mockDef.Headers)
-			route.Handler(m.createHandler(mockDef.Response, next))
+			route.Handler(m.createHandler(mockDef.Response))
 		} else {
 			defaultMocks = append(defaultMocks, mockDef)
 		}
@@ -25,6 +23,6 @@ func (m *UncorsRequestHandler) makeMockedRoutes(next http.Handler) {
 	for _, mockDef := range defaultMocks {
 		route := m.router.NewRoute()
 		setPath(route, mockDef.Path)
-		route.Handler(m.createHandler(mockDef.Response, next))
+		route.Handler(m.createHandler(mockDef.Response))
 	}
 }

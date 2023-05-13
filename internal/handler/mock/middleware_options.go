@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/evg4b/uncors/internal/configuration"
@@ -15,12 +14,6 @@ type MiddlewareOption = func(*Middleware)
 func WithLogger(logger contracts.Logger) MiddlewareOption {
 	return func(m *Middleware) {
 		m.logger = logger
-	}
-}
-
-func WithNextMiddleware(next http.Handler) MiddlewareOption {
-	return func(m *Middleware) {
-		m.next = next
 	}
 }
 
