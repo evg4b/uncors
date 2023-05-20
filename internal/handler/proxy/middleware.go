@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/infrastructure"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/pterm/pterm"
 )
 
 type Handler struct {
@@ -33,9 +34,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 
 func (m *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	if err := m.handle(response, request); err != nil {
-		pterm.Error.Printfln("UNCORS error: %v", err)
-		response.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(response, "UNCORS error:", err.Error())
+		infrastructure.HTTPError(response, err)
 	}
 }
 

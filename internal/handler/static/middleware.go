@@ -9,6 +9,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/infrastructure"
+
 	"github.com/evg4b/uncors/internal/contracts"
 
 	"github.com/spf13/afero"
@@ -34,14 +36,6 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func toHTTPError(err error) (string, int) {
-	if errors.Is(err, fs.ErrPermission) {
-		return http.StatusText(http.StatusForbidden), http.StatusForbidden
-	}
-
-	return http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError
-}
-
 func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	filePath := m.extractFilePath(request)
 
@@ -56,8 +50,7 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		if errors.Is(err, errNorHandled) {
 			m.next.ServeHTTP(writer, request)
 		} else {
-			msg, code := toHTTPError(err)
-			http.Error(writer, msg, code)
+			infrastructure.HTTPError(writer, err)
 		}
 
 		return
