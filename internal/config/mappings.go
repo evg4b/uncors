@@ -1,13 +1,13 @@
-package ui
+package config
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/evg4b/uncors/internal/config"
 )
 
-func Mappings(mappings []config.URLMapping) string {
+type Mappings []Mapping
+
+func (mappings Mappings) String() string {
 	var builder strings.Builder
 
 	for _, mapping := range mappings {

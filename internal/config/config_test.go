@@ -28,7 +28,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  80,
 					HTTPSPort: 443,
-					Mappings:  []config.URLMapping{},
+					Mappings:  []config.Mapping{},
 				},
 			},
 			{
@@ -37,7 +37,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo", To: "https://demo.com"},
 					},
 				},
@@ -47,7 +47,7 @@ func TestLoadConfiguration(t *testing.T) {
 				args: []string{params.Config, "/full-config.yaml"},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{From: "http://other-demo2", To: "https://demo2.io", Mocks: []config.Mock{
 							{
@@ -87,7 +87,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{
 							From: "http://other-demo2",

@@ -22,13 +22,8 @@ const (
 	defaultHTTPSPort = 443
 )
 
-func NormaliseMappings(
-	mappings []config.URLMapping,
-	httpPort,
-	httpsPort int,
-	useHTTPS bool,
-) ([]config.URLMapping, error) {
-	var processedMappings []config.URLMapping
+func NormaliseMappings(mappings config.Mappings, httpPort, httpsPort int, useHTTPS bool) (config.Mappings, error) {
+	var processedMappings config.Mappings
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {

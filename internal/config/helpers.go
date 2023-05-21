@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"github.com/evg4b/uncors/internal/config/hooks"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -29,7 +30,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 
 	for index, key := range from {
 		value := to[index]
-		prev, ok := lo.Find(configuration.Mappings, func(item URLMapping) bool {
+		prev, ok := lo.Find(configuration.Mappings, func(item Mapping) bool {
 			return strings.EqualFold(item.From, key)
 		})
 
@@ -37,7 +38,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 			// log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
 			prev.To = value
 		} else {
-			configuration.Mappings = append(configuration.Mappings, URLMapping{
+			configuration.Mappings = append(configuration.Mappings, Mapping{
 				From: key,
 				To:   value,
 			})
@@ -49,6 +50,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 
 func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.DecodeHookFunc) error {
 	hook := mapstructure.ComposeDecodeHookFunc(
+		hooks.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
 		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
 	)

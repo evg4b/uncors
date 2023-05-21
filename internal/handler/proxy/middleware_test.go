@@ -22,7 +22,7 @@ import (
 )
 
 func TestProxyMiddleware(t *testing.T) {
-	replacerFactory, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
+	replacerFactory, err := urlreplacer.NewURLReplacerFactory([]config.Mapping{
 		{From: "http://premium.local.com", To: "https://premium.api.com"},
 	})
 	testutils.CheckNoError(t, err)

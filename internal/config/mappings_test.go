@@ -1,19 +1,17 @@
 //nolint:lll
-package ui_test
+package config_test
 
 import (
+	"github.com/evg4b/uncors/internal/config"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/config"
-
-	"github.com/evg4b/uncors/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMappings(t *testing.T) {
 	tests := []struct {
 		name     string
-		mappings []config.URLMapping
+		mappings config.Mappings
 		expected []string
 	}{
 		{
@@ -22,14 +20,14 @@ func TestMappings(t *testing.T) {
 		},
 		{
 			name: "http mapping only",
-			mappings: []config.URLMapping{
+			mappings: config.Mappings{
 				{From: "http://localhost", To: "https://github.com"},
 			},
 			expected: []string{"PROXY: http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
-			mappings: []config.URLMapping{
+			mappings: config.Mappings{
 				{From: "http://localhost", To: "https://github.com"},
 				{From: "https://localhost", To: "https://github.com"},
 			},
@@ -40,7 +38,7 @@ func TestMappings(t *testing.T) {
 		},
 		{
 			name: "mapping and mocks",
-			mappings: []config.URLMapping{
+			mappings: config.Mappings{
 				{From: "http://localhost", To: "https://github.com", Mocks: []config.Mock{
 					{}, {}, {},
 				}},
@@ -55,7 +53,7 @@ func TestMappings(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := ui.Mappings(tt.mappings)
+			actual := tt.mappings.String()
 
 			for _, expectedLine := range tt.expected {
 				assert.Contains(t, actual, expectedLine)

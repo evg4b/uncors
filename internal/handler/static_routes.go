@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (m *RequestHandler) makeStaticRoutes(router *mux.Router, statics config.StaticDirMappings, next http.Handler) {
+func (m *RequestHandler) makeStaticRoutes(router *mux.Router, statics config.StaticDirs, next http.Handler) {
 	for _, staticDir := range statics {
 		clearPath := strings.TrimSuffix(staticDir.Path, "/")
 		path := clearPath + "/"

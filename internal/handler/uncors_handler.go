@@ -23,7 +23,7 @@ type RequestHandler struct {
 	router          *mux.Router
 	fs              afero.Fs
 	logger          contracts.Logger
-	mappings        []config.URLMapping
+	mappings        config.Mappings
 	replacerFactory contracts.URLReplacerFactory
 	httpClient      contracts.HTTPClient
 }
@@ -33,7 +33,7 @@ var errHostNotMapped = errors.New("host not mapped")
 func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHandler {
 	handler := &RequestHandler{
 		router:   mux.NewRouter(),
-		mappings: []config.URLMapping{},
+		mappings: config.Mappings{},
 	}
 
 	for _, option := range options {

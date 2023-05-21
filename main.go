@@ -117,7 +117,7 @@ func main() {
 	log.Print("\n")
 	log.Warning(ui.DisclaimerMessage)
 	log.Print("\n")
-	log.Info(ui.Mappings(mappings))
+	log.Info(mappings.String())
 	log.Print("\n")
 
 	go version.CheckNewVersion(ctx, httpClient, Version)

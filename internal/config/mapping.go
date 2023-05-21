@@ -7,45 +7,45 @@ import (
 	"github.com/samber/lo"
 )
 
-type URLMapping struct {
-	From    string            `mapstructure:"from"`
-	To      string            `mapstructure:"to"`
-	Statics StaticDirMappings `mapstructure:"statics"`
-	Mocks   []Mock            `mapstructure:"mocks"`
+type Mapping struct {
+	From    string     `mapstructure:"from"`
+	To      string     `mapstructure:"to"`
+	Statics StaticDirs `mapstructure:"statics"`
+	Mocks   []Mock     `mapstructure:"mocks"`
 }
 
-func (u URLMapping) Clone() URLMapping {
-	return URLMapping{
+func (u Mapping) Clone() Mapping {
+	return Mapping{
 		From: u.From,
 		To:   u.To,
-		Statics: lo.If(u.Statics == nil, StaticDirMappings(nil)).
-			ElseF(func() StaticDirMappings {
-				return lo.Map(u.Statics, func(item StaticDirMapping, index int) StaticDirMapping {
+		Statics: lo.If(u.Statics == nil, StaticDirs(nil)).
+			ElseF(func() StaticDirs {
+				return lo.Map(u.Statics, func(item StaticDir, index int) StaticDir {
 					return item.Clone()
 				})
 			}),
 	}
 }
 
-var urlMappingType = reflect.TypeOf(URLMapping{})
-var urlMappingFields = getTagValues(urlMappingType, "mapstructure")
+var mappingType = reflect.TypeOf(Mapping{})
+var mappingFields = getTagValues(mappingType, "mapstructure")
 
 func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
-		if t != urlMappingType || f.Kind() != reflect.Map {
+		if t != mappingType || f.Kind() != reflect.Map {
 			return rawData, nil
 		}
 
 		if data, ok := rawData.(map[string]any); ok {
-			availableFields, _ := lo.Difference(lo.Keys(data), urlMappingFields)
+			availableFields, _ := lo.Difference(lo.Keys(data), mappingFields)
 			if len(data) == 1 && len(availableFields) == 1 {
-				return URLMapping{
+				return Mapping{
 					From: availableFields[0],
 					To:   data[availableFields[0]].(string), // nolint: forcetypeassert
 				}, nil
 			}
 
-			mapping := URLMapping{}
+			mapping := Mapping{}
 			err := decodeConfig(data, &mapping, StaticDirMappingHookFunc())
 
 			return mapping, err

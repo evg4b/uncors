@@ -32,7 +32,7 @@ func WithHTTPClient(client contracts.HTTPClient) UncorsRequestHandlerOption {
 	}
 }
 
-func WithMappings(mappings []config.URLMapping) UncorsRequestHandlerOption {
+func WithMappings(mappings config.Mappings) UncorsRequestHandlerOption {
 	return func(m *RequestHandler) {
 		m.mappings = mappings
 	}

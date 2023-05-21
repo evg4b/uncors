@@ -54,11 +54,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 		"/mock.json":             mockJSON,
 	})
 
-	mappings := []config.URLMapping{
+	mappings := []config.Mapping{
 		{
 			From: localhost,
 			To:   localhostSecure,
-			Statics: []config.StaticDirMapping{
+			Statics: []config.StaticDir{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},
@@ -296,7 +296,7 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 				handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 				handler.WithLogger(logger),
-				handler.WithMappings([]config.URLMapping{
+				handler.WithMappings([]config.Mapping{
 					// TODO: add hosts
 					{From: "*", To: "*", Mocks: []config.Mock{{
 						Path: "/api",
@@ -335,7 +335,7 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where method is set", func(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
-			mappings := []config.URLMapping{
+			mappings := []config.Mapping{
 				{From: "*", To: "*", Mocks: []config.Mock{{
 					Path:   "/api",
 					Method: http.MethodPut,
@@ -411,7 +411,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("path handling", func(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
-		mappings := []config.URLMapping{
+		mappings := []config.Mapping{
 			{From: "*", To: "*", Mocks: []config.Mock{
 				{
 					Path: userPath,
@@ -522,7 +522,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMappings([]config.URLMapping{
+			handler.WithMappings([]config.Mapping{
 				{From: "*", To: "*", Mocks: []config.Mock{
 					{
 						Path: userPath,
@@ -618,7 +618,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMappings([]config.URLMapping{
+			handler.WithMappings([]config.Mapping{
 				{From: "*", To: "*", Mocks: []config.Mock{
 					{
 						Path: userPath,
