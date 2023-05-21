@@ -8,8 +8,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/evg4b/uncors/internal/log"
-
 	"github.com/spf13/viper"
 )
 
@@ -36,7 +34,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 		})
 
 		if ok {
-			log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
+			// log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
 			prev.To = value
 		} else {
 			configuration.Mappings = append(configuration.Mappings, URLMapping{

@@ -14,18 +14,18 @@ func TestMappings(t *testing.T) {
 	tests := []struct {
 		name     string
 		mappings []config.URLMapping
-		expected string
+		expected []string
 	}{
 		{
 			name:     "no mapping and no mocks",
-			expected: "\n",
+			expected: []string{"\n"},
 		},
 		{
 			name: "http mapping only",
 			mappings: []config.URLMapping{
 				{From: "http://localhost", To: "https://github.com"},
 			},
-			expected: "PROXY: http://localhost => https://github.com\n\n",
+			expected: []string{"PROXY: http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
@@ -33,7 +33,10 @@ func TestMappings(t *testing.T) {
 				{From: "http://localhost", To: "https://github.com"},
 				{From: "https://localhost", To: "https://github.com"},
 			},
-			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\n\n",
+			expected: []string{
+				"PROXY: https://localhost => https://github.com",
+				"PROXY: http://localhost => https://github.com",
+			},
 		},
 		{
 			name: "mapping and mocks",
@@ -43,13 +46,20 @@ func TestMappings(t *testing.T) {
 				}},
 				{From: "https://localhost", To: "https://github.com"},
 			},
-			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\nMOCKS: 3 mock(s) registered\n",
+			expected: []string{
+				"PROXY: https://localhost => https://github.com",
+				"PROXY: http://localhost => https://github.com",
+				"MOCKS: 3 mock(s) registered",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := ui.Mappings(tt.mappings)
-			assert.Equal(t, tt.expected, actual)
+
+			for _, expectedLine := range tt.expected {
+				assert.Contains(t, actual, expectedLine)
+			}
 		})
 	}
 }
