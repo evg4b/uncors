@@ -2,13 +2,11 @@ package config
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/config/hooks"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/mitchellh/mapstructure"
-
 	"github.com/samber/lo"
-
 	"github.com/spf13/viper"
 )
 

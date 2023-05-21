@@ -2,8 +2,9 @@
 package config_test
 
 import (
-	"github.com/evg4b/uncors/internal/config"
 	"testing"
+
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/stretchr/testify/assert"
 )
