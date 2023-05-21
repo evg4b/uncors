@@ -52,9 +52,9 @@
 
 ## Next Release
 
-- [X] Static file serving
+- [X] Static file serving [PR](https://github.com/evg4b/uncors/pull/15)
 - [X] Own error page for uncors internal errors
-- [ ] Separated mock for each url mapping
+- [ ] Separated mock for each url mapping [PR](https://github.com/evg4b/uncors/pull/16)
 
 ## Future features
 
