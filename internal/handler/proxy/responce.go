@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
 )
@@ -26,7 +26,7 @@ func (m *Handler) makeUncorsResponse(
 		return err
 	}
 
-	infrastructure.WriteCorsHeaders(target.Header())
+	infra.WriteCorsHeaders(target.Header())
 
 	return copyResponseData(target, original)
 }

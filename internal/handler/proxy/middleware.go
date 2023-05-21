@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -34,7 +34,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 
 func (m *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	if err := m.handle(response, request); err != nil {
-		infrastructure.HTTPError(response, err)
+		infra.HTTPError(response, err)
 	}
 }
 

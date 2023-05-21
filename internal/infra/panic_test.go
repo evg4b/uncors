@@ -1,10 +1,10 @@
 //go:build release
 
-package infrastructure_test
+package infra_test
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestPanicInterceptor(t *testing.T) {
 			called := false
 
 			assert.NotPanics(t, func() {
-				defer infrastructure.PanicInterceptor(func(data any) {
+				defer infra.PanicInterceptor(func(data any) {
 					called = true
 					assert.Equal(t, testCast.panicData, data)
 				})

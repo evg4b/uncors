@@ -19,7 +19,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -35,7 +35,7 @@ var Version = "X.X.X"
 const baseAddress = "127.0.0.1"
 
 func main() {
-	defer infrastructure.PanicInterceptor(func(value any) {
+	defer infra.PanicInterceptor(func(value any) {
 		pterm.Error.Println(value)
 		os.Exit(1)
 	})
@@ -75,12 +75,12 @@ func main() {
 		panic(err)
 	}
 
-	httpClient, err := infrastructure.MakeHTTPClient(viper.GetString("proxy"))
+	httpClient, err := infra.MakeHTTPClient(viper.GetString("proxy"))
 	if err != nil {
 		panic(err)
 	}
 
-	finisher := finish.Finisher{Log: infrastructure.NoopLogger{}}
+	finisher := finish.Finisher{Log: infra.NoopLogger{}}
 
 	ctx := context.Background()
 

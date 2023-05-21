@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/evg4b/uncors/internal/contracts"
 
@@ -50,7 +50,7 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		if errors.Is(err, errNorHandled) {
 			m.next.ServeHTTP(writer, request)
 		} else {
-			infrastructure.HTTPError(writer, err)
+			infra.HTTPError(writer, err)
 		}
 
 		return

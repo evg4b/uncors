@@ -7,7 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 )
 
@@ -45,7 +45,7 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		}
 	}
 
-	infrastructure.WriteCorsHeaders(header)
+	infra.WriteCorsHeaders(header)
 	for key, value := range response.Headers {
 		header.Set(key, value)
 	}
@@ -58,7 +58,7 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	}
 
 	if err != nil {
-		infrastructure.HTTPError(writer, err)
+		infra.HTTPError(writer, err)
 
 		return
 	}

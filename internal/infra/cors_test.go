@@ -1,10 +1,10 @@
-package infrastructure_test
+package infra_test
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/go-http-utils/headers"
 )
 
@@ -57,7 +57,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			infrastructure.WriteCorsHeaders(tt.header)
+			infra.WriteCorsHeaders(tt.header)
 		})
 	}
 }

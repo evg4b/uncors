@@ -1,4 +1,4 @@
-package infrastructure_test
+package infra_test
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-http-utils/headers"
 
-	"github.com/evg4b/uncors/internal/infrastructure"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +25,7 @@ Occurred error: net/http: abort Handler
 
 func TestHttpError(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	infrastructure.HTTPError(recorder, http.ErrAbortHandler)
+	infra.HTTPError(recorder, http.ErrAbortHandler)
 
 	t.Run("write correct page", func(t *testing.T) {
 		assert.Equal(t, expectedPage, testutils.ReadBody(t, recorder))

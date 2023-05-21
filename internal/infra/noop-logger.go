@@ -1,4 +1,4 @@
-package infrastructure
+package infra
 
 type NoopLogger struct{}
 

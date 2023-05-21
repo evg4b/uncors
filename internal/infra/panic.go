@@ -1,6 +1,6 @@
 //go:build release
 
-package infrastructure
+package infra
 
 func PanicInterceptor(action func(any)) {
 	if recovered := recover(); recovered != nil {

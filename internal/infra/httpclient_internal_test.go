@@ -1,5 +1,5 @@
 // nolint: lll
-package infrastructure
+package infra
 
 import (
 	"net/http"
