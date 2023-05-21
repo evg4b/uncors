@@ -87,7 +87,6 @@ func main() {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
-		handler.WithMocks(uncorsConfig.Mocks),
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
@@ -118,7 +117,7 @@ func main() {
 	log.Print("\n")
 	log.Warning(ui.DisclaimerMessage)
 	log.Print("\n")
-	log.Info(ui.Mappings(mappings, uncorsConfig.Mocks))
+	log.Info(ui.Mappings(mappings))
 	log.Print("\n")
 
 	go version.CheckNewVersion(ctx, httpClient, Version)

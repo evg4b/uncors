@@ -11,6 +11,7 @@ type URLMapping struct {
 	From    string            `mapstructure:"from"`
 	To      string            `mapstructure:"to"`
 	Statics StaticDirMappings `mapstructure:"statics"`
+	Mocks   []Mock            `mapstructure:"mocks"`
 }
 
 func (u URLMapping) Clone() URLMapping {

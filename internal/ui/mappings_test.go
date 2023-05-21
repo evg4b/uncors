@@ -12,10 +12,9 @@ import (
 
 func TestMappings(t *testing.T) {
 	tests := []struct {
-		name      string
-		mappings  []config.URLMapping
-		mocksDefs []config.Mock
-		expected  string
+		name     string
+		mappings []config.URLMapping
+		expected string
 	}{
 		{
 			name:     "no mapping and no mocks",
@@ -37,34 +36,19 @@ func TestMappings(t *testing.T) {
 			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\n\n",
 		},
 		{
-			name: "one mock only",
-			mocksDefs: []config.Mock{
-				{},
-			},
-			expected: "MOCKS: 1 mock(s) registered\n",
-		},
-		{
-			name: "2 mocks only",
-			mocksDefs: []config.Mock{
-				{}, {}, {},
-			},
-			expected: "MOCKS: 3 mock(s) registered\n",
-		},
-		{
 			name: "mapping and mocks",
 			mappings: []config.URLMapping{
-				{From: "http://localhost", To: "https://github.com"},
+				{From: "http://localhost", To: "https://github.com", Mocks: []config.Mock{
+					{}, {}, {},
+				}},
 				{From: "https://localhost", To: "https://github.com"},
-			},
-			mocksDefs: []config.Mock{
-				{}, {}, {},
 			},
 			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\nMOCKS: 3 mock(s) registered\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := ui.Mappings(tt.mappings, tt.mocksDefs)
+			actual := ui.Mappings(tt.mappings)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 )
 
-func Mappings(mappings []config.URLMapping, mocksDefs []config.Mock) string {
+func Mappings(mappings []config.URLMapping) string {
 	var builder strings.Builder
 
 	for _, mapping := range mappings {
@@ -17,6 +17,9 @@ func Mappings(mappings []config.URLMapping, mocksDefs []config.Mock) string {
 				builder.WriteString(fmt.Sprintf("      static: %s => %s\n", static.Path, static.Dir))
 			}
 		}
+		if len(mapping.Mocks) > 0 {
+			builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mapping.Mocks)))
+		}
 	}
 	for _, mapping := range mappings {
 		if strings.HasPrefix(mapping.From, "http:") {
@@ -25,9 +28,9 @@ func Mappings(mappings []config.URLMapping, mocksDefs []config.Mock) string {
 				builder.WriteString(fmt.Sprintf("      static: %s => %s\n", static.Path, static.Dir))
 			}
 		}
-	}
-	if len(mocksDefs) > 0 {
-		builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mocksDefs)))
+		if len(mapping.Mocks) > 0 {
+			builder.WriteString(fmt.Sprintf("MOCKS: %d mock(s) registered", len(mapping.Mocks)))
+		}
 	}
 
 	builder.WriteString("\n")
