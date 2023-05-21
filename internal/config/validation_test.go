@@ -1,29 +1,29 @@
-package configuration_test
+package config_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configuration.UncorsConfig
+		config   *config.UncorsConfig
 		expected string
 	}{
 		{
 			name: "invalid http-port",
-			config: &configuration.UncorsConfig{
-				Mappings: []configuration.URLMapping{},
+			config: &config.UncorsConfig{
+				Mappings: []config.URLMapping{},
 			},
 			expected: "Key: 'UncorsConfig.HTTPPort' Error:Field validation for 'HTTPPort' failed on the 'required' tag",
 		},
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := configuration.Validate(testCase.config)
+			err := config.Validate(testCase.config)
 
 			assert.EqualError(t, err, testCase.expected)
 		})

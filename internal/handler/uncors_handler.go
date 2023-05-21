@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -16,8 +16,8 @@ type UncorsRequestHandler struct {
 	router          *mux.Router
 	fs              afero.Fs
 	logger          contracts.Logger
-	mocks           []configuration.Mock
-	mappings        []configuration.URLMapping
+	mocks           []config.Mock
+	mappings        []config.URLMapping
 	replacerFactory contracts.URLReplacerFactory
 	httpClient      contracts.HTTPClient
 }
@@ -25,8 +25,8 @@ type UncorsRequestHandler struct {
 func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsRequestHandler {
 	handler := &UncorsRequestHandler{
 		router:   mux.NewRouter(),
-		mocks:    []configuration.Mock{},
-		mappings: []configuration.URLMapping{},
+		mocks:    []config.Mock{},
+		mappings: []config.URLMapping{},
 	}
 
 	for _, option := range options {
@@ -50,7 +50,7 @@ func (m *UncorsRequestHandler) ServeHTTP(writer http.ResponseWriter, request *ht
 	m.router.ServeHTTP(writer, request)
 }
 
-func (m *UncorsRequestHandler) createHandler(response configuration.Response) *mock.Middleware {
+func (m *UncorsRequestHandler) createHandler(response config.Response) *mock.Middleware {
 	return mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
 		mock.WithResponse(response),

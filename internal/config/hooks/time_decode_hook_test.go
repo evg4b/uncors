@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/configuration/hooks"
+	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"

@@ -3,7 +3,7 @@ package mock
 import (
 	"time"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/spf13/afero"
@@ -17,7 +17,7 @@ func WithLogger(logger contracts.Logger) MiddlewareOption {
 	}
 }
 
-func WithResponse(response configuration.Response) MiddlewareOption {
+func WithResponse(response config.Response) MiddlewareOption {
 	return func(m *Middleware) {
 		m.response = response
 	}

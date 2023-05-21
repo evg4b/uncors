@@ -18,7 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"golang.org/x/net/context"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/infrastructure"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/ui"
@@ -46,25 +46,25 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	config, err := configuration.LoadConfiguration(viper.GetViper(), os.Args)
+	uncorsConfig, err := config.LoadConfiguration(viper.GetViper(), os.Args)
 	if err != nil {
 		panic(err)
 	}
 
-	if err = configuration.Validate(config); err != nil {
+	if err = config.Validate(uncorsConfig); err != nil {
 		panic(err)
 	}
 
-	if config.Debug {
+	if uncorsConfig.Debug {
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
 	}
 
 	mappings, err := helpers.NormaliseMappings(
-		config.Mappings,
-		config.HTTPPort,
-		config.HTTPSPort,
-		config.IsHTTPSEnabled(),
+		uncorsConfig.Mappings,
+		uncorsConfig.HTTPPort,
+		uncorsConfig.HTTPSPort,
+		uncorsConfig.IsHTTPSEnabled(),
 	)
 	if err != nil {
 		panic(err)
@@ -87,7 +87,7 @@ func main() {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
-		handler.WithMocks(config.Mocks),
+		handler.WithMocks(uncorsConfig.Mocks),
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
@@ -96,19 +96,19 @@ func main() {
 
 	finisher.Add(uncorsServer)
 	go func() {
-		log.Debugf("Starting http server on port %d", config.HTTPPort)
-		addr := net.JoinHostPort(baseAddress, strconv.Itoa(config.HTTPPort))
+		log.Debugf("Starting http server on port %d", uncorsConfig.HTTPPort)
+		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPPort))
 		err := uncorsServer.ListenAndServe(addr)
 		handleHTTPServerError("HTTP", err)
 		finisher.Trigger()
 	}()
 
-	if config.IsHTTPSEnabled() {
+	if uncorsConfig.IsHTTPSEnabled() {
 		log.Debug("Found cert file and key file. Https server will be started")
-		addr := net.JoinHostPort(baseAddress, strconv.Itoa(config.HTTPSPort))
+		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPSPort))
 		go func() {
-			log.Debugf("Starting https server on port %d", config.HTTPSPort)
-			err := uncorsServer.ListenAndServeTLS(addr, config.CertFile, config.KeyFile)
+			log.Debugf("Starting https server on port %d", uncorsConfig.HTTPSPort)
+			err := uncorsServer.ListenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
 			handleHTTPServerError("HTTPS", err)
 			finisher.Trigger()
 		}()
@@ -118,7 +118,7 @@ func main() {
 	log.Print("\n")
 	log.Warning(ui.DisclaimerMessage)
 	log.Print("\n")
-	log.Info(ui.Mappings(mappings, config.Mocks))
+	log.Info(ui.Mappings(mappings, uncorsConfig.Mocks))
 	log.Print("\n")
 
 	go version.CheckNewVersion(ctx, httpClient, Version)

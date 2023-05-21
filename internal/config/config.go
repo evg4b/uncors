@@ -1,9 +1,9 @@
-package configuration
+package config
 
 import (
 	"fmt"
 
-	"github.com/evg4b/uncors/internal/configuration/hooks"
+	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -61,7 +61,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	))
 
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
-		return nil, fmt.Errorf("filed parsing configuration: %w", err)
+		return nil, fmt.Errorf("filed parsing config: %w", err)
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {

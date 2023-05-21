@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 )
 
 type mapping struct {
@@ -24,7 +24,7 @@ var (
 	ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 )
 
-func NewURLReplacerFactory(urlMappings []configuration.URLMapping) (*Factory, error) {
+func NewURLReplacerFactory(urlMappings []config.URLMapping) (*Factory, error) {
 	if len(urlMappings) < 1 {
 		return nil, ErrMappingNotSpecified
 	}

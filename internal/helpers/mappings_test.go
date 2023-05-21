@@ -4,7 +4,7 @@ package helpers_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/stretchr/testify/assert"
@@ -15,16 +15,16 @@ func TestNormaliseMappings(t *testing.T) {
 		httpPort, httpsPort := 3000, 3001
 		testsCases := []struct {
 			name     string
-			mappings []configuration.URLMapping
-			expected []configuration.URLMapping
+			mappings []config.URLMapping
+			expected []config.URLMapping
 			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "localhost", To: "github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://localhost:3000", To: "github.com"},
 					{From: "https://localhost:3001", To: "github.com"},
 				},
@@ -32,33 +32,33 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set http port",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "http://localhost", To: "https://github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://localhost:3000", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "https://localhost", To: "https://github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "https://localhost:3001", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "host1", To: "https://github.com"},
 					{From: "host2", To: "http://github.com"},
 					{From: "http://host3", To: "http://api.github.com"},
 					{From: "https://host4", To: "https://api.github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://host1:3000", To: "https://github.com"},
 					{From: "https://host1:3001", To: "https://github.com"},
 					{From: "http://host2:3000", To: "http://github.com"},
@@ -88,16 +88,16 @@ func TestNormaliseMappings(t *testing.T) {
 		httpPort, httpsPort := 80, 443
 		testsCases := []struct {
 			name     string
-			mappings []configuration.URLMapping
-			expected []configuration.URLMapping
+			mappings []config.URLMapping
+			expected []config.URLMapping
 			useHTTPS bool
 		}{
 			{
 				name: "correctly set http and https ports",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "localhost", To: "github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://localhost", To: "github.com"},
 					{From: "https://localhost", To: "github.com"},
 				},
@@ -105,33 +105,33 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "correctly set http port",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "http://localhost", To: "https://github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://localhost", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "https://localhost", To: "https://github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "https://localhost", To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "host1", To: "https://github.com"},
 					{From: "host2", To: "http://github.com"},
 					{From: "http://host3", To: "http://api.github.com"},
 					{From: "https://host4", To: "https://api.github.com"},
 				},
-				expected: []configuration.URLMapping{
+				expected: []config.URLMapping{
 					{From: "http://host1", To: "https://github.com"},
 					{From: "https://host1", To: "https://github.com"},
 					{From: "http://host2", To: "http://github.com"},
@@ -160,7 +160,7 @@ func TestNormaliseMappings(t *testing.T) {
 	t.Run("incorrect mappings", func(t *testing.T) {
 		testsCases := []struct {
 			name        string
-			mappings    []configuration.URLMapping
+			mappings    []config.URLMapping
 			httpPort    int
 			httpsPort   int
 			useHTTPS    bool
@@ -168,7 +168,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}{
 			{
 				name: "incorrect source url",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "loca^host", To: "github.com"},
 				},
 				httpPort:    3000,
@@ -178,7 +178,7 @@ func TestNormaliseMappings(t *testing.T) {
 			},
 			{
 				name: "incorrect port in source url",
-				mappings: []configuration.URLMapping{
+				mappings: []config.URLMapping{
 					{From: "localhost:", To: "github.com"},
 				},
 				httpPort:    -1,

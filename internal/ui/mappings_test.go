@@ -4,7 +4,7 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +13,8 @@ import (
 func TestMappings(t *testing.T) {
 	tests := []struct {
 		name      string
-		mappings  []configuration.URLMapping
-		mocksDefs []configuration.Mock
+		mappings  []config.URLMapping
+		mocksDefs []config.Mock
 		expected  string
 	}{
 		{
@@ -23,14 +23,14 @@ func TestMappings(t *testing.T) {
 		},
 		{
 			name: "http mapping only",
-			mappings: []configuration.URLMapping{
+			mappings: []config.URLMapping{
 				{From: "http://localhost", To: "https://github.com"},
 			},
 			expected: "PROXY: http://localhost => https://github.com\n\n",
 		},
 		{
 			name: "http and https mappings",
-			mappings: []configuration.URLMapping{
+			mappings: []config.URLMapping{
 				{From: "http://localhost", To: "https://github.com"},
 				{From: "https://localhost", To: "https://github.com"},
 			},
@@ -38,25 +38,25 @@ func TestMappings(t *testing.T) {
 		},
 		{
 			name: "one mock only",
-			mocksDefs: []configuration.Mock{
+			mocksDefs: []config.Mock{
 				{},
 			},
 			expected: "MOCKS: 1 mock(s) registered\n",
 		},
 		{
 			name: "2 mocks only",
-			mocksDefs: []configuration.Mock{
+			mocksDefs: []config.Mock{
 				{}, {}, {},
 			},
 			expected: "MOCKS: 3 mock(s) registered\n",
 		},
 		{
 			name: "mapping and mocks",
-			mappings: []configuration.URLMapping{
+			mappings: []config.URLMapping{
 				{From: "http://localhost", To: "https://github.com"},
 				{From: "https://localhost", To: "https://github.com"},
 			},
-			mocksDefs: []configuration.Mock{
+			mocksDefs: []config.Mock{
 				{}, {}, {},
 			},
 			expected: "PROXY: https://localhost => https://github.com\nPROXY: http://localhost => https://github.com\nMOCKS: 3 mock(s) registered\n",

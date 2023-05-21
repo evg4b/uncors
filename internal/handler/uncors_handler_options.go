@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/spf13/afero"
 )
@@ -14,7 +14,7 @@ func WithLogger(logger contracts.Logger) UncorsRequestHandlerOption {
 	}
 }
 
-func WithMocks(mocks []configuration.Mock) UncorsRequestHandlerOption {
+func WithMocks(mocks []config.Mock) UncorsRequestHandlerOption {
 	return func(m *UncorsRequestHandler) {
 		m.mocks = mocks
 	}
@@ -38,7 +38,7 @@ func WithHTTPClient(client contracts.HTTPClient) UncorsRequestHandlerOption {
 	}
 }
 
-func WithMappings(mappings []configuration.URLMapping) UncorsRequestHandlerOption {
+func WithMappings(mappings []config.URLMapping) UncorsRequestHandlerOption {
 	return func(m *UncorsRequestHandler) {
 		m.mappings = mappings
 	}

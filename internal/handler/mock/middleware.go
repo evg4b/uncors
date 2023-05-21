@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infrastructure"
@@ -12,7 +12,7 @@ import (
 )
 
 type Middleware struct {
-	response configuration.Response
+	response config.Response
 	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time

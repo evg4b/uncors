@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 )
 
-func Mappings(mappings []configuration.URLMapping, mocksDefs []configuration.Mock) string {
+func Mappings(mappings []config.URLMapping, mocksDefs []config.Mock) string {
 	var builder strings.Builder
 
 	for _, mapping := range mappings {

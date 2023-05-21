@@ -1,9 +1,9 @@
-package configuration_test
+package config_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -21,12 +21,12 @@ func TestURLMappingHookFunc(t *testing.T) {
 		tests := []struct {
 			name     string
 			config   string
-			expected configuration.URLMapping
+			expected config.URLMapping
 		}{
 			{
 				name:   "simple key-value mapping",
 				config: "http://localhost:4200: https://github.com",
-				expected: configuration.URLMapping{
+				expected: config.URLMapping{
 					From: "http://localhost:4200",
 					To:   "https://github.com",
 				},
@@ -34,7 +34,7 @@ func TestURLMappingHookFunc(t *testing.T) {
 			{
 				name:   "full object mapping",
 				config: "{ from: http://localhost:3000, to: https://google.com }",
-				expected: configuration.URLMapping{
+				expected: config.URLMapping{
 					From: "http://localhost:3000",
 					To:   "https://google.com",
 				},
@@ -50,10 +50,10 @@ func TestURLMappingHookFunc(t *testing.T) {
 				err := viperInstance.ReadInConfig()
 				testutils.CheckNoError(t, err)
 
-				actual := configuration.URLMapping{}
+				actual := config.URLMapping{}
 
 				err = viperInstance.Unmarshal(&actual, viper.DecodeHook(
-					configuration.URLMappingHookFunc(),
+					config.URLMappingHookFunc(),
 				))
 				testutils.CheckNoError(t, err)
 
@@ -66,31 +66,31 @@ func TestURLMappingHookFunc(t *testing.T) {
 func TestURLMappingClone(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected configuration.URLMapping
+		expected config.URLMapping
 	}{
 		{
 			name:     "empty structure",
-			expected: configuration.URLMapping{},
+			expected: config.URLMapping{},
 		},
 		{
 			name: "structure with 1 field",
-			expected: configuration.URLMapping{
+			expected: config.URLMapping{
 				From: localhost,
 			},
 		},
 		{
 			name: "structure with 2 field",
-			expected: configuration.URLMapping{
+			expected: config.URLMapping{
 				From: localhost,
 				To:   localhostSecure,
 			},
 		},
 		{
 			name: "structure with inner collections",
-			expected: configuration.URLMapping{
+			expected: config.URLMapping{
 				From: localhost,
 				To:   localhostSecure,
-				Statics: []configuration.StaticDirMapping{
+				Statics: []config.StaticDirMapping{
 					{Path: "/cc", Dir: "cc"},
 				},
 			},

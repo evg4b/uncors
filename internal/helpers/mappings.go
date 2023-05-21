@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/pkg/urlx"
 )
@@ -23,12 +23,12 @@ const (
 )
 
 func NormaliseMappings(
-	mappings []configuration.URLMapping,
+	mappings []config.URLMapping,
 	httpPort,
 	httpsPort int,
 	useHTTPS bool,
-) ([]configuration.URLMapping, error) {
-	var processedMappings []configuration.URLMapping
+) ([]config.URLMapping, error) {
+	var processedMappings []config.URLMapping
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {

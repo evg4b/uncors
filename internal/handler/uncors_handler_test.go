@@ -12,7 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/helpers"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -54,11 +54,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 		"/mock.json":             mockJSON,
 	})
 
-	mappings := []configuration.URLMapping{
+	mappings := []config.URLMapping{
 		{
 			From: localhost,
 			To:   localhostSecure,
-			Statics: []configuration.StaticDirMapping{
+			Statics: []config.StaticDirMapping{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},
@@ -66,31 +66,31 @@ func TestUncorsRequestHandler(t *testing.T) {
 		},
 	}
 
-	mockDefs := []configuration.Mock{
+	mockDefs := []config.Mock{
 		{
 			Path: "/api/mocks/1",
-			Response: configuration.Response{
+			Response: config.Response{
 				Code:       http.StatusOK,
 				RawContent: "mock-1",
 			},
 		},
 		{
 			Path: "/api/mocks/2",
-			Response: configuration.Response{
+			Response: config.Response{
 				Code: http.StatusOK,
 				File: "/mock.json",
 			},
 		},
 		{
 			Path: "/api/mocks/3",
-			Response: configuration.Response{
+			Response: config.Response{
 				Code:       http.StatusMultiStatus,
 				RawContent: "mock-3",
 			},
 		},
 		{
 			Path: "/api/mocks/4",
-			Response: configuration.Response{
+			Response: config.Response{
 				Code: http.StatusOK,
 				File: "/unknown.json",
 			},
@@ -298,9 +298,9 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 				handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 				handler.WithLogger(logger),
-				handler.WithMocks([]configuration.Mock{{
+				handler.WithMocks([]config.Mock{{
 					Path: "/api",
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -334,7 +334,7 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where method is set", func(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
-			factory, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+			factory, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
 				{From: "*", To: "*"},
 			})
 			testutils.CheckNoError(t, err)
@@ -350,10 +350,10 @@ func TestMockMiddleware(t *testing.T) {
 					})),
 				handler.WithURLReplacerFactory(factory),
 				handler.WithLogger(logger),
-				handler.WithMocks([]configuration.Mock{{
+				handler.WithMocks([]config.Mock{{
 					Path:   "/api",
 					Method: http.MethodPut,
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -409,7 +409,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("path handling", func(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
-		factory, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+		factory, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
 			{From: "*", To: "*"},
 		})
 		testutils.CheckNoError(t, err)
@@ -425,31 +425,31 @@ func TestMockMiddleware(t *testing.T) {
 				})),
 			handler.WithURLReplacerFactory(factory),
 			handler.WithLogger(logger),
-			handler.WithMocks([]configuration.Mock{
+			handler.WithMocks([]config.Mock{
 				{
 					Path: userPath,
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
 				},
 				{
 					Path: "/api/user/{id:[0-9]+}",
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock2Body,
 					},
 				},
 				{
 					Path: "/api/{single-path/demo",
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusBadRequest,
 						RawContent: mock3Body,
 					},
 				},
 				{
 					Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock4Body,
 					},
@@ -519,10 +519,10 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMocks([]configuration.Mock{
+			handler.WithMocks([]config.Mock{
 				{
 					Path: userPath,
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -532,7 +532,7 @@ func TestMockMiddleware(t *testing.T) {
 					Queries: map[string]string{
 						"id": "17",
 					},
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock2Body,
 					},
@@ -543,7 +543,7 @@ func TestMockMiddleware(t *testing.T) {
 						"id":    "99",
 						"token": "fe145b54563d9be1b2a476f56b0a412b",
 					},
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock3Body,
 					},
@@ -613,10 +613,10 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMocks([]configuration.Mock{
+			handler.WithMocks([]config.Mock{
 				{
 					Path: userPath,
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusOK,
 						RawContent: mock1Body,
 					},
@@ -626,7 +626,7 @@ func TestMockMiddleware(t *testing.T) {
 					Headers: map[string]string{
 						headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
 					},
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusCreated,
 						RawContent: mock2Body,
 					},
@@ -637,7 +637,7 @@ func TestMockMiddleware(t *testing.T) {
 						userIDHeader:       "99",
 						headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
 					},
-					Response: configuration.Response{
+					Response: config.Response{
 						Code:       http.StatusAccepted,
 						RawContent: mock3Body,
 					},

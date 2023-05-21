@@ -1,9 +1,9 @@
-package configuration_test
+package config_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
@@ -16,40 +16,40 @@ func TestLoadConfiguration(t *testing.T) {
 	viperInstance := viper.New()
 	viperInstance.SetFs(fs)
 
-	t.Run("correctly parse configuration", func(t *testing.T) {
+	t.Run("correctly parse config", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			args     []string
-			expected *configuration.UncorsConfig
+			expected *config.UncorsConfig
 		}{
 			{
 				name: "return default config",
 				args: []string{},
-				expected: &configuration.UncorsConfig{
+				expected: &config.UncorsConfig{
 					HTTPPort:  80,
 					HTTPSPort: 443,
-					Mappings:  []configuration.URLMapping{},
-					Mocks:     []configuration.Mock{},
+					Mappings:  []config.URLMapping{},
+					Mocks:     []config.Mock{},
 				},
 			},
 			{
 				name: "minimal config is set",
 				args: []string{params.Config, "/minimal-config.yaml"},
-				expected: &configuration.UncorsConfig{
+				expected: &config.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
-					Mappings: []configuration.URLMapping{
+					Mappings: []config.URLMapping{
 						{From: "http://demo", To: "https://demo.com"},
 					},
-					Mocks: []configuration.Mock{},
+					Mocks: []config.Mock{},
 				},
 			},
 			{
 				name: "read all fields from config file config is set",
 				args: []string{params.Config, "/full-config.yaml"},
-				expected: &configuration.UncorsConfig{
+				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []configuration.URLMapping{
+					Mappings: []config.URLMapping{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{From: "http://other-demo2", To: "https://demo2.io"},
 					},
@@ -58,7 +58,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []configuration.Mock{
+					Mocks: []config.Mock{
 						{
 							Path:   "/demo",
 							Method: "POST",
@@ -68,7 +68,7 @@ func TestLoadConfiguration(t *testing.T) {
 							Headers: map[string]string{
 								"accept-encoding": "deflate",
 							},
-							Response: configuration.Response{
+							Response: config.Response{
 								Code: 201,
 								Headers: map[string]string{
 									"accept-encoding": "deflate",
@@ -88,9 +88,9 @@ func TestLoadConfiguration(t *testing.T) {
 					params.From, mocks.SourceHost2, params.To, mocks.TargetHost2,
 					params.From, mocks.SourceHost3, params.To, mocks.TargetHost3,
 				},
-				expected: &configuration.UncorsConfig{
+				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []configuration.URLMapping{
+					Mappings: []config.URLMapping{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{From: "http://other-demo2", To: "https://demo2.io"},
 						{From: mocks.SourceHost1, To: mocks.TargetHost1},
@@ -102,7 +102,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []configuration.Mock{
+					Mocks: []config.Mock{
 						{
 							Path:   "/demo",
 							Method: "POST",
@@ -112,7 +112,7 @@ func TestLoadConfiguration(t *testing.T) {
 							Headers: map[string]string{
 								"accept-encoding": "deflate",
 							},
-							Response: configuration.Response{
+							Response: config.Response{
 								Code: 201,
 								Headers: map[string]string{
 									"accept-encoding": "deflate",
@@ -127,7 +127,7 @@ func TestLoadConfiguration(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				config, err := configuration.LoadConfiguration(viperInstance, testCase.args)
+				config, err := config.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.NoError(t, err)
 				assert.Equal(t, testCase.expected, config)
@@ -135,7 +135,7 @@ func TestLoadConfiguration(t *testing.T) {
 		}
 	})
 
-	t.Run("parse configuration with error", func(t *testing.T) {
+	t.Run("parse config with error", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			args     []string
@@ -180,7 +180,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 			{
-				name: "configuration file doesn't exist",
+				name: "config file doesn't exist",
 				args: []string{
 					params.Config, "/not-exist-config.yaml",
 				},
@@ -190,7 +190,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 			{
-				name: "configuration file is corrupted",
+				name: "config file is corrupted",
 				args: []string{
 					params.Config, "/corrupted-config.yaml",
 				},
@@ -215,14 +215,14 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, "/incorrect-config.yaml",
 				},
 				expected: []string{
-					"filed parsing configuration: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
+					"filed parsing config: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
 						" strconv.ParseInt: parsing \"xxx\": invalid syntax",
 				},
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				config, err := configuration.LoadConfiguration(viperInstance, testCase.args)
+				config, err := config.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.Nil(t, config)
 				for _, expected := range testCase.expected {
@@ -236,17 +236,17 @@ func TestLoadConfiguration(t *testing.T) {
 func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configuration.UncorsConfig
+		config   *config.UncorsConfig
 		expected bool
 	}{
 		{
 			name:     "false by default",
-			config:   &configuration.UncorsConfig{},
+			config:   &config.UncorsConfig{},
 			expected: false,
 		},
 		{
 			name:     "false by default",
-			config:   &configuration.UncorsConfig{},
+			config:   &config.UncorsConfig{},
 			expected: false,
 		},
 	}

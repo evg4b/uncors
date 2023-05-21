@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 )
 
 func (m *UncorsRequestHandler) makeMockedRoutes() {
-	var defaultMocks []configuration.Mock
+	var defaultMocks []config.Mock
 
 	for _, mockDef := range m.mocks {
 		if len(mockDef.Queries) > 0 || len(mockDef.Headers) > 0 || len(mockDef.Method) > 0 {

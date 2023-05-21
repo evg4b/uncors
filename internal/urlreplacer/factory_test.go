@@ -3,7 +3,7 @@ package urlreplacer_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/configuration"
+	"github.com/evg4b/uncors/internal/config"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
@@ -15,21 +15,21 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
 			name    string
-			mapping []configuration.URLMapping
+			mapping []config.URLMapping
 		}{
 			{
 				name:    "mappings is empty",
-				mapping: make([]configuration.URLMapping, 0),
+				mapping: make([]config.URLMapping, 0),
 			},
 			{
 				name: "source url is incorrect",
-				mapping: []configuration.URLMapping{
+				mapping: []config.URLMapping{
 					{From: string(rune(0x7f)), To: "https://github.com"},
 				},
 			},
 			{
 				name: "target url is incorrect ",
-				mapping: []configuration.URLMapping{
+				mapping: []config.URLMapping{
 					{From: "localhost", To: string(rune(0x7f))},
 				},
 			},
@@ -45,7 +45,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	})
 
 	t.Run("should return replacers", func(t *testing.T) {
-		actual, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+		actual, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
 			{From: "localhost", To: "https://github.com"},
 		})
 
@@ -55,7 +55,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 }
 
 func TestFactoryMake(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory([]configuration.URLMapping{
+	factory, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
 		{From: "http://server1.com", To: "https://mappedserver1.com"},
 		{From: "https://server2.com", To: "https://mappedserver2.com"},
 	})
