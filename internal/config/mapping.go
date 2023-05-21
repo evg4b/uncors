@@ -24,6 +24,12 @@ func (u Mapping) Clone() Mapping {
 					return item.Clone()
 				})
 			}),
+		Mocks: lo.If(u.Mocks == nil, []Mock(nil)).
+			ElseF(func() []Mock {
+				return lo.Map(u.Mocks, func(item Mock, index int) Mock {
+					return item.Clone()
+				})
+			}),
 	}
 }
 

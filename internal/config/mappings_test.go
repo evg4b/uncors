@@ -24,7 +24,7 @@ func TestMappings(t *testing.T) {
 			mappings: config.Mappings{
 				{From: "http://localhost", To: "https://github.com"},
 			},
-			expected: []string{"PROXY: http://localhost => https://github.com"},
+			expected: []string{"http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
@@ -33,21 +33,45 @@ func TestMappings(t *testing.T) {
 				{From: "https://localhost", To: "https://github.com"},
 			},
 			expected: []string{
-				"PROXY: https://localhost => https://github.com",
-				"PROXY: http://localhost => https://github.com",
+				"https://localhost => https://github.com",
+				"http://localhost => https://github.com",
 			},
 		},
 		{
 			name: "mapping and mocks",
 			mappings: config.Mappings{
-				{From: "http://localhost", To: "https://github.com", Mocks: []config.Mock{
-					{}, {}, {},
-				}},
+				{
+					From: "http://localhost",
+					To:   "https://github.com",
+					Mocks: []config.Mock{
+						{
+							Path:     "",
+							Method:   "",
+							Queries:  nil,
+							Headers:  nil,
+							Response: config.Response{},
+						},
+						{
+							Path:     "",
+							Method:   "",
+							Queries:  nil,
+							Headers:  nil,
+							Response: config.Response{},
+						},
+						{
+							Path:     "",
+							Method:   "",
+							Queries:  nil,
+							Headers:  nil,
+							Response: config.Response{},
+						},
+					},
+				},
 				{From: "https://localhost", To: "https://github.com"},
 			},
 			expected: []string{
-				"PROXY: https://localhost => https://github.com",
-				"PROXY: http://localhost => https://github.com",
+				"https://localhost => https://github.com",
+				"http://localhost => https://github.com",
 				"MOCKS: 3 mock(s) registered",
 			},
 		},
