@@ -2,6 +2,7 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -45,25 +46,34 @@ func TestMappings(t *testing.T) {
 					To:   "https://github.com",
 					Mocks: []config.Mock{
 						{
-							Path:     "",
-							Method:   "",
-							Queries:  nil,
-							Headers:  nil,
-							Response: config.Response{},
+							Path:   "/endpoint-1",
+							Method: http.MethodPost,
+							Response: config.Response{
+								Code:       http.StatusOK,
+								RawContent: "OK",
+							},
 						},
 						{
-							Path:     "",
-							Method:   "",
-							Queries:  nil,
-							Headers:  nil,
-							Response: config.Response{},
+							Path:   "/demo",
+							Method: http.MethodGet,
+							Queries: map[string]string{
+								"param1": "value1",
+							},
+							Response: config.Response{
+								Code:       http.StatusInternalServerError,
+								RawContent: "ERROR",
+							},
 						},
 						{
-							Path:     "",
-							Method:   "",
-							Queries:  nil,
-							Headers:  nil,
-							Response: config.Response{},
+							Path:   "/healthcheck",
+							Method: http.MethodGet,
+							Headers: map[string]string{
+								"param1": "value1",
+							},
+							Response: config.Response{
+								Code:       http.StatusForbidden,
+								RawContent: "ERROR",
+							},
 						},
 					},
 				},
@@ -72,7 +82,9 @@ func TestMappings(t *testing.T) {
 			expected: []string{
 				"https://localhost => https://github.com",
 				"http://localhost => https://github.com",
-				"MOCKS: 3 mock(s) registered",
+				"mock: [POST 200] /endpoint-1",
+				"mock: [GET 500] /demo",
+				"mock: [GET 403] /healthcheck",
 			},
 		},
 	}
