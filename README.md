@@ -44,7 +44,7 @@
 - [Static file serving](https://github.com/evg4b/uncors/wiki/4.-Static-file-serving)
 - *Response caching ([coming soon...](./ROADMAP.md))*
 
-Other new features you can find in [roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md)
+Other new features you can find in [roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md).
 
 Full documentation you can found on [wiki pages](https://github.com/evg4b/uncors/wiki).
 
@@ -140,3 +140,7 @@ uncors --from 'http://localhost' --to 'https://github.com' --http-port 8080
 ```
 
 More information about configuration and usage you can fiund on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
+
+# ⚠️ Caution 
+
+Please note that removing or replacing CORS headers can pose potential security vulnerabilities. This tool is specifically designed to streamline the development and testing workflow and should not be used in a production environment or as a remote proxy server. It has not undergone a thorough security review, so caution should be exercised when utilizing it.
