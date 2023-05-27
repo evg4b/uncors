@@ -105,6 +105,12 @@ func TestCloneMap(t *testing.T) {
 		assert.NotSame(t, &data, &actual)
 		assert.EqualValues(t, &data, &actual)
 	})
+
+	t.Run("nil", func(t *testing.T) {
+		actual := helpers.CloneMap[string, string](nil)
+
+		assert.Nil(t, actual)
+	})
 }
 
 func assertClone[K comparable, V any](t *testing.T, data map[K]V) {

@@ -2,6 +2,8 @@ package config
 
 import (
 	"time"
+
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 type Response struct {
@@ -15,7 +17,7 @@ type Response struct {
 func (r Response) Clone() Response {
 	return Response{
 		Code:       r.Code,
-		Headers:    r.Headers,
+		Headers:    helpers.CloneMap(r.Headers),
 		RawContent: r.RawContent,
 		File:       r.File,
 		Delay:      r.Delay,
@@ -34,8 +36,8 @@ func (m Mock) Clone() Mock {
 	return Mock{
 		Path:     m.Path,
 		Method:   m.Method,
-		Queries:  m.Queries,
-		Headers:  m.Headers,
+		Queries:  helpers.CloneMap(m.Queries),
+		Headers:  helpers.CloneMap(m.Headers),
 		Response: m.Response.Clone(),
 	}
 }
