@@ -15,17 +15,13 @@ const (
 )
 
 type UncorsConfig struct {
-	// Base config_test_data
-	HTTPPort int          `mapstructure:"http-port" validate:"required"`
-	Mappings []URLMapping `mapstructure:"mappings" validate:"required"`
-	Proxy    string       `mapstructure:"proxy"`
-	Debug    bool         `mapstructure:"debug"`
-	// HTTPS config_test_data
-	HTTPSPort int    `mapstructure:"https-port"`
-	CertFile  string `mapstructure:"cert-file"`
-	KeyFile   string `mapstructure:"key-file"`
-	// Mocks config_test_data
-	Mocks []Mock `mapstructure:"mocks"`
+	HTTPPort  int      `mapstructure:"http-port" validate:"required"`
+	Mappings  Mappings `mapstructure:"mappings" validate:"required"`
+	Proxy     string   `mapstructure:"proxy"`
+	Debug     bool     `mapstructure:"debug"`
+	HTTPSPort int      `mapstructure:"https-port"`
+	CertFile  string   `mapstructure:"cert-file"`
+	KeyFile   string   `mapstructure:"key-file"`
 }
 
 func (config *UncorsConfig) IsHTTPSEnabled() bool {
@@ -43,8 +39,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	}
 
 	configuration := &UncorsConfig{
-		Mappings: []URLMapping{},
-		Mocks:    []Mock{},
+		Mappings: []Mapping{},
 	}
 
 	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {

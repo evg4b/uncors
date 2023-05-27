@@ -21,12 +21,12 @@ func TestURLMappingHookFunc(t *testing.T) {
 		tests := []struct {
 			name     string
 			config   string
-			expected config.URLMapping
+			expected config.Mapping
 		}{
 			{
 				name:   "simple key-value mapping",
 				config: "http://localhost:4200: https://github.com",
-				expected: config.URLMapping{
+				expected: config.Mapping{
 					From: "http://localhost:4200",
 					To:   "https://github.com",
 				},
@@ -34,7 +34,7 @@ func TestURLMappingHookFunc(t *testing.T) {
 			{
 				name:   "full object mapping",
 				config: "{ from: http://localhost:3000, to: https://google.com }",
-				expected: config.URLMapping{
+				expected: config.Mapping{
 					From: "http://localhost:3000",
 					To:   "https://google.com",
 				},
@@ -50,7 +50,7 @@ func TestURLMappingHookFunc(t *testing.T) {
 				err := viperInstance.ReadInConfig()
 				testutils.CheckNoError(t, err)
 
-				actual := config.URLMapping{}
+				actual := config.Mapping{}
 
 				err = viperInstance.Unmarshal(&actual, viper.DecodeHook(
 					config.URLMappingHookFunc(),
@@ -66,31 +66,31 @@ func TestURLMappingHookFunc(t *testing.T) {
 func TestURLMappingClone(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected config.URLMapping
+		expected config.Mapping
 	}{
 		{
 			name:     "empty structure",
-			expected: config.URLMapping{},
+			expected: config.Mapping{},
 		},
 		{
 			name: "structure with 1 field",
-			expected: config.URLMapping{
+			expected: config.Mapping{
 				From: localhost,
 			},
 		},
 		{
 			name: "structure with 2 field",
-			expected: config.URLMapping{
+			expected: config.Mapping{
 				From: localhost,
 				To:   localhostSecure,
 			},
 		},
 		{
 			name: "structure with inner collections",
-			expected: config.URLMapping{
+			expected: config.Mapping{
 				From: localhost,
 				To:   localhostSecure,
-				Statics: []config.StaticDirMapping{
+				Statics: []config.StaticDir{
 					{Path: "/cc", Dir: "cc"},
 				},
 			},

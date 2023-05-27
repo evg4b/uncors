@@ -24,7 +24,7 @@ var (
 	ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 )
 
-func NewURLReplacerFactory(urlMappings []config.URLMapping) (*Factory, error) {
+func NewURLReplacerFactory(urlMappings config.Mappings) (*Factory, error) {
 	if len(urlMappings) < 1 {
 		return nil, ErrMappingNotSpecified
 	}

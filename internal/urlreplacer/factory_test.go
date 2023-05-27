@@ -15,21 +15,21 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	t.Run("should return error when", func(t *testing.T) {
 		tests := []struct {
 			name    string
-			mapping []config.URLMapping
+			mapping []config.Mapping
 		}{
 			{
 				name:    "mappings is empty",
-				mapping: make([]config.URLMapping, 0),
+				mapping: make([]config.Mapping, 0),
 			},
 			{
 				name: "source url is incorrect",
-				mapping: []config.URLMapping{
+				mapping: []config.Mapping{
 					{From: string(rune(0x7f)), To: "https://github.com"},
 				},
 			},
 			{
 				name: "target url is incorrect ",
-				mapping: []config.URLMapping{
+				mapping: []config.Mapping{
 					{From: "localhost", To: string(rune(0x7f))},
 				},
 			},
@@ -45,7 +45,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 	})
 
 	t.Run("should return replacers", func(t *testing.T) {
-		actual, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
+		actual, err := urlreplacer.NewURLReplacerFactory([]config.Mapping{
 			{From: "localhost", To: "https://github.com"},
 		})
 
@@ -55,7 +55,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 }
 
 func TestFactoryMake(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory([]config.URLMapping{
+	factory, err := urlreplacer.NewURLReplacerFactory([]config.Mapping{
 		{From: "http://server1.com", To: "https://mappedserver1.com"},
 		{From: "https://server2.com", To: "https://mappedserver2.com"},
 	})

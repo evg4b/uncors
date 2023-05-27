@@ -11,8 +11,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/handler"
 
-	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/evg4b/uncors/internal/version"
 
 	"github.com/evg4b/uncors/internal/server"
@@ -60,7 +58,7 @@ func main() {
 		log.Debug("Enabled debug messages")
 	}
 
-	mappings, err := helpers.NormaliseMappings(
+	mappings, err := config.NormaliseMappings(
 		uncorsConfig.Mappings,
 		uncorsConfig.HTTPPort,
 		uncorsConfig.HTTPSPort,
@@ -87,7 +85,6 @@ func main() {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
-		handler.WithMocks(uncorsConfig.Mocks),
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
@@ -118,7 +115,7 @@ func main() {
 	log.Print("\n")
 	log.Warning(ui.DisclaimerMessage)
 	log.Print("\n")
-	log.Info(ui.Mappings(mappings, uncorsConfig.Mocks))
+	log.Info(mappings.String())
 	log.Print("\n")
 
 	go version.CheckNewVersion(ctx, httpClient, Version)

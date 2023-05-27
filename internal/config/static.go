@@ -6,23 +6,23 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type StaticDirMappings = []StaticDirMapping
+type StaticDirs = []StaticDir
 
-type StaticDirMapping struct {
+type StaticDir struct {
 	Path  string `mapstructure:"path"`
 	Dir   string `mapstructure:"dir"`
 	Index string `mapstructure:"index"`
 }
 
-func (s StaticDirMapping) Clone() StaticDirMapping {
-	return StaticDirMapping{
+func (s StaticDir) Clone() StaticDir {
+	return StaticDir{
 		Path:  s.Path,
 		Dir:   s.Dir,
 		Index: s.Index,
 	}
 }
 
-var staticDirMappingsType = reflect.TypeOf(StaticDirMappings{})
+var staticDirMappingsType = reflect.TypeOf(StaticDirs{})
 
 func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
@@ -35,10 +35,10 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 			return rawData, nil
 		}
 
-		var mappings StaticDirMappings
+		var mappings StaticDirs
 		for path, mappingDef := range mappingsDefs {
 			if def, ok := mappingDef.(string); ok {
-				mappings = append(mappings, StaticDirMapping{
+				mappings = append(mappings, StaticDir{
 					Path: path,
 					Dir:  def,
 				})
@@ -46,7 +46,7 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 				continue
 			}
 
-			mapping := StaticDirMapping{}
+			mapping := StaticDir{}
 			err := decodeConfig(mappingDef, &mapping)
 			if err != nil {
 				return nil, err

@@ -28,8 +28,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  80,
 					HTTPSPort: 443,
-					Mappings:  []config.URLMapping{},
-					Mocks:     []config.Mock{},
+					Mappings:  []config.Mapping{},
 				},
 			},
 			{
@@ -38,10 +37,9 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo", To: "https://demo.com"},
 					},
-					Mocks: []config.Mock{},
 				},
 			},
 			{
@@ -49,35 +47,34 @@ func TestLoadConfiguration(t *testing.T) {
 				args: []string{params.Config, "/full-config.yaml"},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo1", To: "https://demo1.com"},
-						{From: "http://other-demo2", To: "https://demo2.io"},
+						{From: "http://other-demo2", To: "https://demo2.io", Mocks: []config.Mock{
+							{
+								Path:   "/demo",
+								Method: "POST",
+								Queries: map[string]string{
+									"foo": "bar",
+								},
+								Headers: map[string]string{
+									"accept-encoding": "deflate",
+								},
+								Response: config.Response{
+									Code: 201,
+									Headers: map[string]string{
+										"accept-encoding": "deflate",
+									},
+									RawContent: "demo",
+									File:       "/demo.txt",
+								},
+							},
+						}},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []config.Mock{
-						{
-							Path:   "/demo",
-							Method: "POST",
-							Queries: map[string]string{
-								"foo": "bar",
-							},
-							Headers: map[string]string{
-								"accept-encoding": "deflate",
-							},
-							Response: config.Response{
-								Code: 201,
-								Headers: map[string]string{
-									"accept-encoding": "deflate",
-								},
-								RawContent: "demo",
-								File:       "/demo.txt",
-							},
-						},
-					},
 				},
 			},
 			{
@@ -90,9 +87,31 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.URLMapping{
+					Mappings: []config.Mapping{
 						{From: "http://demo1", To: "https://demo1.com"},
-						{From: "http://other-demo2", To: "https://demo2.io"},
+						{
+							From: "http://other-demo2",
+							To:   "https://demo2.io",
+							Mocks: []config.Mock{
+								{
+									Path:   "/demo",
+									Method: "POST",
+									Queries: map[string]string{
+										"foo": "bar",
+									},
+									Headers: map[string]string{
+										"accept-encoding": "deflate",
+									},
+									Response: config.Response{
+										Code: 201,
+										Headers: map[string]string{
+											"accept-encoding": "deflate",
+										},
+										RawContent: "demo",
+										File:       "/demo.txt",
+									},
+								},
+							}},
 						{From: mocks.SourceHost1, To: mocks.TargetHost1},
 						{From: mocks.SourceHost2, To: mocks.TargetHost2},
 						{From: mocks.SourceHost3, To: mocks.TargetHost3},
@@ -102,35 +121,15 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  "/cert-file.pem",
 					KeyFile:   "/key-file.key",
-					Mocks: []config.Mock{
-						{
-							Path:   "/demo",
-							Method: "POST",
-							Queries: map[string]string{
-								"foo": "bar",
-							},
-							Headers: map[string]string{
-								"accept-encoding": "deflate",
-							},
-							Response: config.Response{
-								Code: 201,
-								Headers: map[string]string{
-									"accept-encoding": "deflate",
-								},
-								RawContent: "demo",
-								File:       "/demo.txt",
-							},
-						},
-					},
 				},
 			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				config, err := config.LoadConfiguration(viperInstance, testCase.args)
+				uncorsConfig, err := config.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.expected, config)
+				assert.Equal(t, testCase.expected, uncorsConfig)
 			})
 		}
 	})
@@ -222,9 +221,9 @@ func TestLoadConfiguration(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				config, err := config.LoadConfiguration(viperInstance, testCase.args)
+				uncorsConfig, err := config.LoadConfiguration(viperInstance, testCase.args)
 
-				assert.Nil(t, config)
+				assert.Nil(t, uncorsConfig)
 				for _, expected := range testCase.expected {
 					assert.ErrorContains(t, err, expected)
 				}

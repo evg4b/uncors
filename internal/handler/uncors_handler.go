@@ -1,7 +1,14 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/evg4b/uncors/internal/infra"
+
+	"github.com/evg4b/uncors/pkg/urlx"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -12,21 +19,21 @@ import (
 	"github.com/spf13/afero"
 )
 
-type UncorsRequestHandler struct {
+type RequestHandler struct {
 	router          *mux.Router
 	fs              afero.Fs
 	logger          contracts.Logger
-	mocks           []config.Mock
-	mappings        []config.URLMapping
+	mappings        config.Mappings
 	replacerFactory contracts.URLReplacerFactory
 	httpClient      contracts.HTTPClient
 }
 
-func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsRequestHandler {
-	handler := &UncorsRequestHandler{
+var errHostNotMapped = errors.New("host not mapped")
+
+func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHandler {
+	handler := &RequestHandler{
 		router:   mux.NewRouter(),
-		mocks:    []config.Mock{},
-		mappings: []config.URLMapping{},
+		mappings: config.Mappings{},
 	}
 
 	for _, option := range options {
@@ -39,18 +46,36 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *UncorsReque
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	handler.makeMockedRoutes()
-	handler.makeStaticRoutes(proxyHandler)
-	handler.setDefaultHandler(proxyHandler)
+	for _, mapping := range handler.mappings {
+		uri, err := urlx.Parse(mapping.From)
+		if err != nil {
+			panic(err)
+		}
+
+		host, _, err := urlx.SplitHostPort(uri)
+		if err != nil {
+			panic(err)
+		}
+
+		router := handler.router.Host(replaceWildcards(host)).Subrouter()
+
+		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
+		handler.makeMockedRoutes(router, mapping.Mocks)
+		setDefaultHandler(router, proxyHandler)
+	}
+
+	setDefaultHandler(handler.router, http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		infra.HTTPError(writer, errHostNotMapped)
+	}))
 
 	return handler
 }
 
-func (m *UncorsRequestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (m *RequestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	m.router.ServeHTTP(writer, request)
 }
 
-func (m *UncorsRequestHandler) createHandler(response config.Response) *mock.Middleware {
+func (m *RequestHandler) createHandler(response config.Response) *mock.Middleware {
 	return mock.NewMockMiddleware(
 		mock.WithLogger(ui.MockLogger),
 		mock.WithResponse(response),
@@ -58,7 +83,18 @@ func (m *UncorsRequestHandler) createHandler(response config.Response) *mock.Mid
 	)
 }
 
-func (m *UncorsRequestHandler) setDefaultHandler(handler http.Handler) {
-	m.router.NotFoundHandler = handler
-	m.router.MethodNotAllowedHandler = handler
+func setDefaultHandler(router *mux.Router, handler http.Handler) {
+	router.NotFoundHandler = handler
+	router.MethodNotAllowedHandler = handler
+}
+
+const wildcard = "*"
+
+func replaceWildcards(host string) string {
+	count := strings.Count(host, wildcard)
+	for i := 1; i <= count; i++ {
+		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
+	}
+
+	return host
 }
