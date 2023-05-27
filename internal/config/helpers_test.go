@@ -1,11 +1,10 @@
 // nolint: dupl
-package helpers_test
+package config_test
 
 import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -71,7 +70,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := helpers.NormaliseMappings(
+				actual, err := config.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
@@ -144,7 +143,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := helpers.NormaliseMappings(
+				actual, err := config.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
@@ -189,7 +188,7 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, err := helpers.NormaliseMappings(
+				_, err := config.NormaliseMappings(
 					testCase.mappings,
 					testCase.httpPort,
 					testCase.httpsPort,

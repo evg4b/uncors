@@ -11,8 +11,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/handler"
 
-	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/evg4b/uncors/internal/version"
 
 	"github.com/evg4b/uncors/internal/server"
@@ -60,7 +58,7 @@ func main() {
 		log.Debug("Enabled debug messages")
 	}
 
-	mappings, err := helpers.NormaliseMappings(
+	mappings, err := config.NormaliseMappings(
 		uncorsConfig.Mappings,
 		uncorsConfig.HTTPPort,
 		uncorsConfig.HTTPSPort,
