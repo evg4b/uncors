@@ -26,12 +26,10 @@ linters:
     - exhaustruct
     - wsl
     - gci
-    - gofmt
-    - gofumpt
     - nolintlint
-    - tagliatelle
     - maintidx
     - ireturn
+    - bodyclose
 linters-settings:
   varnamelen:
     ignore-names:

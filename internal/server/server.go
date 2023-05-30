@@ -17,8 +17,10 @@ type UncorsServer struct {
 	inShutdown AtomicBool
 }
 
-const readHeaderTimeout = 30 * time.Second
-const shutdownTimeout = 15 * time.Second
+const (
+	readHeaderTimeout = 30 * time.Second
+	shutdownTimeout   = 15 * time.Second
+)
 
 func NewUncorsServer(ctx context.Context, handler http.Handler) *UncorsServer {
 	globalCtx, globalCtxCancel := context.WithCancel(ctx)

@@ -57,7 +57,7 @@ func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	defer originalResponse.Body.Close()
+	defer helpers.CloseSafe(originalResponse.Body)
 
 	err = m.makeUncorsResponse(originalResponse, resp, sourceReplacer)
 	if err != nil {

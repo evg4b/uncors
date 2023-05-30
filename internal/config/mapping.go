@@ -33,8 +33,10 @@ func (u Mapping) Clone() Mapping {
 	}
 }
 
-var mappingType = reflect.TypeOf(Mapping{})
-var mappingFields = getTagValues(mappingType, "mapstructure")
+var (
+	mappingType   = reflect.TypeOf(Mapping{})
+	mappingFields = getTagValues(mappingType, "mapstructure")
+)
 
 func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {

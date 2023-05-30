@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"github.com/evg4b/uncors/internal/helpers"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,7 @@ func ReadBody(t *testing.T, recorder *httptest.ResponseRecorder) string {
 	t.Helper()
 
 	response := recorder.Result()
-	defer CheckNoError(t, response.Body.Close())
+	defer helpers.CloseSafe(response.Body)
 
 	body, err := io.ReadAll(response.Body)
 	CheckNoError(t, err)
@@ -23,7 +24,7 @@ func ReadHeader(t *testing.T, recorder *httptest.ResponseRecorder) http.Header {
 	t.Helper()
 
 	response := recorder.Result()
-	defer CheckNoError(t, response.Body.Close())
+	defer helpers.CloseSafe(response.Body)
 
 	return response.Header
 }

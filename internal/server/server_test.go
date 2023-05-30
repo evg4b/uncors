@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -42,9 +43,7 @@ func TestNewUncorsServer(t *testing.T) {
 
 			res, err := http.DefaultClient.Do(&http.Request{URL: uri, Method: http.MethodGet})
 			testutils.CheckNoError(t, err)
-			defer func() {
-				testutils.CheckNoError(t, res.Body.Close())
-			}()
+			defer helpers.CloseSafe(res.Body)
 
 			data, err := io.ReadAll(res.Body)
 			testutils.CheckNoError(t, err)
@@ -75,9 +74,7 @@ func TestNewUncorsServer(t *testing.T) {
 
 			response, err := httpClient.Do(&http.Request{URL: uri, Method: http.MethodGet})
 			testutils.CheckNoError(t, err)
-			defer func() {
-				testutils.CheckNoError(t, response.Body.Close())
-			}()
+			defer helpers.CloseSafe(response.Body)
 
 			actualResponse, err := io.ReadAll(response.Body)
 			testutils.CheckNoError(t, err)
@@ -88,8 +85,7 @@ func TestNewUncorsServer(t *testing.T) {
 
 	t.Run("run already stopped server", func(t *testing.T) {
 		uncorsServer := server.NewUncorsServer(ctx, handler)
-		err := uncorsServer.Close()
-		testutils.CheckNoServerError(t, err)
+		testutils.CheckNoServerError(t, uncorsServer.Close())
 
 		t.Run("HTTP", func(t *testing.T) {
 			err := uncorsServer.ListenAndServe("127.0.0.1:0")

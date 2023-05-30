@@ -12,12 +12,12 @@ import (
 )
 
 func TestNormaliseRequest(t *testing.T) {
-	var url, err = urlx.Parse("http://localhost")
+	url, err := urlx.Parse("http://localhost")
 	testutils.CheckNoError(t, err)
 
 	t.Run("set correct scheme", func(t *testing.T) {
 		t.Run("http", func(t *testing.T) {
-			var request = &http.Request{
+			request := &http.Request{
 				URL:  url,
 				Host: "localhost",
 			}
@@ -28,7 +28,7 @@ func TestNormaliseRequest(t *testing.T) {
 		})
 
 		t.Run("https", func(t *testing.T) {
-			var request = &http.Request{
+			request := &http.Request{
 				URL:  url,
 				TLS:  &tls.ConnectionState{},
 				Host: "localhost",
@@ -41,7 +41,7 @@ func TestNormaliseRequest(t *testing.T) {
 	})
 
 	t.Run("fill url.host", func(t *testing.T) {
-		var request = &http.Request{
+		request := &http.Request{
 			URL:  url,
 			TLS:  &tls.ConnectionState{},
 			Host: "localhost",

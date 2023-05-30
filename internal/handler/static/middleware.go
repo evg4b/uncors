@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/spf13/afero"
@@ -38,11 +39,7 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	filePath := m.extractFilePath(request)
 
 	file, stat, err := m.openFile(filePath)
-	defer func() {
-		if file != nil {
-			file.Close()
-		}
-	}()
+	defer helpers.CloseSafe(file)
 
 	if err != nil {
 		if errors.Is(err, errNorHandled) {

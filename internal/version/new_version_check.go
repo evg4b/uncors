@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/hashicorp/go-version"
@@ -42,7 +43,7 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 		return
 	}
 
-	defer response.Body.Close()
+	defer helpers.CloseSafe(response.Body)
 	decoder := json.NewDecoder(response.Body)
 
 	lastVersionInfo := versionInfo{}

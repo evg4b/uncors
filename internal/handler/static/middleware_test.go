@@ -19,6 +19,7 @@ const (
 	demoJS    = "/assets/demo.js"
 	indexHTML = "/index.html"
 )
+
 const (
 	indexJSContent   = "console.log('index.js')"
 	demoJSContent    = "console.log('demo.js')"
