@@ -18,7 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/pseidemann/finish"
-	"github.com/pterm/pterm"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -31,7 +30,7 @@ const baseAddress = "127.0.0.1"
 
 func main() {
 	defer infra.PanicInterceptor(func(value any) {
-		pterm.Error.Println(value)
+		log.Error(value)
 		os.Exit(1)
 	})
 
@@ -86,7 +85,15 @@ func main() {
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
 	)
+
 	uncorsServer := server.NewUncorsServer(ctx, globalHandler)
+
+	log.Print(ui.Logo(Version))
+	log.Print("\n")
+	log.Warning(ui.DisclaimerMessage)
+	log.Print("\n")
+	log.Info(mappings.String())
+	log.Print("\n")
 
 	finisher.Add(uncorsServer)
 	go func() {
@@ -107,13 +114,6 @@ func main() {
 			finisher.Trigger()
 		}()
 	}
-
-	log.Print(ui.Logo(Version))
-	log.Print("\n")
-	log.Warning(ui.DisclaimerMessage)
-	log.Print("\n")
-	log.Info(mappings.String())
-	log.Print("\n")
 
 	go version.CheckNewVersion(ctx, httpClient, Version)
 
