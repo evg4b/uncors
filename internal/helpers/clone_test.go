@@ -75,15 +75,15 @@ func TestCloneMap(t *testing.T) {
 
 	t.Run("clonable objects", func(t *testing.T) {
 		data := map[string]clonableTestStruct{
-			"1": {Value: "demo"},
-			"2": {Value: "demo"},
-			"3": {Value: "demo"},
+			"1": {Value: "property 1"},
+			"2": {Value: "property 2"},
+			"3": {Value: "property 3"},
 		}
 
 		expected := map[string]clonableTestStruct{
-			"1": {Value: "Cloned:demo"},
-			"2": {Value: "Cloned:demo"},
-			"3": {Value: "Cloned:demo"},
+			"1": {Value: "Cloned:property 1"},
+			"2": {Value: "Cloned:property 2"},
+			"3": {Value: "Cloned:property 3"},
 		}
 
 		actual := helpers.CloneMap(data)

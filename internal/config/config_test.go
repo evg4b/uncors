@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const acceptEncoding = "accept-encoding"
+
 func TestLoadConfiguration(t *testing.T) {
 	fs := testutils.PrepareFsForTests(t, "config_test_data")
 	viperInstance := viper.New()
@@ -57,12 +59,12 @@ func TestLoadConfiguration(t *testing.T) {
 									"foo": "bar",
 								},
 								Headers: map[string]string{
-									"accept-encoding": "deflate",
+									acceptEncoding: "deflate",
 								},
 								Response: config.Response{
 									Code: 201,
 									Headers: map[string]string{
-										"accept-encoding": "deflate",
+										acceptEncoding: "deflate",
 									},
 									RawContent: "demo",
 									File:       "/demo.txt",
@@ -100,12 +102,12 @@ func TestLoadConfiguration(t *testing.T) {
 										"foo": "bar",
 									},
 									Headers: map[string]string{
-										"accept-encoding": "deflate",
+										acceptEncoding: "deflate",
 									},
 									Response: config.Response{
 										Code: 201,
 										Headers: map[string]string{
-											"accept-encoding": "deflate",
+											acceptEncoding: "deflate",
 										},
 										RawContent: "demo",
 										File:       "/demo.txt",

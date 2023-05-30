@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
 )
 
@@ -21,7 +22,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+					mocks.AllMethods,
 				},
 			},
 		},
@@ -36,7 +37,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+					mocks.AllMethods,
 				},
 			},
 		},
@@ -49,7 +50,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+					mocks.AllMethods,
 				},
 				"X-DATA": []string{"https://demo.com"},
 			},

@@ -295,14 +295,19 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 				handler.WithLogger(logger),
 				handler.WithMappings([]config.Mapping{
-					// TODO: add hosts
-					{From: "*", To: "*", Mocks: []config.Mock{{
-						Path: "/api",
-						Response: config.Response{
-							Code:       http.StatusOK,
-							RawContent: mock1Body,
+					{
+						From: "*",
+						To:   "*",
+						Mocks: []config.Mock{
+							{
+								Path: "/api",
+								Response: config.Response{
+									Code:       http.StatusOK,
+									RawContent: mock1Body,
+								},
+							},
 						},
-					}}},
+					},
 				}),
 			)
 
