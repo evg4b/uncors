@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,10 +20,7 @@ func TestNewUncorsServer(t *testing.T) {
 
 	var handler http.HandlerFunc = func(w http.ResponseWriter, _r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprint(w, expectedResponse)
-		if err != nil {
-			panic(err)
-		}
+		sfmt.Fprint(w, expectedResponse)
 	}
 
 	t.Run("handle request", func(t *testing.T) {

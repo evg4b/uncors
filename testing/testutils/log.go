@@ -2,9 +2,8 @@ package testutils
 
 import (
 	"bytes"
-	"testing"
-
 	"github.com/evg4b/uncors/internal/log"
+	"testing"
 )
 
 func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {

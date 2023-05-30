@@ -2,19 +2,17 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/evg4b/uncors/internal/infra"
-
-	"github.com/evg4b/uncors/pkg/urlx"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
+	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
 )
@@ -93,7 +91,7 @@ const wildcard = "*"
 func replaceWildcards(host string) string {
 	count := strings.Count(host, wildcard)
 	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
+		host = strings.Replace(host, wildcard, sfmt.Sprintf("{p%d}", i), 1)
 	}
 
 	return host

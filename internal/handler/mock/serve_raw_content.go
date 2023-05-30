@@ -1,13 +1,13 @@
 package mock
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/go-http-utils/headers"
 )
 
-func (m *Middleware) serveRawContent(writer http.ResponseWriter) error {
+func (m *Middleware) serveRawContent(writer http.ResponseWriter) {
 	response := m.response
 	header := writer.Header()
 	if len(header.Get(headers.ContentType)) == 0 {
@@ -16,9 +16,5 @@ func (m *Middleware) serveRawContent(writer http.ResponseWriter) error {
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	if _, err := fmt.Fprint(writer, response.RawContent); err != nil {
-		return fmt.Errorf("failed to write mock content: %w", err)
-	}
-
-	return nil
+	sfmt.Fprint(writer, response.RawContent)
 }

@@ -8,10 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/handler/mock"
-
 	"github.com/evg4b/uncors/internal/config"
-
+	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"

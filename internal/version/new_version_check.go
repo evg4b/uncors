@@ -5,12 +5,11 @@ package version
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/hashicorp/go-version"
+	"net/http"
 )
 
 const lastVersionURL = "https://api.github.com/repos/evg4b/uncors/releases/latest"

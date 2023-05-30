@@ -3,29 +3,26 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/evg4b/uncors/internal/handler"
-
-	"github.com/evg4b/uncors/internal/version"
-
-	"github.com/evg4b/uncors/internal/server"
-	"golang.org/x/net/context"
-
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
+	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/internal/version"
 	"github.com/pseidemann/finish"
 	"github.com/pterm/pterm"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 var Version = "X.X.X"
@@ -40,7 +37,7 @@ func main() {
 
 	pflag.Usage = func() {
 		ui.Logo(Version)
-		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		sfmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 

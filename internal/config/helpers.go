@@ -2,15 +2,14 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlx"
-
 	"github.com/evg4b/uncors/internal/config/hooks"
+	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
@@ -84,7 +83,7 @@ func NormaliseMappings(mappings Mappings, httpPort, httpsPort int, useHTTPS bool
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse source url: %w", err)
+			return nil, sfmt.Errorf("failed to parse source url: %w", err)
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/server"
-
 	"github.com/go-playground/assert/v2"
 )
 

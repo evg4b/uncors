@@ -8,9 +8,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/evg4b/uncors/internal/log"
-
 	"golang.org/x/net/context"
 )
 

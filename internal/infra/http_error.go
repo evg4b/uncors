@@ -1,10 +1,10 @@
 package infra
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/go-http-utils/headers"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
@@ -19,12 +19,12 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	header.Set(headers.XContentTypeOptions, "nosniff")
 
 	writer.WriteHeader(http.StatusInternalServerError)
-	message := fmt.Sprintf("%d Error", http.StatusInternalServerError)
+	message := sfmt.Sprintf("%d Error", http.StatusInternalServerError)
 
 	writeLine(writer)
 	writeLine(writer, pageHeader(message))
 	writeLine(writer)
-	writeLine(writer, fmt.Sprintf("Occurred error: %s", err))
+	writeLine(writer, sfmt.Sprintf("Occurred error: %s", err))
 }
 
 func pageHeader(message string) string {
@@ -38,7 +38,5 @@ func pageHeader(message string) string {
 }
 
 func writeLine(writer io.Writer, data ...string) {
-	if _, err := fmt.Fprintln(writer, lo.ToAnySlice(data)...); err != nil {
-		panic(err)
-	}
+	sfmt.Fprintln(writer, lo.ToAnySlice(data)...)
 }

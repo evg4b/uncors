@@ -1,22 +1,20 @@
 package handler_test
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/go-http-utils/headers"
-
-	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler"
+	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -114,7 +112,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			}, nil
 		}
 
-		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
+		panic(sfmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
 	hand := handler.NewUncorsRequestHandler(

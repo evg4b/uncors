@@ -2,10 +2,10 @@ package urlreplacer
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/sfmt"
 )
 
 type mapping struct {
@@ -33,7 +33,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) (*Factory, error) {
 	for _, urlMapping := range urlMappings {
 		target, source, err := replacers(urlMapping.From, urlMapping.To)
 		if err != nil {
-			return nil, fmt.Errorf("failed to configure url mappings: %w", err)
+			return nil, sfmt.Errorf("failed to configure url mappings: %w", err)
 		}
 
 		mappings = append(mappings, mapping{

@@ -1,11 +1,11 @@
 package urlreplacer
 
 import (
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
@@ -17,18 +17,18 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	host, _, err := urlx.SplitHostPort(parsedPattern)
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, sfmt.Errorf("filed to build url glob: %w", err)
 	}
 
 	parts := strings.Split(host, "*")
 	for index, literal := range parts {
 		if index > 0 {
 			count++
-			fmt.Fprintf(&result, "(?P<part%d>.+)", count)
+			sfmt.Fprintf(&result, "(?P<part%d>.+)", count)
 		}
 
 		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
-			return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+			return nil, 0, sfmt.Errorf("filed to build url glob: %w", err)
 		}
 	}
 
@@ -37,37 +37,28 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	compiledRegexp, err := regexp.Compile(result.String())
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, sfmt.Errorf("filed to build url glob: %w", err)
 	}
 
 	return compiledRegexp, count, nil
 }
 
-func wildCardToReplacePattern(parsedPattern *url.URL) (string, int, error) {
+func wildCardToReplacePattern(parsedPattern *url.URL) (string, int) {
 	result := &strings.Builder{}
 	var count int
 
-	if _, err := fmt.Fprint(result, "${scheme}"); err != nil {
-		return "", count, fmt.Errorf("filed to build url glob: %w", err)
-	}
+	sfmt.Fprint(result, "${scheme}")
 
 	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
-			if _, err := fmt.Fprintf(result, "${part%d}", count); err != nil {
-				return "", count, fmt.Errorf("filed to build url glob: %w", err)
-			}
+			sfmt.Fprintf(result, "${part%d}", count)
 		}
 
-		_, err := fmt.Fprint(result, literal)
-		if err != nil {
-			return "", count, fmt.Errorf("filed to build url glob: %w", err)
-		}
+		sfmt.Fprint(result, literal)
 	}
 
-	if _, err := fmt.Fprint(result, "${path}"); err != nil {
-		return "", count, fmt.Errorf("filed to build url glob: %w", err)
-	}
+	sfmt.Fprint(result, "${path}")
 
-	return result.String(), count, nil
+	return result.String(), count
 }

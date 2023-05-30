@@ -1,12 +1,11 @@
 package testutils
 
 import (
+	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
-
-	"github.com/spf13/afero"
 )
 
 // FsFromMap creates afero.Fs in memory from map.

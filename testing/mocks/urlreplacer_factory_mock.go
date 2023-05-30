@@ -9,7 +9,6 @@ import (
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
-
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/gojuno/minimock/v3"
 )

@@ -161,9 +161,8 @@ func TestWildCardToReplacePattern(t *testing.T) {
 				parsedPattern, err := urlx.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
-				pattern, _, err := wildCardToReplacePattern(parsedPattern)
+				pattern, _ := wildCardToReplacePattern(parsedPattern)
 
-				assert.NoError(t, err)
 				assert.Equal(t, testCase.expectedPattern, pattern)
 			})
 		}
@@ -201,7 +200,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 				parsedPattern, err := urlx.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
-				_, count, err := wildCardToReplacePattern(parsedPattern)
+				_, count := wildCardToReplacePattern(parsedPattern)
 
 				assert.NoError(t, err)
 				assert.Equal(t, testCase.expected, count)

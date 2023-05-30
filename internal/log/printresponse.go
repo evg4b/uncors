@@ -1,14 +1,14 @@
 package log
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
 )
 
 func printResponse(response *http.Response) string {
-	prefix := fmt.Sprintf("%d %s", response.StatusCode, response.Request.Method)
+	prefix := sfmt.Sprintf("%d %s", response.StatusCode, response.Request.Method)
 	printer := getPrefixPrinter(response.StatusCode, prefix)
 
 	return printer.Sprint(response.Request.URL.String())
@@ -16,7 +16,7 @@ func printResponse(response *http.Response) string {
 
 func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {
 	if statusCode < 100 || statusCode > 599 {
-		panic(fmt.Sprintf("status code %d is not supported", statusCode))
+		panic(sfmt.Sprintf("status code %d is not supported", statusCode))
 	}
 
 	if 100 <= statusCode && statusCode <= 199 {

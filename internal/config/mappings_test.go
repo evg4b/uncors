@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,11 +2,11 @@ package urlreplacer
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
@@ -56,9 +56,7 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, err
 	}
 
-	if replacer.pattern, _, _ = wildCardToReplacePattern(replacer.target); err != nil {
-		return nil, err
-	}
+	replacer.pattern, _ = wildCardToReplacePattern(replacer.target)
 
 	if len(replacer.target.Scheme) > 0 {
 		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
@@ -70,14 +68,14 @@ func NewReplacer(source, target string) (*Replacer, error) {
 func (r *Replacer) Replace(source string) (string, error) {
 	matches := r.regexp.FindStringSubmatch(source)
 	if len(matches) < 1 {
-		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMached)
+		return "", sfmt.Errorf("url '%s' %w", source, ErrURLNotMached)
 	}
 
 	replaced := strings.Clone(r.pattern)
 
 	for _, subexpName := range r.regexp.SubexpNames() {
 		if len(subexpName) > 0 {
-			partPattern := fmt.Sprintf("${%s}", subexpName)
+			partPattern := sfmt.Sprintf("${%s}", subexpName)
 			partIndex := r.regexp.SubexpIndex(subexpName)
 			partValue := matches[partIndex]
 			if hook, ok := r.hooks[subexpName]; ok {

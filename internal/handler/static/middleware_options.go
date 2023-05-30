@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
-
 	"github.com/spf13/afero"
 )
 

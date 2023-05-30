@@ -5,9 +5,8 @@ package infra_test
 import (
 	"errors"
 	"github.com/evg4b/uncors/internal/infra"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestPanicInterceptor(t *testing.T) {

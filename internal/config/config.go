@@ -1,9 +1,8 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/evg4b/uncors/internal/config/hooks"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -31,11 +30,11 @@ func (config *UncorsConfig) IsHTTPSEnabled() bool {
 func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig, error) {
 	flags := defineFlags()
 	if err := flags.Parse(args); err != nil {
-		return nil, fmt.Errorf("filed parsing flags: %w", err)
+		return nil, sfmt.Errorf("filed parsing flags: %w", err)
 	}
 
 	if err := viperInstance.BindPFlags(flags); err != nil {
-		return nil, fmt.Errorf("filed binding flags: %w", err)
+		return nil, sfmt.Errorf("filed binding flags: %w", err)
 	}
 
 	configuration := &UncorsConfig{
@@ -45,7 +44,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {
 		viperInstance.SetConfigFile(configPath)
 		if err := viperInstance.ReadInConfig(); err != nil {
-			return nil, fmt.Errorf("filed to read config file '%s': %w", configPath, err)
+			return nil, sfmt.Errorf("filed to read config file '%s': %w", configPath, err)
 		}
 	}
 
@@ -56,11 +55,11 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	))
 
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
-		return nil, fmt.Errorf("filed parsing config: %w", err)
+		return nil, sfmt.Errorf("filed parsing config: %w", err)
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {
-		return nil, fmt.Errorf("recognize url mapping: %w", err)
+		return nil, sfmt.Errorf("recognize url mapping: %w", err)
 	}
 
 	return configuration, nil

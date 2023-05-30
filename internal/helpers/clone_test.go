@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/stretchr/testify/assert"
 )
 

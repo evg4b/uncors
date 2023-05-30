@@ -6,17 +6,16 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/version"
+	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/log"
-	"github.com/evg4b/uncors/testing/mocks"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckNewVersion(t *testing.T) {

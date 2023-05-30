@@ -1,10 +1,9 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/log"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 )
@@ -12,7 +11,7 @@ import (
 func Logo(version string) string {
 	logoLength := 51
 	versionLine := strings.Repeat(" ", logoLength)
-	versionSuffix := fmt.Sprintf("version: %s", version)
+	versionSuffix := sfmt.Sprintf("version: %s", version)
 	versionPrefix := versionLine[:logoLength-len(versionSuffix)]
 
 	logo, _ := pterm.DefaultBigText.
@@ -24,21 +23,10 @@ func Logo(version string) string {
 
 	var builder strings.Builder
 
-	if _, err := fmt.Fprintln(&builder); err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := fmt.Fprint(&builder, logo); err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := fmt.Fprint(&builder, versionPrefix, versionSuffix); err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := fmt.Fprintln(&builder); err != nil {
-		log.Fatal(err)
-	}
+	sfmt.Fprintln(&builder)
+	sfmt.Fprint(&builder, logo)
+	sfmt.Fprint(&builder, versionPrefix, versionSuffix)
+	sfmt.Fprintln(&builder)
 
 	return builder.String()
 }

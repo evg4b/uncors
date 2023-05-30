@@ -8,11 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/evg4b/uncors/internal/config"
-
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"

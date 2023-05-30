@@ -1,7 +1,6 @@
 package static_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/handler/static"
+	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -99,7 +99,7 @@ func TestMiddleware(t *testing.T) {
 			static.WithLogger(mocks.NewLoggerMock(t)),
 			static.WithNext(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				writer.WriteHeader(testHTTPStatusCode)
-				fmt.Fprint(writer, testHTTPBody)
+				sfmt.Fprint(writer, testHTTPBody)
 			})),
 		)
 

@@ -1,9 +1,9 @@
 package log
 
 import (
-	"github.com/pterm/pterm"
-
 	"log"
+
+	"github.com/pterm/pterm"
 )
 
 func StandardErrorLogAdapter() *log.Logger {

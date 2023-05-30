@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
@@ -50,17 +49,15 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		header.Set(key, value)
 	}
 
-	var err error
 	if len(m.response.File) > 0 {
-		err = m.serveFileContent(writer, request)
+		err := m.serveFileContent(writer, request)
+		if err != nil {
+			infra.HTTPError(writer, err)
+
+			return
+		}
 	} else {
-		err = m.serveRawContent(writer)
-	}
-
-	if err != nil {
-		infra.HTTPError(writer, err)
-
-		return
+		m.serveRawContent(writer)
 	}
 
 	m.logger.PrintResponse(&http.Response{
