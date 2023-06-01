@@ -1,13 +1,13 @@
 package proxy
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
@@ -44,12 +44,12 @@ func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 
 	targetReplacer, sourceReplacer, err := m.replacers.Make(req.URL)
 	if err != nil {
-		return sfmt.Errorf("failed to transform general url: %w", err)
+		return fmt.Errorf("failed to transform general url: %w", err)
 	}
 
 	originalRequest, err := m.makeOriginalRequest(req, targetReplacer)
 	if err != nil {
-		return sfmt.Errorf("failed to create reuest to original source: %w", err)
+		return fmt.Errorf("failed to create reuest to original source: %w", err)
 	}
 
 	originalResponse, err := m.executeQuery(originalRequest)
@@ -61,7 +61,7 @@ func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 
 	err = m.makeUncorsResponse(originalResponse, resp, sourceReplacer)
 	if err != nil {
-		return sfmt.Errorf("failed to make uncors response: %w", err)
+		return fmt.Errorf("failed to make uncors response: %w", err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 func (m *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	originalResponse, err := m.http.Do(request)
 	if err != nil {
-		return nil, sfmt.Errorf("failed to do reuest: %w", err)
+		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
 	m.logger.PrintResponse(originalResponse)
 

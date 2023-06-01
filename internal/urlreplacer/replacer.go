@@ -2,6 +2,7 @@ package urlreplacer
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -68,7 +69,7 @@ func NewReplacer(source, target string) (*Replacer, error) {
 func (r *Replacer) Replace(source string) (string, error) {
 	matches := r.regexp.FindStringSubmatch(source)
 	if len(matches) < 1 {
-		return "", sfmt.Errorf("url '%s' %w", source, ErrURLNotMached)
+		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMached)
 	}
 
 	replaced := strings.Clone(r.pattern)

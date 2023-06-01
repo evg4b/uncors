@@ -6,15 +6,13 @@ import (
 )
 
 func Fprint(w io.Writer, payload ...any) {
-	_, err := fmt.Fprint(w, payload...)
-	if err != nil {
+	if _, err := fmt.Fprint(w, payload...); err != nil {
 		panic(err)
 	}
 }
 
 func Fprintf(w io.Writer, format string, a ...any) {
-	_, err := fmt.Fprintf(w, format, a...)
-	if err != nil {
+	if _, err := fmt.Fprintf(w, format, a...); err != nil {
 		panic(err)
 	}
 }
@@ -24,8 +22,7 @@ func Sprintf(format string, a ...any) string {
 }
 
 func Fprintln(w io.Writer, a ...any) {
-	_, err := fmt.Fprintln(w, a...)
-	if err != nil {
+	if _, err := fmt.Fprintln(w, a...); err != nil {
 		panic(err)
 	}
 }

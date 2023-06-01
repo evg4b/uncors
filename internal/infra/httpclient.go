@@ -1,10 +1,10 @@
 package infra
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
@@ -25,7 +25,7 @@ func MakeHTTPClient(proxy string) (*http.Client, error) {
 	if len(proxy) > 0 {
 		parsedURL, err := urlx.Parse(proxy)
 		if err != nil {
-			return nil, sfmt.Errorf("failed to create http client: %w", err)
+			return nil, fmt.Errorf("failed to create http client: %w", err)
 		}
 
 		httpClient := defaultHTTPClient
