@@ -10,7 +10,7 @@ import (
 
 type clonableTestStruct struct{ Value string }
 
-func (t clonableTestStruct) Clone() clonableTestStruct {
+func (t *clonableTestStruct) Clone() clonableTestStruct {
 	return clonableTestStruct{Value: "Cloned:" + t.Value}
 }
 

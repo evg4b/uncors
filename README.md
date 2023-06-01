@@ -94,7 +94,7 @@ docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https:
 
 ## Stew (Cross-platform)
 
-Also you can install binaris using [Stew](https://github.com/marwanhawari/) with the following commands:
+Also, you can install binaris using [Stew](https://github.com/marwanhawari/) with the following commands:
 
 ```bash
 stew install evg4b/uncors

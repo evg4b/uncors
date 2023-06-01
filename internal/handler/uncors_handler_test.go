@@ -56,7 +56,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		{
 			From: localhost,
 			To:   localhostSecure,
-			Statics: []config.StaticDir{
+			Statics: []config.StaticDirectory{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},

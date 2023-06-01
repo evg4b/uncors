@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWriteCorsHeaders(t *testing.T) {
@@ -59,6 +60,8 @@ func TestWriteCorsHeaders(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			infra.WriteCorsHeaders(tt.header)
+
+			assert.Equal(t, tt.expected, tt.header)
 		})
 	}
 }

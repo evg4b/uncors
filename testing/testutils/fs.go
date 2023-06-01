@@ -1,11 +1,12 @@
 package testutils
 
 import (
-	"github.com/spf13/afero"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 // FsFromMap creates afero.Fs in memory from map.
@@ -26,7 +27,7 @@ func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 
 func PrepareFsForTests(t *testing.T, folder string) afero.Fs {
 	t.Helper()
-	_, filename, _, _ := runtime.Caller(1)
+	_, filename, _, _ := runtime.Caller(1) //nolint: dogsled
 	dirname := filepath.Join(filepath.Dir(filename), folder)
 
 	return afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), dirname))

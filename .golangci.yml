@@ -1,7 +1,3 @@
-run:
-  skip-dirs:
-    - testing
-    - dist
 linters:
   enable-all: true
   disable:
@@ -37,6 +33,7 @@ linters-settings:
       - to
       - ok
       - fs
+      - ca
 presets:
   - bugs
   - comment

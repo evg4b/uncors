@@ -8,28 +8,18 @@ import (
 )
 
 type Mapping struct {
-	From    string     `mapstructure:"from"`
-	To      string     `mapstructure:"to"`
-	Statics StaticDirs `mapstructure:"statics"`
-	Mocks   []Mock     `mapstructure:"mocks"`
+	From    string            `mapstructure:"from"`
+	To      string            `mapstructure:"to"`
+	Statics StaticDirectories `mapstructure:"statics"`
+	Mocks   Mocks             `mapstructure:"mocks"`
 }
 
-func (u Mapping) Clone() Mapping {
+func (u *Mapping) Clone() Mapping {
 	return Mapping{
-		From: u.From,
-		To:   u.To,
-		Statics: lo.If(u.Statics == nil, StaticDirs(nil)).
-			ElseF(func() StaticDirs {
-				return lo.Map(u.Statics, func(item StaticDir, index int) StaticDir {
-					return item.Clone()
-				})
-			}),
-		Mocks: lo.If(u.Mocks == nil, []Mock(nil)).
-			ElseF(func() []Mock {
-				return lo.Map(u.Mocks, func(item Mock, index int) Mock {
-					return item.Clone()
-				})
-			}),
+		From:    u.From,
+		To:      u.To,
+		Statics: u.Statics.Clone(),
+		Mocks:   u.Mocks.Clone(),
 	}
 }
 

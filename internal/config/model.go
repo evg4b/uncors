@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/samber/lo"
 )
 
 type Response struct {
@@ -14,7 +15,7 @@ type Response struct {
 	Delay      time.Duration     `mapstructure:"delay"`
 }
 
-func (r Response) Clone() Response {
+func (r *Response) Clone() Response {
 	return Response{
 		Code:       r.Code,
 		Headers:    helpers.CloneMap(r.Headers),
@@ -32,7 +33,7 @@ type Mock struct {
 	Response Response          `mapstructure:"response"`
 }
 
-func (m Mock) Clone() Mock {
+func (m *Mock) Clone() Mock {
 	return Mock{
 		Path:     m.Path,
 		Method:   m.Method,
@@ -40,4 +41,16 @@ func (m Mock) Clone() Mock {
 		Headers:  helpers.CloneMap(m.Headers),
 		Response: m.Response.Clone(),
 	}
+}
+
+type Mocks []Mock
+
+func (m Mocks) Clone() Mocks {
+	if m == nil {
+		return nil
+	}
+
+	return lo.Map(m, func(item Mock, index int) Mock {
+		return item.Clone()
+	})
 }

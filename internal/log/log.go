@@ -1,9 +1,10 @@
 package log
 
 import (
+	"io"
+
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
-	"io"
 )
 
 func Error(a ...any) {

@@ -90,7 +90,7 @@ func TestURLMappingClone(t *testing.T) {
 			expected: config.Mapping{
 				From: localhost,
 				To:   localhostSecure,
-				Statics: []config.StaticDir{
+				Statics: []config.StaticDirectory{
 					{Path: "/cc", Dir: "cc"},
 				},
 			},

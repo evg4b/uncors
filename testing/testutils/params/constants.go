@@ -1,6 +1,8 @@
 package params
 
-const Config = "--config"
-const From = "--from"
-const To = "--to"
-const HTTPPort = "--http-port"
+const (
+	Config   = "--config"
+	From     = "--from"
+	To       = "--to"
+	HTTPPort = "--http-port"
+)

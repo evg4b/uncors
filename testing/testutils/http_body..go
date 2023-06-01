@@ -1,11 +1,12 @@
 package testutils
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 func ReadBody(t *testing.T, recorder *httptest.ResponseRecorder) string {

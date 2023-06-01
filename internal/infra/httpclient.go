@@ -1,7 +1,6 @@
 package infra
 
 import (
-	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -16,9 +15,6 @@ var defaultHTTPClient = http.Client{
 		return http.ErrUseLastResponse
 	},
 	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, //nolint: gosec
-		},
 		Proxy: http.ProxyFromEnvironment,
 	},
 	Jar:     nil,
@@ -33,11 +29,7 @@ func MakeHTTPClient(proxy string) (*http.Client, error) {
 		}
 
 		httpClient := defaultHTTPClient
-
 		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, //nolint: gosec
-			},
 			Proxy: http.ProxyURL(parsedURL),
 		}
 

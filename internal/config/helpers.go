@@ -32,18 +32,16 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	}
 
 	for index, key := range from {
-		value := to[index]
 		prev, ok := lo.Find(configuration.Mappings, func(item Mapping) bool {
 			return strings.EqualFold(item.From, key)
 		})
 
 		if ok {
-			// log.Warningf("Mapping for %s from (%s) replaced new value (%s)", key, prev, value)
-			prev.To = value
+			prev.To = to[index]
 		} else {
 			configuration.Mappings = append(configuration.Mappings, Mapping{
 				From: key,
-				To:   value,
+				To:   to[index],
 			})
 		}
 	}

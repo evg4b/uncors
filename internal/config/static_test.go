@@ -19,13 +19,13 @@ const (
 func TestStaticDirMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
 	type testType struct {
-		Statics config.StaticDirs `mapstructure:"statics"`
+		Statics config.StaticDirectories `mapstructure:"statics"`
 	}
 
 	tests := []struct {
 		name     string
 		config   string
-		expected config.StaticDirs
+		expected config.StaticDirectories
 	}{
 		{
 			name: "decode plan mapping",
@@ -34,7 +34,7 @@ statics:
   /path: /static-dir
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirs{
+			expected: config.StaticDirectories{
 				{Path: anotherPath, Dir: anotherStaticDir},
 				{Path: path, Dir: staticDir},
 			},
@@ -46,7 +46,7 @@ statics:
   /path: { dir: /static-dir }
   /another-path: { dir: /another-static-dir }
 `,
-			expected: config.StaticDirs{
+			expected: config.StaticDirectories{
 				{Path: path, Dir: staticDir},
 				{Path: anotherPath, Dir: anotherStaticDir},
 			},
@@ -58,7 +58,7 @@ statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: { dir: /another-static-dir, index: default.html }
 `,
-			expected: config.StaticDirs{
+			expected: config.StaticDirectories{
 				{Path: path, Dir: staticDir, Index: "index.html"},
 				{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
 			},
@@ -70,7 +70,7 @@ statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirs{
+			expected: config.StaticDirectories{
 				{Path: path, Dir: staticDir, Index: "index.html"},
 				{Path: anotherPath, Dir: anotherStaticDir},
 			},
@@ -101,28 +101,28 @@ statics:
 func TestStaticDirMappingClone(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected config.StaticDir
+		expected config.StaticDirectory
 	}{
 		{
 			name:     "empty structure",
-			expected: config.StaticDir{},
+			expected: config.StaticDirectory{},
 		},
 		{
 			name: "structure with 1 field",
-			expected: config.StaticDir{
+			expected: config.StaticDirectory{
 				Dir: "dir",
 			},
 		},
 		{
 			name: "structure with 2 field",
-			expected: config.StaticDir{
+			expected: config.StaticDirectory{
 				Dir:  "dir",
 				Path: "/some-path",
 			},
 		},
 		{
 			name: "structure with all field",
-			expected: config.StaticDir{
+			expected: config.StaticDirectory{
 				Dir:   "dir",
 				Path:  "/one-more-path",
 				Index: "index.html",

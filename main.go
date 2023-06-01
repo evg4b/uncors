@@ -97,21 +97,21 @@ func main() {
 
 	finisher.Add(uncorsServer)
 	go func() {
+		defer finisher.Trigger()
 		log.Debugf("Starting http server on port %d", uncorsConfig.HTTPPort)
 		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPPort))
 		err := uncorsServer.ListenAndServe(addr)
 		handleHTTPServerError("HTTP", err)
-		finisher.Trigger()
 	}()
 
 	if uncorsConfig.IsHTTPSEnabled() {
 		log.Debug("Found cert file and key file. Https server will be started")
 		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPSPort))
 		go func() {
+			defer finisher.Trigger()
 			log.Debugf("Starting https server on port %d", uncorsConfig.HTTPSPort)
 			err := uncorsServer.ListenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
 			handleHTTPServerError("HTTPS", err)
-			finisher.Trigger()
 		}()
 	}
 
