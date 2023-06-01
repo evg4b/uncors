@@ -8,6 +8,7 @@ import (
 
 type PrefixedLogger struct {
 	writer *pterm.PrefixPrinter
+	debug  *pterm.PrefixPrinter
 }
 
 func NewLogger(name string, options ...LoggerOption) *PrefixedLogger {
@@ -18,6 +19,14 @@ func NewLogger(name string, options ...LoggerOption) *PrefixedLogger {
 				Style: &pterm.ThemeDefault.DefaultText,
 				Text:  name,
 			},
+		},
+		debug: &pterm.PrefixPrinter{
+			MessageStyle: &pterm.ThemeDefault.DebugMessageStyle,
+			Prefix: pterm.Prefix{
+				Text:  name,
+				Style: &pterm.ThemeDefault.DebugPrefixStyle,
+			},
+			Debugger: true,
 		},
 	}
 
@@ -54,13 +63,13 @@ func (logger *PrefixedLogger) Infof(template string, v ...any) {
 
 func (logger *PrefixedLogger) Debug(v ...any) {
 	if pterm.PrintDebugMessages {
-		logger.writer.Println(debugPrinter.Sprint(v...))
+		logger.debug.Println(debugPrinter.Sprint(v...))
 	}
 }
 
 func (logger *PrefixedLogger) Debugf(template string, v ...any) {
 	if pterm.PrintDebugMessages {
-		logger.writer.Println(debugPrinter.Sprintf(template, v...))
+		logger.debug.Println(debugPrinter.Sprintf(template, v...))
 	}
 }
 

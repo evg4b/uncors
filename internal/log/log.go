@@ -1,17 +1,10 @@
 package log
 
 import (
-	"io"
-	"os"
-
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
+	"io"
 )
-
-func Fatal(a ...any) {
-	Error(a...)
-	os.Exit(0)
-}
 
 func Error(a ...any) {
 	errorPrinter.Println(a...)

@@ -11,6 +11,7 @@ type LoggerOption = func(logger *PrefixedLogger)
 func WithOutput(writer io.Writer) LoggerOption {
 	return func(logger *PrefixedLogger) {
 		logger.writer.Writer = writer
+		logger.debug.Writer = writer
 	}
 }
 
