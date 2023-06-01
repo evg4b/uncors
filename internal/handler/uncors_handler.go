@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -78,6 +79,7 @@ func (m *RequestHandler) createHandler(response config.Response) *mock.Middlewar
 		mock.WithLogger(ui.MockLogger),
 		mock.WithResponse(response),
 		mock.WithFileSystem(m.fs),
+		mock.WithAfter(time.After),
 	)
 }
 

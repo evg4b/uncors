@@ -34,13 +34,21 @@ func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	if response.Delay > 0 {
 		m.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
-		select {
-		case <-ctx.Done():
-			writer.WriteHeader(http.StatusServiceUnavailable)
-			m.logger.Debugf("Delay for %s canceled", request.URL.RequestURI())
 
-			return
-		case <-m.after(response.Delay):
+		url := request.URL.RequestURI()
+	waitingLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				writer.WriteHeader(http.StatusServiceUnavailable)
+				m.logger.Debugf("Delay is canceled (url: %s)", url)
+
+				return
+			case <-m.after(response.Delay):
+				m.logger.Debugf("Delay is complete (url: %s)", url)
+
+				break waitingLoop
+			}
 		}
 	}
 
