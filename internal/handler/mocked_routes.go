@@ -5,8 +5,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (m *RequestHandler) makeMockedRoutes(router *mux.Router, mocks []config.Mock) {
-	var defaultMocks []config.Mock
+func (m *RequestHandler) makeMockedRoutes(router *mux.Router, mocks config.Mocks) {
+	var defaultMocks config.Mocks
 
 	for _, mockDef := range mocks {
 		if len(mockDef.Queries) > 0 || len(mockDef.Headers) > 0 || len(mockDef.Method) > 0 {

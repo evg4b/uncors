@@ -26,9 +26,9 @@ const (
 	fullConfig     = `
 http-port: 8080
 mappings:
-  - http://demo1: https://demo1.com
-  - from: http://other-demo2
-    to: https://demo2.io
+  - http://localhost: https://github.com
+  - from: http://localhost2
+    to: https://stackoverflow.com
     mocks:
       - path: /demo
         method: POST
@@ -54,7 +54,7 @@ const (
 	incorrectConfigPath = "/incorrect-config.yaml"
 	incorrectConfig     = `http-port: xxx
 mappings:
-  - http://demo: https://demo.com
+  - http://localhost: https://github.com
 `
 )
 
@@ -63,7 +63,7 @@ const (
 	minimalConfig     = `
 http-port: 8080
 mappings:
-  - http://demo: https://demo.com
+  - http://localhost: https://github.com
 `
 )
 
@@ -98,7 +98,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  8080,
 					HTTPSPort: 443,
 					Mappings: config.Mappings{
-						{From: "http://demo", To: "https://demo.com"},
+						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
 					},
 				},
 			},
@@ -108,27 +108,31 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: "http://demo1", To: "https://demo1.com"},
-						{From: "http://other-demo2", To: "https://demo2.io", Mocks: []config.Mock{
-							{
-								Path:   "/demo",
-								Method: "POST",
-								Queries: map[string]string{
-									"foo": "bar",
-								},
-								Headers: map[string]string{
-									acceptEncoding: "deflate",
-								},
-								Response: config.Response{
-									Code: 201,
+						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{
+							From: testconstants.HTTPLocalhost2,
+							To:   testconstants.HTTPSStackoverflow,
+							Mocks: config.Mocks{
+								{
+									Path:   "/demo",
+									Method: "POST",
+									Queries: map[string]string{
+										"foo": "bar",
+									},
 									Headers: map[string]string{
 										acceptEncoding: "deflate",
 									},
-									Raw:  "demo",
-									File: "/demo.txt",
+									Response: config.Response{
+										Code: 201,
+										Headers: map[string]string{
+											acceptEncoding: "deflate",
+										},
+										Raw:  "demo",
+										File: "/demo.txt",
+									},
 								},
 							},
-						}},
+						},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,
@@ -148,11 +152,11 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: "http://demo1", To: "https://demo1.com"},
+						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
 						{
-							From: "http://other-demo2",
-							To:   "https://demo2.io",
-							Mocks: []config.Mock{
+							From: testconstants.HTTPLocalhost2,
+							To:   testconstants.HTTPSStackoverflow,
+							Mocks: config.Mocks{
 								{
 									Path:   "/demo",
 									Method: "POST",

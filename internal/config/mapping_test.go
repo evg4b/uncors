@@ -25,16 +25,16 @@ func TestURLMappingHookFunc(t *testing.T) {
 				name:   "simple key-value mapping",
 				config: "http://localhost:4200: https://github.com",
 				expected: config.Mapping{
-					From: "http://localhost:4200",
+					From: testconstants.HTTPLocalhostWithPort(4200),
 					To:   testconstants.HTTPSGithub,
 				},
 			},
 			{
 				name:   "full object mapping",
-				config: "{ from: http://localhost:3000, to: https://google.com }",
+				config: "{ from: http://localhost:3000, to: https://api.github.com }",
 				expected: config.Mapping{
-					From: "http://localhost:3000",
-					To:   "https://google.com",
+					From: testconstants.HTTPLocalhostWithPort(3000),
+					To:   testconstants.HTTPSAPIGithub,
 				},
 			},
 		}

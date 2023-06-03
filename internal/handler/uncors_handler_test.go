@@ -61,7 +61,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},
 				{Dir: "/images", Path: "/img/"},
 			},
-			Mocks: []config.Mock{
+			Mocks: config.Mocks{
 				{
 					Path: "/api/mocks/1",
 					Response: config.Response{
@@ -299,7 +299,7 @@ func TestMockMiddleware(t *testing.T) {
 					{
 						From: "*",
 						To:   "*",
-						Mocks: []config.Mock{
+						Mocks: config.Mocks{
 							{
 								Path: "/api",
 								Response: config.Response{
@@ -340,7 +340,7 @@ func TestMockMiddleware(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
-				{From: "*", To: "*", Mocks: []config.Mock{{
+				{From: "*", To: "*", Mocks: config.Mocks{{
 					Path:   "/api",
 					Method: http.MethodPut,
 					Response: config.Response{
@@ -416,7 +416,7 @@ func TestMockMiddleware(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
 		mappings := config.Mappings{
-			{From: "*", To: "*", Mocks: []config.Mock{
+			{From: "*", To: "*", Mocks: config.Mocks{
 				{
 					Path: userPath,
 					Response: config.Response{
@@ -527,7 +527,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
-				{From: "*", To: "*", Mocks: []config.Mock{
+				{From: "*", To: "*", Mocks: config.Mocks{
 					{
 						Path: userPath,
 						Response: config.Response{
@@ -623,7 +623,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
-				{From: "*", To: "*", Mocks: []config.Mock{
+				{From: "*", To: "*", Mocks: config.Mocks{
 					{
 						Path: userPath,
 						Response: config.Response{

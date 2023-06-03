@@ -40,7 +40,7 @@ func TestMappings(t *testing.T) {
 				{
 					From: testconstants.HTTPLocalhost,
 					To:   testconstants.HTTPSGithub,
-					Mocks: []config.Mock{
+					Mocks: config.Mocks{
 						{
 							Path:   "/endpoint-1",
 							Method: http.MethodPost,

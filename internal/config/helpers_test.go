@@ -9,9 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	httpPort  = 3000
+	httpsPort = 3001
+)
+
 func TestNormaliseMappings(t *testing.T) {
 	t.Run("custom port handling", func(t *testing.T) {
-		httpPort, httpsPort := 3000, 3001
 		testsCases := []struct {
 			name     string
 			mappings config.Mappings
@@ -52,18 +56,18 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set mixed schemes",
 				mappings: config.Mappings{
-					{From: testconstants.Host1, To: testconstants.HTTPSGithub},
-					{From: "host2", To: testconstants.HTTPGithub},
-					{From: "http://host3", To: "http://api.github.com"},
-					{From: "https://host4", To: "https://api.github.com"},
+					{From: testconstants.Localhost1, To: testconstants.HTTPSGithub},
+					{From: testconstants.Localhost2, To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
+					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
 				},
 				expected: config.Mappings{
-					{From: "http://host1:3000", To: testconstants.HTTPSGithub},
-					{From: "https://host1:3001", To: testconstants.HTTPSGithub},
-					{From: "http://host2:3000", To: testconstants.HTTPGithub},
-					{From: "https://host2:3001", To: testconstants.HTTPGithub},
-					{From: "http://host3:3000", To: "http://api.github.com"},
-					{From: "https://host4:3001", To: "https://api.github.com"},
+					{From: testconstants.HTTPLocalhost1WithPort(httpPort), To: testconstants.HTTPSGithub},
+					{From: testconstants.HTTPSLocalhost1WithPort(httpsPort), To: testconstants.HTTPSGithub},
+					{From: testconstants.HTTPLocalhost2WithPort(httpPort), To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPSLocalhost2WithPort(httpsPort), To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPLocalhost3WithPort(httpPort), To: testconstants.HTTPAPIGithub},
+					{From: testconstants.HTTPSLocalhost4WithPort(httpsPort), To: testconstants.HTTPSAPIGithub},
 				},
 				useHTTPS: true,
 			},
@@ -125,18 +129,18 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set mixed schemes",
 				mappings: config.Mappings{
-					{From: testconstants.Host1, To: testconstants.HTTPSGithub},
-					{From: "host2", To: testconstants.HTTPGithub},
-					{From: "http://host3", To: "http://api.github.com"},
-					{From: "https://host4", To: "https://api.github.com"},
+					{From: testconstants.Localhost1, To: testconstants.HTTPSGithub},
+					{From: testconstants.Localhost2, To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
+					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPHost1, To: testconstants.HTTPSGithub},
-					{From: testconstants.HTTPSHost1, To: testconstants.HTTPSGithub},
-					{From: "http://host2", To: testconstants.HTTPGithub},
-					{From: "https://host2", To: testconstants.HTTPGithub},
-					{From: "http://host3", To: "http://api.github.com"},
-					{From: "https://host4", To: "https://api.github.com"},
+					{From: testconstants.HTTPLocalhost1, To: testconstants.HTTPSGithub},
+					{From: testconstants.HTTPSLocalhost1, To: testconstants.HTTPSGithub},
+					{From: testconstants.HTTPLocalhost2, To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPSLocalhost2, To: testconstants.HTTPGithub},
+					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
+					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
 				},
 				useHTTPS: true,
 			},
@@ -170,8 +174,8 @@ func TestNormaliseMappings(t *testing.T) {
 				mappings: config.Mappings{
 					{From: "loca^host", To: testconstants.Github},
 				},
-				httpPort:    3000,
-				httpsPort:   3001,
+				httpPort:    httpPort,
+				httpsPort:   httpsPort,
 				useHTTPS:    true,
 				expectedErr: "failed to parse source url: parse \"//loca^host\": invalid character \"^\" in host name",
 			},
@@ -181,7 +185,7 @@ func TestNormaliseMappings(t *testing.T) {
 					{From: "localhost:", To: testconstants.Github},
 				},
 				httpPort:    -1,
-				httpsPort:   3001,
+				httpsPort:   httpsPort,
 				useHTTPS:    true,
 				expectedErr: "failed to parse source url: port \"//localhost:\": empty port",
 			},
