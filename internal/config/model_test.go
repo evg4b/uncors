@@ -11,7 +11,7 @@ import (
 )
 
 func TestResponseClone(t *testing.T) {
-	object := config.Response{
+	response := config.Response{
 		Code: http.StatusOK,
 		Headers: map[string]string{
 			headers.ContentType:  "plain/text",
@@ -22,23 +22,23 @@ func TestResponseClone(t *testing.T) {
 		Delay: time.Hour,
 	}
 
-	actual := object.Clone()
+	clonedResponse := response.Clone()
 
 	t.Run("not same", func(t *testing.T) {
-		assert.NotSame(t, &object, &actual)
+		assert.NotSame(t, &response, &clonedResponse)
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, object, actual)
+		assert.EqualValues(t, response, clonedResponse)
 	})
 
 	t.Run("not same Headers map", func(t *testing.T) {
-		assert.NotSame(t, &object.Headers, &actual.Headers)
+		assert.NotSame(t, &response.Headers, &clonedResponse.Headers)
 	})
 }
 
 func TestMockClone(t *testing.T) {
-	object := config.Mock{
+	mock := config.Mock{
 		Path:   "/constants",
 		Method: http.MethodGet,
 		Queries: map[string]string{
@@ -55,25 +55,37 @@ func TestMockClone(t *testing.T) {
 		},
 	}
 
-	actual := object.Clone()
+	clonedMock := mock.Clone()
 
 	t.Run("not same", func(t *testing.T) {
-		assert.NotSame(t, &object, &actual)
+		assert.NotSame(t, &mock, &clonedMock)
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, object, actual)
+		assert.EqualValues(t, mock, clonedMock)
 	})
 
-	t.Run("not same Headers map", func(t *testing.T) {
-		assert.NotSame(t, &object.Headers, &actual.Headers)
+	t.Run("not same headers map", func(t *testing.T) {
+		assert.NotSame(t, &mock.Headers, &clonedMock.Headers)
 	})
 
-	t.Run("not same Queries map", func(t *testing.T) {
-		assert.NotSame(t, &object.Headers, &actual.Headers)
+	t.Run("equals headers map", func(t *testing.T) {
+		assert.EqualValues(t, mock.Headers, clonedMock.Headers)
+	})
+
+	t.Run("not same queries map", func(t *testing.T) {
+		assert.NotSame(t, &mock.Queries, &clonedMock.Queries)
+	})
+
+	t.Run("equals queries map values", func(t *testing.T) {
+		assert.EqualValues(t, mock.Queries, clonedMock.Queries)
 	})
 
 	t.Run("not same Response", func(t *testing.T) {
-		assert.NotSame(t, &object.Response, &actual.Response)
+		assert.NotSame(t, &mock.Response, &clonedMock.Response)
+	})
+
+	t.Run("equals Response values", func(t *testing.T) {
+		assert.EqualValues(t, mock.Response, clonedMock.Response)
 	})
 }

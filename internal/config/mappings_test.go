@@ -17,10 +17,6 @@ func TestMappings(t *testing.T) {
 		expected []string
 	}{
 		{
-			name:     "no mapping and no mocks",
-			expected: []string{"\n"},
-		},
-		{
 			name: "http mapping only",
 			mappings: config.Mappings{
 				{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
@@ -97,4 +93,12 @@ func TestMappings(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("empty", func(t *testing.T) {
+		var mappings config.Mappings
+
+		actual := mappings.String()
+
+		assert.Equal(t, "\n", actual)
+	})
 }

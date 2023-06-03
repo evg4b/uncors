@@ -52,7 +52,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		"/mock.json":             mockJSON,
 	})
 
-	mappings := []config.Mapping{
+	mappings := config.Mappings{
 		{
 			From: testconstants.HTTPLocalhost,
 			To:   testconstants.HTTPSLocalhost,
@@ -295,7 +295,7 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 				handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 				handler.WithLogger(logger),
-				handler.WithMappings([]config.Mapping{
+				handler.WithMappings(config.Mappings{
 					{
 						From: "*",
 						To:   "*",
@@ -339,7 +339,7 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where method is set", func(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
-			mappings := []config.Mapping{
+			mappings := config.Mappings{
 				{From: "*", To: "*", Mocks: []config.Mock{{
 					Path:   "/api",
 					Method: http.MethodPut,
@@ -415,7 +415,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("path handling", func(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
-		mappings := []config.Mapping{
+		mappings := config.Mappings{
 			{From: "*", To: "*", Mocks: []config.Mock{
 				{
 					Path: userPath,
@@ -526,7 +526,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMappings([]config.Mapping{
+			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: []config.Mock{
 					{
 						Path: userPath,
@@ -622,7 +622,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
 			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
-			handler.WithMappings([]config.Mapping{
+			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: []config.Mock{
 					{
 						Path: userPath,

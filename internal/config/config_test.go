@@ -45,8 +45,8 @@ mappings:
 proxy: localhost:8080
 debug: true
 https-port: 8081
-cert-file: /cert-file.pem
-key-file: /key-file.key
+cert-file: /etc/certificates/cert-file.pem
+key-file: /etc/certificates/key-file.key
 `
 )
 
@@ -68,14 +68,13 @@ mappings:
 )
 
 func TestLoadConfiguration(t *testing.T) {
-	fs := testutils.FsFromMap(t, map[string]string{
+	viperInstance := viper.New()
+	viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
 		corruptedConfigPath: corruptedConfig,
 		fullConfigPath:      fullConfig,
 		incorrectConfigPath: incorrectConfig,
 		minimalConfigPath:   minimalConfig,
-	})
-	viperInstance := viper.New()
-	viperInstance.SetFs(fs)
+	}))
 
 	t.Run("correctly parse config", func(t *testing.T) {
 		tests := []struct {
@@ -89,7 +88,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  80,
 					HTTPSPort: 443,
-					Mappings:  []config.Mapping{},
+					Mappings:  config.Mappings{},
 				},
 			},
 			{
@@ -98,7 +97,7 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
-					Mappings: []config.Mapping{
+					Mappings: config.Mappings{
 						{From: "http://demo", To: "https://demo.com"},
 					},
 				},
@@ -108,7 +107,7 @@ func TestLoadConfiguration(t *testing.T) {
 				args: []string{params.Config, fullConfigPath},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.Mapping{
+					Mappings: config.Mappings{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{From: "http://other-demo2", To: "https://demo2.io", Mocks: []config.Mock{
 							{
@@ -134,8 +133,8 @@ func TestLoadConfiguration(t *testing.T) {
 					Proxy:     "localhost:8080",
 					Debug:     true,
 					HTTPSPort: 8081,
-					CertFile:  "/cert-file.pem",
-					KeyFile:   "/key-file.key",
+					CertFile:  testconstants.CertFilePath,
+					KeyFile:   testconstants.KeyFilePath,
 				},
 			},
 			{
@@ -148,7 +147,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
-					Mappings: []config.Mapping{
+					Mappings: config.Mappings{
 						{From: "http://demo1", To: "https://demo1.com"},
 						{
 							From: "http://other-demo2",
@@ -181,8 +180,8 @@ func TestLoadConfiguration(t *testing.T) {
 					Proxy:     "localhost:8080",
 					Debug:     true,
 					HTTPSPort: 8081,
-					CertFile:  "/cert-file.pem",
-					KeyFile:   "/key-file.key",
+					CertFile:  testconstants.CertFilePath,
+					KeyFile:   testconstants.KeyFilePath,
 				},
 			},
 		}
@@ -309,16 +308,16 @@ func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 			name: "true when https configured",
 			config: &config.UncorsConfig{
 				HTTPSPort: 443,
-				CertFile:  "/cert.cer",
-				KeyFile:   "/cert.key",
+				CertFile:  testconstants.CertFilePath,
+				KeyFile:   testconstants.KeyFilePath,
 			},
 			expected: true,
 		},
 		{
 			name: "false when https port is not configured",
 			config: &config.UncorsConfig{
-				CertFile: "/cert.cer",
-				KeyFile:  "/cert.key",
+				CertFile: testconstants.CertFilePath,
+				KeyFile:  testconstants.KeyFilePath,
 			},
 			expected: false,
 		},
@@ -326,7 +325,7 @@ func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 			name: "false when cert file is not configured",
 			config: &config.UncorsConfig{
 				HTTPSPort: 443,
-				KeyFile:   "/cert.key",
+				KeyFile:   testconstants.KeyFilePath,
 			},
 			expected: false,
 		},
@@ -334,7 +333,7 @@ func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 			name: "false when key file is not configured",
 			config: &config.UncorsConfig{
 				HTTPSPort: 443,
-				CertFile:  "/cert.cer",
+				CertFile:  testconstants.CertFilePath,
 			},
 			expected: false,
 		},
