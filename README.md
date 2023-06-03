@@ -37,10 +37,10 @@
 # Core features
 
 - CORS header replacement
-- Wildcard host mapping
-- [HTTPS support](https://github.com/evg4b/uncors/wiki/2.-Configuration#https-support)
-- [Request/response mocking](https://github.com/evg4b/uncors/wiki/3.-Response-mocksing)
-- HTTP/HTTPS proxy support
+- [Wildcard host mapping](https://github.com/evg4b/uncors/wiki/2.-Configuration#wilcard-mapping)
+- [HTTPS support](https://github.com/evg4b/uncors/wiki/2.-Configuration#https-configuration)
+- [Response mocking](https://github.com/evg4b/uncors/wiki/3.-Response-mocksing)
+- [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/2.-Configuration#proxy-configuration)
 - [Static file serving](https://github.com/evg4b/uncors/wiki/4.-Static-file-serving)
 - *Response caching ([coming soon...](./ROADMAP.md))*
 
