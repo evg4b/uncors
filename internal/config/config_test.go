@@ -66,8 +66,8 @@ func TestLoadConfiguration(t *testing.T) {
 									Headers: map[string]string{
 										acceptEncoding: "deflate",
 									},
-									RawContent: "demo",
-									File:       "/demo.txt",
+									Raw:  "demo",
+									File: "/demo.txt",
 								},
 							},
 						}},
@@ -109,8 +109,8 @@ func TestLoadConfiguration(t *testing.T) {
 										Headers: map[string]string{
 											acceptEncoding: "deflate",
 										},
-										RawContent: "demo",
-										File:       "/demo.txt",
+										Raw:  "demo",
+										File: "/demo.txt",
 									},
 								},
 							},

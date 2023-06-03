@@ -14,7 +14,7 @@ mappings:
           code: 201
           headers:
             Accept-Encoding: deflate
-          raw-content: demo
+          raw: demo
           file: /demo.txt
 proxy: localhost:8080
 debug: true

@@ -11,10 +11,10 @@ func (m *Middleware) serveRawContent(writer http.ResponseWriter) {
 	response := m.response
 	header := writer.Header()
 	if len(header.Get(headers.ContentType)) == 0 {
-		contentType := http.DetectContentType([]byte(response.RawContent))
+		contentType := http.DetectContentType([]byte(response.Raw))
 		header.Set(headers.ContentType, contentType)
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	sfmt.Fprint(writer, response.RawContent)
+	sfmt.Fprint(writer, response.Raw)
 }

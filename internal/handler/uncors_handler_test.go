@@ -65,8 +65,8 @@ func TestUncorsRequestHandler(t *testing.T) {
 				{
 					Path: "/api/mocks/1",
 					Response: config.Response{
-						Code:       http.StatusOK,
-						RawContent: "mock-1",
+						Code: http.StatusOK,
+						Raw:  "mock-1",
 					},
 				},
 				{
@@ -79,8 +79,8 @@ func TestUncorsRequestHandler(t *testing.T) {
 				{
 					Path: "/api/mocks/3",
 					Response: config.Response{
-						Code:       http.StatusMultiStatus,
-						RawContent: "mock-3",
+						Code: http.StatusMultiStatus,
+						Raw:  "mock-3",
 					},
 				},
 				{
@@ -302,8 +302,8 @@ func TestMockMiddleware(t *testing.T) {
 							{
 								Path: "/api",
 								Response: config.Response{
-									Code:       http.StatusOK,
-									RawContent: mock1Body,
+									Code: http.StatusOK,
+									Raw:  mock1Body,
 								},
 							},
 						},
@@ -343,8 +343,8 @@ func TestMockMiddleware(t *testing.T) {
 					Path:   "/api",
 					Method: http.MethodPut,
 					Response: config.Response{
-						Code:       http.StatusOK,
-						RawContent: mock1Body,
+						Code: http.StatusOK,
+						Raw:  mock1Body,
 					},
 				}}},
 			}
@@ -419,29 +419,29 @@ func TestMockMiddleware(t *testing.T) {
 				{
 					Path: userPath,
 					Response: config.Response{
-						Code:       http.StatusOK,
-						RawContent: mock1Body,
+						Code: http.StatusOK,
+						Raw:  mock1Body,
 					},
 				},
 				{
 					Path: "/api/user/{id:[0-9]+}",
 					Response: config.Response{
-						Code:       http.StatusAccepted,
-						RawContent: mock2Body,
+						Code: http.StatusAccepted,
+						Raw:  mock2Body,
 					},
 				},
 				{
 					Path: "/api/{single-path/demo",
 					Response: config.Response{
-						Code:       http.StatusBadRequest,
-						RawContent: mock3Body,
+						Code: http.StatusBadRequest,
+						Raw:  mock3Body,
 					},
 				},
 				{
 					Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
 					Response: config.Response{
-						Code:       http.StatusCreated,
-						RawContent: mock4Body,
+						Code: http.StatusCreated,
+						Raw:  mock4Body,
 					},
 				},
 			}},
@@ -530,8 +530,8 @@ func TestMockMiddleware(t *testing.T) {
 					{
 						Path: userPath,
 						Response: config.Response{
-							Code:       http.StatusOK,
-							RawContent: mock1Body,
+							Code: http.StatusOK,
+							Raw:  mock1Body,
 						},
 					},
 					{
@@ -540,8 +540,8 @@ func TestMockMiddleware(t *testing.T) {
 							"id": "17",
 						},
 						Response: config.Response{
-							Code:       http.StatusCreated,
-							RawContent: mock2Body,
+							Code: http.StatusCreated,
+							Raw:  mock2Body,
 						},
 					},
 					{
@@ -551,8 +551,8 @@ func TestMockMiddleware(t *testing.T) {
 							"token": "fe145b54563d9be1b2a476f56b0a412b",
 						},
 						Response: config.Response{
-							Code:       http.StatusAccepted,
-							RawContent: mock3Body,
+							Code: http.StatusAccepted,
+							Raw:  mock3Body,
 						},
 					},
 				}},
@@ -626,8 +626,8 @@ func TestMockMiddleware(t *testing.T) {
 					{
 						Path: userPath,
 						Response: config.Response{
-							Code:       http.StatusOK,
-							RawContent: mock1Body,
+							Code: http.StatusOK,
+							Raw:  mock1Body,
 						},
 					},
 					{
@@ -636,8 +636,8 @@ func TestMockMiddleware(t *testing.T) {
 							headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
 						},
 						Response: config.Response{
-							Code:       http.StatusCreated,
-							RawContent: mock2Body,
+							Code: http.StatusCreated,
+							Raw:  mock2Body,
 						},
 					},
 					{
@@ -647,8 +647,8 @@ func TestMockMiddleware(t *testing.T) {
 							headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
 						},
 						Response: config.Response{
-							Code:       http.StatusAccepted,
-							RawContent: mock3Body,
+							Code: http.StatusAccepted,
+							Raw:  mock3Body,
 						},
 					},
 				}},

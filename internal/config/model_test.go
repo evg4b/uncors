@@ -17,9 +17,9 @@ func TestResponseClone(t *testing.T) {
 			headers.ContentType:  "plain/text",
 			headers.CacheControl: "none",
 		},
-		RawContent: "this is plain text",
-		File:       "~/projects/uncors/response/demo.json",
-		Delay:      time.Hour,
+		Raw:   "this is plain text",
+		File:  "~/projects/uncors/response/demo.json",
+		Delay: time.Hour,
 	}
 
 	actual := object.Clone()
@@ -50,8 +50,8 @@ func TestMockClone(t *testing.T) {
 			headers.CacheControl: "none",
 		},
 		Response: config.Response{
-			Code:       http.StatusOK,
-			RawContent: `{ "status": "ok" }`,
+			Code: http.StatusOK,
+			Raw:  `{ "status": "ok" }`,
 		},
 	}
 

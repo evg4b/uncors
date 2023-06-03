@@ -48,8 +48,8 @@ func TestMappings(t *testing.T) {
 							Path:   "/endpoint-1",
 							Method: http.MethodPost,
 							Response: config.Response{
-								Code:       http.StatusOK,
-								RawContent: "OK",
+								Code: http.StatusOK,
+								Raw:  "OK",
 							},
 						},
 						{
@@ -59,8 +59,8 @@ func TestMappings(t *testing.T) {
 								"param1": "value1",
 							},
 							Response: config.Response{
-								Code:       http.StatusInternalServerError,
-								RawContent: "ERROR",
+								Code: http.StatusInternalServerError,
+								Raw:  "ERROR",
 							},
 						},
 						{
@@ -70,8 +70,8 @@ func TestMappings(t *testing.T) {
 								"param1": "value1",
 							},
 							Response: config.Response{
-								Code:       http.StatusForbidden,
-								RawContent: "ERROR",
+								Code: http.StatusForbidden,
+								Raw:  "ERROR",
 							},
 						},
 					},

@@ -51,7 +51,7 @@ func TestHandler(t *testing.T) {
 		}{
 			{
 				name:     "raw content",
-				response: config.Response{RawContent: jsonContent},
+				response: config.Response{Raw: jsonContent},
 				expected: jsonContent,
 			},
 			{
@@ -89,22 +89,22 @@ func TestHandler(t *testing.T) {
 		}{
 			{
 				name:     "raw content with plain text",
-				response: config.Response{RawContent: textContent},
+				response: config.Response{Raw: textContent},
 				expected: textPlain,
 			},
 			{
 				name:     "raw content with json",
-				response: config.Response{RawContent: jsonContent},
+				response: config.Response{Raw: jsonContent},
 				expected: textPlain,
 			},
 			{
 				name:     "raw content with html",
-				response: config.Response{RawContent: htmlContent},
+				response: config.Response{Raw: htmlContent},
 				expected: "text/html; charset=utf-8",
 			},
 			{
 				name:     "raw content with png",
-				response: config.Response{RawContent: pngContent},
+				response: config.Response{Raw: pngContent},
 				expected: imagePng,
 			},
 			{
@@ -158,8 +158,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should put default CORS headers",
 				response: config.Response{
-					Code:       http.StatusOK,
-					RawContent: textContent,
+					Code: http.StatusOK,
+					Raw:  textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -171,8 +171,8 @@ func TestHandler(t *testing.T) {
 			{
 				name: "should set response code",
 				response: config.Response{
-					Code:       http.StatusOK,
-					RawContent: textContent,
+					Code: http.StatusOK,
+					Raw:  textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -188,7 +188,7 @@ func TestHandler(t *testing.T) {
 					Headers: map[string]string{
 						"X-Key": "X-Key-Value",
 					},
-					RawContent: textContent,
+					Raw: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
@@ -207,7 +207,7 @@ func TestHandler(t *testing.T) {
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
-					RawContent: textContent,
+					Raw: textContent,
 				},
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"localhost"},
@@ -365,9 +365,9 @@ func TestHandler(t *testing.T) {
 			handler := mock.NewMockMiddleware(
 				mock.WithLogger(mocks.NewNoopLogger(t)),
 				mock.WithResponse(config.Response{
-					Code:       http.StatusOK,
-					Delay:      1 * time.Hour,
-					RawContent: "Text content",
+					Code:  http.StatusOK,
+					Delay: 1 * time.Hour,
+					Raw:   "Text content",
 				}),
 				mock.WithFileSystem(fileSystem),
 				mock.WithAfter(time.After),
