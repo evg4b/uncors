@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"testing"
+	"github.com/evg4b/uncors/testing/testconstants"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -9,10 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	localhost       = "http://localhost"
-	localhostSecure = "https://localhost:9090"
-)
+var localhostSecure = "https://localhost:9090"
 
 func TestURLMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
@@ -75,20 +73,20 @@ func TestURLMappingClone(t *testing.T) {
 		{
 			name: "structure with 1 field",
 			expected: config.Mapping{
-				From: localhost,
+				From: testconstants.HTTPLocalhost,
 			},
 		},
 		{
 			name: "structure with 2 field",
 			expected: config.Mapping{
-				From: localhost,
+				From: testconstants.HTTPLocalhost,
 				To:   localhostSecure,
 			},
 		},
 		{
 			name: "structure with inner collections",
 			expected: config.Mapping{
-				From: localhost,
+				From: testconstants.HTTPLocalhost,
 				To:   localhostSecure,
 				Statics: []config.StaticDirectory{
 					{Path: "/cc", Dir: "cc"},

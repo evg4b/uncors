@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,14 +23,14 @@ func TestMappings(t *testing.T) {
 		{
 			name: "http mapping only",
 			mappings: config.Mappings{
-				{From: "http://localhost", To: "https://github.com"},
+				{From: testconstants.HTTPLocalhost, To: "https://github.com"},
 			},
 			expected: []string{"http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
 			mappings: config.Mappings{
-				{From: "http://localhost", To: "https://github.com"},
+				{From: testconstants.HTTPLocalhost, To: "https://github.com"},
 				{From: "https://localhost", To: "https://github.com"},
 			},
 			expected: []string{
@@ -41,7 +42,7 @@ func TestMappings(t *testing.T) {
 			name: "mapping and mocks",
 			mappings: config.Mappings{
 				{
-					From: "http://localhost",
+					From: testconstants.HTTPLocalhost,
 					To:   "https://github.com",
 					Mocks: []config.Mock{
 						{

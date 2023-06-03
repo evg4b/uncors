@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -165,7 +166,7 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
-					headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
 			},
 			{
@@ -178,7 +179,7 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
-					headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
 			},
 			{
@@ -195,7 +196,7 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowCredentials: {"true"},
 					headers.ContentType:                   {textPlain},
 					"X-Key":                               {"X-Key-Value"},
-					headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
 			},
 			{
@@ -213,7 +214,7 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowOrigin:      {"localhost"},
 					headers.AccessControlAllowCredentials: {"false"},
 					headers.ContentType:                   {"none"},
-					headers.AccessControlAllowMethods:     {mocks.AllMethods},
+					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
 			},
 		}

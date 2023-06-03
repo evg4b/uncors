@@ -1,6 +1,7 @@
 package urlreplacer_test
 
 import (
+	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -216,7 +217,7 @@ var isSecureTestCases = []struct {
 }{
 	{
 		name:     "url with http scheme",
-		url:      "http://localhost",
+		url:      testconstants.HTTPLocalhost,
 		expected: false,
 	},
 	{

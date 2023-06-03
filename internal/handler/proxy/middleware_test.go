@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -172,7 +173,7 @@ func TestProxyMiddleware(t *testing.T) {
 		assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
 		assert.Equal(
 			t,
-			mocks.AllMethods,
+			testconstants.AllMethods,
 			header.Get(headers.AccessControlAllowMethods),
 		)
 	})
@@ -196,7 +197,7 @@ func TestProxyMiddleware(t *testing.T) {
 					expected: map[string][]string{
 						headers.AccessControlAllowOrigin:      {"*"},
 						headers.AccessControlAllowCredentials: {"true"},
-						headers.AccessControlAllowMethods:     {mocks.AllMethods},
+						headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 					},
 				},
 				{
@@ -213,7 +214,7 @@ func TestProxyMiddleware(t *testing.T) {
 						"X-Hey-Header":                        {"123"},
 						headers.AccessControlAllowOrigin:      {"*"},
 						headers.AccessControlAllowCredentials: {"true"},
-						headers.AccessControlAllowMethods:     {mocks.AllMethods},
+						headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 					},
 				},
 				{
@@ -229,7 +230,7 @@ func TestProxyMiddleware(t *testing.T) {
 						"Custom-Header":                       {"true"},
 						headers.AccessControlAllowOrigin:      {"*"},
 						headers.AccessControlAllowCredentials: {"true"},
-						headers.AccessControlAllowMethods:     {mocks.AllMethods},
+						headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 					},
 				},
 			}

@@ -1,6 +1,7 @@
 package helpers_test
 
 import (
+	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/helpers"
@@ -25,7 +26,7 @@ func TestCloseSafe(t *testing.T) {
 
 	t.Run("panics when resource close return error", func(t *testing.T) {
 		assert.Panics(t, func() {
-			resource := mocks.NewCloserMock(t).CloseMock.Return(mocks.ErrTest1)
+			resource := mocks.NewCloserMock(t).CloseMock.Return(testconstants.ErrTest1)
 
 			helpers.CloseSafe(resource)
 		})

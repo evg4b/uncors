@@ -1,10 +1,10 @@
 package config_test
 
 import (
+	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
 	"github.com/spf13/viper"
@@ -83,9 +83,9 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "read all fields from config file config is set",
 				args: []string{
 					params.Config, "/full-config.yaml",
-					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
-					params.From, mocks.SourceHost2, params.To, mocks.TargetHost2,
-					params.From, mocks.SourceHost3, params.To, mocks.TargetHost3,
+					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
+					params.From, testconstants.SourceHost2, params.To, testconstants.TargetHost2,
+					params.From, testconstants.SourceHost3, params.To, testconstants.TargetHost3,
 				},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
@@ -115,9 +115,9 @@ func TestLoadConfiguration(t *testing.T) {
 								},
 							},
 						},
-						{From: mocks.SourceHost1, To: mocks.TargetHost1},
-						{From: mocks.SourceHost2, To: mocks.TargetHost2},
-						{From: mocks.SourceHost3, To: mocks.TargetHost3},
+						{From: testconstants.SourceHost1, To: testconstants.TargetHost1},
+						{From: testconstants.SourceHost2, To: testconstants.TargetHost2},
+						{From: testconstants.SourceHost3, To: testconstants.TargetHost3},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,
@@ -155,7 +155,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "return default config",
 				args: []string{
-					params.To, mocks.TargetHost1,
+					params.To, testconstants.TargetHost1,
 				},
 				expected: []string{
 					"recognize url mapping: `from` values are not set for every `to`",
@@ -164,8 +164,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of from values great then count of to",
 				args: []string{
-					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
-					params.From, mocks.SourceHost2,
+					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
+					params.From, testconstants.SourceHost2,
 				},
 				expected: []string{
 					"recognize url mapping: `to` values are not set for every `from`",
@@ -174,8 +174,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of to values great then count of from",
 				args: []string{
-					params.From, mocks.SourceHost1, params.To, mocks.TargetHost1,
-					params.To, mocks.TargetHost2,
+					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
+					params.To, testconstants.TargetHost2,
 				},
 				expected: []string{
 					"recognize url mapping: `from` values are not set for every `to`",

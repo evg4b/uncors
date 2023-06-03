@@ -1,4 +1,4 @@
-package mocks
+package testconstants
 
 import "errors"
 

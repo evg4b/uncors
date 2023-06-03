@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,6 @@ var (
 	mock3Body = `{"mock": "mock number 3"}`
 	mock4Body = `{"mock": "mock number 4"}`
 
-	localhost       = "http://localhost"
 	localhostSecure = "https://localhost"
 
 	backgroundPng = "background.png"
@@ -56,7 +56,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 	mappings := []config.Mapping{
 		{
-			From: localhost,
+			From: testconstants.HTTPLocalhost,
 			To:   localhostSecure,
 			Statics: []config.StaticDirectory{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},

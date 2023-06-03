@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					mocks.AllMethods,
+					testconstants.AllMethods,
 				},
 			},
 		},
@@ -38,7 +38,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					mocks.AllMethods,
+					testconstants.AllMethods,
 				},
 			},
 		},
@@ -51,7 +51,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods: []string{
-					mocks.AllMethods,
+					testconstants.AllMethods,
 				},
 				"X-DATA": []string{"https://demo.com"},
 			},

@@ -7,12 +7,13 @@ import (
 
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNormaliseRequest(t *testing.T) {
-	url, err := urlx.Parse("http://localhost")
+	url, err := urlx.Parse(testconstants.HTTPLocalhost)
 	testutils.CheckNoError(t, err)
 
 	t.Run("set correct scheme", func(t *testing.T) {

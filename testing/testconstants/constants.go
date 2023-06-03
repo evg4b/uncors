@@ -1,9 +1,10 @@
-package mocks
+package testconstants
 
 var (
-	SourceHost1 = "host1"
-	SourceHost2 = "host2"
-	SourceHost3 = "host3"
+	SourceHost1   = "host1"
+	SourceHost2   = "host2"
+	SourceHost3   = "host3"
+	HTTPLocalhost = "http://localhost"
 )
 
 var (
