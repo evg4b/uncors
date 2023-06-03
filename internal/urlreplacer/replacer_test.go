@@ -1,10 +1,10 @@
 package urlreplacer_test
 
 import (
-	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -232,7 +232,7 @@ var isSecureTestCases = []struct {
 	},
 	{
 		name:     "url with https scheme",
-		url:      "https://localhost",
+		url:      testconstants.HTTPSLocalhost,
 		expected: true,
 	},
 }

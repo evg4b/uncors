@@ -26,8 +26,6 @@ var (
 	mock3Body = `{"mock": "mock number 3"}`
 	mock4Body = `{"mock": "mock number 4"}`
 
-	localhostSecure = "https://localhost"
-
 	backgroundPng = "background.png"
 	iconsSvg      = "icons.svg"
 	indexJS       = "index.js"
@@ -57,7 +55,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 	mappings := []config.Mapping{
 		{
 			From: testconstants.HTTPLocalhost,
-			To:   localhostSecure,
+			To:   testconstants.HTTPSLocalhost,
 			Statics: []config.StaticDirectory{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},

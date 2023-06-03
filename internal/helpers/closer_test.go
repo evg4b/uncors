@@ -1,11 +1,11 @@
 package helpers_test
 
 import (
-	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/stretchr/testify/assert"
 )
 

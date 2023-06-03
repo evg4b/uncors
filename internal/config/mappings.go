@@ -13,8 +13,7 @@ type Mappings []Mapping
 func (mappings Mappings) String() string {
 	var builder strings.Builder
 
-	groups := lo.GroupBy(mappings, extractHost)
-	for _, group := range groups {
+	for _, group := range lo.GroupBy(mappings, extractHost) {
 		for _, mapping := range group {
 			builder.WriteString(sfmt.Sprintf("%s => %s\n", mapping.From, mapping.To))
 		}

@@ -1,10 +1,10 @@
 package config_test
 
 import (
-	"github.com/evg4b/uncors/testing/testconstants"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
 	"github.com/spf13/viper"

@@ -3,9 +3,9 @@ package config_test
 
 import (
 	"testing"
-	"github.com/evg4b/uncors/testing/testconstants"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set https port",
 				mappings: []config.Mapping{
-					{From: "https://localhost", To: "https://github.com"},
+					{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
 				},
 				expected: []config.Mapping{
 					{From: "https://localhost:3001", To: "https://github.com"},
@@ -98,7 +98,7 @@ func TestNormaliseMappings(t *testing.T) {
 				},
 				expected: []config.Mapping{
 					{From: testconstants.HTTPLocalhost, To: "github.com"},
-					{From: "https://localhost", To: "github.com"},
+					{From: testconstants.HTTPSLocalhost, To: "github.com"},
 				},
 				useHTTPS: true,
 			},
@@ -115,10 +115,10 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set https port",
 				mappings: []config.Mapping{
-					{From: "https://localhost", To: "https://github.com"},
+					{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
 				},
 				expected: []config.Mapping{
-					{From: "https://localhost", To: "https://github.com"},
+					{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
 				},
 				useHTTPS: true,
 			},

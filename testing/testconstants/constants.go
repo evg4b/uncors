@@ -1,10 +1,9 @@
 package testconstants
 
 var (
-	SourceHost1   = "host1"
-	SourceHost2   = "host2"
-	SourceHost3   = "host3"
-	HTTPLocalhost = "http://localhost"
+	SourceHost1 = "host1"
+	SourceHost2 = "host2"
+	SourceHost3 = "host3"
 )
 
 var (

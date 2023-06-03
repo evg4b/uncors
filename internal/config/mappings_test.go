@@ -31,7 +31,7 @@ func TestMappings(t *testing.T) {
 			name: "http and https mappings",
 			mappings: config.Mappings{
 				{From: testconstants.HTTPLocalhost, To: "https://github.com"},
-				{From: "https://localhost", To: "https://github.com"},
+				{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",
@@ -77,7 +77,7 @@ func TestMappings(t *testing.T) {
 						},
 					},
 				},
-				{From: "https://localhost", To: "https://github.com"},
+				{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",
