@@ -17,8 +17,8 @@
     <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
         <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license">
     </a>
-    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors&branch=develop">
-        <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage&branch=develop">
+    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
+        <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage">
     </a>
     <a href="https://goreportcard.com/report/github.com/evg4b/uncors">
         <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evg4b/uncors">
