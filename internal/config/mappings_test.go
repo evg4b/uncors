@@ -23,15 +23,15 @@ func TestMappings(t *testing.T) {
 		{
 			name: "http mapping only",
 			mappings: config.Mappings{
-				{From: testconstants.HTTPLocalhost, To: "https://github.com"},
+				{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
 			},
 			expected: []string{"http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
 			mappings: config.Mappings{
-				{From: testconstants.HTTPLocalhost, To: "https://github.com"},
-				{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
+				{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+				{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",
@@ -43,7 +43,7 @@ func TestMappings(t *testing.T) {
 			mappings: config.Mappings{
 				{
 					From: testconstants.HTTPLocalhost,
-					To:   "https://github.com",
+					To:   testconstants.HTTPSGithub,
 					Mocks: []config.Mock{
 						{
 							Path:   "/endpoint-1",
@@ -77,7 +77,7 @@ func TestMappings(t *testing.T) {
 						},
 					},
 				},
-				{From: testconstants.HTTPSLocalhost, To: "https://github.com"},
+				{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",

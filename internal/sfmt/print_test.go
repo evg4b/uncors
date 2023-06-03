@@ -12,11 +12,11 @@ import (
 
 const (
 	rawPayload       = "test-data"
-	fPayload         = "pint f %s %d"
-	fPayloadExpected = "pint f demo 555"
+	fPayload         = "print formatted %s %d"
+	fPayloadExpected = "print formatted string 555"
 )
 
-var fPayloadArgs = []any{"demo", 555}
+var fPayloadArgs = []any{"string", 555}
 
 func TestFprint(t *testing.T) {
 	t.Run("print correctly", func(t *testing.T) {

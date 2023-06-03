@@ -6,6 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,13 +24,13 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 			{
 				name: "source url is incorrect",
 				mapping: []config.Mapping{
-					{From: string(rune(0x7f)), To: "https://github.com"},
+					{From: string(rune(0x7f)), To: testconstants.HTTPSGithub},
 				},
 			},
 			{
 				name: "target url is incorrect ",
 				mapping: []config.Mapping{
-					{From: "localhost", To: string(rune(0x7f))},
+					{From: testconstants.Localhost, To: string(rune(0x7f))},
 				},
 			},
 		}
@@ -45,7 +46,7 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 
 	t.Run("should return replacers", func(t *testing.T) {
 		actual, err := urlreplacer.NewURLReplacerFactory([]config.Mapping{
-			{From: "localhost", To: "https://github.com"},
+			{From: testconstants.Localhost, To: testconstants.HTTPSGithub},
 		})
 
 		assert.NotNil(t, actual)

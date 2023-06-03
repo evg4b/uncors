@@ -2,8 +2,6 @@ package testutils
 
 import (
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -23,12 +21,4 @@ func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 	}
 
 	return fs
-}
-
-func PrepareFsForTests(t *testing.T, folder string) afero.Fs {
-	t.Helper()
-	_, filename, _, _ := runtime.Caller(1) //nolint: dogsled
-	dirname := filepath.Join(filepath.Dir(filename), folder)
-
-	return afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), dirname))
 }

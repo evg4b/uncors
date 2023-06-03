@@ -20,7 +20,7 @@ func TestNormaliseRequest(t *testing.T) {
 		t.Run("http", func(t *testing.T) {
 			request := &http.Request{
 				URL:  url,
-				Host: "localhost",
+				Host: testconstants.Localhost,
 			}
 
 			helpers.NormaliseRequest(request)
@@ -32,7 +32,7 @@ func TestNormaliseRequest(t *testing.T) {
 			request := &http.Request{
 				URL:  url,
 				TLS:  &tls.ConnectionState{},
-				Host: "localhost",
+				Host: testconstants.Localhost,
 			}
 
 			helpers.NormaliseRequest(request)
@@ -45,11 +45,11 @@ func TestNormaliseRequest(t *testing.T) {
 		request := &http.Request{
 			URL:  url,
 			TLS:  &tls.ConnectionState{},
-			Host: "localhost",
+			Host: testconstants.Localhost,
 		}
 
 		helpers.NormaliseRequest(request)
 
-		assert.Equal(t, request.URL.Host, "localhost")
+		assert.Equal(t, request.URL.Host, testconstants.Localhost)
 	})
 }

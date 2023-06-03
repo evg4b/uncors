@@ -13,8 +13,67 @@ import (
 
 const acceptEncoding = "accept-encoding"
 
+const (
+	corruptedConfigPath = "/corrupted-config.yaml"
+	corruptedConfig     = `http-port: 8080
+mappings&
+  - http://demo: https://demo.com
+`
+)
+
+const (
+	fullConfigPath = "/full-config.yaml"
+	fullConfig     = `
+http-port: 8080
+mappings:
+  - http://demo1: https://demo1.com
+  - from: http://other-demo2
+    to: https://demo2.io
+    mocks:
+      - path: /demo
+        method: POST
+        queries:
+          foo: bar
+        headers:
+          Accept-Encoding: deflate
+        response:
+          code: 201
+          headers:
+            Accept-Encoding: deflate
+          raw: demo
+          file: /demo.txt
+proxy: localhost:8080
+debug: true
+https-port: 8081
+cert-file: /cert-file.pem
+key-file: /key-file.key
+`
+)
+
+const (
+	incorrectConfigPath = "/incorrect-config.yaml"
+	incorrectConfig     = `http-port: xxx
+mappings:
+  - http://demo: https://demo.com
+`
+)
+
+const (
+	minimalConfigPath = "/minimal-config.yaml"
+	minimalConfig     = `
+http-port: 8080
+mappings:
+  - http://demo: https://demo.com
+`
+)
+
 func TestLoadConfiguration(t *testing.T) {
-	fs := testutils.PrepareFsForTests(t, "config_test_data")
+	fs := testutils.FsFromMap(t, map[string]string{
+		corruptedConfigPath: corruptedConfig,
+		fullConfigPath:      fullConfig,
+		incorrectConfigPath: incorrectConfig,
+		minimalConfigPath:   minimalConfig,
+	})
 	viperInstance := viper.New()
 	viperInstance.SetFs(fs)
 
@@ -35,7 +94,7 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 			{
 				name: "minimal config is set",
-				args: []string{params.Config, "/minimal-config.yaml"},
+				args: []string{params.Config, minimalConfigPath},
 				expected: &config.UncorsConfig{
 					HTTPPort:  8080,
 					HTTPSPort: 443,
@@ -46,7 +105,7 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 			{
 				name: "read all fields from config file config is set",
-				args: []string{params.Config, "/full-config.yaml"},
+				args: []string{params.Config, fullConfigPath},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: []config.Mapping{
@@ -82,7 +141,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "read all fields from config file config is set",
 				args: []string{
-					params.Config, "/full-config.yaml",
+					params.Config, fullConfigPath,
 					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
 					params.From, testconstants.SourceHost2, params.To, testconstants.TargetHost2,
 					params.From, testconstants.SourceHost3, params.To, testconstants.TargetHost3,
@@ -188,13 +247,13 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: []string{
 					"filed to read config file '/not-exist-config.yaml': open ",
-					"test_data/not-exist-config.yaml: no such file or directory",
+					"open /not-exist-config.yaml: file does not exist",
 				},
 			},
 			{
 				name: "config file is corrupted",
 				args: []string{
-					params.Config, "/corrupted-config.yaml",
+					params.Config, corruptedConfigPath,
 				},
 				expected: []string{
 					"filed to read config file '/corrupted-config.yaml': " +
@@ -214,7 +273,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "incorrect type in config file",
 				args: []string{
-					params.Config, "/incorrect-config.yaml",
+					params.Config, incorrectConfigPath,
 				},
 				expected: []string{
 					"filed parsing config: 1 error(s) decoding:\n\n* cannot parse 'http-port' as int:" +
@@ -247,14 +306,44 @@ func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "false by default",
-			config:   &config.UncorsConfig{},
+			name: "true when https configured",
+			config: &config.UncorsConfig{
+				HTTPSPort: 443,
+				CertFile:  "/cert.cer",
+				KeyFile:   "/cert.key",
+			},
+			expected: true,
+		},
+		{
+			name: "false when https port is not configured",
+			config: &config.UncorsConfig{
+				CertFile: "/cert.cer",
+				KeyFile:  "/cert.key",
+			},
+			expected: false,
+		},
+		{
+			name: "false when cert file is not configured",
+			config: &config.UncorsConfig{
+				HTTPSPort: 443,
+				KeyFile:   "/cert.key",
+			},
+			expected: false,
+		},
+		{
+			name: "false when key file is not configured",
+			config: &config.UncorsConfig{
+				HTTPSPort: 443,
+				CertFile:  "/cert.cer",
+			},
 			expected: false,
 		},
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			assert.Equal(t, testCase.expected, testCase.config.IsHTTPSEnabled())
+			actual := testCase.config.IsHTTPSEnabled()
+
+			assert.Equal(t, testCase.expected, actual)
 		})
 	}
 }

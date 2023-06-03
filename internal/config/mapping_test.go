@@ -26,7 +26,7 @@ func TestURLMappingHookFunc(t *testing.T) {
 				config: "http://localhost:4200: https://github.com",
 				expected: config.Mapping{
 					From: "http://localhost:4200",
-					To:   "https://github.com",
+					To:   testconstants.HTTPSGithub,
 				},
 			},
 			{
