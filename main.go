@@ -1,4 +1,3 @@
-// nolint: cyclop
 package main
 
 import (

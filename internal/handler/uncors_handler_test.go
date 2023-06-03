@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -43,6 +44,7 @@ var (
 )
 
 func TestUncorsRequestHandler(t *testing.T) {
+	log.DisableOutput()
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -286,6 +288,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 }
 
 func TestMockMiddleware(t *testing.T) {
+	log.DisableOutput()
 	logger := mocks.NewNoopLogger(t)
 
 	t.Run("request method handling", func(t *testing.T) {
