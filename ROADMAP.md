@@ -50,16 +50,20 @@
 - [X] File configuration - [PR](https://github.com/evg4b/uncors/pull/9)
 - [X] Stable NPM package deploying
 
-## Next Release
+## [0.1.9 Release](https://github.com/evg4b/uncors/releases/tag/v0.1.0)
 
 - [X] Static file serving [PR](https://github.com/evg4b/uncors/pull/15)
 - [X] Own error page for uncors internal errors
-- [ ] Separated mock for each url mapping [PR](https://github.com/evg4b/uncors/pull/16)
+- [X] Separated mock for each url mapping [PR](https://github.com/evg4b/uncors/pull/16)
+
+## Next Release
+
+- [ ] Response caching
+- [ ] JSON Schema for config file
 
 ## Future features
 
 - [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
 - [ ] Occupied port handling
 - [ ] Collecting all request/response to har file
-- [ ] Response caching
 - [ ] Content URl replacing (HTML, JSON, TEXT and other)
