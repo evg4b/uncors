@@ -5,6 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
+	github.com/FlowerWrong/go-hostsfile v0.0.0-20180523020422-0a383d90e66a
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.6.1
 	github.com/deckarep/golang-set/v2 v2.6.0
