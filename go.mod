@@ -3,6 +3,7 @@ module github.com/evg4b/uncors
 go 1.22.2
 
 require (
+	github.com/FlowerWrong/go-hostsfile v0.0.0-20180523020422-0a383d90e66a
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.6.1
 	github.com/charmbracelet/lipgloss v0.11.0
@@ -31,7 +32,6 @@ require (
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
