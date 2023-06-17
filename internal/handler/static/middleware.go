@@ -31,22 +31,27 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	filePath := m.extractFilePath(request)
+	response := WrapResponseWriter(writer)
 
+	filePath := m.extractFilePath(request)
 	file, stat, err := m.openFile(filePath)
 	defer helpers.CloseSafe(file)
 
 	if err != nil {
 		if errors.Is(err, errNorHandled) {
-			m.next.ServeHTTP(writer, request)
+			m.next.ServeHTTP(response, request)
 		} else {
-			infra.HTTPError(writer, err)
+			infra.HTTPError(response, err)
 		}
 
 		return
 	}
 
-	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+	http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
+	m.logger.PrintResponse(&http.Response{
+		StatusCode: response.StatusCode,
+		Request:    request,
+	})
 }
 
 func (m *Middleware) extractFilePath(request *http.Request) string {

@@ -27,6 +27,9 @@ const (
 )
 
 func TestMiddleware(t *testing.T) {
+	loggerMock := mocks.NewLoggerMock(t).
+		PrintResponseMock.Return()
+
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
 		demoJS:    demoJSContent,
@@ -97,7 +100,7 @@ func TestMiddleware(t *testing.T) {
 		const testHTTPBody = "this is tests response"
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithLogger(mocks.NewLoggerMock(t)),
+			static.WithLogger(loggerMock),
 			static.WithNext(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				writer.WriteHeader(testHTTPStatusCode)
 				sfmt.Fprint(writer, testHTTPBody)
@@ -144,7 +147,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("index file is configured", func(t *testing.T) {
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithLogger(mocks.NewLoggerMock(t)),
+			static.WithLogger(loggerMock),
 			static.WithIndex(indexHTML),
 			static.WithNext(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 				panic("should not be called")
@@ -190,7 +193,7 @@ func TestMiddleware(t *testing.T) {
 		t.Run("index file doesn't exists", func(t *testing.T) {
 			middleware := static.NewStaticMiddleware(
 				static.WithFileSystem(fs),
-				static.WithLogger(mocks.NewLoggerMock(t)),
+				static.WithLogger(loggerMock),
 				static.WithIndex("/not-exists.html"),
 				static.WithNext(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 					panic("should not be called")
