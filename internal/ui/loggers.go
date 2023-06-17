@@ -5,17 +5,12 @@ import (
 	"github.com/pterm/pterm"
 )
 
-var ProxyLogger = log.NewLogger(" PROXY ", log.WithStyle(&pterm.Style{
-	pterm.FgBlack,
-	pterm.BgLightBlue,
-}))
+func style(fg pterm.Color, bg pterm.Color) log.LoggerOption {
+	return log.WithStyle(&pterm.Style{fg, bg})
+}
 
-var MockLogger = log.NewLogger(" MOCK  ", log.WithStyle(&pterm.Style{
-	pterm.FgBlack,
-	pterm.BgLightMagenta,
-}))
-
-var StaticLogger = log.NewLogger("STATIC ", log.WithStyle(&pterm.Style{
-	pterm.FgBlack,
-	pterm.BgLightYellow,
-}))
+var (
+	ProxyLogger  = log.NewLogger(" PROXY ", style(pterm.FgBlack, pterm.BgLightBlue))
+	MockLogger   = log.NewLogger(" MOCK  ", style(pterm.FgBlack, pterm.BgLightMagenta))
+	StaticLogger = log.NewLogger("STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
+)
