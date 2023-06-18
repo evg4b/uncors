@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-type Middleware struct {
+type Handler struct {
 	fs     afero.Fs
 	next   contracts.Handler
 	index  string
@@ -20,26 +20,26 @@ type Middleware struct {
 	prefix string
 }
 
-func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{}
+func NewStaticHandler(options ...HandlerOption) *Handler {
+	handler := &Handler{}
 
 	for _, option := range options {
-		option(middleware)
+		option(handler)
 	}
 
-	return middleware
+	return handler
 }
 
-func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
 	response := contracts.WrapResponseWriter(writer)
 
-	filePath := m.extractFilePath(request)
-	file, stat, err := m.openFile(filePath)
+	filePath := h.extractFilePath(request)
+	file, stat, err := h.openFile(filePath)
 	defer helpers.CloseSafe(file)
 
 	if err != nil {
 		if errors.Is(err, errNorHandled) {
-			m.next.ServeHTTP(response, request)
+			h.next.ServeHTTP(response, request)
 		} else {
 			infra.HTTPError(response, err)
 		}
@@ -48,14 +48,14 @@ func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contra
 	}
 
 	http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-	m.logger.PrintResponse(&http.Response{
+	h.logger.PrintResponse(&http.Response{
 		StatusCode: response.StatusCode,
 		Request:    request,
 	})
 }
 
-func (m *Middleware) extractFilePath(request *http.Request) string {
-	filePath := strings.TrimPrefix(request.URL.Path, m.prefix)
+func (h *Handler) extractFilePath(request *http.Request) string {
+	filePath := strings.TrimPrefix(request.URL.Path, h.prefix)
 	if !strings.HasPrefix(filePath, "/") {
 		filePath = "/" + filePath
 	}

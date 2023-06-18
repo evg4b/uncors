@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxyMiddleware(t *testing.T) {
+func TestProxyHandler(t *testing.T) {
 	replacerFactory, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: "http://premium.local.com", To: "https://premium.api.com"},
 	})
@@ -66,7 +66,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -81,7 +81,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 				req.Header.Add(testCase.headerKey, testCase.URL)
 
-				proc.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)
 			})
 		}
 	})
@@ -119,7 +119,7 @@ func TestProxyMiddleware(t *testing.T) {
 					}
 				})
 
-				proc := proxy.NewProxyHandler(
+				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 					proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -134,7 +134,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				proc.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 				assert.Equal(t, testCase.expectedURL, recorder.Header().Get(testCase.headerKey))
 			})
@@ -153,7 +153,7 @@ func TestProxyMiddleware(t *testing.T) {
 			}
 		})
 
-		proc := proxy.NewProxyHandler(
+		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -167,7 +167,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 
-		proc.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 		header := recorder.Header()
 		assert.Equal(t, "*", header.Get(headers.AccessControlAllowOrigin))
@@ -180,7 +180,7 @@ func TestProxyMiddleware(t *testing.T) {
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
-		middleware := proxy.NewProxyHandler(
+		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
@@ -241,7 +241,7 @@ func TestProxyMiddleware(t *testing.T) {
 					req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())

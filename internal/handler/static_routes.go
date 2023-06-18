@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (m *RequestHandler) makeStaticRoutes(
+func (h *RequestHandler) makeStaticRoutes(
 	router *mux.Router,
 	statics config.StaticDirectories,
 	next contracts.Handler,
@@ -26,8 +26,8 @@ func (m *RequestHandler) makeStaticRoutes(
 			Handler(http.RedirectHandler(path, http.StatusTemporaryRedirect))
 
 		route := router.NewRoute()
-		handler := static.NewStaticMiddleware(
-			static.WithFileSystem(afero.NewBasePathFs(m.fs, staticDir.Dir)),
+		handler := static.NewStaticHandler(
+			static.WithFileSystem(afero.NewBasePathFs(h.fs, staticDir.Dir)),
 			static.WithIndex(staticDir.Index),
 			static.WithNext(next),
 			static.WithLogger(ui.StaticLogger),

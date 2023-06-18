@@ -31,35 +31,35 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (m *Handler) ServeHTTP(response *contracts.ResponseWriter, request *contracts.Request) {
-	if err := m.handle(response, request); err != nil {
+func (h *Handler) ServeHTTP(response *contracts.ResponseWriter, request *contracts.Request) {
+	if err := h.handle(response, request); err != nil {
 		infra.HTTPError(response, err)
 	}
 }
 
-func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
+func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
-		return m.makeOptionsResponse(resp, req)
+		return h.makeOptionsResponse(resp, req)
 	}
 
-	targetReplacer, sourceReplacer, err := m.replacers.Make(req.URL)
+	targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
 	}
 
-	originalRequest, err := m.makeOriginalRequest(req, targetReplacer)
+	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to create reuest to original source: %w", err)
 	}
 
-	originalResponse, err := m.executeQuery(originalRequest)
+	originalResponse, err := h.executeQuery(originalRequest)
 	if err != nil {
 		return err
 	}
 
 	defer helpers.CloseSafe(originalResponse.Body)
 
-	err = m.makeUncorsResponse(originalResponse, resp, sourceReplacer)
+	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to make uncors response: %w", err)
 	}
@@ -67,12 +67,12 @@ func (m *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-func (m *Handler) executeQuery(request *http.Request) (*http.Response, error) {
-	originalResponse, err := m.http.Do(request)
+func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
+	originalResponse, err := h.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	m.logger.PrintResponse(originalResponse)
+	h.logger.PrintResponse(originalResponse)
 
 	return originalResponse, nil
 }

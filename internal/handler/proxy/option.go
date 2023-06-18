@@ -6,9 +6,9 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 )
 
-func (m *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
+func (h *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
 	infra.WriteCorsHeaders(writer.Header())
-	m.logger.PrintResponse(&http.Response{
+	h.logger.PrintResponse(&http.Response{
 		StatusCode: http.StatusOK,
 		Request:    req,
 	})

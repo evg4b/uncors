@@ -70,16 +70,16 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 	return handler
 }
 
-func (m *RequestHandler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
-	m.router.ServeHTTP(writer, request)
+func (h *RequestHandler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+	h.router.ServeHTTP(writer, request)
 }
 
-func (m *RequestHandler) createHandler(response config.Response) http.Handler {
+func (h *RequestHandler) createHandler(response config.Response) http.Handler {
 	return contracts.CastToHTTPHandler(
-		mock.NewMockMiddleware(
+		mock.NewMockHandler(
 			mock.WithLogger(ui.MockLogger),
 			mock.WithResponse(response),
-			mock.WithFileSystem(m.fs),
+			mock.WithFileSystem(h.fs),
 			mock.WithAfter(time.After),
 		),
 	)

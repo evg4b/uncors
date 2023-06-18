@@ -9,31 +9,31 @@ import (
 type UncorsRequestHandlerOption = func(*RequestHandler)
 
 func WithLogger(logger contracts.Logger) UncorsRequestHandlerOption {
-	return func(m *RequestHandler) {
-		m.logger = logger
+	return func(h *RequestHandler) {
+		h.logger = logger
 	}
 }
 
 func WithFileSystem(fs afero.Fs) UncorsRequestHandlerOption {
-	return func(m *RequestHandler) {
-		m.fs = fs
+	return func(h *RequestHandler) {
+		h.fs = fs
 	}
 }
 
 func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) UncorsRequestHandlerOption {
-	return func(m *RequestHandler) {
-		m.replacerFactory = replacerFactory
+	return func(h *RequestHandler) {
+		h.replacerFactory = replacerFactory
 	}
 }
 
 func WithHTTPClient(client contracts.HTTPClient) UncorsRequestHandlerOption {
-	return func(m *RequestHandler) {
-		m.httpClient = client
+	return func(h *RequestHandler) {
+		h.httpClient = client
 	}
 }
 
 func WithMappings(mappings config.Mappings) UncorsRequestHandlerOption {
-	return func(m *RequestHandler) {
-		m.mappings = mappings
+	return func(h *RequestHandler) {
+		h.mappings = mappings
 	}
 }

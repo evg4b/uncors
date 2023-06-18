@@ -64,7 +64,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -132,7 +132,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -221,7 +221,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -269,7 +269,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -341,7 +341,7 @@ func TestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
-					handler := mock.NewMockMiddleware(
+					handler := mock.NewMockHandler(
 						mock.WithLogger(mocks.NewNoopLogger(t)),
 						mock.WithResponse(testCase.response),
 						mock.WithFileSystem(fileSystem),
@@ -364,7 +364,7 @@ func TestHandler(t *testing.T) {
 		})
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
-			handler := mock.NewMockMiddleware(
+			handler := mock.NewMockHandler(
 				mock.WithLogger(mocks.NewNoopLogger(t)),
 				mock.WithResponse(config.Response{
 					Code:  http.StatusOK,

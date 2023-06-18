@@ -116,7 +116,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		panic(sfmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
-	hand := handler.NewUncorsRequestHandler(
+	uncorsHandler := handler.NewUncorsRequestHandler(
 		handler.WithLogger(mocks.NewLoggerMock(t)),
 		handler.WithFileSystem(fs),
 		handler.WithURLReplacerFactory(factory),
@@ -154,7 +154,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 						assert.Equal(t, 200, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -167,7 +167,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
@@ -178,7 +178,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 				expectedMessage := "filed to open index file: open /assets/index.php: file does not exist"
@@ -210,7 +210,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 						assert.Equal(t, http.StatusOK, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -223,7 +223,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
@@ -264,7 +264,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
-					hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					assert.Equal(t, testCase.expectedCode, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -277,7 +277,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
-			hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+			uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 			expectedMessage := "filed to open file /unknown.json: open /unknown.json: file does not exist"

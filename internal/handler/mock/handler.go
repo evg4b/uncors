@@ -10,29 +10,29 @@ import (
 	"github.com/spf13/afero"
 )
 
-type Middleware struct {
+type Handler struct {
 	response config.Response
 	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }
 
-func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{}
+func NewMockHandler(options ...HandlerOption) *Handler {
+	handler := &Handler{}
 
 	for _, option := range options {
-		option(middleware)
+		option(handler)
 	}
 
-	return middleware
+	return handler
 }
 
-func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
-	response := m.response
+func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+	response := h.response
 	header := writer.Header()
 
 	if response.Delay > 0 {
-		m.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
+		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
 
 		url := request.URL.RequestURI()
@@ -41,11 +41,11 @@ func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contra
 			select {
 			case <-ctx.Done():
 				writer.WriteHeader(http.StatusServiceUnavailable)
-				m.logger.Debugf("Delay is canceled (url: %s)", url)
+				h.logger.Debugf("Delay is canceled (url: %s)", url)
 
 				return
-			case <-m.after(response.Delay):
-				m.logger.Debugf("Delay is complete (url: %s)", url)
+			case <-h.after(response.Delay):
+				h.logger.Debugf("Delay is complete (url: %s)", url)
 
 				break waitingLoop
 			}
@@ -57,18 +57,18 @@ func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contra
 		header.Set(key, value)
 	}
 
-	if len(m.response.File) > 0 {
-		err := m.serveFileContent(writer, request)
+	if len(h.response.File) > 0 {
+		err := h.serveFileContent(writer, request)
 		if err != nil {
 			infra.HTTPError(writer, err)
 
 			return
 		}
 	} else {
-		m.serveRawContent(writer)
+		h.serveRawContent(writer)
 	}
 
-	m.logger.PrintResponse(&http.Response{
+	h.logger.PrintResponse(&http.Response{
 		Request:    request,
 		StatusCode: response.Code,
 	})

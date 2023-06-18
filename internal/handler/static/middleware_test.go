@@ -99,7 +99,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("index file is not configured", func(t *testing.T) {
 		const testHTTPStatusCode = 999
 		const testHTTPBody = "this is tests response"
-		middleware := static.NewStaticMiddleware(
+		handler := static.NewStaticHandler(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
 			static.WithNext(contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *contracts.Request) {
@@ -115,7 +115,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -133,7 +133,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -146,7 +146,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file is configured", func(t *testing.T) {
-		middleware := static.NewStaticMiddleware(
+		handler := static.NewStaticHandler(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
 			static.WithIndex(indexHTML),
@@ -160,7 +160,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -178,7 +178,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -190,7 +190,7 @@ func TestMiddleware(t *testing.T) {
 		})
 
 		t.Run("index file doesn't exists", func(t *testing.T) {
-			middleware := static.NewStaticMiddleware(
+			handler := static.NewStaticHandler(
 				static.WithFileSystem(fs),
 				static.WithLogger(loggerMock),
 				static.WithIndex("/not-exists.html"),
@@ -201,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 			requestURI, err := url.Parse("/options/")
 			testutils.CheckNoError(t, err)
 
-			middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 				Method: http.MethodGet,
 				URL:    requestURI,
 			})
