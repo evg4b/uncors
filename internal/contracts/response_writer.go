@@ -1,4 +1,4 @@
-package static
+package contracts
 
 import (
 	"net/http"

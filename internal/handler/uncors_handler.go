@@ -63,29 +63,31 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 		setDefaultHandler(router, proxyHandler)
 	}
 
-	setDefaultHandler(handler.router, http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+	setDefaultHandler(handler.router, contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *http.Request) {
 		infra.HTTPError(writer, errHostNotMapped)
 	}))
 
 	return handler
 }
 
-func (m *RequestHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (m *RequestHandler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
 	m.router.ServeHTTP(writer, request)
 }
 
-func (m *RequestHandler) createHandler(response config.Response) *mock.Middleware {
-	return mock.NewMockMiddleware(
-		mock.WithLogger(ui.MockLogger),
-		mock.WithResponse(response),
-		mock.WithFileSystem(m.fs),
-		mock.WithAfter(time.After),
+func (m *RequestHandler) createHandler(response config.Response) http.Handler {
+	return contracts.CastToHTTPHandler(
+		mock.NewMockMiddleware(
+			mock.WithLogger(ui.MockLogger),
+			mock.WithResponse(response),
+			mock.WithFileSystem(m.fs),
+			mock.WithAfter(time.After),
+		),
 	)
 }
 
-func setDefaultHandler(router *mux.Router, handler http.Handler) {
-	router.NotFoundHandler = handler
-	router.MethodNotAllowedHandler = handler
+func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
+	router.NotFoundHandler = contracts.CastToHTTPHandler(handler)
+	router.MethodNotAllowedHandler = contracts.CastToHTTPHandler(handler)
 }
 
 const wildcard = "*"

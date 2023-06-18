@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -80,7 +81,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 				req.Header.Add(testCase.headerKey, testCase.URL)
 
-				proc.ServeHTTP(httptest.NewRecorder(), req)
+				proc.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)
 			})
 		}
 	})
@@ -133,7 +134,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				proc.ServeHTTP(recorder, req)
+				proc.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 				assert.Equal(t, testCase.expectedURL, recorder.Header().Get(testCase.headerKey))
 			})
@@ -166,7 +167,7 @@ func TestProxyMiddleware(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 
-		proc.ServeHTTP(recorder, req)
+		proc.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 		header := recorder.Header()
 		assert.Equal(t, "*", header.Get(headers.AccessControlAllowOrigin))
@@ -240,7 +241,7 @@ func TestProxyMiddleware(t *testing.T) {
 					req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(recorder, req)
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())

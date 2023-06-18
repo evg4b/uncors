@@ -14,7 +14,7 @@ import (
 
 type Middleware struct {
 	fs     afero.Fs
-	next   http.Handler
+	next   contracts.Handler
 	index  string
 	logger contracts.Logger
 	prefix string
@@ -30,8 +30,8 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	response := WrapResponseWriter(writer)
+func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+	response := contracts.WrapResponseWriter(writer)
 
 	filePath := m.extractFilePath(request)
 	file, stat, err := m.openFile(filePath)

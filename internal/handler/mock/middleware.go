@@ -27,7 +27,7 @@ func NewMockMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (m *Middleware) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
 	response := m.response
 	header := writer.Header()
 

@@ -1,8 +1,6 @@
 package static
 
 import (
-	"net/http"
-
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/spf13/afero"
 )
@@ -21,7 +19,7 @@ func WithIndex(index string) MiddlewareOption {
 	}
 }
 
-func WithNext(next http.Handler) MiddlewareOption {
+func WithNext(next contracts.Handler) MiddlewareOption {
 	return func(m *Middleware) {
 		m.next = next
 	}

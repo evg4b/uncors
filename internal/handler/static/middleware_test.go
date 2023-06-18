@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -101,7 +102,7 @@ func TestMiddleware(t *testing.T) {
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
-			static.WithNext(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+			static.WithNext(contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *contracts.Request) {
 				writer.WriteHeader(testHTTPStatusCode)
 				sfmt.Fprint(writer, testHTTPBody)
 			})),
@@ -114,7 +115,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(recorder, &http.Request{
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -132,7 +133,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(recorder, &http.Request{
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -149,9 +150,7 @@ func TestMiddleware(t *testing.T) {
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
 			static.WithIndex(indexHTML),
-			static.WithNext(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-				panic("should not be called")
-			})),
+			static.WithNext(mocks.FailNowMock(t)),
 		)
 
 		t.Run("send index file", func(t *testing.T) {
@@ -161,7 +160,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(recorder, &http.Request{
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -179,7 +178,7 @@ func TestMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					middleware.ServeHTTP(recorder, &http.Request{
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -195,16 +194,14 @@ func TestMiddleware(t *testing.T) {
 				static.WithFileSystem(fs),
 				static.WithLogger(loggerMock),
 				static.WithIndex("/not-exists.html"),
-				static.WithNext(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-					panic("should not be called")
-				})),
+				static.WithNext(mocks.FailNowMock(t)),
 			)
 
 			recorder := httptest.NewRecorder()
 			requestURI, err := url.Parse("/options/")
 			testutils.CheckNoError(t, err)
 
-			middleware.ServeHTTP(recorder, &http.Request{
+			middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
 				Method: http.MethodGet,
 				URL:    requestURI,
 			})

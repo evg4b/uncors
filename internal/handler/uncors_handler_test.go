@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
@@ -153,7 +154,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						hand.ServeHTTP(recorder, request)
+						hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 						assert.Equal(t, 200, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -166,7 +167,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(recorder, request)
+				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
@@ -177,7 +178,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(recorder, request)
+				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 				expectedMessage := "filed to open index file: open /assets/index.php: file does not exist"
@@ -209,7 +210,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						hand.ServeHTTP(recorder, request)
+						hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 						assert.Equal(t, http.StatusOK, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -222,7 +223,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
-				hand.ServeHTTP(recorder, request)
+				hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
@@ -263,7 +264,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
-					hand.ServeHTTP(recorder, request)
+					hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					assert.Equal(t, testCase.expectedCode, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -276,7 +277,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
-			hand.ServeHTTP(recorder, request)
+			hand.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 			expectedMessage := "filed to open file /unknown.json: open /unknown.json: file does not exist"
@@ -327,7 +328,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequest(method, api, nil)
 					recorder := httptest.NewRecorder()
 
-					middleware.ServeHTTP(recorder, request)
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					body := testutils.ReadBody(t, recorder)
 					assert.Equal(t, http.StatusOK, recorder.Code)
@@ -381,7 +382,7 @@ func TestMockMiddleware(t *testing.T) {
 						request := httptest.NewRequest(method, api, nil)
 						recorder := httptest.NewRecorder()
 
-						middleware.ServeHTTP(recorder, request)
+						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 						assert.Equal(t, expectedCode, recorder.Code)
 						assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
@@ -392,7 +393,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequest(http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
-					middleware.ServeHTTP(recorder, request)
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, "", testutils.ReadBody(t, recorder))
@@ -403,7 +404,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -512,7 +513,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -608,7 +609,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -726,7 +727,7 @@ func TestMockMiddleware(t *testing.T) {
 				}
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(recorder, request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
