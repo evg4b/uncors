@@ -20,7 +20,7 @@ func TestNewUncorsServer(t *testing.T) {
 	ctx := context.Background()
 	expectedResponse := "UNCORS OK!"
 
-	var handler contracts.HandlerFunc = func(w *contracts.ResponseWriter, _r *contracts.Request) {
+	var handler contracts.HandlerFunc = func(w *contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
 		sfmt.Fprint(w, expectedResponse)
 	}
