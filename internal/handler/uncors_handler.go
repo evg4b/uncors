@@ -8,6 +8,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/infra"
@@ -60,7 +61,9 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
-		setDefaultHandler(router, proxyHandler)
+
+		cacheMiddleware := cache.NewMiddleware(cache.WithLogger(ui.CacheLogger))
+		setDefaultHandler(router, cacheMiddleware.Wrap(proxyHandler))
 	}
 
 	setDefaultHandler(handler.router, contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *http.Request) {

@@ -34,7 +34,6 @@ func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts
 	if response.Delay > 0 {
 		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
-
 		url := request.URL.RequestURI()
 	waitingLoop:
 		for {
@@ -70,7 +69,7 @@ func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts
 
 	h.logger.PrintResponse(&http.Response{
 		Request:    request,
-		StatusCode: response.Code,
+		StatusCode: writer.StatusCode,
 	})
 }
 

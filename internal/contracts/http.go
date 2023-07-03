@@ -17,13 +17,13 @@ func (f HandlerFunc) ServeHTTP(w *ResponseWriter, r *Request) {
 	f(w, r)
 }
 
-var ErrResponceNotCasted = errors.New("received incorrect response writer type")
+var ErrResponseNotCasted = errors.New("received incorrect response writer type")
 
 func CastToHTTPHandler(handler Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		writer, ok := response.(*ResponseWriter)
 		if !ok {
-			panic(ErrResponceNotCasted)
+			panic(ErrResponseNotCasted)
 		}
 
 		handler.ServeHTTP(writer, request)

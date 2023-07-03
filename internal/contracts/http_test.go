@@ -22,20 +22,20 @@ func TestCastToHTTPHandler(t *testing.T) {
 	httpHandler := contracts.CastToHTTPHandler(uncorsHandler)
 
 	t.Run("cast correctly", func(t *testing.T) {
-		recirder := httptest.NewRecorder()
-		responceWriter := contracts.WrapResponseWriter(recirder)
+		recorder := httptest.NewRecorder()
+		responseWriter := contracts.WrapResponseWriter(recorder)
 
 		assert.NotPanics(t, func() {
-			httpHandler.ServeHTTP(responceWriter, request)
-			assert.Equal(t, expectedBody, testutils.ReadBody(t, recirder))
+			httpHandler.ServeHTTP(responseWriter, request)
+			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
 	})
 
-	t.Run("panit when request is not wrapped", func(t *testing.T) {
-		recirder := httptest.NewRecorder()
+	t.Run("panic when request is not wrapped", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
 
-		assert.PanicsWithValue(t, contracts.ErrResponceNotCasted, func() {
-			httpHandler.ServeHTTP(recirder, request)
+		assert.PanicsWithValue(t, contracts.ErrResponseNotCasted, func() {
+			httpHandler.ServeHTTP(recorder, request)
 		})
 	})
 }
@@ -47,11 +47,11 @@ func TestHandlerFunc(t *testing.T) {
 		sfmt.Fprint(w, expectedBody)
 	})
 
-	recirder := httptest.NewRecorder()
-	responceWriter := contracts.WrapResponseWriter(recirder)
+	recorder := httptest.NewRecorder()
+	responseWriter := contracts.WrapResponseWriter(recorder)
 	request := httptest.NewRequest(http.MethodGet, "/data", nil)
 
-	uncorsHandler.ServeHTTP(responceWriter, request)
+	uncorsHandler.ServeHTTP(responseWriter, request)
 
-	assert.Equal(t, expectedBody, testutils.ReadBody(t, recirder))
+	assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 }
