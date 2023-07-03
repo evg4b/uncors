@@ -56,7 +56,7 @@ func (m *Middleware) openIndexFile() (afero.File, error) {
 
 	file, err := m.fs.Open(m.index)
 	if err != nil {
-		return nil, fmt.Errorf("filed to opend index file: %w", err)
+		return nil, fmt.Errorf("filed to open index file: %w", err)
 	}
 
 	return file, nil
