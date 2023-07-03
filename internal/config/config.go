@@ -1,7 +1,7 @@
 package config
 
 import (
-	fmt "fmt"
+	"fmt"
 
 	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/mitchellh/mapstructure"

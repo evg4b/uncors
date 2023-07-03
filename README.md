@@ -94,7 +94,7 @@ docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https:
 
 ## Stew (Cross-platform)
 
-Also, you can install binaris using [Stew](https://github.com/marwanhawari/) with the following commands:
+Also, you can install binaries using [Stew](https://github.com/marwanhawari/) with the following commands:
 
 ```bash
 stew install evg4b/uncors
@@ -139,7 +139,7 @@ The following command can be used to start the UNCORS proxy server:
 uncors --from 'http://localhost' --to 'https://github.com' --http-port 8080
 ```
 
-More information about configuration and usage you can fiund on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
+More information about configuration and usage you can find on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
 
 # ⚠️ Caution 
 
