@@ -180,7 +180,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				hand.ServeHTTP(recorder, request)
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-				expectedMessage := "filed to opend index file: open /assets/index.php: file does not exist"
+				expectedMessage := "filed to open index file: open /assets/index.php: file does not exist"
 				assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
 			})
 		})
@@ -279,7 +279,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			hand.ServeHTTP(recorder, request)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-			expectedMessage := "filed to opent file /unknown.json: open /unknown.json: file does not exist"
+			expectedMessage := "filed to open file /unknown.json: open /unknown.json: file does not exist"
 			assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
 		})
 	})

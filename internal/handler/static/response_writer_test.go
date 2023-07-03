@@ -11,20 +11,20 @@ import (
 )
 
 func TestResponseWriterWrapper(t *testing.T) {
-	const expectedValye = `{ "status": "ok" }`
+	const expectedValue = `{ "status": "ok" }`
 	const expectedCode = 201
 
 	recorder := httptest.NewRecorder()
 	writer := static.WrapResponseWriter(recorder)
 
 	writer.WriteHeader(expectedCode)
-	sfmt.Fprint(writer, expectedValye)
+	sfmt.Fprint(writer, expectedValue)
 
 	t.Run("save status code", func(t *testing.T) {
 		assert.Equal(t, expectedCode, writer.StatusCode)
 	})
 
 	t.Run("write body", func(t *testing.T) {
-		assert.Equal(t, expectedValye, testutils.ReadBody(t, recorder))
+		assert.Equal(t, expectedValue, testutils.ReadBody(t, recorder))
 	})
 }

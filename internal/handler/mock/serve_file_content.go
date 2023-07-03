@@ -10,7 +10,7 @@ func (m *Middleware) serveFileContent(writer http.ResponseWriter, request *http.
 	fileName := m.response.File
 	file, err := m.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("filed to opent file %s: %w", fileName, err)
+		return fmt.Errorf("filed to open file %s: %w", fileName, err)
 	}
 
 	stat, err := file.Stat()
