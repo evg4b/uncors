@@ -48,10 +48,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	}
 
 	http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-	h.logger.PrintResponse(&http.Response{
-		StatusCode: response.StatusCode(),
-		Request:    request,
-	})
+	h.logger.PrintResponse(request, response.StatusCode())
 }
 
 func (h *Handler) extractFilePath(request *http.Request) string {

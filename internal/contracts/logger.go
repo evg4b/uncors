@@ -1,7 +1,5 @@
 package contracts
 
-import "net/http"
-
 type Logger interface {
 	Error(a ...any)
 	Errorf(template string, a ...any)
@@ -11,5 +9,5 @@ type Logger interface {
 	Infof(template string, a ...any)
 	Debug(a ...any)
 	Debugf(template string, a ...any)
-	PrintResponse(response *http.Response)
+	PrintResponse(request *Request, code int)
 }

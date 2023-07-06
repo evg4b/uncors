@@ -1,17 +1,16 @@
 package log
 
 import (
-	"net/http"
-
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
 )
 
-func printResponse(response *http.Response) string {
-	prefix := sfmt.Sprintf("%d %s", response.StatusCode, response.Request.Method)
-	printer := getPrefixPrinter(response.StatusCode, prefix)
+func printResponse(request *contracts.Request, statusCode int) string {
+	prefix := sfmt.Sprintf("%d %s", statusCode, request.Method)
+	printer := getPrefixPrinter(statusCode, prefix)
 
-	return printer.Sprint(response.Request.URL.String())
+	return printer.Sprint(request.URL.String())
 }
 
 func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {

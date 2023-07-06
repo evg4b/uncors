@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -48,10 +47,7 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 			m.writeCachedResponse(writer, cachedResponse)
 
-			m.logger.PrintResponse(&http.Response{
-				Request:    request,
-				StatusCode: writer.StatusCode(),
-			})
+			m.logger.PrintResponse(request, writer.StatusCode())
 
 			return
 		}
