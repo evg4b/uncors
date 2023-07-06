@@ -67,9 +67,14 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
 
-		cachePrefix := fmt.Sprintf("mapping_%d", index)
-		cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix, mapping.Cache)
-		setDefaultHandler(router, cacheMiddleware.Wrap(proxyHandler))
+		var defaultHandler contracts.Handler = proxyHandler
+		if len(mapping.Cache) > 0 {
+			cachePrefix := fmt.Sprintf("mapping_%d", index)
+			cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix, mapping.Cache)
+			defaultHandler = cacheMiddleware.Wrap(proxyHandler)
+		}
+
+		setDefaultHandler(router, defaultHandler)
 	}
 
 	setDefaultHandler(handler.router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *http.Request) {

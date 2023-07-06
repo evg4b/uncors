@@ -55,6 +55,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 		URLMappingHookFunc(),
 	))
 
+	setDefaultValues(viperInstance)
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing config: %w", err)
 	}
