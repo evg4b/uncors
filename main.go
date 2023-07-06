@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/server"
@@ -16,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
+	goCache "github.com/patrickmn/go-cache"
 	"github.com/pseidemann/finish"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -25,7 +28,11 @@ import (
 
 var Version = "X.X.X"
 
-const baseAddress = "127.0.0.1"
+const (
+	baseAddress           = "127.0.0.1"
+	defaultExpirationTime = time.Hour
+	defaultClearTime      = 5 * time.Minute
+)
 
 func main() {
 	defer infra.PanicInterceptor(func(value any) {
@@ -77,12 +84,21 @@ func main() {
 
 	ctx := context.Background()
 
+	cacheStorage := goCache.New(defaultExpirationTime, defaultClearTime)
+
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
+		handler.WithCacheMiddlewareFactory(func(key string) *cache.Middleware {
+			return cache.NewMiddleware(
+				cache.WithLogger(ui.CacheLogger),
+				cache.WithPrefix(key),
+				cache.WithCacheStorage(cacheStorage),
+			)
+		}),
 	)
 
 	uncorsServer := server.NewUncorsServer(ctx, globalHandler)

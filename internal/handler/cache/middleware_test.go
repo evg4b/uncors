@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
@@ -11,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	goCache "github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +24,7 @@ func TestNewMiddleware(t *testing.T) {
 	}
 
 	middleware := cache.NewMiddleware(
+		cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
 		cache.WithLogger(mocks.NewNoopLogger(t)),
 		cache.WithMethods(http.MethodGet),
 		cache.WithGlobs(

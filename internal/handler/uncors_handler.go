@@ -2,15 +2,16 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
@@ -21,17 +22,18 @@ import (
 )
 
 type RequestHandler struct {
-	router          *mux.Router
-	fs              afero.Fs
-	logger          contracts.Logger
-	mappings        config.Mappings
-	replacerFactory urlreplacer.ReplacerFactory
-	httpClient      contracts.HTTPClient
+	router                 *mux.Router
+	fs                     afero.Fs
+	logger                 contracts.Logger
+	mappings               config.Mappings
+	replacerFactory        urlreplacer.ReplacerFactory
+	httpClient             contracts.HTTPClient
+	cacheMiddlewareFactory cacheMiddlewareFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")
 
-func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHandler {
+func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 	handler := &RequestHandler{
 		router:   mux.NewRouter(),
 		mappings: config.Mappings{},
@@ -41,13 +43,15 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 		option(handler)
 	}
 
+	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
+
 	proxyHandler := proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(handler.replacerFactory),
 		proxy.WithHTTPClient(handler.httpClient),
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	for _, mapping := range handler.mappings {
+	for index, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)
 		if err != nil {
 			panic(err)
@@ -63,7 +67,8 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
 
-		cacheMiddleware := cache.NewMiddleware(cache.WithLogger(ui.CacheLogger))
+		cachePrefix := fmt.Sprintf("mapping_%d", index)
+		cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix)
 		setDefaultHandler(router, cacheMiddleware.Wrap(proxyHandler))
 	}
 

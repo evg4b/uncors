@@ -17,24 +17,21 @@ import (
 
 type Middleware struct {
 	logger    contracts.Logger
-	cache     *cache.Cache
+	storage   *cache.Cache
 	prefix    string
 	methods   []string
 	pathGlobs []string
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{
-		cache:   cache.New(time.Hour, time.Hour),
-		methods: []string{http.MethodGet},
-	}
+	middleware := &Middleware{}
 
 	for _, option := range options {
 		option(middleware)
 	}
 
 	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
-	helpers.AssertIsDefined(middleware.cache, "Cache is not configured")
+	helpers.AssertIsDefined(middleware.storage, "Cache storage is not configured")
 
 	return middleware
 }
@@ -63,7 +60,7 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		next.ServeHTTP(cacheableWriter, request)
 
 		response := cacheableWriter.GetCachedResponse()
-		m.cache.Set(cacheKey, response, time.Hour)
+		m.storage.Set(cacheKey, response, time.Hour)
 	})
 }
 
@@ -107,7 +104,7 @@ func (m *Middleware) extractKey(url *url.URL) string {
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
-	if cachedResponse, ok := m.cache.Get(cacheKey); ok {
+	if cachedResponse, ok := m.storage.Get(cacheKey); ok {
 		return cachedResponse.(*CachedResponse) // nolint: forcetypeassert
 	}
 

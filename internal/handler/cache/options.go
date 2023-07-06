@@ -1,6 +1,9 @@
 package cache
 
-import "github.com/evg4b/uncors/internal/contracts"
+import (
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/patrickmn/go-cache"
+)
 
 type MiddlewareOption = func(*Middleware)
 
@@ -25,5 +28,11 @@ func WithMethods(methods ...string) MiddlewareOption {
 func WithGlobs(globs ...string) MiddlewareOption {
 	return func(m *Middleware) {
 		m.pathGlobs = globs
+	}
+}
+
+func WithCacheStorage(storage *cache.Cache) MiddlewareOption {
+	return func(m *Middleware) {
+		m.storage = storage
 	}
 }

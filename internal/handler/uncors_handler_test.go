@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/sfmt"
@@ -18,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	goCache "github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,6 +43,16 @@ var (
 
 	userIDHeader = "User-Id"
 )
+
+func cacheMiddlewareFactory(t *testing.T) func(key string) *cache.Middleware {
+	return func(key string) *cache.Middleware {
+		return cache.NewMiddleware(
+			cache.WithPrefix(key),
+			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithCacheStorage(goCache.New(goCache.DefaultExpiration, goCache.DefaultExpiration)),
+		)
+	}
+}
 
 func TestUncorsRequestHandler(t *testing.T) {
 	log.DisableOutput()
@@ -122,6 +134,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpMock),
 		handler.WithMappings(mappings),
+		handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 	)
 
 	t.Run("statics directory", func(t *testing.T) {
@@ -311,6 +324,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 				}),
+				handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 			)
 
 			methods := []string{
@@ -365,6 +379,7 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithURLReplacerFactory(factory),
 				handler.WithLogger(logger),
 				handler.WithMappings(mappings),
+				handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 			)
 
 			t.Run("method is not matched", func(t *testing.T) {
@@ -463,6 +478,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithURLReplacerFactory(factory),
 			handler.WithLogger(logger),
 			handler.WithMappings(mappings),
+			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 		)
 
 		tests := []struct {
@@ -559,6 +575,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
+			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 		)
 
 		tests := []struct {
@@ -655,6 +672,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
+			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
 		)
 
 		tests := []struct {
