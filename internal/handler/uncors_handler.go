@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
@@ -24,7 +25,7 @@ type RequestHandler struct {
 	fs              afero.Fs
 	logger          contracts.Logger
 	mappings        config.Mappings
-	replacerFactory contracts.URLReplacerFactory
+	replacerFactory urlreplacer.ReplacerFactory
 	httpClient      contracts.HTTPClient
 }
 

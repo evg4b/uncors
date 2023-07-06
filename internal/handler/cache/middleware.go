@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -71,15 +70,13 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *CachedResponse) {
 	header := writer.Header()
 	for key, values := range cachedResponse.Header {
-		if strings.EqualFold(key, headers.ContentLength) {
-			for _, value := range values {
-				header.Add(key, value)
-			}
+		for _, value := range values {
+			header.Add(key, value)
 		}
 	}
 
 	writer.WriteHeader(cachedResponse.Code)
-	if cachedResponse.Body != nil {
+	if cachedResponse.Body != nil && len(cachedResponse.Body) > 0 {
 		if _, err := writer.Write(cachedResponse.Body); err != nil {
 			panic(err)
 		}

@@ -12,7 +12,7 @@ import (
 )
 
 type Handler struct {
-	replacers contracts.URLReplacerFactory
+	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
 	logger    contracts.Logger
 }

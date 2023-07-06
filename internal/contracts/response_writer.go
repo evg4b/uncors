@@ -1,8 +1,6 @@
 package contracts
 
-import (
-	"net/http"
-)
+import "net/http"
 
 type ResponseWriter interface {
 	http.ResponseWriter

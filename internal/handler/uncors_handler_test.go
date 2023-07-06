@@ -294,7 +294,7 @@ func TestMockMiddleware(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			middleware := handler.NewUncorsRequestHandler(
 				handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
-				handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
+				handler.WithURLReplacerFactory(mocks.NewReplacerFactoryMock(t)),
 				handler.WithLogger(logger),
 				handler.WithMappings(config.Mappings{
 					{
@@ -525,7 +525,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("query handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
-			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
+			handler.WithURLReplacerFactory(mocks.NewReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
@@ -621,7 +621,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("header handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithHTTPClient(mocks.NewHTTPClientMock(t)),
-			handler.WithURLReplacerFactory(mocks.NewURLReplacerFactoryMock(t)),
+			handler.WithURLReplacerFactory(mocks.NewReplacerFactoryMock(t)),
 			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{

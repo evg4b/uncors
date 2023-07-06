@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/spf13/afero"
 )
 
@@ -20,7 +21,7 @@ func WithFileSystem(fs afero.Fs) UncorsRequestHandlerOption {
 	}
 }
 
-func WithURLReplacerFactory(replacerFactory contracts.URLReplacerFactory) UncorsRequestHandlerOption {
+func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) UncorsRequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.replacerFactory = replacerFactory
 	}
