@@ -24,7 +24,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 		expected *cache.CachedResponse
 	}{
 		{
-			name: "Write bodyBytes only",
+			name: "write body bytes only",
 			action: func(w http.ResponseWriter) {
 				sfmt.Fprint(w, bodyString)
 			},
@@ -36,7 +36,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 			},
 		},
 		{
-			name: "Write status code only",
+			name: "write status code only",
 			action: func(w http.ResponseWriter) {
 				w.WriteHeader(http.StatusBadGateway)
 			},
@@ -46,23 +46,35 @@ func TestCacheableResponseWriter(t *testing.T) {
 			},
 		},
 		{
-			name: "Write headers only",
+			name: "write headers only",
 			action: func(w http.ResponseWriter) {
 				header := w.Header()
 				header.Set(headers.ContentType, customContentType)
-				header.Set(headers.ContentLength, "0")
 				header.Set(headers.Authorization, authorization)
 			},
 			expected: &cache.CachedResponse{
 				Header: http.Header{
 					headers.ContentType:   {customContentType},
-					headers.ContentLength: {"0"},
 					headers.Authorization: {authorization},
 				},
 			},
 		},
 		{
-			name: "Write full request",
+			name: "remove unsaved headers",
+			action: func(w http.ResponseWriter) {
+				header := w.Header()
+				header.Set(headers.ContentLength, "999")
+				sfmt.Fprint(w, bodyString)
+			},
+			expected: &cache.CachedResponse{
+				Header: http.Header{
+					headers.ContentType: {defaultContentType},
+				},
+				Body: bodyBytes,
+			},
+		},
+		{
+			name: "write full request",
 			action: func(writer http.ResponseWriter) {
 				header := writer.Header()
 				header.Set(headers.ContentType, customContentType)
@@ -75,7 +87,6 @@ func TestCacheableResponseWriter(t *testing.T) {
 				Code: http.StatusBadGateway,
 				Header: http.Header{
 					headers.ContentType:   {customContentType},
-					headers.ContentLength: {"9"},
 					headers.Authorization: {authorization},
 				},
 				Body: bodyBytes,

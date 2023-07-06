@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+
+	"github.com/go-http-utils/headers"
 )
 
 type CachedResponse struct {
@@ -47,9 +49,12 @@ func (w *CacheableResponseWriter) WriteHeader(statusCode int) {
 }
 
 func (w *CacheableResponseWriter) GetCachedResponse() *CachedResponse {
+	header := w.original.Header().Clone()
+	header.Del(headers.ContentLength)
+
 	return &CachedResponse{
 		Code:   w.code,
 		Body:   w.buffer.Bytes(),
-		Header: w.original.Header(),
+		Header: header,
 	}
 }
