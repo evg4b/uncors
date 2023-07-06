@@ -92,8 +92,9 @@ func (m *Middleware) cacheableRequest(request *contracts.Request) bool {
 }
 
 func (m *Middleware) extractKey(url *url.URL) string {
-	var items []string // nolint: prealloc
-	for key, value := range url.Query() {
+	values := url.Query()
+	items := make([]string, 0, len(values))
+	for key, value := range values {
 		sort.Strings(value)
 		items = append(items, key+"="+strings.Join(value, ","))
 	}
