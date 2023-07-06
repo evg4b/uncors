@@ -7,7 +7,7 @@ import (
 )
 
 func FailNowMock(t *testing.T) contracts.Handler {
-	return contracts.HandlerFunc(func(_ *contracts.ResponseWriter, _ *contracts.Request) {
+	return contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
 		t.Fatal("should not be called")
 	})
 }

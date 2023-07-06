@@ -13,7 +13,7 @@ import (
 
 func TestCastToHTTPHandler(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
-	uncorsHandler := contracts.HandlerFunc(func(w *contracts.ResponseWriter, r *contracts.Request) {
+	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
 		sfmt.Fprint(w, expectedBody)
 	})
@@ -42,7 +42,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 
 func TestHandlerFunc(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
-	uncorsHandler := contracts.HandlerFunc(func(w *contracts.ResponseWriter, r *contracts.Request) {
+	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
 		sfmt.Fprint(w, expectedBody)
 	})

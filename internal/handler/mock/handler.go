@@ -27,7 +27,7 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 	return handler
 }
 
-func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	response := h.response
 	header := writer.Header()
 
@@ -69,7 +69,7 @@ func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts
 
 	h.logger.PrintResponse(&http.Response{
 		Request:    request,
-		StatusCode: writer.StatusCode,
+		StatusCode: writer.StatusCode(),
 	})
 }
 

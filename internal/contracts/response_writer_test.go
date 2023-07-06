@@ -21,7 +21,7 @@ func TestResponseWriterWrapper(t *testing.T) {
 	sfmt.Fprint(writer, expectedValue)
 
 	t.Run("save status code", func(t *testing.T) {
-		assert.Equal(t, expectedCode, writer.StatusCode)
+		assert.Equal(t, expectedCode, writer.StatusCode())
 	})
 
 	t.Run("write body", func(t *testing.T) {

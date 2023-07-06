@@ -1,22 +1,32 @@
 package cache
 
 import (
+	"net/http"
+	"net/url"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/bmatcuk/doublestar/v4"
+	"github.com/samber/lo"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/patrickmn/go-cache"
-	"net/http"
-	"time"
 )
 
 type Middleware struct {
-	logger contracts.Logger
-	cache  *cache.Cache
-	prefix string
+	logger    contracts.Logger
+	cache     *cache.Cache
+	prefix    string
+	methods   []string
+	pathGlobs []string
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	middleware := &Middleware{
-		cache: cache.New(time.Hour, time.Hour),
+		cache:   cache.New(time.Hour, time.Hour),
+		methods: []string{http.MethodGet},
 	}
 
 	for _, option := range options {
@@ -30,37 +40,34 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer *contracts.ResponseWriter, request *contracts.Request) {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		if m.cacheableRequest(request) {
-			cacheKey := m.extractKey(request)
-			cachedResponse, ok := m.cache.Get(cacheKey)
-			if ok {
-
-				d := cachedResponse.(*CachedResponse)
-
-				hh := writer.Header()
-				for kay, value := range d.Header {
-					for _, s := range value {
-						hh.Add(kay, s)
+			cacheKey := m.extractKey(request.URL)
+			if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
+				header := writer.Header()
+				for key, values := range cachedResponse.Header {
+					for _, value := range values {
+						header.Add(key, value)
 					}
 				}
 
-				writer.WriteHeader(d.Code)
-				writer.Write(d.Body)
+				writer.WriteHeader(cachedResponse.Code)
+				if _, err := writer.Write(cachedResponse.Body); err != nil {
+					panic(err)
+				}
 
 				m.logger.PrintResponse(&http.Response{
 					Request:    request,
-					StatusCode: writer.StatusCode,
+					StatusCode: writer.StatusCode(),
 				})
 
 				return
 			}
 
-			wrapped := NewCacheableWriter(writer)
+			cacheableWriter := NewCacheableWriter(writer)
+			next.ServeHTTP(cacheableWriter, request)
 
-			next.ServeHTTP(contracts.WrapResponseWriter(wrapped), request)
-
-			response := wrapped.GetCachedResponse()
+			response := cacheableWriter.GetCachedResponse()
 			m.cache.Set(cacheKey, response, time.Hour)
 
 			return
@@ -71,9 +78,32 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func (m *Middleware) cacheableRequest(request *contracts.Request) bool {
-	return request.Method == http.MethodGet
+	return lo.Contains(m.methods, request.Method) && lo.ContainsBy(m.pathGlobs, func(item string) bool {
+		ok, err := doublestar.PathMatch(item, request.URL.Path)
+		if err != nil {
+			panic(err)
+		}
+
+		return ok
+	})
 }
 
-func (m *Middleware) extractKey(request *contracts.Request) string {
-	return m.prefix + request.URL.Path
+func (m *Middleware) extractKey(url *url.URL) string {
+	var items []string // nolint: prealloc
+	for key, value := range url.Query() {
+		sort.Strings(value)
+		items = append(items, key+"="+strings.Join(value, ","))
+	}
+
+	sort.Strings(items)
+
+	return m.prefix + url.Path + "?" + strings.Join(items, ";")
+}
+
+func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
+	if cachedResponse, ok := m.cache.Get(cacheKey); ok {
+		return cachedResponse.(*CachedResponse) // nolint: forcetypeassert
+	}
+
+	return nil
 }

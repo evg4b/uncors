@@ -34,7 +34,11 @@ func (w *CacheableResponseWriter) Header() http.Header {
 }
 
 func (w *CacheableResponseWriter) Write(bytes []byte) (int, error) {
-	return w.outputWriter.Write(bytes)
+	return w.outputWriter.Write(bytes) //nolint: wrapcheck
+}
+
+func (w *CacheableResponseWriter) StatusCode() int {
+	return w.code
 }
 
 func (w *CacheableResponseWriter) WriteHeader(statusCode int) {

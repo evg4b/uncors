@@ -31,7 +31,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (h *Handler) ServeHTTP(response *contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
 	if err := h.handle(response, request); err != nil {
 		infra.HTTPError(response, err)
 	}

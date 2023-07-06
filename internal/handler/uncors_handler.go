@@ -66,14 +66,14 @@ func NewUncorsRequestHandler(options ...UncorsRequestHandlerOption) *RequestHand
 		setDefaultHandler(router, cacheMiddleware.Wrap(proxyHandler))
 	}
 
-	setDefaultHandler(handler.router, contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *http.Request) {
+	setDefaultHandler(handler.router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *http.Request) {
 		infra.HTTPError(writer, errHostNotMapped)
 	}))
 
 	return handler
 }
 
-func (h *RequestHandler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+func (h *RequestHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	h.router.ServeHTTP(writer, request)
 }
 

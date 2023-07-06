@@ -102,7 +102,7 @@ func TestMiddleware(t *testing.T) {
 		handler := static.NewStaticHandler(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
-			static.WithNext(contracts.HandlerFunc(func(writer *contracts.ResponseWriter, _ *contracts.Request) {
+			static.WithNext(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 				writer.WriteHeader(testHTTPStatusCode)
 				sfmt.Fprint(writer, testHTTPBody)
 			})),

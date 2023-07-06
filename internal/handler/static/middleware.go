@@ -30,7 +30,7 @@ func NewStaticHandler(options ...HandlerOption) *Handler {
 	return handler
 }
 
-func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	response := contracts.WrapResponseWriter(writer)
 
 	filePath := h.extractFilePath(request)
@@ -49,7 +49,7 @@ func (h *Handler) ServeHTTP(writer *contracts.ResponseWriter, request *contracts
 
 	http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
 	h.logger.PrintResponse(&http.Response{
-		StatusCode: response.StatusCode,
+		StatusCode: response.StatusCode(),
 		Request:    request,
 	})
 }

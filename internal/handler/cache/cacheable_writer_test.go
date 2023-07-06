@@ -1,13 +1,14 @@
 package cache_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestCacheableResponseWriter(t *testing.T) {
@@ -15,7 +16,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 	const customContentType = "application/xml"
 	const authorization = "xxxxxx"
 	const bodyString = "Test Body"
-	var bodyBytes = []byte{0x54, 0x65, 0x73, 0x74, 0x20, 0x42, 0x6f, 0x64, 0x79}
+	bodyBytes := []byte{0x54, 0x65, 0x73, 0x74, 0x20, 0x42, 0x6f, 0x64, 0x79}
 
 	tests := []struct {
 		name     string
@@ -62,13 +63,13 @@ func TestCacheableResponseWriter(t *testing.T) {
 		},
 		{
 			name: "Write full request",
-			action: func(w http.ResponseWriter) {
-				header := w.Header()
+			action: func(writer http.ResponseWriter) {
+				header := writer.Header()
 				header.Set(headers.ContentType, customContentType)
 				header.Set(headers.ContentLength, "9")
 				header.Set(headers.Authorization, authorization)
-				w.WriteHeader(http.StatusBadGateway)
-				sfmt.Fprint(w, bodyString)
+				writer.WriteHeader(http.StatusBadGateway)
+				sfmt.Fprint(writer, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Code: http.StatusBadGateway,
@@ -81,15 +82,15 @@ func TestCacheableResponseWriter(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			cacheableWriter := cache.NewCacheableWriter(recorder)
 
-			tt.action(cacheableWriter)
+			testCase.action(cacheableWriter)
 			actual := cacheableWriter.GetCachedResponse()
 
-			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, testCase.expected, actual)
 		})
 	}
 }
