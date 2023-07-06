@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -41,45 +42,53 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
-		if m.cacheableRequest(request) {
-			cacheKey := m.extractKey(request.URL)
-			if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-				header := writer.Header()
-				for key, values := range cachedResponse.Header {
-					for _, value := range values {
-						header.Add(key, value)
-					}
-				}
-
-				writer.WriteHeader(cachedResponse.Code)
-				if _, err := writer.Write(cachedResponse.Body); err != nil {
-					panic(err)
-				}
-
-				m.logger.PrintResponse(&http.Response{
-					Request:    request,
-					StatusCode: writer.StatusCode(),
-				})
-
-				return
-			}
-
-			cacheableWriter := NewCacheableWriter(writer)
-			next.ServeHTTP(cacheableWriter, request)
-
-			response := cacheableWriter.GetCachedResponse()
-			m.cache.Set(cacheKey, response, time.Hour)
+		if !m.cacheableRequest(request) {
+			next.ServeHTTP(writer, request)
 
 			return
 		}
 
-		next.ServeHTTP(writer, request)
+		cacheKey := m.extractKey(request.URL)
+		if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
+			m.writeCachedResponse(writer, cachedResponse)
+
+			m.logger.PrintResponse(&http.Response{
+				Request:    request,
+				StatusCode: writer.StatusCode(),
+			})
+
+			return
+		}
+
+		cacheableWriter := NewCacheableWriter(writer)
+		next.ServeHTTP(cacheableWriter, request)
+
+		response := cacheableWriter.GetCachedResponse()
+		m.cache.Set(cacheKey, response, time.Hour)
 	})
 }
 
+func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *CachedResponse) {
+	header := writer.Header()
+	for key, values := range cachedResponse.Header {
+		if strings.EqualFold(key, headers.ContentLength) {
+			for _, value := range values {
+				header.Add(key, value)
+			}
+		}
+	}
+
+	writer.WriteHeader(cachedResponse.Code)
+	if cachedResponse.Body != nil {
+		if _, err := writer.Write(cachedResponse.Body); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func (m *Middleware) cacheableRequest(request *contracts.Request) bool {
-	return lo.Contains(m.methods, request.Method) && lo.ContainsBy(m.pathGlobs, func(item string) bool {
-		ok, err := doublestar.PathMatch(item, request.URL.Path)
+	return lo.Contains(m.methods, request.Method) && lo.ContainsBy(m.pathGlobs, func(pattern string) bool {
+		ok, err := doublestar.PathMatch(pattern, request.URL.Path)
 		if err != nil {
 			panic(err)
 		}

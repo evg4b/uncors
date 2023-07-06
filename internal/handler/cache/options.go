@@ -15,3 +15,15 @@ func WithPrefix(prefix string) MiddlewareOption {
 		m.prefix = prefix
 	}
 }
+
+func WithMethods(methods []string) MiddlewareOption {
+	return func(m *Middleware) {
+		m.methods = methods
+	}
+}
+
+func WithGlobs(globs []string) MiddlewareOption {
+	return func(m *Middleware) {
+		m.pathGlobs = globs
+	}
+}
