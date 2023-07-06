@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/spf13/afero"
 )
@@ -40,7 +39,7 @@ func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	}
 }
 
-type cacheMiddlewareFactory = func(key string, globs config.CacheGlobs) *cache.Middleware
+type cacheMiddlewareFactory = func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler
 
 func WithCacheMiddlewareFactory(factory cacheMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {

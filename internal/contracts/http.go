@@ -11,6 +11,10 @@ type Handler interface {
 	ServeHTTP(ResponseWriter, *Request)
 }
 
+type MiddlewareHandler interface {
+	Wrap(next Handler) Handler
+}
+
 type HandlerFunc func(ResponseWriter, *Request)
 
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {

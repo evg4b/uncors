@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/infra"
@@ -28,11 +28,7 @@ import (
 
 var Version = "X.X.X"
 
-const (
-	baseAddress           = "127.0.0.1"
-	defaultExpirationTime = time.Hour
-	defaultClearTime      = 5 * time.Minute
-)
+const baseAddress = "127.0.0.1"
 
 func main() {
 	defer infra.PanicInterceptor(func(value any) {
@@ -89,7 +85,7 @@ func main() {
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
-		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) *cache.Middleware {
+		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithPrefix(key),

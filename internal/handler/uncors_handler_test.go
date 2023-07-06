@@ -44,8 +44,8 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheMiddlewareFactory(t *testing.T) func(key string, globs config.CacheGlobs) *cache.Middleware {
-	return func(key string, globs config.CacheGlobs) *cache.Middleware {
+func cacheFactory(t *testing.T) func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
+	return func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
 		return cache.NewMiddleware(
 			cache.WithPrefix(key),
 			cache.WithGlobs(globs),
@@ -135,7 +135,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpMock),
 		handler.WithMappings(mappings),
-		handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+		handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 	)
 
 	t.Run("statics directory", func(t *testing.T) {
@@ -325,7 +325,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 				}),
-				handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+				handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 			)
 
 			methods := []string{
@@ -380,7 +380,7 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithURLReplacerFactory(factory),
 				handler.WithLogger(logger),
 				handler.WithMappings(mappings),
-				handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+				handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 			)
 
 			t.Run("method is not matched", func(t *testing.T) {
@@ -479,7 +479,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithURLReplacerFactory(factory),
 			handler.WithLogger(logger),
 			handler.WithMappings(mappings),
-			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 		)
 
 		tests := []struct {
@@ -576,7 +576,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
-			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 		)
 
 		tests := []struct {
@@ -673,7 +673,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
-			handler.WithCacheMiddlewareFactory(cacheMiddlewareFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 		)
 
 		tests := []struct {
