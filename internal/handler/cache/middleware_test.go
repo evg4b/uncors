@@ -27,7 +27,7 @@ func TestNewMiddleware(t *testing.T) {
 	middleware := cache.NewMiddleware(
 		cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
 		cache.WithLogger(mocks.NewNoopLogger(t)),
-		cache.WithMethods(http.MethodGet),
+		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
 			"/api/**",

@@ -89,6 +89,7 @@ func main() {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithPrefix(key),
+				cache.WithMethods(cacheConfig.Methods),
 				cache.WithCacheStorage(cacheStorage),
 				cache.WithGlobs(globs),
 			)

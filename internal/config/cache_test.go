@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ func TestCacheConfigClone(t *testing.T) {
 	cacheConfig := &config.CacheConfig{
 		ExpirationTime: 5 * time.Minute,
 		ClearTime:      30 * time.Second,
+		Methods:        []string{http.MethodGet, http.MethodPost},
 	}
 
 	clonedCacheConfig := cacheConfig.Clone()
@@ -41,5 +43,9 @@ func TestCacheConfigClone(t *testing.T) {
 
 	t.Run("equals values", func(t *testing.T) {
 		assert.EqualValues(t, cacheConfig, clonedCacheConfig)
+	})
+
+	t.Run("not same methods", func(t *testing.T) {
+		assert.NotSame(t, cacheConfig.Methods, clonedCacheConfig.Methods)
 	})
 }

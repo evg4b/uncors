@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -51,6 +52,9 @@ key-file: /etc/certificates/key-file.key
 cache-config:
   expiration-time: 1h
   clear-time: 30m
+  methods:
+    - GET
+    - POST
 `
 )
 
@@ -96,6 +100,7 @@ func TestLoadConfiguration(t *testing.T) {
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
 						ClearTime:      config.DefaultClearTime,
+						Methods:        []string{http.MethodGet},
 					},
 				},
 			},
@@ -111,6 +116,7 @@ func TestLoadConfiguration(t *testing.T) {
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
 						ClearTime:      config.DefaultClearTime,
+						Methods:        []string{http.MethodGet},
 					},
 				},
 			},
@@ -154,6 +160,10 @@ func TestLoadConfiguration(t *testing.T) {
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
 						ClearTime:      30 * time.Minute,
+						Methods: []string{
+							http.MethodGet,
+							http.MethodPost,
+						},
 					},
 				},
 			},
@@ -205,6 +215,10 @@ func TestLoadConfiguration(t *testing.T) {
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
 						ClearTime:      30 * time.Minute,
+						Methods: []string{
+							http.MethodGet,
+							http.MethodPost,
+						},
 					},
 				},
 			},

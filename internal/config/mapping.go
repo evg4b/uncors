@@ -21,6 +21,7 @@ func (u *Mapping) Clone() Mapping {
 		To:      u.To,
 		Statics: u.Statics.Clone(),
 		Mocks:   u.Mocks.Clone(),
+		Cache:   u.Cache.Clone(),
 	}
 }
 

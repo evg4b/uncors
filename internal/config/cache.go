@@ -20,11 +20,18 @@ func (globs CacheGlobs) Clone() CacheGlobs {
 type CacheConfig struct {
 	ExpirationTime time.Duration `mapstructure:"expiration-time"`
 	ClearTime      time.Duration `mapstructure:"clear-time"`
+	Methods        []string      `mapstructure:"methods"`
 }
 
 func (config *CacheConfig) Clone() *CacheConfig {
+	var methods []string = nil
+	if config.Methods != nil {
+		methods = append(methods, config.Methods...)
+	}
+
 	return &CacheConfig{
 		ExpirationTime: config.ExpirationTime,
 		ClearTime:      config.ClearTime,
+		Methods:        methods,
 	}
 }

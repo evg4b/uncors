@@ -20,7 +20,7 @@ func WithPrefix(prefix string) MiddlewareOption {
 	}
 }
 
-func WithMethods(methods ...string) MiddlewareOption {
+func WithMethods(methods []string) MiddlewareOption {
 	return func(m *Middleware) {
 		m.methods = methods
 	}

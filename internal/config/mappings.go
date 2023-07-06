@@ -25,6 +25,9 @@ func (mappings Mappings) String() string {
 		for _, static := range mapping.Statics {
 			builder.WriteString(sfmt.Sprintf("    static: %s => %s\n", static.Path, static.Dir))
 		}
+		for _, cacheGlob := range mapping.Cache {
+			builder.WriteString(sfmt.Sprintf("    cache: %s\n", cacheGlob))
+		}
 	}
 
 	builder.WriteString("\n")
