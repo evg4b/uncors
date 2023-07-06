@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/samber/lo"
-
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/patrickmn/go-cache"
+	"github.com/samber/lo"
 )
 
 type Middleware struct {
@@ -20,7 +20,7 @@ type Middleware struct {
 	storage   *cache.Cache
 	prefix    string
 	methods   []string
-	pathGlobs []string
+	pathGlobs config.CacheGlobs
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {

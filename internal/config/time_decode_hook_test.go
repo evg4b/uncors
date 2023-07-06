@@ -1,10 +1,10 @@
-package hooks_test
+package config_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/config/hooks"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
@@ -15,7 +15,7 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 	const key = "duration"
 	viperInstance := viper.New()
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
-		hooks.StringToTimeDurationHookFunc(),
+		config.StringToTimeDurationHookFunc(),
 		mapstructure.OrComposeDecodeHookFunc(
 			mapstructure.StringToSliceHookFunc(","),
 			mapstructure.StringToSliceHookFunc(", "),

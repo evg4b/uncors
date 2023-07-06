@@ -40,7 +40,7 @@ func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	}
 }
 
-type cacheMiddlewareFactory = func(key string) *cache.Middleware
+type cacheMiddlewareFactory = func(key string, globs config.CacheGlobs) *cache.Middleware
 
 func WithCacheMiddlewareFactory(factory cacheMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {

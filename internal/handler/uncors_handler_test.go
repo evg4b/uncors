@@ -44,10 +44,11 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheMiddlewareFactory(t *testing.T) func(key string) *cache.Middleware {
-	return func(key string) *cache.Middleware {
+func cacheMiddlewareFactory(t *testing.T) func(key string, globs config.CacheGlobs) *cache.Middleware {
+	return func(key string, globs config.CacheGlobs) *cache.Middleware {
 		return cache.NewMiddleware(
 			cache.WithPrefix(key),
+			cache.WithGlobs(globs),
 			cache.WithLogger(mocks.NewNoopLogger(t)),
 			cache.WithCacheStorage(goCache.New(goCache.DefaultExpiration, goCache.DefaultExpiration)),
 		)

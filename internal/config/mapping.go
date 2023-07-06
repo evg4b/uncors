@@ -12,6 +12,7 @@ type Mapping struct {
 	To      string            `mapstructure:"to"`
 	Statics StaticDirectories `mapstructure:"statics"`
 	Mocks   Mocks             `mapstructure:"mocks"`
+	Cache   CacheGlobs        `mapstructure:"cache"`
 }
 
 func (u *Mapping) Clone() Mapping {

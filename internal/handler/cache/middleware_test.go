@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/sfmt"
@@ -27,10 +28,10 @@ func TestNewMiddleware(t *testing.T) {
 		cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
 		cache.WithLogger(mocks.NewNoopLogger(t)),
 		cache.WithMethods(http.MethodGet),
-		cache.WithGlobs(
+		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
 			"/api/**",
-		),
+		}),
 	)
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {

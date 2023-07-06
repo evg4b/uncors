@@ -80,11 +80,8 @@ func main() {
 		panic(err)
 	}
 
-	finisher := finish.Finisher{Log: infra.NoopLogger{}}
-
-	ctx := context.Background()
-
-	cacheStorage := goCache.New(defaultExpirationTime, defaultClearTime)
+	cacheConfig := uncorsConfig.CacheConfig
+	cacheStorage := goCache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
 
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
@@ -92,14 +89,19 @@ func main() {
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
-		handler.WithCacheMiddlewareFactory(func(key string) *cache.Middleware {
+		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) *cache.Middleware {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithPrefix(key),
 				cache.WithCacheStorage(cacheStorage),
+				cache.WithGlobs(globs),
 			)
 		}),
 	)
+
+	finisher := finish.Finisher{Log: infra.NoopLogger{}}
+
+	ctx := context.Background()
 
 	uncorsServer := server.NewUncorsServer(ctx, globalHandler)
 

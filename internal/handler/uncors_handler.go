@@ -68,7 +68,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		handler.makeMockedRoutes(router, mapping.Mocks)
 
 		cachePrefix := fmt.Sprintf("mapping_%d", index)
-		cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix)
+		cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix, mapping.Cache)
 		setDefaultHandler(router, cacheMiddleware.Wrap(proxyHandler))
 	}
 
