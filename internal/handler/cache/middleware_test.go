@@ -17,8 +17,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewMiddleware(t *testing.T) {
+func TestCacheMiddleware(t *testing.T) {
 	const expectedBody = "this is test"
+
 	expectedHeader := http.Header{
 		headers.ContentType:     {"text/html; charset=iso-8859-1"},
 		headers.ContentEncoding: {"deflate, gzip"},
@@ -36,22 +37,58 @@ func TestNewMiddleware(t *testing.T) {
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
 		tests := []struct {
-			name   string
-			method string
-			path   string
+			name       string
+			method     string
+			path       string
+			statusCode int
 		}{
-			{name: "request in glob", method: http.MethodGet, path: "/api"},
-			{name: "request in glob with params", method: http.MethodGet, path: "/api?some=params"},
-			{name: "request in glob with other params", method: http.MethodGet, path: "/api?other=params"},
-			{name: "second level request in glob", method: http.MethodGet, path: "/api/comments"},
-			{name: "second level request in glob with params", method: http.MethodGet, path: "/api/comments?q=test"},
-			{name: "third level request in glob", method: http.MethodGet, path: "/api/comments/1"},
-			{name: "third level request in glob with params", method: http.MethodGet, path: "/api/comments/1?q=demo"},
+			{
+				name:       "request in glob",
+				method:     http.MethodGet,
+				path:       "/api",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "request in glob with params",
+				method:     http.MethodGet,
+				path:       "/api?some=params",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "request in glob with other params",
+				method:     http.MethodGet,
+				path:       "/api?other=params",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "second level request in glob",
+				method:     http.MethodGet,
+				path:       "/api/comments",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "second level request in glob with params",
+				method:     http.MethodGet,
+				path:       "/api/comments?q=test",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "third level request in glob",
+				method:     http.MethodGet,
+				path:       "/api/comments/1",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "third level request in glob with params",
+				method:     http.MethodGet,
+				path:       "/api/comments/1?q=demo",
+				statusCode: http.StatusOK,
+			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
-					writer.WriteHeader(http.StatusOK)
+					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					sfmt.Fprintf(writer, expectedBody)
 				})
@@ -75,17 +112,46 @@ func TestNewMiddleware(t *testing.T) {
 
 	t.Run("should not cache response", func(t *testing.T) {
 		tests := []struct {
-			name   string
-			method string
-			path   string
+			name       string
+			method     string
+			path       string
+			statusCode int
 		}{
-			{name: "with path out of glob", method: http.MethodGet, path: "/test"},
-			{name: "with POST method", method: http.MethodPost, path: "/api"},
+			{
+				name:       "witch path out of glob",
+				method:     http.MethodGet,
+				path:       "/test",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "from POST method request",
+				method:     http.MethodPost,
+				path:       "/api",
+				statusCode: http.StatusOK,
+			},
+			{
+				name:       "witch response with status code 500",
+				method:     http.MethodGet,
+				path:       "/api/constants",
+				statusCode: http.StatusInternalServerError,
+			},
+			{
+				name:       "witch response with status code 400",
+				method:     http.MethodGet,
+				path:       "/api/constants",
+				statusCode: http.StatusBadRequest,
+			},
+			{
+				name:       "witch response with status code 304",
+				method:     http.MethodGet,
+				path:       "/api/constants",
+				statusCode: http.StatusNotModified,
+			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
-					writer.WriteHeader(http.StatusOK)
+					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					sfmt.Fprintf(writer, expectedBody)
 				})
@@ -96,7 +162,7 @@ func TestNewMiddleware(t *testing.T) {
 					recorder := httptest.NewRecorder()
 					wrappedHandler.ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
-						httptest.NewRequest(http.MethodGet, "/test", nil),
+						httptest.NewRequest(testCase.method, testCase.path, nil),
 					)
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))

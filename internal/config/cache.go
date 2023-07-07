@@ -24,7 +24,7 @@ type CacheConfig struct {
 }
 
 func (config *CacheConfig) Clone() *CacheConfig {
-	var methods []string = nil
+	var methods []string
 	if config.Methods != nil {
 		methods = append(methods, config.Methods...)
 	}

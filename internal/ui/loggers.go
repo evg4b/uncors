@@ -10,8 +10,8 @@ func style(fg pterm.Color, bg pterm.Color) log.LoggerOption {
 }
 
 var (
-	ProxyLogger  = log.NewLogger(" PROXY ", style(pterm.FgBlack, pterm.BgLightBlue))
-	MockLogger   = log.NewLogger(" MOCK  ", style(pterm.FgBlack, pterm.BgLightMagenta))
-	StaticLogger = log.NewLogger("STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
-	CacheLogger  = log.NewLogger(" CACHE ", style(pterm.FgBlack, pterm.BgLightYellow))
+	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
+	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
+	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
+	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
 )

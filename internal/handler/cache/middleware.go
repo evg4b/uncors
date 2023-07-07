@@ -54,9 +54,10 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 		cacheableWriter := NewCacheableWriter(writer)
 		next.ServeHTTP(cacheableWriter, request)
-
-		response := cacheableWriter.GetCachedResponse()
-		m.storage.Set(cacheKey, response, time.Hour)
+		if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
+			response := cacheableWriter.GetCachedResponse()
+			m.storage.Set(cacheKey, response, time.Hour)
+		}
 	})
 }
 

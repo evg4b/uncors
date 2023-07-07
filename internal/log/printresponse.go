@@ -2,6 +2,7 @@ package log
 
 import (
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/pterm/pterm"
 )
@@ -14,11 +15,7 @@ func printResponse(request *contracts.Request, statusCode int) string {
 }
 
 func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {
-	if statusCode < 100 || statusCode > 599 {
-		panic(sfmt.Sprintf("status code %d is not supported", statusCode))
-	}
-
-	if 100 <= statusCode && statusCode <= 199 {
+	if helpers.Is1xxCode(statusCode) {
 		return pterm.PrefixPrinter{
 			MessageStyle: &pterm.ThemeDefault.InfoMessageStyle,
 			Prefix: pterm.Prefix{
@@ -28,7 +25,7 @@ func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {
 		}
 	}
 
-	if 200 <= statusCode && statusCode <= 299 {
+	if helpers.Is2xxCode(statusCode) {
 		return pterm.PrefixPrinter{
 			MessageStyle: &pterm.ThemeDefault.SuccessMessageStyle,
 			Prefix: pterm.Prefix{
@@ -38,7 +35,7 @@ func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {
 		}
 	}
 
-	if 300 <= statusCode && statusCode <= 399 {
+	if helpers.Is3xxCode(statusCode) {
 		return pterm.PrefixPrinter{
 			MessageStyle: &pterm.ThemeDefault.WarningMessageStyle,
 			Prefix: pterm.Prefix{
@@ -48,11 +45,15 @@ func getPrefixPrinter(statusCode int, text string) pterm.PrefixPrinter {
 		}
 	}
 
-	return pterm.PrefixPrinter{
-		MessageStyle: &pterm.ThemeDefault.ErrorMessageStyle,
-		Prefix: pterm.Prefix{
-			Style: &pterm.ThemeDefault.ErrorPrefixStyle,
-			Text:  text,
-		},
+	if helpers.Is4xxCode(statusCode) || helpers.Is5xxCode(statusCode) {
+		return pterm.PrefixPrinter{
+			MessageStyle: &pterm.ThemeDefault.ErrorMessageStyle,
+			Prefix: pterm.Prefix{
+				Style: &pterm.ThemeDefault.ErrorPrefixStyle,
+				Text:  text,
+			},
+		}
 	}
+
+	panic(sfmt.Sprintf("status code %d is not supported", statusCode))
 }
