@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/config"
@@ -37,28 +36,32 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
-		if !m.cacheableRequest(request) {
+		if !m.isCacheableRequest(request) {
 			next.ServeHTTP(writer, request)
 
 			return
 		}
 
-		cacheKey := m.extractKey(request.URL)
-		if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-			m.writeCachedResponse(writer, cachedResponse)
-
-			m.logger.PrintResponse(request, writer.StatusCode())
-
-			return
-		}
-
-		cacheableWriter := NewCacheableWriter(writer)
-		next.ServeHTTP(cacheableWriter, request)
-		if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
-			response := cacheableWriter.GetCachedResponse()
-			m.storage.Set(cacheKey, response, time.Hour)
-		}
+		m.cacheRequest(writer, request, next)
 	})
+}
+
+func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
+	cacheKey := m.extractCacheKey(request.URL)
+	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
+		m.writeCachedResponse(writer, cachedResponse)
+
+		m.logger.PrintResponse(request, writer.StatusCode())
+
+		return
+	}
+
+	cacheableWriter := NewCacheableWriter(writer)
+	next.ServeHTTP(cacheableWriter, request)
+	if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
+		response := cacheableWriter.GetCachedResponse()
+		m.storage.SetDefault(cacheKey, response)
+	}
 }
 
 func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *CachedResponse) {
@@ -77,7 +80,7 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 	}
 }
 
-func (m *Middleware) cacheableRequest(request *contracts.Request) bool {
+func (m *Middleware) isCacheableRequest(request *contracts.Request) bool {
 	return lo.Contains(m.methods, request.Method) && lo.ContainsBy(m.pathGlobs, func(pattern string) bool {
 		ok, err := doublestar.PathMatch(pattern, request.URL.Path)
 		if err != nil {
@@ -88,12 +91,13 @@ func (m *Middleware) cacheableRequest(request *contracts.Request) bool {
 	})
 }
 
-func (m *Middleware) extractKey(url *url.URL) string {
+func (m *Middleware) extractCacheKey(url *url.URL) string {
 	values := url.Query()
 	items := make([]string, 0, len(values))
 	for key, value := range values {
 		sort.Strings(value)
-		items = append(items, key+"="+strings.Join(value, ","))
+		valuesKey := key + "=" + strings.Join(value, ",")
+		items = append(items, valuesKey)
 	}
 
 	sort.Strings(items)

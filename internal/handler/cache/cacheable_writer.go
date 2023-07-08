@@ -50,7 +50,7 @@ func (w *CacheableResponseWriter) WriteHeader(statusCode int) {
 
 func (w *CacheableResponseWriter) GetCachedResponse() *CachedResponse {
 	header := w.original.Header().Clone()
-	clearHeader(header)
+	cleanupHeader(header)
 
 	return &CachedResponse{
 		Code:   w.code,
@@ -59,6 +59,6 @@ func (w *CacheableResponseWriter) GetCachedResponse() *CachedResponse {
 	}
 }
 
-func clearHeader(header http.Header) {
+func cleanupHeader(header http.Header) {
 	header.Del(headers.ContentLength)
 }
