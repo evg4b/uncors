@@ -1,8 +1,7 @@
 package log
 
 import (
-	"net/http"
-
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/pterm/pterm"
 )
 
@@ -73,6 +72,6 @@ func (logger *PrefixedLogger) Debugf(template string, v ...any) {
 	}
 }
 
-func (logger *PrefixedLogger) PrintResponse(response *http.Response) {
-	logger.writer.Println(printResponse(response))
+func (logger *PrefixedLogger) PrintResponse(request *contracts.Request, statusCode int) {
+	logger.writer.Println(printResponse(request, statusCode))
 }

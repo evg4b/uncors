@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -63,7 +64,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -74,7 +75,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
-				handler.ServeHTTP(recorder, request)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.EqualValues(t, testCase.expected, body)
@@ -131,7 +132,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -142,7 +143,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
-				handler.ServeHTTP(recorder, request)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				header := testutils.ReadHeader(t, recorder)
 				assert.EqualValues(t, testCase.expected, header.Get(headers.ContentType))
@@ -220,7 +221,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -232,7 +233,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(recorder, request)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.EqualValues(t, testCase.expected, testutils.ReadHeader(t, recorder))
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -268,7 +269,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockMiddleware(
+				handler := mock.NewMockHandler(
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
@@ -280,7 +281,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequest(http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(recorder, request)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
@@ -340,7 +341,7 @@ func TestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
-					handler := mock.NewMockMiddleware(
+					handler := mock.NewMockHandler(
 						mock.WithLogger(mocks.NewNoopLogger(t)),
 						mock.WithResponse(testCase.response),
 						mock.WithFileSystem(fileSystem),
@@ -355,7 +356,7 @@ func TestHandler(t *testing.T) {
 					request := httptest.NewRequest(http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
 
-					handler.ServeHTTP(recorder, request)
+					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					assert.Equal(t, called, testCase.shouldBeCalled)
 				})
@@ -363,7 +364,7 @@ func TestHandler(t *testing.T) {
 		})
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
-			handler := mock.NewMockMiddleware(
+			handler := mock.NewMockHandler(
 				mock.WithLogger(mocks.NewNoopLogger(t)),
 				mock.WithResponse(config.Response{
 					Code:  http.StatusOK,
@@ -382,7 +383,7 @@ func TestHandler(t *testing.T) {
 			waitGroup.Add(1)
 			go func() {
 				defer waitGroup.Done()
-				handler.ServeHTTP(recorder, request.WithContext(ctx))
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request.WithContext(ctx))
 			}()
 
 			cancel()

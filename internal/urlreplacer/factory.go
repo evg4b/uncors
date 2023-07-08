@@ -8,6 +8,10 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 )
 
+type ReplacerFactory interface {
+	Make(requestURL *url.URL) (*Replacer, *Replacer, error)
+}
+
 type mapping struct {
 	rawSource string
 	source    *Replacer

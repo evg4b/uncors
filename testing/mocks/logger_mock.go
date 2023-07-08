@@ -5,10 +5,11 @@ package mocks
 //go:generate minimock -i github.com/evg4b/uncors/internal/contracts.Logger -o ./logger_mock.go -n LoggerMock
 
 import (
-	"net/http"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
+
+	mm_contracts "github.com/evg4b/uncors/internal/contracts"
 	"github.com/gojuno/minimock/v3"
 )
 
@@ -52,8 +53,8 @@ type LoggerMock struct {
 	beforeInfofCounter uint64
 	InfofMock          mLoggerMockInfof
 
-	funcPrintResponse          func(response *http.Response)
-	inspectFuncPrintResponse   func(response *http.Response)
+	funcPrintResponse          func(request *mm_contracts.Request, code int)
+	inspectFuncPrintResponse   func(request *mm_contracts.Request, code int)
 	afterPrintResponseCounter  uint64
 	beforePrintResponseCounter uint64
 	PrintResponseMock          mLoggerMockPrintResponse
@@ -1252,11 +1253,12 @@ type LoggerMockPrintResponseExpectation struct {
 
 // LoggerMockPrintResponseParams contains parameters of the Logger.PrintResponse
 type LoggerMockPrintResponseParams struct {
-	response *http.Response
+	request *mm_contracts.Request
+	code    int
 }
 
 // Expect sets up expected params for Logger.PrintResponse
-func (mmPrintResponse *mLoggerMockPrintResponse) Expect(response *http.Response) *mLoggerMockPrintResponse {
+func (mmPrintResponse *mLoggerMockPrintResponse) Expect(request *mm_contracts.Request, code int) *mLoggerMockPrintResponse {
 	if mmPrintResponse.mock.funcPrintResponse != nil {
 		mmPrintResponse.mock.t.Fatalf("LoggerMock.PrintResponse mock is already set by Set")
 	}
@@ -1265,7 +1267,7 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Expect(response *http.Response)
 		mmPrintResponse.defaultExpectation = &LoggerMockPrintResponseExpectation{}
 	}
 
-	mmPrintResponse.defaultExpectation.params = &LoggerMockPrintResponseParams{response}
+	mmPrintResponse.defaultExpectation.params = &LoggerMockPrintResponseParams{request, code}
 	for _, e := range mmPrintResponse.expectations {
 		if minimock.Equal(e.params, mmPrintResponse.defaultExpectation.params) {
 			mmPrintResponse.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmPrintResponse.defaultExpectation.params)
@@ -1276,7 +1278,7 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Expect(response *http.Response)
 }
 
 // Inspect accepts an inspector function that has same arguments as the Logger.PrintResponse
-func (mmPrintResponse *mLoggerMockPrintResponse) Inspect(f func(response *http.Response)) *mLoggerMockPrintResponse {
+func (mmPrintResponse *mLoggerMockPrintResponse) Inspect(f func(request *mm_contracts.Request, code int)) *mLoggerMockPrintResponse {
 	if mmPrintResponse.mock.inspectFuncPrintResponse != nil {
 		mmPrintResponse.mock.t.Fatalf("Inspect function is already set for LoggerMock.PrintResponse")
 	}
@@ -1300,7 +1302,7 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Return() *LoggerMock {
 }
 
 //Set uses given function f to mock the Logger.PrintResponse method
-func (mmPrintResponse *mLoggerMockPrintResponse) Set(f func(response *http.Response)) *LoggerMock {
+func (mmPrintResponse *mLoggerMockPrintResponse) Set(f func(request *mm_contracts.Request, code int)) *LoggerMock {
 	if mmPrintResponse.defaultExpectation != nil {
 		mmPrintResponse.mock.t.Fatalf("Default expectation is already set for the Logger.PrintResponse method")
 	}
@@ -1314,15 +1316,15 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Set(f func(response *http.Respo
 }
 
 // PrintResponse implements contracts.Logger
-func (mmPrintResponse *LoggerMock) PrintResponse(response *http.Response) {
+func (mmPrintResponse *LoggerMock) PrintResponse(request *mm_contracts.Request, code int) {
 	mm_atomic.AddUint64(&mmPrintResponse.beforePrintResponseCounter, 1)
 	defer mm_atomic.AddUint64(&mmPrintResponse.afterPrintResponseCounter, 1)
 
 	if mmPrintResponse.inspectFuncPrintResponse != nil {
-		mmPrintResponse.inspectFuncPrintResponse(response)
+		mmPrintResponse.inspectFuncPrintResponse(request, code)
 	}
 
-	mm_params := &LoggerMockPrintResponseParams{response}
+	mm_params := &LoggerMockPrintResponseParams{request, code}
 
 	// Record call args
 	mmPrintResponse.PrintResponseMock.mutex.Lock()
@@ -1339,7 +1341,7 @@ func (mmPrintResponse *LoggerMock) PrintResponse(response *http.Response) {
 	if mmPrintResponse.PrintResponseMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmPrintResponse.PrintResponseMock.defaultExpectation.Counter, 1)
 		mm_want := mmPrintResponse.PrintResponseMock.defaultExpectation.params
-		mm_got := LoggerMockPrintResponseParams{response}
+		mm_got := LoggerMockPrintResponseParams{request, code}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmPrintResponse.t.Errorf("LoggerMock.PrintResponse got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -1348,10 +1350,10 @@ func (mmPrintResponse *LoggerMock) PrintResponse(response *http.Response) {
 
 	}
 	if mmPrintResponse.funcPrintResponse != nil {
-		mmPrintResponse.funcPrintResponse(response)
+		mmPrintResponse.funcPrintResponse(request, code)
 		return
 	}
-	mmPrintResponse.t.Fatalf("Unexpected call to LoggerMock.PrintResponse. %v", response)
+	mmPrintResponse.t.Fatalf("Unexpected call to LoggerMock.PrintResponse. %v %v", request, code)
 
 }
 
