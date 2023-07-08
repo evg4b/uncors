@@ -11,14 +11,14 @@ import (
 
 var errNorHandled = errors.New("request is not handled")
 
-func (m *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
-	file, err := m.fs.Open(filePath)
+func (h *Handler) openFile(filePath string) (afero.File, os.FileInfo, error) {
+	file, err := h.fs.Open(filePath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			return nil, nil, fmt.Errorf("filed to open file: %w", err)
 		}
 
-		indexFile, err := m.openIndexFile()
+		indexFile, err := h.openIndexFile()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -32,7 +32,7 @@ func (m *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 	}
 
 	if stat.IsDir() {
-		indexFile, err := m.openIndexFile()
+		indexFile, err := h.openIndexFile()
 		if err != nil {
 			return file, stat, err
 		}
@@ -49,12 +49,12 @@ func (m *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 	return file, stat, nil
 }
 
-func (m *Middleware) openIndexFile() (afero.File, error) {
-	if len(m.index) == 0 {
+func (h *Handler) openIndexFile() (afero.File, error) {
+	if len(h.index) == 0 {
 		return nil, errNorHandled
 	}
 
-	file, err := m.fs.Open(m.index)
+	file, err := h.fs.Open(h.index)
 	if err != nil {
 		return nil, fmt.Errorf("filed to open index file: %w", err)
 	}

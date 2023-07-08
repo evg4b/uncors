@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -15,13 +14,14 @@ const (
 )
 
 type UncorsConfig struct {
-	HTTPPort  int      `mapstructure:"http-port" validate:"required"`
-	Mappings  Mappings `mapstructure:"mappings" validate:"required"`
-	Proxy     string   `mapstructure:"proxy"`
-	Debug     bool     `mapstructure:"debug"`
-	HTTPSPort int      `mapstructure:"https-port"`
-	CertFile  string   `mapstructure:"cert-file"`
-	KeyFile   string   `mapstructure:"key-file"`
+	HTTPPort    int         `mapstructure:"http-port" validate:"required"`
+	Mappings    Mappings    `mapstructure:"mappings" validate:"required"`
+	Proxy       string      `mapstructure:"proxy"`
+	Debug       bool        `mapstructure:"debug"`
+	HTTPSPort   int         `mapstructure:"https-port"`
+	CertFile    string      `mapstructure:"cert-file"`
+	KeyFile     string      `mapstructure:"key-file"`
+	CacheConfig CacheConfig `mapstructure:"cache-config"`
 }
 
 func (config *UncorsConfig) IsHTTPSEnabled() bool {
@@ -51,10 +51,11 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToSliceHookFunc(","),
-		hooks.StringToTimeDurationHookFunc(),
+		StringToTimeDurationHookFunc(),
 		URLMappingHookFunc(),
 	))
 
+	setDefaultValues(viperInstance)
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
 		return nil, fmt.Errorf("filed parsing config: %w", err)
 	}

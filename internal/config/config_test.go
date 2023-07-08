@@ -1,7 +1,9 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -47,6 +49,12 @@ debug: true
 https-port: 8081
 cert-file: /etc/certificates/cert-file.pem
 key-file: /etc/certificates/key-file.key
+cache-config:
+  expiration-time: 1h
+  clear-time: 30m
+  methods:
+    - GET
+    - POST
 `
 )
 
@@ -89,6 +97,11 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  80,
 					HTTPSPort: 443,
 					Mappings:  config.Mappings{},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						ClearTime:      config.DefaultClearTime,
+						Methods:        []string{http.MethodGet},
+					},
 				},
 			},
 			{
@@ -99,6 +112,11 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 443,
 					Mappings: config.Mappings{
 						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+					},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						ClearTime:      config.DefaultClearTime,
+						Methods:        []string{http.MethodGet},
 					},
 				},
 			},
@@ -139,6 +157,14 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  testconstants.CertFilePath,
 					KeyFile:   testconstants.KeyFilePath,
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: time.Hour,
+						ClearTime:      30 * time.Minute,
+						Methods: []string{
+							http.MethodGet,
+							http.MethodPost,
+						},
+					},
 				},
 			},
 			{
@@ -186,6 +212,14 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPSPort: 8081,
 					CertFile:  testconstants.CertFilePath,
 					KeyFile:   testconstants.KeyFilePath,
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: time.Hour,
+						ClearTime:      30 * time.Minute,
+						Methods: []string{
+							http.MethodGet,
+							http.MethodPost,
+						},
+					},
 				},
 			},
 		}

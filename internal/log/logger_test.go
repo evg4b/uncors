@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/pterm/pterm"
@@ -110,20 +111,24 @@ func TestPrefixedLogger(t *testing.T) {
 
 		t.Run("should correctly format", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 			tests := []struct {
-				name     string
-				response *http.Response
-				expected string
+				name       string
+				response   *http.Response
+				request    *contracts.Request
+				statusCode int
+				expected   string
 			}{
 				{
-					name:     "response with status code 1xx",
-					response: makeResponseURL(100, http.MethodPost, "/api/info"),
+					name:       "response with status code 1xx",
+					statusCode: 100,
+					request:    request(http.MethodPost, "/api/info"),
 					expected: "\x1b[30;104m\x1b[30;104m  Test  \x1b[0m\x1b[0m \x1b[39;49m\x1b[39;49m\x1b[30;46m" +
 						"\x1b[30;46m 100 POST \x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m \x1b[96m\x1b[96mhttps://api.domain" +
 						".com/api/info\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n",
 				},
 				{
-					name:     "response with success code 2xx",
-					response: makeResponseURL(200, http.MethodGet, "/help"),
+					name:       "response with success code 2xx",
+					statusCode: 200,
+					request:    request(http.MethodGet, "/help"),
 					expected: "\x1b[30;104m\x1b[30;104m  Test  \x1b[0m\x1b[0m \x1b[39;49m\x1b[39;49m\x1b[30;46m" +
 						"\x1b[30;46m 100 POST \x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m \x1b[96m\x1b[96mhttps://api." +
 						"domain.com/api/info\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n\x1b[30;104m\x1b" +
@@ -132,8 +137,9 @@ func TestPrefixedLogger(t *testing.T) {
 						"[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n",
 				},
 				{
-					name:     "response with redirect code 3xx",
-					response: makeResponseURL(300, http.MethodPatch, "/api/user"),
+					name:       "response with redirect code 3xx",
+					statusCode: 300,
+					request:    request(http.MethodPatch, "/api/user"),
 					expected: "\x1b[30;104m\x1b[30;104m  Test  \x1b[0m\x1b[0m \x1b[39;49m\x1b[39;49m\x1b[30;46m\x1b" +
 						"[30;46m 100 POST \x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m \x1b[96m\x1b[96mhttps://api.domain" +
 						".com/api/info\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n\x1b[30;104m\x1b[30;104m  " +
@@ -144,8 +150,9 @@ func TestPrefixedLogger(t *testing.T) {
 						"[33mhttps://api.domain.com/api/user\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n",
 				},
 				{
-					name:     "response with user request error code 4xx",
-					response: makeResponseURL(400, http.MethodDelete, "/api/user/permission"),
+					name:       "response with user request error code 4xx",
+					statusCode: 400,
+					request:    request(http.MethodDelete, "/api/user/permission"),
 					expected: "\x1b[30;104m\x1b[30;104m  Test  \x1b[0m\x1b[0m \x1b[39;49m\x1b[39;49m\x1b[30;46m" +
 						"\x1b[30;46m 100 POST \x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m \x1b[96m\x1b[96mhttps://api." +
 						"domain.com/api/info\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n\x1b[30;104m\x1b" +
@@ -160,8 +167,9 @@ func TestPrefixedLogger(t *testing.T) {
 						"\x1b[0m\x1b[0m\n",
 				},
 				{
-					name:     "response with internal server error code 5xx",
-					response: makeResponseURL(500, http.MethodPost, "/"),
+					name:       "response with internal server error code 5xx",
+					statusCode: 500,
+					request:    request(http.MethodPost, "/"),
 					expected: "\x1b[30;104m\x1b[30;104m  Test  \x1b[0m\x1b[0m \x1b[39;49m\x1b[39;49m\x1b[30;46m\x1b" +
 						"[30;46m 100 POST \x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m \x1b[96m\x1b[96mhttps://api.domain." +
 						"com/api/info\x1b[0m\x1b[39;49m\x1b[0m\x1b[39;49m\x1b[0m\x1b[0m\n\x1b[30;104m\x1b[30;104m" +
@@ -180,7 +188,7 @@ func TestPrefixedLogger(t *testing.T) {
 			}
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
-					logger.PrintResponse(testCase.response)
+					logger.PrintResponse(testCase.request, testCase.statusCode)
 
 					assert.Equal(t, testCase.expected, output.String())
 				})
@@ -189,28 +197,25 @@ func TestPrefixedLogger(t *testing.T) {
 
 		t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 			assert.Panics(t, func() {
-				logger.PrintResponse(makeResponseURL(50, http.MethodGet, "/"))
+				logger.PrintResponse(request(http.MethodGet, "/"), 50)
 			})
 		}))
 
 		t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 			assert.Panics(t, func() {
-				logger.PrintResponse(makeResponseURL(600, http.MethodGet, "/"))
+				logger.PrintResponse(request(http.MethodGet, "/"), 600)
 			})
 		}))
 	})
 }
 
-func makeResponseURL(code int, method string, path string) *http.Response {
-	return &http.Response{
-		Request: &http.Request{
-			Method: method,
-			URL: &url.URL{
-				Scheme: "https",
-				Host:   "api.domain.com",
-				Path:   path,
-			},
+func request(method string, path string) *http.Request {
+	return &http.Request{
+		Method: method,
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   "api.domain.com",
+			Path:   path,
 		},
-		StatusCode: code,
 	}
 }
