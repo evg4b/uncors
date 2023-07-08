@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/sfmt"
@@ -19,7 +20,7 @@ func TestNewUncorsServer(t *testing.T) {
 	ctx := context.Background()
 	expectedResponse := "UNCORS OK!"
 
-	var handler http.HandlerFunc = func(w http.ResponseWriter, _r *http.Request) {
+	var handler contracts.HandlerFunc = func(w contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
 		sfmt.Fprint(w, expectedResponse)
 	}

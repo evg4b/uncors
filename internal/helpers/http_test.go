@@ -2,6 +2,7 @@ package helpers_test
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -52,4 +53,119 @@ func TestNormaliseRequest(t *testing.T) {
 
 		assert.Equal(t, request.URL.Host, testconstants.Localhost)
 	})
+}
+
+func TestIs1xxCode(t *testing.T) {
+	cases := []struct {
+		code     int
+		expected bool
+	}{
+		{http.StatusContinue, true},
+		{http.StatusSwitchingProtocols, true},
+		{http.StatusOK, false},
+		{http.StatusMovedPermanently, false},
+		{http.StatusBadRequest, false},
+		{http.StatusInternalServerError, false},
+	}
+
+	for _, testCase := range cases {
+		t.Run(fmt.Sprintf("shoul return %t for code %d", testCase.expected, testCase.code), func(t *testing.T) {
+			actual := helpers.Is1xxCode(testCase.code)
+			assert.Equal(t, testCase.expected, actual)
+		})
+	}
+}
+
+func TestIs2xxCode(t *testing.T) {
+	cases := []struct {
+		code     int
+		expected bool
+	}{
+		{http.StatusOK, true},
+		{http.StatusCreated, true},
+		{http.StatusAccepted, true},
+		{http.StatusSwitchingProtocols, false},
+		{http.StatusMultipleChoices, false},
+		{http.StatusBadRequest, false},
+		{http.StatusInternalServerError, false},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+			actual := helpers.Is2xxCode(c.code)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestIs3xxCode(t *testing.T) {
+	cases := []struct {
+		code     int
+		expected bool
+	}{
+		{http.StatusMultipleChoices, true},
+		{http.StatusMovedPermanently, true},
+		{http.StatusFound, true},
+		{http.StatusOK, false},
+		{http.StatusSwitchingProtocols, false},
+		{http.StatusBadRequest, false},
+		{http.StatusInternalServerError, false},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+			actual := helpers.Is3xxCode(c.code)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestIs4xxCode(t *testing.T) {
+	cases := []struct {
+		code     int
+		expected bool
+	}{
+		{http.StatusBadRequest, true},
+		{http.StatusUnauthorized, true},
+		{http.StatusForbidden, true},
+		{http.StatusOK, false},
+		{http.StatusSwitchingProtocols, false},
+		{http.StatusMultipleChoices, false},
+		{http.StatusInternalServerError, false},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+			actual := helpers.Is4xxCode(c.code)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestIs5xxCode(t *testing.T) {
+	cases := []struct {
+		code     int
+		expected bool
+	}{
+		{http.StatusBadRequest, false},
+		{http.StatusUnauthorized, false},
+		{http.StatusForbidden, false},
+		{http.StatusOK, false},
+		{http.StatusSwitchingProtocols, false},
+		{http.StatusMultipleChoices, false},
+		{http.StatusInternalServerError, true},
+		{http.StatusNetworkAuthenticationRequired, true},
+		{http.StatusHTTPVersionNotSupported, true},
+	}
+
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+			actual := helpers.Is5xxCode(c.code)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
 }

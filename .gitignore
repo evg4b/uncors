@@ -5,3 +5,4 @@ dist/
 uncors
 .idea
 node_modules
+.uncors.yaml

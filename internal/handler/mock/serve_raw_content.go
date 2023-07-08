@@ -7,8 +7,8 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-func (m *Middleware) serveRawContent(writer http.ResponseWriter) {
-	response := m.response
+func (h *Handler) serveRawContent(writer http.ResponseWriter) {
+	response := h.response
 	header := writer.Header()
 	if len(header.Get(headers.ContentType)) == 0 {
 		contentType := http.DetectContentType([]byte(response.Raw))

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/config/hooks"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
@@ -51,7 +50,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 
 func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.DecodeHookFunc) error {
 	hook := mapstructure.ComposeDecodeHookFunc(
-		hooks.StringToTimeDurationHookFunc(),
+		StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
 		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
 	)

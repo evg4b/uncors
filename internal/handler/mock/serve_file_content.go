@@ -6,9 +6,9 @@ import (
 	"os"
 )
 
-func (m *Middleware) serveFileContent(writer http.ResponseWriter, request *http.Request) error {
-	fileName := m.response.File
-	file, err := m.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
+func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Request) error {
+	fileName := h.response.File
+	file, err := h.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("filed to open file %s: %w", fileName, err)
 	}
