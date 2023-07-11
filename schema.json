@@ -75,7 +75,6 @@
       "type": "object",
       "oneOf": [
         {
-          "description": "sadasdasdasda das asd asd ",
           "type": "object",
           "minProperties": 1,
           "maxProperties": 1,
@@ -84,19 +83,19 @@
           }
         },
         {
-          "description": "### sadasdasdasda das asd asd ",
           "type": "object",
           "properties": {
             "from": {
-              "description": "ds af dskf ssdf sdf  jgfdg",
+              "description": "The local host with protocol for the resource from which proxying will take place",
               "type": "string"
             },
             "to": {
-              "description": "ds gkldf jgfdg",
+              "description": "The target host with protocol for the resource to be proxied",
               "type": "string"
             },
             "cache": {
               "type": "array",
+              "description": "List the paths that will be cached.",
               "items": {
                 "type": "string"
               },
@@ -104,13 +103,15 @@
             },
             "mocks": {
               "type": "array",
+              "description": "List the mocked requests",
               "items": {
                 "$ref": "#/definitions/Mock"
               },
               "minItems": 1
             },
-            "static": {
+            "statics": {
               "type": "array",
+              "description": "List of paths that will be served from the directory.",
               "items": {
                 "$ref": "#/definitions/StaticDirectory"
               },
@@ -129,18 +130,20 @@
       "type": "object",
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "Mocked request path"
         },
         "method": {
-          "$ref": "#/definitions/Method"
+          "$ref": "#/definitions/Method",
+          "description": "Mocked request method"
         },
         "queries": {
           "$ref": "#/definitions/Queries",
-          "description": "demo"
+          "description": "Mocked request queries"
         },
         "headers": {
           "$ref": "#/definitions/Headers",
-          "description": "demo"
+          "description": "Mocked request headers"
         },
         "response": {
           "description": "Mock response definition",
@@ -214,6 +217,25 @@
     },
     "StaticDirectory": {
       "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path where the static files will be served"
+        },
+        "dir": {
+          "type": "string",
+          "description": "Path to the folder from which the static files will be served"
+        },
+        "index": {
+          "type": "string",
+          "description": "The file witch will be returned if the requested file is not found. It should be a relative path within the dir folder",
+          "default": ""
+        }
+      },
+      "required": [
+        "path",
+        "dir"
+      ],
       "additionalProperties": false
     },
     "Headers": {
