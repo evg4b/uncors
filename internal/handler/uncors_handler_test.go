@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -44,8 +43,8 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory(t *testing.T) func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
-	return func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
+func cacheFactory(t *testing.T) func(key string, globs config.CacheGlobs) contracts.Middleware {
+	return func(key string, globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithPrefix(key),
 			cache.WithGlobs(globs),
@@ -126,7 +125,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			}, nil
 		}
 
-		panic(sfmt.Sprintf("incorrect request: %s", request.URL.Path))
+		panic(helpers.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
 	uncorsHandler := handler.NewUncorsRequestHandler(

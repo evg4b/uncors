@@ -11,7 +11,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +21,7 @@ func TestNewUncorsServer(t *testing.T) {
 
 	var handler contracts.HandlerFunc = func(w contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
-		sfmt.Fprint(w, expectedResponse)
+		helpers.Fprint(w, expectedResponse)
 	}
 
 	t.Run("handle request", func(t *testing.T) {

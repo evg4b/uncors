@@ -11,10 +11,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
@@ -31,14 +31,14 @@ var Version = "X.X.X"
 const baseAddress = "127.0.0.1"
 
 func main() {
-	defer infra.PanicInterceptor(func(value any) {
+	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
 		os.Exit(1)
 	})
 
 	pflag.Usage = func() {
 		ui.Logo(Version)
-		sfmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		helpers.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 
@@ -85,7 +85,7 @@ func main() {
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
-		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) contracts.MiddlewareHandler {
+		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithPrefix(key),

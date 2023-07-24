@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/sfmt"
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
@@ -109,7 +108,7 @@ const wildcard = "*"
 func replaceWildcards(host string) string {
 	count := strings.Count(host, wildcard)
 	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, sfmt.Sprintf("{p%d}", i), 1)
+		host = strings.Replace(host, wildcard, helpers.Sprintf("{p%d}", i), 1)
 	}
 
 	return host

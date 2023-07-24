@@ -24,8 +24,8 @@ type UncorsConfig struct {
 	CacheConfig CacheConfig `mapstructure:"cache-config"`
 }
 
-func (config *UncorsConfig) IsHTTPSEnabled() bool {
-	return len(config.CertFile) > 0 && len(config.KeyFile) > 0 && config.HTTPSPort > 0
+func (c *UncorsConfig) IsHTTPSEnabled() bool {
+	return len(c.CertFile) > 0 && len(c.KeyFile) > 0 && c.HTTPSPort > 0
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig, error) {

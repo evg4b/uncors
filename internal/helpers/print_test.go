@@ -1,10 +1,10 @@
-package sfmt_test
+package helpers_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ func TestFprint(t *testing.T) {
 	t.Run("print correctly", func(t *testing.T) {
 		writer := &strings.Builder{}
 
-		sfmt.Fprint(writer, rawPayload)
+		helpers.Fprint(writer, rawPayload)
 
 		assert.Equal(t, rawPayload, writer.String())
 	})
@@ -32,7 +32,7 @@ func TestFprint(t *testing.T) {
 			writer := mocks.NewWriterMock(t).
 				WriteMock.Return(0, testconstants.ErrTest1)
 
-			sfmt.Fprint(writer, rawPayload)
+			helpers.Fprint(writer, rawPayload)
 		})
 	})
 }
@@ -41,7 +41,7 @@ func TestFprintf(t *testing.T) {
 	t.Run("print correctly", func(t *testing.T) {
 		writer := &strings.Builder{}
 
-		sfmt.Fprintf(writer, fPayload, fPayloadArgs...)
+		helpers.Fprintf(writer, fPayload, fPayloadArgs...)
 
 		assert.Equal(t, fPayloadExpected, writer.String())
 	})
@@ -51,7 +51,7 @@ func TestFprintf(t *testing.T) {
 			writer := mocks.NewWriterMock(t).
 				WriteMock.Return(0, testconstants.ErrTest1)
 
-			sfmt.Fprintf(writer, fPayload, fPayloadArgs...)
+			helpers.Fprintf(writer, fPayload, fPayloadArgs...)
 		})
 	})
 }
@@ -60,7 +60,7 @@ func TestFprintln(t *testing.T) {
 	t.Run("print correctly", func(t *testing.T) {
 		writer := &strings.Builder{}
 
-		sfmt.Fprintln(writer, rawPayload)
+		helpers.Fprintln(writer, rawPayload)
 
 		assert.Equal(t, rawPayload+"\n", writer.String())
 	})
@@ -70,13 +70,13 @@ func TestFprintln(t *testing.T) {
 			writer := mocks.NewWriterMock(t).
 				WriteMock.Return(0, testconstants.ErrTest1)
 
-			sfmt.Fprintln(writer, rawPayload)
+			helpers.Fprintln(writer, rawPayload)
 		})
 	})
 }
 
 func TestSprintf(t *testing.T) {
-	actual := sfmt.Sprintf(fPayload, fPayloadArgs...)
+	actual := helpers.Sprintf(fPayload, fPayloadArgs...)
 
 	assert.Equal(t, fPayloadExpected, actual)
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +18,7 @@ func TestResponseWriterWrapper(t *testing.T) {
 	writer := contracts.WrapResponseWriter(recorder)
 
 	writer.WriteHeader(expectedCode)
-	sfmt.Fprint(writer, expectedValue)
+	helpers.Fprint(writer, expectedValue)
 
 	t.Run("save status code", func(t *testing.T) {
 		assert.Equal(t, expectedCode, writer.StatusCode())
