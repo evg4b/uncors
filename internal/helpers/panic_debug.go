@@ -1,6 +1,6 @@
 //go:build !release
 
-package infra
+package helpers
 
 func PanicInterceptor(_ func(any)) {
 	// stub method

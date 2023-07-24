@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +26,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 		{
 			name: "write body bytes only",
 			action: func(w http.ResponseWriter) {
-				sfmt.Fprint(w, bodyString)
+				helpers.Fprint(w, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Header: http.Header{
@@ -64,7 +64,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 			action: func(w http.ResponseWriter) {
 				header := w.Header()
 				header.Set(headers.ContentLength, "999")
-				sfmt.Fprint(w, bodyString)
+				helpers.Fprint(w, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Header: http.Header{
@@ -81,7 +81,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				header.Set(headers.ContentLength, "9")
 				header.Set(headers.Authorization, authorization)
 				writer.WriteHeader(http.StatusBadGateway)
-				sfmt.Fprint(writer, bodyString)
+				helpers.Fprint(writer, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Code: http.StatusBadGateway,

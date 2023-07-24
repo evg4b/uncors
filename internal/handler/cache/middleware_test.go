@@ -9,7 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -90,7 +90,7 @@ func TestCacheMiddleware(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
-					sfmt.Fprintf(writer, expectedBody)
+					helpers.Fprintf(writer, expectedBody)
 				})
 
 				wrappedHandler := middleware.Wrap(handler)
@@ -153,7 +153,7 @@ func TestCacheMiddleware(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
-					sfmt.Fprintf(writer, expectedBody)
+					helpers.Fprintf(writer, expectedBody)
 				})
 
 				wrappedHandler := middleware.Wrap(handler)

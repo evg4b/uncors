@@ -23,6 +23,10 @@ func (m *Mock) Clone() Mock {
 	}
 }
 
+func (m *Mock) String() string {
+	return helpers.Sprintf("[%s %d] %s", m.Method, m.Response.Code, m.Path)
+}
+
 type Mocks []Mock
 
 func (m Mocks) Clone() Mocks {

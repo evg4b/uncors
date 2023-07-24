@@ -6,13 +6,13 @@ import (
 
 type CacheGlobs []string
 
-func (globs CacheGlobs) Clone() CacheGlobs {
-	if globs == nil {
+func (g CacheGlobs) Clone() CacheGlobs {
+	if g == nil {
 		return nil
 	}
 
-	cacheGlobs := make(CacheGlobs, 0, len(globs))
-	cacheGlobs = append(cacheGlobs, globs...)
+	cacheGlobs := make(CacheGlobs, 0, len(g))
+	cacheGlobs = append(cacheGlobs, g...)
 
 	return cacheGlobs
 }
@@ -23,15 +23,15 @@ type CacheConfig struct {
 	Methods        []string      `mapstructure:"methods"`
 }
 
-func (config *CacheConfig) Clone() *CacheConfig {
+func (c *CacheConfig) Clone() *CacheConfig {
 	var methods []string
-	if config.Methods != nil {
-		methods = append(methods, config.Methods...)
+	if c.Methods != nil {
+		methods = append(methods, c.Methods...)
 	}
 
 	return &CacheConfig{
-		ExpirationTime: config.ExpirationTime,
-		ClearTime:      config.ClearTime,
+		ExpirationTime: c.ExpirationTime,
+		ClearTime:      c.ClearTime,
 		Methods:        methods,
 	}
 }

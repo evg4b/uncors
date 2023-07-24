@@ -3,7 +3,7 @@ package mock
 import (
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/go-http-utils/headers"
 )
 
@@ -16,5 +16,5 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) {
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	sfmt.Fprint(writer, response.Raw)
+	helpers.Fprint(writer, response.Raw)
 }

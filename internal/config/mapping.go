@@ -15,13 +15,13 @@ type Mapping struct {
 	Cache   CacheGlobs        `mapstructure:"cache"`
 }
 
-func (u *Mapping) Clone() Mapping {
+func (m *Mapping) Clone() Mapping {
 	return Mapping{
-		From:    u.From,
-		To:      u.To,
-		Statics: u.Statics.Clone(),
-		Mocks:   u.Mocks.Clone(),
-		Cache:   u.Cache.Clone(),
+		From:    m.From,
+		To:      m.To,
+		Statics: m.Statics.Clone(),
+		Mocks:   m.Mocks.Clone(),
+		Cache:   m.Cache.Clone(),
 	}
 }
 

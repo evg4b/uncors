@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlx"
 )
 
@@ -25,7 +25,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 	for index, literal := range parts {
 		if index > 0 {
 			count++
-			sfmt.Fprintf(&result, "(?P<part%d>.+)", count)
+			helpers.Fprintf(&result, "(?P<part%d>.+)", count)
 		}
 
 		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
@@ -48,18 +48,18 @@ func wildCardToReplacePattern(parsedPattern *url.URL) (string, int) {
 	result := &strings.Builder{}
 	var count int
 
-	sfmt.Fprint(result, "${scheme}")
+	helpers.Fprint(result, "${scheme}")
 
 	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
-			sfmt.Fprintf(result, "${part%d}", count)
+			helpers.Fprintf(result, "${part%d}", count)
 		}
 
-		sfmt.Fprint(result, literal)
+		helpers.Fprint(result, literal)
 	}
 
-	sfmt.Fprint(result, "${path}")
+	helpers.Fprint(result, "${path}")
 
 	return result.String(), count
 }
