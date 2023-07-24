@@ -9,7 +9,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -104,7 +104,7 @@ func TestMiddleware(t *testing.T) {
 			static.WithLogger(loggerMock),
 			static.WithNext(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 				writer.WriteHeader(testHTTPStatusCode)
-				sfmt.Fprint(writer, testHTTPBody)
+				helpers.Fprint(writer, testHTTPBody)
 			})),
 		)
 

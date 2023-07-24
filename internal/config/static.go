@@ -3,6 +3,7 @@ package config
 import (
 	"reflect"
 
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 )
@@ -21,14 +22,18 @@ func (s *StaticDirectory) Clone() StaticDirectory {
 	}
 }
 
+func (s *StaticDirectory) String() string {
+	return helpers.Sprintf("%s => %s", s.Path, s.Dir)
+}
+
 type StaticDirectories []StaticDirectory
 
-func (d StaticDirectories) Clone() StaticDirectories {
-	if d == nil {
+func (s StaticDirectories) Clone() StaticDirectories {
+	if s == nil {
 		return nil
 	}
 
-	return lo.Map(d, func(item StaticDirectory, index int) StaticDirectory {
+	return lo.Map(s, func(item StaticDirectory, index int) StaticDirectory {
 		return item.Clone()
 	})
 }

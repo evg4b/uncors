@@ -3,7 +3,7 @@ package log
 import (
 	"io"
 
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/pterm/pterm"
 )
 
@@ -12,7 +12,7 @@ func Error(a ...any) {
 }
 
 func Errorf(template string, a ...any) {
-	Error(sfmt.Sprintf(template, a...))
+	Error(helpers.Sprintf(template, a...))
 }
 
 func Warning(a ...any) {
@@ -20,7 +20,7 @@ func Warning(a ...any) {
 }
 
 func Warningf(template string, a ...any) {
-	Warning(sfmt.Sprintf(template, a...))
+	Warning(helpers.Sprintf(template, a...))
 }
 
 func Info(a ...any) {
@@ -28,7 +28,7 @@ func Info(a ...any) {
 }
 
 func Infof(template string, a ...any) {
-	Info(sfmt.Sprintf(template, a...))
+	Info(helpers.Sprintf(template, a...))
 }
 
 func Debug(a ...any) {
@@ -36,7 +36,7 @@ func Debug(a ...any) {
 }
 
 func Debugf(template string, a ...any) {
-	Debug(sfmt.Sprintf(template, a...))
+	Debug(helpers.Sprintf(template, a...))
 }
 
 func Print(a ...any) {

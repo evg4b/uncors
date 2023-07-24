@@ -90,7 +90,7 @@
               "type": "string"
             },
             "to": {
-              "description": "The target host with protocol for the resource to be proxied",
+              "description": "The target host and protocol for the resource that needs to be proxied",
               "type": "string"
             },
             "cache": {

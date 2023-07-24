@@ -11,7 +11,7 @@ type Handler interface {
 	ServeHTTP(ResponseWriter, *Request)
 }
 
-type MiddlewareHandler interface {
+type Middleware interface {
 	Wrap(next Handler) Handler
 }
 

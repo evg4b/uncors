@@ -3,30 +3,30 @@ package config
 import (
 	"strings"
 
-	"github.com/evg4b/uncors/internal/sfmt"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/samber/lo"
 )
 
 type Mappings []Mapping
 
-func (mappings Mappings) String() string {
-	var builder strings.Builder
+func (m Mappings) String() string {
+	builder := &strings.Builder{}
 
-	for _, group := range lo.GroupBy(mappings, extractHost) {
+	for _, group := range lo.GroupBy(m, extractHost) {
 		for _, mapping := range group {
-			builder.WriteString(sfmt.Sprintf("%s => %s\n", mapping.From, mapping.To))
+			helpers.Fprintf(builder, "%s => %s\n", mapping.From, mapping.To)
 		}
 
 		mapping := group[0]
 		for _, mock := range mapping.Mocks {
-			builder.WriteString(sfmt.Sprintf("    mock: [%s %d] %s\n", mock.Method, mock.Response.Code, mock.Path))
+			helpers.Fprintf(builder, "    mock: %s\n", mock.String())
 		}
 		for _, static := range mapping.Statics {
-			builder.WriteString(sfmt.Sprintf("    static: %s => %s\n", static.Path, static.Dir))
+			helpers.Fprintf(builder, "    static: %s\n", static.String())
 		}
 		for _, cacheGlob := range mapping.Cache {
-			builder.WriteString(sfmt.Sprintf("    cache: %s\n", cacheGlob))
+			helpers.Fprintf(builder, "    cache: %s\n", cacheGlob)
 		}
 	}
 

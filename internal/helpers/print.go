@@ -1,4 +1,4 @@
-package sfmt
+package helpers
 
 import (
 	"fmt"
