@@ -48,13 +48,17 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
 	cacheKey := m.extractCacheKey(request.URL)
+	m.logger.Debugf("extracted %s from request", cacheKey)
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.writeCachedResponse(writer, cachedResponse)
+		m.logger.Debugf("extracted %s from request", cacheKey)
 
+		m.writeCachedResponse(writer, cachedResponse)
 		m.logger.PrintResponse(request, writer.StatusCode())
 
 		return
 	}
+
+	m.logger.Debugf("request with key %s is not cached", cacheKey)
 
 	cacheableWriter := NewCacheableWriter(writer)
 	next.ServeHTTP(cacheableWriter, request)
@@ -102,7 +106,7 @@ func (m *Middleware) extractCacheKey(url *url.URL) string {
 
 	sort.Strings(items)
 
-	return m.prefix + url.Path + "?" + strings.Join(items, ";")
+	return helpers.Sprintf("[%s]%s?%s", url.Hostname(), url.Path, strings.Join(items, ";"))
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
