@@ -26,6 +26,10 @@ func (t *CountableHandler) Count() int {
 	return t.count
 }
 
+func (t *CountableHandler) Reset() {
+	t.count = 0
+}
+
 func CopyHeaders(from http.Header, to http.Header) {
 	for key, values := range from {
 		for _, value := range values {

@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,6 +35,12 @@ func TestCacheMiddleware(t *testing.T) {
 			"/api/**",
 		}),
 	)
+
+	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+		writer.WriteHeader(http.StatusOK)
+		testutils.CopyHeaders(expectedHeader, writer.Header())
+		helpers.Fprintf(writer, expectedBody)
+	})
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
 		tests := []struct {
@@ -87,15 +94,11 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
-					writer.WriteHeader(testCase.statusCode)
-					testutils.CopyHeaders(expectedHeader, writer.Header())
-					helpers.Fprintf(writer, expectedBody)
-				})
+				handler.Reset()
 
 				wrappedHandler := middleware.Wrap(handler)
 
-				testutils.Times(5, func() {
+				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
 					wrappedHandler.ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
@@ -158,7 +161,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				wrappedHandler := middleware.Wrap(handler)
 
-				testutils.Times(5, func() {
+				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
 					wrappedHandler.ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
@@ -171,5 +174,33 @@ func TestCacheMiddleware(t *testing.T) {
 				assert.Equal(t, 5, handler.Count())
 			})
 		}
+	})
+
+	t.Run("should not cache response between different hosts matched by one rule", func(t *testing.T) {
+		const count = 5
+		handler.Reset()
+
+		middleware := cache.NewMiddleware(
+			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
+			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithMethods([]string{http.MethodGet}),
+			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
+		)
+
+		wrappedHandler := middleware.Wrap(handler)
+
+		testutils.Times(count, func(index int) {
+			recorder := httptest.NewRecorder()
+			url := fmt.Sprintf("https://test-host-%d.com:4200/api/test", index)
+			request := httptest.NewRequest(http.MethodGet, url, nil)
+			wrappedHandler.ServeHTTP(
+				contracts.WrapResponseWriter(recorder),
+				request,
+			)
+			assert.Equal(t, expectedHeader, recorder.Header())
+			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+		})
+
+		assert.Equal(t, count, handler.Count())
 	})
 }
