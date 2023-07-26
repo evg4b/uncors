@@ -1,7 +1,7 @@
 package testutils
 
-func Times(n int, function func()) {
+func Times(n int, function func(n int)) {
 	for i := 0; i < n; i++ {
-		function()
+		function(i)
 	}
 }
