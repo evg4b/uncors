@@ -17,7 +17,8 @@ var (
 )
 
 var (
-	ErrInvalidSourceURL = errors.New("source url is invalid")
+	ErrInvalidSourceURL = errors.New("source host is invalid")
+	ErrInvalidTargetURL = errors.New("target host is invalid")
 	ErrURLNotMatched    = errors.New("is not matched")
 )
 
@@ -41,7 +42,7 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	}
 
 	var err error
-	replacer := Replacer{
+	replacer := &Replacer{
 		hooks: map[string]func(string) string{},
 	}
 
@@ -50,7 +51,7 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	}
 
 	if replacer.target, err = urlx.Parse(target); err != nil {
-		return nil, ErrInvalidSourceURL
+		return nil, ErrInvalidTargetURL
 	}
 
 	if replacer.regexp, _, err = wildCardToRegexp(replacer.source); err != nil {
@@ -63,7 +64,19 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
 	}
 
-	return &replacer, nil
+	return replacer, validateReplacer(replacer)
+}
+
+func validateReplacer(replacer *Replacer) error {
+	if len(replacer.source.Path) > 0 || len(replacer.source.RawQuery) > 0 {
+		return ErrInvalidSourceURL
+	}
+
+	if len(replacer.target.Path) > 0 || len(replacer.target.RawQuery) > 0 {
+		return ErrInvalidTargetURL
+	}
+
+	return nil
 }
 
 func (r *Replacer) Replace(source string) (string, error) {
