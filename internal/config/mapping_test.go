@@ -15,7 +15,7 @@ var localhostSecure = "https://localhost:9090"
 func TestURLMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
 
-	t.Run("positive cases", func(t *testing.T) {
+	t.Run("positive tests", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			config   string
