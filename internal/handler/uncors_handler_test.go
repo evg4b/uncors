@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -20,6 +21,7 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	goCache "github.com/patrickmn/go-cache"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +46,7 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory(t *testing.T) func(globs config.CacheGlobs) contracts.Middleware {
+func cacheFactory(t *testing.T) handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
@@ -58,7 +60,7 @@ func proxyFactory(
 	t *testing.T,
 	replacerFactory urlreplacer.ReplacerFactory,
 	httpClient contracts.HTTPClient,
-) func() contracts.Handler {
+) handler.ProxyHandlerFactory {
 	if replacerFactory == nil {
 		replacerFactory = mocks.NewReplacerFactoryMock(t)
 	}
@@ -72,6 +74,18 @@ func proxyFactory(
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithLogger(mocks.NewNoopLogger(t)),
+		)
+	}
+}
+
+func staticFactory(t *testing.T, fs afero.Fs) handler.StaticHandlerFactory {
+	return func(path string, dir config.StaticDirectory, next contracts.Handler) contracts.Handler {
+		return static.NewStaticHandler(
+			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
+			static.WithIndex(dir.Index),
+			static.WithNext(next),
+			static.WithLogger(mocks.NewNoopLogger(t)),
+			static.WithPrefix(path),
 		)
 	}
 }
@@ -156,6 +170,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		handler.WithMappings(mappings),
 		handler.WithCacheMiddlewareFactory(cacheFactory(t)),
 		handler.WithProxyHandlerFactory(proxyFactory(t, factory, httpMock)),
+		handler.WithStaticHandlerFactory(staticFactory(t, fs)),
 	)
 
 	t.Run("statics directory", func(t *testing.T) {

@@ -26,14 +26,20 @@ func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	}
 }
 
-func WithCacheMiddlewareFactory(factory cacheMiddlewareFactory) RequestHandlerOption {
+func WithCacheMiddlewareFactory(factory CacheMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.cacheMiddlewareFactory = factory
 	}
 }
 
-func WithProxyHandlerFactory(factory proxyHandlerFactory) RequestHandlerOption {
+func WithProxyHandlerFactory(factory ProxyHandlerFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.proxyHandlerFactory = factory
+	}
+}
+
+func WithStaticHandlerFactory(factory StaticHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.staticHandlerFactory = factory
 	}
 }

@@ -18,8 +18,9 @@ import (
 )
 
 type (
-	cacheMiddlewareFactory = func(globs config.CacheGlobs) contracts.Middleware
-	proxyHandlerFactory    = func() contracts.Handler
+	CacheMiddlewareFactory = func(globs config.CacheGlobs) contracts.Middleware
+	ProxyHandlerFactory    = func() contracts.Handler
+	StaticHandlerFactory   = func(path string, dir config.StaticDirectory, next contracts.Handler) contracts.Handler
 )
 
 type RequestHandler struct {
@@ -27,8 +28,9 @@ type RequestHandler struct {
 	fs                     afero.Fs
 	logger                 contracts.Logger
 	mappings               config.Mappings
-	cacheMiddlewareFactory cacheMiddlewareFactory
-	proxyHandlerFactory    proxyHandlerFactory
+	cacheMiddlewareFactory CacheMiddlewareFactory
+	proxyHandlerFactory    ProxyHandlerFactory
+	staticHandlerFactory   StaticHandlerFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")
