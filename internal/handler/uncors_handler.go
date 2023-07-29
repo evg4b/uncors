@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -50,7 +49,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		proxy.WithLogger(ui.ProxyLogger),
 	)
 
-	for index, mapping := range handler.mappings {
+	for _, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)
 		if err != nil {
 			panic(err)
@@ -68,8 +67,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		var defaultHandler contracts.Handler = proxyHandler
 		if len(mapping.Cache) > 0 {
-			cachePrefix := fmt.Sprintf("mapping_%d", index)
-			cacheMiddleware := handler.cacheMiddlewareFactory(cachePrefix, mapping.Cache)
+			cacheMiddleware := handler.cacheMiddlewareFactory(mapping.Cache)
 			defaultHandler = cacheMiddleware.Wrap(proxyHandler)
 		}
 

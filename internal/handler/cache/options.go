@@ -14,12 +14,6 @@ func WithLogger(logger contracts.Logger) MiddlewareOption {
 	}
 }
 
-func WithPrefix(prefix string) MiddlewareOption {
-	return func(m *Middleware) {
-		m.prefix = prefix
-	}
-}
-
 func WithMethods(methods []string) MiddlewareOption {
 	return func(m *Middleware) {
 		m.methods = methods

@@ -86,10 +86,9 @@ func main() {
 		handler.WithFileSystem(afero.NewOsFs()),
 		handler.WithURLReplacerFactory(factory),
 		handler.WithHTTPClient(httpClient),
-		handler.WithCacheMiddlewareFactory(func(key string, globs config.CacheGlobs) contracts.Middleware {
+		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
-				cache.WithPrefix(key),
 				cache.WithMethods(cacheConfig.Methods),
 				cache.WithCacheStorage(cacheStorage),
 				cache.WithGlobs(globs),

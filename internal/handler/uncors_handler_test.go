@@ -43,10 +43,9 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory(t *testing.T) func(key string, globs config.CacheGlobs) contracts.Middleware {
-	return func(key string, globs config.CacheGlobs) contracts.Middleware {
+func cacheFactory(t *testing.T) func(globs config.CacheGlobs) contracts.Middleware {
+	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
-			cache.WithPrefix(key),
 			cache.WithGlobs(globs),
 			cache.WithLogger(mocks.NewNoopLogger(t)),
 			cache.WithCacheStorage(goCache.New(goCache.DefaultExpiration, goCache.DefaultExpiration)),
