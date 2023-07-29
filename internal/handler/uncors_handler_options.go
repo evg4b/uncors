@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/spf13/afero"
 )
 
@@ -21,28 +20,20 @@ func WithFileSystem(fs afero.Fs) RequestHandlerOption {
 	}
 }
 
-func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) RequestHandlerOption {
-	return func(h *RequestHandler) {
-		h.replacerFactory = replacerFactory
-	}
-}
-
-func WithHTTPClient(client contracts.HTTPClient) RequestHandlerOption {
-	return func(h *RequestHandler) {
-		h.httpClient = client
-	}
-}
-
 func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.mappings = mappings
 	}
 }
 
-type cacheMiddlewareFactory = func(globs config.CacheGlobs) contracts.Middleware
-
 func WithCacheMiddlewareFactory(factory cacheMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.cacheMiddlewareFactory = factory
+	}
+}
+
+func WithProxyHandlerFactory(factory proxyHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.proxyHandlerFactory = factory
 	}
 }

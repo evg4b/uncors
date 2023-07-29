@@ -9,14 +9,17 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
-	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/ui"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
+)
+
+type (
+	cacheMiddlewareFactory = func(globs config.CacheGlobs) contracts.Middleware
+	proxyHandlerFactory    = func() contracts.Handler
 )
 
 type RequestHandler struct {
@@ -24,9 +27,8 @@ type RequestHandler struct {
 	fs                     afero.Fs
 	logger                 contracts.Logger
 	mappings               config.Mappings
-	replacerFactory        urlreplacer.ReplacerFactory
-	httpClient             contracts.HTTPClient
 	cacheMiddlewareFactory cacheMiddlewareFactory
+	proxyHandlerFactory    proxyHandlerFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -43,11 +45,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
 
-	proxyHandler := proxy.NewProxyHandler(
-		proxy.WithURLReplacerFactory(handler.replacerFactory),
-		proxy.WithHTTPClient(handler.httpClient),
-		proxy.WithLogger(ui.ProxyLogger),
-	)
+	proxyHandler := handler.proxyHandlerFactory()
 
 	for _, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)
@@ -65,7 +63,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
 
-		var defaultHandler contracts.Handler = proxyHandler
+		defaultHandler := proxyHandler
 		if len(mapping.Cache) > 0 {
 			cacheMiddleware := handler.cacheMiddlewareFactory(mapping.Cache)
 			defaultHandler = cacheMiddleware.Wrap(proxyHandler)

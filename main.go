@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
@@ -84,14 +85,19 @@ func main() {
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
 		handler.WithFileSystem(afero.NewOsFs()),
-		handler.WithURLReplacerFactory(factory),
-		handler.WithHTTPClient(httpClient),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithMethods(cacheConfig.Methods),
 				cache.WithCacheStorage(cacheStorage),
 				cache.WithGlobs(globs),
+			)
+		}),
+		handler.WithProxyHandlerFactory(func() contracts.Handler {
+			return proxy.NewProxyHandler(
+				proxy.WithURLReplacerFactory(factory),
+				proxy.WithHTTPClient(httpClient),
+				proxy.WithLogger(ui.ProxyLogger),
 			)
 		}),
 	)
