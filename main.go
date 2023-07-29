@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/evg4b/uncors/internal/handler/static"
+	"time"
 
 	cf "github.com/evg4b/uncors/internal/config"
 	c "github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
@@ -87,7 +88,6 @@ func main() {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(ui.MockLogger),
-		handler.WithFileSystem(fs),
 		handler.WithCacheMiddlewareFactory(func(globs cf.CacheGlobs) c.Middleware {
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
@@ -110,6 +110,14 @@ func main() {
 				static.WithNext(next),
 				static.WithLogger(ui.StaticLogger),
 				static.WithPrefix(path),
+			)
+		}),
+		handler.WithMockHandlerFactory(func(response cf.Response) c.Handler {
+			return mock.NewMockHandler(
+				mock.WithLogger(ui.MockLogger),
+				mock.WithResponse(response),
+				mock.WithFileSystem(fs),
+				mock.WithAfter(time.After),
 			)
 		}),
 	)

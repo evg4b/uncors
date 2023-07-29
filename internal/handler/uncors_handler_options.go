@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/spf13/afero"
 )
 
 type RequestHandlerOption = func(*RequestHandler)
@@ -11,12 +10,6 @@ type RequestHandlerOption = func(*RequestHandler)
 func WithLogger(logger contracts.Logger) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.logger = logger
-	}
-}
-
-func WithFileSystem(fs afero.Fs) RequestHandlerOption {
-	return func(h *RequestHandler) {
-		h.fs = fs
 	}
 }
 
@@ -41,5 +34,11 @@ func WithProxyHandlerFactory(factory ProxyHandlerFactory) RequestHandlerOption {
 func WithStaticHandlerFactory(factory StaticHandlerFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.staticHandlerFactory = factory
+	}
+}
+
+func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.mockHandlerFactory = factory
 	}
 }
