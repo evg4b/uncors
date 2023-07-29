@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -137,13 +138,9 @@ func main() {
 }
 
 func handleHTTPServerError(serverName string, err error) {
-	if err != nil {
-		if !errors.Is(err, http.ErrServerClosed) {
-			log.Error(err)
-		} else {
-			log.Debugf("%s server was stopped with error %s", serverName, err)
-		}
-	} else {
+	if err == nil || errors.Is(err, http.ErrServerClosed) {
 		log.Debugf("%s server was stopped without errors", serverName)
+	} else {
+		panic(fmt.Errorf("%s server was stopped with error %w", serverName, err))
 	}
 }
