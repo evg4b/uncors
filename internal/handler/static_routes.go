@@ -6,10 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler/static"
-	"github.com/evg4b/uncors/internal/ui"
 	"github.com/gorilla/mux"
-	"github.com/spf13/afero"
 )
 
 func (h *RequestHandler) makeStaticRoutes(
@@ -26,15 +23,10 @@ func (h *RequestHandler) makeStaticRoutes(
 			Handler(http.RedirectHandler(path, http.StatusTemporaryRedirect))
 
 		route := router.NewRoute()
-		handler := static.NewStaticHandler(
-			static.WithFileSystem(afero.NewBasePathFs(h.fs, staticDir.Dir)),
-			static.WithIndex(staticDir.Index),
-			static.WithNext(next),
-			static.WithLogger(ui.StaticLogger),
-			static.WithPrefix(path),
-		)
 
-		httpHandler := contracts.CastToHTTPHandler(handler)
+		middleware := h.staticMiddlewareFactory(path, staticDir)
+		httpHandler := contracts.CastToHTTPHandler(middleware.Wrap(next))
+
 		route.PathPrefix(path).Handler(httpHandler)
 	}
 }

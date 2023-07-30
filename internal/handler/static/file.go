@@ -11,7 +11,7 @@ import (
 
 var errNorHandled = errors.New("request is not handled")
 
-func (h *Handler) openFile(filePath string) (afero.File, os.FileInfo, error) {
+func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
 	file, err := h.fs.Open(filePath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
@@ -49,7 +49,7 @@ func (h *Handler) openFile(filePath string) (afero.File, os.FileInfo, error) {
 	return file, stat, nil
 }
 
-func (h *Handler) openIndexFile() (afero.File, error) {
+func (h *Middleware) openIndexFile() (afero.File, error) {
 	if len(h.index) == 0 {
 		return nil, errNorHandled
 	}
