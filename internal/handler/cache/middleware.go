@@ -16,7 +16,6 @@ import (
 type Middleware struct {
 	logger    contracts.Logger
 	storage   *cache.Cache
-	prefix    string
 	methods   []string
 	pathGlobs config.CacheGlobs
 }
