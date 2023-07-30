@@ -21,11 +21,11 @@ var defaultHTTPClient = http.Client{
 	Timeout: defaultTimeout,
 }
 
-func MakeHTTPClient(proxy string) (*http.Client, error) {
+func MakeHTTPClient(proxy string) *http.Client {
 	if len(proxy) > 0 {
 		parsedURL, err := urlx.Parse(proxy)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create http client: %w", err)
+			panic(fmt.Errorf("failed to create http client: %w", err))
 		}
 
 		httpClient := defaultHTTPClient
@@ -33,8 +33,8 @@ func MakeHTTPClient(proxy string) (*http.Client, error) {
 			Proxy: http.ProxyURL(parsedURL),
 		}
 
-		return &httpClient, nil
+		return &httpClient
 	}
 
-	return &defaultHTTPClient, nil
+	return &defaultHTTPClient
 }

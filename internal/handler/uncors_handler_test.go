@@ -159,8 +159,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		},
 	}
 
-	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
-	testutils.CheckNoError(t, err)
+	factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 	httpResponseMapping := map[string]string{
 		"/img/original.png": "original.png",
@@ -416,8 +415,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}}},
 			}
-			factory, err := urlreplacer.NewURLReplacerFactory(mappings)
-			testutils.CheckNoError(t, err)
+			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 			middleware := handler.NewUncorsRequestHandler(
 				handler.WithLogger(logger),
@@ -515,8 +513,7 @@ func TestMockMiddleware(t *testing.T) {
 				},
 			}},
 		}
-		factory, err := urlreplacer.NewURLReplacerFactory(mappings)
-		testutils.CheckNoError(t, err)
+		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithLogger(logger),

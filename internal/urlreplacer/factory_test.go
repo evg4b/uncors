@@ -36,30 +36,27 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := urlreplacer.NewURLReplacerFactory(testCase.mapping)
-
-				assert.Nil(t, actual)
-				assert.Error(t, err)
+				assert.Panics(t, func() {
+					urlreplacer.NewURLReplacerFactory(testCase.mapping)
+				})
 			})
 		}
 	})
 
 	t.Run("should return replacers", func(t *testing.T) {
-		actual, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
+		actual := urlreplacer.NewURLReplacerFactory(config.Mappings{
 			{From: testconstants.Localhost, To: testconstants.HTTPSGithub},
 		})
 
 		assert.NotNil(t, actual)
-		assert.NoError(t, err)
 	})
 }
 
 func TestFactoryMake(t *testing.T) {
-	factory, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
+	factory := urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: "http://server1.com", To: "https://mappedserver1.com"},
 		{From: "https://server2.com", To: "https://mappedserver2.com"},
 	})
-	testutils.CheckNoError(t, err)
 
 	tests := []struct {
 		name string

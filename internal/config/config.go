@@ -28,14 +28,14 @@ func (c *UncorsConfig) IsHTTPSEnabled() bool {
 	return len(c.CertFile) > 0 && len(c.KeyFile) > 0 && c.HTTPSPort > 0
 }
 
-func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig, error) {
+func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
 	flags := defineFlags()
 	if err := flags.Parse(args); err != nil {
-		return nil, fmt.Errorf("filed parsing flags: %w", err)
+		panic(fmt.Errorf("filed parsing flags: %w", err))
 	}
 
 	if err := viperInstance.BindPFlags(flags); err != nil {
-		return nil, fmt.Errorf("filed binding flags: %w", err)
+		panic(fmt.Errorf("filed binding flags: %w", err))
 	}
 
 	configuration := &UncorsConfig{
@@ -45,7 +45,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {
 		viperInstance.SetConfigFile(configPath)
 		if err := viperInstance.ReadInConfig(); err != nil {
-			return nil, fmt.Errorf("filed to read config file '%s': %w", configPath, err)
+			panic(fmt.Errorf("filed to read config file '%s': %w", configPath, err))
 		}
 	}
 
@@ -57,14 +57,14 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) (*UncorsConfig
 
 	setDefaultValues(viperInstance)
 	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
-		return nil, fmt.Errorf("filed parsing config: %w", err)
+		panic(fmt.Errorf("filed parsing config: %w", err))
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {
-		return nil, fmt.Errorf("recognize url mapping: %w", err)
+		panic(fmt.Errorf("recognize url mapping: %w", err))
 	}
 
-	return configuration, nil
+	return configuration
 }
 
 func defineFlags() *pflag.FlagSet {

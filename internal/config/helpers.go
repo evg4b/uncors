@@ -74,12 +74,12 @@ const (
 	httpsScheme = "https"
 )
 
-func NormaliseMappings(mappings Mappings, httpPort, httpsPort int, useHTTPS bool) (Mappings, error) {
+func NormaliseMappings(mappings Mappings, httpPort int, httpsPort int, useHTTPS bool) Mappings {
 	var processedMappings Mappings
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse source url: %w", err)
+			panic(fmt.Errorf("failed to parse source url: %w", err))
 		}
 
 		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
@@ -95,7 +95,7 @@ func NormaliseMappings(mappings Mappings, httpPort, httpsPort int, useHTTPS bool
 		}
 	}
 
-	return processedMappings, nil
+	return processedMappings
 }
 
 func assignPortAndScheme(parsedURL url.URL, scheme string, port int) string {

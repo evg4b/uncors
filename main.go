@@ -47,12 +47,9 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	uncorsConfig, err := cf.LoadConfiguration(viper.GetViper(), os.Args)
-	if err != nil {
-		panic(err)
-	}
+	uncorsConfig := cf.LoadConfiguration(viper.GetViper(), os.Args)
 
-	if err = cf.Validate(uncorsConfig); err != nil {
+	if err := cf.Validate(uncorsConfig); err != nil {
 		panic(err)
 	}
 
@@ -61,25 +58,15 @@ func main() {
 		log.Debug("Enabled debug messages")
 	}
 
-	mappings, err := cf.NormaliseMappings(
+	mappings := cf.NormaliseMappings(
 		uncorsConfig.Mappings,
 		uncorsConfig.HTTPPort,
 		uncorsConfig.HTTPSPort,
 		uncorsConfig.IsHTTPSEnabled(),
 	)
-	if err != nil {
-		panic(err)
-	}
 
-	factory, err := urlreplacer.NewURLReplacerFactory(mappings)
-	if err != nil {
-		panic(err)
-	}
-
-	httpClient, err := infra.MakeHTTPClient(viper.GetString("proxy"))
-	if err != nil {
-		panic(err)
-	}
+	factory := urlreplacer.NewURLReplacerFactory(mappings)
+	httpClient := infra.MakeHTTPClient(viper.GetString("proxy"))
 
 	cacheConfig := uncorsConfig.CacheConfig
 	cacheStorage := goCache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
