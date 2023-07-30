@@ -50,7 +50,7 @@
 - [X] File configuration - [PR](https://github.com/evg4b/uncors/pull/9)
 - [X] Stable NPM package deploying
 
-## [0.1.9 Release](https://github.com/evg4b/uncors/releases/tag/v0.1.0)
+## [0.1.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.1.0)
 
 - [X] Static file serving [PR](https://github.com/evg4b/uncors/pull/15)
 - [X] Own error page for uncors internal errors
@@ -58,8 +58,8 @@
 
 ## Next Release
 
-- [ ] Response caching
-- [ ] JSON Schema for config file
+- [X] Response caching [PR](https://github.com/evg4b/uncors/pull/17)
+- [X] JSON Schema for config file [PR](https://github.com/evg4b/uncors/pull/19)
 
 ## Future features
 
