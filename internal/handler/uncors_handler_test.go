@@ -80,12 +80,11 @@ func proxyFactory(
 	}
 }
 
-func staticFactory(t *testing.T, fs afero.Fs) handler.StaticHandlerFactory {
-	return func(path string, dir config.StaticDirectory, next contracts.Handler) contracts.Handler {
-		return static.NewStaticHandler(
+func staticFactory(t *testing.T, fs afero.Fs) handler.StaticMiddlewareFactory {
+	return func(path string, dir config.StaticDirectory) contracts.Middleware {
+		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithNext(next),
 			static.WithLogger(mocks.NewNoopLogger(t)),
 			static.WithPrefix(path),
 		)

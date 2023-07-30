@@ -103,11 +103,10 @@ func main() {
 				proxy.WithLogger(ui.ProxyLogger),
 			)
 		}),
-		handler.WithStaticHandlerFactory(func(path string, dir cf.StaticDirectory, next c.Handler) c.Handler {
-			return static.NewStaticHandler(
+		handler.WithStaticHandlerFactory(func(path string, dir cf.StaticDirectory) c.Middleware {
+			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 				static.WithIndex(dir.Index),
-				static.WithNext(next),
 				static.WithLogger(ui.StaticLogger),
 				static.WithPrefix(path),
 			)

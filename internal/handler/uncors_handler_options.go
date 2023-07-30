@@ -31,9 +31,9 @@ func WithProxyHandlerFactory(factory ProxyHandlerFactory) RequestHandlerOption {
 	}
 }
 
-func WithStaticHandlerFactory(factory StaticHandlerFactory) RequestHandlerOption {
+func WithStaticHandlerFactory(factory StaticMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
-		h.staticHandlerFactory = factory
+		h.staticMiddlewareFactory = factory
 	}
 }
 

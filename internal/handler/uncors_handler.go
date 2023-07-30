@@ -14,10 +14,10 @@ import (
 )
 
 type (
-	CacheMiddlewareFactory = func(globs config.CacheGlobs) contracts.Middleware
-	ProxyHandlerFactory    = func() contracts.Handler
-	StaticHandlerFactory   = func(path string, dir config.StaticDirectory, next contracts.Handler) contracts.Handler
-	MockHandlerFactory     = func(response config.Response) contracts.Handler
+	CacheMiddlewareFactory  = func(globs config.CacheGlobs) contracts.Middleware
+	ProxyHandlerFactory     = func() contracts.Handler
+	StaticMiddlewareFactory = func(path string, dir config.StaticDirectory) contracts.Middleware
+	MockHandlerFactory      = func(response config.Response) contracts.Handler
 )
 
 type RequestHandler struct {
@@ -26,10 +26,10 @@ type RequestHandler struct {
 	logger   contracts.Logger
 	mappings config.Mappings
 
-	cacheMiddlewareFactory CacheMiddlewareFactory
-	proxyHandlerFactory    ProxyHandlerFactory
-	staticHandlerFactory   StaticHandlerFactory
-	mockHandlerFactory     MockHandlerFactory
+	cacheMiddlewareFactory  CacheMiddlewareFactory
+	staticMiddlewareFactory StaticMiddlewareFactory
+	proxyHandlerFactory     ProxyHandlerFactory
+	mockHandlerFactory      MockHandlerFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")

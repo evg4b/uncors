@@ -27,7 +27,7 @@ const (
 	indexHTMLContent = "<html!></html>"
 )
 
-func TestMiddleware(t *testing.T) {
+func TestStaticMiddleware(t *testing.T) {
 	loggerMock := mocks.NewLoggerMock(t).
 		PrintResponseMock.Return()
 
@@ -99,14 +99,16 @@ func TestMiddleware(t *testing.T) {
 	t.Run("index file is not configured", func(t *testing.T) {
 		const testHTTPStatusCode = 999
 		const testHTTPBody = "this is tests response"
-		handler := static.NewStaticHandler(
+
+		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
-			static.WithNext(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
-				writer.WriteHeader(testHTTPStatusCode)
-				helpers.Fprint(writer, testHTTPBody)
-			})),
 		)
+
+		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
+			writer.WriteHeader(testHTTPStatusCode)
+			helpers.Fprint(writer, testHTTPBody)
+		}))
 
 		t.Run("return static content", func(t *testing.T) {
 			for _, testCase := range staticFileTests {
@@ -126,7 +128,7 @@ func TestMiddleware(t *testing.T) {
 			}
 		})
 
-		t.Run("forward request to next handler", func(t *testing.T) {
+		t.Run("forward request to next middleware", func(t *testing.T) {
 			for _, testCase := range notExistingFilesTests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := httptest.NewRecorder()
@@ -146,12 +148,13 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file is configured", func(t *testing.T) {
-		handler := static.NewStaticHandler(
+		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
 			static.WithLogger(loggerMock),
 			static.WithIndex(indexHTML),
-			static.WithNext(mocks.FailNowMock(t)),
 		)
+
+		handler := middleware.Wrap(mocks.FailNowMock(t))
 
 		t.Run("send index file", func(t *testing.T) {
 			for _, testCase := range staticFileTests {
@@ -171,7 +174,7 @@ func TestMiddleware(t *testing.T) {
 			}
 		})
 
-		t.Run("forward request to next handler", func(t *testing.T) {
+		t.Run("forward request to next middleware", func(t *testing.T) {
 			for _, testCase := range notExistingFilesTests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := httptest.NewRecorder()
@@ -190,12 +193,13 @@ func TestMiddleware(t *testing.T) {
 		})
 
 		t.Run("index file doesn't exists", func(t *testing.T) {
-			handler := static.NewStaticHandler(
+			middleware := static.NewStaticMiddleware(
 				static.WithFileSystem(fs),
 				static.WithLogger(loggerMock),
 				static.WithIndex("/not-exists.html"),
-				static.WithNext(mocks.FailNowMock(t)),
 			)
+
+			handler := middleware.Wrap(mocks.FailNowMock(t))
 
 			recorder := httptest.NewRecorder()
 			requestURI, err := url.Parse("/options/")

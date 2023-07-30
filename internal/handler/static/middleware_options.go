@@ -5,34 +5,28 @@ import (
 	"github.com/spf13/afero"
 )
 
-type HandlerOption = func(*Handler)
+type MiddlewareOption = func(*Middleware)
 
-func WithFileSystem(fs afero.Fs) HandlerOption {
-	return func(h *Handler) {
+func WithFileSystem(fs afero.Fs) MiddlewareOption {
+	return func(h *Middleware) {
 		h.fs = fs
 	}
 }
 
-func WithIndex(index string) HandlerOption {
-	return func(h *Handler) {
+func WithIndex(index string) MiddlewareOption {
+	return func(h *Middleware) {
 		h.index = index
 	}
 }
 
-func WithNext(next contracts.Handler) HandlerOption {
-	return func(h *Handler) {
-		h.next = next
-	}
-}
-
-func WithLogger(logger contracts.Logger) HandlerOption {
-	return func(h *Handler) {
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(h *Middleware) {
 		h.logger = logger
 	}
 }
 
-func WithPrefix(prefix string) HandlerOption {
-	return func(h *Handler) {
+func WithPrefix(prefix string) MiddlewareOption {
+	return func(h *Middleware) {
 		h.prefix = prefix
 	}
 }

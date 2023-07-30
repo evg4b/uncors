@@ -23,9 +23,10 @@ func (h *RequestHandler) makeStaticRoutes(
 			Handler(http.RedirectHandler(path, http.StatusTemporaryRedirect))
 
 		route := router.NewRoute()
-		handler := h.staticHandlerFactory(path, staticDir, next)
 
-		httpHandler := contracts.CastToHTTPHandler(handler)
+		middleware := h.staticMiddlewareFactory(path, staticDir)
+		httpHandler := contracts.CastToHTTPHandler(middleware.Wrap(next))
+
 		route.PathPrefix(path).Handler(httpHandler)
 	}
 }
