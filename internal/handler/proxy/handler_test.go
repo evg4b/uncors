@@ -22,10 +22,9 @@ import (
 )
 
 func TestProxyHandler(t *testing.T) {
-	replacerFactory, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
+	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: "http://premium.local.com", To: "https://premium.api.com"},
 	})
-	testutils.CheckNoError(t, err)
 
 	t.Run("should correctly replace headers in request to target resource", func(t *testing.T) {
 		tests := []struct {

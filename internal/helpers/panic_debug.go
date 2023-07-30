@@ -2,6 +2,9 @@
 
 package helpers
 
-func PanicInterceptor(_ func(any)) {
-	// stub method
+func PanicInterceptor(action func(any)) {
+	if recovered := recover(); recovered != nil {
+		action(recovered)
+		panic(recovered)
+	}
 }

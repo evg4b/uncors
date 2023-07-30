@@ -74,14 +74,13 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := config.NormaliseMappings(
+				actual := config.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
 					testCase.useHTTPS,
 				)
 
-				assert.NoError(t, err)
 				assert.EqualValues(t, testCase.expected, actual)
 			})
 		}
@@ -147,14 +146,13 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := config.NormaliseMappings(
+				actual := config.NormaliseMappings(
 					testCase.mappings,
 					httpPort,
 					httpsPort,
 					testCase.useHTTPS,
 				)
 
-				assert.NoError(t, err)
 				assert.EqualValues(t, testCase.expected, actual)
 			})
 		}
@@ -192,14 +190,14 @@ func TestNormaliseMappings(t *testing.T) {
 		}
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, err := config.NormaliseMappings(
-					testCase.mappings,
-					testCase.httpPort,
-					testCase.httpsPort,
-					testCase.useHTTPS,
-				)
-
-				assert.EqualError(t, err, testCase.expectedErr)
+				assert.PanicsWithError(t, testCase.expectedErr, func() {
+					config.NormaliseMappings(
+						testCase.mappings,
+						testCase.httpPort,
+						testCase.httpsPort,
+						testCase.useHTTPS,
+					)
+				})
 			})
 		}
 	})
