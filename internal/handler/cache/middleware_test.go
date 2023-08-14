@@ -189,6 +189,12 @@ func TestCacheMiddleware(t *testing.T) {
 
 		wrappedHandler := middleware.Wrap(handler)
 
+		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+			writer.WriteHeader(http.StatusOK)
+			testutils.CopyHeaders(expectedHeader, writer.Header())
+			helpers.Fprintf(writer, request.Method)
+		})
+
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("https://test-host-%d.com:4200/api/test", index)
@@ -202,5 +208,38 @@ func TestCacheMiddleware(t *testing.T) {
 		})
 
 		assert.Equal(t, count, handler.Count())
+	})
+
+	t.Run("should not cache response between different methods matched by one rule", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut}
+		handler.Reset()
+
+		middleware := cache.NewMiddleware(
+			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
+			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithMethods(methods),
+			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
+		)
+
+		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+			writer.WriteHeader(http.StatusOK)
+			testutils.CopyHeaders(expectedHeader, writer.Header())
+			helpers.Fprintf(writer, request.Method)
+		})
+
+		wrappedHandler := middleware.Wrap(handler)
+
+		for _, method := range methods {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(method, "https://test-host.com:4200/api/test", nil)
+			wrappedHandler.ServeHTTP(
+				contracts.WrapResponseWriter(recorder),
+				request,
+			)
+			assert.Equal(t, expectedHeader, recorder.Header())
+			assert.Equal(t, method, testutils.ReadBody(t, recorder))
+		}
+
+		assert.Equal(t, len(methods), handler.Count())
 	})
 }
