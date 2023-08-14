@@ -46,7 +46,7 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
-	cacheKey := m.extractCacheKey(request.URL)
+	cacheKey := m.extractCacheKey(request.Method, request.URL)
 	m.logger.Debugf("extracted %s from request", cacheKey)
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 		m.logger.Debugf("extracted %s from request", cacheKey)
@@ -94,7 +94,7 @@ func (m *Middleware) isCacheableRequest(request *contracts.Request) bool {
 	})
 }
 
-func (m *Middleware) extractCacheKey(url *url.URL) string {
+func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 	values := url.Query()
 	items := make([]string, 0, len(values))
 	for key, value := range values {
@@ -105,7 +105,7 @@ func (m *Middleware) extractCacheKey(url *url.URL) string {
 
 	sort.Strings(items)
 
-	return helpers.Sprintf("[%s]%s?%s", url.Hostname(), url.Path, strings.Join(items, ";"))
+	return helpers.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
