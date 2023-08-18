@@ -144,3 +144,8 @@ More information about configuration and usage you can fiund on [UNCORS wiki](ht
 # ⚠️ Caution 
 
 Please note that removing or replacing CORS headers can pose potential security vulnerabilities. This tool is specifically designed to streamline the development and testing workflow and should not be used in a production environment or as a remote proxy server. It has not undergone a thorough security review, so caution should be exercised when utilizing it.
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/evg4b/uncors.svg)](https://starchart.cc/evg4b/uncors)
+
