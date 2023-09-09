@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -28,11 +29,18 @@ import (
 )
 
 type App struct {
-	fs          afero.Fs
-	version     string
-	baseAddress string
-	finisher    finish.Finisher
+	fs           afero.Fs
+	version      string
+	baseAddress  string
+	finisher     finish.Finisher
+	waitGroup    sync.WaitGroup
+	httpMutex    sync.Mutex
+	httpsMutex   sync.Mutex
+	server       *server.UncorsServer
+	serverToStop *server.UncorsServer
 }
+
+const DefaultTimeout = 10 * time.Second
 
 func CreateApp(fs afero.Fs, version string, baseAddress string) *App {
 	return &App{
@@ -47,6 +55,17 @@ func CreateApp(fs afero.Fs, version string, baseAddress string) *App {
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
+	log.Print(ui.Logo(app.version))
+	log.Print("\n")
+	log.Warning(ui.DisclaimerMessage)
+	log.Print("\n")
+	log.Info(uncorsConfig.Mappings.String())
+	log.Print("\n")
+
+	app.initServer(ctx, uncorsConfig)
+}
+
+func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(uncorsConfig.Mappings),
 		handler.WithLogger(ui.MockLogger),
@@ -89,39 +108,68 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 		}),
 	)
 
-	uncorsServer := server.NewUncorsServer(ctx, globalHandler)
-
-	log.Print(ui.Logo(app.version))
-	log.Print("\n")
-	log.Warning(ui.DisclaimerMessage)
-	log.Print("\n")
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
-
-	app.finisher.Add(uncorsServer)
-
+	app.server = server.NewUncorsServer(ctx, globalHandler)
+	app.waitGroup.Add(1)
 	go func() {
-		defer app.finisher.Trigger()
+		defer app.waitGroup.Done()
+		defer app.httpMutex.Unlock()
+
+		app.httpMutex.Lock()
 		log.Debugf("Starting http server on port %d", uncorsConfig.HTTPPort)
 		addr := net.JoinHostPort(app.baseAddress, strconv.Itoa(uncorsConfig.HTTPPort))
-		err := uncorsServer.ListenAndServe(addr)
+		err := app.server.ListenAndServe(addr)
 		handleHTTPServerError("HTTP", err)
 	}()
 
 	if uncorsConfig.IsHTTPSEnabled() {
 		log.Debug("Found cert file and key file. Https server will be started")
 		addr := net.JoinHostPort(app.baseAddress, strconv.Itoa(uncorsConfig.HTTPSPort))
+		app.waitGroup.Add(1)
 		go func() {
-			defer app.finisher.Trigger()
+			defer app.waitGroup.Done()
+			defer app.httpsMutex.Unlock()
+
+			app.httpsMutex.Lock()
 			log.Debugf("Starting https server on port %d", uncorsConfig.HTTPSPort)
-			err := uncorsServer.ListenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
+			err := app.server.ListenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
 			handleHTTPServerError("HTTPS", err)
 		}()
 	}
+}
 
-	app.finisher.Wait()
+func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
+	app.serverToStop = app.server
+	app.initServer(ctx, uncorsConfig)
+	internalShutdown(app.serverToStop)
+}
 
+func (app *App) Wait() {
+	app.waitGroup.Wait()
 	log.Info("Server was stopped")
+}
+
+func (app *App) Stop() {
+	internalShutdown(app.server)
+	internalShutdown(app.serverToStop)
+}
+
+func internalShutdown(server *server.UncorsServer) {
+	if server == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	err := server.Shutdown(ctx)
+	if err != nil {
+		if err == context.DeadlineExceeded {
+			log.Errorf("finish: shutdown timeout")
+		} else {
+			log.Errorf("finish: error while shutting down %s: %s", err)
+		}
+	} else {
+		log.Debug("finish: %s closed")
+	}
 }
 
 func handleHTTPServerError(serverName string, err error) {

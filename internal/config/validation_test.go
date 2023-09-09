@@ -23,7 +23,7 @@ func TestValidate(t *testing.T) {
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := config.Validate(testCase.config)
+			err := config.validate(testCase.config)
 
 			assert.EqualError(t, err, testCase.expected)
 		})

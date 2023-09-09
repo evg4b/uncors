@@ -71,6 +71,10 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		configuration.IsHTTPSEnabled(),
 	)
 
+	if err := validate(configuration); err != nil {
+		panic(err)
+	}
+
 	return configuration
 }
 

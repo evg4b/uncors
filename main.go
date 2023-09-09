@@ -1,9 +1,10 @@
 package main
 
 import (
+	"github.com/fsnotify/fsnotify"
 	"os"
 
-	cf "github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
@@ -32,21 +33,26 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	viperInstance := viper.GetViper()
-	uncorsConfig := cf.LoadConfiguration(viperInstance, os.Args)
-
-	if err := cf.Validate(uncorsConfig); err != nil {
-		panic(err)
-	}
-
-	if uncorsConfig.Debug {
-		log.EnableDebugMessages()
-		log.Debug("Enabled debug messages")
-	}
+	uncorsConfig := loadConfiguration()
 
 	fs := afero.NewOsFs()
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version, baseAddress)
+	viper.OnConfigChange(func(in fsnotify.Event) {
+		app.Restart(ctx, loadConfiguration())
+	})
+	viper.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 	app.Start(ctx, uncorsConfig)
+	app.Wait()
+}
+
+func loadConfiguration() *config.UncorsConfig {
+	viperInstance := viper.GetViper()
+	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
+	if uncorsConfig.Debug {
+		log.EnableDebugMessages()
+		log.Debug("Enabled debug messages")
+	}
+	return uncorsConfig
 }
