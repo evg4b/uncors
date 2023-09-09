@@ -1,16 +1,16 @@
 package config_test
 
 import (
-	"net/http"
-	"testing"
-	"time"
-
+	"fmt"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"testing"
+	"time"
 )
 
 const acceptEncoding = "accept-encoding"
@@ -111,7 +111,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  8080,
 					HTTPSPort: 443,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 					},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
@@ -126,9 +126,9 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 						{
-							From: testconstants.HTTPLocalhost2,
+							From: testconstants.HTTPLocalhost2WithPort(8080),
 							To:   testconstants.HTTPSStackoverflow,
 							Mocks: config.Mocks{
 								{
@@ -178,9 +178,9 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 						{
-							From: testconstants.HTTPLocalhost2,
+							From: testconstants.HTTPLocalhost2WithPort(8080),
 							To:   testconstants.HTTPSStackoverflow,
 							Mocks: config.Mocks{
 								{
@@ -203,9 +203,12 @@ func TestLoadConfiguration(t *testing.T) {
 								},
 							},
 						},
-						{From: testconstants.SourceHost1, To: testconstants.TargetHost1},
-						{From: testconstants.SourceHost2, To: testconstants.TargetHost2},
-						{From: testconstants.SourceHost3, To: testconstants.TargetHost3},
+						{From: fmt.Sprintf("http://%s:8080", testconstants.SourceHost1), To: testconstants.TargetHost1},
+						{From: fmt.Sprintf("https://%s:8081", testconstants.SourceHost1), To: testconstants.TargetHost1},
+						{From: fmt.Sprintf("http://%s:8080", testconstants.SourceHost2), To: testconstants.TargetHost2},
+						{From: fmt.Sprintf("https://%s:8081", testconstants.SourceHost2), To: testconstants.TargetHost2},
+						{From: fmt.Sprintf("http://%s:8080", testconstants.SourceHost3), To: testconstants.TargetHost3},
+						{From: fmt.Sprintf("https://%s:8081", testconstants.SourceHost3), To: testconstants.TargetHost3},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,

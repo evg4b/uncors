@@ -64,6 +64,13 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		panic(fmt.Errorf("recognize url mapping: %w", err))
 	}
 
+	configuration.Mappings = NormaliseMappings(
+		configuration.Mappings,
+		configuration.HTTPPort,
+		configuration.HTTPSPort,
+		configuration.IsHTTPSEnabled(),
+	)
+
 	return configuration
 }
 
