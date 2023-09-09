@@ -47,15 +47,13 @@ func CreateApp(fs afero.Fs, version string, baseAddress string) *App {
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
-	httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
-	cacheConfig := uncorsConfig.CacheConfig
-	cacheStorage := goCache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
-
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(uncorsConfig.Mappings),
 		handler.WithLogger(ui.MockLogger),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+			cacheConfig := uncorsConfig.CacheConfig
+			cacheStorage := goCache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
+
 			return cache.NewMiddleware(
 				cache.WithLogger(ui.CacheLogger),
 				cache.WithMethods(cacheConfig.Methods),
@@ -64,6 +62,9 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 			)
 		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
+			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
+			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
+
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),
 				proxy.WithHTTPClient(httpClient),
