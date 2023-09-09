@@ -33,26 +33,28 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	uncorsConfig := loadConfiguration()
+	viperInstance := viper.GetViper()
+	uncorsConfig := loadConfiguration(viperInstance)
 
 	fs := afero.NewOsFs()
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version, baseAddress)
-	viper.OnConfigChange(func(in fsnotify.Event) {
-		app.Restart(ctx, loadConfiguration())
+	viperInstance.OnConfigChange(func(in fsnotify.Event) {
+		app.Restart(ctx, loadConfiguration(viperInstance))
 	})
-	viper.WatchConfig()
+	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 	app.Start(ctx, uncorsConfig)
 	app.Wait()
 }
 
-func loadConfiguration() *config.UncorsConfig {
-	viperInstance := viper.GetViper()
+func loadConfiguration(viperInstance *viper.Viper) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
 	if uncorsConfig.Debug {
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
 	}
+
+	viperInstance.WatchConfig()
 	return uncorsConfig
 }

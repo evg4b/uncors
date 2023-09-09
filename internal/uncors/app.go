@@ -29,15 +29,14 @@ import (
 )
 
 type App struct {
-	fs           afero.Fs
-	version      string
-	baseAddress  string
-	finisher     finish.Finisher
-	waitGroup    sync.WaitGroup
-	httpMutex    sync.Mutex
-	httpsMutex   sync.Mutex
-	server       *server.UncorsServer
-	serverToStop *server.UncorsServer
+	fs          afero.Fs
+	version     string
+	baseAddress string
+	finisher    finish.Finisher
+	waitGroup   sync.WaitGroup
+	httpMutex   sync.Mutex
+	httpsMutex  sync.Mutex
+	server      *server.UncorsServer
 }
 
 const DefaultTimeout = 10 * time.Second
@@ -138,9 +137,15 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	app.serverToStop = app.server
+	defer app.waitGroup.Done()
+	app.waitGroup.Add(1)
+	log.Print("\n")
+	log.Info("Restarting server....")
+	log.Print("\n")
+	internalShutdown(app.server)
+	log.Info(uncorsConfig.Mappings.String())
+	log.Print("\n")
 	app.initServer(ctx, uncorsConfig)
-	internalShutdown(app.serverToStop)
 }
 
 func (app *App) Wait() {
@@ -150,7 +155,6 @@ func (app *App) Wait() {
 
 func (app *App) Stop() {
 	internalShutdown(app.server)
-	internalShutdown(app.serverToStop)
 }
 
 func internalShutdown(server *server.UncorsServer) {
