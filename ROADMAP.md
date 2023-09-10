@@ -52,14 +52,15 @@
 
 ## [0.1.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.1.0)
 
-- [X] Static file serving [PR](https://github.com/evg4b/uncors/pull/15)
+- [X] Static file serving - [PR](https://github.com/evg4b/uncors/pull/15)
 - [X] Own error page for uncors internal errors
-- [X] Separated mock for each url mapping [PR](https://github.com/evg4b/uncors/pull/16)
+- [X] Separated mock for each url mapping - [PR](https://github.com/evg4b/uncors/pull/16)
 
 ## Next Release
 
-- [X] Response caching [PR](https://github.com/evg4b/uncors/pull/17)
-- [X] JSON Schema for config file [PR](https://github.com/evg4b/uncors/pull/19)
+- [X] Response caching - [PR](https://github.com/evg4b/uncors/pull/17)
+- [X] JSON Schema for config file - [PR](https://github.com/evg4b/uncors/pull/19)
+- [ ] Automatically reload the server after configuration changes - [PR](https://github.com/evg4b/uncors/pull/22)
 
 ## Future features
 
