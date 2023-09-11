@@ -48,10 +48,6 @@ func (srv *UncorsServer) ListenAndServe(addr string) error {
 		return http.ErrServerClosed
 	}
 
-	if addr == "" {
-		addr = ":http"
-	}
-
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
@@ -60,6 +56,7 @@ func (srv *UncorsServer) ListenAndServe(addr string) error {
 	defer listener.Close()
 
 	srv.Addr = listener.Addr().String()
+
 	err = srv.Serve(listener)
 	if err != nil {
 		srv.internalShutdown()
@@ -71,10 +68,6 @@ func (srv *UncorsServer) ListenAndServe(addr string) error {
 func (srv *UncorsServer) ListenAndServeTLS(addr string, certFile, keyFile string) error {
 	if srv.shuttingDown() {
 		return http.ErrServerClosed
-	}
-
-	if addr == "" {
-		addr = ":https"
 	}
 
 	listener, err := net.Listen("tcp", addr)

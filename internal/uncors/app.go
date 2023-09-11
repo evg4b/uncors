@@ -37,8 +37,9 @@ type App struct {
 }
 
 const DefaultTimeout = 10 * time.Second
+const baseAddress = "127.0.0.1"
 
-func CreateApp(fs afero.Fs, version string, baseAddress string) *App {
+func CreateApp(fs afero.Fs, version string) *App {
 	return &App{
 		fs:          fs,
 		version:     version,

@@ -21,8 +21,6 @@ import (
 
 var Version = "X.X.X"
 
-const baseAddress = "127.0.0.1"
-
 func main() {
 	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
@@ -40,7 +38,7 @@ func main() {
 
 	fs := afero.NewOsFs()
 	ctx := context.Background()
-	app := uncors.CreateApp(fs, Version, baseAddress)
+	app := uncors.CreateApp(fs, Version)
 	viperInstance.OnConfigChange(func(in fsnotify.Event) {
 		app.Restart(ctx, loadConfiguration(viperInstance))
 	})
