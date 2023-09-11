@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -23,7 +22,6 @@ import (
 	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	goCache "github.com/patrickmn/go-cache"
-	"github.com/pseidemann/finish"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -32,7 +30,6 @@ type App struct {
 	fs          afero.Fs
 	version     string
 	baseAddress string
-	finisher    finish.Finisher
 	waitGroup   sync.WaitGroup
 	httpMutex   sync.Mutex
 	httpsMutex  sync.Mutex
@@ -46,10 +43,6 @@ func CreateApp(fs afero.Fs, version string, baseAddress string) *App {
 		fs:          fs,
 		version:     version,
 		baseAddress: baseAddress,
-		finisher: finish.Finisher{
-			Log:     infra.NoopLogger{},
-			Signals: append(finish.DefaultSignals, syscall.SIGHUP),
-		},
 	}
 }
 
@@ -142,7 +135,11 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	log.Print("\n")
 	log.Info("Restarting server....")
 	log.Print("\n")
-	internalShutdown(app.server)
+	err := internalShutdown(ctx, app.server)
+	if err != nil {
+		panic(err) // TODO: refactor this error handling
+	}
+
 	log.Info(uncorsConfig.Mappings.String())
 	log.Print("\n")
 	app.initServer(ctx, uncorsConfig)
@@ -153,27 +150,31 @@ func (app *App) Wait() {
 	log.Info("Server was stopped")
 }
 
-func (app *App) Stop() {
-	internalShutdown(app.server)
+func (app *App) Shutdown(ctx context.Context) error {
+	return internalShutdown(ctx, app.server)
 }
 
-func internalShutdown(server *server.UncorsServer) {
+func internalShutdown(rootCtx context.Context, server *server.UncorsServer) error {
 	if server == nil {
-		return
+		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(rootCtx, DefaultTimeout)
 	defer cancel()
-	err := server.Shutdown(ctx)
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			log.Errorf("finish: shutdown timeout")
+
+	if err := server.Shutdown(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Errorf("shutdown timeout")
 		} else {
-			log.Errorf("finish: error while shutting down %s: %s", err)
+			log.Errorf("error while shutting down: %s", err)
 		}
-	} else {
-		log.Debug("finish: %s closed")
+
+		return err
 	}
+
+	log.Debug("server closed")
+
+	return nil
 }
 
 func handleHTTPServerError(serverName string, err error) {

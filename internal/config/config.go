@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/evg4b/uncors/internal/helpers"
 	"sync"
+
+	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
@@ -15,12 +16,14 @@ const (
 	defaultHTTPSPort = 443
 )
 
-var flagsOnceGuard = sync.Once{}
-var flags *pflag.FlagSet
+var (
+	flagsOnceGuard = sync.Once{}
+	flags          *pflag.FlagSet
+)
 
 type UncorsConfig struct {
-	HTTPPort    int         `mapstructure:"http-port"    validate:"required"`
-	Mappings    Mappings    `mapstructure:"mappings"     validate:"required"`
+	HTTPPort    int         `mapstructure:"http-port"    Validate:"required"`
+	Mappings    Mappings    `mapstructure:"mappings"     Validate:"required"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	HTTPSPort   int         `mapstructure:"https-port"`
@@ -77,7 +80,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		configuration.IsHTTPSEnabled(),
 	)
 
-	if err := validate(configuration); err != nil {
+	if err := Validate(configuration); err != nil {
 		panic(err)
 	}
 

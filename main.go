@@ -1,8 +1,10 @@
 package main
 
 import (
-	"github.com/fsnotify/fsnotify"
 	"os"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -33,17 +35,19 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	uncorsConfig := loadConfiguration(viper.GetViper())
+	viperInstance := viper.GetViper()
+	uncorsConfig := loadConfiguration(viperInstance)
 
 	fs := afero.NewOsFs()
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version, baseAddress)
-	viper.OnConfigChange(func(in fsnotify.Event) {
-		app.Restart(ctx, loadConfiguration(viper.GetViper()))
+	viperInstance.OnConfigChange(func(in fsnotify.Event) {
+		app.Restart(ctx, loadConfiguration(viperInstance))
 	})
-	viper.WatchConfig()
+	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 	app.Start(ctx, uncorsConfig)
+	go uncors.GracefulShutdown(ctx, 5*time.Second, app.Shutdown)
 	app.Wait()
 }
 

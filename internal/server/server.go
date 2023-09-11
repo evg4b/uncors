@@ -116,11 +116,11 @@ func (srv *UncorsServer) internalShutdown() {
 	err := srv.Shutdown(ctx)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Errorf("finish: shutdown timeout for UNCORS server")
+			log.Errorf("shutdown timeout for UNCORS server")
 		} else {
-			log.Errorf("finish: error while shutting down UNCORS server: %s", err)
+			log.Errorf("error while shutting down UNCORS server: %s", err)
 		}
 	} else {
-		log.Debug("finish: UNCORS server closed")
+		log.Debug("UNCORS server closed")
 	}
 }
