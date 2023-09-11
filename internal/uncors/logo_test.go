@@ -3,7 +3,6 @@ package uncors_test
 import (
 	"testing"
 
-
 	"github.com/evg4b/uncors/internal/uncors"
 
 	"github.com/pterm/pterm"

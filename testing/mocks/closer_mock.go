@@ -90,7 +90,7 @@ func (mmClose *mCloserMockClose) Return(err error) *CloserMock {
 	return mmClose.mock
 }
 
-//Set uses given function f to mock the Closer.Close method
+// Set uses given function f to mock the Closer.Close method
 func (mmClose *mCloserMockClose) Set(f func() (err error)) *CloserMock {
 	if mmClose.defaultExpectation != nil {
 		mmClose.mock.t.Fatalf("Default expectation is already set for the Closer.Close method")

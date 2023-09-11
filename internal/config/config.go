@@ -22,8 +22,8 @@ var (
 )
 
 type UncorsConfig struct {
-	HTTPPort    int         `mapstructure:"http-port"    Validate:"required"`
-	Mappings    Mappings    `mapstructure:"mappings"     Validate:"required"`
+	HTTPPort    int         `Validate:"required"         mapstructure:"http-port"`
+	Mappings    Mappings    `Validate:"required"         mapstructure:"mappings"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	HTTPSPort   int         `mapstructure:"https-port"`
