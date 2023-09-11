@@ -1,9 +1,11 @@
-package ui_test
+package uncors_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/ui"
+
+	"github.com/evg4b/uncors/internal/uncors"
+
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,6 +47,6 @@ var expectedLogo = []byte{
 
 func TestLogo(t *testing.T) {
 	pterm.DisableColor()
-	logo := ui.Logo("X.Y.Z")
+	logo := uncors.Logo("X.Y.Z")
 	assert.Equal(t, expectedLogo, []byte(logo))
 }

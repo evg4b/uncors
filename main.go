@@ -1,8 +1,8 @@
+// nolint: wrapcheck
 package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -10,7 +10,6 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/log"
-	"github.com/evg4b/uncors/internal/ui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
@@ -28,7 +27,7 @@ func main() {
 	})
 
 	pflag.Usage = func() {
-		ui.Logo(Version)
+		uncors.Logo(Version)
 		helpers.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
@@ -45,7 +44,16 @@ func main() {
 	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 	app.Start(ctx, uncorsConfig)
-	go uncors.GracefulShutdown(ctx, 5*time.Second, app.Shutdown)
+	go func() {
+		shutdownErr := helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
+			log.Debug("shutdown signal received")
+
+			return app.Shutdown(shutdownCtx)
+		})
+		if shutdownErr != nil {
+			panic(shutdownErr)
+		}
+	}()
 	app.Wait()
 }
 
