@@ -22,11 +22,11 @@ import (
 type App struct {
 	fs            afero.Fs
 	version       string
-	waitGroup     sync.WaitGroup
-	httpMutex     sync.Mutex
-	httpsMutex    sync.Mutex
+	waitGroup     *sync.WaitGroup
+	httpMutex     *sync.Mutex
+	httpsMutex    *sync.Mutex
 	server        *http.Server
-	shuttingDown  atomic.Bool
+	shuttingDown  *atomic.Bool
 	httpListener  net.Listener
 	httpsListener net.Listener
 	cache         appCache
@@ -39,7 +39,14 @@ const (
 )
 
 func CreateApp(fs afero.Fs, version string) *App {
-	return &App{fs: fs, version: version}
+	return &App{
+		fs:           fs,
+		version:      version,
+		waitGroup:    &sync.WaitGroup{},
+		httpMutex:    &sync.Mutex{},
+		httpsMutex:   &sync.Mutex{},
+		shuttingDown: &atomic.Bool{},
+	}
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
@@ -54,6 +61,7 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 }
 
 func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfig) {
+	app.shuttingDown.Store(false)
 	app.server = app.createServer(ctx, uncorsConfig)
 
 	app.waitGroup.Add(1)

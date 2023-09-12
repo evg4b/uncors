@@ -18,14 +18,14 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 
 	log.Debug("uncors: shutting down ...")
 
-	if err := app.Shutdown(ctx); err != nil {
+	if err := app.server.Shutdown(ctx); err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Errorf("shutdown timeout for UNCORS server")
 		} else {
 			log.Errorf("error while shutting down UNCORS server: %s", err)
 		}
 
-		return err
+		return err // nolint: wrapcheck
 	}
 
 	log.Debug("UNCORS server closed")
