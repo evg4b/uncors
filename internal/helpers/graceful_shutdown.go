@@ -8,9 +8,11 @@ import (
 	"syscall"
 )
 
+var notifyFn = signal.Notify
+
 func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context) error) error {
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	notifyFn(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	select {
 	case sig := <-stop:
