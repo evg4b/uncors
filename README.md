@@ -9,29 +9,29 @@
 </p>
 <p align="center">
   <a href="https://go.dev">
-    <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/evg4b/uncors">
+    <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/evg4b/uncors/develop?label=go">
   </a>
-  <a href="https://github.com/evg4b/uncors/releases/latest">
-    <img alt="GitHub version" src="https://img.shields.io/github/v/tag/evg4b/uncors?label=version">
+  <a href="#">
+    <img alt="GitHub version" src="https://img.shields.io/badge/version-%40next-blue">
   </a>
-    <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
-        <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license">
-    </a>
-    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-        <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage">
-    </a>
-    <a href="https://goreportcard.com/report/github.com/evg4b/uncors">
-        <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evg4b/uncors">
-    </a>
-    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-        <img alt="Reliability Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=reliability_rating">
-    </a>
-    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-        <img alt="Security Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=security_rating">
-    </a>
-    <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-        <img alt="Lines of Code" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=ncloc">
-    </a>
+  <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license&branch=develop">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
+    <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage&branch=develop">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/evg4b/uncors">
+    <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evg4b/uncors">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
+    <img alt="Reliability Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=reliability_rating&branch=develop">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
+    <img alt="Security Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=security_rating&branch=develop">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
+    <img alt="Lines of Code" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=ncloc&branch=develop">
+  </a>
 </p>
 
 # Core features
@@ -99,11 +99,13 @@ uncors --from 'http://localhost' --to 'https://github.com' --http-port 8080
 
 More information about configuration and usage you can find on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
 
-# ⚠️ Caution 
+# ⚠️ Caution
 
-Please note that removing or replacing CORS headers can pose potential security vulnerabilities. This tool is specifically designed to streamline the development and testing workflow and should not be used in a production environment or as a remote proxy server. It has not undergone a thorough security review, so caution should be exercised when utilizing it.
+Please note that removing or replacing CORS headers can pose potential security vulnerabilities. This tool is
+specifically designed to streamline the development and testing workflow and should not be used in a production
+environment or as a remote proxy server. It has not undergone a thorough security review, so caution should be exercised
+when utilizing it.
 
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/evg4b/uncors.svg)](https://starchart.cc/evg4b/uncors)
-
