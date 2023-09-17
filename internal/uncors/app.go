@@ -133,7 +133,6 @@ func (app *App) Close() error {
 
 func (app *App) Wait() {
 	app.waitGroup.Wait()
-	log.Info("Server was stopped")
 }
 
 func (app *App) Shutdown(ctx context.Context) error {

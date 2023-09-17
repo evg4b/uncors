@@ -38,6 +38,10 @@ func main() {
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version)
 	viperInstance.OnConfigChange(func(in fsnotify.Event) {
+		defer helpers.PanicInterceptor(func(value any) {
+			log.Errorf("Config reloading value %v", value)
+		})
+
 		app.Restart(ctx, loadConfiguration(viperInstance))
 	})
 	viperInstance.WatchConfig()
@@ -54,6 +58,7 @@ func main() {
 		}
 	}()
 	app.Wait()
+	log.Info("Server was stopped")
 }
 
 func loadConfiguration(viperInstance *viper.Viper) *config.UncorsConfig {
