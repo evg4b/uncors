@@ -24,5 +24,7 @@ func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context
 		return nil
 	}
 
+	close(stop)
+
 	return shutdownFunc(ctx)
 }

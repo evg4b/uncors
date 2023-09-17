@@ -2,7 +2,10 @@ package helpers
 
 import (
 	"context"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,5 +59,33 @@ func TestGracefulShutdown(t *testing.T) {
 		})
 
 		cancel()
+	}))
+
+	t.Run("shutdown after system signal", WithGoroutines(func(t *testing.T, env Env) {
+		var systemSig chan<- os.Signal
+
+		notifyFn = func(c chan<- os.Signal, sig ...os.Signal) {
+			systemSig = c
+		}
+
+		t.Cleanup(func() {
+			notifyFn = signal.Notify
+		})
+
+		called := false
+		env.Go(func() {
+			err := GracefulShutdown(context.Background(), func(ctx context.Context) error {
+				called = true
+
+				return nil
+			})
+			assert.NoError(t, err)
+		})
+
+		env.CheckAfterAll(func() {
+			assert.True(t, called)
+		})
+
+		systemSig <- syscall.SIGTERM
 	}))
 }
