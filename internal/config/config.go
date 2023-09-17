@@ -14,8 +14,8 @@ const (
 )
 
 type UncorsConfig struct {
-	HTTPPort    int         `mapstructure:"http-port" validate:"required"`
-	Mappings    Mappings    `mapstructure:"mappings" validate:"required"`
+	HTTPPort    int         `mapstructure:"http-port"    validate:"required"`
+	Mappings    Mappings    `mapstructure:"mappings"     validate:"required"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	HTTPSPort   int         `mapstructure:"https-port"`

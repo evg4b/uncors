@@ -178,7 +178,6 @@ func TestCacheMiddleware(t *testing.T) {
 
 	t.Run("should not cache response between different hosts matched by one rule", func(t *testing.T) {
 		const count = 5
-		handler.Reset()
 
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
@@ -187,13 +186,13 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 		)
 
-		wrappedHandler := middleware.Wrap(handler)
-
 		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
-			helpers.Fprintf(writer, request.Method)
+			helpers.Fprintf(writer, expectedBody)
 		})
+
+		wrappedHandler := middleware.Wrap(handler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
