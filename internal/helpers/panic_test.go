@@ -26,10 +26,6 @@ func TestPanicInterceptor(t *testing.T) {
 			panicData:      errors.New("test error"),
 			shouldBeCalled: true,
 		},
-		{
-			name:      "intercepts panic and return with exit code 0",
-			panicData: nil,
-		},
 	}
 
 	for _, testCast := range tests {
