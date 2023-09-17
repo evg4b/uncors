@@ -2,29 +2,42 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-var notifyFn = signal.Notify
+var (
+	notifyFn  = signal.Notify
+	sigintFix = func() {
+		// fix prints after "^C"
+		println("") // nolint:forbidigo
+	}
+)
 
 func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context) error) error {
+	if done := waiteSignal(ctx); done {
+		return nil
+	}
+
+	return shutdownFunc(ctx)
+}
+
+func waiteSignal(ctx context.Context) bool {
 	stop := make(chan os.Signal, 1)
+
 	notifyFn(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	defer close(stop)
 
 	select {
 	case sig := <-stop:
 		if sig == syscall.SIGINT {
-			// fix prints after "^C"
-			fmt.Println("") // nolint:forbidigo
+			sigintFix()
 		}
 	case <-ctx.Done():
-		return nil
+		return true
 	}
 
-	close(stop)
-
-	return shutdownFunc(ctx)
+	return false
 }
