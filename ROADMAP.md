@@ -60,7 +60,7 @@
 
 - [X] Response caching - [PR](https://github.com/evg4b/uncors/pull/17)
 - [X] JSON Schema for config file - [PR](https://github.com/evg4b/uncors/pull/19)
-- [ ] Automatically reload the server after configuration changes - [PR](https://github.com/evg4b/uncors/pull/22)
+- [X] Automatically reload the server after configuration changes - [PR](https://github.com/evg4b/uncors/pull/22)
 
 ## Future features
 
