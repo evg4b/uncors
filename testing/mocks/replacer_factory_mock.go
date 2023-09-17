@@ -111,7 +111,7 @@ func (mmMake *mReplacerFactoryMockMake) Return(rp1 *mm_urlreplacer.Replacer, rp2
 	return mmMake.mock
 }
 
-//Set uses given function f to mock the ReplacerFactory.Make method
+// Set uses given function f to mock the ReplacerFactory.Make method
 func (mmMake *mReplacerFactoryMockMake) Set(f func(requestURL *url.URL) (rp1 *mm_urlreplacer.Replacer, rp2 *mm_urlreplacer.Replacer, err error)) *ReplacerFactoryMock {
 	if mmMake.defaultExpectation != nil {
 		mmMake.mock.t.Fatalf("Default expectation is already set for the ReplacerFactory.Make method")

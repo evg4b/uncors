@@ -2,7 +2,6 @@ __debug_bin
 server.key
 server.crt
 dist/
-uncors
 .idea
 node_modules
 .uncors.yaml

@@ -1,4 +1,4 @@
-package ui
+package uncors
 
 import (
 	"strings"

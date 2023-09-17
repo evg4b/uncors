@@ -75,7 +75,7 @@ const (
 )
 
 func NormaliseMappings(mappings Mappings, httpPort int, httpsPort int, useHTTPS bool) Mappings {
-	var processedMappings Mappings
+	processedMappings := Mappings{}
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
 		if err != nil {

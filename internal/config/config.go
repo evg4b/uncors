@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 
+	"github.com/evg4b/uncors/internal/helpers"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -12,6 +14,8 @@ const (
 	defaultHTTPPort  = 80
 	defaultHTTPSPort = 443
 )
+
+var flags *pflag.FlagSet
 
 type UncorsConfig struct {
 	HTTPPort    int         `mapstructure:"http-port"    validate:"required"`
@@ -29,7 +33,8 @@ func (c *UncorsConfig) IsHTTPSEnabled() bool {
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
-	flags := defineFlags()
+	defineFlags()
+	helpers.AssertIsDefined(flags)
 	if err := flags.Parse(args); err != nil {
 		panic(fmt.Errorf("filed parsing flags: %w", err))
 	}
@@ -61,14 +66,25 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {
-		panic(fmt.Errorf("recognize url mapping: %w", err))
+		panic(err)
+	}
+
+	configuration.Mappings = NormaliseMappings(
+		configuration.Mappings,
+		configuration.HTTPPort,
+		configuration.HTTPSPort,
+		configuration.IsHTTPSEnabled(),
+	)
+
+	if err := Validate(configuration); err != nil {
+		panic(err)
 	}
 
 	return configuration
 }
 
-func defineFlags() *pflag.FlagSet {
-	flags := pflag.NewFlagSet("uncors", pflag.ContinueOnError)
+func defineFlags() {
+	flags = pflag.NewFlagSet("uncors", pflag.ContinueOnError)
 	flags.Usage = pflag.Usage
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for to the resource to be proxy")
 	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
@@ -79,6 +95,4 @@ func defineFlags() *pflag.FlagSet {
 	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.StringP("config", "c", "", "Path to the configuration file")
-
-	return flags
 }

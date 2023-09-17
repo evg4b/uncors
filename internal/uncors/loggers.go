@@ -1,4 +1,4 @@
-package ui
+package uncors
 
 import (
 	"github.com/evg4b/uncors/internal/log"
