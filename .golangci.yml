@@ -26,6 +26,7 @@ linters:
     - maintidx
     - ireturn
     - bodyclose
+    - depguard
 linters-settings:
   varnamelen:
     ignore-names:
