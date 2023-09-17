@@ -78,13 +78,12 @@ mappings:
 )
 
 func TestLoadConfiguration(t *testing.T) {
-	viperInstance := viper.New()
-	viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
+	fs := testutils.FsFromMap(t, map[string]string{
 		corruptedConfigPath: corruptedConfig,
 		fullConfigPath:      fullConfig,
 		incorrectConfigPath: incorrectConfig,
 		minimalConfigPath:   minimalConfig,
-	}))
+	})
 
 	t.Run("correctly parse config", func(t *testing.T) {
 		HTTPf := func(host string, port int) string {
@@ -239,6 +238,10 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
+				viper.Reset()
+				viperInstance := viper.New()
+				viperInstance.SetFs(fs)
+
 				uncorsConfig := config.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.Equal(t, testCase.expected, uncorsConfig)
@@ -247,7 +250,6 @@ func TestLoadConfiguration(t *testing.T) {
 	})
 
 	t.Run("parse config with error", func(t *testing.T) {
-		t.SkipNow()
 		tests := []struct {
 			name     string
 			args     []string
@@ -268,7 +270,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.To, testconstants.TargetHost1,
 				},
 				expected: []string{
-					"recognize url mapping: `from` values are not set for every `to`",
+					"`from` values are not set for every `to`",
 				},
 			},
 			{
@@ -278,7 +280,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.From, testconstants.SourceHost2,
 				},
 				expected: []string{
-					"recognize url mapping: `to` values are not set for every `from`",
+					"`to` values are not set for every `from`",
 				},
 			},
 			{
@@ -288,19 +290,18 @@ func TestLoadConfiguration(t *testing.T) {
 					params.To, testconstants.TargetHost2,
 				},
 				expected: []string{
-					"recognize url mapping: `from` values are not set for every `to`",
+					"`from` values are not set for every `to`",
 				},
 			},
-			//{
-			//	name: "config file doesn't exist",
-			//	args: []string{
-			//		params.Config, "/not-exist-config.yaml",
-			//	},
-			//	expected: []string{
-			//		"filed to read config file '/not-exist-config.yaml': open ",
-			//		"open /not-exist-config.yaml: file does not exist",
-			//	},
-			// },
+			{
+				name: "config file doesn't exist",
+				args: []string{
+					params.Config, "/not-exist-config.yaml",
+				},
+				expected: []string{
+					"filed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
+				},
+			},
 			{
 				name: "config file is corrupted",
 				args: []string{
@@ -333,8 +334,13 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 		}
 		for _, testCase := range tests {
+			testCase := testCase
 			t.Run(testCase.name, func(t *testing.T) {
 				for _, expected := range testCase.expected {
+					viper.Reset()
+					viperInstance := viper.New()
+					viperInstance.SetFs(fs)
+
 					assert.PanicsWithError(t, expected, func() {
 						config.LoadConfiguration(viperInstance, testCase.args)
 					})

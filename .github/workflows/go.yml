@@ -31,7 +31,7 @@ jobs:
         run: go build -tags release -v .
 
       - name: Test
-        run: go test -tags release -v -coverprofile=coverage.out ./...
+        run: go test -tags release -timeout 1m -v -coverprofile=coverage.out ./...
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master

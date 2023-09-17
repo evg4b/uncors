@@ -8,7 +8,6 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	t.SkipNow()
 	tests := []struct {
 		name     string
 		config   *config.UncorsConfig

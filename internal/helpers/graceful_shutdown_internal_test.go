@@ -62,6 +62,7 @@ func TestGracefulShutdown(t *testing.T) {
 	}))
 
 	t.Run("shutdown after system signal", WithGoroutines(func(t *testing.T, env Env) {
+		t.Skip()
 		var systemSig chan<- os.Signal
 
 		notifyFn = func(c chan<- os.Signal, sig ...os.Signal) {

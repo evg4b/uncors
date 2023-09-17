@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/evg4b/uncors/internal/helpers"
 
@@ -16,14 +15,11 @@ const (
 	defaultHTTPSPort = 443
 )
 
-var (
-	flagsOnceGuard = sync.Once{}
-	flags          *pflag.FlagSet
-)
+var flags *pflag.FlagSet
 
 type UncorsConfig struct {
-	HTTPPort    int         `Validate:"required"         mapstructure:"http-port"`
-	Mappings    Mappings    `Validate:"required"         mapstructure:"mappings"`
+	HTTPPort    int         `mapstructure:"http-port"    validate:"required"`
+	Mappings    Mappings    `mapstructure:"mappings"     validate:"required"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	HTTPSPort   int         `mapstructure:"https-port"`
@@ -70,7 +66,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 	}
 
 	if err := readURLMapping(viperInstance, configuration); err != nil {
-		panic(fmt.Errorf("recognize url mapping: %w", err))
+		panic(err)
 	}
 
 	configuration.Mappings = NormaliseMappings(
@@ -88,17 +84,15 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 }
 
 func defineFlags() {
-	flagsOnceGuard.Do(func() {
-		flags = pflag.NewFlagSet("uncors", pflag.ContinueOnError)
-		flags.Usage = pflag.Usage
-		flags.StringSliceP("to", "t", []string{}, "Target host with protocol for to the resource to be proxy")
-		flags.StringSliceP("from", "f", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
-		flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
-		flags.UintP("https-port", "s", defaultHTTPSPort, "Local HTTPS listening port")
-		flags.String("cert-file", "", "Path to HTTPS certificate file")
-		flags.String("key-file", "", "Path to matching for certificate private key")
-		flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
-		flags.Bool("debug", false, "Show debug output")
-		flags.StringP("config", "c", "", "Path to the configuration file")
-	})
+	flags = pflag.NewFlagSet("uncors", pflag.ContinueOnError)
+	flags.Usage = pflag.Usage
+	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for to the resource to be proxy")
+	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
+	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
+	flags.UintP("https-port", "s", defaultHTTPSPort, "Local HTTPS listening port")
+	flags.String("cert-file", "", "Path to HTTPS certificate file")
+	flags.String("key-file", "", "Path to matching for certificate private key")
+	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
+	flags.Bool("debug", false, "Show debug output")
+	flags.StringP("config", "c", "", "Path to the configuration file")
 }
