@@ -1,6 +1,8 @@
+// nolint: nosprintfhostport
 package config_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -76,15 +78,22 @@ mappings:
 )
 
 func TestLoadConfiguration(t *testing.T) {
-	viperInstance := viper.New()
-	viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
+	fs := testutils.FsFromMap(t, map[string]string{
 		corruptedConfigPath: corruptedConfig,
 		fullConfigPath:      fullConfig,
 		incorrectConfigPath: incorrectConfig,
 		minimalConfigPath:   minimalConfig,
-	}))
+	})
 
 	t.Run("correctly parse config", func(t *testing.T) {
+		HTTPf := func(host string, port int) string {
+			return fmt.Sprintf("http://%s:%d", host, port)
+		}
+
+		HTTPSf := func(host string, port int) string {
+			return fmt.Sprintf("https://%s:%d", host, port)
+		}
+
 		tests := []struct {
 			name     string
 			args     []string
@@ -111,7 +120,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  8080,
 					HTTPSPort: 443,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 					},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
@@ -126,9 +135,9 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 						{
-							From: testconstants.HTTPLocalhost2,
+							From: testconstants.HTTPLocalhost2WithPort(8080),
 							To:   testconstants.HTTPSStackoverflow,
 							Mocks: config.Mocks{
 								{
@@ -178,9 +187,9 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
 						{
-							From: testconstants.HTTPLocalhost2,
+							From: testconstants.HTTPLocalhost2WithPort(8080),
 							To:   testconstants.HTTPSStackoverflow,
 							Mocks: config.Mocks{
 								{
@@ -203,9 +212,12 @@ func TestLoadConfiguration(t *testing.T) {
 								},
 							},
 						},
-						{From: testconstants.SourceHost1, To: testconstants.TargetHost1},
-						{From: testconstants.SourceHost2, To: testconstants.TargetHost2},
-						{From: testconstants.SourceHost3, To: testconstants.TargetHost3},
+						{From: HTTPf(testconstants.SourceHost1, 8080), To: testconstants.TargetHost1},
+						{From: HTTPSf(testconstants.SourceHost1, 8081), To: testconstants.TargetHost1},
+						{From: HTTPf(testconstants.SourceHost2, 8080), To: testconstants.TargetHost2},
+						{From: HTTPSf(testconstants.SourceHost2, 8081), To: testconstants.TargetHost2},
+						{From: HTTPf(testconstants.SourceHost3, 8080), To: testconstants.TargetHost3},
+						{From: HTTPSf(testconstants.SourceHost3, 8081), To: testconstants.TargetHost3},
 					},
 					Proxy:     "localhost:8080",
 					Debug:     true,
@@ -223,8 +235,13 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 		}
+
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
+				viper.Reset()
+				viperInstance := viper.New()
+				viperInstance.SetFs(fs)
+
 				uncorsConfig := config.LoadConfiguration(viperInstance, testCase.args)
 
 				assert.Equal(t, testCase.expected, uncorsConfig)
@@ -253,7 +270,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.To, testconstants.TargetHost1,
 				},
 				expected: []string{
-					"recognize url mapping: `from` values are not set for every `to`",
+					"`from` values are not set for every `to`",
 				},
 			},
 			{
@@ -263,7 +280,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.From, testconstants.SourceHost2,
 				},
 				expected: []string{
-					"recognize url mapping: `to` values are not set for every `from`",
+					"`to` values are not set for every `from`",
 				},
 			},
 			{
@@ -273,19 +290,18 @@ func TestLoadConfiguration(t *testing.T) {
 					params.To, testconstants.TargetHost2,
 				},
 				expected: []string{
-					"recognize url mapping: `from` values are not set for every `to`",
+					"`from` values are not set for every `to`",
 				},
 			},
-			//{
-			//	name: "config file doesn't exist",
-			//	args: []string{
-			//		params.Config, "/not-exist-config.yaml",
-			//	},
-			//	expected: []string{
-			//		"filed to read config file '/not-exist-config.yaml': open ",
-			//		"open /not-exist-config.yaml: file does not exist",
-			//	},
-			// },
+			{
+				name: "config file doesn't exist",
+				args: []string{
+					params.Config, "/not-exist-config.yaml",
+				},
+				expected: []string{
+					"filed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
+				},
+			},
 			{
 				name: "config file is corrupted",
 				args: []string{
@@ -318,8 +334,13 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 		}
 		for _, testCase := range tests {
+			testCase := testCase
 			t.Run(testCase.name, func(t *testing.T) {
 				for _, expected := range testCase.expected {
+					viper.Reset()
+					viperInstance := viper.New()
+					viperInstance.SetFs(fs)
+
 					assert.PanicsWithError(t, expected, func() {
 						config.LoadConfiguration(viperInstance, testCase.args)
 					})

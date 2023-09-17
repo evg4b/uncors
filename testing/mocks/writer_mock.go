@@ -108,7 +108,7 @@ func (mmWrite *mWriterMockWrite) Return(n int, err error) *WriterMock {
 	return mmWrite.mock
 }
 
-//Set uses given function f to mock the Writer.Write method
+// Set uses given function f to mock the Writer.Write method
 func (mmWrite *mWriterMockWrite) Set(f func(p []byte) (n int, err error)) *WriterMock {
 	if mmWrite.defaultExpectation != nil {
 		mmWrite.mock.t.Fatalf("Default expectation is already set for the Writer.Write method")

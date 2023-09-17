@@ -4,8 +4,9 @@ package helpers_test
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/helpers"
 	"testing"
+
+	"github.com/evg4b/uncors/internal/helpers"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -109,7 +109,7 @@ func (mmDo *mHTTPClientMockDo) Return(rp1 *http.Response, err error) *HTTPClient
 	return mmDo.mock
 }
 
-//Set uses given function f to mock the HTTPClient.Do method
+// Set uses given function f to mock the HTTPClient.Do method
 func (mmDo *mHTTPClientMockDo) Set(f func(req *http.Request) (rp1 *http.Response, err error)) *HTTPClientMock {
 	if mmDo.defaultExpectation != nil {
 		mmDo.mock.t.Fatalf("Default expectation is already set for the HTTPClient.Do method")

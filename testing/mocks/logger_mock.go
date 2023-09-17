@@ -175,7 +175,7 @@ func (mmDebug *mLoggerMockDebug) Return() *LoggerMock {
 	return mmDebug.mock
 }
 
-//Set uses given function f to mock the Logger.Debug method
+// Set uses given function f to mock the Logger.Debug method
 func (mmDebug *mLoggerMockDebug) Set(f func(a ...any)) *LoggerMock {
 	if mmDebug.defaultExpectation != nil {
 		mmDebug.mock.t.Fatalf("Default expectation is already set for the Logger.Debug method")
@@ -228,7 +228,6 @@ func (mmDebug *LoggerMock) Debug(a ...any) {
 		return
 	}
 	mmDebug.t.Fatalf("Unexpected call to LoggerMock.Debug. %v", a)
-
 }
 
 // DebugAfterCounter returns a count of finished LoggerMock.Debug invocations
@@ -363,7 +362,7 @@ func (mmDebugf *mLoggerMockDebugf) Return() *LoggerMock {
 	return mmDebugf.mock
 }
 
-//Set uses given function f to mock the Logger.Debugf method
+// Set uses given function f to mock the Logger.Debugf method
 func (mmDebugf *mLoggerMockDebugf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmDebugf.defaultExpectation != nil {
 		mmDebugf.mock.t.Fatalf("Default expectation is already set for the Logger.Debugf method")
@@ -416,7 +415,6 @@ func (mmDebugf *LoggerMock) Debugf(template string, a ...any) {
 		return
 	}
 	mmDebugf.t.Fatalf("Unexpected call to LoggerMock.Debugf. %v %v", template, a)
-
 }
 
 // DebugfAfterCounter returns a count of finished LoggerMock.Debugf invocations
@@ -550,7 +548,7 @@ func (mmError *mLoggerMockError) Return() *LoggerMock {
 	return mmError.mock
 }
 
-//Set uses given function f to mock the Logger.Error method
+// Set uses given function f to mock the Logger.Error method
 func (mmError *mLoggerMockError) Set(f func(a ...any)) *LoggerMock {
 	if mmError.defaultExpectation != nil {
 		mmError.mock.t.Fatalf("Default expectation is already set for the Logger.Error method")
@@ -603,7 +601,6 @@ func (mmError *LoggerMock) Error(a ...any) {
 		return
 	}
 	mmError.t.Fatalf("Unexpected call to LoggerMock.Error. %v", a)
-
 }
 
 // ErrorAfterCounter returns a count of finished LoggerMock.Error invocations
@@ -738,7 +735,7 @@ func (mmErrorf *mLoggerMockErrorf) Return() *LoggerMock {
 	return mmErrorf.mock
 }
 
-//Set uses given function f to mock the Logger.Errorf method
+// Set uses given function f to mock the Logger.Errorf method
 func (mmErrorf *mLoggerMockErrorf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmErrorf.defaultExpectation != nil {
 		mmErrorf.mock.t.Fatalf("Default expectation is already set for the Logger.Errorf method")
@@ -791,7 +788,6 @@ func (mmErrorf *LoggerMock) Errorf(template string, a ...any) {
 		return
 	}
 	mmErrorf.t.Fatalf("Unexpected call to LoggerMock.Errorf. %v %v", template, a)
-
 }
 
 // ErrorfAfterCounter returns a count of finished LoggerMock.Errorf invocations
@@ -925,7 +921,7 @@ func (mmInfo *mLoggerMockInfo) Return() *LoggerMock {
 	return mmInfo.mock
 }
 
-//Set uses given function f to mock the Logger.Info method
+// Set uses given function f to mock the Logger.Info method
 func (mmInfo *mLoggerMockInfo) Set(f func(a ...any)) *LoggerMock {
 	if mmInfo.defaultExpectation != nil {
 		mmInfo.mock.t.Fatalf("Default expectation is already set for the Logger.Info method")
@@ -978,7 +974,6 @@ func (mmInfo *LoggerMock) Info(a ...any) {
 		return
 	}
 	mmInfo.t.Fatalf("Unexpected call to LoggerMock.Info. %v", a)
-
 }
 
 // InfoAfterCounter returns a count of finished LoggerMock.Info invocations
@@ -1113,7 +1108,7 @@ func (mmInfof *mLoggerMockInfof) Return() *LoggerMock {
 	return mmInfof.mock
 }
 
-//Set uses given function f to mock the Logger.Infof method
+// Set uses given function f to mock the Logger.Infof method
 func (mmInfof *mLoggerMockInfof) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmInfof.defaultExpectation != nil {
 		mmInfof.mock.t.Fatalf("Default expectation is already set for the Logger.Infof method")
@@ -1166,7 +1161,6 @@ func (mmInfof *LoggerMock) Infof(template string, a ...any) {
 		return
 	}
 	mmInfof.t.Fatalf("Unexpected call to LoggerMock.Infof. %v %v", template, a)
-
 }
 
 // InfofAfterCounter returns a count of finished LoggerMock.Infof invocations
@@ -1301,7 +1295,7 @@ func (mmPrintResponse *mLoggerMockPrintResponse) Return() *LoggerMock {
 	return mmPrintResponse.mock
 }
 
-//Set uses given function f to mock the Logger.PrintResponse method
+// Set uses given function f to mock the Logger.PrintResponse method
 func (mmPrintResponse *mLoggerMockPrintResponse) Set(f func(request *mm_contracts.Request, code int)) *LoggerMock {
 	if mmPrintResponse.defaultExpectation != nil {
 		mmPrintResponse.mock.t.Fatalf("Default expectation is already set for the Logger.PrintResponse method")
@@ -1354,7 +1348,6 @@ func (mmPrintResponse *LoggerMock) PrintResponse(request *mm_contracts.Request, 
 		return
 	}
 	mmPrintResponse.t.Fatalf("Unexpected call to LoggerMock.PrintResponse. %v %v", request, code)
-
 }
 
 // PrintResponseAfterCounter returns a count of finished LoggerMock.PrintResponse invocations
@@ -1488,7 +1481,7 @@ func (mmWarning *mLoggerMockWarning) Return() *LoggerMock {
 	return mmWarning.mock
 }
 
-//Set uses given function f to mock the Logger.Warning method
+// Set uses given function f to mock the Logger.Warning method
 func (mmWarning *mLoggerMockWarning) Set(f func(a ...any)) *LoggerMock {
 	if mmWarning.defaultExpectation != nil {
 		mmWarning.mock.t.Fatalf("Default expectation is already set for the Logger.Warning method")
@@ -1541,7 +1534,6 @@ func (mmWarning *LoggerMock) Warning(a ...any) {
 		return
 	}
 	mmWarning.t.Fatalf("Unexpected call to LoggerMock.Warning. %v", a)
-
 }
 
 // WarningAfterCounter returns a count of finished LoggerMock.Warning invocations
@@ -1676,7 +1668,7 @@ func (mmWarningf *mLoggerMockWarningf) Return() *LoggerMock {
 	return mmWarningf.mock
 }
 
-//Set uses given function f to mock the Logger.Warningf method
+// Set uses given function f to mock the Logger.Warningf method
 func (mmWarningf *mLoggerMockWarningf) Set(f func(template string, a ...any)) *LoggerMock {
 	if mmWarningf.defaultExpectation != nil {
 		mmWarningf.mock.t.Fatalf("Default expectation is already set for the Logger.Warningf method")
@@ -1729,7 +1721,6 @@ func (mmWarningf *LoggerMock) Warningf(template string, a ...any) {
 		return
 	}
 	mmWarningf.t.Fatalf("Unexpected call to LoggerMock.Warningf. %v %v", template, a)
-
 }
 
 // WarningfAfterCounter returns a count of finished LoggerMock.Warningf invocations

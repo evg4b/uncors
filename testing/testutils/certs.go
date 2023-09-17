@@ -14,6 +14,8 @@ import (
 	"path"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 type Certs struct {
@@ -23,14 +25,18 @@ type Certs struct {
 	KeyPath       string
 }
 
-func WithTmpCerts(action func(t *testing.T, certs *Certs)) func(t *testing.T) {
+func WithTmpCerts(fs afero.Fs, action func(t *testing.T, certs *Certs)) func(t *testing.T) {
+	if fs == nil {
+		fs = afero.NewOsFs()
+	}
+
 	return func(t *testing.T) {
-		certs := certSetup(t)
+		certs := certSetup(t, fs)
 		action(t, certs)
 	}
 }
 
-func certSetup(t *testing.T) *Certs {
+func certSetup(t *testing.T, fs afero.Fs) *Certs {
 	t.Helper()
 
 	now := time.Now()
@@ -100,11 +106,13 @@ func certSetup(t *testing.T) *Certs {
 	})
 	CheckNoError(t, err)
 
-	tmpDir := t.TempDir()
+	tmpDir, err := afero.TempDir(fs, "", "uncors_")
+	CheckNoError(t, err)
+
 	certPath := path.Join(tmpDir, "test.cert")
 	keyPath := path.Join(tmpDir, "test.key")
 
-	err = os.WriteFile(certPath, certPEM, os.ModePerm)
+	err = afero.WriteFile(fs, certPath, certPEM, os.ModePerm)
 	CheckNoError(t, err)
 
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
@@ -113,7 +121,7 @@ func certSetup(t *testing.T) *Certs {
 	})
 	CheckNoError(t, err)
 
-	err = os.WriteFile(keyPath, privateKeyPEM, os.ModePerm)
+	err = afero.WriteFile(fs, keyPath, privateKeyPEM, os.ModePerm)
 	CheckNoError(t, err)
 
 	serverCert, err := tls.X509KeyPair(certPEM, privateKeyPEM)
