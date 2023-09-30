@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -25,16 +25,16 @@ func TestURLMappingHookFunc(t *testing.T) {
 				name:   "simple key-value mapping",
 				config: "http://localhost:4200: https://github.com",
 				expected: config.Mapping{
-					From: testconstants.HTTPLocalhostWithPort(4200),
-					To:   testconstants.HTTPSGithub,
+					From: hosts.Localhost.HTTPPort(4200),
+					To:   hosts.Github.HTTPS(),
 				},
 			},
 			{
 				name:   "full object mapping",
 				config: "{ from: http://localhost:3000, to: https://api.github.com }",
 				expected: config.Mapping{
-					From: testconstants.HTTPLocalhostWithPort(3000),
-					To:   testconstants.HTTPSAPIGithub,
+					From: hosts.Localhost.HTTPPort(3000),
+					To:   hosts.APIGithub.HTTPS(),
 				},
 			},
 		}
@@ -73,20 +73,20 @@ func TestURLMappingClone(t *testing.T) {
 		{
 			name: "structure with 1 field",
 			expected: config.Mapping{
-				From: testconstants.HTTPLocalhost,
+				From: hosts.Localhost.HTTP(),
 			},
 		},
 		{
 			name: "structure with 2 field",
 			expected: config.Mapping{
-				From: testconstants.HTTPLocalhost,
+				From: hosts.Localhost.HTTP(),
 				To:   localhostSecure,
 			},
 		},
 		{
 			name: "structure with inner collections",
 			expected: config.Mapping{
-				From: testconstants.HTTPLocalhost,
+				From: hosts.Localhost.HTTP(),
 				To:   localhostSecure,
 				Statics: []config.StaticDirectory{
 					{Path: "/cc", Dir: "cc"},

@@ -2,12 +2,12 @@
 package config_test
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
@@ -86,14 +86,6 @@ func TestLoadConfiguration(t *testing.T) {
 	})
 
 	t.Run("correctly parse config", func(t *testing.T) {
-		HTTPf := func(host string, port int) string {
-			return fmt.Sprintf("http://%s:%d", host, port)
-		}
-
-		HTTPSf := func(host string, port int) string {
-			return fmt.Sprintf("https://%s:%d", host, port)
-		}
-
 		tests := []struct {
 			name     string
 			args     []string
@@ -120,7 +112,7 @@ func TestLoadConfiguration(t *testing.T) {
 					HTTPPort:  8080,
 					HTTPSPort: 443,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 					},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
@@ -135,10 +127,10 @@ func TestLoadConfiguration(t *testing.T) {
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 						{
-							From: testconstants.HTTPLocalhost2WithPort(8080),
-							To:   testconstants.HTTPSStackoverflow,
+							From: hosts.Localhost2.HTTPPort(8080),
+							To:   hosts.Stackoverflow.HTTPS(),
 							Mocks: config.Mocks{
 								{
 									Path:   "/demo",
@@ -161,7 +153,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy:     "localhost:8080",
+					Proxy:     hosts.Localhost.Port(8080),
 					Debug:     true,
 					HTTPSPort: 8081,
 					CertFile:  testconstants.CertFilePath,
@@ -180,17 +172,17 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "read all fields from config file config is set",
 				args: []string{
 					params.Config, fullConfigPath,
-					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
-					params.From, testconstants.SourceHost2, params.To, testconstants.TargetHost2,
-					params.From, testconstants.SourceHost3, params.To, testconstants.TargetHost3,
+					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
+					params.From, hosts.Localhost2.Host(), params.To, hosts.Stackoverflow.Host(),
+					params.From, hosts.Localhost3.Host(), params.To, hosts.APIGithub.Host(),
 				},
 				expected: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: config.Mappings{
-						{From: testconstants.HTTPLocalhostWithPort(8080), To: testconstants.HTTPSGithub},
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 						{
-							From: testconstants.HTTPLocalhost2WithPort(8080),
-							To:   testconstants.HTTPSStackoverflow,
+							From: hosts.Localhost2.HTTPPort(8080),
+							To:   hosts.Stackoverflow.HTTPS(),
 							Mocks: config.Mocks{
 								{
 									Path:   "/demo",
@@ -212,14 +204,14 @@ func TestLoadConfiguration(t *testing.T) {
 								},
 							},
 						},
-						{From: HTTPf(testconstants.SourceHost1, 8080), To: testconstants.TargetHost1},
-						{From: HTTPSf(testconstants.SourceHost1, 8081), To: testconstants.TargetHost1},
-						{From: HTTPf(testconstants.SourceHost2, 8080), To: testconstants.TargetHost2},
-						{From: HTTPSf(testconstants.SourceHost2, 8081), To: testconstants.TargetHost2},
-						{From: HTTPf(testconstants.SourceHost3, 8080), To: testconstants.TargetHost3},
-						{From: HTTPSf(testconstants.SourceHost3, 8081), To: testconstants.TargetHost3},
+						{From: hosts.Localhost1.HTTPPort(8080), To: hosts.Github.Host()},
+						{From: hosts.Localhost1.HTTPSPort(8081), To: hosts.Github.Host()},
+						{From: hosts.Localhost2.HTTPPort(8080), To: hosts.Stackoverflow.Host()},
+						{From: hosts.Localhost2.HTTPSPort(8081), To: hosts.Stackoverflow.Host()},
+						{From: hosts.Localhost3.HTTPPort(8080), To: hosts.APIGithub.Host()},
+						{From: hosts.Localhost3.HTTPSPort(8081), To: hosts.APIGithub.Host()},
 					},
-					Proxy:     "localhost:8080",
+					Proxy:     hosts.Localhost.Port(8080),
 					Debug:     true,
 					HTTPSPort: 8081,
 					CertFile:  testconstants.CertFilePath,
@@ -267,7 +259,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "return default config",
 				args: []string{
-					params.To, testconstants.TargetHost1,
+					params.To, hosts.Github.Host(),
 				},
 				expected: []string{
 					"`from` values are not set for every `to`",
@@ -276,8 +268,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of from values great then count of to",
 				args: []string{
-					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
-					params.From, testconstants.SourceHost2,
+					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
+					params.From, hosts.Localhost2.Host(),
 				},
 				expected: []string{
 					"`to` values are not set for every `from`",
@@ -286,8 +278,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "count of to values great then count of from",
 				args: []string{
-					params.From, testconstants.SourceHost1, params.To, testconstants.TargetHost1,
-					params.To, testconstants.TargetHost2,
+					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
+					params.To, hosts.Stackoverflow.Host(),
 				},
 				expected: []string{
 					"`from` values are not set for every `to`",

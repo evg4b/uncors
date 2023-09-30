@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/testing/testutils/appbuilder"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/evg4b/uncors/testing/testutils/appbuilder"
 	"github.com/phayes/freeport"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -34,8 +35,8 @@ func TestUncorsApp(t *testing.T) {
 				HTTPPort: freeport.GetPort(),
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "http://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTP(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(expectedResponse),
 					},
 				},
@@ -61,8 +62,8 @@ func TestUncorsApp(t *testing.T) {
 				KeyFile:   certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "https://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTPS(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(expectedResponse),
 					},
 				},
@@ -114,8 +115,8 @@ func TestUncorsApp(t *testing.T) {
 				HTTPPort: port,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "https://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTPS(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(otherExpectedRepose),
 					},
 				},
@@ -140,8 +141,8 @@ func TestUncorsApp(t *testing.T) {
 				KeyFile:   certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "https://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTPS(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(expectedResponse),
 					},
 				},
@@ -167,8 +168,8 @@ func TestUncorsApp(t *testing.T) {
 				KeyFile:   certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "https://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTPS(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(otherExpectedRepose),
 					},
 				},

@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -222,7 +223,7 @@ func TestProxyHandler(t *testing.T) {
 					recorderFactory: func() *httptest.ResponseRecorder {
 						writer := httptest.NewRecorder()
 						writer.Header().Set("Custom-Header", "true")
-						writer.Header().Set(headers.AccessControlAllowOrigin, "localhost:3000")
+						writer.Header().Set(headers.AccessControlAllowOrigin, hosts.Localhost.Port(3000))
 
 						return writer
 					},

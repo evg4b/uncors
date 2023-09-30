@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,15 +19,15 @@ func TestMappings(t *testing.T) {
 		{
 			name: "http mapping only",
 			mappings: config.Mappings{
-				{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+				{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{"http://localhost => https://github.com"},
 		},
 		{
 			name: "http and https mappings",
 			mappings: config.Mappings{
-				{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
-				{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
+				{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
+				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",
@@ -38,8 +38,8 @@ func TestMappings(t *testing.T) {
 			name: "mapping and mocks",
 			mappings: config.Mappings{
 				{
-					From: testconstants.HTTPLocalhost,
-					To:   testconstants.HTTPSGithub,
+					From: hosts.Localhost.HTTP(),
+					To:   hosts.Github.HTTPS(),
 					Mocks: config.Mocks{
 						{
 							Path:   "/endpoint-1",
@@ -73,7 +73,7 @@ func TestMappings(t *testing.T) {
 						},
 					},
 				},
-				{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
+				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
 				"https://localhost => https://github.com",

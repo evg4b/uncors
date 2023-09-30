@@ -18,8 +18,8 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
-	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	goCache "github.com/patrickmn/go-cache"
@@ -119,8 +119,8 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 	mappings := config.Mappings{
 		{
-			From: testconstants.HTTPLocalhost,
-			To:   testconstants.HTTPSLocalhost,
+			From: hosts.Localhost.HTTP(),
+			To:   hosts.Localhost.HTTPS(),
 			Statics: []config.StaticDirectory{
 				{Dir: "/assets", Path: "/cc/", Index: indexHTML},
 				{Dir: "/assets", Path: "/pnp/", Index: "index.php"},

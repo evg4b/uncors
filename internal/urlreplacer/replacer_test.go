@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,13 +18,13 @@ type replacerTestCase struct {
 func TestReplacerV2Replace(t *testing.T) {
 	t.Run("url is not empty", func(t *testing.T) {
 		t.Run("source", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacer("", testconstants.HTTPGithub)
+			_, err := urlreplacer.NewReplacer("", hosts.Github.HTTP())
 
 			assert.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
 		})
 
 		t.Run("target", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacer("localhost:3000", "")
+			_, err := urlreplacer.NewReplacer(hosts.Localhost.Port(3000), "")
 
 			assert.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
 		})
@@ -217,7 +217,7 @@ var isSecureTestCases = []struct {
 }{
 	{
 		name:     "url with http scheme",
-		url:      testconstants.HTTPLocalhost,
+		url:      hosts.Localhost.HTTP(),
 		expected: false,
 	},
 	{
@@ -227,12 +227,12 @@ var isSecureTestCases = []struct {
 	},
 	{
 		name:     "url without scheme",
-		url:      testconstants.Localhost,
+		url:      hosts.Localhost.Host(),
 		expected: false,
 	},
 	{
 		name:     "url with https scheme",
-		url:      testconstants.HTTPSLocalhost,
+		url:      hosts.Localhost.HTTPS(),
 		expected: true,
 	},
 }
@@ -240,7 +240,7 @@ var isSecureTestCases = []struct {
 func TestReplacerIsSourceSecure(t *testing.T) {
 	makeReplacer := func(source string) *urlreplacer.Replacer {
 		t.Helper()
-		replacer, err := urlreplacer.NewReplacer(source, testconstants.HTTPSGithub)
+		replacer, err := urlreplacer.NewReplacer(source, hosts.Github.HTTPS())
 		if err != nil {
 			t.Error(err)
 		}
@@ -260,7 +260,7 @@ func TestReplacerIsSourceSecure(t *testing.T) {
 func TestReplacerIsTargetSecure(t *testing.T) {
 	makeReplacer := func(target string) *urlreplacer.Replacer {
 		t.Helper()
-		replacer, err := urlreplacer.NewReplacer(testconstants.HTTPSGithub, target)
+		replacer, err := urlreplacer.NewReplacer(hosts.Github.HTTPS(), target)
 		if err != nil {
 			t.Error(err)
 		}

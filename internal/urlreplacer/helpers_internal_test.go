@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/pkg/urlx"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,8 +17,8 @@ var testCases = []struct {
 	expectedPattern string
 }{
 	{
-		name:            testconstants.Localhost,
-		url:             testconstants.Localhost,
+		name:            hosts.Localhost.Host(),
+		url:             hosts.Localhost.Host(),
 		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?localhost(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}localhost${path}",
 	},
@@ -101,7 +101,7 @@ func TestWildCardToRegexp(t *testing.T) {
 		}{
 			{
 				name:     "no wildcards",
-				url:      testconstants.Localhost,
+				url:      hosts.Localhost.Host(),
 				expected: 0,
 			},
 			{
@@ -178,7 +178,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 		}{
 			{
 				name:     "no wildcards",
-				url:      testconstants.Localhost,
+				url:      hosts.Localhost.Host(),
 				expected: 0,
 			},
 			{
