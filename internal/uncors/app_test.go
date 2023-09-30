@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/testing/testutils/appbuilder"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/phayes/freeport"
 	"github.com/spf13/afero"
@@ -27,7 +27,10 @@ func TestUncorsApp(t *testing.T) {
 
 	t.Run("handle request", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 		t.Run("HTTP", func(t *testing.T) {
-			uncorsApp, uri := createApp(ctx, t, fs, false, &config.UncorsConfig{
+			appBuilder := appbuilder.NewAppBuilder(t).
+				WithFs(fs)
+
+			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				HTTPPort: freeport.GetPort(),
 				Mappings: config.Mappings{
 					config.Mapping{
@@ -42,13 +45,17 @@ func TestUncorsApp(t *testing.T) {
 				testutils.CheckNoServerError(t, err)
 			}()
 
-			response := makeRequest(t, http.DefaultClient, uri)
+			response := makeRequest(t, http.DefaultClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
 		})
 
 		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
-			uncorsApp, uri := createApp(ctx, t, fs, true, &config.UncorsConfig{
+			appBuilder := appbuilder.NewAppBuilder(t).
+				WithFs(fs).
+				WithHTTPS()
+
+			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				HTTPSPort: freeport.GetPort(),
 				CertFile:  certs.CertPath,
 				KeyFile:   certs.KeyPath,
@@ -71,7 +78,7 @@ func TestUncorsApp(t *testing.T) {
 				},
 			}
 
-			response := makeRequest(t, httpClient, uri)
+			response := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
 		}))
@@ -82,12 +89,15 @@ func TestUncorsApp(t *testing.T) {
 
 		t.Run("HTTP", func(t *testing.T) {
 			port := freeport.GetPort()
-			uncorsApp, uri := createApp(ctx, t, fs, false, &config.UncorsConfig{
+			appBuilder := appbuilder.NewAppBuilder(t).
+				WithFs(fs)
+
+			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				HTTPPort: port,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  "http://127.0.0.1",
-						To:    "https://github.com",
+						From:  hosts.Loopback.HTTP(),
+						To:    hosts.Github.HTTPS(),
 						Mocks: mocks(expectedResponse),
 					},
 				},
@@ -97,7 +107,7 @@ func TestUncorsApp(t *testing.T) {
 				testutils.CheckNoServerError(t, err)
 			}()
 
-			response := makeRequest(t, http.DefaultClient, uri)
+			response := makeRequest(t, http.DefaultClient, appBuilder.URI())
 			assert.Equal(t, expectedResponse, response)
 
 			uncorsApp.Restart(ctx, &config.UncorsConfig{
@@ -113,14 +123,18 @@ func TestUncorsApp(t *testing.T) {
 
 			time.Sleep(delay)
 
-			response2 := makeRequest(t, http.DefaultClient, uri)
+			response2 := makeRequest(t, http.DefaultClient, appBuilder.URI())
 
 			assert.Equal(t, otherExpectedRepose, response2)
 		})
 
 		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
 			port := freeport.GetPort()
-			uncorsApp, uri := createApp(ctx, t, fs, true, &config.UncorsConfig{
+			appBuilder := appbuilder.NewAppBuilder(t).
+				WithFs(fs).
+				WithHTTPS()
+
+			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				HTTPSPort: port,
 				CertFile:  certs.CertPath,
 				KeyFile:   certs.KeyPath,
@@ -143,7 +157,7 @@ func TestUncorsApp(t *testing.T) {
 				},
 			}
 
-			response := makeRequest(t, httpClient, uri)
+			response := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
 
@@ -162,7 +176,7 @@ func TestUncorsApp(t *testing.T) {
 
 			time.Sleep(delay)
 
-			response2 := makeRequest(t, httpClient, uri)
+			response2 := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, otherExpectedRepose, response2)
 		}))
@@ -170,6 +184,7 @@ func TestUncorsApp(t *testing.T) {
 }
 
 func makeRequest(t *testing.T, httpClient *http.Client, uri *url.URL) string {
+	t.Helper()
 	res, err := httpClient.Do(&http.Request{URL: uri, Method: http.MethodGet})
 	testutils.CheckNoError(t, err)
 	defer helpers.CloseSafe(res.Body)
@@ -178,30 +193,6 @@ func makeRequest(t *testing.T, httpClient *http.Client, uri *url.URL) string {
 	testutils.CheckNoError(t, err)
 
 	return string(data)
-}
-
-func createApp(
-	ctx context.Context,
-	t *testing.T, fs afero.Fs, https bool, config *config.UncorsConfig,
-) (*uncors.App, *url.URL) {
-	app := uncors.CreateApp(fs, "x.x.x")
-
-	go app.Start(ctx, config)
-
-	time.Sleep(delay)
-
-	prefix := "http://"
-	if https {
-		prefix = "https://"
-	}
-	addr := app.HTTPAddr().String()
-	if https {
-		addr = app.HTTPSAddr().String()
-	}
-	uri, err := url.Parse(prefix + addr)
-	testutils.CheckNoError(t, err)
-
-	return app, uri
 }
 
 func mocks(response string) config.Mocks {
