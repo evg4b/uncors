@@ -8,20 +8,20 @@ import (
 
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlx"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNormaliseRequest(t *testing.T) {
-	url, err := urlx.Parse(testconstants.HTTPLocalhost)
+	url, err := urlx.Parse(hosts.Localhost.HTTP())
 	testutils.CheckNoError(t, err)
 
 	t.Run("set correct scheme", func(t *testing.T) {
 		t.Run("http", func(t *testing.T) {
 			request := &http.Request{
 				URL:  url,
-				Host: testconstants.Localhost,
+				Host: hosts.Localhost.Host(),
 			}
 
 			helpers.NormaliseRequest(request)
@@ -33,7 +33,7 @@ func TestNormaliseRequest(t *testing.T) {
 			request := &http.Request{
 				URL:  url,
 				TLS:  &tls.ConnectionState{},
-				Host: testconstants.Localhost,
+				Host: hosts.Localhost.Host(),
 			}
 
 			helpers.NormaliseRequest(request)
@@ -46,12 +46,12 @@ func TestNormaliseRequest(t *testing.T) {
 		request := &http.Request{
 			URL:  url,
 			TLS:  &tls.ConnectionState{},
-			Host: testconstants.Localhost,
+			Host: hosts.Localhost.Host(),
 		}
 
 		helpers.NormaliseRequest(request)
 
-		assert.Equal(t, request.URL.Host, testconstants.Localhost)
+		assert.Equal(t, request.URL.Host, hosts.Localhost.Host())
 	})
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -205,14 +206,14 @@ func TestHandler(t *testing.T) {
 				response: config.Response{
 					Code: http.StatusOK,
 					Headers: map[string]string{
-						headers.AccessControlAllowOrigin:      testconstants.Localhost,
+						headers.AccessControlAllowOrigin:      hosts.Localhost.Host(),
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
 					Raw: textContent,
 				},
 				expected: map[string][]string{
-					headers.AccessControlAllowOrigin:      {testconstants.Localhost},
+					headers.AccessControlAllowOrigin:      {hosts.Localhost.Host()},
 					headers.AccessControlAllowCredentials: {"false"},
 					headers.ContentType:                   {"none"},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},

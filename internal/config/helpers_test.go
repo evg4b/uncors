@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testconstants"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,49 +25,49 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set http and https ports",
 				mappings: config.Mappings{
-					{From: testconstants.Localhost, To: testconstants.Github},
+					{From: hosts.Localhost.Host(), To: hosts.Github.Host()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhostWithPort(httpPort), To: testconstants.Github},
-					{From: testconstants.HTTPSLocalhostWithPort(httpsPort), To: testconstants.Github},
+					{From: hosts.Localhost.HTTPPort(httpPort), To: hosts.Github.Host()},
+					{From: hosts.Localhost.HTTPSPort(httpsPort), To: hosts.Github.Host()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set http port",
 				mappings: config.Mappings{
-					{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhostWithPort(httpPort), To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTPPort(httpPort), To: hosts.Github.HTTPS()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
 				mappings: config.Mappings{
-					{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPSLocalhostWithPort(httpsPort), To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTPSPort(httpsPort), To: hosts.Github.HTTPS()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
 				mappings: config.Mappings{
-					{From: testconstants.Localhost1, To: testconstants.HTTPSGithub},
-					{From: testconstants.Localhost2, To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
-					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
+					{From: hosts.Localhost1.Host(), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost2.Host(), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost3.HTTP(), To: hosts.APIGithub.HTTP()},
+					{From: hosts.Localhost4.HTTPS(), To: hosts.APIGithub.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhost1WithPort(httpPort), To: testconstants.HTTPSGithub},
-					{From: testconstants.HTTPSLocalhost1WithPort(httpsPort), To: testconstants.HTTPSGithub},
-					{From: testconstants.HTTPLocalhost2WithPort(httpPort), To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPSLocalhost2WithPort(httpsPort), To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPLocalhost3WithPort(httpPort), To: testconstants.HTTPAPIGithub},
-					{From: testconstants.HTTPSLocalhost4WithPort(httpsPort), To: testconstants.HTTPSAPIGithub},
+					{From: hosts.Localhost1.HTTPPort(httpPort), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost1.HTTPSPort(httpsPort), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost2.HTTPPort(httpPort), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost2.HTTPSPort(httpsPort), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost3.HTTPPort(httpPort), To: hosts.APIGithub.HTTP()},
+					{From: hosts.Localhost4.HTTPSPort(httpsPort), To: hosts.APIGithub.HTTPS()},
 				},
 				useHTTPS: true,
 			},
@@ -97,49 +97,49 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "correctly set http and https ports",
 				mappings: config.Mappings{
-					{From: testconstants.Localhost, To: testconstants.Github},
+					{From: hosts.Localhost.Host(), To: hosts.Github.Host()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhost, To: testconstants.Github},
-					{From: testconstants.HTTPSLocalhost, To: testconstants.Github},
+					{From: hosts.Localhost.HTTP(), To: hosts.Github.Host()},
+					{From: hosts.Localhost.HTTPS(), To: hosts.Github.Host()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set http port",
 				mappings: config.Mappings{
-					{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set https port",
 				mappings: config.Mappings{
-					{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPSLocalhost, To: testconstants.HTTPSGithub},
+					{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 				},
 				useHTTPS: true,
 			},
 			{
 				name: "correctly set mixed schemes",
 				mappings: config.Mappings{
-					{From: testconstants.Localhost1, To: testconstants.HTTPSGithub},
-					{From: testconstants.Localhost2, To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
-					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
+					{From: hosts.Localhost1.Host(), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost2.Host(), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost3.HTTP(), To: hosts.APIGithub.HTTP()},
+					{From: hosts.Localhost4.HTTPS(), To: hosts.APIGithub.HTTPS()},
 				},
 				expected: config.Mappings{
-					{From: testconstants.HTTPLocalhost1, To: testconstants.HTTPSGithub},
-					{From: testconstants.HTTPSLocalhost1, To: testconstants.HTTPSGithub},
-					{From: testconstants.HTTPLocalhost2, To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPSLocalhost2, To: testconstants.HTTPGithub},
-					{From: testconstants.HTTPLocalhost3, To: testconstants.HTTPAPIGithub},
-					{From: testconstants.HTTPSLocalhost4, To: testconstants.HTTPSAPIGithub},
+					{From: hosts.Localhost1.HTTP(), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost1.HTTPS(), To: hosts.Github.HTTPS()},
+					{From: hosts.Localhost2.HTTP(), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost2.HTTPS(), To: hosts.Github.HTTP()},
+					{From: hosts.Localhost3.HTTP(), To: hosts.APIGithub.HTTP()},
+					{From: hosts.Localhost4.HTTPS(), To: hosts.APIGithub.HTTPS()},
 				},
 				useHTTPS: true,
 			},
@@ -170,7 +170,7 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "incorrect source url",
 				mappings: config.Mappings{
-					{From: "loca^host", To: testconstants.Github},
+					{From: "loca^host", To: hosts.Github.Host()},
 				},
 				httpPort:    httpPort,
 				httpsPort:   httpsPort,
@@ -180,7 +180,7 @@ func TestNormaliseMappings(t *testing.T) {
 			{
 				name: "incorrect port in source url",
 				mappings: config.Mappings{
-					{From: "localhost:", To: testconstants.Github},
+					{From: "localhost:", To: hosts.Github.Host()},
 				},
 				httpPort:    -1,
 				httpsPort:   httpsPort,
