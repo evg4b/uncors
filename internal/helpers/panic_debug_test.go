@@ -1,4 +1,4 @@
-//go:build release
+//go:build !release
 
 package helpers_test
 
@@ -32,7 +32,7 @@ func TestPanicInterceptor(t *testing.T) {
 		t.Run(testCast.name, func(t *testing.T) {
 			called := false
 
-			assert.NotPanics(t, func() {
+			assert.Panics(t, func() {
 				defer helpers.PanicInterceptor(func(data any) {
 					called = true
 					assert.Equal(t, testCast.panicData, data)
