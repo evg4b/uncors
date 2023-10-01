@@ -25,7 +25,7 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 			log.Errorf("error while shutting down UNCORS server: %s", err)
 		}
 
-		return err // nolint: wrapcheck
+		return err
 	}
 
 	log.Debug("UNCORS server closed")
