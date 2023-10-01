@@ -27,6 +27,7 @@ linters:
     - ireturn
     - bodyclose
     - depguard
+    - wrapcheck
 linters-settings:
   varnamelen:
     ignore-names:

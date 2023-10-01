@@ -7,5 +7,5 @@ import (
 func Validate(c *UncorsConfig) error {
 	validate := validator.New()
 
-	return validate.Struct(c) //nolint:wrapcheck
+	return validate.Struct(c)
 }

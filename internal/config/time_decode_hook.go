@@ -14,7 +14,6 @@ func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
-		//nolint:wrapcheck
 		return time.ParseDuration(
 			strings.ReplaceAll(data.(string), " ", ""), //nolint: forcetypeassert
 		)

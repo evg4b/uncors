@@ -61,12 +61,12 @@ func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.Decod
 		IgnoreUntaggedFields: true,
 	})
 	if err != nil {
-		return err //nolint:wrapcheck
+		return err
 	}
 
 	err = decoder.Decode(data)
 
-	return err //nolint:wrapcheck
+	return err
 }
 
 const (

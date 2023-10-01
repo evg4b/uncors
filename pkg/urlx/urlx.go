@@ -1,5 +1,4 @@
 // Package urlx parses and normalizes URLs. It can also resolve hostname to an IP address.
-// nolint: wrapcheck
 package urlx
 
 import (
