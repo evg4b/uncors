@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-npm-go-bin@^0.0.1-beta.1:
-  version "0.0.1-beta.1"
-  resolved "https://registry.yarnpkg.com/npm-go-bin/-/npm-go-bin-0.0.1-beta.1.tgz#5db3b62e2903641c523d7a7af0124df915950e1e"
-  integrity sha512-XvSZ1NmFTlDyMylAOlnqbYIR+UVoVFUYwgyufGHRJhcdO+3mNKWDUULeSD1yg+8nTMGgB1DbfjH1ryfyLCei+g==
+npm-go-bin@latest:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/npm-go-bin/-/npm-go-bin-0.0.1.tgz#acbf3c3f728fdc74f9e3197f25844ee1a4ecbd3b"
+  integrity sha512-MNQSlayGXDx0EGzJvSK2D9gjy1JUOVHhSb08UCh6zJ+UHUhl1aR26qTCdreBRF9JDAjIuZ6kHqlZisPRPJf1kQ==
