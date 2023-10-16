@@ -30,7 +30,7 @@
     "url": "https://github.com/evg4b/uncors/releases/download/v{{version}}/uncors_{{version}}_{{platform}}_{{arch}}.tar.gz"
   },
   "dependencies": {
-    "npm-go-bin": "^0.0.1-beta.1"
+    "npm-go-bin": "latest"
   },
   "cpu": [
     "x64",
