@@ -18,8 +18,8 @@ const (
 var flags *pflag.FlagSet
 
 type UncorsConfig struct {
-	HTTPPort    int         `mapstructure:"http-port"    validate:"required"`
-	Mappings    Mappings    `mapstructure:"mappings"     validate:"required"`
+	HTTPPort    int         `mapstructure:"http-port"`
+	Mappings    Mappings    `mapstructure:"mappings"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	HTTPSPort   int         `mapstructure:"https-port"`
@@ -75,10 +75,6 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		configuration.HTTPSPort,
 		configuration.IsHTTPSEnabled(),
 	)
-
-	if err := Validate(configuration); err != nil {
-		panic(err)
-	}
 
 	return configuration
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/evg4b/uncors/internal/config/validators"
 	"os"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -62,6 +63,11 @@ func main() {
 
 func loadConfiguration(viperInstance *viper.Viper) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
+	err := validators.ValidateConfig(uncorsConfig)
+	if err != nil {
+		panic(err)
+	}
+
 	if uncorsConfig.Debug {
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")
