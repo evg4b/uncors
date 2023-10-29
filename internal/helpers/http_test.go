@@ -26,7 +26,7 @@ func TestNormaliseRequest(t *testing.T) {
 
 			helpers.NormaliseRequest(request)
 
-			assert.Equal(t, request.URL.Scheme, "http")
+			assert.Equal(t, "http", request.URL.Scheme)
 		})
 
 		t.Run("https", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestNormaliseRequest(t *testing.T) {
 
 			helpers.NormaliseRequest(request)
 
-			assert.Equal(t, request.URL.Scheme, "https")
+			assert.Equal(t, "https", request.URL.Scheme)
 		})
 	})
 

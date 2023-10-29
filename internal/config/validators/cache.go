@@ -7,6 +7,6 @@ type CacheValidator struct {
 	Value string
 }
 
-func (c *CacheValidator) IsValid(errors *validate.Errors) {
-
+func (c *CacheValidator) IsValid(_ *validate.Errors) {
+	// will be implemented later
 }

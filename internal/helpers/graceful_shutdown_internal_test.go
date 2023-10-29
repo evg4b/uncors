@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
@@ -51,7 +52,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 				return nil
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 
 		env.CheckAfterAll(func() {
@@ -98,7 +99,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 						return nil
 					})
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				})
 
 				<-time.After(50 * time.Millisecond)
@@ -129,7 +130,7 @@ func TestGracefulShutdown(t *testing.T) {
 			err := GracefulShutdown(context.Background(), func(ctx context.Context) error {
 				return nil
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 
 		<-time.After(50 * time.Millisecond)

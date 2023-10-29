@@ -8,7 +8,7 @@ import (
 type Request = http.Request
 
 type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
+	ServeHTTP(writer ResponseWriter, request *Request)
 }
 
 type Middleware interface {

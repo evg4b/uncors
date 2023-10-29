@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParse(t *testing.T) {
@@ -104,10 +105,10 @@ func TestParse(t *testing.T) {
 		url, err := urlx.Parse(testCase.in)
 
 		if !testCase.err {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		if testCase.err {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 
 		if testCase.out != "" {
@@ -116,7 +117,7 @@ func TestParse(t *testing.T) {
 			// If the above defaulted to HTTP, let's test HTTPS too.
 			if !strings.HasPrefix(strings.ToLower(testCase.in), "http://") && strings.HasPrefix(testCase.out, "http://") {
 				url, err := urlx.ParseWithDefaultScheme(testCase.in, "https")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				if !strings.HasPrefix(url.String(), "https://") {
 					t.Errorf("%q: expected %q with https:// prefix, got %q", testCase.in, testCase.out, url.String())
@@ -183,10 +184,10 @@ func TestURLNormalize(t *testing.T) {
 		url, err := urlx.NormalizeString(testCase.in)
 
 		if !testCase.err {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		if testCase.err {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 		assert.Equal(t, testCase.out, url)
 	}
@@ -207,10 +208,10 @@ func TestURLResolve(t *testing.T) {
 		ipAdders, err := urlx.ResolveString(testCase.in)
 
 		if !testCase.err {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		if testCase.err {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 		if testCase.out != "" {
 			assert.Equal(t, testCase.out, ipAdders.String())
@@ -231,10 +232,10 @@ func TestURIEncode(t *testing.T) {
 		actual, err := urlx.URIEncode(testCase.in)
 
 		if !testCase.err {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		if testCase.err {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 		if testCase.out != "" {
 			assert.Equal(t, testCase.out, actual)

@@ -10,6 +10,6 @@ type StaticValidator struct {
 	Value config.StaticDirectory
 }
 
-func (s *StaticValidator) IsValid(errors *validate.Errors) {
-
+func (s *StaticValidator) IsValid(_ *validate.Errors) {
+	// will be implemented later
 }

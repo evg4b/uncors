@@ -30,6 +30,10 @@ func (h host) HTTPPort(port int) string {
 	return h.jonPort(h.HTTP(), port)
 }
 
+func (h host) Scheme(scheme string) string {
+	return scheme + "://" + string(h)
+}
+
 func (h host) jonPort(host string, port int) string {
 	return host + ":" + strconv.Itoa(port)
 }

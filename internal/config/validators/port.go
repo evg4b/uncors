@@ -2,6 +2,7 @@ package validators
 
 import (
 	"fmt"
+
 	v "github.com/gobuffalo/validate"
 )
 

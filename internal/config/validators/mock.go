@@ -10,6 +10,6 @@ type MockValidator struct {
 	Value config.Mock
 }
 
-func (m *MockValidator) IsValid(errors *v.Errors) {
-
+func (m *MockValidator) IsValid(_ *v.Errors) {
+	// will be implemented later
 }

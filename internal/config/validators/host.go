@@ -1,76 +1,53 @@
 package validators
 
 import (
+	"fmt"
+
 	"github.com/evg4b/uncors/pkg/urlx"
-	v "github.com/gobuffalo/validate"
+	"github.com/gobuffalo/validate"
 )
+
+const maxHostLength = 255
 
 type HostValidator struct {
 	Field string
 	Value string
 }
 
-func (h *HostValidator) IsValid(errors *v.Errors) {
-	if !h.validateLength(errors) {
+func (h *HostValidator) IsValid(errors *validate.Errors) {
+	if !h.validateHostLength(errors) {
 		return
 	}
 
-	parsed, err := urlx.Parse(h.Value)
+	uri, err := urlx.Parse(h.Value)
 	if err != nil {
-		errors.Add(h.Field, "Host is invalid")
+		errors.Add(h.Field, fmt.Sprintf("%s is invalid: %s", h.Field, err))
 
 		return
 	}
 
-	if parsed.Hostname() == "" {
-		errors.Add(h.Field, "Host is invalid")
+	if uri.Path != "" {
+		errors.Add(h.Field, fmt.Sprintf("%s must not contain path", h.Field))
 	}
 
-	if parsed.Port() != "" {
-		errors.Add(h.Field, "Host must not contain port")
-	}
-
-	if parsed.Scheme != "" {
-		errors.Add(h.Field, "Host must not contain scheme")
-	}
-
-	if parsed.User != nil {
-		errors.Add(h.Field, "Host must not contain user")
-	}
-
-	if parsed.RawPath != "" {
-		errors.Add(h.Field, "Host must not contain path")
-	}
-
-	if parsed.RawQuery != "" {
-		errors.Add(h.Field, "Host must not contain query")
-	}
-
-	if parsed.RawFragment != "" {
-		errors.Add(h.Field, "Host must not contain fragment")
-	}
-
-	if parsed.Opaque != "" {
-		errors.Add(h.Field, "Host must not contain opaque")
-	}
-
-	if parsed.ForceQuery {
-		errors.Add(h.Field, "Host must not contain force query")
+	if uri.RawQuery != "" {
+		errors.Add(h.Field, fmt.Sprintf("%s must not contain query", h.Field))
 	}
 }
 
-func (h *HostValidator) validateLength(errors *v.Errors) bool {
-	if h.Value == "" {
-		errors.Add(h.Field, "Host must not be empty")
+func (h *HostValidator) validateHostLength(errors *validate.Errors) bool {
+	result := true
+	length := len(h.Value)
 
-		return false
+	if length == 0 {
+		errors.Add(h.Field, fmt.Sprintf("%s must not be empty", h.Field))
+		result = false
 	}
 
-	if len(h.Value) > 255 {
-		errors.Add(h.Field, "Host must be less than 255 characters")
-
-		return false
+	if length > maxHostLength {
+		errors.Add(h.Field, fmt.Sprintf("%s must not be longer than 255 characters, but got %d", h.Field, len(h.Value)))
+		result = false
 	}
 
-	return true
+	return result
 }

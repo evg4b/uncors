@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/evg4b/uncors/internal/config/validators"
 	"os"
+
+	"github.com/evg4b/uncors/internal/config/validators"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"

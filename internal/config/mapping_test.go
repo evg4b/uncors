@@ -55,7 +55,7 @@ func TestURLMappingHookFunc(t *testing.T) {
 				))
 				testutils.CheckNoError(t, err)
 
-				assert.Equal(t, actual, testCase.expected)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})

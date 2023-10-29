@@ -1,13 +1,13 @@
 package validators_test
 
-//import (
+// import (
 //	"testing"
 //
 //	"github.com/evg4b/uncors/internal/config"
 //	"github.com/stretchr/testify/assert"
 //)
 //
-//func TestValidate(t *testing.T) {
+// func TestValidate(t *testing.T) {
 //	tests := []struct {
 //		name     string
 //		config   *config.UncorsConfig
@@ -25,7 +25,7 @@ package validators_test
 //		t.Run(testCase.name, func(t *testing.T) {
 //			err := config.Validate(testCase.config)
 //
-//			assert.EqualError(t, err, testCase.expected)
+//			require.EqualError(t, err, testCase.expected)
 //		})
 //	}
 //}
