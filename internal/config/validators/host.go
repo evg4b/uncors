@@ -21,7 +21,7 @@ func (h *HostValidator) IsValid(errors *validate.Errors) {
 
 	uri, err := urlx.Parse(h.Value)
 	if err != nil {
-		errors.Add(h.Field, fmt.Sprintf("%s is invalid: %s", h.Field, err))
+		errors.Add(h.Field, fmt.Sprintf("%s is not valid host", h.Field))
 
 		return
 	}
@@ -32,6 +32,10 @@ func (h *HostValidator) IsValid(errors *validate.Errors) {
 
 	if uri.RawQuery != "" {
 		errors.Add(h.Field, fmt.Sprintf("%s must not contain query", h.Field))
+	}
+
+	if uri.Scheme != "http" && uri.Scheme != "https" && uri.Scheme != "" {
+		errors.Add(h.Field, fmt.Sprintf("%s scheme must be http or https", h.Field))
 	}
 }
 

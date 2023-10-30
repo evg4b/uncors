@@ -76,6 +76,16 @@ func TestHostValidator(t *testing.T) {
 				value: "example.com?query=1",
 				error: "field must not contain query",
 			},
+			{
+				name:  "host with unsupported scheme",
+				value: hosts.Localhost.Scheme("ftp"),
+				error: "field scheme must be http or https",
+			},
+			{
+				name:  "host is not valid",
+				value: "loca:::lhost",
+				error: "field is not valid host",
+			},
 		}
 
 		for _, test := range tests {
