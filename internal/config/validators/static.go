@@ -10,6 +10,9 @@ type StaticValidator struct {
 	Value config.StaticDirectory
 }
 
-func (s *StaticValidator) IsValid(_ *validate.Errors) {
-	// will be implemented later
+func (s *StaticValidator) IsValid(errors *validate.Errors) {
+	errors.Append(validate.Validate(&PathValidator{
+		Field: "path",
+		Value: s.Value.Path,
+	}))
 }
