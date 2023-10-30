@@ -3,7 +3,7 @@ package validators
 import (
 	"fmt"
 
-	v "github.com/gobuffalo/validate"
+	"github.com/gobuffalo/validate"
 )
 
 type PortValidator struct {
@@ -11,7 +11,7 @@ type PortValidator struct {
 	Value int
 }
 
-func (p *PortValidator) IsValid(errors *v.Errors) {
+func (p *PortValidator) IsValid(errors *validate.Errors) {
 	if p.Value < 1 || p.Value > 65535 {
 		errors.Add(p.Field, fmt.Sprintf("%s must be between 0 and 65535", p.Field))
 	}

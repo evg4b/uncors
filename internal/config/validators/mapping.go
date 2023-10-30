@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/evg4b/uncors/internal/config"
-	v "github.com/gobuffalo/validate"
+	"github.com/gobuffalo/validate"
 )
 
 type MappingValidator struct {
@@ -12,29 +12,29 @@ type MappingValidator struct {
 	Value config.Mapping
 }
 
-func (m *MappingValidator) IsValid(errors *v.Errors) {
-	errors.Append(v.Validate(
+func (m *MappingValidator) IsValid(errors *validate.Errors) {
+	errors.Append(validate.Validate(
 		&HostValidator{Field: "from", Value: m.Value.From},
 		&HostValidator{Field: "to", Value: m.Value.To},
 	))
 
 	for i, static := range m.Value.Statics {
-		errors.Append(v.Validate(&StaticValidator{
-			Field: fmt.Sprintf("statics[%d]", i),
+		errors.Append(validate.Validate(&StaticValidator{
+			Field: joinPath(m.Field, fmt.Sprintf("statics[%d]", i)),
 			Value: static,
 		}))
 	}
 
 	for i, mock := range m.Value.Mocks {
-		errors.Append(v.Validate(&MockValidator{
-			Field: fmt.Sprintf("mocks[%d]", i),
+		errors.Append(validate.Validate(&MockValidator{
+			Field: joinPath(m.Field, fmt.Sprintf("mocks[%d]", i)),
 			Value: mock,
 		}))
 	}
 
 	for i, cache := range m.Value.Cache {
-		errors.Append(v.Validate(&CacheValidator{
-			Field: fmt.Sprintf("cache[%d]", i),
+		errors.Append(validate.Validate(&CacheValidator{
+			Field: joinPath(m.Field, fmt.Sprintf("cache[%d]", i)),
 			Value: cache,
 		}))
 	}

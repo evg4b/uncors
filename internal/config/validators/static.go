@@ -12,7 +12,7 @@ type StaticValidator struct {
 
 func (s *StaticValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(&PathValidator{
-		Field: "path",
+		Field: joinPath(s.Field, "path"),
 		Value: s.Value.Path,
 	}))
 }
