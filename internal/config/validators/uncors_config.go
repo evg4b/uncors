@@ -23,6 +23,11 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 			Value: mapping,
 		}))
 	}
+
+	errors.Append(validate.Validate(&ProxyValidator{
+		Field: "proxy",
+		Value: u.Config.Proxy,
+	}))
 }
 
 func ValidateConfig(config *config.UncorsConfig) error {
