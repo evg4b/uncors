@@ -8,31 +8,32 @@ import (
 )
 
 type UncorsConfigValidator struct {
-	Config *config.UncorsConfig
+	config.UncorsConfig
 }
 
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&PortValidator{Field: "http-port", Value: u.Config.HTTPPort},
-		&PortValidator{Field: "https-port", Value: u.Config.HTTPSPort},
+		&PortValidator{Field: "http-port", Value: u.HTTPPort},
+		&PortValidator{Field: "https-port", Value: u.HTTPSPort},
 	))
 
-	for i, mapping := range u.Config.Mappings {
+	for i, mapping := range u.Mappings {
 		errors.Append(validate.Validate(&MappingValidator{
 			Field: fmt.Sprintf("mappings[%d]", i),
 			Value: mapping,
 		}))
 	}
 
-	errors.Append(validate.Validate(&ProxyValidator{
-		Field: "proxy",
-		Value: u.Config.Proxy,
-	}))
+	errors.Append(validate.Validate(
+		&ProxyValidator{Field: "proxy", Value: u.Proxy},
+		&FileExistsValidator{Field: "cert-file", Value: u.CertFile},
+		&FileExistsValidator{Field: "key-file", Value: u.KeyFile},
+		&CacheConfigValidator{Field: "cache-config", Value: u.CacheConfig},
+	))
 }
 
 func ValidateConfig(config *config.UncorsConfig) error {
-	errors := validate.Validate(&UncorsConfigValidator{Config: config})
-	if errors.HasAny() {
+	if errors := validate.Validate(&UncorsConfigValidator{*config}); errors.HasAny() {
 		return errors
 	}
 

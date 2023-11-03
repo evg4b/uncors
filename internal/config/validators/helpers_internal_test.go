@@ -39,17 +39,17 @@ func TestJoinObjectPath(t *testing.T) {
 		},
 		{
 			name:     "array with dot",
-			paths:    []string{"one", "two", "[0].three"},
+			paths:    []string{"one", "two", "[0]", "three"},
 			expected: "one.two[0].three",
 		},
 		{
 			name:     "array with dot and array",
-			paths:    []string{"one", "two", "[0].three", "[1]"},
+			paths:    []string{"one", "two", "[0]", "three", "[1]"},
 			expected: "one.two[0].three[1]",
 		},
 		{
 			name:     "array with dot and array and dot",
-			paths:    []string{"one", "two", "[0].three", "[1].four"},
+			paths:    []string{"one", "two", "[0]", "three", "[1]", "four"},
 			expected: "one.two[0].three[1].four",
 		},
 	}
