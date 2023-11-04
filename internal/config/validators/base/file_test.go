@@ -4,20 +4,18 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config/validators/base"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestFileExistsValidator(t *testing.T) {
+func TestFileValidator(t *testing.T) {
 	const field = "test"
 
 	t.Run("should not register error if file error", func(t *testing.T) {
 		path := "/demo/file.go"
-		errors := validate.Validate(&base.FileExistsValidator{
+		errors := validate.Validate(&base.FileValidator{
 			Field: field,
 			Value: path,
 			Fs: testutils.FsFromMap(t, map[string]string{
@@ -51,7 +49,7 @@ func TestFileExistsValidator(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			errors := validate.Validate(&base.FileExistsValidator{
+			errors := validate.Validate(&base.FileValidator{
 				Field: field,
 				Value: test.path,
 				Fs:    fs,

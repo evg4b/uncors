@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/afero"
 )
 
-type FileExistsValidator struct {
+type FileValidator struct {
 	Field string
 	Value string
 	Fs    afero.Fs
 }
 
-func (f *FileExistsValidator) IsValid(errors *validate.Errors) {
+func (f *FileValidator) IsValid(errors *validate.Errors) {
 	helpers.PassedOrOsFs(&f.Fs)
 
 	stat, err := f.Fs.Stat(f.Value)

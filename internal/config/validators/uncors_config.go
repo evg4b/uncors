@@ -27,8 +27,8 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 
 	errors.Append(validate.Validate(
 		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
-		&base.FileExistsValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
-		&base.FileExistsValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
+		&base.FileValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
+		&base.FileValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
 		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
 	))
 }

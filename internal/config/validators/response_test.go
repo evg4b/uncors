@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResponseValidator_IsValid(t *testing.T) {
+func TestResponseValidator(t *testing.T) {
 	const file = "testdata/file.txt"
 
 	fs := testutils.FsFromMap(t, map[string]string{
@@ -20,17 +20,39 @@ func TestResponseValidator_IsValid(t *testing.T) {
 	})
 
 	t.Run("should not register errors if response is valid", func(t *testing.T) {
-		errors := validate.Validate(&validators.ResponseValidator{
-			Field: "test",
-			Value: config.Response{
-				Code:  200,
-				File:  file,
-				Delay: 3 * time.Second,
+		tests := []struct {
+			name  string
+			value config.Response
+		}{
+			{
+				name: "valid response with file",
+				value: config.Response{
+					Code:  200,
+					File:  file,
+					Delay: 3 * time.Second,
+				},
 			},
-			Fs: fs,
-		})
+			{
+				name: "valid response with raw",
+				value: config.Response{
+					Code:  200,
+					Raw:   `{ "test": "test" }`,
+					Delay: 3 * time.Second,
+				},
+			},
+		}
 
-		assert.False(t, errors.HasAny())
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				errors := validate.Validate(&validators.ResponseValidator{
+					Field: "test",
+					Value: test.value,
+					Fs:    fs,
+				})
+
+				assert.False(t, errors.HasAny())
+			})
+		}
 	})
 
 	t.Run("should register errors for", func(t *testing.T) {
@@ -65,6 +87,24 @@ func TestResponseValidator_IsValid(t *testing.T) {
 					Delay: -1 * time.Second,
 				},
 				error: "test.delay must be greater than 0",
+			},
+			{
+				name: "file and raw are empty",
+				value: config.Response{
+					Code:  200,
+					Delay: 3 * time.Second,
+				},
+				error: "test.raw or test.file must be set",
+			},
+			{
+				name: "file with raw are set",
+				value: config.Response{
+					Code:  200,
+					File:  file,
+					Raw:   "test",
+					Delay: 3 * time.Second,
+				},
+				error: "only one of test.raw or test.file must be set",
 			},
 		}
 		for _, test := range tests {
