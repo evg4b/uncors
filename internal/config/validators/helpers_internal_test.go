@@ -61,3 +61,34 @@ func TestJoinObjectPath(t *testing.T) {
 		})
 	}
 }
+
+func TestIndex(t *testing.T) {
+	tests := []struct {
+		name     string
+		index    int
+		expected string
+	}{
+		{
+			name:     "zero",
+			index:    0,
+			expected: "[0]",
+		},
+		{
+			name:     "one",
+			index:    1,
+			expected: "[1]",
+		},
+		{
+			name:     "two",
+			index:    2,
+			expected: "[2]",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := index(tt.index)
+
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}

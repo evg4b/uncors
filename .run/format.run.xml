@@ -1,8 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="lint" type="CompoundRunConfigurationType">
+  <configuration default="false" name="format" type="CompoundRunConfigurationType">
     <toRun name="gofmt" type="ShConfigurationType" />
     <toRun name="gofumpt" type="ShConfigurationType" />
-    <toRun name="golangci-lint" type="ShConfigurationType" />
     <method v="2" />
   </configuration>
 </component>
