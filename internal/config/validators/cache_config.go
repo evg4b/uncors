@@ -1,8 +1,6 @@
 package validators
 
 import (
-	"fmt"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/gobuffalo/validate"
 )
@@ -31,7 +29,7 @@ func (c *CacheConfigValidator) IsValid(errors *validate.Errors) {
 	for i, method := range c.Value.Methods {
 		errors.Append(validate.Validate(
 			&MethodValidator{
-				Field: joinPath(c.Field, "methods", fmt.Sprintf("[%d]", i)),
+				Field: joinPath(c.Field, "methods", index(i)),
 				Value: method,
 			},
 		))

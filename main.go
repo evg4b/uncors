@@ -32,10 +32,11 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	viperInstance := viper.GetViper()
-	uncorsConfig := loadConfiguration(viperInstance)
-
 	fs := afero.NewOsFs()
+
+	viperInstance := viper.GetViper()
+	uncorsConfig := loadConfiguration(viperInstance, fs)
+
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version)
 	viperInstance.OnConfigChange(func(in fsnotify.Event) {
@@ -43,7 +44,7 @@ func main() {
 			log.Errorf("Config reloading value %v", value)
 		})
 
-		app.Restart(ctx, loadConfiguration(viperInstance))
+		app.Restart(ctx, loadConfiguration(viperInstance, fs))
 	})
 	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
@@ -62,9 +63,9 @@ func main() {
 	log.Info("Server was stopped")
 }
 
-func loadConfiguration(viperInstance *viper.Viper) *config.UncorsConfig {
+func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
-	err := validators.ValidateConfig(uncorsConfig)
+	err := validators.ValidateConfig(uncorsConfig, fs)
 	if err != nil {
 		panic(err)
 	}

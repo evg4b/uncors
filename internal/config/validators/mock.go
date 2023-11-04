@@ -10,6 +10,20 @@ type MockValidator struct {
 	Value config.Mock
 }
 
-func (m *MockValidator) IsValid(_ *validate.Errors) {
-	// will be implemented later
+func (m *MockValidator) IsValid(errors *validate.Errors) {
+	errors.Append(validate.Validate(
+		&PathValidator{
+			Field: joinPath(m.Field, "path"),
+			Value: m.Value.Path,
+		},
+		&MethodValidator{
+			Field:      joinPath(m.Field, "method"),
+			Value:      m.Value.Method,
+			AllowEmpty: true,
+		},
+		&ResponseValidator{
+			Field: joinPath(m.Field, "response"),
+			Value: m.Value.Response,
+		},
+	))
 }

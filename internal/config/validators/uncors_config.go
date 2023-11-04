@@ -1,39 +1,44 @@
 package validators
 
 import (
-	"fmt"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/gobuffalo/validate"
+	"github.com/spf13/afero"
 )
 
 type UncorsConfigValidator struct {
-	config.UncorsConfig
+	config *config.UncorsConfig
+	Fs     afero.Fs
 }
 
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&PortValidator{Field: "http-port", Value: u.HTTPPort},
-		&PortValidator{Field: "https-port", Value: u.HTTPSPort},
+		&PortValidator{Field: "http-port", Value: u.config.HTTPPort},
+		&PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
 	))
 
-	for i, mapping := range u.Mappings {
+	for i, mapping := range u.config.Mappings {
 		errors.Append(validate.Validate(&MappingValidator{
-			Field: fmt.Sprintf("mappings[%d]", i),
+			Field: joinPath("mappings", index(i)),
 			Value: mapping,
 		}))
 	}
 
 	errors.Append(validate.Validate(
-		&ProxyValidator{Field: "proxy", Value: u.Proxy},
-		&FileExistsValidator{Field: "cert-file", Value: u.CertFile},
-		&FileExistsValidator{Field: "key-file", Value: u.KeyFile},
-		&CacheConfigValidator{Field: "cache-config", Value: u.CacheConfig},
+		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
+		&FileExistsValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
+		&FileExistsValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
+		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
 	))
 }
 
-func ValidateConfig(config *config.UncorsConfig) error {
-	if errors := validate.Validate(&UncorsConfigValidator{*config}); errors.HasAny() {
+func ValidateConfig(config *config.UncorsConfig, fs afero.Fs) error {
+	errors := validate.Validate(&UncorsConfigValidator{
+		config: config,
+		Fs:     fs,
+	})
+
+	if errors.HasAny() {
 		return errors
 	}
 

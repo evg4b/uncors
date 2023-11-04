@@ -1,6 +1,9 @@
 package validators
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func joinPath(paths ...string) string {
 	builder := strings.Builder{}
@@ -15,4 +18,8 @@ func joinPath(paths ...string) string {
 	}
 
 	return builder.String()
+}
+
+func index(i int) string {
+	return fmt.Sprintf("[%d]", i)
 }
