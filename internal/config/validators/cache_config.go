@@ -2,6 +2,7 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 )
 
@@ -12,11 +13,11 @@ type CacheConfigValidator struct {
 
 func (c *CacheConfigValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&DurationValidator{
+		&base.DurationValidator{
 			Field: joinPath(c.Field, "expiration-time"),
 			Value: c.Value.ExpirationTime,
 		},
-		&DurationValidator{
+		&base.DurationValidator{
 			Field: joinPath(c.Field, "clear-time"),
 			Value: c.Value.ClearTime,
 		},
@@ -28,7 +29,7 @@ func (c *CacheConfigValidator) IsValid(errors *validate.Errors) {
 
 	for i, method := range c.Value.Methods {
 		errors.Append(validate.Validate(
-			&MethodValidator{
+			&base.MethodValidator{
 				Field: joinPath(c.Field, "methods", index(i)),
 				Value: method,
 			},

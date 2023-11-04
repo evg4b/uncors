@@ -2,6 +2,7 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -13,8 +14,8 @@ type UncorsConfigValidator struct {
 
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&PortValidator{Field: "http-port", Value: u.config.HTTPPort},
-		&PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
+		&base.PortValidator{Field: "http-port", Value: u.config.HTTPPort},
+		&base.PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
 	))
 
 	for i, mapping := range u.config.Mappings {
@@ -26,8 +27,8 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 
 	errors.Append(validate.Validate(
 		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
-		&FileExistsValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
-		&FileExistsValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
+		&base.FileExistsValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
+		&base.FileExistsValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
 		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
 	))
 }

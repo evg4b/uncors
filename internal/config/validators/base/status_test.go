@@ -1,10 +1,10 @@
-package validators_test
+package base_test
 
 import (
 	"strconv"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +27,7 @@ func TestStatusValidator(t *testing.T) {
 
 		for _, code := range validCodes {
 			t.Run(strconv.Itoa(code), func(t *testing.T) {
-				errors := validate.Validate(&validators.StatusValidator{
+				errors := validate.Validate(&base.StatusValidator{
 					Field: field,
 					Value: code,
 				})
@@ -47,7 +47,7 @@ func TestStatusValidator(t *testing.T) {
 
 		for _, code := range invalidCodes {
 			t.Run(strconv.Itoa(code), func(t *testing.T) {
-				errors := validate.Validate(&validators.StatusValidator{
+				errors := validate.Validate(&base.StatusValidator{
 					Field: field,
 					Value: code,
 				})

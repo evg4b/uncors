@@ -1,9 +1,10 @@
-package validators_test
+package base_test
 
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/internal/config/validators/base"
+
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +26,7 @@ func TestPathValidator(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.PathValidator{
+				errors := validate.Validate(&base.PathValidator{
 					Field: field,
 					Value: test.value,
 				})
@@ -65,7 +66,7 @@ func TestPathValidator(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.PathValidator{
+				errors := validate.Validate(&base.PathValidator{
 					Field: field,
 					Value: test.value,
 				})

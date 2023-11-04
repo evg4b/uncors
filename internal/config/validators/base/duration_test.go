@@ -1,10 +1,11 @@
-package validators_test
+package base_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/internal/config/validators/base"
+
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +26,7 @@ func TestDurationValidator(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.DurationValidator{
+				errors := validate.Validate(&base.DurationValidator{
 					Field: field,
 					Value: tt.Value,
 				})
@@ -54,7 +55,7 @@ func TestDurationValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.DurationValidator{
+				errors := validate.Validate(&base.DurationValidator{
 					Field: field,
 					Value: test.Value,
 				})

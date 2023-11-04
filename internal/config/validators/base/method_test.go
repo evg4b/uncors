@@ -1,13 +1,14 @@
-package validators_test
+package base_test
 
 import (
 	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/config/validators/base"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +30,7 @@ func TestMethodValidator(t *testing.T) {
 		}
 		for _, method := range httpMethods {
 			t.Run(fmt.Sprintf("http method %s", method), func(t *testing.T) {
-				errors := validate.Validate(&validators.MethodValidator{
+				errors := validate.Validate(&base.MethodValidator{
 					Field: field,
 					Value: method,
 				})
@@ -39,7 +40,7 @@ func TestMethodValidator(t *testing.T) {
 		}
 
 		t.Run("empty value when empty value is allowed", func(t *testing.T) {
-			errors := validate.Validate(&validators.MethodValidator{
+			errors := validate.Validate(&base.MethodValidator{
 				Field:      field,
 				Value:      "",
 				AllowEmpty: true,
@@ -68,7 +69,7 @@ func TestMethodValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.MethodValidator{
+				errors := validate.Validate(&base.MethodValidator{
 					Field: field,
 					Value: test.Value,
 				})

@@ -1,12 +1,13 @@
-package validators_test
+package base_test
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/config/validators/base"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/evg4b/uncors/internal/config/validators"
 	v "github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +18,7 @@ func TestIsValid(t *testing.T) {
 	t.Run("valid port", func(t *testing.T) {
 		for _, port := range []int{1, 443, 65535} {
 			t.Run(fmt.Sprintf("port %d", port), func(t *testing.T) {
-				errors := v.Validate(&validators.PortValidator{
+				errors := v.Validate(&base.PortValidator{
 					Field: field,
 					Value: port,
 				})
@@ -30,7 +31,7 @@ func TestIsValid(t *testing.T) {
 	t.Run("invalid port", func(t *testing.T) {
 		for _, port := range []int{-5, 0, 70000} {
 			t.Run(fmt.Sprintf("port %d", port), func(t *testing.T) {
-				errors := v.Validate(&validators.PortValidator{
+				errors := v.Validate(&base.PortValidator{
 					Field: field,
 					Value: port,
 				})

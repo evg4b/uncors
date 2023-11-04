@@ -1,10 +1,11 @@
-package validators_test
+package base_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/internal/config/validators/base"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/evg4b/uncors/testing/hosts"
@@ -40,7 +41,7 @@ func TestHostValidator(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.HostValidator{
+				errors := validate.Validate(&base.HostValidator{
 					Field: field,
 					Value: test.value,
 				})
@@ -90,7 +91,7 @@ func TestHostValidator(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.HostValidator{
+				errors := validate.Validate(&base.HostValidator{
 					Field: field,
 					Value: test.value,
 				})

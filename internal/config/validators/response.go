@@ -2,6 +2,7 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -14,16 +15,16 @@ type ResponseValidator struct {
 
 func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&StatusValidator{
+		&base.StatusValidator{
 			Field: joinPath(r.Field, "code"),
 			Value: r.Value.Code,
 		},
-		&FileExistsValidator{
+		&base.FileExistsValidator{
 			Field: joinPath(r.Field, "file"),
 			Value: r.Value.File,
 			Fs:    r.Fs,
 		},
-		&DurationValidator{
+		&base.DurationValidator{
 			Field: joinPath(r.Field, "delay"),
 			Value: r.Value.Delay,
 		},

@@ -2,6 +2,7 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 )
 
@@ -12,8 +13,8 @@ type MappingValidator struct {
 
 func (m *MappingValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&HostValidator{Field: "from", Value: m.Value.From},
-		&HostValidator{Field: "to", Value: m.Value.To},
+		&base.HostValidator{Field: "from", Value: m.Value.From},
+		&base.HostValidator{Field: "to", Value: m.Value.To},
 	))
 
 	for i, static := range m.Value.Statics {
