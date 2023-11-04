@@ -22,8 +22,9 @@ func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 			Value: r.Value.Code,
 		},
 		&base.DurationValidator{
-			Field: joinPath(r.Field, "delay"),
-			Value: r.Value.Delay,
+			Field:     joinPath(r.Field, "delay"),
+			Value:     r.Value.Delay,
+			AllowZero: true,
 		},
 	))
 

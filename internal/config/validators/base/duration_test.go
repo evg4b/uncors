@@ -16,19 +16,26 @@ func TestDurationValidator(t *testing.T) {
 
 	t.Run("should not register errors for", func(t *testing.T) {
 		tests := []struct {
-			name  string
-			Value time.Duration
+			name      string
+			value     time.Duration
+			allowZero bool
 		}{
 			{
-				name:  "positive value",
-				Value: 1 * time.Second,
+				name:  "positive value without allow zero",
+				value: 1 * time.Second,
+			},
+			{
+				name:      "zero value with allow zero",
+				value:     0,
+				allowZero: true,
 			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				errors := validate.Validate(&base.DurationValidator{
-					Field: field,
-					Value: tt.Value,
+					Field:     field,
+					Value:     tt.value,
+					AllowZero: tt.allowZero,
 				})
 
 				assert.False(t, errors.HasAny())
@@ -38,26 +45,34 @@ func TestDurationValidator(t *testing.T) {
 
 	t.Run("should register errors for", func(t *testing.T) {
 		tests := []struct {
-			name  string
-			Value time.Duration
-			error string
+			name      string
+			value     time.Duration
+			allowZero bool
+			error     string
 		}{
 			{
-				name:  "zero value",
-				Value: 0,
+				name:  "negative value without allow zero",
+				value: -1 * time.Second,
 				error: "test-field must be greater than 0",
 			},
 			{
-				name:  "negative value",
-				Value: -1 * time.Second,
+				name:  "zero value without allow zero",
+				value: 0,
 				error: "test-field must be greater than 0",
+			},
+			{
+				name:      "negative value with allow zero",
+				value:     -1 * time.Second,
+				error:     "test-field must be greater than or equal to 0",
+				allowZero: true,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				errors := validate.Validate(&base.DurationValidator{
-					Field: field,
-					Value: test.Value,
+					Field:     field,
+					Value:     test.value,
+					AllowZero: test.allowZero,
 				})
 
 				require.EqualError(t, errors, test.error)

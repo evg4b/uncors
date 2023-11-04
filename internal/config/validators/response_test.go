@@ -40,6 +40,13 @@ func TestResponseValidator(t *testing.T) {
 					Delay: 3 * time.Second,
 				},
 			},
+			{
+				name: "valid response without delay",
+				value: config.Response{
+					Code: 200,
+					Raw:  `{ "test": "test" }`,
+				},
+			},
 		}
 
 		for _, test := range tests {
@@ -86,7 +93,7 @@ func TestResponseValidator(t *testing.T) {
 					File:  file,
 					Delay: -1 * time.Second,
 				},
-				error: "test.delay must be greater than 0",
+				error: "test.delay must be greater than or equal to 0",
 			},
 			{
 				name: "file and raw are empty",

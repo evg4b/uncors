@@ -9,7 +9,7 @@ import (
 
 type UncorsConfigValidator struct {
 	config *config.UncorsConfig
-	Fs     afero.Fs
+	fs     afero.Fs
 }
 
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
@@ -18,17 +18,37 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 		&base.PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
 	))
 
+	if len(u.config.Mappings) == 0 {
+		errors.Add("mappings", "mappings must not be empty")
+
+		return
+	}
+
 	for i, mapping := range u.config.Mappings {
 		errors.Append(validate.Validate(&MappingValidator{
 			Field: joinPath("mappings", index(i)),
 			Value: mapping,
+			Fs:    u.fs,
 		}))
+	}
+
+	if u.config.CertFile == "" && u.config.KeyFile != "" {
+		errors.Add("cert-file", "cert-file must be specified if key-file is specified")
+	}
+
+	if u.config.CertFile != "" && u.config.KeyFile == "" {
+		errors.Add("key-file", "key-file must be specified if cert-file is specified")
+	}
+
+	if u.config.CertFile != "" && u.config.KeyFile != "" {
+		errors.Append(validate.Validate(
+			&base.FileValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.fs},
+			&base.FileValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.fs},
+		))
 	}
 
 	errors.Append(validate.Validate(
 		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
-		&base.FileValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.Fs},
-		&base.FileValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.Fs},
 		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
 	))
 }
@@ -36,7 +56,7 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 func ValidateConfig(config *config.UncorsConfig, fs afero.Fs) error {
 	errors := validate.Validate(&UncorsConfigValidator{
 		config: config,
-		Fs:     fs,
+		fs:     fs,
 	})
 
 	if errors.HasAny() {
