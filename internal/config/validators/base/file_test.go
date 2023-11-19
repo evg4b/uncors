@@ -39,12 +39,12 @@ func TestFileValidator(t *testing.T) {
 		{
 			name:  "file does not exist",
 			path:  "file_does_not_exist.go",
-			error: "test file does not exist",
+			error: "test file_does_not_exist.go does not exist",
 		},
 		{
 			name:  "file is not accessible",
 			path:  "/demo",
-			error: "test is a directory",
+			error: "test /demo is a directory",
 		},
 	}
 	for _, test := range tests {

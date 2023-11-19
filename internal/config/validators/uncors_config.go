@@ -15,7 +15,6 @@ type UncorsConfigValidator struct {
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
 		&base.PortValidator{Field: "http-port", Value: u.config.HTTPPort},
-		&base.PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
 	))
 
 	if len(u.config.Mappings) == 0 {
@@ -32,15 +31,23 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 		}))
 	}
 
-	if u.config.CertFile == "" && u.config.KeyFile != "" {
-		errors.Add("cert-file", "cert-file must be specified if key-file is specified")
-	}
+	if u.config.HTTPSPort != 0 {
+		errors.Append(validate.Validate(
+			&base.PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
+		))
 
-	if u.config.CertFile != "" && u.config.KeyFile == "" {
-		errors.Add("key-file", "key-file must be specified if cert-file is specified")
-	}
+		if u.config.CertFile == "" {
+			errors.Add("cert-file", "cert-file must be specified")
 
-	if u.config.CertFile != "" && u.config.KeyFile != "" {
+			return
+		}
+
+		if u.config.KeyFile == "" {
+			errors.Add("key-file", "key-file must be specified")
+
+			return
+		}
+
 		errors.Append(validate.Validate(
 			&base.FileValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.fs},
 			&base.FileValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.fs},

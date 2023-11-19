@@ -80,7 +80,7 @@ func TestStaticValidator(t *testing.T) {
 					Dir:   "/static",
 					Index: "index.php",
 				},
-				error: "test.index file does not exist",
+				error: "test.index /static/index.php does not exist",
 			},
 		}
 		for _, test := range tests {

@@ -23,17 +23,17 @@ func (f *FileValidator) IsValid(errors *validate.Errors) {
 	if err != nil {
 		switch {
 		case os.IsNotExist(err):
-			errors.Add(f.Field, fmt.Sprintf("%s file does not exist", f.Field))
+			errors.Add(f.Field, fmt.Sprintf("%s %s does not exist", f.Field, f.Value))
 		case os.IsPermission(err):
-			errors.Add(f.Field, fmt.Sprintf("%s file is not accessible", f.Field))
+			errors.Add(f.Field, fmt.Sprintf("%s %s is not accessible", f.Field, f.Value))
 		default:
-			errors.Add(f.Field, fmt.Sprintf("%s is not a file", f.Field))
+			errors.Add(f.Field, fmt.Sprintf("%s %s is not a file", f.Field, f.Value))
 		}
 
 		return
 	}
 
 	if stat.IsDir() {
-		errors.Add(f.Field, fmt.Sprintf("%s is a directory", f.Field))
+		errors.Add(f.Field, fmt.Sprintf("%s %s is a directory", f.Field, f.Value))
 	}
 }

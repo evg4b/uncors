@@ -84,7 +84,7 @@ func TestResponseValidator(t *testing.T) {
 					File:  "testdata/unknown.txt",
 					Delay: 3 * time.Second,
 				},
-				error: "test.file file does not exist",
+				error: "test.file testdata/unknown.txt does not exist",
 			},
 			{
 				name: "delay",
