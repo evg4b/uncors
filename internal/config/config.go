@@ -85,7 +85,7 @@ func defineFlags() {
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for to the resource to be proxy")
 	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
 	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
-	flags.UintP("https-port", "s", defaultHTTPSPort, "Local HTTPS listening port")
+	flags.UintP("https-port", "s", 0, "Local HTTPS listening port")
 	flags.String("cert-file", "", "Path to HTTPS certificate file")
 	flags.String("key-file", "", "Path to matching for certificate private key")
 	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")

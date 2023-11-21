@@ -95,9 +95,8 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "return default config",
 				args: []string{},
 				expected: &config.UncorsConfig{
-					HTTPPort:  80,
-					HTTPSPort: 443,
-					Mappings:  config.Mappings{},
+					HTTPPort: 80,
+					Mappings: config.Mappings{},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
 						ClearTime:      config.DefaultClearTime,
@@ -109,8 +108,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "minimal config is set",
 				args: []string{params.Config, minimalConfigPath},
 				expected: &config.UncorsConfig{
-					HTTPPort:  8080,
-					HTTPSPort: 443,
+					HTTPPort: 8080,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 					},
