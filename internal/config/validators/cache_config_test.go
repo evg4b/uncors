@@ -5,13 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/config/validators"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCacheConfigValidator(t *testing.T) {

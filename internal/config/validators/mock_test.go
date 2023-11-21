@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMockValidator_IsValid(t *testing.T) {
+func TestMockValidator(t *testing.T) {
 	t.Run("should return true", func(t *testing.T) {
 		errors := validate.Validate(&validators.MockValidator{
 			Field: "mock",

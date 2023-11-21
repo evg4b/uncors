@@ -7,11 +7,12 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUncorsConfigValidator_IsValid(t *testing.T) {
+func TestUncorsConfigValidator(t *testing.T) {
 	const certPath = "cert.pem"
 	const keyPath = "key.pem"
 
@@ -30,7 +31,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 				value: &config.UncorsConfig{
 					HTTPPort: 8080,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -60,7 +61,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 				value: &config.UncorsConfig{
 					HTTPPort: 0,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -76,7 +77,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 					HTTPPort:  8080,
 					HTTPSPort: -2,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -109,7 +110,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 					HTTPSPort: 8443,
 					CertFile:  certPath,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -126,7 +127,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 					HTTPSPort: 8443,
 					KeyFile:   keyPath,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -144,7 +145,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 					CertFile:  certPath,
 					KeyFile:   "wrong-key.pem",
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,
@@ -162,7 +163,7 @@ func TestUncorsConfigValidator_IsValid(t *testing.T) {
 					CertFile:  "wrong-cert.pem",
 					KeyFile:   keyPath,
 					Mappings: []config.Mapping{
-						{From: "http://localhost:8080", To: "https://localhost:8443"},
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/evg4b/uncors/testing/hosts"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -13,12 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMappingValidator_IsValid(t *testing.T) {
+func TestMappingValidator(t *testing.T) {
 	const field = "mapping"
+	const demoJSONPath = "/tmp/demo.json"
 
 	t.Run("should not register errors for", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{
-			"/tmp/demo.json": "{}",
+			demoJSONPath: "{}",
 		})
 
 		tests := []struct {
@@ -29,7 +32,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "full filled mapping",
 				value: config.Mapping{
 					From: "localhost",
-					To:   "github.com",
+					To:   hosts.Github.Host(),
 					Statics: []config.StaticDirectory{
 						{Path: "/", Dir: "/tmp"},
 						{Path: "/", Dir: "/tmp"},
@@ -48,7 +51,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 							Method: http.MethodGet,
 							Response: config.Response{
 								Code: 300,
-								File: "/tmp/demo.json",
+								File: demoJSONPath,
 							},
 						},
 					},
@@ -62,7 +65,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "mapping without mocks and statics and caches",
 				value: config.Mapping{
 					From:    "localhost",
-					To:      "github.com",
+					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
 					Cache:   config.CacheGlobs{},
@@ -84,7 +87,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 
 	t.Run("should register errors for", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{
-			"/tmp/demo.json": "{}",
+			demoJSONPath: "{}",
 		})
 
 		tests := []struct {
@@ -96,7 +99,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "mapping without from",
 				value: config.Mapping{
 					From:    "",
-					To:      "github.com",
+					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
 					Cache:   config.CacheGlobs{},
@@ -118,7 +121,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "mapping with invalid statics",
 				value: config.Mapping{
 					From: "localhost",
-					To:   "github.com",
+					To:   hosts.Github.Host(),
 					Statics: []config.StaticDirectory{
 						{Path: "/", Dir: "/tmp"},
 						{Path: "/", Dir: ""},
@@ -132,7 +135,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "mapping with invalid mocks",
 				value: config.Mapping{
 					From:    "localhost",
-					To:      "github.com",
+					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks: []config.Mock{
 						{
@@ -152,7 +155,7 @@ func TestMappingValidator_IsValid(t *testing.T) {
 				name: "mapping with invalid mocks",
 				value: config.Mapping{
 					From:    "localhost",
-					To:      "github.com",
+					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
 					Cache: config.CacheGlobs{

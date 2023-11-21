@@ -3,18 +3,21 @@ package validators_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStaticValidator(t *testing.T) {
+	const assetsPath = "/assets"
+	const staticPath = "/static"
+	const indexFilePath = "/static/index.html"
+
 	fs := testutils.FsFromMap(t, map[string]string{
-		"/static/index.html": "/static/index.html",
+		indexFilePath: indexFilePath,
 	})
 
 	t.Run("should not register errors if response is valid", func(t *testing.T) {
@@ -25,16 +28,16 @@ func TestStaticValidator(t *testing.T) {
 			{
 				name: "valid static directory with index",
 				value: config.StaticDirectory{
-					Path:  "/assets",
-					Dir:   "/static",
+					Path:  assetsPath,
+					Dir:   staticPath,
 					Index: "index.html",
 				},
 			},
 			{
 				name: "valid static directory without index",
 				value: config.StaticDirectory{
-					Path: "/assets",
-					Dir:  "/static",
+					Path: assetsPath,
+					Dir:  staticPath,
 				},
 			},
 		}
@@ -61,14 +64,14 @@ func TestStaticValidator(t *testing.T) {
 				name: "empty path",
 				value: config.StaticDirectory{
 					Path: "",
-					Dir:  "/static",
+					Dir:  staticPath,
 				},
 				error: "test.path must not be empty",
 			},
 			{
 				name: "empty directory",
 				value: config.StaticDirectory{
-					Path: "/assets",
+					Path: assetsPath,
 					Dir:  "",
 				},
 				error: "test.directory must not be empty",
@@ -76,8 +79,8 @@ func TestStaticValidator(t *testing.T) {
 			{
 				name: "empty directory",
 				value: config.StaticDirectory{
-					Path:  "/assets",
-					Dir:   "/static",
+					Path:  assetsPath,
+					Dir:   staticPath,
 					Index: "index.php",
 				},
 				error: "test.index /static/index.php does not exist",
