@@ -3,6 +3,8 @@ package urlreplacer_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
@@ -86,11 +88,11 @@ func TestFactoryMake(t *testing.T) {
 			if len(testCase.err) > 0 {
 				assert.Nil(t, got1)
 				assert.Nil(t, got)
-				assert.EqualError(t, err, testCase.err)
+				require.EqualError(t, err, testCase.err)
 			} else {
 				assert.NotNil(t, got1)
 				assert.NotNil(t, got)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

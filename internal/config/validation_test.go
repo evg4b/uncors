@@ -3,8 +3,9 @@ package config_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestValidate(t *testing.T) {
@@ -25,7 +26,7 @@ func TestValidate(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := config.Validate(testCase.config)
 
-			assert.EqualError(t, err, testCase.expected)
+			require.EqualError(t, err, testCase.expected)
 		})
 	}
 }

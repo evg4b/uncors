@@ -347,7 +347,7 @@ func TestHandler(t *testing.T) {
 						mock.WithResponse(testCase.response),
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
-							assert.Equal(t, duration, testCase.expected)
+							assert.Equal(t, testCase.expected, duration)
 							called = true
 
 							return time.After(time.Nanosecond)
@@ -391,8 +391,8 @@ func TestHandler(t *testing.T) {
 
 			waitGroup.Wait()
 
-			assert.Equal(t, testutils.ReadBody(t, recorder), "")
-			assert.Equal(t, recorder.Code, http.StatusServiceUnavailable)
+			assert.Equal(t, "", testutils.ReadBody(t, recorder))
+			assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 		})
 	})
 }

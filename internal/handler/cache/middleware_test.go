@@ -234,6 +234,6 @@ func TestCacheMiddleware(t *testing.T) {
 			assert.Equal(t, method, testutils.ReadBody(t, recorder))
 		}
 
-		assert.Equal(t, len(methods), handler.Count())
+		assert.Len(t, methods, handler.Count())
 	})
 }

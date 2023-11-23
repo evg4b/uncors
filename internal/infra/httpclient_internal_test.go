@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMakeHTTPClient(t *testing.T) {
@@ -20,14 +21,14 @@ func TestMakeHTTPClient(t *testing.T) {
 			client := MakeHTTPClient("")
 
 			err := client.CheckRedirect(nil, nil)
-			assert.ErrorIs(t, http.ErrUseLastResponse, err)
+			require.ErrorIs(t, http.ErrUseLastResponse, err)
 		})
 
 		t.Run("for client with proxy", func(t *testing.T) {
 			client := MakeHTTPClient("http://localhost:8000")
 
 			err := client.CheckRedirect(nil, nil)
-			assert.ErrorIs(t, http.ErrUseLastResponse, err)
+			require.ErrorIs(t, http.ErrUseLastResponse, err)
 		})
 	})
 

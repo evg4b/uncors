@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testCases = []struct {
@@ -87,7 +88,7 @@ func TestWildCardToRegexp(t *testing.T) {
 
 				regexp, _, err := wildCardToRegexp(parsedPattern)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, testCase.expectedRegexp, regexp.String())
 			})
 		}
@@ -127,7 +128,7 @@ func TestWildCardToRegexp(t *testing.T) {
 
 				_, count, err := wildCardToRegexp(parsedPattern)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, testCase.expected, count)
 			})
 		}
@@ -150,7 +151,7 @@ func TestWildCardToRegexp(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				_, _, err := wildCardToRegexp(&testCase.parsedPattern)
 
-				assert.EqualError(t, err, testCase.expected)
+				require.EqualError(t, err, testCase.expected)
 			})
 		}
 	})
@@ -204,7 +205,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 
 				_, count := wildCardToReplacePattern(parsedPattern)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, testCase.expected, count)
 			})
 		}

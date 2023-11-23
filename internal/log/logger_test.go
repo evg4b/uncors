@@ -1,4 +1,4 @@
-// nolint: bodyclose
+// nolint: bodyclose, goconst
 package log_test
 
 import (

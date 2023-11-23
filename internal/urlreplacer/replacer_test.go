@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type replacerTestCase struct {
@@ -20,13 +21,13 @@ func TestReplacerV2Replace(t *testing.T) {
 		t.Run("source", func(t *testing.T) {
 			_, err := urlreplacer.NewReplacer("", hosts.Github.HTTP())
 
-			assert.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
+			require.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
 		})
 
 		t.Run("target", func(t *testing.T) {
 			_, err := urlreplacer.NewReplacer(hosts.Localhost.Port(3000), "")
 
-			assert.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
+			require.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
 		})
 	})
 
@@ -62,7 +63,7 @@ func TestReplacerV2Replace(t *testing.T) {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
 
-						assert.NoError(t, err)
+						require.NoError(t, err)
 						assert.Equal(t, testsCase.expected, actual)
 					})
 				}
@@ -98,7 +99,7 @@ func TestReplacerV2Replace(t *testing.T) {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
 
-						assert.NoError(t, err)
+						require.NoError(t, err)
 						assert.Equal(t, testsCase.expected, actual)
 					})
 				}
@@ -134,7 +135,7 @@ func TestReplacerV2Replace(t *testing.T) {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
 
-						assert.NoError(t, err)
+						require.NoError(t, err)
 						assert.Equal(t, testsCase.expected, actual)
 					})
 				}
@@ -188,7 +189,7 @@ func TestReplacerV2Replace(t *testing.T) {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
 
-						assert.NoError(t, err)
+						require.NoError(t, err)
 						assert.Equal(t, testsCase.expected, actual)
 					})
 				}
@@ -201,7 +202,7 @@ func TestReplacerV2Replace(t *testing.T) {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
 
-						assert.NoError(t, err)
+						require.NoError(t, err)
 						assert.Equal(t, testsCase.expected, actual)
 					})
 				}

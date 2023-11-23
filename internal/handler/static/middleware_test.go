@@ -122,7 +122,7 @@ func TestStaticMiddleware(t *testing.T) {
 						URL:    requestURI,
 					})
 
-					assert.Equal(t, recorder.Code, http.StatusOK)
+					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
 				})
 			}
@@ -168,7 +168,7 @@ func TestStaticMiddleware(t *testing.T) {
 						URL:    requestURI,
 					})
 
-					assert.Equal(t, recorder.Code, http.StatusOK)
+					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
 				})
 			}
