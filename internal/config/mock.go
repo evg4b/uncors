@@ -24,7 +24,12 @@ func (m *Mock) Clone() Mock {
 }
 
 func (m *Mock) String() string {
-	return helpers.Sprintf("[%s %d] %s", m.Method, m.Response.Code, m.Path)
+	method := "*"
+	if m.Method != "" {
+		method = m.Method
+	}
+
+	return helpers.Sprintf("[%s %d] %s", method, m.Response.Code, m.Path)
 }
 
 type Mocks []Mock

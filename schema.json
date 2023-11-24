@@ -15,13 +15,17 @@
       "type": "integer",
       "description": "Local HTTP listened port",
       "default": 80,
-      "format": "int32"
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 65535
     },
     "https-port": {
       "type": "integer",
       "description": "Local HTTPS listened port",
       "default": 443,
-      "format": "int32"
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 65535
     },
     "cert-file": {
       "type": "string",

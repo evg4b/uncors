@@ -9,6 +9,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.6.1
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/go-playground/validator/v10 v10.16.0
+	github.com/gobuffalo/validate v2.0.4+incompatible
 	github.com/gojuno/minimock/v3 v3.1.3
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-version v1.6.0

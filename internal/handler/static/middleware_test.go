@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -168,7 +169,7 @@ func TestStaticMiddleware(t *testing.T) {
 						URL:    requestURI,
 					})
 
-					assert.Equal(t, http.StatusOK, recorder.Code)
+					require.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
 				})
 			}

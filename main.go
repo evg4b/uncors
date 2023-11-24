@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/evg4b/uncors/internal/config/validators"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -30,18 +32,19 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	viperInstance := viper.GetViper()
-	uncorsConfig := loadConfiguration(viperInstance)
-
 	fs := afero.NewOsFs()
+
+	viperInstance := viper.GetViper()
+	uncorsConfig := loadConfiguration(viperInstance, fs)
+
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version)
 	viperInstance.OnConfigChange(func(in fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
-			log.Errorf("Config reloading value %v", value)
+			log.Errorf("Config reloading error: %v", value)
 		})
 
-		app.Restart(ctx, loadConfiguration(viperInstance))
+		app.Restart(ctx, loadConfiguration(viperInstance, fs))
 	})
 	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
@@ -60,8 +63,13 @@ func main() {
 	log.Info("Server was stopped")
 }
 
-func loadConfiguration(viperInstance *viper.Viper) *config.UncorsConfig {
+func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
+	err := validators.ValidateConfig(uncorsConfig, fs)
+	if err != nil {
+		panic(err)
+	}
+
 	if uncorsConfig.Debug {
 		log.EnableDebugMessages()
 		log.Debug("Enabled debug messages")

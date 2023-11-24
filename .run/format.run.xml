@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="format" type="CompoundRunConfigurationType">
+    <toRun name="gofmt" type="ShConfigurationType" />
+    <toRun name="gofumpt" type="ShConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
