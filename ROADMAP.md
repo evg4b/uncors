@@ -56,15 +56,17 @@
 - [X] Own error page for uncors internal errors
 - [X] Separated mock for each url mapping - [PR](https://github.com/evg4b/uncors/pull/16)
 
-## Next Release
+## [0.2.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.2.0)
 
 - [X] Response caching - [PR](https://github.com/evg4b/uncors/pull/17)
 - [X] JSON Schema for config file - [PR](https://github.com/evg4b/uncors/pull/19)
 - [X] Automatically reload the server after configuration changes - [PR](https://github.com/evg4b/uncors/pull/22)
 
-## Future features
+## Next Release
 
-- [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
 - [ ] Occupied port handling
+- [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
+
+## Future features
 - [ ] Collecting all request/response to har file
 - [ ] Content URl replacing (HTML, JSON, TEXT and other)
