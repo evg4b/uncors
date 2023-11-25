@@ -26,7 +26,7 @@ var (
 //  1. It forces the default scheme and port to http
 //  2. It favors absolute paths over relative ones, thus "example.com"
 //     is parsed into url.Host instead of url.Path.
-//  3. It lowercases the Host (not only the Scheme).
+//  3. It lowercase's the Host (not only the Scheme).
 func Parse(rawURL string) (*url.URL, error) {
 	return ParseWithDefaultScheme(rawURL, "")
 }
@@ -184,7 +184,7 @@ func Normalize(parsedURL *url.URL) (string, error) {
 }
 
 // NormalizeString returns normalized URL string.
-// It's a shortcut for Parse() and Normalize() funcs.
+// It's a shortcut for Parse() and Normalize() functions.
 func NormalizeString(rawURL string) (string, error) {
 	u, err := Parse(rawURL)
 	if err != nil {
@@ -210,7 +210,7 @@ func Resolve(parsedURL *url.URL) (*net.IPAddr, error) {
 }
 
 // ResolveString resolves the URL host to its IP address.
-// It's a shortcut for Parse() and Resolve() funcs.
+// It's a shortcut for Parse() and Resolve() functions.
 func ResolveString(rawURL string) (*net.IPAddr, error) {
 	u, err := Parse(rawURL)
 	if err != nil {

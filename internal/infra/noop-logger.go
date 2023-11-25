@@ -2,10 +2,10 @@ package infra
 
 type NoopLogger struct{}
 
-func (n NoopLogger) Infof(string, ...any) {
+func (n NoopLogger) Infof(_ string, _ ...any) {
 	// Interface implementation
 }
 
-func (n NoopLogger) Errorf(string, ...any) {
+func (n NoopLogger) Errorf(_ string, _ ...any) {
 	// Interface implementation
 }

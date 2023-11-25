@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type clonableTestStruct struct{ Value string }
+type cloneableTestStruct struct{ Value string }
 
-func (t *clonableTestStruct) Clone() clonableTestStruct {
-	return clonableTestStruct{Value: "Cloned:" + t.Value}
+func (t *cloneableTestStruct) Clone() cloneableTestStruct {
+	return cloneableTestStruct{Value: "Cloned:" + t.Value}
 }
 
-type nonClonableTestStruct struct{ Value string }
+type nonCloneableTestStruct struct{ Value string }
 
 func TestCloneMap(t *testing.T) {
 	t.Run("base types", func(t *testing.T) {
@@ -73,14 +73,14 @@ func TestCloneMap(t *testing.T) {
 		})
 	})
 
-	t.Run("clonable objects", func(t *testing.T) {
-		data := map[string]clonableTestStruct{
+	t.Run("cloneable objects", func(t *testing.T) {
+		data := map[string]cloneableTestStruct{
 			"1": {Value: "property 1"},
 			"2": {Value: "property 2"},
 			"3": {Value: "property 3"},
 		}
 
-		expected := map[string]clonableTestStruct{
+		expected := map[string]cloneableTestStruct{
 			"1": {Value: "Cloned:property 1"},
 			"2": {Value: "Cloned:property 2"},
 			"3": {Value: "Cloned:property 3"},
@@ -92,8 +92,8 @@ func TestCloneMap(t *testing.T) {
 		assert.EqualValues(t, &expected, &actual)
 	})
 
-	t.Run("non clonable objects", func(t *testing.T) {
-		data := map[string]nonClonableTestStruct{
+	t.Run("non cloneable objects", func(t *testing.T) {
+		data := map[string]nonCloneableTestStruct{
 			"1": {Value: "demo"},
 			"2": {Value: "demo"},
 			"3": {Value: "demo"},

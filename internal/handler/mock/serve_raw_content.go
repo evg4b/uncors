@@ -16,5 +16,5 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) {
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	helpers.Fprint(writer, response.Raw)
+	helpers.FPrint(writer, response.Raw)
 }

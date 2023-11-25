@@ -25,7 +25,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 	for index, literal := range parts {
 		if index > 0 {
 			count++
-			helpers.Fprintf(&result, "(?P<part%d>.+)", count)
+			helpers.FPrintf(&result, "(?P<part%d>.+)", count)
 		}
 
 		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
@@ -48,18 +48,18 @@ func wildCardToReplacePattern(parsedPattern *url.URL) (string, int) {
 	result := &strings.Builder{}
 	var count int
 
-	helpers.Fprint(result, "${scheme}")
+	helpers.FPrint(result, "${scheme}")
 
 	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
-			helpers.Fprintf(result, "${part%d}", count)
+			helpers.FPrintf(result, "${part%d}", count)
 		}
 
-		helpers.Fprint(result, literal)
+		helpers.FPrint(result, literal)
 	}
 
-	helpers.Fprint(result, "${path}")
+	helpers.FPrint(result, "${path}")
 
 	return result.String(), count
 }

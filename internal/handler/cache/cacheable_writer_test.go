@@ -26,7 +26,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 		{
 			name: "write body bytes only",
 			action: func(w http.ResponseWriter) {
-				helpers.Fprint(w, bodyString)
+				helpers.FPrint(w, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Header: http.Header{
@@ -64,7 +64,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 			action: func(w http.ResponseWriter) {
 				header := w.Header()
 				header.Set(headers.ContentLength, "999")
-				helpers.Fprint(w, bodyString)
+				helpers.FPrint(w, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Header: http.Header{
@@ -81,7 +81,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				header.Set(headers.ContentLength, "9")
 				header.Set(headers.Authorization, authorization)
 				writer.WriteHeader(http.StatusBadGateway)
-				helpers.Fprint(writer, bodyString)
+				helpers.FPrint(writer, bodyString)
 			},
 			expected: &cache.CachedResponse{
 				Code: http.StatusBadGateway,

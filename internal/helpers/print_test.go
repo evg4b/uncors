@@ -1,6 +1,7 @@
 package helpers_test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -18,51 +19,31 @@ const (
 
 var fPayloadArgs = []any{"string", 555}
 
-func TestFprint(t *testing.T) {
-	t.Run("print correctly", func(t *testing.T) {
-		writer := &strings.Builder{}
-
-		helpers.Fprint(writer, rawPayload)
-
-		assert.Equal(t, rawPayload, writer.String())
-	})
-
-	t.Run("panic on error", func(t *testing.T) {
-		assert.Panics(t, func() {
-			writer := mocks.NewWriterMock(t).
-				WriteMock.Return(0, testconstants.ErrTest1)
-
-			helpers.Fprint(writer, rawPayload)
-		})
+func TestFPrint(t *testing.T) {
+	simplePrintTest(t, rawPayload, func(writer io.Writer) {
+		helpers.FPrint(writer, rawPayload)
 	})
 }
 
 func TestFprintf(t *testing.T) {
-	t.Run("print correctly", func(t *testing.T) {
-		writer := &strings.Builder{}
-
-		helpers.Fprintf(writer, fPayload, fPayloadArgs...)
-
-		assert.Equal(t, fPayloadExpected, writer.String())
-	})
-
-	t.Run("panic on error", func(t *testing.T) {
-		assert.Panics(t, func() {
-			writer := mocks.NewWriterMock(t).
-				WriteMock.Return(0, testconstants.ErrTest1)
-
-			helpers.Fprintf(writer, fPayload, fPayloadArgs...)
-		})
+	simplePrintTest(t, fPayloadExpected, func(writer io.Writer) {
+		helpers.FPrintf(writer, fPayload, fPayloadArgs...)
 	})
 }
 
-func TestFprintln(t *testing.T) {
+func TestFPrintln(t *testing.T) {
+	simplePrintTest(t, rawPayload+"\n", func(writer io.Writer) {
+		helpers.FPrintln(writer, rawPayload)
+	})
+}
+
+func simplePrintTest(t *testing.T, expected string, action func(writer io.Writer)) {
 	t.Run("print correctly", func(t *testing.T) {
 		writer := &strings.Builder{}
 
-		helpers.Fprintln(writer, rawPayload)
+		action(writer)
 
-		assert.Equal(t, rawPayload+"\n", writer.String())
+		assert.Equal(t, expected, writer.String())
 	})
 
 	t.Run("panic on error", func(t *testing.T) {
@@ -70,7 +51,7 @@ func TestFprintln(t *testing.T) {
 			writer := mocks.NewWriterMock(t).
 				WriteMock.Return(0, testconstants.ErrTest1)
 
-			helpers.Fprintln(writer, rawPayload)
+			action(writer)
 		})
 	})
 }

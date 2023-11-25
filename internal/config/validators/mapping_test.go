@@ -56,7 +56,7 @@ func TestMappingValidator(t *testing.T) {
 						},
 					},
 					Cache: config.CacheGlobs{
-						"/api/info",
+						"/api/constants",
 						"/**",
 					},
 				},
@@ -139,7 +139,7 @@ func TestMappingValidator(t *testing.T) {
 					Statics: []config.StaticDirectory{},
 					Mocks: []config.Mock{
 						{
-							Path:   "/api/info",
+							Path:   "/api/user",
 							Method: "invalid",
 							Response: config.Response{
 								Code: 200,

@@ -28,7 +28,7 @@ func main() {
 
 	pflag.Usage = func() {
 		uncors.Logo(Version)
-		helpers.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 

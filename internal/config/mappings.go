@@ -15,18 +15,18 @@ func (m Mappings) String() string {
 
 	for _, group := range lo.GroupBy(m, extractHost) {
 		for _, mapping := range group {
-			helpers.Fprintf(builder, "%s => %s\n", mapping.From, mapping.To)
+			helpers.FPrintf(builder, "%s => %s\n", mapping.From, mapping.To)
 		}
 
 		mapping := group[0]
 		for _, mock := range mapping.Mocks {
-			helpers.Fprintf(builder, "    mock: %s\n", mock.String())
+			helpers.FPrintf(builder, "    mock: %s\n", mock.String())
 		}
 		for _, static := range mapping.Statics {
-			helpers.Fprintf(builder, "    static: %s\n", static.String())
+			helpers.FPrintf(builder, "    static: %s\n", static.String())
 		}
 		for _, cacheGlob := range mapping.Cache {
-			helpers.Fprintf(builder, "    cache: %s\n", cacheGlob)
+			helpers.FPrintf(builder, "    cache: %s\n", cacheGlob)
 		}
 	}
 

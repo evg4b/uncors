@@ -108,7 +108,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 			writer.WriteHeader(testHTTPStatusCode)
-			helpers.Fprint(writer, testHTTPBody)
+			helpers.FPrint(writer, testHTTPBody)
 		}))
 
 		t.Run("return static content", func(t *testing.T) {

@@ -20,6 +20,8 @@ import (
 
 func TestCacheMiddleware(t *testing.T) {
 	const expectedBody = "this is test"
+	const cacheGlob = "/api/**"
+	const constantEndpoint = "/api/constants"
 
 	expectedHeader := http.Header{
 		headers.ContentType:     {"text/html; charset=iso-8859-1"},
@@ -32,14 +34,14 @@ func TestCacheMiddleware(t *testing.T) {
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
-			"/api/**",
+			cacheGlob,
 		}),
 	)
 
 	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
-		helpers.Fprintf(writer, expectedBody)
+		helpers.FPrintf(writer, expectedBody)
 	})
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
@@ -135,19 +137,19 @@ func TestCacheMiddleware(t *testing.T) {
 			{
 				name:       "witch response with status code 500",
 				method:     http.MethodGet,
-				path:       "/api/constants",
+				path:       constantEndpoint,
 				statusCode: http.StatusInternalServerError,
 			},
 			{
 				name:       "witch response with status code 400",
 				method:     http.MethodGet,
-				path:       "/api/constants",
+				path:       constantEndpoint,
 				statusCode: http.StatusBadRequest,
 			},
 			{
 				name:       "witch response with status code 304",
 				method:     http.MethodGet,
-				path:       "/api/constants",
+				path:       constantEndpoint,
 				statusCode: http.StatusNotModified,
 			},
 		}
@@ -156,7 +158,7 @@ func TestCacheMiddleware(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
-					helpers.Fprintf(writer, expectedBody)
+					helpers.FPrintf(writer, expectedBody)
 				})
 
 				wrappedHandler := middleware.Wrap(handler)
@@ -184,7 +186,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
 			cache.WithLogger(mocks.NewNoopLogger(t)),
 			cache.WithMethods([]string{http.MethodGet}),
-			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
+			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
 		wrappedHandler := middleware.Wrap(handler)
@@ -212,13 +214,13 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
 			cache.WithLogger(mocks.NewNoopLogger(t)),
 			cache.WithMethods(methods),
-			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
+			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
 		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
-			helpers.Fprintf(writer, request.Method)
+			helpers.FPrintf(writer, request.Method)
 		})
 
 		wrappedHandler := middleware.Wrap(handler)

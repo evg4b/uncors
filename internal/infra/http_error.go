@@ -19,10 +19,10 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	writer.WriteHeader(http.StatusInternalServerError)
 	message := helpers.Sprintf("%d Error", http.StatusInternalServerError)
 
-	helpers.Fprintln(writer)
-	helpers.Fprintln(writer, pageHeader(message))
-	helpers.Fprintln(writer)
-	helpers.Fprintln(writer, helpers.Sprintf("Occurred error: %s", err))
+	helpers.FPrintln(writer)
+	helpers.FPrintln(writer, pageHeader(message))
+	helpers.FPrintln(writer)
+	helpers.FPrintln(writer, helpers.Sprintf("Occurred error: %s", err))
 }
 
 func pageHeader(message string) string {

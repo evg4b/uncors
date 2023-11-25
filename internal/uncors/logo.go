@@ -23,10 +23,10 @@ func Logo(version string) string {
 
 	var builder strings.Builder
 
-	helpers.Fprintln(&builder)
-	helpers.Fprint(&builder, logo)
-	helpers.Fprint(&builder, versionPrefix, versionSuffix)
-	helpers.Fprintln(&builder)
+	helpers.FPrintln(&builder)
+	helpers.FPrint(&builder, logo)
+	helpers.FPrint(&builder, versionPrefix, versionSuffix)
+	helpers.FPrintln(&builder)
 
 	return builder.String()
 }

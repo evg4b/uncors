@@ -18,7 +18,7 @@ func TestResponseWriterWrapper(t *testing.T) {
 	writer := contracts.WrapResponseWriter(recorder)
 
 	writer.WriteHeader(expectedCode)
-	helpers.Fprint(writer, expectedValue)
+	helpers.FPrint(writer, expectedValue)
 
 	t.Run("save status code", func(t *testing.T) {
 		assert.Equal(t, expectedCode, writer.StatusCode())
