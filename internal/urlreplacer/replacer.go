@@ -103,6 +103,14 @@ func (r *Replacer) Replace(source string) (string, error) {
 	return replaced, nil
 }
 
+func (r *Replacer) ReplaceSoft(source string) string {
+	if replaced, err := r.Replace(source); err == nil {
+		return replaced
+	}
+
+	return source
+}
+
 func (r *Replacer) IsSourceSecure() bool {
 	if len(r.source.Scheme) > 0 {
 		return isSecure(r.source.Scheme)

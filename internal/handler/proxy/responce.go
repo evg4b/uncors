@@ -19,10 +19,13 @@ func (h *Handler) makeUncorsResponse(
 		return fmt.Errorf("failed to copy cookies in request: %w", err)
 	}
 
-	err := copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: replacer.Replace,
-	})
-	if err != nil {
+	modifications := modificationsMap{
+		headers.Location: func(s string) (string, error) { // nolint: unparam
+			return replacer.ReplaceSoft(s), nil
+		},
+	}
+
+	if err := copyHeaders(original.Header, target.Header(), modifications); err != nil {
 		return err
 	}
 
