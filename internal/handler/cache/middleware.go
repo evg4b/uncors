@@ -21,11 +21,7 @@ type Middleware struct {
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
-	middleware := &Middleware{}
-
-	for _, option := range options {
-		option(middleware)
-	}
+	middleware := helpers.ApplyOptions(&Middleware{}, options)
 
 	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
 	helpers.AssertIsDefined(middleware.storage, "Cache storage is not configured")
