@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	github.com/deckarep/golang-set/v2 v2.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
