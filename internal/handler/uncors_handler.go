@@ -35,14 +35,7 @@ type RequestHandler struct {
 var errHostNotMapped = errors.New("host not mapped")
 
 func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
-	handler := &RequestHandler{
-		Router:   mux.NewRouter(),
-		mappings: config.Mappings{},
-	}
-
-	for _, option := range options {
-		option(handler)
-	}
+	handler := helpers.ApplyOptions(&RequestHandler{Router: mux.NewRouter(), mappings: config.Mappings{}}, options)
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
 

@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"github.com/evg4b/uncors/internal/helpers"
 	"net/http"
 	"time"
 
@@ -18,13 +19,7 @@ type Handler struct {
 }
 
 func NewMockHandler(options ...HandlerOption) *Handler {
-	handler := &Handler{}
-
-	for _, option := range options {
-		option(handler)
-	}
-
-	return handler
+	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {

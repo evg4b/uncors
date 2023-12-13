@@ -19,6 +19,10 @@ type Middleware struct {
 	prefix string
 }
 
+func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
+	return helpers.ApplyOptions(&Middleware{}, options)
+}
+
 func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		response := contracts.WrapResponseWriter(writer)
@@ -40,16 +44,6 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
 		h.logger.PrintResponse(request, response.StatusCode())
 	})
-}
-
-func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	handler := &Middleware{}
-
-	for _, option := range options {
-		option(handler)
-	}
-
-	return handler
 }
 
 func (h *Middleware) extractFilePath(request *http.Request) string {

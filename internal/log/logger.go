@@ -2,6 +2,7 @@ package log
 
 import (
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/pterm/pterm"
 )
 
@@ -29,11 +30,7 @@ func NewLogger(name string, options ...LoggerOption) *PrefixedLogger {
 		},
 	}
 
-	for _, option := range options {
-		option(logger)
-	}
-
-	return logger
+	return helpers.ApplyOptions(logger, options)
 }
 
 func (logger *PrefixedLogger) Error(v ...any) {

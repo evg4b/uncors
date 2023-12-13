@@ -18,11 +18,7 @@ type Handler struct {
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	middleware := &Handler{}
-
-	for _, option := range options {
-		option(middleware)
-	}
+	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
 	helpers.AssertIsDefined(middleware.logger, "ProxyHandler: Logger is not configured")
