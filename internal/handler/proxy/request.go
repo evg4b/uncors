@@ -27,9 +27,7 @@ func (h *Handler) makeOriginalRequest(
 		return nil, err
 	}
 
-	if err = copyCookiesToTarget(req, replacer, originalRequest); err != nil {
-		return nil, fmt.Errorf("failed to copy cookies in request: %w", err)
-	}
+	copyCookiesToTarget(req, replacer, originalRequest)
 
 	return originalRequest, nil
 }
