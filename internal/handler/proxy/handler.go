@@ -77,7 +77,7 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
-		// TODO: Replace domain in cookie
+		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 		http.SetCookie(source, cookie)
 	}
 
@@ -88,7 +88,7 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) error {
 	for _, cookie := range source.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
-		// TODO: Replace domain in cookie
+		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 		target.AddCookie(cookie)
 	}
 
