@@ -73,24 +73,18 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	return originalResponse, nil
 }
 
-// nolint: unparam
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 		http.SetCookie(source, cookie)
 	}
-
-	return nil
 }
 
-// nolint: unparam
-func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) error {
+func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) {
 	for _, cookie := range source.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 		target.AddCookie(cookie)
 	}
-
-	return nil
 }

@@ -15,9 +15,7 @@ func (h *Handler) makeUncorsResponse(
 	target http.ResponseWriter,
 	replacer *urlreplacer.Replacer,
 ) error {
-	if err := copyCookiesToSource(original, replacer, target); err != nil {
-		return fmt.Errorf("failed to copy cookies in request: %w", err)
-	}
+	copyCookiesToSource(original, replacer, target)
 
 	modifications := modificationsMap{
 		headers.Location: func(s string) (string, error) { // nolint: unparam
