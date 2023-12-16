@@ -1,12 +1,12 @@
 package mock
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
 	"net/http"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 )

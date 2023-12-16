@@ -1,9 +1,10 @@
 package helpers_test
 
 import (
+	"testing"
+
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type myService struct {
