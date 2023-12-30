@@ -35,6 +35,49 @@ func TestMappings(t *testing.T) {
 			},
 		},
 		{
+			name: "http and https mappings with statics",
+			mappings: config.Mappings{
+				{
+					From: hosts.Localhost.HTTP(),
+					To:   hosts.Github.HTTPS(),
+					Statics: config.StaticDirectories{
+						{
+							Path: "/static",
+							Dir:  "/tmp",
+						},
+						{
+							Path:  "/static2",
+							Dir:   "/tmp2",
+							Index: "index.html",
+						},
+					},
+				},
+			},
+			expected: []string{
+				"http://localhost => https://github.com",
+				"    static: /static => /tmp",
+				"    static: /static2 => /tmp2",
+			},
+		},
+		{
+			name: "http and https mappings with cache",
+			mappings: config.Mappings{
+				{
+					From: hosts.Localhost.HTTP(),
+					To:   hosts.Github.HTTPS(),
+					Cache: config.CacheGlobs{
+						"/static",
+						"/static2",
+					},
+				},
+			},
+			expected: []string{
+				"http://localhost => https://github.com",
+				"    cache: /static",
+				"    cache: /static2",
+			},
+		},
+		{
 			name: "mapping and mocks",
 			mappings: config.Mappings{
 				{
