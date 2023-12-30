@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/evg4b/uncors/internal/log"
 	"net/http"
 	"strings"
 
@@ -66,8 +67,9 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		setDefaultHandler(router, defaultHandler)
 	}
 
-	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *http.Request) {
+	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, r *http.Request) {
 		infra.HTTPError(writer, errHostNotMapped)
+		log.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
 	}))
 
 	return handler
