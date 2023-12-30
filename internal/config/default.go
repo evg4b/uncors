@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	defaultHTTPPort       = 80
+	defaultHTTPSPort      = 443
 	DefaultExpirationTime = 30 * time.Minute
 	DefaultClearTime      = 30 * time.Minute
 )

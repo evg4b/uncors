@@ -10,11 +10,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	defaultHTTPPort  = 80
-	defaultHTTPSPort = 443
-)
-
 var flags *pflag.FlagSet
 
 type UncorsConfig struct {
