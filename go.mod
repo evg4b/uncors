@@ -7,7 +7,7 @@ toolchain go1.21.1
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.6.1
-	github.com/deckarep/golang-set/v2 v2.5.0
+	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/gobuffalo/validate v2.0.4+incompatible
 	github.com/gojuno/minimock/v3 v3.1.3
@@ -15,11 +15,11 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
-	github.com/pterm/pterm v0.12.71
+	github.com/pterm/pterm v0.12.73
 	github.com/samber/lo v1.39.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.18.1
+	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.19.0
 )
@@ -50,7 +50,7 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
+	golang.org/x/exp v0.0.0-20231226003508-02704c960a9b // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
