@@ -109,3 +109,12 @@ when utilizing it.
 # Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/evg4b/uncors.svg?variant=adaptive)](https://starchart.cc/evg4b/uncors)
+
+# Support project
+
+<p align="center" dir="auto">
+<br>
+<a target="_blank" rel="noopener noreferrer" href="https://www.buymeacoffee.com/evg4b">
+    <img src="https://github.com/appcraftstudio/buymeacoffee/raw/master/Images/snapshot-bmc-button.png" width="200" style="max-width: 100%;">
+</a>
+</p>
