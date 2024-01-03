@@ -106,6 +106,6 @@ specifically designed to streamline the development and testing workflow and sho
 environment or as a remote proxy server. It has not undergone a thorough security review, so caution should be exercised
 when utilizing it.
 
-## Stargazers over time
+# Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/evg4b/uncors.svg)](https://starchart.cc/evg4b/uncors)
+[![Stargazers over time](https://starchart.cc/evg4b/uncors.svg?variant=adaptive)](https://starchart.cc/evg4b/uncors)
