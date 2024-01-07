@@ -108,7 +108,7 @@ when utilizing it.
 
 # Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/evg4b/uncors.svg?variant=adaptive)](https://starchart.cc/evg4b/uncors)
+[![Stargazers over time](https://starchart.cc/evg4b/uncors.svg?variant=adaptive&line=%232f81f7)](https://starchart.cc/evg4b/uncors)
 
 # Support project
 
