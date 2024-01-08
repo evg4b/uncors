@@ -19,6 +19,7 @@ const corsLetters = ` ██████  ██████  ██████
  ██████  ██████  ██   ██ ███████`
 
 var (
+	// TODO: Replace to adaptive colors.
 	unStyles = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#DC0100"))
 	corsStyles = lipgloss.NewStyle().
