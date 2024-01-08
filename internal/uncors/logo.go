@@ -1,32 +1,38 @@
 package uncors
 
 import (
-	"strings"
+	"fmt"
 
-	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/pterm/pterm"
-	"github.com/pterm/pterm/putils"
+	"github.com/charmbracelet/lipgloss"
+)
+
+const unLetters = `██    ██ ███    ██
+██    ██ ████   ██ 
+██    ██ ██ ██  ██ 
+██    ██ ██  ██ ██ 
+ ██████  ██   ████`
+
+const corsLetters = ` ██████  ██████  ██████  ███████ 
+██      ██    ██ ██   ██ ██      
+██      ██    ██ ██████  ███████ 
+██      ██    ██ ██   ██      ██
+ ██████  ██████  ██   ██ ███████`
+
+var (
+	unStyles = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#DC0100"))
+	corsStyles = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFD400"))
 )
 
 func Logo(version string) string {
-	logoLength := 51
-	versionLine := strings.Repeat(" ", logoLength)
-	versionSuffix := helpers.Sprintf("version: %s", version)
-	versionPrefix := versionLine[:logoLength-len(versionSuffix)]
-
-	logo, _ := pterm.DefaultBigText.
-		WithLetters(
-			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), //nolint: gomnd
-		).
-		Srender()
-
-	var builder strings.Builder
-
-	helpers.FPrintln(&builder)
-	helpers.FPrint(&builder, logo)
-	helpers.FPrint(&builder, versionPrefix, versionSuffix)
-	helpers.FPrintln(&builder)
-
-	return builder.String()
+	return lipgloss.JoinVertical(
+		lipgloss.Right,
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			unStyles.Render(unLetters),
+			corsStyles.Render(corsLetters),
+		),
+		fmt.Sprintf("version: %s", version),
+	)
 }
