@@ -1,14 +1,16 @@
 package main
 
 import (
+	"github.com/muesli/termenv"
 	"os"
 
-	"github.com/evg4b/uncors/internal/config/validators"
-
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
+	logLegacy "github.com/evg4b/uncors/internal/log"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/fsnotify/fsnotify"
@@ -21,6 +23,20 @@ import (
 var Version = "X.X.X"
 
 func main() {
+	logPrinter := tui.NewPrinter()
+	defer func() {
+		if err := logPrinter.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	log.SetReportTimestamp(false)
+	log.SetReportCaller(false)
+	log.SetColorProfile(termenv.ColorProfile())
+	log.SetOutput(logPrinter)
+	logLegacy.SetOutput(logPrinter)
+
+	test(logPrinter)
 	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
 		os.Exit(1)
@@ -71,10 +87,10 @@ func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsCo
 	}
 
 	if uncorsConfig.Debug {
-		log.EnableDebugMessages()
+		log.SetLevel(log.DebugLevel)
 		log.Debug("Enabled debug messages")
 	} else {
-		log.DisableDebugMessages()
+		log.SetLevel(log.InfoLevel)
 	}
 
 	return uncorsConfig
