@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 )
 
 type RequestHandlerOption = func(*RequestHandler)
 
-func WithLogger(logger contracts.Logger) RequestHandlerOption {
+func WithLogger(logger *log.Logger) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.logger = logger
 	}

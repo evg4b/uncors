@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -13,7 +14,7 @@ import (
 
 type Handler struct {
 	response config.Response
-	logger   contracts.Logger
+	logger   *log.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }
@@ -62,7 +63,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		h.serveRawContent(writer)
 	}
 
-	h.logger.PrintResponse(request, writer.StatusCode())
+	//h.logger.PrintResponse(request, writer.StatusCode())
 }
 
 func normaliseCode(code int) int {

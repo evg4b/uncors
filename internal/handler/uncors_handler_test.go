@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
@@ -16,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -107,7 +107,7 @@ func mockFactory(t *testing.T, fs afero.Fs) handler.MockHandlerFactory {
 }
 
 func TestUncorsRequestHandler(t *testing.T) {
-	log.DisableOutput()
+	log.SetOutput(io.Discard)
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -351,7 +351,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 }
 
 func TestMockMiddleware(t *testing.T) {
-	log.DisableOutput()
+	log.SetOutput(io.Discard)
 	logger := mocks.NewNoopLogger(t)
 
 	t.Run("request method handling", func(t *testing.T) {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/muesli/termenv"
 	"os"
 
 	"github.com/charmbracelet/log"
@@ -9,7 +8,6 @@ import (
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	logLegacy "github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
@@ -32,18 +30,14 @@ func main() {
 
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
-	log.SetColorProfile(termenv.ColorProfile())
-	log.SetOutput(logPrinter)
-	logLegacy.SetOutput(logPrinter)
 
-	test(logPrinter)
 	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
 		os.Exit(1)
 	})
 
 	pflag.Usage = func() {
-		uncors.Logo(Version)
+		print(uncors.Logo(Version))
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}

@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -15,7 +16,7 @@ import (
 type Middleware struct {
 	fs     afero.Fs
 	index  string
-	logger contracts.Logger
+	logger *log.Logger
 	prefix string
 }
 
@@ -42,7 +43,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-		h.logger.PrintResponse(request, response.StatusCode())
+		//h.logger.PrintResponse(request, response.StatusCode())
 	})
 }
 

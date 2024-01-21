@@ -1,17 +1,19 @@
 package uncors
 
 import (
-	"github.com/evg4b/uncors/internal/log"
-	"github.com/pterm/pterm"
+	"github.com/charmbracelet/log"
 )
 
-func style(fg pterm.Color, bg pterm.Color) log.LoggerOption {
-	return log.WithStyle(&pterm.Style{fg, bg})
-}
+// var (
+//	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
+//	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
+//	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
+//	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
+//)
 
 var (
-	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
-	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
-	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
-	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
+	ProxyLogger  = log.Default()
+	MockLogger   = log.Default()
+	StaticLogger = log.Default()
+	CacheLogger  = log.Default()
 )
