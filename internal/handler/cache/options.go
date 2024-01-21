@@ -1,14 +1,14 @@
 package cache
 
 import (
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/patrickmn/go-cache"
 )
 
 type MiddlewareOption = func(*Middleware)
 
-func WithLogger(logger contracts.Logger) MiddlewareOption {
+func WithLogger(logger *log.Logger) MiddlewareOption {
 	return func(m *Middleware) {
 		m.logger = logger
 	}

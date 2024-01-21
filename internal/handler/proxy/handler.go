@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -14,7 +15,7 @@ import (
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	logger    contracts.Logger
+	logger    *log.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
@@ -68,7 +69,7 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	h.logger.PrintResponse(originalResponse.Request, originalResponse.StatusCode)
+	//h.logger.PrintResponse(originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }

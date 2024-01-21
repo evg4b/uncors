@@ -1,7 +1,7 @@
 package static
 
 import (
-	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/afero"
 )
 
@@ -19,7 +19,7 @@ func WithIndex(index string) MiddlewareOption {
 	}
 }
 
-func WithLogger(logger contracts.Logger) MiddlewareOption {
+func WithLogger(logger *log.Logger) MiddlewareOption {
 	return func(h *Middleware) {
 		h.logger = logger
 	}

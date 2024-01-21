@@ -1,16 +1,14 @@
 package mocks
 
-import "testing"
+import (
+	"io"
+	"testing"
 
-func NewNoopLogger(t *testing.T) *LoggerMock {
-	return NewLoggerMock(t).
-		ErrorfMock.Return().
-		ErrorfMock.Return().
-		WarningMock.Return().
-		WarningfMock.Return().
-		InfoMock.Return().
-		InfofMock.Return().
-		DebugMock.Return().
-		DebugfMock.Return().
-		PrintResponseMock.Return()
+	"github.com/charmbracelet/log"
+)
+
+func NewNoopLogger(t *testing.T) *log.Logger {
+	t.Helper()
+
+	return log.New(io.Discard)
 }

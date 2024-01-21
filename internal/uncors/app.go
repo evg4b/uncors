@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -55,7 +55,7 @@ func CreateApp(fs afero.Fs, version string) *App {
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	log.Print(Logo(app.version))
 	log.Print("\n")
-	log.Warning(DisclaimerMessage)
+	log.Warn(DisclaimerMessage)
 	log.Print("\n")
 	log.Info(uncorsConfig.Mappings.String())
 	log.Print("\n")
@@ -107,7 +107,7 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 			helpers.NormaliseRequest(request)
 			globalHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
-		ErrorLog: log.StandardErrorLogAdapter(),
+		ErrorLog: log.StandardLog(),
 	}
 	server.RegisterOnShutdown(globalCtxCancel)
 
