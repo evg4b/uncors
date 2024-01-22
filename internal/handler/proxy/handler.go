@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -15,7 +14,7 @@ import (
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	logger    *log.Logger
+	logger    contracts.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {

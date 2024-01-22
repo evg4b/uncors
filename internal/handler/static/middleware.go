@@ -6,7 +6,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -16,7 +15,7 @@ import (
 type Middleware struct {
 	fs     afero.Fs
 	index  string
-	logger *log.Logger
+	logger contracts.Logger
 	prefix string
 }
 

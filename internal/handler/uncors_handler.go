@@ -24,7 +24,7 @@ type (
 type RequestHandler struct {
 	*mux.Router
 
-	logger   *log.Logger
+	logger   contracts.Logger
 	mappings config.Mappings
 
 	cacheMiddlewareFactory  CacheMiddlewareFactory

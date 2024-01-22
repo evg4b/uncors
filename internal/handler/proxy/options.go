@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
@@ -20,7 +19,7 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	}
 }
 
-func WithLogger(logger *log.Logger) HandlerOption {
+func WithLogger(logger contracts.Logger) HandlerOption {
 	return func(m *Handler) {
 		m.logger = logger
 	}

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -15,7 +14,7 @@ import (
 )
 
 type Middleware struct {
-	logger    *log.Logger
+	logger    contracts.Logger
 	storage   *cache.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
