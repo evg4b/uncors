@@ -3,7 +3,7 @@ package mock
 import (
 	"time"
 
-	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/contracts"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/spf13/afero"
@@ -11,7 +11,7 @@ import (
 
 type HandlerOption = func(*Handler)
 
-func WithLogger(logger *log.Logger) HandlerOption {
+func WithLogger(logger contracts.Logger) HandlerOption {
 	return func(h *Handler) {
 		h.logger = logger
 	}

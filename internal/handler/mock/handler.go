@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -14,7 +13,7 @@ import (
 
 type Handler struct {
 	response config.Response
-	logger   *log.Logger
+	logger   contracts.Logger
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }
