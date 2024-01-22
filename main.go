@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/charmbracelet/log"
@@ -37,7 +38,7 @@ func main() {
 	})
 
 	pflag.Usage = func() {
-		print(uncors.Logo(Version))
+		fmt.Print(uncors.Logo(Version)) //nolint:forbidigo
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
