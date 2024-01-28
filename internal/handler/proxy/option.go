@@ -8,7 +8,7 @@ import (
 
 func (h *Handler) makeOptionsResponse(writer http.ResponseWriter, _ *http.Request) error {
 	infra.WriteCorsHeaders(writer.Header())
-	//h.logger.PrintResponse(req, http.StatusOK)
+
 
 	return nil
 }

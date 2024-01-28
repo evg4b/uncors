@@ -5,12 +5,13 @@ package version
 import (
 	"context"
 	"encoding/json"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/evg4b/uncors/internal/uncors"
 	"net/http"
 
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/hashicorp/go-version"
 )
 
@@ -20,28 +21,28 @@ type versionInfo struct {
 	Version string `json:"tag_name"`
 }
 
-func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurrentVersion string) {
+func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurrentVersion string) tea.Cmd {
 	log.Debug("Checking new version")
 
 	currentVersion, err := version.NewVersion(rawCurrentVersion)
 	if err != nil {
 		log.Debugf("failed to parse current version: %v", err)
 
-		return
+		return nil
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
 	if err != nil {
 		log.Debugf("failed to generate new version check request: %v", err)
 
-		return
+		return nil
 	}
 
 	response, err := client.Do(request)
 	if err != nil {
 		log.Debugf("http error occupied: %v", err)
 
-		return
+		return nil
 	}
 
 	defer helpers.CloseSafe(response.Body)
@@ -52,20 +53,21 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 	if err != nil {
 		log.Debugf("failed to parse last version response: %v", err)
 
-		return
+		return nil
 	}
 
 	lastVersion, err := version.NewVersion(lastVersionInfo.Version)
 	if err != nil {
 		log.Debugf("failed to parse last version: %v", err)
 
-		return
+		return nil
 	}
 
 	if lastVersion.GreaterThan(currentVersion) {
-		log.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		log.Info("\n")
-	} else {
-		log.Debug("Version is up to date")
+		return tea.Printf(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
 	}
+
+	log.Debug("Version is up to date")
+
+	return nil
 }

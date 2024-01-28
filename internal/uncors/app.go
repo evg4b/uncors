@@ -53,13 +53,6 @@ func CreateApp(fs afero.Fs, version string) *App {
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	log.Print(Logo(app.version))
-	log.Print("\n")
-	log.Warn(DisclaimerMessage)
-	log.Print("\n")
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
-
 	app.initServer(ctx, uncorsConfig)
 }
 
@@ -120,13 +113,10 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	log.Print("\n")
 	log.Info("Restarting server....")
 	log.Print("\n")
-	err := app.internalShutdown(ctx)
-	if err != nil {
+	if err := app.internalShutdown(ctx); err != nil {
 		panic(err) // TODO: refactor this error handling
 	}
 
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
 	app.initServer(ctx, uncorsConfig)
 }
 

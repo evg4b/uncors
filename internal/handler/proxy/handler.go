@@ -68,7 +68,7 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	//h.logger.PrintResponse(originalResponse.Request, originalResponse.StatusCode)
+
 
 	return originalResponse, nil
 }

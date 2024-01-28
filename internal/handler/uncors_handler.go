@@ -5,6 +5,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/tui"
+
+	"github.com/evg4b/uncors/internal/tui"
+
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -40,7 +44,8 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
 
-	proxyHandler := handler.proxyHandlerFactory()
+	wrapper := tui.RequestTracker{}
+	proxyHandler := wrapper.Wrap(handler.proxyHandlerFactory())
 
 	for _, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)

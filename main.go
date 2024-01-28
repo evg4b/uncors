@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 
+
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
@@ -22,6 +25,11 @@ import (
 var Version = "X.X.X"
 
 func main() {
+	defer helpers.PanicInterceptor(func(value any) {
+		log.Error(value)
+		os.Exit(1)
+	})
+
 	logPrinter := tui.NewPrinter()
 	defer func() {
 		if err := logPrinter.Close(); err != nil {
@@ -29,19 +37,9 @@ func main() {
 		}
 	}()
 
+	log.SetOutput(logPrinter)
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
-
-	defer helpers.PanicInterceptor(func(value any) {
-		log.Error(value)
-		os.Exit(1)
-	})
-
-	pflag.Usage = func() {
-		fmt.Print(uncors.Logo(Version)) //nolint:forbidigo
-		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
-		pflag.PrintDefaults()
-	}
 
 	fs := afero.NewOsFs()
 
@@ -49,6 +47,24 @@ func main() {
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
+	model := uncors.NewUncorsModel(
+		uncors.WithVersion(Version),
+		uncors.WithLogPrinter(logPrinter),
+		uncors.WithConfig(uncorsConfig),
+	)
+
+	program := tea.NewProgram(model, tea.WithContext(ctx))
+	if _, err := program.Run(); err != nil {
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+	pflag.Usage = func() {
+		fmt.Print(uncors.Logo(Version)) //nolint:forbidigo
+		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		pflag.PrintDefaults()
+	}
+
 	app := uncors.CreateApp(fs, Version)
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
