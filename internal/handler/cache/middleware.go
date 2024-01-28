@@ -49,7 +49,6 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 
 		m.writeCachedResponse(writer, cachedResponse)
 
-
 		return
 	}
 

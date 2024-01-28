@@ -3,6 +3,9 @@ package uncors
 import (
 	"context"
 
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,12 +17,14 @@ import (
 )
 
 type uncorsModel struct {
-	logPrinter tui.Printer
-	version    string
-	keys       keyMap
-	help       help.Model
-	config     *config.UncorsConfig
-	app        *App
+	logPrinter     tui.Printer
+	version        string
+	keys           keyMap
+	help           help.Model
+	config         *config.UncorsConfig
+	requestTracker tui.RequestTracker
+	app            *App
+	spinner        spinner.Model
 }
 
 // keyMap defines a set of keybindings. To work for help it must satisfy
@@ -55,11 +60,12 @@ type Option = func(*uncorsModel)
 
 func NewUncorsModel(options ...Option) tea.Model {
 	model := uncorsModel{
-		keys: keys,
-		help: help.New(),
+		keys:    keys,
+		help:    help.New(),
+		spinner: spinner.New(spinner.WithSpinner(spinner.Monkey)),
 	}
 	helpers.ApplyOptions(&model, options)
-	model.app = CreateApp(afero.NewOsFs(), model.version)
+	model.app = CreateApp(afero.NewOsFs(), model.version, model.requestTracker)
 
 	return model
 }
@@ -67,6 +73,9 @@ func NewUncorsModel(options ...Option) tea.Model {
 func (u uncorsModel) Init() tea.Cmd {
 	return tea.Batch(
 		u.logPrinter.Tick,
+		u.requestTracker.Tick,
+		u.requestTracker.Tick2,
+		u.spinner.Tick,
 		tea.Sequence(
 			tui.PrintLogoCmd(u.version),
 			tea.Println(),
@@ -103,11 +112,27 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		u.help.Width = msg.Width
+	case tui.DoneRequestDefinition:
+		return u, tea.Batch(
+			u.requestTracker.Tick,
+			tea.Println(msg.URL, msg.Method, msg.Status),
+		)
+	case tui.RequestDefinition:
+		return u, u.requestTracker.Tick2
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		u.spinner, cmd = u.spinner.Update(msg)
+
+		return u, cmd
 	}
 
 	return u, nil
 }
 
 func (u uncorsModel) View() string {
-	return u.help.View(u.keys)
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		u.requestTracker.View(u.spinner.View()),
+		u.help.View(u.keys),
+	)
 }

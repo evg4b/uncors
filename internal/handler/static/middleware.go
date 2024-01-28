@@ -42,7 +42,6 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-
 	})
 }
 

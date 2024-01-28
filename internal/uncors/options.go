@@ -22,3 +22,9 @@ func WithConfig(config *config.UncorsConfig) Option {
 		model.config = config
 	}
 }
+
+func WithRequestTracker(tracker tui.RequestTracker) Option {
+	return func(model *uncorsModel) {
+		model.requestTracker = tracker
+	}
+}

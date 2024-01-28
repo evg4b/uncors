@@ -23,6 +23,7 @@ type appCache struct {
 
 func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.RequestHandler {
 	globalHandler := handler.NewUncorsRequestHandler(
+		handler.WithRequestTracker(app.tracker),
 		handler.WithMappings(uncorsConfig.Mappings),
 		handler.WithLogger(MockLogger),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {

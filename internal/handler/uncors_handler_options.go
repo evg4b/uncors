@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 type RequestHandlerOption = func(*RequestHandler)
@@ -40,5 +41,11 @@ func WithStaticHandlerFactory(factory StaticMiddlewareFactory) RequestHandlerOpt
 func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.mockHandlerFactory = factory
+	}
+}
+
+func WithRequestTracker(tracker tui.RequestTracker) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.tracker = tracker
 	}
 }

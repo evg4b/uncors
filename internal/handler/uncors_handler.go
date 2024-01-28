@@ -5,15 +5,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/tui"
-
-	"github.com/evg4b/uncors/internal/tui"
-
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 )
@@ -35,6 +32,7 @@ type RequestHandler struct {
 	staticMiddlewareFactory StaticMiddlewareFactory
 	proxyHandlerFactory     ProxyHandlerFactory
 	mockHandlerFactory      MockHandlerFactory
+	tracker                 tui.RequestTracker
 }
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -44,8 +42,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
 
-	wrapper := tui.RequestTracker{}
-	proxyHandler := wrapper.Wrap(handler.proxyHandlerFactory())
+	proxyHandler := handler.tracker.Wrap(handler.proxyHandlerFactory())
 
 	for _, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)
