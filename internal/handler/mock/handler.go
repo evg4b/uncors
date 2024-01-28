@@ -61,8 +61,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	} else {
 		h.serveRawContent(writer)
 	}
-
-
 }
 
 func normaliseCode(code int) int {

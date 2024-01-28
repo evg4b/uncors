@@ -13,5 +13,6 @@ import (
 
 func CheckNewVersion(_ context.Context, _ contracts.HTTPClient, _ string) tea.Cmd {
 	log.Debug("Check new version stub")
+
 	return nil
 }

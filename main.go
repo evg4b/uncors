@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muesli/termenv"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -38,6 +39,7 @@ func main() {
 	}()
 
 	log.SetOutput(logPrinter)
+	log.SetColorProfile(termenv.ColorProfile())
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
 
@@ -46,11 +48,14 @@ func main() {
 	viperInstance := viper.GetViper()
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
+	tracker := tui.NewRequestTracker()
+
 	ctx := context.Background()
 	model := uncors.NewUncorsModel(
 		uncors.WithVersion(Version),
 		uncors.WithLogPrinter(logPrinter),
 		uncors.WithConfig(uncorsConfig),
+		uncors.WithRequestTracker(tracker),
 	)
 
 	program := tea.NewProgram(model, tea.WithContext(ctx))
@@ -65,7 +70,7 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	app := uncors.CreateApp(fs, Version)
+	app := uncors.CreateApp(fs, Version, tracker)
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
 			log.Errorf("Config reloading error: %v", value)

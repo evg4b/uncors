@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -31,6 +32,7 @@ type App struct {
 	httpsListenerMutex *sync.Mutex
 	httpsListener      net.Listener
 	cache              appCache
+	tracker            tui.RequestTracker
 }
 
 const (
@@ -39,7 +41,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string) *App {
+func CreateApp(fs afero.Fs, version string, tracker tui.RequestTracker) *App {
 	return &App{
 		fs:                 fs,
 		version:            version,
@@ -49,6 +51,7 @@ func CreateApp(fs afero.Fs, version string) *App {
 		shuttingDown:       &atomic.Bool{},
 		httpListenerMutex:  &sync.Mutex{},
 		httpsListenerMutex: &sync.Mutex{},
+		tracker:            tracker,
 	}
 }
 
