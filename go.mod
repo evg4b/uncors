@@ -7,6 +7,7 @@ toolchain go1.21.1
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.6.1
+	github.com/charmbracelet/bubbles v0.17.1
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/charmbracelet/log v0.3.1
@@ -55,7 +56,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.5 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect

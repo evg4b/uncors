@@ -62,7 +62,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		h.serveRawContent(writer)
 	}
 
-	//h.logger.PrintResponse(request, writer.StatusCode())
+
 }
 
 func normaliseCode(code int) int {
