@@ -25,6 +25,7 @@ type uncorsModel struct {
 	requestTracker tui.RequestTracker
 	app            *App
 	spinner        spinner.Model
+	memory         tea.Model
 }
 
 // keyMap defines a set of keybindings. To work for help it must satisfy
@@ -63,6 +64,7 @@ func NewUncorsModel(options ...Option) tea.Model {
 		keys:    keys,
 		help:    help.New(),
 		spinner: spinner.New(spinner.WithSpinner(spinner.Monkey)),
+		memory:  tui.NewMemoryTracker(),
 	}
 	helpers.ApplyOptions(&model, options)
 	model.app = CreateApp(afero.NewOsFs(), model.version, model.requestTracker)
@@ -76,6 +78,7 @@ func (u uncorsModel) Init() tea.Cmd {
 		u.requestTracker.Tick,
 		u.requestTracker.Tick2,
 		u.spinner.Tick,
+		u.memory.Init(),
 		tea.Sequence(
 			tui.PrintLogoCmd(u.version),
 			tea.Println(),
@@ -124,6 +127,11 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		u.spinner, cmd = u.spinner.Update(msg)
 
 		return u, cmd
+	case tui.MemoryTick:
+		var cmd tea.Cmd
+		u.memory, cmd = u.memory.Update(msg)
+
+		return u, cmd
 	}
 
 	return u, nil
@@ -133,6 +141,11 @@ func (u uncorsModel) View() string {
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		u.requestTracker.View(u.spinner.View()),
-		u.help.View(u.keys),
+		lipgloss.JoinHorizontal(
+			lipgloss.Right,
+			u.help.View(u.keys),
+			" Memory: ",
+			u.memory.View(),
+		),
 	)
 }
