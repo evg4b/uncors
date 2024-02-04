@@ -2,6 +2,9 @@ package uncors
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
@@ -26,7 +29,20 @@ type uncorsModel struct {
 	app            *App
 	spinner        spinner.Model
 	memory         tea.Model
+	width          int
 }
+
+var (
+	keyStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
+		Light: "#909090",
+		Dark:  "#626262",
+	})
+
+	descStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
+		Light: "#B2B2B2",
+		Dark:  "#4A4A4A",
+	})
+)
 
 // keyMap defines a set of keybindings. To work for help it must satisfy
 // key.Map. It could also very easily be a map[string]key.Binding.
@@ -63,7 +79,7 @@ func NewUncorsModel(options ...Option) tea.Model {
 	model := uncorsModel{
 		keys:    keys,
 		help:    help.New(),
-		spinner: spinner.New(spinner.WithSpinner(spinner.Monkey)),
+		spinner: spinner.New(spinner.WithSpinner(tui.Spinner)),
 		memory:  tui.NewMemoryTracker(),
 	}
 	helpers.ApplyOptions(&model, options)
@@ -79,6 +95,8 @@ func (u uncorsModel) Init() tea.Cmd {
 		u.requestTracker.Tick2,
 		u.spinner.Tick,
 		u.memory.Init(),
+		tea.HideCursor,
+		tea.SetWindowTitle(fmt.Sprintf("uncors v%s", u.version)),
 		tea.Sequence(
 			tui.PrintLogoCmd(u.version),
 			tea.Println(),
@@ -101,11 +119,14 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, u.keys.Restart):
-			return u, func() tea.Msg {
-				u.app.Restart(context.Background(), u.config)
+			return u, tea.Batch(
+				func() tea.Msg {
+					u.app.Restart(context.Background(), u.config)
 
-				return nil
-			}
+					return nil
+				},
+				tea.ClearScreen,
+			)
 		case key.Matches(msg, u.keys.Quit):
 			if err := u.app.Shutdown(context.Background()); err != nil {
 				log.Error(err)
@@ -114,11 +135,17 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return u, tea.Quit
 		}
 	case tea.WindowSizeMsg:
+		u.width = msg.Width
 		u.help.Width = msg.Width
+
+		return u, nil
 	case tui.DoneRequestDefinition:
 		return u, tea.Batch(
 			u.requestTracker.Tick,
-			tea.Println(msg.URL, msg.Method, msg.Status),
+			tea.Println(
+				styles.WarningBlock.Render("PROXY"),
+				tui.RenderDoneRequest(msg),
+			),
 		)
 	case tui.RequestDefinition:
 		return u, u.requestTracker.Tick2
@@ -138,14 +165,25 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u uncorsModel) View() string {
+	data := u.requestTracker.View(u.spinner.View())
+
+	line := lipgloss.JoinVertical(
+		lipgloss.Left,
+		fmt.Sprintf(
+			"%s%s",
+			descStyle.Render("mem: "),
+			keyStyle.Render(u.memory.View()),
+		),
+		u.help.View(u.keys),
+	)
+
+	if data == "" {
+		return line
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		u.requestTracker.View(u.spinner.View()),
-		lipgloss.JoinHorizontal(
-			lipgloss.Right,
-			u.help.View(u.keys),
-			" Memory: ",
-			u.memory.View(),
-		),
+		data,
+		line,
 	)
 }

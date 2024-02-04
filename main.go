@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-
 	"github.com/muesli/termenv"
 
 	tea "github.com/charmbracelet/bubbletea"

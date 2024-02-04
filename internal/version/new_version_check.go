@@ -5,9 +5,10 @@ package version
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evg4b/uncors/internal/uncors"
-	"net/http"
 
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"

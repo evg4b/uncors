@@ -1,31 +1,31 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/dustin/go-humanize"
 	"runtime"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/dustin/go-humanize"
 )
 
 type MemoryTick string
 
 type memoryTracker struct {
-	usage  string
-	ticker *time.Ticker
+	usage    string
+	memStats *runtime.MemStats
+	ticker   *time.Ticker
 }
 
 func NewMemoryTracker() tea.Model {
 	return memoryTracker{
-		usage:  "...",
-		ticker: time.NewTicker(time.Second),
+		usage:    "...",
+		memStats: &runtime.MemStats{},
+		ticker:   time.NewTicker(time.Second),
 	}
 }
 
 func (m memoryTracker) Init() tea.Cmd {
-	return tea.Sequence(
-		m.mem,
-		m.tick,
-	)
+	return tea.Sequence(m.mem, m.tick)
 }
 
 func (m memoryTracker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -49,8 +49,7 @@ func (m memoryTracker) View() string {
 }
 
 func (m memoryTracker) mem() tea.Msg {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
+	runtime.ReadMemStats(m.memStats)
 
-	return MemoryTick(humanize.Bytes(memStats.Alloc))
+	return MemoryTick(humanize.Bytes(m.memStats.Alloc))
 }
