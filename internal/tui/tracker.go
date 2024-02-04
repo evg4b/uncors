@@ -1,16 +1,18 @@
 package tui
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
 	"net/http"
 	"sort"
 	"strings"
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
-
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
+
+const bufferSize = 10
 
 type RequestDefinition struct {
 	URL    string
@@ -31,8 +33,8 @@ type RequestTracker struct {
 
 func NewRequestTracker() RequestTracker {
 	return RequestTracker{
-		done:     make(chan DoneRequestDefinition, 10),
-		progress: make(chan RequestDefinition, 10),
+		done:     make(chan DoneRequestDefinition, bufferSize),
+		progress: make(chan RequestDefinition, bufferSize),
 		requests: make(map[string]RequestDefinition),
 		mutex:    &sync.Mutex{},
 	}
@@ -86,11 +88,9 @@ func (r RequestTracker) View(spinner string) string {
 	data := make([]string, 0, len(r.requests))
 	for _, definition := range r.requests {
 		builder := strings.Builder{}
-		builder.WriteString(spinner)
-		builder.WriteString(" ")
-		builder.WriteString(definition.Method)
-		builder.WriteString(" ")
-		builder.WriteString(definition.URL)
+		builder.WriteString(styles.WarningBlock.Render("PROXY"))
+		builder.WriteString(RenderRequest(definition, spinner))
+		builder.WriteString(styles.DisabledText.Render(definition.URL))
 		data = append(data, builder.String())
 	}
 	r.mutex.Unlock()
