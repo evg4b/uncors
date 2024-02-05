@@ -2,21 +2,20 @@ package main
 
 import (
 	"fmt"
+	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/version"
 	"os"
+
+	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/muesli/termenv"
 
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/charmbracelet/log"
-	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
-	"github.com/evg4b/uncors/internal/version"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -38,76 +37,39 @@ func main() {
 		}
 	}()
 
-	log.SetOutput(logPrinter)
 	log.SetColorProfile(termenv.ColorProfile())
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
+	log.SetStyles(styles.DefaultStyles())
 
-	fs := afero.NewOsFs()
-
-	viperInstance := viper.GetViper()
-	uncorsConfig := loadConfiguration(viperInstance, fs)
-
-	tracker := tui.NewRequestTracker()
-
-	ctx := context.Background()
-	model := uncors.NewUncorsModel(
-		uncors.WithVersion(Version),
-		uncors.WithLogPrinter(logPrinter),
-		uncors.WithConfig(uncorsConfig),
-		uncors.WithRequestTracker(tracker),
-	)
-
-	program := tea.NewProgram(model, tea.WithContext(ctx))
-	if _, err := program.Run(); err != nil {
-		os.Exit(1)
-	}
-
-	os.Exit(0)
 	pflag.Usage = func() {
 		fmt.Print(uncors.Logo(Version)) //nolint:forbidigo
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 
-	app := uncors.CreateApp(fs, Version, tracker)
-	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
-		defer helpers.PanicInterceptor(func(value any) {
-			log.Errorf("Config reloading error: %v", value)
-		})
+	fs := afero.NewOsFs()
+	viperInstance := viper.GetViper()
+	loader := tui.NewConfigLoader(viperInstance, fs)
+	uncorsConfig := loader.Load()
 
-		app.Restart(ctx, loadConfiguration(viperInstance, fs))
-	})
-	viperInstance.WatchConfig()
+	tracker := tui.NewRequestTracker()
+
+	log.SetOutput(logPrinter)
+	ctx := context.Background()
+
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
-	app.Start(ctx, uncorsConfig)
-	go func() {
-		shutdownErr := helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-			log.Debug("shutdown signal received")
 
-			return app.Shutdown(shutdownCtx)
-		})
-		if shutdownErr != nil {
-			panic(shutdownErr)
-		}
-	}()
-	app.Wait()
-	log.Info("Server was stopped")
-}
+	model := uncors.NewUncorsModel(
+		uncors.WithVersion(Version),
+		uncors.WithLogPrinter(logPrinter),
+		uncors.WithConfig(uncorsConfig),
+		uncors.WithRequestTracker(tracker),
+		uncors.WithConfigLoader(loader),
+	)
 
-func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
-	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
-	err := validators.ValidateConfig(uncorsConfig, fs)
-	if err != nil {
-		panic(err)
+	program := tea.NewProgram(model, tea.WithContext(ctx))
+	if _, err := program.Run(); err != nil {
+		log.Fatal(err)
 	}
-
-	if uncorsConfig.Debug {
-		log.SetLevel(log.DebugLevel)
-		log.Debug("Enabled debug messages")
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
-
-	return uncorsConfig
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/evg4b/uncors/internal/tui"
 )
 
-func WithLogPrinter(printer tui.Printer) Option {
+func WithLogPrinter(printer *tui.Printer) Option {
 	return func(model *uncorsModel) {
 		model.logPrinter = printer
 	}
@@ -26,5 +26,11 @@ func WithConfig(config *config.UncorsConfig) Option {
 func WithRequestTracker(tracker tui.RequestTracker) Option {
 	return func(model *uncorsModel) {
 		model.requestTracker = tracker
+	}
+}
+
+func WithConfigLoader(loader *tui.ConfigLoader) Option {
+	return func(model *uncorsModel) {
+		model.configLoader = loader
 	}
 }

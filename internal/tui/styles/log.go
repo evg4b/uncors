@@ -2,6 +2,8 @@ package styles
 
 import "github.com/charmbracelet/lipgloss"
 
+const boxWidth = 7
+
 // TODO: Replace to adaptive colors.
 var (
 	LogoYellow = lipgloss.NewStyle().
@@ -13,6 +15,7 @@ var (
 	WarningBlock = lipgloss.NewStyle().
 			Background(lipgloss.Color(yellow)).
 			Foreground(lipgloss.Color(black)).
+			Width(boxWidth).
 			Padding(0, 1).
 			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
@@ -20,9 +23,21 @@ var (
 	WarningText = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(yellow))
 
+	InfoBlock = lipgloss.NewStyle().
+			Background(lipgloss.Color(blue)).
+			Foreground(lipgloss.Color(black)).
+			Width(boxWidth).
+			Padding(0, 1).
+			Margin(0, 1, 0, 0).
+			ColorWhitespace(true)
+
+	InfoText = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(blue))
+
 	SuccessBlock = lipgloss.NewStyle().
 			Background(lipgloss.Color(green)).
 			Foreground(lipgloss.Color(black)).
+			Width(boxWidth).
 			Padding(0, 1).
 			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
@@ -36,6 +51,7 @@ var (
 	ErrorBlock = lipgloss.NewStyle().
 			Background(lipgloss.Color(red)).
 			Foreground(lipgloss.Color(black)).
+			Width(boxWidth).
 			Padding(0, 1).
 			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
@@ -43,16 +59,26 @@ var (
 	ErrorText = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(red))
 
-	DisabledText = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(grey)).
+	DebugBlock = lipgloss.NewStyle().
+			Background(lipgloss.Color(grey)).
+			Foreground(lipgloss.Color(black)).
+			Width(boxWidth).
 			Padding(0, 1).
 			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
+	DebugText = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(grey))
+
 	DisabledBlock = lipgloss.NewStyle().
-			Background(lipgloss.Color(grey)).
+			Background(lipgloss.Color(darkGrey)).
 			Foreground(lipgloss.Color(black)).
 			Padding(0, 1).
+			Width(boxWidth).
 			Margin(0, 1, 0, 0).
+			ColorWhitespace(true)
+
+	DisabledText = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(darkGrey)).
 			ColorWhitespace(true)
 )
