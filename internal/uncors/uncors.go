@@ -20,7 +20,7 @@ import (
 )
 
 type uncorsModel struct {
-	logPrinter     tui.Printer
+	logPrinter     *tui.Printer
 	version        string
 	keys           keyMap
 	help           help.Model
@@ -30,6 +30,7 @@ type uncorsModel struct {
 	spinner        spinner.Model
 	memory         tea.Model
 	width          int
+	configLoader   *tui.ConfigLoader
 }
 
 var (
@@ -90,6 +91,7 @@ func NewUncorsModel(options ...Option) tea.Model {
 
 func (u uncorsModel) Init() tea.Cmd {
 	return tea.Batch(
+		u.configLoader.Init,
 		u.logPrinter.Tick,
 		u.requestTracker.Tick,
 		u.requestTracker.Tick2,
@@ -100,7 +102,7 @@ func (u uncorsModel) Init() tea.Cmd {
 		tea.Sequence(
 			tui.PrintLogoCmd(u.version),
 			tea.Println(),
-			tui.PrintDisclaimerMessage,
+			tui.PrintDisclaimerMessage(),
 			tea.Println(),
 			tui.PrintMappings(u.config.Mappings),
 		),
@@ -134,6 +136,17 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return u, tea.Quit
 		}
+	case *config.UncorsConfig:
+		u.config = msg
+		u.app.Restart(context.Background(), u.config)
+		return u, tea.Batch(
+			u.configLoader.Tick,
+			tea.Sequence(
+				tea.Println("config updated"),
+				tea.ClearScreen,
+				tui.PrintMappings(u.config.Mappings),
+			),
+		)
 	case tea.WindowSizeMsg:
 		u.width = msg.Width
 		u.help.Width = msg.Width

@@ -2,11 +2,12 @@ package tui
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
-	"strconv"
 )
 
 func RenderDoneRequest(request DoneRequestDefinition) string {
@@ -19,11 +20,11 @@ func RenderRequest(request RequestDefinition, spinner string) string {
 	return render(request, spinner, styles.DisabledBlock, styles.DisabledText)
 }
 
-func render(r RequestDefinition, pl string, block, text lipgloss.Style) string {
+func render(request RequestDefinition, status string, block, text lipgloss.Style) string {
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		block.Render(fmt.Sprintf("%s %s", r.Method, pl)),
-		text.Render(r.URL),
+		block.Render(fmt.Sprintf("%s %s", request.Method, status)),
+		text.Render(request.URL),
 	)
 }
 
