@@ -2,7 +2,7 @@ package styles
 
 import "github.com/charmbracelet/lipgloss"
 
-const boxWidth = 7
+const boxWidth = 10
 
 // TODO: Replace to adaptive colors.
 var (

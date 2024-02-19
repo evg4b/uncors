@@ -2,6 +2,7 @@ package static
 
 import (
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
 
@@ -28,5 +29,11 @@ func WithLogger(logger contracts.Logger) MiddlewareOption {
 func WithPrefix(prefix string) MiddlewareOption {
 	return func(h *Middleware) {
 		h.prefix = prefix
+	}
+}
+
+func WithRequestTracker(tracker tui.RequestTracker) MiddlewareOption {
+	return func(h *Middleware) {
+		h.tracker = tracker
 	}
 }

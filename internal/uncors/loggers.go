@@ -4,16 +4,9 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// var (
-//	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
-//	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
-//	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
-//	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
-//)
-
 var (
-	ProxyLogger  = log.Default()
-	MockLogger   = log.Default()
-	StaticLogger = log.Default()
-	CacheLogger  = log.Default()
+	ProxyLogger  = log.Default().WithPrefix("proxy")
+	MockLogger   = log.Default().WithPrefix("mock")
+	StaticLogger = log.Default().WithPrefix("static")
+	CacheLogger  = log.Default().WithPrefix("cache")
 )

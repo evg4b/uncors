@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
@@ -8,7 +10,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
-	"os"
 )
 
 type ConfigLoader struct {

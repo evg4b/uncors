@@ -9,12 +9,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 const bufferSize = 10
 
 type RequestDefinition struct {
+	Type   string
 	URL    string
 	Method string
 }
@@ -40,20 +40,31 @@ func NewRequestTracker() RequestTracker {
 	}
 }
 
-func (r RequestTracker) Wrap(next contracts.Handler) contracts.Handler {
+func (r RequestTracker) Wrap(next contracts.Handler, prefix string) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		responseWriter := NewResponseWriter(writer)
-		uuid := r.registerRequest(request)
-		defer r.resolveRequest(uuid, responseWriter)
+		uuid := r.registerRequest(request, prefix)
+		defer func() {
+			r.resolveRequest(uuid, responseWriter.StatusCode())
+		}()
 		next.ServeHTTP(responseWriter, request)
 	})
 }
 
-func (r RequestTracker) registerRequest(request *contracts.Request) string {
+func (r RequestTracker) RegisterRequest(request *http.Request, prefix string) string {
+	return r.registerRequest(request, prefix)
+}
+
+func (r RequestTracker) ResolveRequest(id string, statusCode int) {
+	r.resolveRequest(id, statusCode)
+}
+
+func (r RequestTracker) registerRequest(request *http.Request, prefix string) string {
 	uuid := helpers.GetUUID()
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	def := RequestDefinition{
+		Type:   prefix,
 		URL:    request.URL.String(),
 		Method: request.Method,
 	}
@@ -63,10 +74,10 @@ func (r RequestTracker) registerRequest(request *contracts.Request) string {
 	return uuid
 }
 
-func (r RequestTracker) resolveRequest(id string, w ResponseWriter) {
+func (r RequestTracker) resolveRequest(id string, w int) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.done <- DoneRequestDefinition{RequestDefinition: r.requests[id], Status: w.StatusCode()}
+	r.done <- DoneRequestDefinition{RequestDefinition: r.requests[id], Status: w}
 	delete(r.requests, id)
 }
 
@@ -88,9 +99,8 @@ func (r RequestTracker) View(spinner string) string {
 	data := make([]string, 0, len(r.requests))
 	for _, definition := range r.requests {
 		builder := strings.Builder{}
-		builder.WriteString(styles.WarningBlock.Render("PROXY"))
+		builder.WriteString(definition.Type)
 		builder.WriteString(RenderRequest(definition, spinner))
-		builder.WriteString(styles.DisabledText.Render(definition.URL))
 		data = append(data, builder.String())
 	}
 	r.mutex.Unlock()

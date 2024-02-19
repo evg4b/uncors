@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
@@ -22,5 +23,11 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 func WithLogger(logger contracts.Logger) HandlerOption {
 	return func(m *Handler) {
 		m.logger = logger
+	}
+}
+
+func WithRequestTracker(tracker tui.RequestTracker) HandlerOption {
+	return func(m *Handler) {
+		m.tracker = tracker
 	}
 }

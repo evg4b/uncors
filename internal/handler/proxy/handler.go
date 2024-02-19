@@ -2,19 +2,21 @@ package proxy
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"net/http"
+	"strings"
 )
 
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
 	logger    contracts.Logger
+	tracker   tui.RequestTracker
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
@@ -27,17 +29,19 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
-	if err := h.handle(response, request); err != nil {
-		infra.HTTPError(response, err)
+func (h *Handler) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request) {
+	if strings.EqualFold(req.Method, http.MethodOptions) {
+		h.makeOptionsResponse(resp, req)
+
+		return
+	}
+
+	if err := h.handle(resp, req); err != nil {
+		infra.HTTPError(resp, err)
 	}
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	if strings.EqualFold(req.Method, http.MethodOptions) {
-		return h.makeOptionsResponse(resp, req)
-	}
-
 	targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
@@ -52,7 +56,6 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
-
 	defer helpers.CloseSafe(originalResponse.Body)
 
 	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer)
@@ -64,10 +67,16 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 }
 
 func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
+	id := h.tracker.RegisterRequest(request, styles.ProxyStyle.Render("PROXY"))
 	originalResponse, err := h.http.Do(request)
+
 	if err != nil {
+		h.tracker.ResolveRequest(id, 0)
+
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
+
+	h.tracker.ResolveRequest(id, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }

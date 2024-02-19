@@ -3,6 +3,7 @@ package cache
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -29,5 +30,11 @@ func WithGlobs(globs config.CacheGlobs) MiddlewareOption {
 func WithCacheStorage(storage *cache.Cache) MiddlewareOption {
 	return func(m *Middleware) {
 		m.storage = storage
+	}
+}
+
+func WithRequestTracker(tracker tui.RequestTracker) MiddlewareOption {
+	return func(m *Middleware) {
+		m.tracker = tracker
 	}
 }

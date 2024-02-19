@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/http"
 	"strings"
 
@@ -42,7 +43,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
 
-	proxyHandler := handler.tracker.Wrap(handler.proxyHandlerFactory())
+	proxyHandler := handler.proxyHandlerFactory()
 
 	for _, mapping := range handler.mappings {
 		uri, err := urlx.Parse(mapping.From)
@@ -83,7 +84,7 @@ func (h *RequestHandler) ServeHTTP(writer contracts.ResponseWriter, request *con
 
 func (h *RequestHandler) createHandler(response config.Response) http.Handler {
 	return contracts.CastToHTTPHandler(
-		h.mockHandlerFactory(response),
+		h.tracker.Wrap(h.mockHandlerFactory(response), styles.MockStyle.Render("MOCK")),
 	)
 }
 

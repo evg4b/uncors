@@ -36,6 +36,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 				cache2.WithMethods(cacheConfig.Methods),
 				cache2.WithCacheStorage(cacheStorage),
 				cache2.WithGlobs(globs),
+				cache2.WithRequestTracker(app.tracker),
 			)
 		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
@@ -46,6 +47,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 				proxy.WithURLReplacerFactory(factory),
 				proxy.WithHTTPClient(httpClient),
 				proxy.WithLogger(ProxyLogger),
+				proxy.WithRequestTracker(app.tracker),
 			)
 		}),
 		app.getWithStaticHandlerFactory(),
@@ -78,6 +80,7 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
 				static.WithLogger(StaticLogger),
+				static.WithRequestTracker(app.tracker),
 				static.WithPrefix(path),
 			)
 		}
