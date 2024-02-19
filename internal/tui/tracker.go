@@ -97,10 +97,7 @@ func (r RequestTracker) View(spinner string) string {
 
 	data := make([]string, 0, len(r.requests))
 	for _, definition := range r.requests {
-		builder := strings.Builder{}
-		builder.WriteString(definition.Type)
-		builder.WriteString(RenderRequest(definition, spinner))
-		data = append(data, builder.String())
+		data = append(data, RenderRequest(definition, spinner))
 	}
 	r.mutex.Unlock()
 	sort.Strings(data)
