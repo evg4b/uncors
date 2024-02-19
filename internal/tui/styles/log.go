@@ -39,8 +39,6 @@ var (
 
 	SuccessText = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(green)).
-			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	ErrorBlock = lipgloss.NewStyle().

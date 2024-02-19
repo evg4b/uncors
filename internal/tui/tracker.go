@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -15,7 +16,9 @@ const bufferSize = 10
 
 type RequestDefinition struct {
 	Type   string
-	URL    string
+	Host   string
+	Path   string
+	Params string
 	Method string
 }
 
@@ -62,15 +65,27 @@ func (r RequestTracker) registerRequest(request *http.Request, prefix string) st
 	uuid := helpers.GetUUID()
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	def := RequestDefinition{
-		Type:   prefix,
-		URL:    request.URL.String(),
-		Method: request.Method,
-	}
+	def := r.funcName(request, prefix)
 	r.requests[uuid] = def
 	r.progress <- def
 
 	return uuid
+}
+
+func (r RequestTracker) funcName(request *http.Request, prefix string) RequestDefinition {
+	host := fmt.Sprintf("%s://%s", request.URL.Scheme, request.URL.Host)
+	params := ""
+	if request.URL.RawQuery != "" {
+		params = fmt.Sprintf("?%s", request.URL.RawQuery)
+	}
+
+	return RequestDefinition{
+		Type:   prefix,
+		Host:   host,
+		Path:   request.URL.Path,
+		Params: params,
+		Method: request.Method,
+	}
 }
 
 func (r RequestTracker) resolveRequest(id string, w int) {

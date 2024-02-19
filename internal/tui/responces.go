@@ -10,9 +10,9 @@ import (
 )
 
 func RenderDoneRequest(request DoneRequestDefinition) string {
-	block, text := selectStyles(request.Status)
+	style := selectStyles(request.Status)
 
-	return render(request.RequestDefinition, formatCode(request), block, text)
+	return render(request.RequestDefinition, formatCode(request), style)
 }
 
 func formatCode(request DoneRequestDefinition) string {
@@ -24,29 +24,35 @@ func formatCode(request DoneRequestDefinition) string {
 }
 
 func RenderRequest(request RequestDefinition, spinner string) string {
-	return render(request, spinner, styles.DisabledBlock, styles.DisabledText)
+	return render(request, spinner, styles.PendingStyle)
 }
 
-func render(request RequestDefinition, status string, block, text lipgloss.Style) string {
+func render(request RequestDefinition, status string, style styles.StatusStyle) string {
+	method := lipgloss.PlaceHorizontal(4, lipgloss.Left, request.Method)
+
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		request.Type,
-		block.Render(fmt.Sprintf("%s %s", request.Method, status)),
-		text.Render(request.URL),
+		style.BlockStyle.Render(fmt.Sprintf("%s %s", method, status)),
+		style.MainTextStyle.Render(request.Host),
+		style.MainTextStyle.Render(request.Path),
+		style.SecondaryTextStyle.Render(request.Params),
 	)
 }
 
-func selectStyles(status int) (lipgloss.Style, lipgloss.Style) {
+func selectStyles(status int) styles.StatusStyle {
 	switch {
 	case helpers.Is1xxCode(status):
-		return styles.WarningBlock, styles.WarningText
+		return styles.InformationalStyle
 	case helpers.Is2xxCode(status):
-		return styles.SuccessBlock, styles.SuccessText
+		return styles.SuccessStyle
 	case helpers.Is3xxCode(status):
-		return styles.WarningBlock, styles.WarningText
-	case helpers.Is4xxCode(status), helpers.Is5xxCode(status):
-		return styles.ErrorBlock, styles.ErrorText
+		return styles.RedirectionStyle
+	case helpers.Is4xxCode(status):
+		return styles.ClientErrorStyle
+	case helpers.Is5xxCode(status):
+		return styles.ServerErrorStyle
+	default:
+		return styles.CanceledStyle
 	}
-
-	return styles.DisabledBlock, styles.DisabledText
 }
