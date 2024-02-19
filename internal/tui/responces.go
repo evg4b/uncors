@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
@@ -13,7 +12,15 @@ import (
 func RenderDoneRequest(request DoneRequestDefinition) string {
 	block, text := selectStyles(request.Status)
 
-	return render(request.RequestDefinition, strconv.Itoa(request.Status), block, text)
+	return render(request.RequestDefinition, formatCode(request), block, text)
+}
+
+func formatCode(request DoneRequestDefinition) string {
+	if request.Status == 0 {
+		return "---"
+	}
+
+	return strconv.Itoa(request.Status)
 }
 
 func RenderRequest(request RequestDefinition, spinner string) string {
@@ -39,8 +46,6 @@ func selectStyles(status int) (lipgloss.Style, lipgloss.Style) {
 	case helpers.Is4xxCode(status), helpers.Is5xxCode(status):
 		return styles.ErrorBlock, styles.ErrorText
 	}
-
-	log.Warnf("Unknown status code %d", status)
 
 	return styles.DisabledBlock, styles.DisabledText
 }

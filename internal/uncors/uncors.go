@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evg4b/uncors/internal/tui/styles"
-
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
 
@@ -156,7 +154,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return u, tea.Batch(
 			u.requestTracker.Tick,
 			tea.Println(
-				styles.WarningBlock.Render("PROXY"),
+				msg.Type,
 				tui.RenderDoneRequest(msg),
 			),
 		)

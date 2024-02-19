@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/version"
-	"os"
 
 	"github.com/evg4b/uncors/internal/tui/styles"
 

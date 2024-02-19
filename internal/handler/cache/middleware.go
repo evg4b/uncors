@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/url"
 	"sort"
 	"strings"
@@ -18,6 +20,7 @@ type Middleware struct {
 	storage   *cache.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
+	tracker   tui.RequestTracker
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
@@ -37,17 +40,21 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return
 		}
 
-		m.cacheRequest(writer, request, next)
+		m.handleRequest(writer, request, next)
 	})
 }
 
-func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
+func (m *Middleware) handleRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 	m.logger.Debugf("extracted %s from request", cacheKey)
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.logger.Debugf("extracted %s from request", cacheKey)
+		handler := contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
+			m.writeCachedResponse(writer, cachedResponse)
+			m.logger.Debugf("extracted %s from request", cacheKey)
+		})
 
-		m.writeCachedResponse(writer, cachedResponse)
+		m.tracker.Wrap(handler, styles.CacheStyle.Render("CACHE")).
+			ServeHTTP(writer, request)
 
 		return
 	}
