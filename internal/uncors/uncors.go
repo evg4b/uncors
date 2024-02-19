@@ -153,10 +153,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tui.DoneRequestDefinition:
 		return u, tea.Batch(
 			u.requestTracker.Tick,
-			tea.Println(
-				msg.Type,
-				tui.RenderDoneRequest(msg),
-			),
+			tea.Println(tui.RenderDoneRequest(msg)),
 		)
 	case tui.RequestDefinition:
 		return u, u.requestTracker.Tick2

@@ -28,6 +28,7 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
 	helpers.AssertIsDefined(middleware.storage, "Cache storage is not configured")
+	helpers.AssertIsDefined(middleware.tracker, "Request tracker is not configured")
 
 	return middleware
 }

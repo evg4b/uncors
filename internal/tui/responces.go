@@ -30,6 +30,7 @@ func RenderRequest(request RequestDefinition, spinner string) string {
 func render(request RequestDefinition, status string, block, text lipgloss.Style) string {
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
+		request.Type,
 		block.Render(fmt.Sprintf("%s %s", request.Method, status)),
 		text.Render(request.URL),
 	)
