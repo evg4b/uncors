@@ -42,12 +42,11 @@ func NewRequestTracker() RequestTracker {
 
 func (r RequestTracker) Wrap(next contracts.Handler, prefix string) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
-		responseWriter := NewResponseWriter(writer)
 		uuid := r.registerRequest(request, prefix)
 		defer func() {
-			r.resolveRequest(uuid, responseWriter.StatusCode())
+			r.resolveRequest(uuid, writer.StatusCode())
 		}()
-		next.ServeHTTP(responseWriter, request)
+		next.ServeHTTP(writer, request)
 	})
 }
 
@@ -107,28 +106,4 @@ func (r RequestTracker) View(spinner string) string {
 	sort.Strings(data)
 
 	return strings.Join(data, "\n")
-}
-
-type ResponseWriter struct {
-	writer contracts.ResponseWriter
-}
-
-func NewResponseWriter(writer contracts.ResponseWriter) ResponseWriter {
-	return ResponseWriter{writer: writer}
-}
-
-func (r ResponseWriter) Header() http.Header {
-	return r.writer.Header()
-}
-
-func (r ResponseWriter) Write(bytes []byte) (int, error) {
-	return r.writer.Write(bytes)
-}
-
-func (r ResponseWriter) WriteHeader(statusCode int) {
-	r.writer.WriteHeader(statusCode)
-}
-
-func (r ResponseWriter) StatusCode() int {
-	return r.writer.StatusCode()
 }
