@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
@@ -33,10 +32,9 @@ func render(request RequestDefinition, status string, style styles.StatusStyle) 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		request.Type,
-		style.BlockStyle.Render(fmt.Sprintf("%s %s", method, status)),
+		style.BlockStyle.Render(method+" "+status),
 		style.MainTextStyle.Render(request.Host),
 		style.MainTextStyle.Render(request.Path),
-		style.SecondaryTextStyle.Render(request.Params),
 	)
 }
 

@@ -28,16 +28,14 @@ type DoneRequestDefinition struct {
 }
 
 type RequestTracker struct {
-	done     chan DoneRequestDefinition
-	progress chan RequestDefinition
+	eventBus chan tea.Msg
 	requests map[string]RequestDefinition
 	mutex    *sync.Mutex
 }
 
 func NewRequestTracker() RequestTracker {
 	return RequestTracker{
-		done:     make(chan DoneRequestDefinition, bufferSize),
-		progress: make(chan RequestDefinition, bufferSize),
+		eventBus: make(chan tea.Msg, bufferSize),
 		requests: make(map[string]RequestDefinition),
 		mutex:    &sync.Mutex{},
 	}
@@ -67,7 +65,7 @@ func (r RequestTracker) registerRequest(request *http.Request, prefix string) st
 	defer r.mutex.Unlock()
 	def := r.funcName(request, prefix)
 	r.requests[uuid] = def
-	r.progress <- def
+	r.eventBus <- def
 
 	return uuid
 }
@@ -76,7 +74,7 @@ func (r RequestTracker) funcName(request *http.Request, prefix string) RequestDe
 	host := fmt.Sprintf("%s://%s", request.URL.Scheme, request.URL.Host)
 	params := ""
 	if request.URL.RawQuery != "" {
-		params = fmt.Sprintf("?%s", request.URL.RawQuery)
+		params = "?" + request.URL.RawQuery
 	}
 
 	return RequestDefinition{
@@ -91,20 +89,12 @@ func (r RequestTracker) funcName(request *http.Request, prefix string) RequestDe
 func (r RequestTracker) resolveRequest(id string, w int) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.done <- DoneRequestDefinition{RequestDefinition: r.requests[id], Status: w}
+	r.eventBus <- DoneRequestDefinition{RequestDefinition: r.requests[id], Status: w}
 	delete(r.requests, id)
 }
 
 func (r RequestTracker) Tick() tea.Msg {
-	request := <-r.done
-
-	return request
-}
-
-func (r RequestTracker) Tick2() tea.Msg {
-	request := <-r.progress
-
-	return request
+	return <-r.eventBus
 }
 
 func (r RequestTracker) View(spinner string) string {
