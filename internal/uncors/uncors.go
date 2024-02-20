@@ -2,8 +2,6 @@ package uncors
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
 
@@ -78,10 +76,9 @@ func (u uncorsModel) Init() tea.Cmd {
 		u.configLoader.Init,
 		u.logPrinter.Tick,
 		u.requestTracker.Tick,
-		u.requestTracker.Tick2,
 		u.spinner.Tick,
 		tea.HideCursor,
-		tea.SetWindowTitle(fmt.Sprintf("uncors v%s", u.version)),
+		tea.SetWindowTitle("uncors v"+u.version),
 		tea.Sequence(
 			tui.PrintLogoCmd(u.version),
 			tea.Println(),
@@ -141,7 +138,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Println(tui.RenderDoneRequest(msg)),
 		)
 	case tui.RequestDefinition:
-		return u, u.requestTracker.Tick2
+		return u, u.requestTracker.Tick
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		u.spinner, cmd = u.spinner.Update(msg)
@@ -161,7 +158,7 @@ func (u uncorsModel) View() string {
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		data,
+		lipgloss.PlaceHorizontal(u.width, lipgloss.Left, data),
 		u.help.View(u.keys),
 	)
 }
