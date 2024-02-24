@@ -5,7 +5,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"net/http"
@@ -16,7 +16,7 @@ type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
 	logger    contracts.Logger
-	tracker   tui.RequestTracker
+	tracker   request_tracker.RequestTracker
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {

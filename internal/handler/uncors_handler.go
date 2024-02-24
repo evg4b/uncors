@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/http"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 )
@@ -33,7 +33,7 @@ type RequestHandler struct {
 	staticMiddlewareFactory StaticMiddlewareFactory
 	proxyHandlerFactory     ProxyHandlerFactory
 	mockHandlerFactory      MockHandlerFactory
-	tracker                 tui.RequestTracker
+	tracker                 request_tracker.RequestTracker
 }
 
 var errHostNotMapped = errors.New("host not mapped")

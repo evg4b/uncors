@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/url"
 	"sort"
@@ -20,7 +20,7 @@ type Middleware struct {
 	storage   *cache.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
-	tracker   tui.RequestTracker
+	tracker   request_tracker.RequestTracker
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {

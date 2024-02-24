@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -21,7 +22,7 @@ type uncorsModel struct {
 	keys           keyMap
 	help           help.Model
 	config         *config.UncorsConfig
-	requestTracker tui.RequestTracker
+	requestTracker request_tracker.RequestTracker
 	app            *App
 	spinner        spinner.Model
 	width          int
@@ -132,12 +133,12 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		u.help.Width = msg.Width
 
 		return u, nil
-	case tui.DoneRequestDefinition:
+	case request_tracker.DoneRequestDefinition:
 		return u, tea.Batch(
 			u.requestTracker.Tick,
-			tea.Println(tui.RenderDoneRequest(msg)),
+			tea.Println(request_tracker.RenderDoneRequest(msg)),
 		)
-	case tui.RequestDefinition:
+	case request_tracker.RequestDefinition:
 		return u, u.requestTracker.Tick
 	case spinner.TickMsg:
 		var cmd tea.Cmd

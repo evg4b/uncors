@@ -2,7 +2,7 @@ package static
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/http"
 	"path"
@@ -19,7 +19,7 @@ type Middleware struct {
 	index   string
 	logger  contracts.Logger
 	prefix  string
-	tracker tui.RequestTracker
+	tracker request_tracker.RequestTracker
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
