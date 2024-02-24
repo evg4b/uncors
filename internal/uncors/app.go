@@ -3,6 +3,7 @@ package uncors
 import (
 	"errors"
 	"fmt"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"net"
 	"net/http"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -30,7 +30,7 @@ type App struct {
 	httpListener  net.Listener
 	httpsListener net.Listener
 	cache         appCache
-	tracker       tui.RequestTracker
+	tracker       request_tracker.RequestTracker
 }
 
 const (
@@ -39,7 +39,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string, tracker tui.RequestTracker) *App {
+func CreateApp(fs afero.Fs, version string, tracker request_tracker.RequestTracker) *App {
 	return &App{
 		fs:           fs,
 		version:      version,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"os"
 
 	"github.com/evg4b/uncors/internal/infra"
@@ -54,7 +55,7 @@ func main() {
 	loader := tui.NewConfigLoader(viperInstance, fs)
 	uncorsConfig := loader.Load()
 
-	tracker := tui.NewRequestTracker()
+	tracker := request_tracker.NewRequestTracker()
 
 	log.SetOutput(logPrinter)
 	ctx := context.Background()

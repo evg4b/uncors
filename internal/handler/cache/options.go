@@ -3,7 +3,7 @@ package cache
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -33,7 +33,7 @@ func WithCacheStorage(storage *cache.Cache) MiddlewareOption {
 	}
 }
 
-func WithRequestTracker(tracker tui.RequestTracker) MiddlewareOption {
+func WithRequestTracker(tracker request_tracker.RequestTracker) MiddlewareOption {
 	return func(m *Middleware) {
 		m.tracker = tracker
 	}
