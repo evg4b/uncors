@@ -3,13 +3,14 @@ package uncors
 import (
 	"errors"
 	"fmt"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"net"
 	"net/http"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
 
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"

@@ -2,13 +2,14 @@ package request_tracker
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbletea"
-	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 	"net/http"
 	"sort"
 	"strings"
 	"sync"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 const bufferSize = 10
@@ -107,4 +108,12 @@ func (r RequestTracker) View(spinner string) string {
 	sort.Strings(data)
 
 	return strings.Join(data, "\n")
+}
+
+func (r RequestTracker) WrapHttpClient(client contracts.HTTPClient, prefix string) contracts.HTTPClient {
+	return HttpRequestTracker{
+		tracker: r,
+		client:  client,
+		prefix:  prefix,
+	}
 }
