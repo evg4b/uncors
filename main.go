@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
 	"os"
+
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/styles"
+	"github.com/muesli/termenv"
 
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/version"
-
-	"github.com/evg4b/uncors/internal/tui/styles"
-
-	"github.com/muesli/termenv"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -39,10 +38,13 @@ func main() {
 		}
 	}()
 
-	log.SetColorProfile(termenv.ColorProfile())
+	log.SetOutput(logPrinter)
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
 	log.SetStyles(styles.DefaultStyles())
+	log.SetColorProfile(termenv.ColorProfile())
+
+	log.Debugf("Starting Uncors %s", Version)
 
 	pflag.Usage = func() {
 		fmt.Print(uncors.Logo(Version)) //nolint:forbidigo
@@ -57,7 +59,6 @@ func main() {
 
 	tracker := request_tracker.NewRequestTracker()
 
-	log.SetOutput(logPrinter)
 	ctx := context.Background()
 
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)

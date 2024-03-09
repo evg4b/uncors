@@ -3,6 +3,9 @@ package uncors
 import (
 	"time"
 
+	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/tui/styles"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
@@ -25,14 +28,14 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithRequestTracker(app.tracker),
 		handler.WithMappings(uncorsConfig.Mappings),
-		handler.WithLogger(MockLogger),
+		handler.WithLogger(log.Default().WithPrefix("mock")),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
 			// TODO: Add cache storage reusage
 			cacheStorage := cache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
 
 			return cache2.NewMiddleware(
-				cache2.WithLogger(CacheLogger),
+				cache2.WithLogger(log.Default().WithPrefix("cache")),
 				cache2.WithMethods(cacheConfig.Methods),
 				cache2.WithCacheStorage(cacheStorage),
 				cache2.WithGlobs(globs),
@@ -42,12 +45,12 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
 			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
 			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
+			wrappedClient := app.tracker.WrapHttpClient(httpClient, styles.ProxyStyle.Render("PROXY"))
 
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),
-				proxy.WithHTTPClient(httpClient),
-				proxy.WithLogger(ProxyLogger),
-				proxy.WithRequestTracker(app.tracker),
+				proxy.WithHTTPClient(wrappedClient),
+				proxy.WithLogger(log.Default().WithPrefix("proxy")),
 			)
 		}),
 		app.getWithStaticHandlerFactory(),
@@ -61,7 +64,7 @@ func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {
 	if app.cache.mockHandlerFactory == nil {
 		factoryFunc := func(response config.Response) contracts.Handler {
 			return mock.NewMockHandler(
-				mock.WithLogger(MockLogger),
+				mock.WithLogger(log.Default().WithPrefix("mock")),
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),
@@ -79,7 +82,7 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
-				static.WithLogger(StaticLogger),
+				static.WithLogger(log.Default().WithPrefix("static")),
 				static.WithRequestTracker(app.tracker),
 				static.WithPrefix(path),
 			)

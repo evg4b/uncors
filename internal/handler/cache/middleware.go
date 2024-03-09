@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/url"
 	"sort"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/config"

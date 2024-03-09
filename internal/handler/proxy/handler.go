@@ -2,21 +2,19 @@ package proxy
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"net/http"
-	"strings"
 )
 
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
 	logger    contracts.Logger
-	tracker   request_tracker.RequestTracker
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
@@ -67,16 +65,10 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 }
 
 func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
-	id := h.tracker.RegisterRequest(request, styles.ProxyStyle.Render("PROXY"))
 	originalResponse, err := h.http.Do(request)
-
 	if err != nil {
-		h.tracker.ResolveRequest(id, 0)
-
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-
-	h.tracker.ResolveRequest(id, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }

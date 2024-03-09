@@ -1,10 +1,11 @@
 package request_tracker
 
 import (
+	"strconv"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
-	"strconv"
 )
 
 func RenderDoneRequest(request DoneRequestDefinition) string {

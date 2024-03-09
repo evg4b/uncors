@@ -2,10 +2,11 @@ package handler
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/http"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"

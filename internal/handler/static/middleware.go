@@ -2,11 +2,12 @@ package static
 
 import (
 	"errors"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"

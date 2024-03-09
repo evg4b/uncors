@@ -2,6 +2,7 @@ package uncors
 
 import (
 	"context"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evg4b/uncors/internal/tui/request_tracker"
