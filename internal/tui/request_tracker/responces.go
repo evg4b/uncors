@@ -16,7 +16,7 @@ func RenderDoneRequest(request DoneRequestDefinition) string {
 
 func formatCode(request DoneRequestDefinition) string {
 	if request.Status == 0 {
-		return "---"
+		return "✖✖✖"
 	}
 
 	return strconv.Itoa(request.Status)

@@ -28,6 +28,7 @@ type uncorsModel struct {
 	spinner        spinner.Model
 	width          int
 	configLoader   *tui.ConfigLoader
+	requests       request_tracker.ActiveRequests
 }
 
 // keyMap defines a set of keybindings. To work for help it must satisfy
@@ -63,9 +64,10 @@ type Option = func(*uncorsModel)
 
 func NewUncorsModel(options ...Option) tea.Model {
 	model := uncorsModel{
-		keys:    keys,
-		help:    help.New(),
-		spinner: spinner.New(spinner.WithSpinner(tui.Spinner)),
+		keys:     keys,
+		help:     help.New(),
+		spinner:  spinner.New(spinner.WithSpinner(tui.Spinner)),
+		requests: request_tracker.ActiveRequests{},
 	}
 	helpers.ApplyOptions(&model, options)
 	model.app = CreateApp(afero.NewOsFs(), model.version, model.requestTracker)
@@ -121,6 +123,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case *config.UncorsConfig:
 		u.config = msg
 		u.app.Restart(context.Background(), u.config)
+
 		return u, tea.Batch(
 			u.configLoader.Tick,
 			tea.Sequence(
@@ -139,7 +142,9 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			u.requestTracker.Tick,
 			tea.Println(request_tracker.RenderDoneRequest(msg)),
 		)
-	case request_tracker.RequestDefinition:
+	case request_tracker.ActiveRequests:
+		u.requests = msg
+
 		return u, u.requestTracker.Tick
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -152,7 +157,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u uncorsModel) View() string {
-	data := u.requestTracker.View(u.spinner.View())
+	data := u.requestTracker.View(u.requests, u.spinner.View())
 
 	if data == "" {
 		return u.help.View(u.keys)

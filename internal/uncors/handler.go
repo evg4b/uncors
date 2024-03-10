@@ -45,7 +45,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
 			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
 			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
-			wrappedClient := app.tracker.WrapHttpClient(httpClient, styles.ProxyStyle.Render("PROXY"))
+			wrappedClient := app.tracker.WrapHTTPClient(httpClient, styles.ProxyStyle.Render("PROXY"))
 
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),

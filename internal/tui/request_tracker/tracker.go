@@ -1,11 +1,13 @@
 package request_tracker
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
+	"golang.org/x/exp/maps"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -29,14 +31,16 @@ type DoneRequestDefinition struct {
 
 type RequestTracker struct {
 	eventBus chan tea.Msg
-	requests map[string]RequestDefinition
+	requests map[uuid.UUID]RequestDefinition
 	mutex    *sync.Mutex
 }
+
+type ActiveRequests []RequestDefinition
 
 func NewRequestTracker() RequestTracker {
 	return RequestTracker{
 		eventBus: make(chan tea.Msg, bufferSize),
-		requests: make(map[string]RequestDefinition),
+		requests: make(map[uuid.UUID]RequestDefinition),
 		mutex:    &sync.Mutex{},
 	}
 }
@@ -51,27 +55,27 @@ func (r RequestTracker) Wrap(next contracts.Handler, prefix string) contracts.Ha
 	})
 }
 
-func (r RequestTracker) RegisterRequest(request *http.Request, prefix string) string {
+func (r RequestTracker) RegisterRequest(request *http.Request, prefix string) uuid.UUID {
 	return r.registerRequest(request, prefix)
 }
 
-func (r RequestTracker) ResolveRequest(id string, statusCode int) {
+func (r RequestTracker) ResolveRequest(id uuid.UUID, statusCode int) {
 	r.resolveRequest(id, statusCode)
 }
 
-func (r RequestTracker) registerRequest(request *http.Request, prefix string) string {
-	uuid := helpers.GetUUID()
+func (r RequestTracker) registerRequest(request *http.Request, prefix string) uuid.UUID {
+	id := helpers.GetUUID()
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	def := r.funcName(request, prefix)
-	r.requests[uuid] = def
-	r.eventBus <- def
+	def := r.requestDefinition(request, prefix)
+	r.requests[id] = def
+	r.eventBus <- ActiveRequests(maps.Values(r.requests))
 
-	return uuid
+	return id
 }
 
-func (r RequestTracker) funcName(request *http.Request, prefix string) RequestDefinition {
-	host := fmt.Sprintf("%s://%s", request.URL.Scheme, request.URL.Host)
+func (r RequestTracker) requestDefinition(request *http.Request, prefix string) RequestDefinition {
+	host := request.URL.Scheme + "://" + request.URL.Host
 	params := ""
 	if request.URL.RawQuery != "" {
 		params = "?" + request.URL.RawQuery
@@ -86,31 +90,36 @@ func (r RequestTracker) funcName(request *http.Request, prefix string) RequestDe
 	}
 }
 
-func (r RequestTracker) resolveRequest(id string, w int) {
+func (r RequestTracker) resolveRequest(id uuid.UUID, status int) {
+	r.eventBus <- DoneRequestDefinition{
+		RequestDefinition: r.remove(id),
+		Status:            status,
+	}
+}
+
+func (r RequestTracker) remove(id uuid.UUID) RequestDefinition {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.eventBus <- DoneRequestDefinition{RequestDefinition: r.requests[id], Status: w}
+	resolved := r.requests[id]
 	delete(r.requests, id)
+	return resolved
 }
 
 func (r RequestTracker) Tick() tea.Msg {
 	return <-r.eventBus
 }
 
-func (r RequestTracker) View(spinner string) string {
-	r.mutex.Lock()
-
-	data := make([]string, 0, len(r.requests))
-	for _, definition := range r.requests {
+func (r RequestTracker) View(requests ActiveRequests, spinner string) string {
+	data := make([]string, 0, len(requests))
+	for _, definition := range requests {
 		data = append(data, RenderRequest(definition, spinner))
 	}
-	r.mutex.Unlock()
 	sort.Strings(data)
 
 	return strings.Join(data, "\n")
 }
 
-func (r RequestTracker) WrapHttpClient(client contracts.HTTPClient, prefix string) contracts.HTTPClient {
+func (r RequestTracker) WrapHTTPClient(client contracts.HTTPClient, prefix string) contracts.HTTPClient {
 	return HttpRequestTracker{
 		tracker: r,
 		client:  client,
