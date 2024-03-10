@@ -16,7 +16,7 @@ func (h HttpRequestTracker) Do(req *http.Request) (*http.Response, error) {
 	id := h.tracker.RegisterRequest(req, h.prefix)
 	resp, err := h.client.Do(req)
 	if err != nil {
-		h.tracker.ResolveRequest(id, -1)
+		h.tracker.ResolveRequest(id, 0)
 		return nil, err
 	}
 
