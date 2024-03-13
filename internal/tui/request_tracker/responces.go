@@ -1,7 +1,9 @@
 package request_tracker
 
 import (
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -53,4 +55,14 @@ func selectStyles(status int) styles.StatusStyle {
 	default:
 		return styles.CanceledStyle
 	}
+}
+
+func View(requests ActiveRequests, spinner string) string {
+	data := make([]string, 0, len(requests))
+	for _, definition := range requests {
+		data = append(data, RenderRequest(definition, spinner))
+	}
+	sort.Strings(data)
+
+	return strings.Join(data, "\n")
 }

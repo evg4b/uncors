@@ -157,7 +157,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u uncorsModel) View() string {
-	data := u.requestTracker.View(u.requests, u.spinner.View())
+	data := request_tracker.View(u.requests, u.spinner.View())
 
 	if data == "" {
 		return u.help.View(u.keys)

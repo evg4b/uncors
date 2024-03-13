@@ -36,8 +36,8 @@ var ServerErrorStyle = ClientErrorStyle
 
 var CanceledStyle = StatusStyle{
 	BlockStyle:         DisabledBlock.Copy(),
-	MainTextStyle:      DisabledText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	MainTextStyle:      DisabledText.Copy().Strikethrough(true),
+	SecondaryTextStyle: DisabledText.Copy().Strikethrough(true),
 }
 
 var PendingStyle = StatusStyle{

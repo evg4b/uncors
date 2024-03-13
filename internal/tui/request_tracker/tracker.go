@@ -2,8 +2,6 @@ package request_tracker
 
 import (
 	"net/http"
-	"sort"
-	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -11,7 +9,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 const bufferSize = 10
@@ -30,7 +27,7 @@ type DoneRequestDefinition struct {
 }
 
 type RequestTracker struct {
-	eventBus chan tea.Msg
+	bus      chan tea.Msg
 	requests map[uuid.UUID]RequestDefinition
 	mutex    *sync.Mutex
 }
@@ -39,7 +36,7 @@ type ActiveRequests []RequestDefinition
 
 func NewRequestTracker() RequestTracker {
 	return RequestTracker{
-		eventBus: make(chan tea.Msg, bufferSize),
+		bus:      make(chan tea.Msg, bufferSize),
 		requests: make(map[uuid.UUID]RequestDefinition),
 		mutex:    &sync.Mutex{},
 	}
@@ -47,9 +44,9 @@ func NewRequestTracker() RequestTracker {
 
 func (r RequestTracker) Wrap(next contracts.Handler, prefix string) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
-		uuid := r.registerRequest(request, prefix)
+		id := r.registerRequest(request, prefix)
 		defer func() {
-			r.resolveRequest(uuid, writer.StatusCode())
+			r.resolveRequest(id, writer.StatusCode())
 		}()
 		next.ServeHTTP(writer, request)
 	})
@@ -63,13 +60,17 @@ func (r RequestTracker) ResolveRequest(id uuid.UUID, statusCode int) {
 	r.resolveRequest(id, statusCode)
 }
 
+func (r RequestTracker) CancelRequest(id uuid.UUID) {
+	r.resolveRequest(id, 0)
+}
+
 func (r RequestTracker) registerRequest(request *http.Request, prefix string) uuid.UUID {
-	id := helpers.GetUUID()
+	id := uuid.New()
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	def := r.requestDefinition(request, prefix)
 	r.requests[id] = def
-	r.eventBus <- ActiveRequests(maps.Values(r.requests))
+	r.bus <- ActiveRequests(maps.Values(r.requests))
 
 	return id
 }
@@ -91,10 +92,11 @@ func (r RequestTracker) requestDefinition(request *http.Request, prefix string) 
 }
 
 func (r RequestTracker) resolveRequest(id uuid.UUID, status int) {
-	r.eventBus <- DoneRequestDefinition{
+	r.bus <- DoneRequestDefinition{
 		RequestDefinition: r.remove(id),
 		Status:            status,
 	}
+	r.bus <- ActiveRequests(maps.Values(r.requests))
 }
 
 func (r RequestTracker) remove(id uuid.UUID) RequestDefinition {
@@ -102,25 +104,16 @@ func (r RequestTracker) remove(id uuid.UUID) RequestDefinition {
 	defer r.mutex.Unlock()
 	resolved := r.requests[id]
 	delete(r.requests, id)
+
 	return resolved
 }
 
 func (r RequestTracker) Tick() tea.Msg {
-	return <-r.eventBus
-}
-
-func (r RequestTracker) View(requests ActiveRequests, spinner string) string {
-	data := make([]string, 0, len(requests))
-	for _, definition := range requests {
-		data = append(data, RenderRequest(definition, spinner))
-	}
-	sort.Strings(data)
-
-	return strings.Join(data, "\n")
+	return <-r.bus
 }
 
 func (r RequestTracker) WrapHTTPClient(client contracts.HTTPClient, prefix string) contracts.HTTPClient {
-	return HttpRequestTracker{
+	return HTTPRequestTracker{
 		tracker: r,
 		client:  client,
 		prefix:  prefix,
