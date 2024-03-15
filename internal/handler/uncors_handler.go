@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/charmbracelet/log"
@@ -34,7 +34,7 @@ type RequestHandler struct {
 	staticMiddlewareFactory StaticMiddlewareFactory
 	proxyHandlerFactory     ProxyHandlerFactory
 	mockHandlerFactory      MockHandlerFactory
-	tracker                 request_tracker.RequestTracker
+	tracker                 monitor.RequestTracker
 }
 
 var errHostNotMapped = errors.New("host not mapped")

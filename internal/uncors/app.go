@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
@@ -31,7 +31,7 @@ type App struct {
 	httpListener  net.Listener
 	httpsListener net.Listener
 	cache         appCache
-	tracker       request_tracker.RequestTracker
+	tracker       monitor.RequestTracker
 }
 
 const (
@@ -40,7 +40,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string, tracker request_tracker.RequestTracker) *App {
+func CreateApp(fs afero.Fs, version string, tracker monitor.RequestTracker) *App {
 	return &App{
 		fs:           fs,
 		version:      version,

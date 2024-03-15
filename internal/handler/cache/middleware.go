@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/bmatcuk/doublestar/v4"
@@ -21,7 +21,7 @@ type Middleware struct {
 	storage   *cache.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
-	tracker   request_tracker.RequestTracker
+	tracker   monitor.RequestTracker
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {

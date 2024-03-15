@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -23,41 +23,12 @@ type uncorsModel struct {
 	keys           keyMap
 	help           help.Model
 	config         *config.UncorsConfig
-	requestTracker request_tracker.RequestTracker
+	requestTracker monitor.RequestTracker
 	app            *App
 	spinner        spinner.Model
 	width          int
 	configLoader   *tui.ConfigLoader
-	requests       request_tracker.ActiveRequests
-}
-
-// keyMap defines a set of keybindings. To work for help it must satisfy
-// key.Map. It could also very easily be a map[string]key.Binding.
-type keyMap struct {
-	Quit    key.Binding
-	Restart key.Binding
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view. It's part
-// of the key.Map interface.
-func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{
-		k.Quit,
-		k.Restart,
-	}
-}
-
-// FullHelp returns keybindings for the expanded help view. It's part of the
-// key.Map interface.
-func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Quit, k.Restart}, // second column
-	}
-}
-
-var keys = keyMap{
-	Restart: key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "restart server")),
-	Quit:    key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+	requests       monitor.ActiveRequests
 }
 
 type Option = func(*uncorsModel)
@@ -67,7 +38,7 @@ func NewUncorsModel(options ...Option) tea.Model {
 		keys:     keys,
 		help:     help.New(),
 		spinner:  spinner.New(spinner.WithSpinner(tui.Spinner)),
-		requests: request_tracker.ActiveRequests{},
+		requests: monitor.ActiveRequests{},
 	}
 	helpers.ApplyOptions(&model, options)
 	model.app = CreateApp(afero.NewOsFs(), model.version, model.requestTracker)
@@ -137,12 +108,12 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		u.help.Width = msg.Width
 
 		return u, nil
-	case request_tracker.DoneRequestDefinition:
+	case monitor.DoneRequestDefinition:
 		return u, tea.Batch(
 			u.requestTracker.Tick,
-			tea.Println(request_tracker.RenderDoneRequest(msg)),
+			tea.Println(monitor.RenderDoneRequest(msg)),
 		)
-	case request_tracker.ActiveRequests:
+	case monitor.ActiveRequests:
 		u.requests = msg
 
 		return u, u.requestTracker.Tick
@@ -157,7 +128,7 @@ func (u uncorsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u uncorsModel) View() string {
-	data := request_tracker.View(u.requests, u.spinner.View())
+	data := monitor.View(u.requests, u.spinner.View())
 
 	if data == "" {
 		return u.help.View(u.keys)

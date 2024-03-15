@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/muesli/termenv"
 
@@ -57,7 +57,7 @@ func main() {
 	loader := tui.NewConfigLoader(viperInstance, fs)
 	uncorsConfig := loader.Load()
 
-	tracker := request_tracker.NewRequestTracker()
+	tracker := monitor.NewRequestTracker()
 
 	ctx := context.Background()
 
