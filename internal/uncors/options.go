@@ -3,7 +3,7 @@ package uncors
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 )
 
 func WithLogPrinter(printer *tui.Printer) Option {
@@ -24,7 +24,7 @@ func WithConfig(config *config.UncorsConfig) Option {
 	}
 }
 
-func WithRequestTracker(tracker request_tracker.RequestTracker) Option {
+func WithRequestTracker(tracker monitor.RequestTracker) Option {
 	return func(model *uncorsModel) {
 		model.requestTracker = tracker
 	}

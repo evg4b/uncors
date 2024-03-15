@@ -6,3 +6,5 @@ dist/
 node_modules
 .uncors.yaml
 coverage.out
+/uncors
+/uncors.exe

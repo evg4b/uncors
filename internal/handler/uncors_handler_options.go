@@ -3,7 +3,7 @@ package handler
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 )
 
 type RequestHandlerOption = func(*RequestHandler)
@@ -44,7 +44,7 @@ func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
 	}
 }
 
-func WithRequestTracker(tracker request_tracker.RequestTracker) RequestHandlerOption {
+func WithRequestTracker(tracker monitor.RequestTracker) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.tracker = tracker
 	}

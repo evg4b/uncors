@@ -1,4 +1,4 @@
-package request_tracker
+package monitor
 
 import (
 	"net/http"

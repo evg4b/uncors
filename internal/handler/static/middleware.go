@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/tui/request_tracker"
+	"github.com/evg4b/uncors/internal/tui/monitor"
 	"github.com/evg4b/uncors/internal/tui/styles"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -20,7 +20,7 @@ type Middleware struct {
 	index   string
 	logger  contracts.Logger
 	prefix  string
-	tracker request_tracker.RequestTracker
+	tracker monitor.RequestTracker
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
