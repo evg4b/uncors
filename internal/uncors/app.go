@@ -10,10 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/evg4b/uncors/internal/tui/monitor"
+
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -29,6 +31,7 @@ type App struct {
 	httpListener  net.Listener
 	httpsListener net.Listener
 	cache         appCache
+	tracker       monitor.RequestTracker
 }
 
 const (
@@ -37,7 +40,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string) *App {
+func CreateApp(fs afero.Fs, version string, tracker monitor.RequestTracker) *App {
 	return &App{
 		fs:           fs,
 		version:      version,
@@ -45,17 +48,11 @@ func CreateApp(fs afero.Fs, version string) *App {
 		httpMutex:    &sync.Mutex{},
 		httpsMutex:   &sync.Mutex{},
 		shuttingDown: &atomic.Bool{},
+		tracker:      tracker,
 	}
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	log.Print(Logo(app.version))
-	log.Print("\n")
-	log.Warning(DisclaimerMessage)
-	log.Print("\n")
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
-
 	app.initServer(ctx, uncorsConfig)
 }
 
@@ -103,7 +100,7 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 			helpers.NormaliseRequest(request)
 			globalHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
-		ErrorLog: log.StandardErrorLogAdapter(),
+		ErrorLog: log.StandardLog(),
 	}
 	server.RegisterOnShutdown(globalCtxCancel)
 
@@ -116,13 +113,10 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	log.Print("\n")
 	log.Info("Restarting server....")
 	log.Print("\n")
-	err := app.internalShutdown(ctx)
-	if err != nil {
+	if err := app.internalShutdown(ctx); err != nil {
 		panic(err) // TODO: refactor this error handling
 	}
 
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
 	app.initServer(ctx, uncorsConfig)
 }
 

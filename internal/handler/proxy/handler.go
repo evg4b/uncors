@@ -27,17 +27,19 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
-	if err := h.handle(response, request); err != nil {
-		infra.HTTPError(response, err)
+func (h *Handler) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request) {
+	if strings.EqualFold(req.Method, http.MethodOptions) {
+		h.makeOptionsResponse(resp, req)
+
+		return
+	}
+
+	if err := h.handle(resp, req); err != nil {
+		infra.HTTPError(resp, err)
 	}
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	if strings.EqualFold(req.Method, http.MethodOptions) {
-		return h.makeOptionsResponse(resp, req)
-	}
-
 	targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
 	if err != nil {
 		return fmt.Errorf("failed to transform general url: %w", err)
@@ -52,7 +54,6 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
-
 	defer helpers.CloseSafe(originalResponse.Body)
 
 	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer)
@@ -68,7 +69,6 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	h.logger.PrintResponse(originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }

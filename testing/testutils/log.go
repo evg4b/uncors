@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/log"
+	"github.com/charmbracelet/log"
 )
 
 func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {

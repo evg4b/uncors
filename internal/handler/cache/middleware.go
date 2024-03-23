@@ -5,6 +5,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/tui/monitor"
+	"github.com/evg4b/uncors/internal/tui/styles"
+
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -18,6 +21,7 @@ type Middleware struct {
 	storage   *cache.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
+	tracker   monitor.RequestTracker
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
@@ -25,6 +29,7 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
 	helpers.AssertIsDefined(middleware.storage, "Cache storage is not configured")
+	helpers.AssertIsDefined(middleware.tracker, "Request tracker is not configured")
 
 	return middleware
 }
@@ -37,18 +42,21 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return
 		}
 
-		m.cacheRequest(writer, request, next)
+		m.handleRequest(writer, request, next)
 	})
 }
 
-func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
+func (m *Middleware) handleRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 	m.logger.Debugf("extracted %s from request", cacheKey)
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.logger.Debugf("extracted %s from request", cacheKey)
+		handler := contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
+			m.writeCachedResponse(writer, cachedResponse)
+			m.logger.Debugf("extracted %s from request", cacheKey)
+		})
 
-		m.writeCachedResponse(writer, cachedResponse)
-		m.logger.PrintResponse(request, writer.StatusCode())
+		m.tracker.Wrap(handler, styles.CacheStyle.Render("CACHE")).
+			ServeHTTP(writer, request)
 
 		return
 	}
