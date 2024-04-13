@@ -11,7 +11,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-const bufferSize = 10
+const (
+	bufferSize      = 10
+	CancelledStatus = int(^uint(0) >> 1)
+)
 
 type RequestDefinition struct {
 	Type   string
@@ -61,7 +64,7 @@ func (r RequestTracker) ResolveRequest(id uuid.UUID, statusCode int) {
 }
 
 func (r RequestTracker) CancelRequest(id uuid.UUID) {
-	r.resolveRequest(id, 0)
+	r.resolveRequest(id, CancelledStatus)
 }
 
 func (r RequestTracker) registerRequest(request *http.Request, prefix string) uuid.UUID {
@@ -96,7 +99,7 @@ func (r RequestTracker) resolveRequest(id uuid.UUID, status int) {
 		RequestDefinition: r.remove(id),
 		Status:            status,
 	}
-	r.bus <- ActiveRequests(maps.Values(r.requests))
+	r.bus <- ActiveRequests(r.getRequests())
 }
 
 func (r RequestTracker) remove(id uuid.UUID) RequestDefinition {
@@ -106,6 +109,13 @@ func (r RequestTracker) remove(id uuid.UUID) RequestDefinition {
 	delete(r.requests, id)
 
 	return resolved
+}
+
+func (r RequestTracker) getRequests() []RequestDefinition {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	return maps.Values(r.requests)
 }
 
 func (r RequestTracker) Tick() tea.Msg {

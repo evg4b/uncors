@@ -53,8 +53,7 @@ func main() {
 	}
 
 	fs := afero.NewOsFs()
-	viperInstance := viper.GetViper()
-	loader := tui.NewConfigLoader(viperInstance, fs)
+	loader := tui.NewConfigLoader(viper.GetViper(), fs)
 	uncorsConfig := loader.Load()
 
 	tracker := monitor.NewRequestTracker()

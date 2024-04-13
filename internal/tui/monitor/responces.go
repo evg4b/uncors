@@ -17,7 +17,7 @@ func RenderDoneRequest(request DoneRequestDefinition) string {
 }
 
 func formatCode(request DoneRequestDefinition) string {
-	if request.Status == 0 {
+	if request.Status == CancelledStatus {
 		return "✖✖✖"
 	}
 
@@ -37,6 +37,7 @@ func render(request RequestDefinition, status string, style styles.StatusStyle) 
 		style.BlockStyle.Render(method+" "+status),
 		style.MainTextStyle.Render(request.Host),
 		style.MainTextStyle.Render(request.Path),
+		style.SecondaryTextStyle.Render(request.Params),
 	)
 }
 
