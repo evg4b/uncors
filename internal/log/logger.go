@@ -1,7 +1,6 @@
 package log
 
 import (
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/pterm/pterm"
 )
@@ -67,8 +66,4 @@ func (logger *PrefixedLogger) Debugf(template string, v ...any) {
 	if pterm.PrintDebugMessages {
 		logger.debug.Println(debugPrinter.Sprintf(template, v...))
 	}
-}
-
-func (logger *PrefixedLogger) PrintResponse(request *contracts.Request, statusCode int) {
-	logger.writer.Println(printResponse(request, statusCode))
 }

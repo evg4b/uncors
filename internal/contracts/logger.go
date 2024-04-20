@@ -9,5 +9,4 @@ type Logger interface {
 	Infof(template string, a ...any)
 	Debug(a ...any)
 	Debugf(template string, a ...any)
-	PrintResponse(request *Request, code int)
 }
