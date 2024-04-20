@@ -43,7 +43,7 @@ func main() {
 	log.SetReportTimestamp(false)
 	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
-	log.SetStyles(styles.DefaultStyles())
+	log.SetStyles(&styles.DefaultStyles)
 	log.SetColorProfile(termenv.ColorProfile())
 
 	uncorsConfig := loadConfiguration(viperInstance, fs)
