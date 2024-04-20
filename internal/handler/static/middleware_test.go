@@ -29,8 +29,7 @@ const (
 )
 
 func TestStaticMiddleware(t *testing.T) {
-	loggerMock := mocks.NewLoggerMock(t).
-		PrintResponseMock.Return()
+	loggerMock := mocks.NewLoggerMock(t)
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
