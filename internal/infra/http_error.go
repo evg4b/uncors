@@ -8,11 +8,14 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/go-http-utils/headers"
-	"github.com/pterm/pterm"
-	"github.com/pterm/pterm/putils"
 )
 
-var style = pterm.Style{}
+const errorHeader = `
+███████  ██████   ██████      ███████ ██████  ██████   ██████  ██████  
+██      ██  ████ ██  ████     ██      ██   ██ ██   ██ ██    ██ ██   ██ 
+███████ ██ ██ ██ ██ ██ ██     █████   ██████  ██████  ██    ██ ██████  
+     ██ ████  ██ ████  ██     ██      ██   ██ ██   ██ ██    ██ ██   ██ 
+███████  ██████   ██████      ███████ ██   ██ ██   ██  ██████  ██   ██ `
 
 func HTTPError(writer http.ResponseWriter, err error) {
 	header := writer.Header()
@@ -25,10 +28,10 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	header.Del(headers.SetCookie)
 
 	writer.WriteHeader(http.StatusInternalServerError)
-	pageHeader := helpers.Sprintf("%d Error", http.StatusInternalServerError)
 
 	helpers.FPrintln(writer)
-	helpers.FPrintln(writer, pageHeaderFormatter(pageHeader))
+	helpers.FPrintln(writer, errorHeader)
+	helpers.FPrintln(writer)
 	helpers.FPrintln(writer)
 	helpers.FPrintln(writer, helpers.Sprintf("Occurred error: %s", err))
 	helpers.FPrintln(writer)
@@ -43,14 +46,4 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	helpers.FPrintf(writer, "TotalAlloc = %v\n", humanize.Bytes(memStats.TotalAlloc))
 	helpers.FPrintf(writer, "Sys = %v\n", humanize.Bytes(memStats.Sys))
 	helpers.FPrintf(writer, "NumGC = %v\n", memStats.NumGC)
-}
-
-func pageHeaderFormatter(message string) string {
-	letters := putils.LettersFromStringWithStyle(message, &style)
-	text, err := pterm.DefaultBigText.WithLetters(letters).Srender()
-	if err != nil {
-		panic(err)
-	}
-
-	return text
 }
