@@ -195,13 +195,13 @@ func TestPrefixedLogger(t *testing.T) {
 			}
 		}))
 
-		t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
+		t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 			assert.Panics(t, func() {
 				logger.PrintResponse(request(http.MethodGet, "/"), 50)
 			})
 		}))
 
-		t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
+		t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 			assert.Panics(t, func() {
 				logger.PrintResponse(request(http.MethodGet, "/"), 600)
 			})

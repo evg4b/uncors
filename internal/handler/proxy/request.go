@@ -22,7 +22,6 @@ func (h *Handler) makeOriginalRequest(
 		headers.Origin:  replacer.Replace,
 		headers.Referer: replacer.Replace,
 	})
-
 	if err != nil {
 		return nil, err
 	}

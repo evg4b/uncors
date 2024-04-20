@@ -26,7 +26,7 @@ func TestUncorsApp(t *testing.T) {
 	fs := afero.NewOsFs()
 	expectedResponse := "UNCORS OK!"
 
-	t.Run("handle request", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
+	t.Run("handle request", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		t.Run("HTTP", func(t *testing.T) {
 			appBuilder := appbuilder.NewAppBuilder(t).
 				WithFs(fs)
@@ -85,7 +85,7 @@ func TestUncorsApp(t *testing.T) {
 		}))
 	}))
 
-	t.Run("restart server", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
+	t.Run("restart server", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		const otherExpectedRepose = `{ "bla": true }`
 
 		t.Run("HTTP", func(t *testing.T) {

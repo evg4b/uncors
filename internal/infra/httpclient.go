@@ -11,7 +11,7 @@ import (
 const defaultTimeout = 5 * time.Minute
 
 var defaultHTTPClient = http.Client{
-	CheckRedirect: func(r *http.Request, v []*http.Request) error {
+	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	},
 	Transport: &http.Transport{

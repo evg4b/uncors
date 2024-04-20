@@ -39,7 +39,7 @@ func main() {
 
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version)
-	viperInstance.OnConfigChange(func(in fsnotify.Event) {
+	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
 			log.Errorf("Config reloading error: %v", value)
 		})

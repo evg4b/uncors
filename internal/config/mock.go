@@ -39,7 +39,7 @@ func (m Mocks) Clone() Mocks {
 		return nil
 	}
 
-	return lo.Map(m, func(item Mock, index int) Mock {
+	return lo.Map(m, func(item Mock, _ int) Mock {
 		return item.Clone()
 	})
 }

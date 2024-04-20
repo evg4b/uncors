@@ -28,6 +28,8 @@ linters:
     - bodyclose
     - depguard
     - wrapcheck
+    - perfsprint
+    - contextcheck
 linters-settings:
   varnamelen:
     ignore-names:
@@ -36,16 +38,3 @@ linters-settings:
       - ok
       - fs
       - ca
-presets:
-  - bugs
-  - comment
-  - complexity
-  - error
-  - format
-  - import
-  - metalinter
-  - module
-  - performance
-  - style
-  - test
-  - unused

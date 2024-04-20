@@ -147,9 +147,9 @@ func TestWildCardToRegexp(t *testing.T) {
 			},
 		}
 		for _, testCase := range testCases {
-			testCase := testCase
 			t.Run(testCase.name, func(t *testing.T) {
-				_, _, err := wildCardToRegexp(&testCase.parsedPattern)
+				pattern := testCase.parsedPattern
+				_, _, err := wildCardToRegexp(&pattern)
 
 				require.EqualError(t, err, testCase.expected)
 			})

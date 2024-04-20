@@ -38,7 +38,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}),
 	)
 
-	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
 		helpers.FPrintf(writer, expectedBody)
@@ -155,7 +155,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					helpers.FPrintf(writer, expectedBody)

@@ -79,7 +79,7 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 		log.Debug("Found cert file and key file. Https server will be started")
 		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPSPort))
 		app.waitGroup.Add(1)
-		go func() {
+		go func(app *App) {
 			defer app.waitGroup.Done()
 			defer app.httpsMutex.Unlock()
 
@@ -87,7 +87,7 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 			log.Debugf("Starting https server on port %d", uncorsConfig.HTTPSPort)
 			err := app.listenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
 			handleHTTPServerError("HTTPS", err)
-		}()
+		}(app)
 	}
 }
 
@@ -95,7 +95,7 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 	globalHandler := app.buildHandler(uncorsConfig)
 	globalCtx, globalCtxCancel := context.WithCancel(ctx)
 	server := &http.Server{
-		BaseContext: func(listener net.Listener) context.Context {
+		BaseContext: func(_ net.Listener) context.Context {
 			return globalCtx
 		},
 		ReadHeaderTimeout: readHeaderTimeout,

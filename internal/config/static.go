@@ -33,7 +33,7 @@ func (s StaticDirectories) Clone() StaticDirectories {
 		return nil
 	}
 
-	return lo.Map(s, func(item StaticDirectory, index int) StaticDirectory {
+	return lo.Map(s, func(item StaticDirectory, _ int) StaticDirectory {
 		return item.Clone()
 	})
 }

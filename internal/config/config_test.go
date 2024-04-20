@@ -324,7 +324,6 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 		}
 		for _, testCase := range tests {
-			testCase := testCase
 			t.Run(testCase.name, func(t *testing.T) {
 				for _, expected := range testCase.expected {
 					viper.Reset()

@@ -69,7 +69,7 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
-					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),
 				)
@@ -137,7 +137,7 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
-					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),
 				)
@@ -226,7 +226,7 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
-					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),
 				)
@@ -274,7 +274,7 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(mocks.NewNoopLogger(t)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
-					mock.WithAfter(func(duration time.Duration) <-chan time.Time {
+					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),
 				)

@@ -58,7 +58,7 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 func getTagValues(typeValue reflect.Type, tag string) []string {
 	fields := reflect.VisibleFields(typeValue)
 
-	return lo.FilterMap(fields, func(field reflect.StructField, index int) (string, bool) {
+	return lo.FilterMap(fields, func(field reflect.StructField, _ int) (string, bool) {
 		return field.Tag.Lookup(tag)
 	})
 }

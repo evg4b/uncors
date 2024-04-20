@@ -47,7 +47,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 		called := false
 		env.Go(func() {
-			err := GracefulShutdown(ctx, func(ctx context.Context) error {
+			err := GracefulShutdown(ctx, func(_ context.Context) error {
 				called = true
 
 				return nil
@@ -84,7 +84,7 @@ func TestGracefulShutdown(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, WithGoroutines(func(t *testing.T, env Env) {
 				var systemSig chan<- os.Signal
-				notifyFn = func(c chan<- os.Signal, sig ...os.Signal) {
+				notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
 					systemSig = c
 				}
 
@@ -94,7 +94,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 				called := false
 				env.Go(func() {
-					err := GracefulShutdown(context.Background(), func(ctx context.Context) error {
+					err := GracefulShutdown(context.Background(), func(_ context.Context) error {
 						called = true
 
 						return nil
@@ -114,7 +114,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 	t.Run("apply additional ui fix for SIGINT signal", WithGoroutines(func(t *testing.T, env Env) {
 		var systemSig chan<- os.Signal
-		notifyFn = func(c chan<- os.Signal, sig ...os.Signal) {
+		notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
 			systemSig = c
 		}
 		called := false
@@ -127,7 +127,7 @@ func TestGracefulShutdown(t *testing.T) {
 		})
 
 		env.Go(func() {
-			err := GracefulShutdown(context.Background(), func(ctx context.Context) error {
+			err := GracefulShutdown(context.Background(), func(_ context.Context) error {
 				return nil
 			})
 			require.NoError(t, err)
