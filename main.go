@@ -3,12 +3,16 @@ package main
 import (
 	"os"
 
+	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/styles"
+	"github.com/muesli/termenv"
+
 	"github.com/evg4b/uncors/internal/config/validators"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/fsnotify/fsnotify"
@@ -27,7 +31,7 @@ func main() {
 	})
 
 	pflag.Usage = func() {
-		uncors.Logo(Version)
+		println(tui.Logo(Version)) //nolint:forbidigo
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
@@ -35,7 +39,19 @@ func main() {
 	fs := afero.NewOsFs()
 
 	viperInstance := viper.GetViper()
+
+	log.SetReportTimestamp(false)
+	log.SetReportTimestamp(false)
+	log.SetReportCaller(false)
+	log.SetStyles(styles.DefaultStyles())
+	log.SetColorProfile(termenv.ColorProfile())
+
 	uncorsConfig := loadConfiguration(viperInstance, fs)
+
+	log.Info("Starting server")
+	log.Debugf("Version: %s", Version)
+	log.Warnf("Warning: %s", "This is a warning message")
+	log.Errorf("Error: %s", "This is an error message")
 
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, Version)
@@ -71,10 +87,10 @@ func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsCo
 	}
 
 	if uncorsConfig.Debug {
-		log.EnableDebugMessages()
+		log.SetLevel(log.DebugLevel)
 		log.Debug("Enabled debug messages")
 	} else {
-		log.DisableDebugMessages()
+		log.SetLevel(log.InfoLevel)
 	}
 
 	return uncorsConfig
