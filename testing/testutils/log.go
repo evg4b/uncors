@@ -2,9 +2,8 @@ package testutils
 
 import (
 	"bytes"
+	"github.com/charmbracelet/log"
 	"testing"
-
-	"github.com/evg4b/uncors/internal/log"
 )
 
 func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {

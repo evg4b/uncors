@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -20,9 +19,6 @@ import (
 )
 
 func TestCheckNewVersion(t *testing.T) {
-	log.DisableColor()
-	log.EnableDebugMessages()
-
 	t.Run("do not panic where", func(t *testing.T) {
 		t.Skip()
 		tests := []struct {
