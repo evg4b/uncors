@@ -59,9 +59,9 @@ func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	println(tui.Logo(app.version)) //nolint:forbidigo
 	log.Print("")
-	log.Warn(DisclaimerMessage)
+	tui.PrintWarningBox(DisclaimerMessage)
 	log.Print("")
-	log.Info(uncorsConfig.Mappings.String())
+	tui.PrintInfoBox(uncorsConfig.Mappings.String())
 	log.Print("")
 
 	app.initServer(ctx, uncorsConfig)
