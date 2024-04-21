@@ -22,7 +22,7 @@ func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T)
 
 func UniqOutput(output *bytes.Buffer, action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {
 	return func(t *testing.T) {
+		t.Cleanup(output.Reset)
 		action(t, output)
-		output.Reset()
 	}
 }
