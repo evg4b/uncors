@@ -5,9 +5,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/tui"
 
-	"github.com/evg4b/uncors/internal/tui/styles"
-	"github.com/muesli/termenv"
-
 	"github.com/evg4b/uncors/internal/config/validators"
 
 	"github.com/charmbracelet/log"
@@ -41,10 +38,7 @@ func main() {
 
 	viperInstance := viper.GetViper()
 
-	log.SetReportTimestamp(false)
-	log.SetReportCaller(false)
-	log.SetStyles(&styles.DefaultStyles)
-	log.SetColorProfile(termenv.ColorProfile())
+	infra.ConfigureLogger()
 
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
