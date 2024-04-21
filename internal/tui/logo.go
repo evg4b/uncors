@@ -8,11 +8,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const unLetters = `██    ██ ███    ██
+const unLetters = `██    ██ ███    ██ 
 ██    ██ ████   ██ 
 ██    ██ ██ ██  ██ 
 ██    ██ ██  ██ ██ 
- ██████  ██   ████`
+ ██████  ██   ████ `
 
 const corsLetters = ` ██████  ██████  ██████  ███████
 ██      ██    ██ ██   ██ ██     
@@ -20,14 +20,15 @@ const corsLetters = ` ██████  ██████  ██████
 ██      ██    ██ ██   ██      ██
  ██████  ██████  ██   ██ ███████`
 
+var (
+	red    = styles.LogoRed.Render
+	yellow = styles.LogoYellow.Render
+)
+
 func Logo(version string) string {
 	return lipgloss.JoinVertical(
 		lipgloss.Right,
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			styles.LogoRed.Render(unLetters),
-			styles.LogoYellow.Render(corsLetters),
-		),
+		lipgloss.JoinHorizontal(lipgloss.Top, red(unLetters), yellow(corsLetters)),
 		fmt.Sprintf("version: %s", version),
 	)
 }
