@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
@@ -16,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -48,11 +48,11 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory(t *testing.T) handler.CacheMiddlewareFactory {
+func cacheFactory() handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithLogger(log.New(io.Discard)),
 			cache.WithCacheStorage(goCache.New(goCache.DefaultExpiration, goCache.DefaultExpiration)),
 		)
 	}
@@ -75,30 +75,30 @@ func proxyFactory(
 		return proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithHTTPClient(httpClient),
-			proxy.WithLogger(mocks.NewNoopLogger(t)),
+			proxy.WithLogger(log.New(io.Discard)),
 		)
 	}
 }
 
-func staticFactory(t *testing.T, fs afero.Fs) handler.StaticMiddlewareFactory {
+func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
 	return func(path string, dir config.StaticDirectory) contracts.Middleware {
 		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithLogger(mocks.NewNoopLogger(t)),
+			static.WithLogger(log.New(io.Discard)),
 			static.WithPrefix(path),
 		)
 	}
 }
 
-func mockFactory(t *testing.T, fs afero.Fs) handler.MockHandlerFactory {
+func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 	if fs == nil {
 		fs = afero.NewMemMapFs()
 	}
 
 	return func(response config.Response) contracts.Handler {
 		return mock.NewMockHandler(
-			mock.WithLogger(mocks.NewNoopLogger(t)),
+			mock.WithLogger(log.New(io.Discard)),
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),
@@ -107,7 +107,7 @@ func mockFactory(t *testing.T, fs afero.Fs) handler.MockHandlerFactory {
 }
 
 func TestUncorsRequestHandler(t *testing.T) {
-	log.DisableOutput()
+	log.SetOutput(io.Discard)
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -182,10 +182,10 @@ func TestUncorsRequestHandler(t *testing.T) {
 	uncorsHandler := handler.NewUncorsRequestHandler(
 		handler.WithLogger(mocks.NewLoggerMock(t)),
 		handler.WithMappings(mappings),
-		handler.WithCacheMiddlewareFactory(cacheFactory(t)),
+		handler.WithCacheMiddlewareFactory(cacheFactory()),
 		handler.WithProxyHandlerFactory(proxyFactory(t, factory, httpMock)),
-		handler.WithStaticHandlerFactory(staticFactory(t, fs)),
-		handler.WithMockHandlerFactory(mockFactory(t, fs)),
+		handler.WithStaticHandlerFactory(staticFactory(fs)),
+		handler.WithMockHandlerFactory(mockFactory(fs)),
 	)
 
 	t.Run("statics directory", func(t *testing.T) {
@@ -351,8 +351,8 @@ func TestUncorsRequestHandler(t *testing.T) {
 }
 
 func TestMockMiddleware(t *testing.T) {
-	log.DisableOutput()
-	logger := mocks.NewNoopLogger(t)
+	log.SetOutput(io.Discard)
+	logger := log.New(io.Discard)
 
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
@@ -374,8 +374,8 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 				}),
-				handler.WithCacheMiddlewareFactory(cacheFactory(t)),
-				handler.WithMockHandlerFactory(mockFactory(t, nil)),
+				handler.WithCacheMiddlewareFactory(cacheFactory()),
+				handler.WithMockHandlerFactory(mockFactory(nil)),
 			)
 
 			methods := []string{
@@ -420,7 +420,7 @@ func TestMockMiddleware(t *testing.T) {
 			middleware := handler.NewUncorsRequestHandler(
 				handler.WithLogger(logger),
 				handler.WithMappings(mappings),
-				handler.WithCacheMiddlewareFactory(cacheFactory(t)),
+				handler.WithCacheMiddlewareFactory(cacheFactory()),
 				handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
@@ -429,7 +429,7 @@ func TestMockMiddleware(t *testing.T) {
 							Body:       io.NopCloser(strings.NewReader(expectedBody)),
 						}, nil
 					}))),
-				handler.WithMockHandlerFactory(mockFactory(t, nil)),
+				handler.WithMockHandlerFactory(mockFactory(nil)),
 			)
 
 			t.Run("method is not matched", func(t *testing.T) {
@@ -518,7 +518,7 @@ func TestMockMiddleware(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithLogger(logger),
 			handler.WithMappings(mappings),
-			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory()),
 			handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
@@ -527,7 +527,7 @@ func TestMockMiddleware(t *testing.T) {
 						Body:       io.NopCloser(strings.NewReader(expectedBody)),
 					}, nil
 				}))),
-			handler.WithMockHandlerFactory(mockFactory(t, nil)),
+			handler.WithMockHandlerFactory(mockFactory(nil)),
 		)
 
 		tests := []struct {
@@ -622,9 +622,9 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
-			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory()),
 			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
-			handler.WithMockHandlerFactory(mockFactory(t, nil)),
+			handler.WithMockHandlerFactory(mockFactory(nil)),
 		)
 
 		tests := []struct {
@@ -719,9 +719,9 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				}},
 			}),
-			handler.WithCacheMiddlewareFactory(cacheFactory(t)),
+			handler.WithCacheMiddlewareFactory(cacheFactory()),
 			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
-			handler.WithMockHandlerFactory(mockFactory(t, nil)),
+			handler.WithMockHandlerFactory(mockFactory(nil)),
 		)
 
 		tests := []struct {

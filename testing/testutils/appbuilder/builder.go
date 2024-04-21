@@ -2,9 +2,12 @@ package appbuilder
 
 import (
 	"context"
+	"io"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/uncors"
@@ -49,7 +52,7 @@ func (a *Builder) URI() *url.URL {
 
 func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncors.App {
 	a.t.Helper()
-	app := uncors.CreateApp(a.fs, "x.x.x")
+	app := uncors.CreateApp(a.fs, log.New(io.Discard), "x.x.x")
 	go app.Start(ctx, config)
 	time.Sleep(delay)
 	var err error

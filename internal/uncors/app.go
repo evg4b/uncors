@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/evg4b/uncors/internal/tui"
+
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -31,6 +34,7 @@ type App struct {
 	httpsListenerMutex *sync.Mutex
 	httpsListener      net.Listener
 	cache              appCache
+	logger             *log.Logger
 }
 
 const (
@@ -39,7 +43,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string) *App {
+func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 	return &App{
 		fs:                 fs,
 		version:            version,
@@ -49,16 +53,17 @@ func CreateApp(fs afero.Fs, version string) *App {
 		shuttingDown:       &atomic.Bool{},
 		httpListenerMutex:  &sync.Mutex{},
 		httpsListenerMutex: &sync.Mutex{},
+		logger:             logger,
 	}
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	log.Print(Logo(app.version))
-	log.Print("\n")
-	log.Warning(DisclaimerMessage)
-	log.Print("\n")
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
+	println(tui.Logo(app.version)) //nolint:forbidigo
+	log.Print("")
+	tui.PrintWarningBox(os.Stdout, DisclaimerMessage)
+	log.Print("")
+	tui.PrintInfoBox(os.Stdout, uncorsConfig.Mappings.String())
+	log.Print("")
 
 	app.initServer(ctx, uncorsConfig)
 }
@@ -107,7 +112,7 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 			helpers.NormaliseRequest(request)
 			globalHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
-		ErrorLog: log.StandardErrorLogAdapter(),
+		ErrorLog: log.StandardLog(),
 	}
 	server.RegisterOnShutdown(globalCtxCancel)
 
@@ -117,16 +122,16 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	defer app.waitGroup.Done()
 	app.waitGroup.Add(1)
-	log.Print("\n")
+	log.Print("")
 	log.Info("Restarting server....")
-	log.Print("\n")
+	log.Print("")
 	err := app.internalShutdown(ctx)
 	if err != nil {
 		panic(err) // TODO: refactor this error handling
 	}
 
 	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
+	log.Print("")
 	app.initServer(ctx, uncorsConfig)
 }
 
