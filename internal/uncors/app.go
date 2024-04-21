@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -59,9 +60,9 @@ func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	println(tui.Logo(app.version)) //nolint:forbidigo
 	log.Print("")
-	tui.PrintWarningBox(DisclaimerMessage)
+	tui.PrintWarningBox(os.Stdout, DisclaimerMessage)
 	log.Print("")
-	tui.PrintInfoBox(uncorsConfig.Mappings.String())
+	tui.PrintInfoBox(os.Stdout, uncorsConfig.Mappings.String())
 	log.Print("")
 
 	app.initServer(ctx, uncorsConfig)
