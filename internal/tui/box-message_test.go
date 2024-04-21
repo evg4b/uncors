@@ -1,15 +1,20 @@
 package tui_test
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func TestPrintWarningBox(t *testing.T) {
+	t.Cleanup(func() {
+		lipgloss.DefaultRenderer().SetColorProfile(termenv.ColorProfile())
+	})
+
 	tests := []struct {
 		name     string
 		message  string
@@ -30,14 +35,14 @@ func TestPrintWarningBox(t *testing.T) {
 				"211;0m \x1b[0m\x1b[48;2;255;211;0m     \x1b[0m second line \n",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			buffer := strings.Builder{}
 			lipgloss.DefaultRenderer().SetColorProfile(termenv.TrueColor)
 
-			tui.PrintWarningBox(&buffer, tt.message)
+			tui.PrintWarningBox(&buffer, testCase.message)
 
-			assert.Equal(t, tt.expected, buffer.String())
+			assert.Equal(t, testCase.expected, buffer.String())
 		})
 	}
 }
@@ -63,14 +68,14 @@ func TestPrintInfoBox(t *testing.T) {
 				"206m \x1b[0m\x1b[48;2;0;113;206m     \x1b[0m second line \n",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			buffer := strings.Builder{}
 			lipgloss.DefaultRenderer().SetColorProfile(termenv.TrueColor)
 
-			tui.PrintInfoBox(&buffer, tt.message)
+			tui.PrintInfoBox(&buffer, testCase.message)
 
-			assert.Equal(t, tt.expected, buffer.String())
+			assert.Equal(t, testCase.expected, buffer.String())
 		})
 	}
 }

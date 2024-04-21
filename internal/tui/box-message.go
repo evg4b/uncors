@@ -38,7 +38,6 @@ func printMessageBox(out io.Writer, message, prefix string, block lipgloss.Style
 		block.Render(prefix, space),
 		message,
 	))
-
 	if err != nil {
 		panic(err)
 	}
