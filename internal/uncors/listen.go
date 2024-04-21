@@ -18,6 +18,8 @@ func (app *App) listenAndServe(addr string) error {
 		addr:  addr,
 		serve: app.server.Serve,
 		setListener: func(l net.Listener) {
+			app.httpListenerMutex.Lock()
+			defer app.httpListenerMutex.Unlock()
 			app.httpListener = l
 		},
 	})
@@ -30,6 +32,8 @@ func (app *App) listenAndServeTLS(addr string, certFile, keyFile string) error {
 			return app.server.ServeTLS(l, certFile, keyFile)
 		},
 		setListener: func(l net.Listener) {
+			app.httpsListenerMutex.Lock()
+			defer app.httpsListenerMutex.Unlock()
 			app.httpsListener = l
 		},
 	})
