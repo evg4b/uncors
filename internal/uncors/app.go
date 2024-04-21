@@ -29,8 +29,8 @@ type App struct {
 	httpListenerMutex  *sync.Mutex
 	httpListener       net.Listener
 	httpsListenerMutex *sync.Mutex
-	httpsListener net.Listener
-	cache         appCache
+	httpsListener      net.Listener
+	cache              appCache
 }
 
 const (
@@ -145,12 +145,14 @@ func (app *App) Shutdown(ctx context.Context) error {
 func (app *App) HTTPAddr() net.Addr {
 	app.httpListenerMutex.Lock()
 	defer app.httpListenerMutex.Unlock()
+
 	return app.httpListener.Addr() // TODO: Add nil handing
 }
 
 func (app *App) HTTPSAddr() net.Addr {
 	app.httpsListenerMutex.Lock()
 	defer app.httpsListenerMutex.Unlock()
+
 	return app.httpsListener.Addr() // TODO: Add nil handing
 }
 

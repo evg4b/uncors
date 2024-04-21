@@ -39,10 +39,10 @@ func (e *Env) Unlock() {
 	e.mutex.Unlock()
 }
 
-func WithGoroutines(test func(t *testing.T, env Env)) func(t *testing.T) {
+func WithGoroutines(test func(t *testing.T, env *Env)) func(t *testing.T) {
 	return func(t *testing.T) {
 		env := Env{wg: &sync.WaitGroup{}, mutex: sync.Mutex{}}
-		test(t, env)
+		test(t, &env)
 		env.wg.Wait()
 		for _, f := range env.afterAll {
 			f()
@@ -51,7 +51,7 @@ func WithGoroutines(test func(t *testing.T, env Env)) func(t *testing.T) {
 }
 
 func TestGracefulShutdown(t *testing.T) {
-	t.Run("shutdown when context is done", WithGoroutines(func(t *testing.T, env Env) {
+	t.Run("shutdown when context is done", WithGoroutines(func(t *testing.T, env *Env) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		called := false
@@ -91,7 +91,7 @@ func TestGracefulShutdown(t *testing.T) {
 		}
 
 		for _, testCase := range tests {
-			t.Run(testCase.name, WithGoroutines(func(t *testing.T, env Env) {
+			t.Run(testCase.name, WithGoroutines(func(t *testing.T, env *Env) {
 				env.Lock()
 				var systemSig chan<- os.Signal
 				notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
@@ -124,7 +124,7 @@ func TestGracefulShutdown(t *testing.T) {
 		}
 	})
 
-	t.Run("apply additional ui fix for SIGINT signal", WithGoroutines(func(t *testing.T, env Env) {
+	t.Run("apply additional ui fix for SIGINT signal", WithGoroutines(func(t *testing.T, env *Env) {
 		var systemSig chan<- os.Signal
 		env.Lock()
 		notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
