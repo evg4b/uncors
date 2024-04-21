@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
 
@@ -68,7 +69,7 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	h.logger.PrintResponse(originalResponse.Request, originalResponse.StatusCode)
+	tui.PrintResponse(h.logger, originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }

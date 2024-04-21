@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
 
@@ -62,7 +63,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		h.serveRawContent(writer)
 	}
 
-	h.logger.PrintResponse(request, writer.StatusCode())
+	tui.PrintResponse(h.logger, request, writer.StatusCode())
 }
 
 func normaliseCode(code int) int {

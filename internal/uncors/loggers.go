@@ -1,17 +1,23 @@
 package uncors
 
 import (
-	"github.com/evg4b/uncors/internal/log"
-	"github.com/pterm/pterm"
+	// "github.com/evg4b/uncors/internal/log".
+	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
-func style(fg pterm.Color, bg pterm.Color) log.LoggerOption {
-	return log.WithStyle(&pterm.Style{fg, bg})
+func NewProxyLogger(logger *log.Logger) *log.Logger {
+	return styles.CreateLogger(logger, styles.ProxyStyle.Render("PROXY"))
 }
 
-var (
-	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
-	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
-	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
-	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
-)
+func NewMockLogger(logger *log.Logger) *log.Logger {
+	return styles.CreateLogger(logger, styles.MockStyle.Render("MOCK"))
+}
+
+func NewStaticLogger(logger *log.Logger) *log.Logger {
+	return styles.CreateLogger(logger, styles.StaticStyle.Render("STATIC"))
+}
+
+func NewCacheLogger(logger *log.Logger) *log.Logger {
+	return styles.CreateLogger(logger, styles.CacheStyle.Render("CACHE"))
+}

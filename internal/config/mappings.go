@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/samber/lo"
 )
@@ -11,28 +11,26 @@ import (
 type Mappings []Mapping
 
 func (m Mappings) String() string {
-	builder := &strings.Builder{}
+	var lines []string
 
 	for _, group := range lo.GroupBy(m, extractHost) {
 		for _, mapping := range group {
-			helpers.FPrintf(builder, "%s => %s\n", mapping.From, mapping.To)
+			lines = append(lines, fmt.Sprintf("%s => %s", mapping.From, mapping.To))
 		}
 
 		mapping := group[0]
 		for _, mock := range mapping.Mocks {
-			helpers.FPrintf(builder, "    mock: %s\n", mock.String())
+			lines = append(lines, fmt.Sprintf("    mock: %s", mock.String()))
 		}
 		for _, static := range mapping.Statics {
-			helpers.FPrintf(builder, "    static: %s\n", static.String())
+			lines = append(lines, fmt.Sprintf("    static: %s", static.String()))
 		}
 		for _, cacheGlob := range mapping.Cache {
-			helpers.FPrintf(builder, "    cache: %s\n", cacheGlob)
+			lines = append(lines, fmt.Sprintf("    cache: %s", cacheGlob))
 		}
 	}
 
-	builder.WriteString("\n")
-
-	return builder.String()
+	return strings.Join(lines, "\n")
 }
 
 func extractHost(item Mapping) string {

@@ -2,16 +2,18 @@ package cache_test
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	goCache "github.com/patrickmn/go-cache"
@@ -30,7 +32,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 	middleware := cache.NewMiddleware(
 		cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
-		cache.WithLogger(mocks.NewNoopLogger(t)),
+		cache.WithLogger(log.New(io.Discard)),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
@@ -184,7 +186,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
-			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
@@ -212,7 +214,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
-			cache.WithLogger(mocks.NewNoopLogger(t)),
+			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods(methods),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
