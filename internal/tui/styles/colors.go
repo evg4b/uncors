@@ -1,11 +1,13 @@
 package styles
 
+import "github.com/charmbracelet/lipgloss"
+
 const (
-	yellow   = "#FFD400"
-	red      = "#DC0100"
-	black    = "#000000"
-	green    = "#00A86B"
-	blue     = "#0072CE"
-	grey     = "#8c8c8c"
-	darkGrey = "#4d4d4d"
+	yellow   = lipgloss.Color("#FFD400")
+	red      = lipgloss.Color("#DC0100")
+	black    = lipgloss.Color("#000000")
+	green    = lipgloss.Color("#00A86B")
+	blue     = lipgloss.Color("#0072CE")
+	grey     = lipgloss.Color("#8C8C8C")
+	darkGrey = lipgloss.Color("#4D4D4D")
 )
