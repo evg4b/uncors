@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -54,10 +55,11 @@ func TestGracefulShutdown(t *testing.T) {
 	t.Run("shutdown when context is done", WithGoroutines(func(t *testing.T, env *Env) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		called := false
+		called := &atomic.Bool{}
+
 		env.Go(func() {
 			err := GracefulShutdown(ctx, func(_ context.Context) error {
-				called = true
+				called.Store(true)
 
 				return nil
 			})
@@ -65,7 +67,7 @@ func TestGracefulShutdown(t *testing.T) {
 		})
 
 		env.CheckAfterAll(func() {
-			assert.True(t, called)
+			assert.False(t, called.Load())
 		})
 
 		cancel()
