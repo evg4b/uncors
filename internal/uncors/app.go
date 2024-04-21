@@ -121,16 +121,16 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	defer app.waitGroup.Done()
 	app.waitGroup.Add(1)
-	log.Print("\n")
+	log.Print("")
 	log.Info("Restarting server....")
-	log.Print("\n")
+	log.Print("")
 	err := app.internalShutdown(ctx)
 	if err != nil {
 		panic(err) // TODO: refactor this error handling
 	}
 
 	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
+	log.Print("")
 	app.initServer(ctx, uncorsConfig)
 }
 

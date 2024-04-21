@@ -64,7 +64,7 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 
 	if lastVersion.GreaterThan(currentVersion) {
 		log.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		log.Info("\n")
+		log.Info("")
 	} else {
 		log.Debug("Version is up to date")
 	}
