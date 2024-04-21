@@ -68,5 +68,6 @@
 - [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
 
 ## Future features
+
 - [ ] Collecting all request/response to har file
 - [ ] Content URl replacing (HTML, JSON, TEXT and other)

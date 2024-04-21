@@ -6,6 +6,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/tui/monitor"
+	"github.com/evg4b/uncors/internal/tui/styles"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -13,10 +16,11 @@ import (
 )
 
 type Middleware struct {
-	fs     afero.Fs
-	index  string
-	logger contracts.Logger
-	prefix string
+	fs      afero.Fs
+	index   string
+	logger  contracts.Logger
+	prefix  string
+	tracker monitor.RequestTracker
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
@@ -24,9 +28,7 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
-		response := contracts.WrapResponseWriter(writer)
-
+	return contracts.HandlerFunc(func(response contracts.ResponseWriter, request *contracts.Request) {
 		filePath := h.extractFilePath(request)
 		file, stat, err := h.openFile(filePath)
 		defer helpers.CloseSafe(file)
@@ -41,8 +43,12 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return
 		}
 
-		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-		h.logger.PrintResponse(request, response.StatusCode())
+		handler := contracts.HandlerFunc(func(response contracts.ResponseWriter, request *contracts.Request) {
+			http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
+		})
+
+		h.tracker.Wrap(handler, styles.StaticStyle.Render("STATIC")).
+			ServeHTTP(response, request)
 	})
 }
 

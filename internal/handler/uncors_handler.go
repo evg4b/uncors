@@ -5,11 +5,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/tui/monitor"
+	"github.com/evg4b/uncors/internal/tui/styles"
+
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 )
@@ -31,6 +34,7 @@ type RequestHandler struct {
 	staticMiddlewareFactory StaticMiddlewareFactory
 	proxyHandlerFactory     ProxyHandlerFactory
 	mockHandlerFactory      MockHandlerFactory
+	tracker                 monitor.RequestTracker
 }
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -81,7 +85,7 @@ func (h *RequestHandler) ServeHTTP(writer contracts.ResponseWriter, request *con
 
 func (h *RequestHandler) createHandler(response config.Response) http.Handler {
 	return contracts.CastToHTTPHandler(
-		h.mockHandlerFactory(response),
+		h.tracker.Wrap(h.mockHandlerFactory(response), styles.MockStyle.Render("MOCK")),
 	)
 }
 

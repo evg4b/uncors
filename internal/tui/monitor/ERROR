@@ -1,0 +1,684 @@
+fatal error: concurrent map iteration and map write
+
+goroutine 40335 [running]:
+golang.org/x/exp/maps.Values[...](...)
+	/Users/evg4b/go/pkg/mod/golang.org/x/exp@v0.0.0-20240318143956-a85f2c67cd81/maps/maps.go:22
+github.com/evg4b/uncors/internal/tui/monitor.RequestTracker.resolveRequest({0x14000116060?, 0x1400011e090?, 0x1400011a030?}, {0x45, 0xeb, 0x53, 0x49, 0x6e, 0xf9, 0x48, ...}, ...)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/tracker.go:102 +0x188
+github.com/evg4b/uncors/internal/tui/monitor.RequestTracker.ResolveRequest(...)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/tracker.go:63
+github.com/evg4b/uncors/internal/tui/monitor.HTTPRequestTracker.Do({{0x14000116060, 0x1400011e090, 0x1400011a030}, {0x1028c4b98, 0x102b722c0}, {0x140003660e0, 0x70}}, 0x140003cb0e0)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/http_client.go:24 +0xe0
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).executeQuery(0x1400030e0f0?, 0x140003cafc0?)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:68 +0x28
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).handle(0x1400031a390, {0x102ed7fd8, 0x1400049e468}, 0x140003cafc0)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:53 +0x104
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).ServeHTTP(0x1400031a390, {0x1028c8b18, 0x1400049e468}, 0x140003cafc0)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:37 +0xa8
+github.com/evg4b/uncors/internal/handler.NewUncorsRequestHandler.setDefaultHandler.CastToHTTPHandler.func2({0x102ed7fd8?, 0x1400049e468?}, 0x140003cafc0?)
+	/Users/evg4b/Documents/uncors/internal/contracts/http.go:33 +0x64
+net/http.HandlerFunc.ServeHTTP(0x140003caea0?, {0x102ed7fd8?, 0x1400049e468?}, 0x1400049e468?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+github.com/gorilla/mux.(*Router).ServeHTTP(0x1400031e0c0, {0x102ed7fd8, 0x1400049e468}, 0x140003cac60)
+	/Users/evg4b/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x194
+github.com/evg4b/uncors/internal/handler.(*RequestHandler).ServeHTTP(...)
+	/Users/evg4b/Docu:83
+github.com/evg4b/uncors/internal/uncors.(*App).createServer.func2({0x1028c8420, 0x1400064c700}, 0x140003cac60)
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:101 +0x198
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1028c8420?, 0x1400064c700?}, 0x14000302b50?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+net/http.serverHandler.ServeHTTP({0x140004c4870?}, {0x1028c8420?, 0x1400064c700?}, 0x6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3137 +0xbc
+net/http.(*conn).serve(0x14000128ab0, {0x1028c8c30, 0x140003a0120})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2039 +0x508
+created by net/http.(*Server).Serve in goroutine 56
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3285 +0x3f0
+
+goroutine 1 [runnable]:
+fmt.(*ss).consume(0x140005a6060, {0x102749ff6, 0x16}, 0x1)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:479 +0x1b0
+fmt.(*ss).accept(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:516
+fmt.(*ss).scanNumber(0x140005a6060, {0x102749ff6, 0x16}, 0xf6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:595 +0x68
+fmt.(*ss).scanUint(0x140005a6060, 0x78, 0x8)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:686 +0x1e4
+fmt.(*ss).scanOne(0x140005a6060, 0x78, {0x102820060?, 0x1400030cc3f})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:988 +0x270
+fmt.(*ss).doScanf(0x140005a6060, {0x10274610f, 0xd}, {0x14000706540, 0x3, 0x102c38a68?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:1230 +0x1e4
+fmt.Fscanf({0x1028c4bb8?, 0x14000255e10?}, {0x10274610f, 0xd}, {0x14000706540, 0x3, 0x3})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:143 +0x88
+fmt.Sscanf(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/fmt/scan.go:114
+github.com/lucasb-eyer/go-colorful.Hex({0x102742f97, 0x7})
+	/Users/evg4b/go/pkg/mod/github.com/lucasb-eyer/go-colorful@v1.2.0/colors.go:342 +0x130
+github.com/muesli/termenv.Profile.Convert(0x0, {0x1028c4d78?, 0x14000255e00?})
+	/Users/evg4b/go/pkg/mod/github.com/muesli/termenv@v0.15.2/profile.go:50 +0xd8
+github.com/muesli/termenv.Profile.Color(0x0, {0x102742f97?, 0x0?})
+	/Users/evg4b/go/pkg/mod/github.com/muesli/termenv@v0.15.2/profile.go:90 +0x8c
+github.com/charmbracelet/lipgloss.Color.color({0x102742f97, 0x7}, 0x102b7f3f4?)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/lipgloss@v0.10.0/color.go:48 +0x34
+github.com/charmbracelet/lipgloss.Style.Render({0x102b7f3c0?, 0x14000021e00?, {0x0, 0x0}}, {0x14000706cf8?, 0x1400030cba8?, 0x0?})
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/lipgloss@v0.10.0/style.go:265 +0xfd0
+github.com/evg4b/uncors/internal/tui/monitor.render({{0x140003660e0, 0x70}, {0x140001460f0, 0x24}, {0x14000026fc4, 0x25}, {0x0, 0x0}, {0x1400013b780, 0x3}}, ...)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/responces.go:38 +0x10c
+github.com/evg4b/uncors/internal/tui/monitor.RenderDoneRequest({{{0x140003660e0, 0x70}, {0x140001460f0, 0x24}, {0x14000026fc4, 0x25}, {0x0, 0x0}, {0x1, 0x3}}, ...})
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/responces.go:16 +0x230
+github.com/evg4b/uncors/internal/uncors.uncorsModel.Update({0x14000080cc0, {0x10274217b, 0x5}, {{{0x14000080ca0, 0x2, 0x2}, {{...}, {...}}, 0x0}, {{0x14000033f20, ...}, ...}}, ...}, ...)
+	/Users/evg4b/Documents/uncors/internal/uncors/uncors.go:114 +0x2c4
+github.com/charmbracelet/bubbletea.(*Program).eventLoop(0x14000118680, {0x1028c7eb0?, 0x14000126288?}, 0x1400012a060)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:411 +0x4d8
+github.com/charmbracelet/bubbletea.(*Program).Run(0x14000118680)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:543 +0x6c8
+main.main()
+	/Users/evg4b/Documents/uncors/main.go:74 +0x3f0
+
+goroutine 25 [syscall, 78 minutes]:
+syscall.syscall6(0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/sys_darwin.go:45 +0x68
+golang.org/x/sys/unix.kevent(0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	/Users/evg4b/go/pkg/mod/golang.org/x/sys@v0.18.0/unix/zsyscall_darwin_arm64.go:275 +0x54
+golang.org/x/sys/unix.Kevent(0x1400005fd48?, {0x14000128168?, 0x1400005fd48?, 0x1024340b0?}, {0x1400005fd78?, 0x0?, 0x1400005fd68?}, 0x10268f190?)
+	/U:397 +0x40
+github.com/muesli/cancelreader.(*kqueueCancelReader).wait(0x14000128120)
+	/Users/evg4b/go/pkg/mod/github.com/muesli/cancelreader@v0.2.2/cancelreader_bsd.go:125 +0x58
+github.com/muesli/cancelreader.(*kqueueCancelReader).Read(0x14000128120, {0x1400000ca00, 0x100, 0x100})
+	/Users/evg4b/go/pkg/mod/github.com/muesli/cancelreader@v0.2.2/cancelreader_bsd.go:69 +0x44
+github.com/charmbracelet/bubbletea.readInputs({0x1028c8c68, 0x1400012c000}, 0x1400012a000, {0x102f2ae98, 0x14000128120})
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/key.go:550 +0x88
+github.com/charmbracelet/bubbletea.(*Program).readLoop(0x14000118680)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tty.go:76 +0x90
+created by github.com/charmbracelet/bubbletea.(*Program).initCancelReader in goroutine 1
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tty.go:67 +0x110
+
+goroutine 24 [select]:
+github.com/charmbracelet/bubbletea.(*standardRenderer).listen(0x14000132000)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/standard_renderer.go:133 +0x64
+created by github.com/charmbracelet/bubbletea.(*standardRenderer).start in goroutine 1
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/standard_renderer.go:92 +0xb8
+
+goroutine 22 [select, 78 minutes]:
+github.com/charmbracelet/bubbletea.(*Program).handleSignals.func1()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:237 +0x100
+created by github.com/charmbracelet/bubbletea.(*Program).handleSignals in goroutine 1
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:228 +0x80
+
+goroutine 32 [semacquire, 78 minutes]:
+sync.runtime_Semacquire(0x140001620a0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/sema.go:62 +0x2c
+sync.(*WaitGroup).Wait(0x1400011a6a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/sync/waitgroup.go:116 +0x74
+github.com/spf13/viper.(*Viper).WatchConfig.func1()
+	/Users/evg4b/go/pkg/mod/github.com/spf13/viper@v1.18.2/viper.go:502 +0x2d0
+created by github.com/spf13/viper.(*Viper).WatchConfig in goroutine 30
+	/Users/evg4b/go/pkg/mod/github.com/spf13/viper@v1.18.2/viper.go:442 +0x84
+
+goroutine 39 [syscall, 78 minutes]:
+os/signal.signal_recv()
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/sigqueue.go:149 +0x2c
+os/signal.loop()
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/os/signal/signal_unix.go:23 +0x1c
+created by os/signal.Notify.func1.1 in goroutine 22
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/os/signal/signal.go:151 +0x28
+
+goroutine 27 [select, 78 minutes]:
+github.com/charmbracelet/bubbletea.(*Program).listenForResize(0x14000118680, 0x1400012a600)
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/signals_unix.go:25 +0xf0
+created by github.com/charmbracelet/bubbletea.(*Program).handleResize in goroutine 1
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:262 +0x180
+
+goroutine 28 [select]:
+github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:279 +0xb0
+created by github.com/charmbracelet/bubbletea.(*Program).handleCommands in goroutine 1
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:275 +0x94
+
+goroutine 30 [chan receive, 78 minutes]:
+github.com/evg4b/uncors/internal/tui.(*ConfigLoader).Tick(...)
+	/Users/evg4b/Documents/uncors/internal/tui/config.go:39
+github.com/evg4b/uncors/internal/tui.(*ConfigLoader).Init(0x14000080d00)
+	/Users/evg4b/Documents/uncors/internal/tui/config.go:35 +0xa8
+github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1.1()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:294 +0x30
+created by github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1 in goroutine 28
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:293 +0x110
+
+goroutine 33 [syscall, 78 minutes]:
+syscall.syscall6(0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/sys_darwin.go:45 +0x68
+golang.org/x/sys/unix.kevent(0x0?, 0x0?, 0x0?, 0x0?, 0x0?, 0x0?)
+	/Users/evg4b/go/pkg/mod/golang.org/x/sys@v0.18.0/unix/zsyscall_darwin_arm64.go:275 +0x54
+golang.org/x/sys/unix.Kevent(0x0?, {0x0?, 0x0?, 0x0?}, {0x1400029b580?, 0x0?, 0x1400029b498?}, 0x1026bca58?)
+	/Users/evg4b/go/pkg/mod/golang.org/x/sys@v0.18.0/unix/syscall_bsd.go:397 +0x40
+github.com/fsnotify/fsnotify.(*Watcher).read(0x0?, {0x1400029b580, 0x0?, 0xa})
+	/Users/evg4b/go/pkg/mod/github.com/fsnotify/fsnotify@v1.7.0/backend_kqueue.go:777 +0x44
+github.com/fsnotify/fsnotify.(*Watcher).readEvents(0x14000162070)
+	/Users/evg4b/go/pkg/mod/github.com/fsnotify/fsnotify@v1.7.0/backend_kqueue.go:547 +0x9c
+created by github.com/fsnotify/fsnotify.NewBufferedWatcher in goroutine 32
+	/Users/evg4b/go/pkg/mod/github.com/fsnotify/fsnotify@v1.7.0/backend_kqueue.go:184 +0x1fc
+
+goroutine 40336 [IO wait]:
+internal/poll.runtime_pollWait(0x102ed09a0, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x1400016cd80?, 0x140004c4881?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x1400016cd80, {0x140004c4881, 0x1, 0x1})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x1400016cd80, {0x140004c4881?, 0x1400018af80?, 0x1025717e0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x140001300d8, {0x140004c4881?, 0x140002e0778?, 0x0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+net/http.(*connReader).backgroundRead(0x140004c4870)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:681 +0x40
+created by net/http.(*connReader).startBackgroundRead in goroutine 40335
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:677 +0xc8
+
+goroutine 66 [select, 78 minutes]:
+github.com/spf13/viper.(*Viper).WatchConfig.func1.1()
+	/Users/evg4b/go/pkg/mod/github.com/spf13/viper@v1.18.2/viper.go:465 +0xb8
+created by github.com/spf13/viper.(*Viper).WatchConfig.func1 in goroutine 32
+	/Users/evg4b/go/pkg/mod/github.com/spf13/viper@v1.18.2/viper.go:463 +0x298
+
+goroutine 56 [runnable]:
+internal/poll.runtime_pollWait(0x102ed0c88, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x14000398000?, 0x400000?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Accept(0x14000398000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:611 +0x250
+net.(*netFD).accept(0x14000398000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_unix.go:172 +0x28
+net.(*TCPListener).accept(0x140003a2000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/tcpsock_posix.go:159 +0x28
+net.(*TCPListener).Accept(0x140003a2000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/tcpsock.go:327 +0x2c
+net/http.(*Server).Serve(0x14000370000, {0x1028c85d0, 0x140003a2000})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3255 +0x2a8
+github.com/evg4b/uncors/internal/uncors.(*App).internalServe(0x14000128000, 0x14000305ee8)
+	/Users/evg4b/Documents/uncors/internal/uncors/listen.go:51 +0xac
+github.com/evg4b/uncors/internal/uncors.(*App).listenAndServe(0x14000128000, {0x1400030c550?, 0x1400031873a?})
+	/Users/evg4b/Documents/uncors/internal/uncors/listen.go:17 +0xb8
+github.com/evg4b/uncors/internal/uncors.(*App).initServer.func1()
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:71 +0x1cc
+created by github.com/evg4b/uncors/internal/uncors.(*App).initServer in goroutine 55
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:64 +0xc0
+
+goroutine 40299 [select]:
+net/http.(*http2ClientConn).RoundTrip(0x14000368180, 0x140001719e0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8323 +0x374
+net/http.(*http2Transport).RoundTripOpt(0x140001287e0, 0x140001719e0, {0xf0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7591 +0x1d4
+net/http.(*http2Transport).RoundTrip(0x102b778c0?, 0x140003407c0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7540 +0x20
+net/http.(*Transport).roundTrip(0x102b778c0, 0x140001718c0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/transport.go:606 +0x680
+net/http.(*Transport).RoundTrip(0x140001718c0?, 0x1028c4df8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/roundtrip.go:17 +0x1c
+net/http.send(0x140001717a0, {0x1028c4df8, 0x102b778c0}, {0x1025ccc60?, 0x8?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:259 +0x4ac
+net/http.(*Client).send(0x102b722c0, 0x140001717a0, {0x9d484e902a699c6a?, 0x4aba483f6f62d8?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:180 +0x9c
+net/http.(*Client).do(0x102b722c0, 0x140001717a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:724 +0x6b4
+net/http.(*Client).Do(0x484e902a699c6a23?, 0x4aba483f6f62d89d?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:590 +0x1c
+github.com/evg4b/uncors/internal/tui/monitor.HTTPRequestTracker.Do({{0x14000116060, 0x1400011e090, 0x1400011a030}, {0x1028c4b98, 0x102b722c0}, {0x140003660e0, 0x70}}, 0x140001717a0)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/http_client.go:17 +0x7c
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).executeQuery(0x1400030e0f0?, 0x14000171680?)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:68 +0x28
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).handle(0x1400031a390, {0x102ed7fd8, 0x1400000e828}, 0x14000171680)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:53 +0x104
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).ServeHTTP(0x1400031a390, {0x1028c8b18, 0x1400000e828}, 0x14000171680)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:37 +0xa8
+github.com/evg4b/uncors/internal/handler.NewUncorsRequestHandler.setDefaultHandler.CastToHTTPHandler.func2({0x102ed7fd8?, 0x1400000e828?}, 0x14000171680?)
+	/Users/evg4b/Documents/uncors/internal/contracts/http.go:33 +0x64
+net/http.HandlerFunc.ServeHTTP(0x14000171560?, {0x102ed7fd8?, 0x1400000e828?}, 0x1400000e828?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+github.com/gorilla/mux.(*Router).ServeHTTP(0x1400031e0c0, {0x102ed7fd8, 0x1400000e828}, 0x14000171200)
+	/Users/evg4b/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x194
+github.com/evg4b/uncors/internal/handler.(*RequestHandler).ServeHTTP(...)
+	/Users/evg4b/Documents/uncors/internal/handler/uncors_handler.go:83
+github.com/evg4b/uncors/internal/uncors.(*App).createServer.func2({0x1028c8420, 0x14000150460}, 0x14000171200)
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:101 0x198
+net/http.HandlerFunc.ServeHTTP(0x10?, {0x1028c8420?, 0x14000150460?}, 0x14000150460?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+net/http.serverHandler.ServeHTTP({0x1028c6bf8?}, {0x1028c8420?, 0x14000150460?}, 0x6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3137 +0xbc
+net/http.(*conn).serve(0x14000326990, {0x1028c8c30, 0x140003a0120})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2039 +0x508
+created by net/http.(*Server).Serve in goroutine 56
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3285 +0x3f0
+
+goroutine 20076 [chan receive, 43 minutes]:
+github.com/evg4b/uncors/internal/tui.(*Printer).Tick(...)
+	/Users/evg4b/Documents/uncors/internal/tui/printer.go:40
+github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1.1()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:294 +0x30
+created by github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1 in goroutine 28
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:293 +0x110
+
+goroutine 40467 [IO wait]:
+internal/poll.runtime_pollWait(0x12b8f15f0, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x14000420500?, 0x140004f92a1?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x14000420500, {0x140004f92a1, 0x1, 0x1})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x14000420500, {0x140004f92a1?, 0x1400021ff28?, 0x102571910?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x14000130038, {0x140004f92a1?, 0x1400021ffa8?, 0x0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+net/http.(*connReader).backgroundRead(0x140004f9290)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:681 +0x40
+created by net/http.(*connReader).startBackgroundRead in goroutine 40466
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:677 +0xc8
+
+goroutine 40065 [select]:
+net/http.(*http2clientStream).writeRequest(0x140004dc180, 0x140000005a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8491 +0x8ec
+net/http.(*http2clientStream).doRequest(0x140004dc180, 0x140000b4630?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8353 +0x20
+created by net/http.(*http2ClientConn).RoundTrip in goroutine 40328
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8259 +0x2b0
+
+goroutine 40468 [select]:
+net/http.(*http2clientStream).writeRequest(0x1400048e300, 0x140003cab40)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8491 +0x8ec
+net/http.(*http2clientStream).doRequest(0x1400048e300, 0x1400030e4c8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8353 +0x20
+created by net/http.(*http2ClientConn).RoundTrip in goroutine 40466
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8259 +0x2b0
+
+goroutine 40345 [IO wait]:
+internal/poll.runtime_pollWait(0x12b8f1bc0, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x140002d2500?, 0x1400024a000?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x140002d2500, {0x1400024a000, 0x1000, 0x1000})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x140002d2500, {0x1400024a000?, 0x12b8ebc98?, 0x1400049e0f0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x14000130000, {0x1400024a000?, 0x140004328d8?, 0x1023ddebc?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+crypto/tls.(*atLeastReader).Read(0x1400049e0f0, {0x1400024a000?, 0x0?, 0x1400049e0f0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:806 +0x40
+bytes.(*Buffer).ReadFrom(0x1400018a630, {0x1028c6280, 0x1400049e0f0})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bytes/buffer.go:211 +0x90
+crypto/tls.(*Conn).readFromUntil(0x1400018a388, {0x102ed8068, 0x14000130000}, 0x140004329b0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:828 +0xd0
+crypto/tls.(*Conn).readRecordOrCCS(0x1400018a388, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:626 +0x35c
+crypto/tls.(*Conn).readRecord(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:588
+crypto/tls.(*Conn).Read(0x1400018a388, {0x14000427000, 0x1000, 0x10262e0b8?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:1370 +0x168
+bufio.(*Reader).Read(0x14000588a80, {0x140002143c0, 0x9, 0x140004c46c0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bufio/bufio.go:241 +0x1b4
+io.ReadAtLeast({0x1028c4f78, 0x14000588a80}, {0x140002143c0, 0x9, 0x9}, 0x9)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:335 +0xa0
+io.ReadFull(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:354
+net/http.http2readFrameHeader({0x140002143c0, 0x9, 0x1025fa110?}, {0x1028c4f78?, 0x14000588a80?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1638 +0x58
+net/http.(*http2Framer).ReadFrame(0x14000214380)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1902 +0x78
+net/http.(*http2clientConnReadLoop).run(0x14000432f98)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9303 +0xf8
+net/http.(*http2ClientConn).readLoop(0x14000368180)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9198 +0x5c
+created by net/http.(*http2Transport).newClientConn in goroutine 40344
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7848 +0xa84
+
+goroutine 40334 [select]:
+net/http.(*http2ClientConn).RoundTrip(0x140005be000, 0x140003f05a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8323 +0x374
+net/http.(*http2Transport).RoundTripOpt(0x140001287e0, 0x140003f05a0, {0xf0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7591 +0x1d4
+net/http.(*http2Transport).RoundTrip(0x102b778c0?, 0x14000502000?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7540 +0x20
+net/http.(*Transport).roundTrip(0x102b778c0, 0x140003f05a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/transport.go:606 +0x680
+net/http.(*Transport).RoundTrip(0x140003f05a0?, 0x1028c4df8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/roundtrip.go:17 +0x1c
+net/http.send(0x140003f0480, {0x1028c4df8, 0x102b778c0}, {0x1025ccc60?, 0x8?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:259 +0x4ac
+net/http.(*Client).send(0x102b722c0, 0x140003f0480, {0x9dce4fa4f220103f?, 0x1f77a04607a5c5?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:180 +0x9c
+net/http.(*Client).do(0x102b722c0, 0x140003f0480)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:724 +0x6b4
+net/http.(*Client).Do(0xce4fa4f220103f8b?, 0x1f77a04607a5c59d?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:590 +0x1c
+github.com/evg4b/uncors/internal/tui/monitor.HTTPRequestTracker.Do({{0x14000116060, 0x1400011e090, 0x1400011a030}, {0x1028c4b98, 0x102b722c0}, {0x140003660e0, 0x70}}, 0x140003f0480)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/http_client.go:17 +0x7c
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).executeQuery(0x1400030e0f0?, 0x140003f0360?)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:68 +0x28
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).handle(0x1400031a390, {0x102ed7fd8, 0x1400059a198}, 0x140003f0360)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:53 +0x104
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).ServeHTTP(0x1400031a390, {0x1028c8b18, 0x1400059a198}, 0x140003f0360)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:37 +0xa8
+github.com/evg4b/uncors/internal/handler.NewUncorsRequestHandler.setDefaultHandler.CastToHTTPHandler.func2({0x102ed7fd8?, 0x1400059a198?}, 0x140003f0360?)
+	/Users/evg4b/Documents/uncors/internal/contracts/http.go:33 +0x64
+net/http.HandlerFunc.ServeHTTP(0x140003f0240?, {0x102ed7fd8?, 0x1400059a198?}, 0x1400059a198?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+github.com/gorilla/mux.(*Router).ServeHTTP(0x1400031e0c0, {0x102ed7fd8, 0x1400059a198}, 0x140003f0000)
+	/Users/evg4b/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x194
+github.com/evg4b/uncors/internal/handler.(*RequestHandler).ServeHTTP(...)
+	/Users/evg4b/Documents/uncors/internal/handler/uncors_handler.go:83
+github.com/evg4b/uncors/internal/uncors.(*App).createServer.func2({0x1028c8420, 0x14000214000}, 0x140003f0000)
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:101 +0x198
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1028c8420?, 0x14000214000?}, 0x14000625b50?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+net/http.serverHandler.ServeHTTP({0x140004f2420?}, {0x1028c8420?, 0x14000214000?}, 0x6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3137 +0xbc
+net/http.(*conn).serve(0x14000128a20, {0x1028c8c30, 0x140003a0120})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2039 +0x508
+created by net/http.(*Server).Serve in goroutine 56
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3285 +0x3f0
+
+goroutine 40064 [runnable]:
+internal/poll.runtime_pollWait(0x102ed02d8, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x140000ee500?, 0x14000491000?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x140000ee500, {0x14000491000, 0x1000, 0x1000})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x140000ee500, {0x14000491000?, 0x102f63df8?, 0x14000814270?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x14000396018, {0x14000491000?, 0x1400034b?, 0x1023ddebc?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+crypto/tls.(*atLeastReader).Read(0x14000814270, {0x14000491000?, 0x0?, 0x14000814270?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:806 +0x40
+bytes.(*Buffer).ReadFrom(0x1400017e2b0, {0x1028c6280, 0x14000814270})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bytes/buffer.go:211 +0x90
+crypto/tls.(*Conn).readFromUntil(0x1400017e008, {0x102ed8068, 0x14000396018}, 0x1400034b9b0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:828 +0xd0
+crypto/tls.(*Conn).readRecordOrCCS(0x1400017e008, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:626 +0x35c
+crypto/tls.(*Conn).readRecord(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:588
+crypto/tls.(*Conn).Read(0x1400017e008, {0x14000603000, 0x1000, 0x7e?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:1370 +0x168
+bufio.(*Reader).Read(0x1400042c6c0, {0x14000150660, 0x9, 0x80?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bufio/bufio.go:241 +0x1b4
+io.ReadAtLeast({0x1028c4f78, 0x1400042c6c0}, {0x14000150660, 0x9, 0x9}, 0x9)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:335 +0xa0
+io.ReadFull(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:354
+net/http.http2readFrameHeader({0x14000150660, 0x9, 0x1400034bd68?}, {0x1028c4f78?, 0x1400042c6c0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1638 +0x58
+net/http.(*http2Framer).ReadFrame(0x14000150620)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1902 +0x78
+net/http.(*http2clientConnReadLoop).run(0x1400034bf98)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9303 +0xf8
+net/http.(*http2ClientConn).readLoop(0x140004dc000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9198 +0x5c
+created by net/http.(*http2Transport).newClientConn in goroutine 40063
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7848 +0xa84
+
+goroutine 40435 [runnable]:
+internal/poll.runtime_pollWait(0x102ed07b0, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x140000ee880?, 0x14000287000?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x140000ee880, {0x14000287000, 0x1000, 0x1000})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x140000ee880, {0x14000287000?, 0x102f63df8?, 0x14000814480?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x14000130030, {0x14000287000?, 0x140005178d8?, 0x1023ddebc?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+crypto/tls.(*atLeastReader).Read(0x14000814480, {0x14000287000?, 0x0?, 0x14000814480?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:806 +0x40
+bytes.(*Buffer).ReadFrom(0x140000a42b0, {0x1028c6280, 0x14000814480})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bytes/buffer.go:211 +0x90
+crypto/tls.(*Conn).readFromUntil(0x140000a4008, {0x102ed8068, 0x14000130030}, 0x140005179b0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:828 +0xd0
+crypto/tls.(*Conn).readRecordOrCCS(0x140000a4008, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:626 +0x35c
+crypto/tls.(*Conn).readRecord(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:588
+crypto/tls.(*Conn).Read(0x140000a4008, {0x140004a1000, 0x1000, 0x14000380008?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:1370 +0x168
+bufio.(*Reader).Read(0x14000116ea0, {0x140001509e0, 0x9, 0x14000492330?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bufio/bufio.go:241 +0x1b4
+io.ReadAtLeast({0x1028c4f78, 0x14000116ea0}, {0x140001509e0, 0x9, 0x9}, 0x9)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:335 +0xa0
+io.ReadFull(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:354
+net/http.http2readFrameHeader({0x140001509e0, 0x9, 0x0?}, {0x1028c4f78?, 0x14000116ea0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1638 +0x58
+net/http.(*http2Framer).ReadFrame(0x140001509a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1902 +0x78
+net/http.(*http2clientConnReadLoop).run(0x14000517f98)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9303 +0xf8
+net/http.(*http2ClientConn).readLoop(0x140004dc480)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9198 +0x5c
+created by net/http.(*http2Transport).newClientConn in goroutine 40434
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7848 +0xa84
+
+goroutine 40078 [IO wait]:
+internal/poll.runtime_pollWait(0x102ed0b90, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x1400016ce00?, 0x140003b4000?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x1400016ce00, {0x140003b4000, 0x1000, 0x1000})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x1400016ce00, {0x140003b4000?, 0x102f50568?, 0x1400059a018?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x140004b6028, {0x140003b4000?, 0x1400061f8d8?, 0x1023ddebc?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+crypto/tls.(*atLeastReader).Read(0x1400059a018, {0x140003b4000?, 0x0?, 0x1400059a018?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:806 +0x40
+bytes.(*Buffer).ReadFrom(0x1400017ed30, {0x1028c6280, 0x1400059a018})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bytes/buffer.go:211 +0x90
+crypto/tls.(*Conn).readFromUntil(0x1400017ea88, {0x102ed8068, 0x140004b6028}, 0x1400061f9b0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:828 +0xd0
+crypto/tls.(*Conn).readRecordOrCCS(0x1400017ea88, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:626 +0x35c
+crypto/tls.(*Conn).readRecord(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:588
+crypto/tls.(*Conn).Read(0x1400017ea88, {0x140005c1000, 0x1000, 0x10262e0b8?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/crypto/tls/conn.go:1370 +0x168
+bufio.(*Reader).Read(0x1400062b080, {0x140005ac2e0, 0x9, 0x140003a0150?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/bufio/bufio.go:241 +0x1b4
+io.ReadAtLeast({0x1028c4f78, 0x1400062b080}, {0x140005ac2e0, 0x9, 0x9}, 0x9)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:335 +0xa0
+io.ReadFull(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/io/io.go:354
+net/http.http2readFrameHeader({0x140005ac2e0, 0x9, 0x1025fa110?}, {0x1028c4f78?, 0x1400062b080?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1638 +0x58
+net/http.(*http2Framer).ReadFrame(0x140005ac2a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:1902 +0x78
+net/http.(*http2clientConnReadLoop).run(0x1400061ff98)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9303 +0xf8
+net/http.(*http2ClientConn).readLoop(0x140005be000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:9198 +0x5c
+created by net/http.(*http2Transport).newClientConn in goroutine 40077
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7848 +0xa84
+
+goroutine 40347 [IO wait]:
+internal/poll.runtime_pollWait(0x12b8f17e0, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x140000ee900?, 0x1400052e011?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x140000ee900, {0x1400052e011, 0x1, 0x1})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x140000ee900, {0x1400052e011?, 0x14000030480?, 0x140003b9c20?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x140004b6058, {0x1400052e011?, 0x5?, 0x1400048d050?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+net/http.(*connReader).backgroundRead(0x1400052e000)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:681 +0x40
+created by net/http.(*connReader).startBackgroundRead in goroutine 40346
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:677 +0xc8
+
+goroutine 40346 [select]:
+net/http.(*http2clientStream).writeRequest(0x14000368300, 0x140001719e0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8491 +0x8ec
+net/http.(*http2clientStream).doRequest(0x14000368300, 0x707474686d37373b?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8353 +0x20
+created by net/http.(*http2ClientConn).RoundTrip in goroutine 40299
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8259 +0x2b0
+
+goroutine 40466 [select]:
+net/http.(*http2ClientConn).RoundTrip(0x140004dc480, 0x140003cab40)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8323 +0x374
+net/http.(*http2Transport).RoundTripOpt(0x140001287e0, 0x140003cab40, {0x40?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7591 +0x1d4
+net/http.(*http2Transport).RoundTrip(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7540
+net/http.http2noDialH2RoundTripper.RoundTrip({0x102b778c0?}, 0x140003cab40?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:10167 +0x24
+net/http.(*Transport).roundTrip(0x102b778c0, 0x140003cab40)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/transport.go:553 +0x358
+net/http.(*Transport).RoundTrip(0x140003cab40?, 0x1028c4df8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/roundtrip.go:17 +0x1c
+net/http.send(0x140003ca7e0, {0x1028c4df8, 0x102b778c0}, {0x1025ccc60?, 0x8?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:259 +0x4ac
+net/http.(*Client).send(0x102b722c0, 0x140003ca7e0, {0xa94e4b60cb555088?, 0x7ce701af6b546b?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:180 +0x9c
+net/http.(*Client).do(0x102b722c0, 0x140003ca7e0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:724 +0x6b4
+net/http.(*Client).Do(0x4e4b60cb555088cc?, 0x7ce701af6b546ba9?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:590 +0x1c
+github.com/evg4b/uncors/internal/tui/monitor.HTTPRequestTracker.Do({{0x14000116060, 0x1400011e090, 0x1400011a030}, {0x1028c4b98, 0x102b722c0}, {0x140003660e0, 0x70}}, 0x140003ca7e0)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/http_client.go:17 +0x7c
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).executeQuery(0x1400030e0f0?, 0x140003ca6c0?)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:68 +0x28
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).handle(0x1400031a390, {0x102ed7fd8, 0x1400049e060}, 0x140003ca6c0)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:53 +0x104
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).ServeHTTP(0x1400031a390, {0x1028c8b18, 0x1400049e060}, 0x140003ca6c0)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:37 +0xa8
+github.com/evg4b/uncors/internal/handler.NewUncorsRequestHandler.setDefaultHandler.CastToHTTPHandler.func2({0x102ed7fd8?, 0x1400049e060?}, 0x140003ca6c0?)
+	/Users/evg4b/Documents/uncors/internal/contracts/http.go:33 +0x64
+net/http.HandlerFunc.ServeHTTP(0x140003ca360?, {0x102ed7fd8?, 0x1400049e060?}, 0x1400049e060?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+github.com/gorilla/mux.(*Router).ServeHTTP(0x1400031e0c0, {0x102ed7fd8, 0x1400049e060}, 0x140003ca000)
+	/Users/evg4b/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x194
+github.com/evg4b/uncors/internal/handler.(*RequestHandler).ServeHTTP(...)
+	/Users/evg4b/Documents/uncors/internal/handler/uncors_handler.go:83
+github.com/evg4b/uncors/internal/uncors.(*App).createServer.func2({0x1028c8420, 0x140005ac000}, 0x140003ca000)
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:101 +0x198
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1028c8420?, 0x140005ac000?}, 0x1400043cb50?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+net/http.serverHandler.ServeHTTP({0x140004f9290?}, {0x1028c8420?, 0x140005ac000?}, 0x6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3137 +0xbc
+net/http.(*conn).serve(0x140003266c0, {0x1028c8c30, 0x140003a0120})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2039 +0x508
+created by net/http.(*Server).Serve in goroutine 56
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3285 +0x3f0
+
+goroutine 40079 [select]:
+net/http.(*http2clientStream).writeRequest(0x140005be180, 0x140003f05a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8491 +0x8ec
+net/http.(*http2clientStream).doRequest(0x140005be180, 0x140000b4f20?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8353 +0x20
+created by net/http.(*http2ClientConn).RoundTrip in goroutine 40334
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8259 +0x2b0
+
+goroutine 40328 [select]:
+net/http.(*http2ClientConn).RoundTrip(0x140004dc000, 0x140000005a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:8323 +0x374
+net/http.(*http2Transport).RoundTripOpt(0x140001287e0, 0x140000005a0, {0xf0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7591 +0x1d4
+net/http.(*http2Transport).RoundTrip(0x102b778c0?, 0x140005aa1c0?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/h2_bundle.go:7540 +0x20
+net/http.(*Transport).roundTrip(0x102b778c0, 0x140000005a0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/transport.go:606 +0x680
+net/http.(*Transport).RoundTrip(0x140000005a0?, 0x1028c4df8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/roundtrip.go:17 +0x1c
+net/http.send(0x14000000360, {0x1028c4df8, 0x102b778c0}, {0x1025ccc60?, 0x8?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:259 +0x4ac
+net/http.(*Client).send(0x102b722c0, 0x14000000360, {0x902845b64a9f2fc1?, 0x7e025dffa6d25b?, 0x102b7f720?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:180 +0x9c
+net/http.(*Client).do(0x102b722c0, 0x14000000360)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:724 +0x6b4
+net/http.(*Client).Do(0x2845b64a9f2fc180?, 0x7e025dffa6d25b90?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/client.go:590 +0x1c
+github.com/evg4b/uncors/internal/tui/monitor.HTTPRequestTracker.Do({{0x14000116060, 0x1400011e090, 0x1400011a030}, {0x1028c4b98, 0x102b722c0}, {0x140003660e0, 0x70}}, 0x14000000360)
+	/Users/evg4b/Documents/uncors/internal/tui/monitor/http_client.go:17 +0x7c
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).executeQuery(0x1400030e0f0?, 0x14000000240?)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:68 +0x28
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).handle(0x1400031a390, {0x102ed7fd8, 0x1400000e8b8}, 0x14000000240)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:53 +0x104
+github.com/evg4b/uncors/internal/handler/proxy.(*Handler).ServeHTTP(0x1400031a390, {0x1028c8b18, 0x1400000e8b8}, 0x14000000240)
+	/Users/evg4b/Documents/uncors/internal/handler/proxy/handler.go:37 +0xa8
+github.com/evg4b/uncors/internal/handler.NewUncorsRequestHandler.setDefaultHandler.CastToHTTPHandler.func2({0x102ed7fd8?, 0x1400000e8b8?}, 0x14000000240?)
+	/Users/evg4b/Documents/uncors/internal/contracts/http.go:33 +0x64
+net/http.HandlerFunc.ServeHTTP(0x14000171e60?, {0x102ed7fd8?, 0x1400000e8b8?}, 0x1400000e8b8?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+github.com/gorilla/mux.(*Router).ServeHTTP(0x1400031e0c0, {0x102ed7fd8, 0x1400000e8b8}, 0x14000171c20)
+	/Users/evg4b/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x194
+github.com/evg4b/uncors/internal/handler.(*RequestHandler).ServeHTTP(...)
+	/Users/evg4b/Documents/uncors/internal/handler/uncors_handler.go:83
+github.com/evg4b/uncors/internal/uncors.(*App).createServer.func2({0x1028c8420, 0x14000150540}, 0x14000171c20)
+	/Users/evg4b/Documents/uncors/internal/uncors/app.go:101 +0x198
+net/http.HandlerFunc.ServeHTTP(0x0?, {0x1028c8420?, 0x14000150540?}, 0x14000691b50?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2166 +0x38
+net/http.serverHandler.ServeHTTP({0x1400052e4b0?}, {0x1028c8420?, 0x14000150540?}, 0x6?)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3137 +0xbc
+net/http.(*conn).serve(0x140001285a0, {0x1028c8c30, 0x140003a0120})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:2039 +0x508
+created by net/http.(*Server).Serve in goroutine 56
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:3285 +0x3f0
+
+goroutine 40403 [chan receive]:
+github.com/charmbracelet/bubbles/spinner.Model.Update.Model.tick.Tick.func2()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/commands.go:142 +0x3c
+github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1.1()
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:294 +0x30
+created by github.com/charmbracelet/bubbletea.(*Program).handleCommands.func1 in goroutine 28
+	/Users/evg4b/go/pkg/mod/github.com/charmbracelet/bubbletea@v0.25.0/tea.go:293 +0x110
+
+goroutine 40316 [IO wait]:
+internal/poll.runtime_pollWait(0x102ed04c8, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x1400016cd00?, 0x140004f2431?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x1400016cd00, {0x140004f2431, 0x1, 0x1})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x1400016cd00, {0x140004f2431?, 0x140000a4880?, 0x1025717e0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x140001300d0, {0x140004f2431?, 0x140002dd798?, 0x0?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+net/http.(*connReader).backgroundRead(0x140004f2420)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:681 +0x40
+created by net/http.(*connReader).startBackgroundRead in goroutine 40334
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:677 +0xc8
+
+goroutine 40304 [IO wait]:
+internal/poll.runtime_pollWait(0x12b8f1cb8, 0x72)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/runtime/netpoll.go:345 +0xa0
+internal/poll.(*pollDesc).wait(0x1400016cb80?, 0x1400052e4c1?, 0x0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x1400016cb80, {0x1400052e4c1, 0x1, 0x1})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/internal/poll/fd_unix.go:164 +0x200
+net.(*netFD).Read(0x1400016cb80, {0x1400052e4c1?, 0x0?, 0x140002e2738?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/fd_posix.go:55 +0x28
+net.(*conn).Read(0x140001300a8, {0x1400052e4c1?, 0x140002e2778?, 0x102540c38?})
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/net.go:179 +0x34
+net/http.(*connReader).backgroundRead(0x1400052e4b0)
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:681 +0x40
+created by net/http.(*connReader).startBackgroundRead in goroutine 40328
+	/opt/homebrew/Cellar/go/1.22.1/libexec/src/net/http/server.go:677 +0xc8
+exit status 2

@@ -30,8 +30,6 @@ func (m Mappings) String() string {
 		}
 	}
 
-	builder.WriteString("\n")
-
 	return builder.String()
 }
 
