@@ -1,31 +1,23 @@
 package uncors
 
 import (
-	"os"
 	// "github.com/evg4b/uncors/internal/log".
 	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
-var ProxyLogger = log.NewWithOptions(os.Stdout, log.Options{
-	Prefix: " PROXY  ",
-})
+func NewProxyLogger(logger *log.Logger) *log.Logger {
+	return logger.WithPrefix(styles.ProxyStyle.Render("PROXY"))
+}
 
-var MockLogger = log.NewWithOptions(os.Stdout, log.Options{
-	Prefix: " MOCK   ",
-})
+func NewMockLogger(logger *log.Logger) *log.Logger {
+	return logger.WithPrefix(styles.MockStyle.Render("MOCK"))
+}
 
-var StaticLogger = log.NewWithOptions(os.Stdout, log.Options{
-	Prefix: " STATIC ",
-})
+func NewStaticLogger(logger *log.Logger) *log.Logger {
+	return logger.WithPrefix(styles.StaticStyle.Render("STATIC"))
+}
 
-var CacheLogger = log.NewWithOptions(os.Stdout, log.Options{
-	Prefix: " CACHE  ",
-})
-
-//
-// var (
-//	ProxyLogger  = log.NewLogger(" PROXY  ", style(pterm.FgBlack, pterm.BgLightBlue))
-//	MockLogger   = log.NewLogger(" MOCK   ", style(pterm.FgBlack, pterm.BgLightMagenta))
-//	StaticLogger = log.NewLogger(" STATIC ", style(pterm.FgBlack, pterm.BgLightWhite))
-//	CacheLogger  = log.NewLogger(" CACHE  ", style(pterm.FgBlack, pterm.BgLightYellow))
-//)
+func NewCacheLogger(logger *log.Logger) *log.Logger {
+	return logger.WithPrefix(styles.CacheStyle.Render("CACHE"))
+}

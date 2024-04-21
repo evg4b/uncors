@@ -53,6 +53,18 @@ type LoggerMock struct {
 	beforeInfofCounter uint64
 	InfofMock          mLoggerMockInfof
 
+	funcPrint          func(msg any, keyvals ...any)
+	inspectFuncPrint   func(msg any, keyvals ...any)
+	afterPrintCounter  uint64
+	beforePrintCounter uint64
+	PrintMock          mLoggerMockPrint
+
+	funcPrintf          func(format string, args ...any)
+	inspectFuncPrintf   func(format string, args ...any)
+	afterPrintfCounter  uint64
+	beforePrintfCounter uint64
+	PrintfMock          mLoggerMockPrintf
+
 	funcWarn          func(msg any, keyvals ...any)
 	inspectFuncWarn   func(msg any, keyvals ...any)
 	afterWarnCounter  uint64
@@ -91,6 +103,12 @@ func NewLoggerMock(t minimock.Tester) *LoggerMock {
 
 	m.InfofMock = mLoggerMockInfof{mock: m}
 	m.InfofMock.callArgs = []*LoggerMockInfofParams{}
+
+	m.PrintMock = mLoggerMockPrint{mock: m}
+	m.PrintMock.callArgs = []*LoggerMockPrintParams{}
+
+	m.PrintfMock = mLoggerMockPrintf{mock: m}
+	m.PrintfMock.callArgs = []*LoggerMockPrintfParams{}
 
 	m.WarnMock = mLoggerMockWarn{mock: m}
 	m.WarnMock.callArgs = []*LoggerMockWarnParams{}
@@ -1231,6 +1249,382 @@ func (m *LoggerMock) MinimockInfofInspect() {
 	}
 }
 
+type mLoggerMockPrint struct {
+	mock               *LoggerMock
+	defaultExpectation *LoggerMockPrintExpectation
+	expectations       []*LoggerMockPrintExpectation
+
+	callArgs []*LoggerMockPrintParams
+	mutex    sync.RWMutex
+}
+
+// LoggerMockPrintExpectation specifies expectation struct of the Logger.Print
+type LoggerMockPrintExpectation struct {
+	mock   *LoggerMock
+	params *LoggerMockPrintParams
+
+	Counter uint64
+}
+
+// LoggerMockPrintParams contains parameters of the Logger.Print
+type LoggerMockPrintParams struct {
+	msg     any
+	keyvals []any
+}
+
+// Expect sets up expected params for Logger.Print
+func (mmPrint *mLoggerMockPrint) Expect(msg any, keyvals ...any) *mLoggerMockPrint {
+	if mmPrint.mock.funcPrint != nil {
+		mmPrint.mock.t.Fatalf("LoggerMock.Print mock is already set by Set")
+	}
+
+	if mmPrint.defaultExpectation == nil {
+		mmPrint.defaultExpectation = &LoggerMockPrintExpectation{}
+	}
+
+	mmPrint.defaultExpectation.params = &LoggerMockPrintParams{msg, keyvals}
+	for _, e := range mmPrint.expectations {
+		if minimock.Equal(e.params, mmPrint.defaultExpectation.params) {
+			mmPrint.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmPrint.defaultExpectation.params)
+		}
+	}
+
+	return mmPrint
+}
+
+// Inspect accepts an inspector function that has same arguments as the Logger.Print
+func (mmPrint *mLoggerMockPrint) Inspect(f func(msg any, keyvals ...any)) *mLoggerMockPrint {
+	if mmPrint.mock.inspectFuncPrint != nil {
+		mmPrint.mock.t.Fatalf("Inspect function is already set for LoggerMock.Print")
+	}
+
+	mmPrint.mock.inspectFuncPrint = f
+
+	return mmPrint
+}
+
+// Return sets up results that will be returned by Logger.Print
+func (mmPrint *mLoggerMockPrint) Return() *LoggerMock {
+	if mmPrint.mock.funcPrint != nil {
+		mmPrint.mock.t.Fatalf("LoggerMock.Print mock is already set by Set")
+	}
+
+	if mmPrint.defaultExpectation == nil {
+		mmPrint.defaultExpectation = &LoggerMockPrintExpectation{mock: mmPrint.mock}
+	}
+
+	return mmPrint.mock
+}
+
+// Set uses given function f to mock the Logger.Print method
+func (mmPrint *mLoggerMockPrint) Set(f func(msg any, keyvals ...any)) *LoggerMock {
+	if mmPrint.defaultExpectation != nil {
+		mmPrint.mock.t.Fatalf("Default expectation is already set for the Logger.Print method")
+	}
+
+	if len(mmPrint.expectations) > 0 {
+		mmPrint.mock.t.Fatalf("Some expectations are already set for the Logger.Print method")
+	}
+
+	mmPrint.mock.funcPrint = f
+	return mmPrint.mock
+}
+
+// Print implements contracts.Logger
+func (mmPrint *LoggerMock) Print(msg any, keyvals ...any) {
+	mm_atomic.AddUint64(&mmPrint.beforePrintCounter, 1)
+	defer mm_atomic.AddUint64(&mmPrint.afterPrintCounter, 1)
+
+	if mmPrint.inspectFuncPrint != nil {
+		mmPrint.inspectFuncPrint(msg, keyvals...)
+	}
+
+	mm_params := LoggerMockPrintParams{msg, keyvals}
+
+	// Record call args
+	mmPrint.PrintMock.mutex.Lock()
+	mmPrint.PrintMock.callArgs = append(mmPrint.PrintMock.callArgs, &mm_params)
+	mmPrint.PrintMock.mutex.Unlock()
+
+	for _, e := range mmPrint.PrintMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return
+		}
+	}
+
+	if mmPrint.PrintMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmPrint.PrintMock.defaultExpectation.Counter, 1)
+		mm_want := mmPrint.PrintMock.defaultExpectation.params
+		mm_got := LoggerMockPrintParams{msg, keyvals}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmPrint.t.Errorf("LoggerMock.Print got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		return
+
+	}
+	if mmPrint.funcPrint != nil {
+		mmPrint.funcPrint(msg, keyvals...)
+		return
+	}
+	mmPrint.t.Fatalf("Unexpected call to LoggerMock.Print. %v %v", msg, keyvals)
+
+}
+
+// PrintAfterCounter returns a count of finished LoggerMock.Print invocations
+func (mmPrint *LoggerMock) PrintAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrint.afterPrintCounter)
+}
+
+// PrintBeforeCounter returns a count of LoggerMock.Print invocations
+func (mmPrint *LoggerMock) PrintBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrint.beforePrintCounter)
+}
+
+// Calls returns a list of arguments used in each call to LoggerMock.Print.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmPrint *mLoggerMockPrint) Calls() []*LoggerMockPrintParams {
+	mmPrint.mutex.RLock()
+
+	argCopy := make([]*LoggerMockPrintParams, len(mmPrint.callArgs))
+	copy(argCopy, mmPrint.callArgs)
+
+	mmPrint.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockPrintDone returns true if the count of the Print invocations corresponds
+// the number of defined expectations
+func (m *LoggerMock) MinimockPrintDone() bool {
+	for _, e := range m.PrintMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.PrintMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPrintCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcPrint != nil && mm_atomic.LoadUint64(&m.afterPrintCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockPrintInspect logs each unmet expectation
+func (m *LoggerMock) MinimockPrintInspect() {
+	for _, e := range m.PrintMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to LoggerMock.Print with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.PrintMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPrintCounter) < 1 {
+		if m.PrintMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to LoggerMock.Print")
+		} else {
+			m.t.Errorf("Expected call to LoggerMock.Print with params: %#v", *m.PrintMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcPrint != nil && mm_atomic.LoadUint64(&m.afterPrintCounter) < 1 {
+		m.t.Error("Expected call to LoggerMock.Print")
+	}
+}
+
+type mLoggerMockPrintf struct {
+	mock               *LoggerMock
+	defaultExpectation *LoggerMockPrintfExpectation
+	expectations       []*LoggerMockPrintfExpectation
+
+	callArgs []*LoggerMockPrintfParams
+	mutex    sync.RWMutex
+}
+
+// LoggerMockPrintfExpectation specifies expectation struct of the Logger.Printf
+type LoggerMockPrintfExpectation struct {
+	mock   *LoggerMock
+	params *LoggerMockPrintfParams
+
+	Counter uint64
+}
+
+// LoggerMockPrintfParams contains parameters of the Logger.Printf
+type LoggerMockPrintfParams struct {
+	format string
+	args   []any
+}
+
+// Expect sets up expected params for Logger.Printf
+func (mmPrintf *mLoggerMockPrintf) Expect(format string, args ...any) *mLoggerMockPrintf {
+	if mmPrintf.mock.funcPrintf != nil {
+		mmPrintf.mock.t.Fatalf("LoggerMock.Printf mock is already set by Set")
+	}
+
+	if mmPrintf.defaultExpectation == nil {
+		mmPrintf.defaultExpectation = &LoggerMockPrintfExpectation{}
+	}
+
+	mmPrintf.defaultExpectation.params = &LoggerMockPrintfParams{format, args}
+	for _, e := range mmPrintf.expectations {
+		if minimock.Equal(e.params, mmPrintf.defaultExpectation.params) {
+			mmPrintf.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmPrintf.defaultExpectation.params)
+		}
+	}
+
+	return mmPrintf
+}
+
+// Inspect accepts an inspector function that has same arguments as the Logger.Printf
+func (mmPrintf *mLoggerMockPrintf) Inspect(f func(format string, args ...any)) *mLoggerMockPrintf {
+	if mmPrintf.mock.inspectFuncPrintf != nil {
+		mmPrintf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Printf")
+	}
+
+	mmPrintf.mock.inspectFuncPrintf = f
+
+	return mmPrintf
+}
+
+// Return sets up results that will be returned by Logger.Printf
+func (mmPrintf *mLoggerMockPrintf) Return() *LoggerMock {
+	if mmPrintf.mock.funcPrintf != nil {
+		mmPrintf.mock.t.Fatalf("LoggerMock.Printf mock is already set by Set")
+	}
+
+	if mmPrintf.defaultExpectation == nil {
+		mmPrintf.defaultExpectation = &LoggerMockPrintfExpectation{mock: mmPrintf.mock}
+	}
+
+	return mmPrintf.mock
+}
+
+// Set uses given function f to mock the Logger.Printf method
+func (mmPrintf *mLoggerMockPrintf) Set(f func(format string, args ...any)) *LoggerMock {
+	if mmPrintf.defaultExpectation != nil {
+		mmPrintf.mock.t.Fatalf("Default expectation is already set for the Logger.Printf method")
+	}
+
+	if len(mmPrintf.expectations) > 0 {
+		mmPrintf.mock.t.Fatalf("Some expectations are already set for the Logger.Printf method")
+	}
+
+	mmPrintf.mock.funcPrintf = f
+	return mmPrintf.mock
+}
+
+// Printf implements contracts.Logger
+func (mmPrintf *LoggerMock) Printf(format string, args ...any) {
+	mm_atomic.AddUint64(&mmPrintf.beforePrintfCounter, 1)
+	defer mm_atomic.AddUint64(&mmPrintf.afterPrintfCounter, 1)
+
+	if mmPrintf.inspectFuncPrintf != nil {
+		mmPrintf.inspectFuncPrintf(format, args...)
+	}
+
+	mm_params := LoggerMockPrintfParams{format, args}
+
+	// Record call args
+	mmPrintf.PrintfMock.mutex.Lock()
+	mmPrintf.PrintfMock.callArgs = append(mmPrintf.PrintfMock.callArgs, &mm_params)
+	mmPrintf.PrintfMock.mutex.Unlock()
+
+	for _, e := range mmPrintf.PrintfMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return
+		}
+	}
+
+	if mmPrintf.PrintfMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmPrintf.PrintfMock.defaultExpectation.Counter, 1)
+		mm_want := mmPrintf.PrintfMock.defaultExpectation.params
+		mm_got := LoggerMockPrintfParams{format, args}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmPrintf.t.Errorf("LoggerMock.Printf got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		return
+
+	}
+	if mmPrintf.funcPrintf != nil {
+		mmPrintf.funcPrintf(format, args...)
+		return
+	}
+	mmPrintf.t.Fatalf("Unexpected call to LoggerMock.Printf. %v %v", format, args)
+
+}
+
+// PrintfAfterCounter returns a count of finished LoggerMock.Printf invocations
+func (mmPrintf *LoggerMock) PrintfAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintf.afterPrintfCounter)
+}
+
+// PrintfBeforeCounter returns a count of LoggerMock.Printf invocations
+func (mmPrintf *LoggerMock) PrintfBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmPrintf.beforePrintfCounter)
+}
+
+// Calls returns a list of arguments used in each call to LoggerMock.Printf.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmPrintf *mLoggerMockPrintf) Calls() []*LoggerMockPrintfParams {
+	mmPrintf.mutex.RLock()
+
+	argCopy := make([]*LoggerMockPrintfParams, len(mmPrintf.callArgs))
+	copy(argCopy, mmPrintf.callArgs)
+
+	mmPrintf.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockPrintfDone returns true if the count of the Printf invocations corresponds
+// the number of defined expectations
+func (m *LoggerMock) MinimockPrintfDone() bool {
+	for _, e := range m.PrintfMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.PrintfMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPrintfCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcPrintf != nil && mm_atomic.LoadUint64(&m.afterPrintfCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockPrintfInspect logs each unmet expectation
+func (m *LoggerMock) MinimockPrintfInspect() {
+	for _, e := range m.PrintfMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to LoggerMock.Printf with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.PrintfMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterPrintfCounter) < 1 {
+		if m.PrintfMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to LoggerMock.Printf")
+		} else {
+			m.t.Errorf("Expected call to LoggerMock.Printf with params: %#v", *m.PrintfMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcPrintf != nil && mm_atomic.LoadUint64(&m.afterPrintfCounter) < 1 {
+		m.t.Error("Expected call to LoggerMock.Printf")
+	}
+}
+
 type mLoggerMockWarn struct {
 	mock               *LoggerMock
 	defaultExpectation *LoggerMockWarnExpectation
@@ -1623,6 +2017,10 @@ func (m *LoggerMock) MinimockFinish() {
 
 			m.MinimockInfofInspect()
 
+			m.MinimockPrintInspect()
+
+			m.MinimockPrintfInspect()
+
 			m.MinimockWarnInspect()
 
 			m.MinimockWarnfInspect()
@@ -1656,6 +2054,8 @@ func (m *LoggerMock) minimockDone() bool {
 		m.MinimockErrorfDone() &&
 		m.MinimockInfoDone() &&
 		m.MinimockInfofDone() &&
+		m.MinimockPrintDone() &&
+		m.MinimockPrintfDone() &&
 		m.MinimockWarnDone() &&
 		m.MinimockWarnfDone()
 }

@@ -33,6 +33,7 @@ type App struct {
 	httpsListenerMutex *sync.Mutex
 	httpsListener      net.Listener
 	cache              appCache
+	logger             *log.Logger
 }
 
 const (
@@ -41,7 +42,7 @@ const (
 	shutdownTimeout   = 15 * time.Second
 )
 
-func CreateApp(fs afero.Fs, version string) *App {
+func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 	return &App{
 		fs:                 fs,
 		version:            version,
@@ -51,16 +52,17 @@ func CreateApp(fs afero.Fs, version string) *App {
 		shuttingDown:       &atomic.Bool{},
 		httpListenerMutex:  &sync.Mutex{},
 		httpsListenerMutex: &sync.Mutex{},
+		logger:             logger,
 	}
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	log.Print(tui.Logo(app.version))
-	log.Print("\n")
+	log.Print("")
 	log.Warn(DisclaimerMessage)
-	log.Print("\n")
+	log.Print("")
 	log.Info(uncorsConfig.Mappings.String())
-	log.Print("\n")
+	log.Print("")
 
 	app.initServer(ctx, uncorsConfig)
 }

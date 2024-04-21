@@ -10,7 +10,7 @@ import (
 
 func (h *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) error {
 	infra.WriteCorsHeaders(writer.Header())
-	tui.PrintResponse(req, http.StatusOK)
+	tui.PrintResponse(h.logger, req, http.StatusOK)
 
 	return nil
 }

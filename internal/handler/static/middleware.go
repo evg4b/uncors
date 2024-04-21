@@ -43,7 +43,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-		tui.PrintResponse(request, response.StatusCode())
+		tui.PrintResponse(h.logger, request, response.StatusCode())
 	})
 }
 

@@ -31,7 +31,7 @@ func main() {
 	})
 
 	pflag.Usage = func() {
-		println(tui.Logo(Version)) //nolint:forbidigo
+		log.Print(tui.Logo(Version))
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
@@ -41,20 +41,14 @@ func main() {
 	viperInstance := viper.GetViper()
 
 	log.SetReportTimestamp(false)
-	log.SetReportTimestamp(false)
 	log.SetReportCaller(false)
 	log.SetStyles(&styles.DefaultStyles)
 	log.SetColorProfile(termenv.ColorProfile())
 
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
-	log.Info("Starting server")
-	log.Debugf("Version: %s", Version)
-	log.Warnf("Warning: %s", "This is a warning message")
-	log.Errorf("Error: %s", "This is an error message")
-
 	ctx := context.Background()
-	app := uncors.CreateApp(fs, Version)
+	app := uncors.CreateApp(fs, log.Default(), Version)
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
 			log.Errorf("Config reloading error: %v", value)

@@ -49,7 +49,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 		m.logger.Debugf("extracted %s from request", cacheKey)
 
 		m.writeCachedResponse(writer, cachedResponse)
-		tui.PrintResponse(request, writer.StatusCode())
+		tui.PrintResponse(m.logger, request, writer.StatusCode())
 
 		return
 	}

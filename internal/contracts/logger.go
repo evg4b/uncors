@@ -9,4 +9,6 @@ type Logger interface {
 	Infof(template string, a ...any)
 	Debug(msg any, keyvals ...any)
 	Debugf(template string, a ...any)
+	Print(msg any, keyvals ...any)
+	Printf(format string, args ...any)
 }
