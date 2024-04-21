@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 )

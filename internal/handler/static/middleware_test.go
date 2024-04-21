@@ -1,11 +1,14 @@
 package static_test
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
@@ -29,8 +32,7 @@ const (
 )
 
 func TestStaticMiddleware(t *testing.T) {
-	loggerMock := mocks.NewLoggerMock(t).
-		PrintResponseMock.Return()
+	loggerMock := log.New(io.Discard)
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
