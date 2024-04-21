@@ -5,3 +5,4 @@ dist/
 .idea
 node_modules
 .uncors.yaml
+coverage.out

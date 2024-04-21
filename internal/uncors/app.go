@@ -19,16 +19,18 @@ import (
 )
 
 type App struct {
-	fs            afero.Fs
-	version       string
-	waitGroup     *sync.WaitGroup
-	httpMutex     *sync.Mutex
-	httpsMutex    *sync.Mutex
-	server        *http.Server
-	shuttingDown  *atomic.Bool
-	httpListener  net.Listener
-	httpsListener net.Listener
-	cache         appCache
+	fs                 afero.Fs
+	version            string
+	waitGroup          *sync.WaitGroup
+	httpMutex          *sync.Mutex
+	httpsMutex         *sync.Mutex
+	server             *http.Server
+	shuttingDown       *atomic.Bool
+	httpListenerMutex  *sync.Mutex
+	httpListener       net.Listener
+	httpsListenerMutex *sync.Mutex
+	httpsListener      net.Listener
+	cache              appCache
 }
 
 const (
@@ -39,12 +41,14 @@ const (
 
 func CreateApp(fs afero.Fs, version string) *App {
 	return &App{
-		fs:           fs,
-		version:      version,
-		waitGroup:    &sync.WaitGroup{},
-		httpMutex:    &sync.Mutex{},
-		httpsMutex:   &sync.Mutex{},
-		shuttingDown: &atomic.Bool{},
+		fs:                 fs,
+		version:            version,
+		waitGroup:          &sync.WaitGroup{},
+		httpMutex:          &sync.Mutex{},
+		httpsMutex:         &sync.Mutex{},
+		shuttingDown:       &atomic.Bool{},
+		httpListenerMutex:  &sync.Mutex{},
+		httpsListenerMutex: &sync.Mutex{},
 	}
 }
 
@@ -139,10 +143,16 @@ func (app *App) Shutdown(ctx context.Context) error {
 }
 
 func (app *App) HTTPAddr() net.Addr {
+	app.httpListenerMutex.Lock()
+	defer app.httpListenerMutex.Unlock()
+
 	return app.httpListener.Addr() // TODO: Add nil handing
 }
 
 func (app *App) HTTPSAddr() net.Addr {
+	app.httpsListenerMutex.Lock()
+	defer app.httpsListenerMutex.Unlock()
+
 	return app.httpsListener.Addr() // TODO: Add nil handing
 }
 
