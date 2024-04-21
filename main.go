@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/evg4b/uncors/internal/tui"
 	"os"
 
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/muesli/termenv"
 
@@ -31,7 +31,7 @@ func main() {
 	})
 
 	pflag.Usage = func() {
-		log.Print(tui.Logo(Version))
+		println(tui.Logo(Version))
 		helpers.FPrintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}

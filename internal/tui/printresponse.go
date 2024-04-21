@@ -9,9 +9,13 @@ import (
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
+const prefixWidth = 10
+
 func printResponse(request *contracts.Request, statusCode int) string {
 	prefix := helpers.Sprintf("%d %s", statusCode, request.Method)
 	prefixStyle, textStyle := getPrefixPrinter(statusCode)
+	prefixStyle = prefixStyle.Copy().
+		Width(prefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(request.URL.String()))
 }

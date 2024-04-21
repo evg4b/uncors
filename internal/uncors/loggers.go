@@ -7,17 +7,17 @@ import (
 )
 
 func NewProxyLogger(logger *log.Logger) *log.Logger {
-	return logger.WithPrefix(styles.ProxyStyle.Render("PROXY"))
+	return styles.CreateLogger(logger, styles.ProxyStyle.Render("PROXY"))
 }
 
 func NewMockLogger(logger *log.Logger) *log.Logger {
-	return logger.WithPrefix(styles.MockStyle.Render("MOCK"))
+	return styles.CreateLogger(logger, styles.MockStyle.Render("MOCK"))
 }
 
 func NewStaticLogger(logger *log.Logger) *log.Logger {
-	return logger.WithPrefix(styles.StaticStyle.Render("STATIC"))
+	return styles.CreateLogger(logger, styles.StaticStyle.Render("STATIC"))
 }
 
 func NewCacheLogger(logger *log.Logger) *log.Logger {
-	return logger.WithPrefix(styles.CacheStyle.Render("CACHE"))
+	return styles.CreateLogger(logger, styles.CacheStyle.Render("CACHE"))
 }

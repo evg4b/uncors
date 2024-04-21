@@ -14,7 +14,6 @@ var (
 			Background(yellow).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	WarningText = lipgloss.NewStyle().
@@ -24,7 +23,6 @@ var (
 			Background(blue).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	InfoText = lipgloss.NewStyle().
@@ -34,7 +32,6 @@ var (
 			Background(green).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	SuccessText = lipgloss.NewStyle().
@@ -45,7 +42,6 @@ var (
 			Background(red).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	ErrorText = lipgloss.NewStyle().
@@ -55,7 +51,6 @@ var (
 			Background(grey).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	DebugText = lipgloss.NewStyle().
@@ -65,7 +60,6 @@ var (
 			Background(darkGrey).
 			Foreground(black).
 			Padding(0, 1).
-			Margin(0, 1, 0, 0).
 			ColorWhitespace(true)
 
 	DisabledText = lipgloss.NewStyle().

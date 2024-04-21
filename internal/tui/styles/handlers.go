@@ -2,19 +2,25 @@ package styles
 
 import "github.com/charmbracelet/lipgloss"
 
-const blockWidth = 8
+const baseBlockWidth = 8
+
+var baseBlock = lipgloss.NewStyle().
+	Foreground(black).
+	Padding(0, 1).
+	Margin(0).
+	Width(baseBlockWidth).
+	ColorWhitespace(true)
 
 var (
-	ProxyStyle = WarningBlock.Copy().
-			Background(lipgloss.Color("#6a71f7")).
-			Width(blockWidth)
-	MockStyle = WarningBlock.Copy().
-			Background(lipgloss.Color("#ee7ff8")).
-			Width(blockWidth)
-	StaticStyle = WarningBlock.Copy().
-			Background(lipgloss.Color("#ffffff")).
-			Width(blockWidth)
-	CacheStyle = WarningBlock.Copy().
-			Background(lipgloss.Color("#fefc7f")).
-			Width(blockWidth)
+	ProxyStyle = baseBlock.Copy().
+			Background(lipgloss.Color("#6a71f7"))
+
+	MockStyle = baseBlock.Copy().
+			Background(lipgloss.Color("#ee7ff8"))
+
+	StaticStyle = baseBlock.Copy().
+			Background(lipgloss.Color("#ffffff"))
+
+	CacheStyle = baseBlock.Copy().
+			Background(lipgloss.Color("#fefc7f"))
 )

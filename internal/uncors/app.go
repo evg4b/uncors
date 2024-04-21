@@ -57,7 +57,7 @@ func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 }
 
 func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	log.Print(tui.Logo(app.version))
+	println(tui.Logo(app.version))
 	log.Print("")
 	log.Warn(DisclaimerMessage)
 	log.Print("")
