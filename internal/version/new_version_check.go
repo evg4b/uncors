@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/hashicorp/go-version"
 )
@@ -64,7 +64,7 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 
 	if lastVersion.GreaterThan(currentVersion) {
 		log.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		log.Info("\n")
+		log.Info("")
 	} else {
 		log.Debug("Version is up to date")
 	}

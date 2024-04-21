@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/evg4b/uncors/internal/log"
+	"github.com/charmbracelet/log"
 )
 
 func (app *App) internalShutdown(rootCtx context.Context) error {

@@ -24,14 +24,14 @@ type appCache struct {
 func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.RequestHandler {
 	globalHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(uncorsConfig.Mappings),
-		handler.WithLogger(MockLogger),
+		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
 			// TODO: Add cache storage reusage
 			cacheStorage := cache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
 
 			return cache2.NewMiddleware(
-				cache2.WithLogger(CacheLogger),
+				cache2.WithLogger(NewCacheLogger(app.logger)),
 				cache2.WithMethods(cacheConfig.Methods),
 				cache2.WithCacheStorage(cacheStorage),
 				cache2.WithGlobs(globs),
@@ -44,7 +44,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),
 				proxy.WithHTTPClient(httpClient),
-				proxy.WithLogger(ProxyLogger),
+				proxy.WithLogger(NewProxyLogger(app.logger)),
 			)
 		}),
 		app.getWithStaticHandlerFactory(),
@@ -58,7 +58,7 @@ func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {
 	if app.cache.mockHandlerFactory == nil {
 		factoryFunc := func(response config.Response) contracts.Handler {
 			return mock.NewMockHandler(
-				mock.WithLogger(MockLogger),
+				mock.WithLogger(NewMockLogger(app.logger)),
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),
@@ -76,7 +76,7 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
-				static.WithLogger(StaticLogger),
+				static.WithLogger(NewStaticLogger(app.logger)),
 				static.WithPrefix(path),
 			)
 		}

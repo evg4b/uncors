@@ -6,4 +6,6 @@ dist/
 node_modules
 .uncors.yaml
 coverage.out
+.DS_Store
 uncors
+!uncors/

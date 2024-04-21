@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 )
@@ -48,7 +49,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 		m.logger.Debugf("extracted %s from request", cacheKey)
 
 		m.writeCachedResponse(writer, cachedResponse)
-		m.logger.PrintResponse(request, writer.StatusCode())
+		tui.PrintResponse(m.logger, request, writer.StatusCode())
 
 		return
 	}
