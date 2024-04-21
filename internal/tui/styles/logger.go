@@ -1,9 +1,10 @@
 package styles
 
 import (
+	"math"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"math"
 )
 
 var noLevel = log.Level(math.MaxInt32)
