@@ -4,17 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/evg4b/uncors/testing/testutils"
+
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPrintWarningBox(t *testing.T) {
-	t.Cleanup(func() {
-		lipgloss.DefaultRenderer().SetColorProfile(termenv.ColorProfile())
-	})
-
 	tests := []struct {
 		name     string
 		message  string
@@ -36,14 +32,13 @@ func TestPrintWarningBox(t *testing.T) {
 		},
 	}
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
 			buffer := strings.Builder{}
-			lipgloss.DefaultRenderer().SetColorProfile(termenv.TrueColor)
 
 			tui.PrintWarningBox(&buffer, testCase.message)
 
 			assert.Equal(t, testCase.expected, buffer.String())
-		})
+		}))
 	}
 }
 
@@ -69,13 +64,12 @@ func TestPrintInfoBox(t *testing.T) {
 		},
 	}
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
 			buffer := strings.Builder{}
-			lipgloss.DefaultRenderer().SetColorProfile(termenv.TrueColor)
 
 			tui.PrintInfoBox(&buffer, testCase.message)
 
 			assert.Equal(t, testCase.expected, buffer.String())
-		})
+		}))
 	}
 }

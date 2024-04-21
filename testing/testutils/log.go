@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/evg4b/uncors/internal/infra"
-	"github.com/muesli/termenv"
-
 	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/infra"
 )
 
 func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {
@@ -17,14 +14,10 @@ func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T)
 
 	logger := log.Default()
 	logger.SetOutput(buffer)
-	logger.SetColorProfile(termenv.TrueColor)
 
-	renderer := lipgloss.DefaultRenderer()
-	renderer.SetColorProfile(termenv.TrueColor)
-
-	return func(t *testing.T) {
+	return WithTrueColor(func(t *testing.T) {
 		action(t, buffer)
-	}
+	})
 }
 
 func UniqOutput(output *bytes.Buffer, action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {

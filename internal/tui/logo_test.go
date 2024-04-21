@@ -3,8 +3,7 @@ package tui_test
 import (
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
+	"github.com/evg4b/uncors/testing/testutils"
 
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/stretchr/testify/assert"
@@ -59,12 +58,9 @@ var expectedLogo = []byte{
 }
 
 func TestLogo(t *testing.T) {
-	lipgloss.DefaultRenderer().SetColorProfile(termenv.TrueColor)
-	t.Cleanup(func() {
-		lipgloss.DefaultRenderer().SetColorProfile(termenv.ColorProfile())
-	})
-
-	version := "0.1.0"
-	logo := tui.Logo(version)
-	assert.Equal(t, expectedLogo, []byte(logo))
+	t.Run("Logo", testutils.WithTrueColor(func(t *testing.T) {
+		version := "0.1.0"
+		logo := tui.Logo(version)
+		assert.Equal(t, expectedLogo, []byte(logo))
+	}))
 }
