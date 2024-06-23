@@ -5,6 +5,7 @@ go 1.22.2
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.6.1
+	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/charmbracelet/log v0.4.0
 	github.com/deckarep/golang-set/v2 v2.6.0

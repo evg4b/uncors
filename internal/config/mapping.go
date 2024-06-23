@@ -3,6 +3,8 @@ package config
 import (
 	"reflect"
 
+	"github.com/evg4b/uncors/internal/fakedata"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 )
@@ -46,7 +48,13 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 			}
 
 			mapping := Mapping{}
-			err := decodeConfig(data, &mapping, StaticDirMappingHookFunc())
+			err := decodeConfig(
+				data,
+				&mapping,
+				StaticDirMappingHookFunc(),
+				fakedata.RootNodeDecodeHook(),
+				fakedata.ObjectNodeDecodeHook(),
+			)
 
 			return mapping, err
 		}
