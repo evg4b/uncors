@@ -36,5 +36,7 @@ func getPrefixPrinter(statusCode int) (lipgloss.Style, lipgloss.Style) {
 		return styles.ErrorBlock, styles.ErrorText
 	}
 
-	panic(helpers.Sprintf("status code %d is not supported", statusCode))
+	// panic(helpers.Sprintf("status code %d is not supported", statusCode))
+
+	return styles.ErrorBlock, styles.ErrorText
 }

@@ -28,10 +28,13 @@ func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 		},
 	))
 
-	if r.Value.Raw == "" && r.Value.File == "" {
-		rawPath := joinPath(r.Field, "raw")
-		filePath := joinPath(r.Field, "file")
-		errors.Add(r.Field, fmt.Sprintf("%s or %s must be set", rawPath, filePath))
+	if r.Value.Raw == "" && r.Value.File == "" && r.Value.Fake == nil {
+		errors.Add(r.Field, fmt.Sprintf(
+			"%s, %s or %s  must be set",
+			joinPath(r.Field, "raw"),
+			joinPath(r.Field, "file"),
+			joinPath(r.Field, "fake"),
+		))
 
 		return
 	}

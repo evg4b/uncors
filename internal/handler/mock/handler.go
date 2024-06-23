@@ -52,14 +52,19 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		header.Set(key, value)
 	}
 
-	if len(h.response.File) > 0 {
+	switch {
+	case response.IsFake():
+		h.serveFakeContent(writer, request)
+
+		return
+	case response.IsFile():
 		err := h.serveFileContent(writer, request)
 		if err != nil {
 			infra.HTTPError(writer, err)
 
 			return
 		}
-	} else {
+	case response.IsRaw():
 		h.serveRawContent(writer)
 	}
 
