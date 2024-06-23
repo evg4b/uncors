@@ -5,8 +5,6 @@ import (
 	"github.com/samber/lo"
 )
 
-func getTypes() {
-	for _, i2 := range lo.Keys(gofakeit.FuncLookups) {
-		println(i2)
-	}
+func GetTypes() []string {
+	return lo.Keys(gofakeit.FuncLookups)
 }

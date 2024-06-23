@@ -1,22 +1,37 @@
-package base
+package base_test
 
 import (
-	"fmt"
+	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-type StringEnumValidator struct {
-	Field   string
-	Value   string
-	Options []string
-}
+func TestStringEnumValidator(t *testing.T) {
+	t.Run("valid option", func(t *testing.T) {
+		errors := validate.Validate(&base.StringEnumValidator{
+			Field: "field",
+			Value: "option-1",
+			Options: []string{
+				"option-1",
+				"option-2",
+			},
+		})
 
-func (f *StringEnumValidator) IsValid(errors *validate.Errors) {
-	for _, option := range f.Options {
-		if f.Value == option {
-			return
-		}
-	}
+		assert.False(t, errors.HasAny())
+	})
 
-	errors.Add(f.Field, fmt.Sprintf("'%s' is not a valid option", f.Value))
+	t.Run("valid option", func(t *testing.T) {
+		errors := validate.Validate(&base.StringEnumValidator{
+			Field: "field",
+			Value: "option-x",
+			Options: []string{
+				"option-1",
+				"option-2",
+			},
+		})
+
+		require.EqualError(t, errors, "'option-x' is not a valid option")
+	})
 }
