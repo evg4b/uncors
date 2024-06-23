@@ -27,24 +27,8 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	response := h.response
 	header := writer.Header()
 
-	if response.Delay > 0 {
-		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
-		ctx := request.Context()
-		url := request.URL.RequestURI()
-	waitingLoop:
-		for {
-			select {
-			case <-ctx.Done():
-				writer.WriteHeader(http.StatusServiceUnavailable)
-				h.logger.Debugf("Delay is canceled (url: %s)", url)
-
-				return
-			case <-h.after(response.Delay):
-				h.logger.Debugf("Delay is complete (url: %s)", url)
-
-				break waitingLoop
-			}
-		}
+	if h.waiteDelay(writer, request, response) {
+		return
 	}
 
 	infra.WriteCorsHeaders(header)
@@ -69,6 +53,30 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	}
 
 	tui.PrintResponse(h.logger, request, writer.StatusCode())
+}
+
+func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts.Request, response config.Response) bool {
+	if response.Delay > 0 {
+		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
+		ctx := request.Context()
+		url := request.URL.RequestURI()
+	waitingLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				writer.WriteHeader(http.StatusServiceUnavailable)
+				h.logger.Debugf("Delay is canceled (url: %s)", url)
+
+				return true
+			case <-h.after(response.Delay):
+				h.logger.Debugf("Delay is complete (url: %s)", url)
+
+				break waitingLoop
+			}
+		}
+	}
+
+	return false
 }
 
 func normaliseCode(code int) int {

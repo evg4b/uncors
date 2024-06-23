@@ -2,42 +2,21 @@ package fakedata
 
 import (
 	"errors"
-	"reflect"
-
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/mitchellh/mapstructure"
 )
 
 func (root *Node) Compile() (any, error) {
 	faker := gofakeit.New(root.Seed)
 
-	switch root.Type {
-	case "object":
-		return compileToMap(root.Properties, faker)
-	case "array":
-		return compileToArray(root.Items, faker)
-	default:
-		faker := gofakeit.New(root.Seed)
-		funcInfo := gofakeit.GetFuncLookup(root.Type)
-		if funcInfo == nil {
-			return nil, errors.New("unknown type: " + root.Type)
-		}
-
-		options, err := transformOptions(root.Options)
-		if err != nil {
-			return nil, err
-		}
-
-		return funcInfo.Generate(faker, options, funcInfo)
-	}
+	return root.compileInternal(faker)
 }
 
 func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 	switch root.Type {
 	case "object":
-		return compileToMap(root.Properties, nil)
+		return compileToMap(root.Properties, faker)
 	case "array":
-		return compileToArray(root.Items, nil)
+		return compileToArray(root.Item, root.Count, faker)
 	default:
 		funcInfo := gofakeit.GetFuncLookup(root.Type)
 		if funcInfo == nil {
@@ -53,31 +32,10 @@ func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 	}
 }
 
-func transformOptions(options map[string]any) (*gofakeit.MapParams, error) {
-	result := make(gofakeit.MapParams)
-	for key, value := range options {
-		if stringVal, ok := value.(string); ok {
-			result[key] = []string{stringVal}
-
-			continue
-		}
-
-		if stringArrayVal, ok := value.([]string); ok {
-			result[key] = stringArrayVal
-
-			continue
-		}
-
-		return nil, errors.New("invalid options value type")
-	}
-
-	return &result, nil
-}
-
-func compileToArray(items []Node, faker *gofakeit.Faker) ([]any, error) {
-	result := make([]any, 0, len(items))
-	for _, value := range items {
-		compiledValue, err := value.compileInternal(faker)
+func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error) {
+	result := make([]any, 0, count)
+	for range count {
+		compiledValue, err := item.compileInternal(faker)
 		if err != nil {
 			return nil, err
 		}
@@ -98,12 +56,4 @@ func compileToMap(properties map[string]Node, faker *gofakeit.Faker) (map[string
 	}
 
 	return result, nil
-}
-
-var rootNodeType = reflect.TypeOf(Node{})
-
-func RootNodeDecodeHook() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, rawData interface{}) (interface{}, error) {
-		return rawData, nil
-	}
 }

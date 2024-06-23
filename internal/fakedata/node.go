@@ -2,7 +2,7 @@ package fakedata
 
 type Node struct {
 	Type       string          `mapstructure:"type"`
-	Items      []Node          `mapstructure:"items"`
+	Item       *Node           `mapstructure:"item"`
 	Properties map[string]Node `mapstructure:"properties"`
 	Options    map[string]any  `mapstructure:"options"`
 	Count      int             `mapstructure:"count"`
