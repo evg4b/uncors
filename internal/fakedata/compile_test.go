@@ -17,22 +17,71 @@ func TestDemo(t *testing.T) {
 		expect any
 	}{
 		{
+			name: "sentence",
+			node: fakedata.Node{
+				Seed: seed,
+				Type: "sentence",
+			},
+			expect: "Who generally yourselves one lean.",
+		},
+		{
 			name: "object",
 			node: fakedata.Node{
 				Seed: seed,
 				Type: "object",
 				Properties: map[string]fakedata.Node{
-					"foo": {
-						Type: "sentence",
-					},
-					"bar": {
-						Type: "number",
-					},
+					"foo": {Type: "sentence"},
+					"bar": {Type: "number"},
 				},
 			},
 			expect: map[string]any{
 				"foo": "Who generally yourselves one lean.",
 				"bar": 1089124290,
+			},
+		},
+		{
+			name: "array",
+			node: fakedata.Node{
+				Seed: seed,
+				Type: "array",
+				Item: &fakedata.Node{
+					Type: "sentence",
+				},
+				Count: 3,
+			},
+			expect: []any{
+				"Who generally yourselves one lean.",
+				"Him Shakespearean there summation for.",
+				"This group outside upon by.",
+			},
+		},
+		{
+			name: "array of objects",
+			node: fakedata.Node{
+				Seed: seed,
+				Type: "array",
+				Item: &fakedata.Node{
+					Type: "object",
+					Properties: map[string]fakedata.Node{
+						"foo": {
+							Type: "sentence",
+						},
+						"bar": {
+							Type: "number",
+						},
+					},
+				},
+				Count: 2,
+			},
+			expect: []any{
+				map[string]any{
+					"bar": 1089124290,
+					"foo": "Who generally yourselves one lean.",
+				},
+				map[string]any{
+					"bar": -1123283869,
+					"foo": "Beyond we yours what for.",
+				},
 			},
 		},
 	}

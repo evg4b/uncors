@@ -158,6 +158,9 @@
             },
             {
               "$ref": "#/definitions/FileMockResponse"
+            },
+            {
+              "$ref": "#/definitions/FakeDataMockResponse"
             }
           ]
         }
@@ -220,6 +223,25 @@
       ],
       "additionalProperties": false
     },
+    "FakeDataMockResponse": {
+      "type": "object",
+      "code": {
+        "type": "integer",
+        "description": "HTTP response status code"
+      },
+      "delay": {
+        "$ref": "#/definitions/Duration",
+        "description": "Delay before sending the mock response"
+      },
+      "headers": {
+        "$ref": "#/definitions/Headers",
+        "description": "HTTP headers which will be sent in the mock response"
+      },
+      "fake": {
+        "$ref": "#/definitions/FakeDataNode",
+        "description": ";;;;;"
+      }
+    },
     "StaticDirectory": {
       "type": "object",
       "properties": {
@@ -274,6 +296,21 @@
     "Duration": {
       "type": "string",
       "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$"
+    },
+    "FakeDataNode": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object",
+          "$ref": "#/definitions/FakeDataNode"
+        }
+      },
+      "required": [
+        "type"
+      ]
     }
   }
 }
