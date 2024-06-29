@@ -1,12 +1,11 @@
 package schema_test
 
 import (
+	"github.com/evg4b/uncors/tests/schema"
 	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/testing/testutils"
-
-	"github.com/evg4b/uncors/testing/schema"
 
 	"github.com/stretchr/testify/assert"
 
@@ -15,6 +14,8 @@ import (
 )
 
 func TestValidJsonSchema(t *testing.T) {
+	testdir := schema.DirPredicate("valid")
+
 	testTempDir := t.TempDir()
 	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
 
@@ -24,7 +25,7 @@ func TestValidJsonSchema(t *testing.T) {
 	}{
 		{
 			name: "minimal valid file",
-			file: filepath.Join("valid", "minimal-valid.yaml"),
+			file: testdir("minimal-valid.yaml"),
 		},
 	}
 

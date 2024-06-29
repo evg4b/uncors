@@ -18,3 +18,6 @@ build:
 
 build-release:
 	go build -tags release ./...
+
+clean:
+	rm -rf ./uncors ./uncors.exe coverage.out

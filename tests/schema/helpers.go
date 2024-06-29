@@ -34,3 +34,9 @@ func TransformToJSON(t *testing.T, dir string, file string) string {
 
 	return jsonFilePath
 }
+
+func DirPredicate(dir string) func(string) string {
+	return func(file string) string {
+		return filepath.Join(dir, file)
+	}
+}
