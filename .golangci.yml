@@ -20,9 +20,8 @@ linters:
     - wrapcheck
     - perfsprint
     - contextcheck
-    - execinquery
-    - exportloopref
     - gomnd
+    - execinquery
 linters-settings:
   varnamelen:
     ignore-names:
