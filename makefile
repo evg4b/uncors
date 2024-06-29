@@ -8,7 +8,7 @@ update_deps:
 	go mod tidy
 
 test:
-	go test -v ./...
+	go test ./...
 
 test-cover:
 	go test -tags release -timeout 1m -race -v -coverprofile=coverage.out ./...
@@ -18,3 +18,6 @@ build:
 
 build-release:
 	go build -tags release ./...
+
+clean:
+	rm -rf ./uncors ./uncors.exe coverage.out
