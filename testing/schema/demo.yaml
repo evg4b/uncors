@@ -1,0 +1,4 @@
+http-port: 3000
+mappings:
+  - from: http://localhost
+    to: https://github.com
