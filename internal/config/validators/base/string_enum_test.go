@@ -1,11 +1,12 @@
 package base_test
 
 import (
+	"testing"
+
 	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestStringEnumValidator(t *testing.T) {

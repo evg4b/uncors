@@ -2,8 +2,9 @@ package fakedata
 
 import (
 	"errors"
-	"github.com/brianvoe/gofakeit/v7"
 	"strconv"
+
+	"github.com/brianvoe/gofakeit/v7"
 )
 
 func transformOptions(options map[string]any) (*gofakeit.MapParams, error) {
