@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -24,12 +25,22 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
-	response := h.response
-	header := writer.Header()
-
-	if h.waiteDelay(writer, request, response) {
+	if h.waiteDelay(writer, request) {
 		return
 	}
+
+	if err := h.writeResponse(writer, request); err != nil {
+		infra.HTTPError(writer, err)
+
+		return
+	}
+
+	tui.PrintResponse(h.logger, request, writer.StatusCode())
+}
+
+func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
+	header := writer.Header()
+	response := h.response
 
 	infra.WriteCorsHeaders(header)
 	for key, value := range response.Headers {
@@ -38,24 +49,27 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	switch {
 	case response.IsFake():
-		h.serveFakeContent(writer, request)
-
-		return
+		if err := h.serveFakeContent(writer); err != nil {
+			return err
+		}
 	case response.IsFile():
-		err := h.serveFileContent(writer, request)
-		if err != nil {
-			infra.HTTPError(writer, err)
-
-			return
+		if err := h.serveFileContent(writer, request); err != nil {
+			return err
 		}
 	case response.IsRaw():
-		h.serveRawContent(writer)
+		if err := h.serveRawContent(writer); err != nil {
+			return err
+		}
+	default:
+		return errors.New("response is not defined")
 	}
 
-	tui.PrintResponse(h.logger, request, writer.StatusCode())
+	return nil
 }
 
-func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts.Request, response config.Response) bool {
+func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
+	response := h.response
+
 	if response.Delay > 0 {
 		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()

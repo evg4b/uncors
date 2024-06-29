@@ -3,7 +3,8 @@ package config
 import (
 	"time"
 
-	"github.com/evg4b/uncors/internal/fakedata"
+	"github.com/evg4b/uncors/pkg/fakedata"
+
 	"github.com/evg4b/uncors/internal/helpers"
 )
 

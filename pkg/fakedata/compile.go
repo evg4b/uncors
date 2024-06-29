@@ -2,6 +2,7 @@ package fakedata
 
 import (
 	"errors"
+
 	"github.com/brianvoe/gofakeit/v7"
 )
 
