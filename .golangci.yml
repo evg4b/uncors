@@ -1,16 +1,6 @@
 linters:
   enable-all: true
   disable:
-    - exhaustivestruct
-    - nosnakecase
-    - interfacer
-    - scopelint
-    - maligned
-    - varcheck
-    - golint
-    - structcheck
-    - deadcode
-    - ifshort
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
@@ -30,6 +20,8 @@ linters:
     - wrapcheck
     - perfsprint
     - contextcheck
+    - gomnd
+    - execinquery
 linters-settings:
   varnamelen:
     ignore-names:
