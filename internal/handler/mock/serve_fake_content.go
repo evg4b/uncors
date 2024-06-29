@@ -7,7 +7,7 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-func (h *Handler) serveFakeContent(writer contracts.ResponseWriter, _request *contracts.Request) {
+func (h *Handler) serveFakeContent(writer contracts.ResponseWriter) error {
 	response := h.response
 	header := writer.Header()
 
@@ -15,13 +15,16 @@ func (h *Handler) serveFakeContent(writer contracts.ResponseWriter, _request *co
 		header.Set(headers.ContentType, "application/json")
 	}
 
-	writer.WriteHeader(normaliseCode(response.Code))
 	data, err := response.Fake.Compile()
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	writer.WriteHeader(normaliseCode(response.Code))
 	err = json.NewEncoder(writer).Encode(data)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }

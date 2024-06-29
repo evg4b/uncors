@@ -9,3 +9,4 @@ coverage.out
 .DS_Store
 uncors
 !uncors/
+tools/fakedata/scheme.json

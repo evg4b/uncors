@@ -2,9 +2,12 @@ package fakedata
 
 import (
 	"errors"
-	"github.com/brianvoe/gofakeit/v7"
 	"strconv"
+
+	"github.com/brianvoe/gofakeit/v7"
 )
+
+var ErrInvalidOptionsType = errors.New("invalid options value type")
 
 func transformOptions(options map[string]any) (*gofakeit.MapParams, error) {
 	result := make(gofakeit.MapParams)
@@ -37,7 +40,7 @@ func transformOptions(options map[string]any) (*gofakeit.MapParams, error) {
 			continue
 		}
 
-		return nil, errors.New("invalid options value type")
+		return nil, ErrInvalidOptionsType
 	}
 
 	return &result, nil

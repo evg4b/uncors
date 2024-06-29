@@ -2,10 +2,15 @@ package fakedata
 
 import (
 	"errors"
+	"fmt"
+
 	"github.com/brianvoe/gofakeit/v7"
 )
 
+var ErrUnknownType = errors.New("unknown type")
+
 func (root *Node) Compile() (any, error) {
+	initPackage()
 	faker := gofakeit.New(root.Seed)
 
 	return root.compileInternal(faker)
@@ -20,7 +25,7 @@ func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 	default:
 		funcInfo := gofakeit.GetFuncLookup(root.Type)
 		if funcInfo == nil {
-			return nil, errors.New("unknown type: " + root.Type)
+			return nil, fmt.Errorf("incorrect fake function %s : %w", root.Type, ErrUnknownType)
 		}
 
 		options, err := transformOptions(root.Options)
