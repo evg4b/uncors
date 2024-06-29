@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="format" type="CompoundRunConfigurationType">
-        <toRun name="gofmt" type="ShConfigurationType"/>
-        <toRun name="gofumpt" type="ShConfigurationType"/>
-        <method v="2"/>
-    </configuration>
+  <configuration default="false" name="format" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
+    <makefile filename="$PROJECT_DIR$/makefile" target="format" workingDirectory="" arguments="">
+      <envs />
+    </makefile>
+    <method v="2" />
+  </configuration>
 </component>
