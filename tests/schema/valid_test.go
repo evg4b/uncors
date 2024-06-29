@@ -1,9 +1,10 @@
 package schema_test
 
 import (
-	"github.com/evg4b/uncors/tests/schema"
 	"path/filepath"
 	"testing"
+
+	"github.com/evg4b/uncors/tests/schema"
 
 	"github.com/evg4b/uncors/testing/testutils"
 
@@ -26,6 +27,10 @@ func TestValidJsonSchema(t *testing.T) {
 		{
 			name: "minimal valid file",
 			file: testdir("minimal-valid.yaml"),
+		},
+		{
+			name: "short mapping",
+			file: testdir("short-mapping.yaml"),
 		},
 	}
 

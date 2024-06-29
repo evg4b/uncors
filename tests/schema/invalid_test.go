@@ -1,9 +1,10 @@
 package schema_test
 
 import (
-	"github.com/evg4b/uncors/tests/schema"
 	"path/filepath"
 	"testing"
+
+	"github.com/evg4b/uncors/tests/schema"
 
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/samber/lo"
@@ -28,6 +29,14 @@ func TestInvalidJsonSchema(t *testing.T) {
 			file: testdir("empty-mappings.yaml"),
 			errors: []string{
 				"mappings: Array must have at least 1 items",
+			},
+		},
+		{
+			name: "not full mapping",
+			file: testdir("not-full-mapping.yaml"),
+			errors: []string{
+				"mappings.0: Must validate one and only one schema (oneOf)",
+				"mappings.0.to: Invalid type. Expected: string, given: null",
 			},
 		},
 	}
