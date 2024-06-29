@@ -12,15 +12,8 @@ var baseBlock = lipgloss.NewStyle().
 	ColorWhitespace(true)
 
 var (
-	ProxyStyle = baseBlock.Copy().
-			Background(lipgloss.Color("#6a71f7"))
-
-	MockStyle = baseBlock.Copy().
-			Background(lipgloss.Color("#ee7ff8"))
-
-	StaticStyle = baseBlock.Copy().
-			Background(lipgloss.Color("#ffffff"))
-
-	CacheStyle = baseBlock.Copy().
-			Background(lipgloss.Color("#fefc7f"))
+	ProxyStyle  = baseBlock.Background(lipgloss.Color("#6a71f7"))
+	MockStyle   = baseBlock.Background(lipgloss.Color("#ee7ff8"))
+	StaticStyle = baseBlock.Background(lipgloss.Color("#ffffff"))
+	CacheStyle  = baseBlock.Background(lipgloss.Color("#fefc7f"))
 )
