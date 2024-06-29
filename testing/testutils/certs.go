@@ -25,8 +25,6 @@ type Certs struct {
 	KeyPath       string
 }
 
-const keyBits = 4096
-
 func WithTmpCerts(fs afero.Fs, action func(t *testing.T, certs *Certs)) func(t *testing.T) {
 	if fs == nil {
 		fs = afero.NewOsFs()
@@ -37,6 +35,8 @@ func WithTmpCerts(fs afero.Fs, action func(t *testing.T, certs *Certs)) func(t *
 		action(t, certs)
 	}
 }
+
+var localIPAddress = net.IPv4(127, 0, 0, 1) //nolint:mnd
 
 func certSetup(t *testing.T, fs afero.Fs) *Certs {
 	t.Helper()
@@ -64,7 +64,8 @@ func certSetup(t *testing.T, fs afero.Fs) *Certs {
 		BasicConstraintsValid: true,
 	}
 
-	caPrivateKey, err := rsa.GenerateKey(rand.Reader, keyBits)
+	const keySize = 4096
+	caPrivateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	CheckNoError(t, err)
 
 	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivateKey.PublicKey, caPrivateKey)
@@ -77,10 +78,11 @@ func certSetup(t *testing.T, fs afero.Fs) *Certs {
 	})
 	CheckNoError(t, err)
 
+	const serialNumber = 2024
+	const certValidity = 10
 	// set up our server certificate
-	const certYear = 2019
 	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(certYear),
+		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
 			Organization:  []string{"Company, INC."},
 			Country:       []string{"US"},
@@ -89,15 +91,15 @@ func certSetup(t *testing.T, fs afero.Fs) *Certs {
 			StreetAddress: []string{"Golden Gate Bridge"},
 			PostalCode:    []string{"94016"},
 		},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}, // nolint: mnd
+		IPAddresses:  []net.IP{localIPAddress, net.IPv6loopback},
 		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0), // nolint: mnd
+		NotAfter:     time.Now().AddDate(certValidity, 0, 0),
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 	}
 
-	certPrivateKey, err := rsa.GenerateKey(rand.Reader, keyBits)
+	certPrivateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	CheckNoError(t, err)
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivateKey.PublicKey, caPrivateKey)
