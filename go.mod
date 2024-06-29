@@ -11,13 +11,13 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/gobuffalo/validate v2.0.4+incompatible
-	github.com/gojuno/minimock/v3 v3.3.12
+	github.com/gojuno/minimock/v3 v3.3.13
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/termenv v0.15.2
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
-	github.com/samber/lo v1.39.0
+	github.com/samber/lo v1.43.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
@@ -31,7 +31,6 @@ require (
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
