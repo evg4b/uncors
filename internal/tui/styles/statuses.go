@@ -9,39 +9,39 @@ type StatusStyle struct {
 }
 
 var InformationalStyle = StatusStyle{
-	BlockStyle:         InfoBlock.Copy(),
-	MainTextStyle:      InfoText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	BlockStyle:         InfoBlock,
+	MainTextStyle:      InfoText,
+	SecondaryTextStyle: DisabledText,
 }
 
 var SuccessStyle = StatusStyle{
-	BlockStyle:         SuccessBlock.Copy(),
-	MainTextStyle:      SuccessText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	BlockStyle:         SuccessBlock,
+	MainTextStyle:      SuccessText,
+	SecondaryTextStyle: DisabledText,
 }
 
 var RedirectionStyle = StatusStyle{
-	BlockStyle:         WarningBlock.Copy(),
-	MainTextStyle:      WarningText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	BlockStyle:         WarningBlock,
+	MainTextStyle:      WarningText,
+	SecondaryTextStyle: DisabledText,
 }
 
 var ClientErrorStyle = StatusStyle{
-	BlockStyle:         ErrorBlock.Copy(),
-	MainTextStyle:      ErrorText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	BlockStyle:         ErrorBlock,
+	MainTextStyle:      ErrorText,
+	SecondaryTextStyle: DisabledText,
 }
 
 var ServerErrorStyle = ClientErrorStyle
 
 var CanceledStyle = StatusStyle{
-	BlockStyle:         DisabledBlock.Copy(),
-	MainTextStyle:      DisabledText.Copy().Strikethrough(true),
-	SecondaryTextStyle: DisabledText.Copy().Strikethrough(true),
+	BlockStyle:         DisabledBlock,
+	MainTextStyle:      DisabledText.Strikethrough(true),
+	SecondaryTextStyle: DisabledText.Strikethrough(true),
 }
 
 var PendingStyle = StatusStyle{
-	BlockStyle:         DisabledBlock.Copy(),
-	MainTextStyle:      DisabledText.Copy(),
-	SecondaryTextStyle: DisabledText.Copy(),
+	BlockStyle:         DisabledBlock,
+	MainTextStyle:      DisabledText,
+	SecondaryTextStyle: DisabledText,
 }

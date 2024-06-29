@@ -12,10 +12,10 @@ var noLevel = log.Level(math.MaxInt32)
 var (
 	boxLength = 8
 
-	debugPrefix = DebugBlock.Copy().Width(boxLength)
-	infoPrefix  = InfoBlock.Copy().Width(boxLength)
-	warnPrefix  = WarningBlock.Copy().Width(boxLength)
-	errorPrefix = ErrorBlock.Copy().Width(boxLength)
+	debugPrefix = DebugBlock.Width(boxLength)
+	infoPrefix  = InfoBlock.Width(boxLength)
+	warnPrefix  = WarningBlock.Width(boxLength)
+	errorPrefix = ErrorBlock.Width(boxLength)
 
 	DefaultStyles = log.Styles{
 		Timestamp: lipgloss.NewStyle(),
@@ -27,19 +27,19 @@ var (
 		Separator: lipgloss.NewStyle().Faint(true),
 		Levels: map[log.Level]lipgloss.Style{
 			noLevel: lipgloss.NewStyle().Margin(0).Padding(0),
-			log.DebugLevel: DebugText.Copy().
+			log.DebugLevel: DebugText.
 				SetString(debugPrefix.Render(DebugLabel)).
 				Bold(true),
-			log.InfoLevel: InfoText.Copy().
+			log.InfoLevel: InfoText.
 				SetString(infoPrefix.Render(InfoLabel)).
 				Bold(true),
-			log.WarnLevel: WarningText.Copy().
+			log.WarnLevel: WarningText.
 				SetString(warnPrefix.Render(WarningLabel)).
 				Bold(true),
-			log.ErrorLevel: ErrorText.Copy().
+			log.ErrorLevel: ErrorText.
 				SetString(errorPrefix.Render(ErrorLabel)).
 				Bold(true),
-			log.FatalLevel: ErrorText.Copy().
+			log.FatalLevel: ErrorText.
 				SetString(errorPrefix.Render(FatalLabel)).
 				Bold(true),
 		},
@@ -50,13 +50,13 @@ var (
 
 func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
 	newStyles := log.Styles{
-		Timestamp: DefaultStyles.Timestamp.Copy(),
-		Caller:    DefaultStyles.Caller.Copy(),
-		Prefix:    DefaultStyles.Prefix.Copy(),
-		Message:   DefaultStyles.Message.Copy(),
-		Key:       DefaultStyles.Key.Copy(),
-		Value:     DefaultStyles.Value.Copy(),
-		Separator: DefaultStyles.Separator.Copy(),
+		Timestamp: DefaultStyles.Timestamp,
+		Caller:    DefaultStyles.Caller,
+		Prefix:    DefaultStyles.Prefix,
+		Message:   DefaultStyles.Message,
+		Key:       DefaultStyles.Key,
+		Value:     DefaultStyles.Value,
+		Separator: DefaultStyles.Separator,
 		Levels:    make(map[log.Level]lipgloss.Style, len(DefaultStyles.Levels)),
 		Keys:      make(map[string]lipgloss.Style, len(DefaultStyles.Keys)),
 		Values:    make(map[string]lipgloss.Style, len(DefaultStyles.Values)),
@@ -64,11 +64,9 @@ func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
 
 	for level, style := range DefaultStyles.Levels {
 		if level == noLevel {
-			newStyles.Levels[level] = style.Copy().
-				SetString(prefix + style.Value())
+			newStyles.Levels[level] = style.SetString(prefix + style.Value())
 		} else {
-			newStyles.Levels[level] = style.Copy().
-				SetString(prefix, style.Value())
+			newStyles.Levels[level] = style.SetString(prefix, style.Value())
 		}
 	}
 
@@ -83,6 +81,6 @@ func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
 
 func copyMap(source, dest map[string]lipgloss.Style) {
 	for key, value := range source {
-		dest[key] = value.Copy()
+		dest[key] = value
 	}
 }

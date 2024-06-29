@@ -31,7 +31,7 @@ func printMessageBox(out io.Writer, message, prefix string, block lipgloss.Style
 	height := lipgloss.Height(message)
 	space := strings.Repeat("\n", height-1)
 
-	block = block.Copy().Margin(0, 1, 0, 0)
+	block = block.Margin(0, 1, 0, 0)
 
 	_, err := fmt.Fprintln(out, lipgloss.JoinHorizontal( //nolint:forbidigo
 		lipgloss.Top,
