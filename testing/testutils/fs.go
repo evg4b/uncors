@@ -2,7 +2,11 @@ package testutils
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/afero"
 )
@@ -21,4 +25,12 @@ func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 	}
 
 	return fs
+}
+
+func CurrentDir(t *testing.T) string {
+	t.Helper()
+	_, callerFile, _, ok := runtime.Caller(1)
+	require.True(t, ok, "Failed to get caller information")
+
+	return filepath.Dir(callerFile)
 }
