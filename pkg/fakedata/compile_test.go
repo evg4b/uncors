@@ -3,6 +3,8 @@ package fakedata_test
 import (
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
+
 	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,6 +12,9 @@ import (
 
 func TestDemo(t *testing.T) {
 	const seed = 129
+
+	err := gofakeit.Seed(seed)
+	require.NoError(t, err)
 
 	testCases := []struct {
 		name   string
