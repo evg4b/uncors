@@ -20,6 +20,8 @@ type Handler struct {
 	after    func(duration time.Duration) <-chan time.Time
 }
 
+var ErrResponseIsNotDefined = errors.New("response is not defined")
+
 func NewMockHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
@@ -61,7 +63,7 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 			return err
 		}
 	default:
-		return errors.New("response is not defined")
+		return ErrResponseIsNotDefined
 	}
 
 	return nil
