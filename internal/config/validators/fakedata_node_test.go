@@ -60,7 +60,6 @@ func TestFakedataNodeValidator(t *testing.T) {
 			{
 				name:  "unknown fake data type",
 				value: &fakedata.Node{Type: "unknown"},
-				root:  true,
 				err:   "'unknown' is not a valid option",
 			},
 			{
@@ -68,6 +67,31 @@ func TestFakedataNodeValidator(t *testing.T) {
 				value: &fakedata.Node{Type: "number", Seed: 1},
 				root:  false,
 				err:   "property 'seed' is not allowed in nested nodes",
+			},
+			{
+				name:  "array without items template",
+				value: &fakedata.Node{Type: "array"},
+				err:   "property 'item' is required for array nodes",
+			},
+			{
+				name: "negative count for array",
+				value: &fakedata.Node{
+					Type:  "array",
+					Item:  &fakedata.Node{Type: "number"},
+					Count: -1,
+				},
+				err: "property 'count' must be greater than or equal to 0",
+			},
+			{
+				name: "nested object with invalid property",
+				value: &fakedata.Node{
+					Type: "array",
+					Item: &fakedata.Node{
+						Type: "unknown",
+					},
+					Count: 1,
+				},
+				err: "'unknown' is not a valid option",
 			},
 		}
 		for _, testCase := range tests {
