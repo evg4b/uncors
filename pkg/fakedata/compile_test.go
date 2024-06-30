@@ -4,15 +4,44 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-
 	"github.com/evg4b/uncors/pkg/fakedata"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDemo(t *testing.T) {
-	t.Skip("Flaky test, need to fix it")
 	const seed = 129
+
+	t.Run("seed produces deterministic results", func(t *testing.T) {
+		node := &fakedata.Node{
+			Seed: seed,
+			Type: "object",
+			Properties: map[string]fakedata.Node{
+				"foo": {Type: "sentence"},
+				"bar": {Type: "number"},
+				"baz": {
+					Type: "array",
+					Item: &fakedata.Node{
+						Type: "object",
+						Properties: map[string]fakedata.Node{
+							"qux": {Type: "sentence"},
+						},
+					},
+				},
+			},
+		}
+
+		expected, err := node.Compile()
+		require.NoError(t, err)
+
+		for _, clonedNode := range lo.Repeat(50, node) {
+			actual, err := clonedNode.Compile()
+			require.NoError(t, err)
+
+			assert.Equal(t, expected, actual)
+		}
+	})
 
 	err := gofakeit.Seed(seed)
 	require.NoError(t, err)
@@ -41,8 +70,8 @@ func TestDemo(t *testing.T) {
 				},
 			},
 			expect: map[string]any{
-				"foo": "Who generally yourselves one lean.",
-				"bar": 1089124290,
+				"bar": 1321272094,
+				"foo": "Thing they clarity to him.",
 			},
 		},
 		{
@@ -81,12 +110,12 @@ func TestDemo(t *testing.T) {
 			},
 			expect: []any{
 				map[string]any{
-					"bar": 1089124290,
-					"foo": "Who generally yourselves one lean.",
+					"bar": 1321272094,
+					"foo": "Thing they clarity to him.",
 				},
 				map[string]any{
-					"bar": -1123283869,
-					"foo": "Beyond we yours what for.",
+					"bar": -720820234,
+					"foo": "We yours what for this.",
 				},
 			},
 		},
