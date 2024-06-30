@@ -13,19 +13,60 @@ type SchemaNode struct {
 	Name                 string                `json:"name,omitempty"`
 	Description          string                `json:"description,omitempty"`
 	Type                 string                `json:"type,omitempty"`
+	Minimum              int                   `json:"minimum,omitempty"`
 	Const                string                `json:"const,omitempty"`
 	Default              string                `json:"default,omitempty"`
 	AdditionalProperties bool                  `json:"additionalProperties"`
+	Ref                  string                `json:"$ref,omitempty"`
 	Properties           map[string]SchemaNode `json:"properties,omitempty"`
+	Required             []string              `json:"required,omitempty"`
 }
 
 func generateSchemeData() {
 	var nodes []SchemaNode //nolint:prealloc
 
 	for _, key := range fakedata.GetTypes() {
+		if key == "object" {
+			nodes = append(nodes, SchemaNode{
+				Type: "object",
+				Properties: map[string]SchemaNode{
+					"properties": {
+						Ref: "#/definitions/FakeDataNode",
+					},
+					"type": {
+						Const: "object",
+					},
+				},
+				Required: []string{"type"},
+			})
+
+			continue
+		}
+
+		if key == "array" {
+			nodes = append(nodes, SchemaNode{
+				Type: "object",
+				Properties: map[string]SchemaNode{
+					"items": {
+						Ref: "#/definitions/FakeDataNode",
+					},
+					"type": {
+						Const: "array",
+					},
+					"count": {
+						Type:    "integer",
+						Minimum: 0,
+					},
+				},
+				Required: []string{"type"},
+			})
+
+			continue
+		}
+
 		info := gofakeit.GetFuncLookup(key)
 		if info == nil {
-			continue
+			panic("Unknown type: " + key)
 		}
 
 		schemaNode := SchemaNode{
