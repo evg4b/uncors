@@ -17,9 +17,6 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 
 	writer.WriteHeader(normaliseCode(response.Code))
 	_, err := fmt.Fprint(writer, response.Raw)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
