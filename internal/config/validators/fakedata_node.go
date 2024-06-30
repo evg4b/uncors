@@ -33,10 +33,14 @@ func (c *FakedataNodeValidator) IsValid(errors *validate.Errors) {
 	}
 
 	if c.Value.Type == "array" {
-		errors.Append(validate.Validate(&FakedataNodeValidator{
-			Field: joinPath(c.Field, "item"),
-			Value: c.Value.Item,
-		}))
+		if c.Value.Item == nil {
+			errors.Add(joinPath(c.Field, "item"), "property 'item' is required for array nodes")
+		} else {
+			errors.Append(validate.Validate(&FakedataNodeValidator{
+				Field: joinPath(c.Field, "item"),
+				Value: c.Value.Item,
+			}))
+		}
 
 		if c.Value.Count < 0 {
 			errors.Add(joinPath(c.Field, "count"), "property 'count' must be greater than or equal to 0")
