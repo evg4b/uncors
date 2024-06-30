@@ -9,14 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const option1 = "option-1"
+const option2 = "option-2"
+
 func TestStringEnumValidator(t *testing.T) {
 	t.Run("valid option", func(t *testing.T) {
 		errors := validate.Validate(&base.StringEnumValidator{
 			Field: "field",
-			Value: "option-1",
+			Value: option1,
 			Options: []string{
-				"option-1",
-				"option-2",
+				option1,
+				option2,
 			},
 		})
 
@@ -28,8 +31,8 @@ func TestStringEnumValidator(t *testing.T) {
 			Field: "field",
 			Value: "option-x",
 			Options: []string{
-				"option-1",
-				"option-2",
+				option1,
+				option2,
 			},
 		})
 

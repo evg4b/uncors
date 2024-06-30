@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_transformOptions(t *testing.T) {
+func TestTransformOptions(t *testing.T) {
 	tests := []struct {
 		name     string
 		options  map[string]any

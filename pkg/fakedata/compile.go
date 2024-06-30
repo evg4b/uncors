@@ -3,7 +3,6 @@ package fakedata
 import (
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"sort"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -15,7 +14,7 @@ var ErrUnknownType = errors.New("unknown type")
 func (root *Node) Compile() (any, error) {
 	initPackage()
 
-	return root.compileInternal(gofakeit.NewFaker(rand.NewPCG(root.Seed, root.Seed), true))
+	return root.compileInternal(gofakeit.New(root.Seed))
 }
 
 func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {

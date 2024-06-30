@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDemo(t *testing.T) {
+func TestFakedataNode(t *testing.T) {
 	const seed = 129
 
 	t.Run("seed produces deterministic results", func(t *testing.T) {
@@ -40,6 +40,35 @@ func TestDemo(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, expected, actual)
+		}
+	})
+
+	t.Run("produces each time new results", func(t *testing.T) {
+		node := &fakedata.Node{
+			Type: "object",
+			Properties: map[string]fakedata.Node{
+				"foo": {Type: "sentence"},
+				"bar": {Type: "number"},
+				"baz": {
+					Type: "array",
+					Item: &fakedata.Node{
+						Type: "object",
+						Properties: map[string]fakedata.Node{
+							"qux": {Type: "sentence"},
+						},
+					},
+				},
+			},
+		}
+
+		expected, err := node.Compile()
+		require.NoError(t, err)
+
+		for _, clonedNode := range lo.Repeat(50, node) {
+			actual, err := clonedNode.Compile()
+			require.NoError(t, err)
+
+			assert.NotEqual(t, expected, actual)
 		}
 	})
 
