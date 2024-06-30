@@ -93,6 +93,42 @@ func TestFakedataNodeValidator(t *testing.T) {
 				},
 				err: "'unknown' is not a valid option",
 			},
+			{
+				name: "object with count property",
+				value: &fakedata.Node{
+					Type:       "object",
+					Properties: map[string]fakedata.Node{},
+					Count:      1,
+				},
+				err: "property 'count' is not allowed for object nodes",
+			},
+			{
+				name: "object with item property",
+				value: &fakedata.Node{
+					Type:       "object",
+					Properties: map[string]fakedata.Node{},
+					Item:       &fakedata.Node{Type: "number"},
+				},
+				err: "property 'item' is not allowed for object nodes",
+			},
+			{
+				name: "object with options property",
+				value: &fakedata.Node{
+					Type:       "object",
+					Properties: map[string]fakedata.Node{},
+					Options:    map[string]interface{}{"key": "value"},
+				},
+				err: "property 'options' is not allowed for object nodes",
+			},
+			{
+				name: "array properties property",
+				value: &fakedata.Node{
+					Type:       "array",
+					Item:       &fakedata.Node{Type: "number"},
+					Properties: map[string]fakedata.Node{},
+				},
+				err: "property 'properties' is not allowed for array nodes",
+			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {

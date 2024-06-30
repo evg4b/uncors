@@ -24,26 +24,50 @@ func (c *FakedataNodeValidator) IsValid(errors *validate.Errors) {
 	}
 
 	if c.Value.Type == "object" {
-		for key, node := range c.Value.Properties {
-			errors.Append(validate.Validate(&FakedataNodeValidator{
-				Field: joinPath(c.Field, key),
-				Value: &node,
-			}))
-		}
+		c.validateAsObject(errors)
 	}
 
 	if c.Value.Type == "array" {
-		if c.Value.Item == nil {
-			errors.Add(joinPath(c.Field, "item"), "property 'item' is required for array nodes")
-		} else {
-			errors.Append(validate.Validate(&FakedataNodeValidator{
-				Field: joinPath(c.Field, "item"),
-				Value: c.Value.Item,
-			}))
-		}
+		c.validateAsArray(errors)
+	}
+}
 
-		if c.Value.Count < 0 {
-			errors.Add(joinPath(c.Field, "count"), "property 'count' must be greater than or equal to 0")
-		}
+func (c *FakedataNodeValidator) validateAsArray(errors *validate.Errors) {
+	if c.Value.Properties != nil {
+		errors.Add(joinPath(c.Field, "properties"), "property 'properties' is not allowed for array nodes")
+	}
+
+	if c.Value.Item == nil {
+		errors.Add(joinPath(c.Field, "item"), "property 'item' is required for array nodes")
+	} else {
+		errors.Append(validate.Validate(&FakedataNodeValidator{
+			Field: joinPath(c.Field, "item"),
+			Value: c.Value.Item,
+		}))
+	}
+
+	if c.Value.Count < 0 {
+		errors.Add(joinPath(c.Field, "count"), "property 'count' must be greater than or equal to 0")
+	}
+}
+
+func (c *FakedataNodeValidator) validateAsObject(errors *validate.Errors) {
+	if c.Value.Count != 0 {
+		errors.Add(joinPath(c.Field, "count"), "property 'count' is not allowed for object nodes")
+	}
+
+	if c.Value.Item != nil {
+		errors.Add(joinPath(c.Field, "item"), "property 'item' is not allowed for object nodes")
+	}
+
+	if c.Value.Options != nil {
+		errors.Add(joinPath(c.Field, "options"), "property 'options' is not allowed for object nodes")
+	}
+
+	for key, node := range c.Value.Properties {
+		errors.Append(validate.Validate(&FakedataNodeValidator{
+			Field: joinPath(c.Field, key),
+			Value: &node,
+		}))
 	}
 }

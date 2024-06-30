@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const option1 = "option-1"
-const option2 = "option-2"
+const (
+	option1 = "option-1"
+	option2 = "option-2"
+)
 
 func TestStringEnumValidator(t *testing.T) {
 	t.Run("valid option", func(t *testing.T) {
