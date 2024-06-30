@@ -101,7 +101,7 @@ func TestResponseValidator(t *testing.T) {
 					Code:  200,
 					Delay: 3 * time.Second,
 				},
-				error: "test.raw or test.file must be set",
+				error: "test.raw, test.file or test.fake must be set",
 			},
 			{
 				name: "file with raw are set",
