@@ -3,17 +3,19 @@ package fakedata
 import (
 	"errors"
 	"fmt"
+	"math/rand/v2"
+	"sort"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/samber/lo"
 )
 
 var ErrUnknownType = errors.New("unknown type")
 
 func (root *Node) Compile() (any, error) {
 	initPackage()
-	faker := gofakeit.New(root.Seed)
 
-	return root.compileInternal(faker)
+	return root.compileInternal(gofakeit.NewFaker(rand.NewPCG(root.Seed, root.Seed), true))
 }
 
 func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
@@ -25,7 +27,7 @@ func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 	default:
 		funcInfo := gofakeit.GetFuncLookup(root.Type)
 		if funcInfo == nil {
-			return nil, fmt.Errorf("incorrect fake function %s : %w", root.Type, ErrUnknownType)
+			return nil, fmt.Errorf("incorrect fake function %s: %w", root.Type, ErrUnknownType)
 		}
 
 		options, err := transformOptions(root.Options)
@@ -50,14 +52,17 @@ func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error)
 	return result, nil
 }
 
-func compileToMap(properties map[string]Node, faker *gofakeit.Faker) (map[string]any, error) {
+func compileToMap(properties map[string]Node, faker *gofakeit.Faker) (any, error) {
 	result := make(map[string]any)
-	for key, value := range properties {
-		compiledValue, err := value.compileInternal(faker)
+	keys := lo.Keys(properties)
+	sort.Strings(keys)
+	for _, property := range keys {
+		node := properties[property]
+		compiledValue, err := node.compileInternal(faker)
 		if err != nil {
 			return nil, err
 		}
-		result[key] = compiledValue
+		result[property] = compiledValue
 	}
 
 	return result, nil
