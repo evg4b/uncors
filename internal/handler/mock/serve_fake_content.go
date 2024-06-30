@@ -21,10 +21,7 @@ func (h *Handler) serveFakeContent(writer contracts.ResponseWriter) error {
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	err = json.NewEncoder(writer).Encode(data)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return json.NewEncoder(writer).
+		Encode(data)
 }

@@ -42,11 +42,11 @@ func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error) {
 	result := make([]any, 0, count)
 	for range count {
-		compiledValue, err := item.compileInternal(faker)
+		compiled, err := item.compileInternal(faker)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, compiledValue)
+		result = append(result, compiled)
 	}
 
 	return result, nil
@@ -55,7 +55,7 @@ func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error)
 func compileToMap(properties map[string]Node, faker *gofakeit.Faker) (any, error) {
 	result := make(map[string]any)
 	keys := lo.Keys(properties)
-	sort.Strings(keys)
+	sort.Strings(keys) // it is important to sort keys to get the same result every time
 	for _, property := range keys {
 		node := properties[property]
 		compiledValue, err := node.compileInternal(faker)
