@@ -129,6 +129,16 @@ func TestFakedataNodeValidator(t *testing.T) {
 				},
 				err: "property 'properties' is not allowed for array nodes",
 			},
+			{
+				name: "object validate internal properties",
+				value: &fakedata.Node{
+					Type: "object",
+					Properties: map[string]fakedata.Node{
+						"key": {Type: "unknown"},
+					},
+				},
+				err: "'unknown' is not a valid option",
+			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
