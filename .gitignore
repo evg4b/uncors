@@ -10,3 +10,4 @@ coverage.out
 uncors
 !uncors/
 tools/fakedata/scheme.json
+tools/fakedata/docs.md
