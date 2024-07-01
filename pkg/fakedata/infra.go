@@ -11,6 +11,14 @@ var initPackage = sync.OnceFunc(func() {
 	gofakeit.RemoveFuncLookup("csv")
 	gofakeit.RemoveFuncLookup("xml")
 	gofakeit.RemoveFuncLookup("json")
+	gofakeit.RemoveFuncLookup("person")
+	gofakeit.RemoveFuncLookup("teams")
+	gofakeit.RemoveFuncLookup("car")
+	gofakeit.RemoveFuncLookup("movie")
+	gofakeit.RemoveFuncLookup("product")
+	gofakeit.RemoveFuncLookup("creditcard")
+	gofakeit.RemoveFuncLookup("address")
+	gofakeit.RemoveFuncLookup("email_text")
 })
 
 func GetTypes() []string {
