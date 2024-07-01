@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -19,13 +20,57 @@ type Handler struct {
 	after    func(duration time.Duration) <-chan time.Time
 }
 
+var ErrResponseIsNotDefined = errors.New("response is not defined")
+
 func NewMockHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
-	response := h.response
+	if h.waiteDelay(writer, request) {
+		return
+	}
+
+	if err := h.writeResponse(writer, request); err != nil {
+		infra.HTTPError(writer, err)
+
+		return
+	}
+
+	tui.PrintResponse(h.logger, request, writer.StatusCode())
+}
+
+func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
 	header := writer.Header()
+	response := h.response
+
+	infra.WriteCorsHeaders(header)
+	for key, value := range response.Headers {
+		header.Set(key, value)
+	}
+
+	switch {
+	case response.IsFake():
+		if err := h.serveFakeContent(writer); err != nil {
+			return err
+		}
+	case response.IsFile():
+		if err := h.serveFileContent(writer, request); err != nil {
+			return err
+		}
+	case response.IsRaw():
+		if err := h.serveRawContent(writer); err != nil {
+			return err
+		}
+	default:
+		return ErrResponseIsNotDefined
+	}
+
+	return nil
+}
+
+func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
+	response := h.response
 
 	if response.Delay > 0 {
 		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
@@ -38,7 +83,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 				writer.WriteHeader(http.StatusServiceUnavailable)
 				h.logger.Debugf("Delay is canceled (url: %s)", url)
 
-				return
+				return true
 			case <-h.after(response.Delay):
 				h.logger.Debugf("Delay is complete (url: %s)", url)
 
@@ -47,23 +92,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		}
 	}
 
-	infra.WriteCorsHeaders(header)
-	for key, value := range response.Headers {
-		header.Set(key, value)
-	}
-
-	if len(h.response.File) > 0 {
-		err := h.serveFileContent(writer, request)
-		if err != nil {
-			infra.HTTPError(writer, err)
-
-			return
-		}
-	} else {
-		h.serveRawContent(writer)
-	}
-
-	tui.PrintResponse(h.logger, request, writer.StatusCode())
+	return false
 }
 
 func normaliseCode(code int) int {

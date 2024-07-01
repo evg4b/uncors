@@ -46,7 +46,11 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 			}
 
 			mapping := Mapping{}
-			err := decodeConfig(data, &mapping, StaticDirMappingHookFunc())
+			err := decodeConfig(
+				data,
+				&mapping,
+				StaticDirMappingHookFunc(),
+			)
 
 			return mapping, err
 		}

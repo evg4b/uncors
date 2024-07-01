@@ -39,6 +39,14 @@ func TestInvalidJsonSchema(t *testing.T) {
 				"mappings.0.to: Invalid type. Expected: string, given: null",
 			},
 		},
+		{
+			name: "empty mocks",
+			file: testdir("empty-mocks.yaml"),
+			errors: []string{
+				"mappings.0: Must validate one and only one schema (oneOf)",
+				"mappings.0.mocks: Array must have at least 1 items",
+			},
+		},
 	}
 
 	for _, testCase := range cases {
