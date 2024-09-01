@@ -22,6 +22,7 @@ linters:
     - contextcheck
     - gomnd
     - execinquery
+    - exportloopref
 linters-settings:
   varnamelen:
     ignore-names:
