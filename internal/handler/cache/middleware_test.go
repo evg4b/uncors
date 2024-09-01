@@ -222,7 +222,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
-			helpers.FPrintf(writer, request.Method)
+			helpers.FPrint(writer, request.Method)
 		})
 
 		wrappedHandler := middleware.Wrap(handler)
