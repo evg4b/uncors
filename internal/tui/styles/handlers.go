@@ -8,8 +8,7 @@ var baseBlock = lipgloss.NewStyle().
 	Foreground(black).
 	Padding(0, 1).
 	Margin(0).
-	Width(baseBlockWidth).
-	ColorWhitespace(true)
+	Width(baseBlockWidth)
 
 var (
 	ProxyStyle  = baseBlock.Background(lipgloss.Color("#6a71f7"))
