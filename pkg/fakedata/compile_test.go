@@ -158,4 +158,54 @@ func TestFakedataNode(t *testing.T) {
 			assert.Equal(t, testCase.expect, actual)
 		})
 	}
+
+	t.Run("should have base json types", func(t *testing.T) {
+		cases := []struct {
+			name   string
+			node   fakedata.Node
+			expect any
+		}{
+			{
+				name: "number",
+				node: fakedata.Node{
+					Seed: seed,
+					Type: "number",
+				},
+				expect: 1321272094,
+			},
+			{
+				name: "boolean",
+				node: fakedata.Node{
+					Seed: seed,
+					Type: "boolean",
+				},
+				expect: true,
+			},
+			{
+				name: "string",
+				node: fakedata.Node{
+					Seed: seed,
+					Type: "string",
+				},
+				expect: "Thing they clarity to him.",
+			},
+			{
+				name: "date",
+				node: fakedata.Node{
+					Seed: seed,
+					Type: "date",
+				},
+				expect: "2010-07-07T19:51:28Z",
+			},
+		}
+
+		for _, testCase := range cases {
+			t.Run(testCase.name, func(t *testing.T) {
+				actual, err := testCase.node.Compile()
+				require.NoError(t, err)
+
+				assert.Equal(t, testCase.expect, actual)
+			})
+		}
+	})
 }
