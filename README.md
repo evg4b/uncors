@@ -11,12 +11,23 @@
   <a href="https://go.dev">
     <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/evg4b/uncors/develop?label=go">
   </a>
-  <a href="#">
-    <img alt="GitHub version" src="https://img.shields.io/badge/version-%40next-blue">
+  <a href="https://github.com/evg4b/uncors/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/evg4b/uncors">
   </a>
   <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license&branch=develop">
   </a>
+  <br/>
+  <a href="https://www.npmjs.com/package/uncors">
+    <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/uncors?logo=npm">
+  </a>
+  <a href="https://hub.docker.com/r/evg4b/uncors">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/evg4b/uncors?logo=docker&logoColor=%23fff">
+  </a>
+  <a href="https://github.com/evg4b/uncors/releases/latest">
+    <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/evg4b/uncors/total?logo=github">
+  </a>
+  <br/>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
     <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage&branch=develop">
   </a>
@@ -81,7 +92,7 @@ pnpm add -D uncors
 docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
 ```
 
-#### [Stew](https://github.com/marwanhawari/) (Cross-platform)
+#### [Stew](https://github.com/marwanhawari/stew) (Cross-platform)
 
 ```bash
 stew install evg4b/uncors
