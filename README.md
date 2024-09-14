@@ -54,7 +54,7 @@ You can install the application in one of the following ways:
 
 #### [Homebrew](https://brew.sh/) (macOS | Linux)
 
-```bash 
+```bash
 brew install evg4b/tap/uncors
 ```
 
@@ -110,11 +110,6 @@ when utilizing it.
 
 [![Stargazers over time](https://starchart.cc/evg4b/uncors.svg?variant=adaptive&line=%232f81f7)](https://starchart.cc/evg4b/uncors)
 
-# Support project
+# Support the project
 
-<p align="center" dir="auto">
-<br>
-<a target="_blank" rel="noopener noreferrer" href="https://www.buymeacoffee.com/evg4b">
-    <img src="https://github.com/appcraftstudio/buymeacoffee/raw/master/Images/snapshot-bmc-button.png" width="200" style="max-width: 100%;">
-</a>
-</p>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X0SWTP3)
