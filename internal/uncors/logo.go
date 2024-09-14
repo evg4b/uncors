@@ -8,6 +8,12 @@ import (
 	"github.com/pterm/pterm/putils"
 )
 
+const (
+	colorRed   = 255
+	colorGreen = 215
+	colorBlue  = 0
+)
+
 func Logo(version string) string {
 	logoLength := 51
 	versionLine := strings.Repeat(" ", logoLength)
@@ -17,7 +23,7 @@ func Logo(version string) string {
 	logo, _ := pterm.DefaultBigText.
 		WithLetters(
 			putils.LettersFromStringWithStyle("UN", pterm.NewStyle(pterm.FgRed)),
-			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(255, 215, 0)), //nolint: gomnd
+			putils.LettersFromStringWithRGB("CORS", pterm.NewRGB(colorRed, colorGreen, colorBlue)),
 		).
 		Srender()
 

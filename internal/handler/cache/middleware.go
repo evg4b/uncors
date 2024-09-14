@@ -72,7 +72,7 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 	}
 
 	writer.WriteHeader(cachedResponse.Code)
-	if cachedResponse.Body != nil && len(cachedResponse.Body) > 0 {
+	if len(cachedResponse.Body) > 0 {
 		if _, err := writer.Write(cachedResponse.Body); err != nil {
 			panic(err)
 		}
