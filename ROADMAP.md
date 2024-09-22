@@ -62,11 +62,15 @@
 - [X] JSON Schema for config file - [PR](https://github.com/evg4b/uncors/pull/19)
 - [X] Automatically reload the server after configuration changes - [PR](https://github.com/evg4b/uncors/pull/22)
 
-## Next Release
+## [0.3.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.3.0)
+- [X] Fake Data generation - [PR](https://github.com/evg4b/uncors/pull/33)
+- [X] Changed console rendering lib - [PR](https://github.com/evg4b/uncors/pull/29)
 
-- [ ] Occupied port handling
-- [ ] Informative error messages - [PR](https://github.com/evg4b/uncors/pull/10)
+## Next Release
+- Coming soon...
 
 ## Future features
-- [ ] Collecting all request/response to har file
+- [ ] Informative error messages
 - [ ] Content URl replacing (HTML, JSON, TEXT and other)
+- [ ] Occupied port handling
+- [ ] Collecting all request/response to har file
