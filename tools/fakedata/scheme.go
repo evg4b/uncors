@@ -23,9 +23,9 @@ type SchemaNode struct {
 }
 
 func generateSchemeData() {
-	var nodes []SchemaNode //nolint:prealloc
-
-	for _, key := range fakedata.GetTypes() {
+	types := fakedata.GetTypes()
+	nodes := make([]SchemaNode, 0, len(types))
+	for _, key := range types {
 		if key == "object" {
 			nodes = append(nodes, SchemaNode{
 				Type: "object",
@@ -81,7 +81,7 @@ func generateSchemeData() {
 			},
 		}
 
-		if info.Params != nil && len(info.Params) > 0 {
+		if len(info.Params) > 0 {
 			params := map[string]SchemaNode{}
 
 			lo.ForEach(info.Params, func(v gofakeit.Param, _ int) {

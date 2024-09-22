@@ -49,7 +49,14 @@ func generateMdData() {
 	}
 
 	for _, row := range rows {
-		if _, err = mdFile.WriteString("| " + f(row.Type) + " | " + f(row.Description) + " | " + f(row.Params) + " | " + f(row.Example) + " |\n"); err != nil {
+		if _, err = fmt.Fprintf(
+			mdFile,
+			"| %s | %s | %s | %s |\n",
+			f(row.Type),
+			f(row.Description),
+			f(row.Params),
+			f(row.Example),
+		); err != nil {
 			panic(err)
 		}
 	}
