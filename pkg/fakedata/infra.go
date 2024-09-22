@@ -31,49 +31,15 @@ var disablesFunctions = []string{
 
 	// person
 	"person",
-	"name",
-	"nameprefix",
-	"namesuffix",
-	"firstname",
-	"middlename",
-	"lastname",
-	"gender",
-	"ssn",
-	"hobby",
-	// "contact", - unknown type
-	"email",
-	"phone",
-	"phoneformatted",
 	"teams",
 
 	// generate
-	// "struct",
-	// "slice",
 	"map",
 	"generate",
 	"regex",
 
-	// auth
-	"username",
-	"password",
-
 	// address
 	"address",
-	"city",
-	"country",
-	"countryabr",
-	"state",
-	"stateabr",
-	"street",
-	"streetname",
-	"streetnumber",
-	"streetprefix",
-	"streetsuffix",
-	"zip",
-	"latitude",
-	// "latitudeinrange",
-	"longitude",
-	// "longitudeinrange",
 
 	// game
 	"gamertag",
@@ -97,81 +63,6 @@ var disablesFunctions = []string{
 	"carfueltype",
 	"cartransmissiontype",
 
-	// nouns
-	"noun",
-	"nouncommon",
-	"nounconcrete",
-	"nounabstract",
-	"nouncollectivepeople",
-	"nouncollectiveanimal",
-	"nouncollectivething",
-	"nouncountable",
-	"noununcountable",
-
-	// verbs
-	"verb",
-	"verbaction",
-	"verblinking",
-	"verbhelping",
-
-	// adverbs
-	"adverb",
-	"adverbmanner",
-	"adverbdegree",
-	"adverbplace",
-	"adverbtimedefinite",
-	"adverbtimeindefinite",
-	"adverbfrequencydefinite",
-	"adverbfrequencyindefinite",
-
-	// propositions
-	"preposition",
-	"prepositionsimple",
-	"prepositiondouble",
-	"prepositioncompound",
-
-	// adjectives
-	"adjective",
-	"adjectivedescriptive",
-	"adjectivequantitative",
-	"adjectiveproper",
-	"adjectivedemonstrative",
-	"adjectivepossessive",
-	"adjectiveinterrogative",
-	"adjectiveindefinite",
-
-	// pronouns
-	"pronoun",
-	"pronounpersonal",
-	"pronounobject",
-	"pronounpossessive",
-	"pronounreflective",
-	"pronoundemonstrative",
-	"pronouninterrogative",
-	"pronounrelative",
-
-	// connectives
-	"connective",
-	"connectivetime",
-	"connectivecomparative",
-	"connectivecomplaint",
-	"connectivelisting",
-	"connectivecasual",
-	"connectiveexamplify",
-
-	// words
-	"word",
-
-	// sentences
-	"sentence",
-	"paragraph",
-	"loremipsumword",
-	"loremipsumsentence",
-	"loremipsumparagraph",
-	"question",
-	"quote",
-	"phrase",
-
 	// foods
 	"fruit",
 	"vegetable",
@@ -182,97 +73,27 @@ var disablesFunctions = []string{
 	"dessert",
 
 	// misc
-	"bool",
-	"uuid",
 	"weighted",
 	"flipacoin",
-	// "randommapkey",
-	// "shuffleanyslice",
 
 	// colors
-	"color",
-	"hexcolor",
-	"rgbcolor",
 	"safecolor",
 	"nicecolors",
 
 	// images
-	// "image",
 	"imagejpeg",
 	"imagepng",
-
-	// internet
-	"url",
-	"domainname",
-	"domainsuffix",
-	"ipv4address",
-	"ipv6address",
-	"macaddress",
-	"httpstatuscode",
-	"httpstatuscodesimple",
-	"loglevel",
-	"httpmethod",
-	"httpversion",
-	"useragent",
-	"chromeuseragent",
-	"firefoxuseragent",
-	"operauseragent",
-	"safariuseragent",
 
 	// html
 	"inputname",
 	"svg",
 
-	// date/time
-	"date",
-	"pastdate",
-	"futuredate",
-	"daterange",
-	"nanosecond",
-	"second",
-	"minute",
-	"hour",
-	"month",
-	"monthstring",
-	"day",
-	"weekday",
-	"year",
-	"timezone",
-	"timezoneabv",
-	"timezonefull",
-	"timezoneoffset",
-	"timezoneregion",
-
 	// payment
-	"price",
 	"creditcard",
-	"creditcardcvv",
-	"creditcardexp",
-	"creditcardnumber",
-	"creditcardtype",
 	"currency",
-	"currencylong",
-	"currencyshort",
-	"achrouting",
-	"achaccount",
-	"bitcoinaddress",
-	"bitcoinprivatekey",
-
-	// finance
-	"cusip",
-	"isin",
 
 	// company
-	"bs",
-	"blurb",
-	"buzzword",
-	"company",
-	"companysuffix",
 	"job",
-	"jobdescriptor",
-	"joblevel",
-	"jobtitle",
-	"slogan",
 
 	// hacker
 	"hackerabbreviation",
@@ -301,18 +122,8 @@ var disablesFunctions = []string{
 	"dog",
 	"bird",
 
-	// emoji
-	"emoji",
-	"emojidescription",
-	"emojicategory",
-	"emojialias",
-	"emojitag",
-
 	// language
-	"language",
-	"languageabbreviation",
 	"programminglanguage",
-	// "programminglanguagebest",
 
 	// number
 	"shuffleints",
@@ -320,10 +131,6 @@ var disablesFunctions = []string{
 	"hexuint",
 
 	// string
-	"digit",
-	"digitn",
-	"letter",
-	"lettern",
 	"lexify",
 	"numerify",
 	"shufflestrings",
@@ -372,7 +179,6 @@ var disablesFunctions = []string{
 	"errorhttp",
 	"errorhttpclient",
 	"errorhttpserver",
-	// "errorinput",
 	"errorruntime",
 
 	// school
