@@ -1,13 +1,13 @@
 package mock
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/go-http-utils/headers"
 )
 
-func (h *Handler) serveRawContent(writer http.ResponseWriter) {
+func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 	response := h.response
 	header := writer.Header()
 	if len(header.Get(headers.ContentType)) == 0 {
@@ -16,5 +16,7 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) {
 	}
 
 	writer.WriteHeader(normaliseCode(response.Code))
-	helpers.FPrint(writer, response.Raw)
+	_, err := fmt.Fprint(writer, response.Raw)
+
+	return err
 }

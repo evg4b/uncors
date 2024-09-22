@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/pkg/fakedata"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -27,10 +29,11 @@ const (
 )
 
 const (
-	textContent = "status: ok"
-	jsonContent = `{ "test": "ok" }`
-	htmlContent = "<html></html>"
-	pngContent  = "\x89PNG\x0D\x0A\x1A\x0A"
+	textContent     = "status: ok"
+	jsonContent     = `{ "test": "ok" }`
+	htmlContent     = "<html></html>"
+	pngContent      = "\x89PNG\x0D\x0A\x1A\x0A"
+	fakeJSONContent = "{\"foo\":\"Yourselves that school smoothly next.\"}\n"
 )
 
 const (
@@ -63,6 +66,17 @@ func TestHandler(t *testing.T) {
 				name:     "file content",
 				response: config.Response{File: jsonFile},
 				expected: jsonContent,
+			},
+			{
+				name: "fake content",
+				response: config.Response{Fake: &fakedata.Node{
+					Seed: 123,
+					Type: "object",
+					Properties: map[string]fakedata.Node{
+						"foo": {Type: "sentence"},
+					},
+				}},
+				expected: fakeJSONContent,
 			},
 		}
 		for _, testCase := range tests {
@@ -245,6 +259,8 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("status code", func(t *testing.T) {
+		const content = "test content"
+
 		tests := []struct {
 			name     string
 			response config.Response
@@ -254,6 +270,7 @@ func TestHandler(t *testing.T) {
 				name: "provide 201 code",
 				response: config.Response{
 					Code: http.StatusCreated,
+					Raw:  content,
 				},
 				expected: http.StatusCreated,
 			},
@@ -261,12 +278,15 @@ func TestHandler(t *testing.T) {
 				name: "provide 503 code",
 				response: config.Response{
 					Code: http.StatusServiceUnavailable,
+					Raw:  content,
 				},
 				expected: http.StatusServiceUnavailable,
 			},
 			{
-				name:     "automatically provide 200 code",
-				response: config.Response{},
+				name: "automatically provide 200 code",
+				response: config.Response{
+					Raw: content,
+				},
 				expected: http.StatusOK,
 			},
 		}
