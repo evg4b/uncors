@@ -24,6 +24,7 @@ type MdTableRow struct {
 	Output      string
 }
 
+//nolint:cyclop
 func generateMdData() {
 	rows := make([]MdTableRow, 0)
 	for _, typeKey := range fakedata.GetTypes() {
