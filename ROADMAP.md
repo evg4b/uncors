@@ -67,7 +67,9 @@
 - [X] Changed console rendering lib - [PR](https://github.com/evg4b/uncors/pull/29)
 
 ## Next Release
-- Coming soon...
+
+- [ ] Update GoReleaser to the last version
+- [ ] Add support of dark and light terminal themes
 
 ## Future features
 - [ ] Informative error messages
