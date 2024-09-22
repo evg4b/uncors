@@ -21,3 +21,4 @@ build-release:
 
 clean:
 	rm -rf ./uncors ./uncors.exe coverage.out
+	rm -rf ./tools/fakedata/docs.md ./tools/fakedata/scheme.json
