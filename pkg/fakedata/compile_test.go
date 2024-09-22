@@ -174,12 +174,12 @@ func TestFakedataNode(t *testing.T) {
 				expect: 1321272094,
 			},
 			{
-				name: "boolean",
+				name: "bool",
 				node: fakedata.Node{
 					Seed: seed,
-					Type: "boolean",
+					Type: "bool",
 				},
-				expect: true,
+				expect: false,
 			},
 			{
 				name: "string",
@@ -187,7 +187,7 @@ func TestFakedataNode(t *testing.T) {
 					Seed: seed,
 					Type: "string",
 				},
-				expect: "Thing they clarity to him.",
+				expect: "Necessitatibus natus numquam consequatur eos.",
 			},
 			{
 				name: "date",

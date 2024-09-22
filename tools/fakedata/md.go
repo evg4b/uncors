@@ -18,7 +18,7 @@ import (
 type MdTableRow struct {
 	Type        string
 	Description string
-	Params      []string
+	Options     []string
 	Example     string
 	Group       string
 	Output      string
@@ -42,7 +42,7 @@ func generateMdData() {
 			Example:     info.Example,
 			Group:       info.Category,
 			Output:      info.Output,
-			Params: lo.Map(info.Params, func(param gofakeit.Param, _ int) string {
+			Options: lo.Map(info.Params, func(param gofakeit.Param, _ int) string {
 				return fmt.Sprintf("%s (%s) - %s", param.Field, param.Type, param.Description)
 			}),
 		})
@@ -57,14 +57,18 @@ func generateMdData() {
 		return item.Group
 	})
 
-	lo.ForEach(lo.Keys(groupedData), func(item string, _ int) {
+	groupKeys := lo.Keys(groupedData)
+
+	sort.Strings(groupKeys)
+
+	lo.ForEach(groupKeys, func(item string, _ int) {
 		rows := groupedData[item]
 
-		if _, err = fmt.Fprintf(mdFile, "### %s\n", capitalizeFirstLetter(item)); err != nil {
+		if _, err = fmt.Fprintf(mdFile, "#### %s\n", capitalizeFirstLetter(item)); err != nil {
 			panic(err)
 		}
 
-		if _, err = mdFile.WriteString("| Type | Description | Params | Return Type | Example |\n"); err != nil {
+		if _, err = mdFile.WriteString("| Type | Description | Options | Return Type | Example |\n"); err != nil {
 			panic(err)
 		}
 
@@ -94,7 +98,7 @@ func generateMdData() {
 				"| %s | %s | %s | %s | %s |\n",
 				process(row.Type),
 				process(row.Description),
-				processLi(row.Params),
+				processLi(row.Options),
 				process(row.Output),
 				process(row.Example),
 			); err != nil {
@@ -115,6 +119,10 @@ func process(lines string) string {
 }
 
 func processLi(lines []string) string {
+	if len(lines) == 0 {
+		return "-"
+	}
+
 	return strings.Join(lo.Map(lines, func(item string, _ int) string {
 		return strings.ReplaceAll(item, "\n", ".")
 	}), "<br>")
@@ -127,5 +135,6 @@ func capitalizeFirstLetter(str string) string {
 	// Convert first character to uppercase and append the rest of the string
 	runes := []rune(str)
 	runes[0] = unicode.ToUpper(runes[0])
+
 	return string(runes)
 }

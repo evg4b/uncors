@@ -34,6 +34,7 @@ func TestGetTypes(t *testing.T) {
 		"float64range",
 
 		// string
+		"string",
 		"digit",
 		"digitn",
 		"letter",

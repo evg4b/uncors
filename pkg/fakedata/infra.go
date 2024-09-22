@@ -212,6 +212,17 @@ var disablesFunctions = []string{
 }
 
 var initPackage = sync.OnceFunc(func() {
+	info := gofakeit.GetFuncLookup("loremipsumsentence")
+	gofakeit.AddFuncLookup("string", gofakeit.Info{
+		Display:     "Lorem Ipsum String",
+		Category:    "string",
+		Description: info.Description,
+		Example:     info.Example,
+		Output:      info.Output,
+		Params:      info.Params,
+		Generate:    info.Generate,
+	})
+
 	lo.ForEach(disablesFunctions, func(item string, _ int) {
 		if gofakeit.GetFuncLookup(item) == nil {
 			panic(item)

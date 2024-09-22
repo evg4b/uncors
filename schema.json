@@ -300,8 +300,56 @@
     "FakeDataNode": {
       "oneOf": [
         {
-          "name": "IntRange",
-          "description": "Integer value between given range",
+          "name": "Latitude",
+          "description": "Geographic coordinate specifying north-south position on Earth's surface",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "latitude",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Manner",
+          "description": "Adverb that describes how an action is performed",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbmanner",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Hex Color",
+          "description": "Six-digit code representing a color in the color model",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "hexcolor",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Company",
+          "description": "Designated official name of a business or organization",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "company",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Paragraph",
+          "description": "Distinct section of writing covering a single theme, composed of multiple sentences",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -309,142 +357,74 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum int value",
+                "paragraphcount": {
+                  "name": "Paragraph Count",
+                  "description": "Number of paragraphs",
                   "type": "number",
+                  "default": "2",
                   "additionalProperties": false
                 },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum int value",
+                "paragraphseparator": {
+                  "name": "Paragraph Separator",
+                  "description": "String value to add between paragraphs",
+                  "type": "string",
+                  "default": "\u003cbr /\u003e",
+                  "additionalProperties": false
+                },
+                "sentencecount": {
+                  "name": "Sentence Count",
+                  "description": "Number of sentences in a paragraph",
                   "type": "number",
+                  "default": "2",
+                  "additionalProperties": false
+                },
+                "wordcount": {
+                  "name": "Word Count",
+                  "description": "Number of words in a sentence",
+                  "type": "number",
+                  "default": "5",
                   "additionalProperties": false
                 }
               }
             },
             "type": {
-              "const": "intrange",
+              "const": "paragraph",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Product Category",
-          "description": "Classification grouping similar products based on shared characteristics or functions",
+          "name": "Log Level",
+          "description": "Classification used in logging to indicate the severity or priority of a log entry",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "productcategory",
+              "const": "loglevel",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Adverb Time Indefinite",
-          "description": "Adverb that gives a general or unspecified time frame",
+          "name": "Middle Name",
+          "description": "Name between a person's first name and last name",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "adverbtimeindefinite",
+              "const": "middlename",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Author",
-          "description": "The individual who wrote or created the content of a book",
+          "name": "Adverb Frequency Definite",
+          "description": "Adverb that specifies how often an action occurs with a clear frequency",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "bookauthor",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Car Model",
-          "description": "Specific design or version of a car produced by a manufacturer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "carmodel",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Gamertag",
-          "description": "User-selected online username or alias used for identification in games",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "gamertag",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Language BCP",
-          "description": "Set of guidelines and standards for identifying and representing languages in computing and internet protocols",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "languagebcp",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Movie Name",
-          "description": "Title or name of a specific film used for identification and reference",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "moviename",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Linking Verb",
-          "description": "Verb that Connects the subject of a sentence to a subject complement",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "verblinking",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Street Name",
-          "description": "Name given to a specific road or street",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "streetname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Month String",
-          "description": "String Representation of a month name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "monthstring",
+              "const": "adverbfrequencydefinite",
               "additionalProperties": false
             }
           }
@@ -470,247 +450,6 @@
             },
             "type": {
               "const": "loremipsumsentence",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft animal",
-          "description": "Non-hostile creatures in Minecraft, often used for resources and farming",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftanimal",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "LetterN",
-          "description": "ASCII string with length N",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "count": {
-                  "name": "Count",
-                  "description": "Number of digits to generate",
-                  "type": "number",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "lettern",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Place",
-          "description": "Adverb that indicates the location or direction of an action",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adverbplace",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "State Abbreviation",
-          "description": "Shortened 2-letter form of a country's state",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "stateabr",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Car Fuel Type",
-          "description": "Type of energy source a car uses",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "carfueltype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Blurb",
-          "description": "Brief description or summary of a company's purpose, products, or services",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "blurb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Error object word",
-          "description": "Various categories conveying details about encountered errors",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "errorobject",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "UUID",
-          "description": "128-bit identifier used to uniquely identify objects or entities in computer systems",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "uuid",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Collective Thing",
-          "description": "Group of objects or items, such as a 'bundle' of sticks or a 'cluster' of grapes",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nouncollectivething",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Runtime error",
-          "description": "Malfunction occuring during program execution, often causing abrupt termination or unexpected behavior",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "errorruntime",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HTTP Version",
-          "description": "Number indicating the version of the HTTP protocol used for communication between a client and a server",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "httpversion",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft dye",
-          "description": "Items used to change the color of various in-game objects",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftdye",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Int8",
-          "description": "Signed 8-bit integer, capable of representing values from -128 to 127",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "int8",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Demonstrative Adjective",
-          "description": "Adjective used to point out specific things",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adjectivedemonstrative",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Day",
-          "description": "24-hour period equivalent to one rotation of Earth on its axis",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "day",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Emoji Description",
-          "description": "Brief explanation of the meaning or emotion conveyed by an emoji",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "emojidescription",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "gRPC error",
-          "description": "Communication failure in the high-performance, open-source universal RPC framework",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "errorgrpc",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hipster Sentence",
-          "description": "Sentence showcasing the use of trendy and unconventional vocabulary associated with hipster culture",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "wordcount": {
-                  "name": "Word Count",
-                  "description": "Number of words in a sentence",
-                  "type": "number",
-                  "default": "5",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "hipstersentence",
               "additionalProperties": false
             }
           }
@@ -748,61 +487,49 @@
           }
         },
         {
-          "name": "PastDate",
-          "description": "Date that has occurred before the current moment in time",
+          "name": "Bitcoin Address",
+          "description": "Cryptographic identifier used to receive, store, and send Bitcoin cryptocurrency in a peer-to-peer network",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "pastdate",
+              "const": "bitcoinaddress",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Domain Suffix",
-          "description": "The part of a domain name that comes after the last dot, indicating its type or purpose",
+          "name": "Connective",
+          "description": "Word used to connect words or sentences",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "domainsuffix",
+              "const": "connective",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "ACH Account Number",
-          "description": "A bank account number used for Automated Clearing House transactions and electronic transfers",
+          "name": "Noun Concrete",
+          "description": "Names for physical entities experienced through senses like sight, touch, smell, or taste",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "achaccount",
+              "const": "nounconcrete",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Word",
-          "description": "Basic unit of language representing a concept or thing, consisting of letters and having meaning",
+          "name": "State",
+          "description": "Governmental division within a country, often having its own laws and government",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "word",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Street Suffix",
-          "description": "Designation at the end of a street name indicating type, like 'Avenue' or 'Street'",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "streetsuffix",
+              "const": "state",
               "additionalProperties": false
             }
           }
@@ -820,686 +547,61 @@
           }
         },
         {
-          "name": "Fruit",
-          "description": "Edible plant part, typically sweet, enjoyed as a natural snack or dessert",
+          "name": "Weekday",
+          "description": "Day of the week excluding the weekend",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "fruit",
+              "const": "weekday",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Float32 Range",
-          "description": "Float32 value between given range",
+          "name": "First Name",
+          "description": "The name given to a person at birth",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum float32 value",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum float32 value",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
             "type": {
-              "const": "float32range",
+              "const": "firstname",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Name",
-          "description": "The given and family name of an individual",
+          "name": "Phone",
+          "description": "Numerical sequence used to contact individuals via telephone or mobile devices",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "name",
+              "const": "phone",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Regex",
-          "description": "Pattern-matching tool used in text processing to search and manipulate strings",
+          "name": "Interrogative Adjective",
+          "description": "Adjective used to ask questions",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "str": {
-                  "name": "String",
-                  "description": "Regex RE2 syntax string",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
             "type": {
-              "const": "regex",
+              "const": "adjectiveinterrogative",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Flip A Coin",
-          "description": "Decision-making method involving the tossing of a coin to determine outcomes",
+          "name": "Adverb",
+          "description": "Word that modifies verbs, adjectives, or other adverbs",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "flipacoin",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Product",
-          "description": "An item created for sale or use",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "product",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Beer Name",
-          "description": "Specific brand or variety of beer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "beername",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Middle Name",
-          "description": "Name between a person's first name and last name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "middlename",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Email",
-          "description": "Electronic mail used for sending digital messages and communication over the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "email",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Numerify",
-          "description": "Replace # with random numerical values",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "str": {
-                  "name": "String",
-                  "description": "String value to replace #'s",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "numerify",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "IPv4 Address",
-          "description": "Numerical label assigned to devices on a network for identification and communication",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "ipv4address",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adjective",
-          "description": "Word describing or modifying a noun",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adjective",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Interjection",
-          "description": "Word expressing emotion",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "interjection",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Car Type",
-          "description": "Classification of cars based on size, use, or body style",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "cartype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Name Suffix",
-          "description": "A title or designation added after a person's name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "namesuffix",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Product Feature",
-          "description": "Specific characteristic of a product that distinguishes it from others products",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "productfeature",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Product UPC",
-          "description": "Standardized barcode used for product identification and tracking in retail and commerce",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "productupc",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Shuffle Strings",
-          "description": "Shuffle an array of strings",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "strs": {
-                  "name": "Strings",
-                  "description": "Delimited separated strings",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "shufflestrings",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun",
-          "description": "Person, place, thing, or idea, named or referred to in a sentence",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "noun",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minute",
-          "description": "Unit of time equal to 60 seconds",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minute",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft mob neutral",
-          "description": "Creature in the game that only becomes hostile if provoked, typically defending itself when attacked",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftmobneutral",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Int",
-          "description": "Signed integer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "int",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Int16",
-          "description": "Signed 16-bit integer, capable of representing values from 32,768 to 32,767",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "int16",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Frequency Definite",
-          "description": "Adverb that specifies how often an action occurs with a clear frequency",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adverbfrequencydefinite",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Latitude Range",
-          "description": "Latitude number between the given range (default min=0, max=90)",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum range",
-                  "type": "string",
-                  "default": "90",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum range",
-                  "type": "string",
-                  "default": "0",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "latituderange",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Second",
-          "description": "Unit of time equal to 1/60th of a minute",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "second",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft biome",
-          "description": "Distinctive environmental regions in the game, characterized by unique terrain, vegetation, and weather",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftbiome",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Phone Formatted",
-          "description": "Formatted phone number of a person",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phoneformatted",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Random markdown document",
-          "description": "Lightweight markup language used for formatting plain text",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "markdown",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Uint8",
-          "description": "Unsigned 8-bit integer, capable of representing values from 0 to 255",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "uint8",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Float32",
-          "description": "Data type representing floating-point numbers with 32 bits of precision in computing",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "float32",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "DateRange",
-          "description": "Random date between two ranges",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "enddate": {
-                  "name": "End Date",
-                  "description": "End date time string",
-                  "type": "string",
-                  "default": "2024-06-30",
-                  "additionalProperties": false
-                },
-                "format": {
-                  "name": "Format",
-                  "description": "Date time string format",
-                  "type": "string",
-                  "default": "yyyy-MM-dd",
-                  "additionalProperties": false
-                },
-                "startdate": {
-                  "name": "Start Date",
-                  "description": "Start date time string",
-                  "type": "string",
-                  "default": "1970-01-01",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "daterange",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Collective People",
-          "description": "Group of people or things regarded as a unit",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nouncollectivepeople",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Preposition",
-          "description": "Words used to express the relationship of a noun or pronoun to other words in a sentence",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "preposition",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pronoun Relative",
-          "description": "Pronoun that introduces a clause, referring back to a noun or pronoun",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "pronounrelative",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Longitude Range",
-          "description": "Longitude number between the given range (default min=0, max=180)",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum range",
-                  "type": "string",
-                  "default": "180",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum range",
-                  "type": "string",
-                  "default": "0",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "longituderange",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Emoji",
-          "description": "Digital symbol expressing feelings or ideas in text messages and online chats",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "emoji",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Drink",
-          "description": "Liquid consumed for hydration, pleasure, or nutritional benefits",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "drink",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Random text email Document",
-          "description": "Written content of an email message, including the sender's message to the recipient",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "email_text",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Possessive Adjective",
-          "description": "Adjective indicating ownership or possession",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adjectivepossessive",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Country Abbreviation",
-          "description": "Shortened 2-letter form of a country's name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "countryabr",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Lorem Ipsum Word",
-          "description": "Word of the Lorem Ipsum placeholder text used in design and publishing",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "loremipsumword",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Beer Style",
-          "description": "Distinct characteristics and flavors of beer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "beerstyle",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "IPv6 Address",
-          "description": "Numerical label assigned to devices on a network, providing a larger address space than IPv4 for internet communication",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "ipv6address",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Currency Short",
-          "description": "Short 3-letter word used to represent a specific currency",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "currencyshort",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Transitive Verb",
-          "description": "Verb that requires a direct object to complete its meaning",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "verbtransitive",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Intransitive Verb",
-          "description": "Verb that does not require a direct object to complete its meaning",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "verbintransitive",
+              "const": "adverb",
               "additionalProperties": false
             }
           }
@@ -1517,152 +619,68 @@
           }
         },
         {
-          "name": "Car",
-          "description": "Wheeled motor vehicle used for transportation",
+          "name": "Month",
+          "description": "Division of the year, typically 30 or 31 days long",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "car",
+              "const": "month",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Minecraft weather",
-          "description": "Atmospheric conditions in the game that include rain, thunderstorms, and clear skies, affecting gameplay and ambiance",
+          "name": "Email",
+          "description": "Electronic mail used for sending digital messages and communication over the internet",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "minecraftweather",
+              "const": "email",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Pronoun Indefinite",
-          "description": "Pronoun that does not refer to a specific person or thing",
+          "name": "Connective Complaint",
+          "description": "Connective word used to express dissatisfaction or complaints about a situation",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "pronounindefinite",
+              "const": "connectivecomplaint",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Safe Color",
-          "description": "Colors displayed consistently on different web browsers and devices",
+          "name": "IPv4 Address",
+          "description": "Numerical label assigned to devices on a network for identification and communication",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "safecolor",
+              "const": "ipv4address",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Minecraft weapon",
-          "description": "Tools and items used in Minecraft for combat and defeating hostile mobs",
+          "name": "Preposition Double",
+          "description": "Two-word combination preposition, indicating a complex relation",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "minecraftweapon",
+              "const": "prepositiondouble",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Float64",
-          "description": "Data type representing floating-point numbers with 64 bits of precision in computing",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "float64",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Connective Comparitive",
-          "description": "Connective word used to indicate a comparison between two or more things",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "connectivecomparative",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pronoun",
-          "description": "Word used in place of a noun to avoid repetition",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "pronoun",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Int64",
-          "description": "Signed 64-bit integer, capable of representing values from -9,223,372,036,854,775,808 to -9,223,372,036,854,775,807",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "int64",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Bitcoin Address",
-          "description": "Cryptographic identifier used to receive, store, and send Bitcoin cryptocurrency in a peer-to-peer network",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "bitcoinaddress",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Verb Phrase",
-          "description": "Phrase that Consists of a verb and its modifiers, expressing an action or state",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phraseverb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Street Prefix",
-          "description": "Directional or descriptive term preceding a street name, like 'East' or 'Main'",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "streetprefix",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Date",
-          "description": "Representation of a specific day, month, and year, often used for chronological reference",
+          "name": "Sentence",
+          "description": "Set of words expressing a statement, question, exclamation, or command",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -1670,41 +688,53 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "format": {
-                  "name": "Format",
-                  "description": "Date time string format output. You may also use golang time format or java time format",
-                  "type": "string",
-                  "default": "RFC3339",
+                "wordcount": {
+                  "name": "Word Count",
+                  "description": "Number of words in a sentence",
+                  "type": "number",
+                  "default": "5",
                   "additionalProperties": false
                 }
               }
             },
             "type": {
-              "const": "date",
+              "const": "sentence",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Breakfast",
-          "description": "First meal of the day, typically eaten in the morning",
+          "name": "Helping Verb",
+          "description": "Auxiliary verb that helps the main verb complete the sentence",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "breakfast",
+              "const": "verbhelping",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Dinner",
-          "description": "Evening meal, typically the day's main and most substantial meal",
+          "name": "Longitude",
+          "description": "Geographic coordinate indicating east-west position on Earth's surface",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "dinner",
+              "const": "longitude",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "MAC Address",
+          "description": "Unique identifier assigned to network interfaces, often used in Ethernet networks",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "macaddress",
               "additionalProperties": false
             }
           }
@@ -1735,665 +765,61 @@
           }
         },
         {
-          "name": "Pronoun Interrogative",
-          "description": "Pronoun used to ask questions",
+          "name": "Credit Card CVV",
+          "description": "Three or four-digit security code on a credit card used for online and remote transactions",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "pronouninterrogative",
+              "const": "creditcardcvv",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Street Number",
-          "description": "Numerical identifier assigned to a street",
+          "name": "Demonstrative Adjective",
+          "description": "Adjective used to point out specific things",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "streetnumber",
+              "const": "adjectivedemonstrative",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "App Version",
-          "description": "Particular release of an application in Semantic Versioning format",
+          "name": "HTTP Status Code Simple",
+          "description": "Three-digit number returned by a web server to indicate the outcome of an HTTP request",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "appversion",
+              "const": "httpstatuscodesimple",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Connective Listing",
-          "description": "Connective word used to list or enumerate items or examples",
+          "name": "Uint",
+          "description": "Unsigned integer",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "connectivelisting",
+              "const": "uint",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Quote",
-          "description": "Direct repetition of someone else's words",
+          "name": "Year",
+          "description": "Period of 365 days, the time Earth takes to orbit the Sun",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "quote",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Person",
-          "description": "Personal data, like name and contact details, used for identification and communication",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "person",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Random String",
-          "description": "Return a random string from a string array",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "strs": {
-                  "name": "Strings",
-                  "description": "Delimited separated strings",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "randomstring",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hour",
-          "description": "Unit of time equal to 60 minutes",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hour",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Vegetable",
-          "description": "Edible plant or part of a plant, often used in savory cooking or salads",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "vegetable",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hackering Verb",
-          "description": "Verb describing actions and activities related to hacking, often involving computer systems and security",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackeringverb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Float64 Range",
-          "description": "Float64 value between given range",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum float64 value",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum float64 value",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "float64range",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HexUint",
-          "description": "Hexadecimal representation of an unsigned integer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "bitSize": {
-                  "name": "Bit Size",
-                  "description": "Bit size of the unsigned integer",
-                  "type": "number",
-                  "default": "8",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "hexuint",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hobby",
-          "description": "An activity pursued for leisure and pleasure",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hobby",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Common",
-          "description": "General name for people, places, or things, not specific or unique",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nouncommon",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Abstract",
-          "description": "Ideas, qualities, or states that cannot be perceived with the five senses",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nounabstract",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Animal",
-          "description": "Living creature with the ability to move, eat, and interact with its environment",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "animal",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Job Descriptor",
-          "description": "Word used to describe the duties, requirements, and nature of a job",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "jobdescriptor",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Weekday",
-          "description": "Day of the week excluding the weekend",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "weekday",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Int32",
-          "description": "Signed 32-bit integer, capable of representing values from -2,147,483,648 to 2,147,483,647",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "int32",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Preposition Compound",
-          "description": "Preposition that can be formed by combining two or more prepositions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "prepositioncompound",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hacker Phrase",
-          "description": "Informal jargon and slang used in the hacking and cybersecurity community",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackerphrase",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Currency",
-          "description": "Medium of exchange, often in the form of paper money or coins, used for trade and transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "currency",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Connective Time",
-          "description": "Connective word used to indicate a temporal relationship between events or actions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "connectivetime",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft armor tier",
-          "description": "Classification system for armor sets in Minecraft, indicating their effectiveness and protection level",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftarmortier",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Phrase",
-          "description": "Phrase that modifies a verb, adjective, or another adverb, providing additional information.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phraseadverb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Nanosecond",
-          "description": "Unit of time equal to One billionth (10^-9) of a second",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nanosecond",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Image SVG",
-          "description": "Scalable Vector Graphics used to display vector images in web content",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "colors": {
-                  "name": "Colors",
-                  "description": "Hex or RGB array of colors to use",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "height": {
-                  "name": "Height",
-                  "description": "Height in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                },
-                "type": {
-                  "name": "Type",
-                  "description": "Sub child element type",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "width": {
-                  "name": "Width",
-                  "description": "Width in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "svg",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Preposition Double",
-          "description": "Two-word combination preposition, indicating a complex relation",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "prepositiondouble",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pronoun Reflective",
-          "description": "Pronoun referring back to the subject of the sentence",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "pronounreflective",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Digit",
-          "description": "Numerical symbol used to represent numbers",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "digit",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Color",
-          "description": "Hue seen by the eye, returns the name of the color like red or blue",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "color",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Job Level",
-          "description": "Random job level",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "joblevel",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Emoji Tag",
-          "description": "Label or keyword associated with an emoji to categorize or search for it easily",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "emojitag",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Chrome User Agent",
-          "description": "The specific identification string sent by the Google Chrome web browser when making requests on the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "chromeuseragent",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Gender",
-          "description": "Classification based on social and cultural norms that identifies an individual",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "gender",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Job",
-          "description": "Position or role in employment, involving specific tasks and responsibilities",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "job",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "SQL",
-          "description": "Command in SQL used to add new data records into a database table",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "count": {
-                  "name": "Count",
-                  "description": "Number of inserts to generate",
-                  "type": "number",
-                  "default": "100",
-                  "additionalProperties": false
-                },
-                "fields": {
-                  "name": "Fields",
-                  "description": "Fields containing key name and function to run in json format",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "table": {
-                  "name": "Table",
-                  "description": "Name of the table to insert into",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "sql",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Currency Long",
-          "description": "Complete name of a specific currency used for official identification in financial transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "currencylong",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Credit Card Exp",
-          "description": "Date when a credit card becomes invalid and cannot be used for transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "creditcardexp",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Simple Sentence",
-          "description": "Group of words that expresses a complete thought",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "sentencesimple",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "ISIN",
-          "description": "International standard code for uniquely identifying securities worldwide",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "isin",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Lunch",
-          "description": "Midday meal, often lighter than dinner, eaten around noon",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "lunch",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "User Agent",
-          "description": "String sent by a web browser to identify itself when requesting web content",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "useragent",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Longitude",
-          "description": "Geographic coordinate indicating east-west position on Earth's surface",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "longitude",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Beer Hop",
-          "description": "The flower used in brewing to add flavor, aroma, and bitterness to beer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "beerhop",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Celebrity Business",
-          "description": "High-profile individual known for significant achievements in business or entrepreneurship",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "celebritybusiness",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Company Suffix",
-          "description": "Suffix at the end of a company name, indicating business structure, like 'Inc.' or 'LLC'",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "companysuffix",
+              "const": "year",
               "additionalProperties": false
             }
           }
@@ -2411,331 +837,49 @@
           }
         },
         {
-          "name": "UintRange",
-          "description": "Non-negative integer value between given range",
+          "name": "Minute",
+          "description": "Unit of time equal to 60 seconds",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum uint value",
-                  "type": "number",
-                  "default": "4294967295",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum uint value",
-                  "type": "number",
-                  "default": "0",
-                  "additionalProperties": false
-                }
-              }
-            },
             "type": {
-              "const": "uintrange",
+              "const": "minute",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Descriptive Adjective",
-          "description": "Adjective that provides detailed characteristics about a noun",
+          "name": "Int32",
+          "description": "Signed 32-bit integer, capable of representing values from -2,147,483,648 to 2,147,483,647",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "adjectivedescriptive",
+              "const": "int32",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Noun Countable",
-          "description": "Items that can be counted individually",
+          "name": "Bitcoin Private Key",
+          "description": "Secret, secure code that allows the owner to access and control their Bitcoin holdings",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "nouncountable",
+              "const": "bitcoinprivatekey",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Beer Alcohol",
-          "description": "Measures the alcohol content in beer",
+          "name": "Connective Listing",
+          "description": "Connective word used to list or enumerate items or examples",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "beeralcohol",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Celebrity Actor",
-          "description": "Famous person known for acting in films, television, or theater",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "celebrityactor",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Connective Examplify",
-          "description": "Connective word used to provide examples or illustrations of a concept or idea",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "connectiveexamplify",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Helping Verb",
-          "description": "Auxiliary verb that helps the main verb complete the sentence",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "verbhelping",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Nice Colors",
-          "description": "Attractive and appealing combinations of colors, returns an list of color hex codes",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nicecolors",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Uint16",
-          "description": "Unsigned 16-bit integer, capable of representing values from 0 to 65,535",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "uint16",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Credit Card Number",
-          "description": "Unique numerical identifier on a credit card used for making electronic payments and transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "bins": {
-                  "name": "Bins",
-                  "description": "Optional list of prepended bin numbers to pick from",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "gaps": {
-                  "name": "Gaps",
-                  "description": "Whether or not to have gaps in number",
-                  "type": "boolean",
-                  "default": "false",
-                  "additionalProperties": false
-                },
-                "types": {
-                  "name": "Types",
-                  "description": "A select number of types you want to use when generating a credit card number",
-                  "type": "string",
-                  "default": "all",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "creditcardnumber",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Question",
-          "description": "Statement formulated to inquire or seek clarification",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "question",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft mob boss",
-          "description": "Powerful hostile creature in the game, often found in challenging dungeons or structures",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftmobboss",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Shuffle Ints",
-          "description": "Shuffles an array of ints",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "ints": {
-                  "name": "Integers",
-                  "description": "Delimited separated integers",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "shuffleints",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Random Int",
-          "description": "Randomly selected value from a slice of int",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "ints": {
-                  "name": "Integers",
-                  "description": "Delimited separated integers",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "randomint",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Comment",
-          "description": "Statement or remark expressing an opinion, observation, or reaction",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "comment",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Opera User Agent",
-          "description": "The specific identification string sent by the Opera web browser when making requests on the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "operauseragent",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Determiner",
-          "description": "Word that introduces a noun and identifies it as a noun",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "noundeterminer",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Company",
-          "description": "Designated official name of a business or organization",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "company",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Timezone Abbreviation",
-          "description": "Abbreviated 3-letter word of a timezone",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "timezoneabv",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Image JPEG",
-          "description": "Image file format known for its efficient compression and compatibility",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "height": {
-                  "name": "Height",
-                  "description": "Image height in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                },
-                "width": {
-                  "name": "Width",
-                  "description": "Image width in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "imagejpeg",
+              "const": "connectivelisting",
               "additionalProperties": false
             }
           }
@@ -2753,49 +897,153 @@
           }
         },
         {
-          "name": "Pronoun Demonstrative",
-          "description": "Pronoun that points out specific people or things",
+          "name": "Timezone Region",
+          "description": "Geographic area sharing the same standard time",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "pronoundemonstrative",
+              "const": "timezoneregion",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Farm Animal",
-          "description": "Animal name commonly found on a farm",
+          "name": "Emoji",
+          "description": "Digital symbol expressing feelings or ideas in text messages and online chats",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "farmanimal",
+              "const": "emoji",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "HTTP error",
-          "description": "A problem with a web http request",
+          "name": "State Abbreviation",
+          "description": "Shortened 2-letter form of a country's state",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "errorhttp",
+              "const": "stateabr",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Input Name",
-          "description": "Attribute used to define the name of an input element in web forms",
+          "name": "Domain Name",
+          "description": "Human-readable web address used to identify websites on the internet",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "inputname",
+              "const": "domainname",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "HTTP Status Code",
+          "description": "Random http status code",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "httpstatuscode",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Country Abbreviation",
+          "description": "Shortened 2-letter form of a country's name",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "countryabr",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Timezone Offset",
+          "description": "The difference in hours from Coordinated Universal Time (UTC) for a specific region",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "timezoneoffset",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Price",
+          "description": "The amount of money or value assigned to a product, service, or asset in a transaction",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max": {
+                  "name": "Max",
+                  "description": "Maximum price value",
+                  "type": "string",
+                  "default": "1000",
+                  "additionalProperties": false
+                },
+                "min": {
+                  "name": "Min",
+                  "description": "Minimum price value",
+                  "type": "string",
+                  "default": "0",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "price",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Last Name",
+          "description": "The family name or surname of an individual",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "lastname",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Possessive Adjective",
+          "description": "Adjective indicating ownership or possession",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adjectivepossessive",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Personal",
+          "description": "Pronoun referring to a specific persons or things",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronounpersonal",
               "additionalProperties": false
             }
           }
@@ -2813,85 +1061,13 @@
           }
         },
         {
-          "name": "Adverb Time Definite",
-          "description": "Adverb that specifies the exact time an action occurs",
+          "name": "Indefinite Adjective",
+          "description": "Adjective describing a non-specific noun",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "adverbtimedefinite",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Credit Card Type",
-          "description": "Classification of credit cards based on the issuing company",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "creditcardtype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "State",
-          "description": "Governmental division within a country, often having its own laws and government",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "state",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Slogan",
-          "description": "Catchphrase or motto used by a company to represent its brand or values",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "slogan",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "School",
-          "description": "An institution for formal education and learning",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "school",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Interrogative Adjective",
-          "description": "Adjective used to ask questions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adjectiveinterrogative",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Preposition Simple",
-          "description": "Single-word preposition showing relationships between 2 parts of a sentence",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "prepositionsimple",
+              "const": "adjectiveindefinite",
               "additionalProperties": false
             }
           }
@@ -2909,37 +1085,629 @@
           }
         },
         {
-          "name": "Minecraft tool",
-          "description": "Items in Minecraft designed for specific tasks, including mining, digging, and building",
+          "name": "IPv6 Address",
+          "description": "Numerical label assigned to devices on a network, providing a larger address space than IPv4 for internet communication",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "minecrafttool",
+              "const": "ipv6address",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Indefinite Adjective",
-          "description": "Adjective describing a non-specific noun",
+          "name": "Noun",
+          "description": "Person, place, thing, or idea, named or referred to in a sentence",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "adjectiveindefinite",
+              "const": "noun",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Action Verb",
-          "description": "Verb Indicating a physical or mental action",
+          "name": "Timezone",
+          "description": "Region where the same standard time is used, based on longitudinal divisions of the Earth",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "verbaction",
+              "const": "timezone",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "HTTP Method",
+          "description": "Verb used in HTTP requests to specify the desired action to be performed on a resource",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "httpmethod",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Uint64",
+          "description": "Unsigned 64-bit integer, capable of representing values from 0 to 18,446,744,073,709,551,615",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "uint64",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "CUSIP",
+          "description": "Unique identifier for securities, especially bonds, in the United States and Canada",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "cusip",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "SSN",
+          "description": "Unique nine-digit identifier used for government and financial purposes in the United States",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "ssn",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Day",
+          "description": "24-hour period equivalent to one rotation of Earth on its axis",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "day",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Name Suffix",
+          "description": "A title or designation added after a person's name",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "namesuffix",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Connective Casual",
+          "description": "Connective word used to indicate a cause-and-effect relationship between events or actions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "connectivecasual",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Relative",
+          "description": "Pronoun that introduces a clause, referring back to a noun or pronoun",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronounrelative",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Int64",
+          "description": "Signed 64-bit integer, capable of representing values from -9,223,372,036,854,775,808 to -9,223,372,036,854,775,807",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "int64",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "ACH Routing Number",
+          "description": "Unique nine-digit code used in the U.S. for identifying the bank and processing electronic transactions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "achrouting",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Name",
+          "description": "The given and family name of an individual",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "name",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "LetterN",
+          "description": "ASCII string with length N",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "count": {
+                  "name": "Count",
+                  "description": "Number of digits to generate",
+                  "type": "number",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "lettern",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Job Title",
+          "description": "Specific title for a position or role within a company or organization",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "jobtitle",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "PastDate",
+          "description": "Date that has occurred before the current moment in time",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pastdate",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Letter",
+          "description": "Character or symbol from the American Standard Code for Information Interchange (ASCII) character set",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "letter",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "DateRange",
+          "description": "Random date between two ranges",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enddate": {
+                  "name": "End Date",
+                  "description": "End date time string",
+                  "type": "string",
+                  "default": "2024-09-22",
+                  "additionalProperties": false
+                },
+                "format": {
+                  "name": "Format",
+                  "description": "Date time string format",
+                  "type": "string",
+                  "default": "yyyy-MM-dd",
+                  "additionalProperties": false
+                },
+                "startdate": {
+                  "name": "Start Date",
+                  "description": "Start date time string",
+                  "type": "string",
+                  "default": "1970-01-01",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "daterange",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Name Prefix",
+          "description": "A title or honorific added before a person's name",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nameprefix",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Currency Short",
+          "description": "Short 3-letter word used to represent a specific currency",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "currencyshort",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Connective Comparitive",
+          "description": "Connective word used to indicate a comparison between two or more things",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "connectivecomparative",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Emoji Alias",
+          "description": "Alternative name or keyword used to represent a specific emoji in text or code",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "emojialias",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Hobby",
+          "description": "An activity pursued for leisure and pleasure",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "hobby",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Countable",
+          "description": "Items that can be counted individually",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nouncountable",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Collective People",
+          "description": "Group of people or things regarded as a unit",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nouncollectivepeople",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Street Name",
+          "description": "Name given to a specific road or street",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "streetname",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Chrome User Agent",
+          "description": "The specific identification string sent by the Google Chrome web browser when making requests on the internet",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "chromeuseragent",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "UintN",
+          "description": "Unsigned integer between 0 and n",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "n": {
+                  "name": "N",
+                  "description": "Maximum uint value",
+                  "type": "number",
+                  "default": "4294967295",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "uintn",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Demonstrative",
+          "description": "Pronoun that points out specific people or things",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronoundemonstrative",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Interrogative",
+          "description": "Pronoun used to ask questions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronouninterrogative",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Reflective",
+          "description": "Pronoun referring back to the subject of the sentence",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronounreflective",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Street Suffix",
+          "description": "Designation at the end of a street name indicating type, like 'Avenue' or 'Street'",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "streetsuffix",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Nanosecond",
+          "description": "Unit of time equal to One billionth (10^-9) of a second",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nanosecond",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Timezone Full",
+          "description": "Full name of a timezone",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "timezonefull",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Emoji Description",
+          "description": "Brief explanation of the meaning or emotion conveyed by an emoji",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "emojidescription",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Connective Examplify",
+          "description": "Connective word used to provide examples or illustrations of a concept or idea",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "connectiveexamplify",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Time Indefinite",
+          "description": "Adverb that gives a general or unspecified time frame",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbtimeindefinite",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Uncountable",
+          "description": "Items that can't be counted individually",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "noununcountable",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Color",
+          "description": "Hue seen by the eye, returns the name of the color like red or blue",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "color",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Second",
+          "description": "Unit of time equal to 1/60th of a minute",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "second",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Descriptive Adjective",
+          "description": "Adjective that provides detailed characteristics about a noun",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adjectivedescriptive",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Linking Verb",
+          "description": "Verb that Connects the subject of a sentence to a subject complement",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "verblinking",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Degree",
+          "description": "Adverb that indicates the degree or intensity of an action or adjective",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbdegree",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Abstract",
+          "description": "Ideas, qualities, or states that cannot be perceived with the five senses",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nounabstract",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Hour",
+          "description": "Unit of time equal to 60 minutes",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "hour",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Company Suffix",
+          "description": "Suffix at the end of a company name, indicating business structure, like 'Inc.' or 'LLC'",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "companysuffix",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Timezone Abbreviation",
+          "description": "Abbreviated 3-letter word of a timezone",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "timezoneabv",
               "additionalProperties": false
             }
           }
@@ -3005,226 +1773,25 @@
           }
         },
         {
-          "name": "Beer Malt",
-          "description": "Processed barley or other grains, provides sugars for fermentation and flavor to beer",
+          "name": "Float64",
+          "description": "Data type representing floating-point numbers with 64 bits of precision in computing",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "beermalt",
+              "const": "float64",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Database error",
-          "description": "A problem or issue encountered while accessing or managing a database",
+          "name": "Gender",
+          "description": "Classification based on social and cultural norms that identifies an individual",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "errordatabase",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HTTP client error",
-          "description": "Failure or issue occurring within a client software that sends requests to web servers",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "errorhttpclient",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Concrete",
-          "description": "Names for physical entities experienced through senses like sight, touch, smell, or taste",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nounconcrete",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Price",
-          "description": "The amount of money or value assigned to a product, service, or asset in a transaction",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "max": {
-                  "name": "Max",
-                  "description": "Maximum price value",
-                  "type": "string",
-                  "default": "1000",
-                  "additionalProperties": false
-                },
-                "min": {
-                  "name": "Min",
-                  "description": "Minimum price value",
-                  "type": "string",
-                  "default": "0",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "price",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "ACH Routing Number",
-          "description": "Unique nine-digit code used in the U.S. for identifying the bank and processing electronic transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "achrouting",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Bitcoin Private Key",
-          "description": "Secret, secure code that allows the owner to access and control their Bitcoin holdings",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "bitcoinprivatekey",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Beer Yeast",
-          "description": "Microorganism used in brewing to ferment sugars, producing alcohol and carbonation in beer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "beeryeast",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Celebrity Sport",
-          "description": "Famous athlete known for achievements in a particular sport",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "celebritysport",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hacker Abbreviation",
-          "description": "Abbreviations and acronyms commonly used in the hacking and cybersecurity community",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackerabbreviation",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Log Level",
-          "description": "Classification used in logging to indicate the severity or priority of a log entry",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "loglevel",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Movie",
-          "description": "A story told through moving pictures and sound",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "movie",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Product Material",
-          "description": "The substance from which a product is made, influencing its appearance, durability, and properties",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "productmaterial",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Manner",
-          "description": "Adverb that describes how an action is performed",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adverbmanner",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Sentence",
-          "description": "Set of words expressing a statement, question, exclamation, or command",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "wordcount": {
-                  "name": "Word Count",
-                  "description": "Number of words in a sentence",
-                  "type": "number",
-                  "default": "5",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "sentence",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Firefox User Agent",
-          "description": "The specific identification string sent by the Firefox web browser when making requests on the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "firefoxuseragent",
+              "const": "gender",
               "additionalProperties": false
             }
           }
@@ -3254,13 +1821,111 @@
           }
         },
         {
-          "name": "Adverb",
-          "description": "Word that modifies verbs, adjectives, or other adverbs",
+          "name": "Credit Card Number",
+          "description": "Unique numerical identifier on a credit card used for making electronic payments and transactions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "bins": {
+                  "name": "Bins",
+                  "description": "Optional list of prepended bin numbers to pick from",
+                  "type": "string",
+                  "additionalProperties": false
+                },
+                "gaps": {
+                  "name": "Gaps",
+                  "description": "Whether or not to have gaps in number",
+                  "type": "boolean",
+                  "default": "false",
+                  "additionalProperties": false
+                },
+                "types": {
+                  "name": "Types",
+                  "description": "A select number of types you want to use when generating a credit card number",
+                  "type": "string",
+                  "default": "all",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "creditcardnumber",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Blurb",
+          "description": "Brief description or summary of a company's purpose, products, or services",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "adverb",
+              "const": "blurb",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Emoji Tag",
+          "description": "Label or keyword associated with an emoji to categorize or search for it easily",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "emojitag",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Preposition Compound",
+          "description": "Preposition that can be formed by combining two or more prepositions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "prepositioncompound",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Phone Formatted",
+          "description": "Formatted phone number of a person",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "phoneformatted",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Time Definite",
+          "description": "Adverb that specifies the exact time an action occurs",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbtimedefinite",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Frequency Indefinite",
+          "description": "Adverb that specifies how often an action occurs without specifying a particular frequency",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbfrequencyindefinite",
               "additionalProperties": false
             }
           }
@@ -3278,13 +1943,410 @@
           }
         },
         {
-          "name": "Job Title",
-          "description": "Specific title for a position or role within a company or organization",
+          "name": "Country",
+          "description": "Nation with its own government and defined territory",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "jobtitle",
+              "const": "country",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Question",
+          "description": "Statement formulated to inquire or seek clarification",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "question",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Action Verb",
+          "description": "Verb Indicating a physical or mental action",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "verbaction",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Buzzword",
+          "description": "Trendy or overused term often used in business to sound impressive",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "buzzword",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Float64 Range",
+          "description": "Float64 value between given range",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max": {
+                  "name": "Max",
+                  "description": "Maximum float64 value",
+                  "type": "string",
+                  "additionalProperties": false
+                },
+                "min": {
+                  "name": "Min",
+                  "description": "Minimum float64 value",
+                  "type": "string",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "float64range",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Lorem Ipsum String",
+          "description": "Sentence of the Lorem Ipsum placeholder text used in design and publishing",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "wordcount": {
+                  "name": "Word Count",
+                  "description": "Number of words in a sentence",
+                  "type": "number",
+                  "default": "5",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "string",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Connective Time",
+          "description": "Connective word used to indicate a temporal relationship between events or actions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "connectivetime",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Preposition",
+          "description": "Words used to express the relationship of a noun or pronoun to other words in a sentence",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "preposition",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Street Number",
+          "description": "Numerical identifier assigned to a street",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "streetnumber",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "UUID",
+          "description": "128-bit identifier used to uniquely identify objects or entities in computer systems",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "uuid",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Credit Card Exp",
+          "description": "Date when a credit card becomes invalid and cannot be used for transactions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "creditcardexp",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun",
+          "description": "Word used in place of a noun to avoid repetition",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronoun",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Quote",
+          "description": "Direct repetition of someone else's words",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "quote",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Int",
+          "description": "Signed integer",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "int",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Proper Adjective",
+          "description": "Adjective derived from a proper noun, often used to describe nationality or origin",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adjectiveproper",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Common",
+          "description": "General name for people, places, or things, not specific or unique",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nouncommon",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Street",
+          "description": "Public road in a city or town, typically with houses and buildings on each side",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "street",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Collective Thing",
+          "description": "Group of objects or items, such as a 'bundle' of sticks or a 'cluster' of grapes",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nouncollectivething",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Phrase",
+          "description": "A small group of words standing together",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "phrase",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Preposition Simple",
+          "description": "Single-word preposition showing relationships between 2 parts of a sentence",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "prepositionsimple",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "User Agent",
+          "description": "String sent by a web browser to identify itself when requesting web content",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "useragent",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Language",
+          "description": "System of communication using symbols, words, and grammar to convey meaning between individuals",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "language",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Lorem Ipsum Word",
+          "description": "Word of the Lorem Ipsum placeholder text used in design and publishing",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "loremipsumword",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Adverb Place",
+          "description": "Adverb that indicates the location or direction of an action",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adverbplace",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Pronoun Object",
+          "description": "Pronoun used as the object of a verb or preposition",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "pronounobject",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Float32 Range",
+          "description": "Float32 value between given range",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "options": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max": {
+                  "name": "Max",
+                  "description": "Maximum float32 value",
+                  "type": "string",
+                  "additionalProperties": false
+                },
+                "min": {
+                  "name": "Min",
+                  "description": "Minimum float32 value",
+                  "type": "string",
+                  "additionalProperties": false
+                }
+              }
+            },
+            "type": {
+              "const": "float32range",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Verb",
+          "description": "Word expressing an action, event or state",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "verb",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Boolean",
+          "description": "Data type that represents one of two possible values, typically true or false",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "bool",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Uint8",
+          "description": "Unsigned 8-bit integer, capable of representing values from 0 to 255",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "uint8",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Int16",
+          "description": "Signed 16-bit integer, capable of representing values from 32,768 to 32,767",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "int16",
               "additionalProperties": false
             }
           }
@@ -3302,20 +2364,176 @@
           }
         },
         {
-          "name": "HTTP server error",
-          "description": "Failure or issue occurring within a server software that recieves requests from clients",
+          "name": "Digit",
+          "description": "Numerical symbol used to represent numbers",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "errorhttpserver",
+              "const": "digit",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Dice",
-          "description": "Small, cube-shaped objects used in games of chance for random outcomes",
+          "name": "Adjective",
+          "description": "Word describing or modifying a noun",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "adjective",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "ACH Account Number",
+          "description": "A bank account number used for Automated Clearing House transactions and electronic transfers",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "achaccount",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Opera User Agent",
+          "description": "The specific identification string sent by the Opera web browser when making requests on the internet",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "operauseragent",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "HTTP Version",
+          "description": "Number indicating the version of the HTTP protocol used for communication between a client and a server",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "httpversion",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Street Prefix",
+          "description": "Directional or descriptive term preceding a street name, like 'East' or 'Main'",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "streetprefix",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Job Level",
+          "description": "Random job level",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "joblevel",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Slogan",
+          "description": "Catchphrase or motto used by a company to represent its brand or values",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "slogan",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Firefox User Agent",
+          "description": "The specific identification string sent by the Firefox web browser when making requests on the internet",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "firefoxuseragent",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Language Abbreviation",
+          "description": "Shortened form of a language's name",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "languageabbreviation",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Currency Long",
+          "description": "Complete name of a specific currency used for official identification in financial transactions",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "currencylong",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Noun Collective Animal",
+          "description": "Group of animals, like a 'pack' of wolves or a 'flock' of birds",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "nouncollectiveanimal",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Credit Card Type",
+          "description": "Classification of credit cards based on the issuing company",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "creditcardtype",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Job Descriptor",
+          "description": "Word used to describe the duties, requirements, and nature of a job",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "jobdescriptor",
+              "additionalProperties": false
+            }
+          }
+        },
+        {
+          "name": "Date",
+          "description": "Representation of a specific day, month, and year, often used for chronological reference",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -3323,175 +2541,89 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "numdice": {
-                  "name": "Number of Dice",
-                  "description": "Number of dice to roll",
-                  "type": "number",
-                  "default": "1",
-                  "additionalProperties": false
-                },
-                "sides": {
-                  "name": "Number of Sides",
-                  "description": "Number of sides on each dice",
+                "format": {
+                  "name": "Format",
+                  "description": "Date time string format output. You may also use golang time format or java time format",
                   "type": "string",
-                  "default": "[6]",
+                  "default": "RFC3339",
                   "additionalProperties": false
                 }
               }
             },
             "type": {
-              "const": "dice",
+              "const": "date",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Dog",
-          "description": "Various breeds that define different dogs",
+          "name": "Username",
+          "description": "Unique identifier assigned to a user for accessing an account or system",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "dog",
+              "const": "username",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Beer BLG",
-          "description": "Scale indicating the concentration of extract in worts",
+          "name": "Month String",
+          "description": "String Representation of a month name",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "beerblg",
+              "const": "monthstring",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Minecraft villager level",
-          "description": "Measure of a villager's experience and proficiency in their assigned job or profession",
+          "name": "ISIN",
+          "description": "International standard code for uniquely identifying securities worldwide",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "minecraftvillagerlevel",
+              "const": "isin",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Noun Proper",
-          "description": "Specific name for a particular person, place, or organization",
+          "name": "Safari User Agent",
+          "description": "The specific identification string sent by the Safari web browser when making requests on the internet",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "nounproper",
+              "const": "safariuseragent",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "First Name",
-          "description": "The name given to a person at birth",
+          "name": "Float32",
+          "description": "Data type representing floating-point numbers with 32 bits of precision in computing",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "firstname",
+              "const": "float32",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Product Description",
-          "description": "Explanation detailing the features and characteristics of a product",
+          "name": "Zip",
+          "description": "Numerical code for postal address sorting, specific to a geographic area",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "productdescription",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Vowel",
-          "description": "Speech sound produced with an open vocal tract",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "vowel",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Book",
-          "description": "Written or printed work consisting of pages bound together, covering various subjects or stories",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "book",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Timezone Full",
-          "description": "Full name of a timezone",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "timezonefull",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Fixed Width",
-          "description": "Fixed width rows of output data based on input fields",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "fields": {
-                  "name": "Fields",
-                  "description": "Fields name, function and params",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "rowcount": {
-                  "name": "Row Count",
-                  "description": "Number of rows",
-                  "type": "number",
-                  "default": "10",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "fixed_width",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Language",
-          "description": "System of communication using symbols, words, and grammar to convey meaning between individuals",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "language",
+              "const": "zip",
               "additionalProperties": false
             }
           }
@@ -3543,583 +2675,13 @@
           }
         },
         {
-          "name": "Connective",
-          "description": "Word used to connect words or sentences",
+          "name": "Int8",
+          "description": "Signed 8-bit integer, capable of representing values from -128 to 127",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "connective",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Collective Animal",
-          "description": "Group of animals, like a 'pack' of wolves or a 'flock' of birds",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nouncollectiveanimal",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Phrase",
-          "description": "A small group of words standing together",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phrase",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Snack",
-          "description": "Random snack",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "snack",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Image PNG",
-          "description": "Image file format known for its lossless compression and support for transparency",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "height": {
-                  "name": "Height",
-                  "description": "Image height in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                },
-                "width": {
-                  "name": "Width",
-                  "description": "Image width in px",
-                  "type": "number",
-                  "default": "500",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "imagepng",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft ore",
-          "description": "Naturally occurring minerals found in the game Minecraft, used for crafting purposes",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftore",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft villager station",
-          "description": "Designated area or structure in Minecraft where villagers perform their job-related tasks and trading",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftvillagerstation",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Connective Casual",
-          "description": "Connective word used to indicate a cause-and-effect relationship between events or actions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "connectivecasual",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Beer IBU",
-          "description": "Scale measuring bitterness of beer from hops",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "beeribu",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "File Extension",
-          "description": "Suffix appended to a filename indicating its format or type",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "fileextension",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hacker Noun",
-          "description": "Noun representing an element, tool, or concept within the realm of hacking and cybersecurity",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackernoun",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Domain Name",
-          "description": "Human-readable web address used to identify websites on the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "domainname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HTTP Status Code Simple",
-          "description": "Three-digit number returned by a web server to indicate the outcome of an HTTP request",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "httpstatuscodesimple",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft armor part",
-          "description": "Component of an armor set in Minecraft, such as a helmet, chestplate, leggings, or boots",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftarmorpart",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Template",
-          "description": "Generates document from template",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "data": {
-                  "name": "Custom Data",
-                  "description": "Custom data to pass to the template",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "template": {
-                  "name": "Template",
-                  "description": "Golang template to generate the document from",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "template",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pet Name",
-          "description": "Affectionate nickname given to a pet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "petname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "CUSIP",
-          "description": "Unique identifier for securities, especially bonds, in the United States and Canada",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "cusip",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Generate",
-          "description": "Random string generated from string value based upon available data sets",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "str": {
-                  "name": "String",
-                  "description": "String value to generate from",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "generate",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Validation error",
-          "description": "Occurs when input data fails to meet required criteria or format specifications",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "errorvalidation",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hacker Adjective",
-          "description": "Adjectives describing terms often associated with hackers and cybersecurity experts",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackeradjective",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hacker Verb",
-          "description": "Verbs associated with actions and activities in the field of hacking and cybersecurity",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hackerverb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Teams",
-          "description": "Randomly split people into teams",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "people": {
-                  "name": "Strings",
-                  "description": "Array of people",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "teams": {
-                  "name": "Strings",
-                  "description": "Array of teams",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "teams",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Product Name",
-          "description": "Distinctive title or label assigned to a product for identification and marketing",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "productname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Uint",
-          "description": "Unsigned integer",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "uint",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Letter",
-          "description": "Character or symbol from the American Standard Code for Information Interchange (ASCII) character set",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "letter",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Uncountable",
-          "description": "Items that can't be counted individually",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "noununcountable",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Car Transmission Type",
-          "description": "Mechanism a car uses to transmit power from the engine to the wheels",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "cartransmissiontype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Year",
-          "description": "Period of 365 days, the time Earth takes to orbit the Sun",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "year",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Timezone",
-          "description": "Region where the same standard time is used, based on longitudinal divisions of the Earth",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "timezone",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hipster Paragraph",
-          "description": "Paragraph showcasing the use of trendy and unconventional vocabulary associated with hipster culture",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "paragraphcount": {
-                  "name": "Paragraph Count",
-                  "description": "Number of paragraphs",
-                  "type": "number",
-                  "default": "2",
-                  "additionalProperties": false
-                },
-                "paragraphseparator": {
-                  "name": "Paragraph Separator",
-                  "description": "String value to add between paragraphs",
-                  "type": "string",
-                  "default": "\u003cbr /\u003e",
-                  "additionalProperties": false
-                },
-                "sentencecount": {
-                  "name": "Sentence Count",
-                  "description": "Number of sentences in a paragraph",
-                  "type": "number",
-                  "default": "2",
-                  "additionalProperties": false
-                },
-                "wordcount": {
-                  "name": "Word Count",
-                  "description": "Number of words in a sentence",
-                  "type": "number",
-                  "default": "5",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "hipsterparagraph",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft mob hostile",
-          "description": "Aggressive creatures in the game that actively attack players when encountered",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftmobhostile",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Verb",
-          "description": "Word expressing an action, event or state",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "verb",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Uint64",
-          "description": "Unsigned 64-bit integer, capable of representing values from 0 to 18,446,744,073,709,551,615",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "uint64",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Random Uint",
-          "description": "Randomly selected value from a slice of uint",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "uints": {
-                  "name": "Unsigned Integers",
-                  "description": "Delimited separated unsigned integers",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "randomuint",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Credit Card",
-          "description": "Plastic card allowing users to make purchases on credit, with payment due at a later date",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "creditcard",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Timezone Offset",
-          "description": "The difference in hours from Coordinated Universal Time (UTC) for a specific region",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "timezoneoffset",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "MAC Address",
-          "description": "Unique identifier assigned to network interfaces, often used in Ethernet networks",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "macaddress",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Credit Card CVV",
-          "description": "Three or four-digit security code on a credit card used for online and remote transactions",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "creditcardcvv",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "SSN",
-          "description": "Unique nine-digit identifier used for government and financial purposes in the United States",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "ssn",
+              "const": "int8",
               "additionalProperties": false
             }
           }
@@ -4137,678 +2699,37 @@
           }
         },
         {
-          "name": "Buzzword",
-          "description": "Trendy or overused term often used in business to sound impressive",
+          "name": "Word",
+          "description": "Basic unit of language representing a concept or thing, consisting of letters and having meaning",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "buzzword",
+              "const": "word",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Map",
-          "description": "Data structure that stores key-value pairs",
+          "name": "Domain Suffix",
+          "description": "The part of a domain name that comes after the last dot, indicating its type or purpose",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "map",
+              "const": "domainsuffix",
               "additionalProperties": false
             }
           }
         },
         {
-          "name": "Genre",
-          "description": "Category that classifies movies based on common themes, styles, and storytelling approaches",
+          "name": "Uint16",
+          "description": "Unsigned 16-bit integer, capable of representing values from 0 to 65,535",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "type": {
-              "const": "moviegenre",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Name Prefix",
-          "description": "A title or honorific added before a person's name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "nameprefix",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Last Name",
-          "description": "The family name or surname of an individual",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "lastname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Zip",
-          "description": "Numerical code for postal address sorting, specific to a geographic area",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "zip",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Dessert",
-          "description": "Sweet treat often enjoyed after a meal",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "dessert",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Safari User Agent",
-          "description": "The specific identification string sent by the Safari web browser when making requests on the internet",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "safariuseragent",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Preposition Phrase",
-          "description": "Phrase starting with a preposition, showing relation between elements in a sentence.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phrasepreposition",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Street",
-          "description": "Public road in a city or town, typically with houses and buildings on each side",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "street",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Latitude",
-          "description": "Geographic coordinate specifying north-south position on Earth's surface",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "latitude",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "UintN",
-          "description": "Unsigned integer between 0 and n",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "n": {
-                  "name": "N",
-                  "description": "Maximum uint value",
-                  "type": "number",
-                  "default": "4294967295",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "uintn",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Noun Phrase",
-          "description": "Phrase with a noun as its head, functions within sentence like a noun",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phrasenoun",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Address",
-          "description": "Residential location including street, city, state, country and postal code",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "address",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HTTP Method",
-          "description": "Verb used in HTTP requests to specify the desired action to be performed on a resource",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "httpmethod",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Language Abbreviation",
-          "description": "Shortened form of a language's name",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "languageabbreviation",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Lexify",
-          "description": "Replace ? with random generated letters",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "str": {
-                  "name": "String",
-                  "description": "String value to replace ?'s",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "lexify",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Boolean",
-          "description": "Data type that represents one of two possible values, typically true or false",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "bool",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Title",
-          "description": "The specific name given to a book",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "booktitle",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Programming Language",
-          "description": "Formal system of instructions used to create software and perform computational tasks",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "programminglanguage",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft wood",
-          "description": "Natural resource in Minecraft, used for crafting various items and building structures",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftwood",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft food",
-          "description": "Consumable items in Minecraft that provide nourishment to the player character",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftfood",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft mob passive",
-          "description": "Non-aggressive creatures in the game that do not attack players",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftmobpassive",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Car Maker",
-          "description": "Company or brand that manufactures and designs cars",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "carmaker",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pronoun Personal",
-          "description": "Pronoun referring to a specific persons or things",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "pronounpersonal",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Pronoun Object",
-          "description": "Pronoun used as the object of a verb or preposition",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "pronounobject",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "File Mime Type",
-          "description": "Defines file format and nature for browsers and email clients using standardized identifiers",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "filemimetype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Connective Complaint",
-          "description": "Connective word used to express dissatisfaction or complaints about a situation",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "connectivecomplaint",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Bird",
-          "description": "Distinct species of birds",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "bird",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Genre",
-          "description": "Category or type of book defined by its content, style, or form",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "bookgenre",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hex Color",
-          "description": "Six-digit code representing a color in the color model",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hexcolor",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Timezone Region",
-          "description": "Geographic area sharing the same standard time",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "timezoneregion",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Error",
-          "description": "Message displayed by a computer or software when a problem or mistake is encountered",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "error",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Degree",
-          "description": "Adverb that indicates the degree or intensity of an action or adjective",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adverbdegree",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Adverb Frequency Indefinite",
-          "description": "Adverb that specifies how often an action occurs without specifying a particular frequency",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adverbfrequencyindefinite",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Animal Type",
-          "description": "Type of animal, such as mammals, birds, reptiles, etc.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "animaltype",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Month",
-          "description": "Division of the year, typically 30 or 31 days long",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "month",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Emoji Alias",
-          "description": "Alternative name or keyword used to represent a specific emoji in text or code",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "emojialias",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Hipster Word",
-          "description": "Trendy and unconventional vocabulary used by hipsters to express unique cultural preferences",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "hipsterword",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Proper Adjective",
-          "description": "Adjective derived from a proper noun, often used to describe nationality or origin",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "adjectiveproper",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Username",
-          "description": "Unique identifier assigned to a user for accessing an account or system",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "username",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Weighted",
-          "description": "Randomly select a given option based upon an equal amount of weights",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "options": {
-                  "name": "Options",
-                  "description": "Array of any values",
-                  "type": "string",
-                  "additionalProperties": false
-                },
-                "weights": {
-                  "name": "Weights",
-                  "description": "Array of weights",
-                  "type": "string",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "weighted",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "App Name",
-          "description": "Software program designed for a specific purpose or task on a computer or mobile device",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "appname",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "HTTP Status Code",
-          "description": "Random http status code",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "httpstatuscode",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Country",
-          "description": "Nation with its own government and defined territory",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "country",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "App Author",
-          "description": "Person or group creating and developing an application",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "appauthor",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Minecraft villager job",
-          "description": "The profession or occupation assigned to a villager character in the game",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "minecraftvillagerjob",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Paragraph",
-          "description": "Distinct section of writing covering a single theme, composed of multiple sentences",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "options": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "paragraphcount": {
-                  "name": "Paragraph Count",
-                  "description": "Number of paragraphs",
-                  "type": "number",
-                  "default": "2",
-                  "additionalProperties": false
-                },
-                "paragraphseparator": {
-                  "name": "Paragraph Separator",
-                  "description": "String value to add between paragraphs",
-                  "type": "string",
-                  "default": "\u003cbr /\u003e",
-                  "additionalProperties": false
-                },
-                "sentencecount": {
-                  "name": "Sentence Count",
-                  "description": "Number of sentences in a paragraph",
-                  "type": "number",
-                  "default": "2",
-                  "additionalProperties": false
-                },
-                "wordcount": {
-                  "name": "Word Count",
-                  "description": "Number of words in a sentence",
-                  "type": "number",
-                  "default": "5",
-                  "additionalProperties": false
-                }
-              }
-            },
-            "type": {
-              "const": "paragraph",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Cat",
-          "description": "Various breeds that define different cats",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "cat",
-              "additionalProperties": false
-            }
-          }
-        },
-        {
-          "name": "Phone",
-          "description": "Numerical sequence used to contact individuals via telephone or mobile devices",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "phone",
+              "const": "uint16",
               "additionalProperties": false
             }
           }
@@ -4851,6 +2772,7 @@
             "type"
           ]
         }
-      ]}
+      ]
+    }
   }
 }
