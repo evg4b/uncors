@@ -10,8 +10,27 @@ import (
 
 func TestGetTypes(t *testing.T) {
 	expected := []string{
+		// Inner types
 		"object",
 		"array",
+		// number
+		"number",
+		"int",
+		"intn",
+		"int8",
+		"int16",
+		"int32",
+		"int64",
+		"uint",
+		"uintn",
+		"uint8",
+		"uint16",
+		"uint32",
+		"uint64",
+		"float32",
+		"float32range",
+		"float64",
+		"float64range",
 	}
 
 	actual := fakedata.GetTypes()
