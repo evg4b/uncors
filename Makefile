@@ -1,15 +1,24 @@
-default: test format build
-
-test:
-	go test -timeout 1m ./...
-
-test-coverage:
-	go test -tags release -timeout 1m -race -v -coverprofile=coverage.out ./...
-
 format:
-	gofumpt -l -w .
 	gofmt -l -s -w .
+	gofumpt -l -w .
 	golangci-lint run --fix
 
+update_deps:
+	go get -u ./...
+	go mod tidy
+
+test:
+	go test ./...
+
+test-cover:
+	go test -tags release -timeout 1m -race -v -coverprofile=coverage.out ./...
+
 build:
-	go build -tags release -v .
+	go build ./...
+
+build-release:
+	go build -tags release ./...
+
+clean:
+	rm -rf ./uncors ./uncors.exe coverage.out
+	rm -rf ./tools/fakedata/docs.md ./tools/fakedata/scheme.json
