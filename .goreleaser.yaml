@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-
+version: 2
 project_name: uncors
 before:
   hooks:
@@ -28,7 +28,7 @@ checksum:
 source:
   enabled: false
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
@@ -80,8 +80,8 @@ brews:
     description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
     license: MIT
     homepage: https://github.com/evg4b/uncors
-    folder: Formula
-    tap:
+    directory: Formula
+    repository:
       owner: evg4b
       name: homebrew-tap
       token: "{{ .Env.ACCOUNT_GITHUB_TOKEN }}"
@@ -90,17 +90,18 @@ brews:
     commit_author:
       name: Evgeny Abramovich
       email: evg.abramovitch@gmail.com
-scoop:
-  bucket:
-    owner: evg4b
-    name: scoop-bucket
-    branch: main
-    token: "{{ .Env.ACCOUNT_GITHUB_TOKEN }}"
-  folder: bucket
-  commit_author:
-    name: Evgeny Abramovich
-    email: evg.abramovitch@gmail.com
-  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-  homepage: https://github.com/evg4b/uncors
-  description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
-  license: MIT
+scoops:
+  - name: uncors
+    repository:
+      owner: evg4b
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.ACCOUNT_GITHUB_TOKEN }}"
+    directory: bucket
+    commit_author:
+      name: Evgeny Abramovich
+      email: evg.abramovitch@gmail.com
+    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: https://github.com/evg4b/uncors
+    description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
+    license: MIT
