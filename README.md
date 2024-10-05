@@ -110,12 +110,12 @@ uncors --from 'http://localhost' --to 'https://github.com' --http-port 8080
 
 More information about configuration and usage you can find on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
 
-# ⚠️ Caution
-
-Please be aware that the modification or replacement of CORS headers may introduce potential security vulnerabilities.
-This tool is specifically engineered to optimize the development and testing workflow and is not intended for use in a
-production environment or as a remote proxy server. It has not undergone a thorough security review; therefore, caution
-should be exercised when utilizing it.
+> [!Caution]
+>
+> Please be aware that the modification or replacement of CORS headers may introduce potential security vulnerabilities.
+> This tool is specifically engineered to optimize the development and testing workflow and is not intended for use in a
+> production environment or as a remote proxy server. It has not undergone a thorough security review; therefore, caution
+> should be exercised when utilizing it.
 
 # Stargazers over time
 
