@@ -38,4 +38,5 @@ jobs:
         id: test-action
         uses: evg4b/goreleaser-npm-publisher-action@main
         with:
+          prefix: 'wserdtryftvubhijnokmpl'
           token: ${{ secrets.TOKEN }}
