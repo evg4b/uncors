@@ -79,11 +79,12 @@ scoop install evg4b/uncors
 #### [NPM](https://npmjs.com) (Cross-platform)
 
 ```bash
+# Run as a independent CLI tool 
+npx -y uncors ...
+# Or add as dependency in your package
 npm install uncors --save-dev
-# OR
-yarn add uncors --dev
-# OR
-pnpm add -D uncors
+# yarn add uncors --dev
+# pnpm add -D uncors
 ```
 
 #### [Docker](https://www.docker.com/) (Cross-platform)
