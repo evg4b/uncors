@@ -133,7 +133,7 @@ func TestStaticDirMappingClone(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := testCase.expected.Clone()
 
-			assert.NotSame(t, testCase.expected, actual)
+			assert.NotSame(t, &testCase.expected, &actual)
 			assert.Equal(t, testCase.expected, actual)
 		})
 	}

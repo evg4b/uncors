@@ -28,6 +28,11 @@ var disablesFunctions = []string{
 	"productcategory",
 	"productfeature",
 	"productmaterial",
+	"productaudience",
+	"productbenefit",
+	"productdimension",
+	"productsuffix",
+	"productusecase",
 
 	// person
 	"person",
