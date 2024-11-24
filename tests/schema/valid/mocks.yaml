@@ -1,0 +1,32 @@
+http-port: 3000
+mappings:
+  - from: http://localhost
+    to: https://github.com
+    mocks:
+      - path: /demo1
+        response:
+          headers:
+            Content-Type: application/json
+          status: 200
+          raw: "Hello, World!"
+      - path: /demo2
+        response:
+          status: 200
+          file: /tmp/demo.json
+      - path: /demo3
+        response:
+          status: 200
+          fake:
+            type: object
+            properties:
+              first-name:
+                type: firstname
+              last-name:
+                type: lastname
+              email:
+                type: email
+              phones:
+                type: array
+                item:
+                  type: phoneformatted
+                count: 3

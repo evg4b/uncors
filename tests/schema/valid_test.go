@@ -4,43 +4,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/evg4b/uncors/tests/schema"
-
 	"github.com/evg4b/uncors/testing/testutils"
-
+	"github.com/evg4b/uncors/tests/schema"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 	"github.com/xeipuuv/gojsonschema"
 )
 
 func TestValidJsonSchema(t *testing.T) {
-	testdir := schema.DirPredicate("valid")
+	testCases := schema.LoadTestCases(t, testutils.CurrentDir(t), "valid")
 
-	testTempDir := t.TempDir()
 	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
 
-	cases := []struct {
-		name string
-		file string
-	}{
-		{
-			name: "minimal valid file",
-			file: testdir("minimal-valid.yaml"),
-		},
-		{
-			name: "short mapping",
-			file: testdir("short-mapping.yaml"),
-		},
-		{
-			name: "base mappings",
-			file: testdir("base-mappings.yaml"),
-		},
-	}
-
-	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			targetJSONFile := schema.TransformToJSON(t, testTempDir, testCase.file)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			targetJSONFile := schema.TransformToJSON(t, testCase.File)
 
 			schemaLoader := gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
 			documentLoader := gojsonschema.NewReferenceLoader("file://" + targetJSONFile)
