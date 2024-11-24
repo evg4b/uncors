@@ -21,19 +21,23 @@ func printResponse(request *contracts.Request, statusCode int) string {
 
 func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
 	if helpers.Is1xxCode(statusCode) {
-		return styles.InfoBlock, styles.InfoText
+		return styles.HTTPStatus1xxBlockStyle, styles.HTTPStatus1xxTextStyle
 	}
 
 	if helpers.Is2xxCode(statusCode) {
-		return styles.SuccessBlock, styles.SuccessText
+		return styles.HTTPStatus2xxBlockStyle, styles.HTTPStatus2xxTextStyle
 	}
 
 	if helpers.Is3xxCode(statusCode) {
-		return styles.WarningBlock, styles.WarningText
+		return styles.HTTPStatus3xxBlockStyle, styles.HTTPStatus3xxTextStyle
 	}
 
-	if helpers.Is4xxCode(statusCode) || helpers.Is5xxCode(statusCode) {
-		return styles.ErrorBlock, styles.ErrorText
+	if helpers.Is4xxCode(statusCode) {
+		return styles.HTTPStatus4xxBlockStyle, styles.HTTPStatus4xxTextStyle
+	}
+
+	if helpers.Is5xxCode(statusCode) {
+		return styles.HTTPStatus5xxBlockStyle, styles.HTTPStatus5xxTextStyle
 	}
 
 	panic(helpers.Sprintf("status code %d is not supported", statusCode))

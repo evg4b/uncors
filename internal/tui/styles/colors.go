@@ -3,7 +3,7 @@ package styles
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	// Logo colors
+	// Logo colors.
 	logoYellowColor = lipgloss.AdaptiveColor{
 		Light: "#E2A600",
 		Dark:  "#FFD400",
@@ -13,7 +13,7 @@ var (
 		Dark:  "#DC0100",
 	}
 
-	// Status colors
+	// Status colors.
 	warningColor = lipgloss.AdaptiveColor{
 		Light: "#E2A600",
 		Dark:  "#FFD400",
@@ -22,13 +22,9 @@ var (
 		Light: "#B60000",
 		Dark:  "#DC0100",
 	}
-	textColor = lipgloss.AdaptiveColor{
+	contrastColor = lipgloss.AdaptiveColor{
 		Light: "#FFFFFF",
 		Dark:  "#000000",
-	}
-	successColor = lipgloss.AdaptiveColor{
-		Light: "#00A86B",
-		Dark:  "#00A86B",
 	}
 	infoColor = lipgloss.AdaptiveColor{
 		Light: "#005BA5",
@@ -39,7 +35,7 @@ var (
 		Dark:  "#8C8C8C",
 	}
 
-	// Feature colors
+	// Feature colors.
 	proxyColor = lipgloss.AdaptiveColor{
 		Light: "#545AC9",
 		Dark:  "#6A71F7",
@@ -55,5 +51,27 @@ var (
 	cacheColor = lipgloss.AdaptiveColor{
 		Light: "#CCC906",
 		Dark:  "#FEFC7F",
+	}
+
+	// Http status colors.
+	httpStatus1xxColor = lipgloss.AdaptiveColor{
+		Light: "#005BA5",
+		Dark:  "#0072CE",
+	}
+	httpStatus2xxColor = lipgloss.AdaptiveColor{
+		Light: "#01833B",
+		Dark:  "#00AF4F",
+	}
+	httpStatus3xxColor = lipgloss.AdaptiveColor{
+		Light: "#E2A600",
+		Dark:  "#FFD400",
+	}
+	httpStatus4xxColor = lipgloss.AdaptiveColor{
+		Light: "#B60000",
+		Dark:  "#DC0100",
+	}
+	httpStatus5xxColor = lipgloss.AdaptiveColor{
+		Light: "#B60000",
+		Dark:  "#DC0100",
 	}
 )

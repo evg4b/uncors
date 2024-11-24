@@ -5,7 +5,7 @@ import "github.com/charmbracelet/lipgloss"
 const baseBlockWidth = 8
 
 var baseBlock = lipgloss.NewStyle().
-	Foreground(textColor).
+	Foreground(contrastColor).
 	Padding(0, 1).
 	Margin(0).
 	Width(baseBlockWidth)

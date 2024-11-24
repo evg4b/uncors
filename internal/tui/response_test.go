@@ -19,7 +19,7 @@ import (
 
 func TestPrintResponse(t *testing.T) {
 	t.Run("should correctly format", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-		logger := styles.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		tests := []struct {
 			name       string
@@ -92,7 +92,7 @@ func TestPrintResponse(t *testing.T) {
 	}))
 
 	t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-		logger := styles.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		assert.Panics(t, func() {
 			tui.PrintResponse(logger, request(http.MethodGet, "/"), 50)
@@ -100,7 +100,7 @@ func TestPrintResponse(t *testing.T) {
 	}))
 
 	t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-		logger := styles.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		assert.Panics(t, func() {
 			tui.PrintResponse(logger, request(http.MethodGet, "/"), 600)
