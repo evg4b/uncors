@@ -9,17 +9,17 @@ import (
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
-const prefixWidth = 12
+const prefixWidth = 13
 
 func printResponse(request *contracts.Request, statusCode int) string {
 	prefix := helpers.Sprintf("%d %s", statusCode, request.Method)
-	prefixStyle, textStyle := getPrefixPrinter(statusCode)
+	prefixStyle, textStyle := getStyles(statusCode)
 	prefixStyle = prefixStyle.Width(prefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(request.URL.String()))
 }
 
-func getPrefixPrinter(statusCode int) (lipgloss.Style, lipgloss.Style) {
+func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
 	if helpers.Is1xxCode(statusCode) {
 		return styles.InfoBlock, styles.InfoText
 	}
