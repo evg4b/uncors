@@ -2,51 +2,50 @@ package styles
 
 import "github.com/charmbracelet/lipgloss"
 
-// TODO: Replace to adaptive colors.
 var (
 	LogoYellow = lipgloss.NewStyle().
-			Foreground(yellow)
+			Foreground(logoYellowColor)
 
 	LogoRed = lipgloss.NewStyle().
-		Foreground(red)
+		Foreground(logoRedColor)
 
 	WarningBlock = lipgloss.NewStyle().
-			Background(yellow).
-			Foreground(black).
+			Background(warningColor).
+			Foreground(textColor).
 			Padding(0, 1)
 
 	WarningText = lipgloss.NewStyle().
-			Foreground(yellow)
+			Foreground(warningColor)
 
 	InfoBlock = lipgloss.NewStyle().
-			Background(blue).
-			Foreground(black).
+			Background(infoColor).
+			Foreground(textColor).
 			Padding(0, 1)
 
 	InfoText = lipgloss.NewStyle().
-			Foreground(blue)
+			Foreground(infoColor)
 
 	SuccessBlock = lipgloss.NewStyle().
-			Background(green).
-			Foreground(black).
+			Background(successColor).
+			Foreground(textColor).
 			Padding(0, 1)
 
 	SuccessText = lipgloss.NewStyle().
-			Foreground(green)
+			Foreground(successColor)
 
 	ErrorBlock = lipgloss.NewStyle().
-			Background(red).
-			Foreground(black).
+			Background(errorColor).
+			Foreground(textColor).
 			Padding(0, 1)
 
 	ErrorText = lipgloss.NewStyle().
-			Foreground(red)
+			Foreground(errorColor)
 
 	DebugBlock = lipgloss.NewStyle().
-			Background(grey).
-			Foreground(black).
+			Background(debugColor).
+			Foreground(textColor).
 			Padding(0, 1)
 
 	DebugText = lipgloss.NewStyle().
-			Foreground(grey)
+			Foreground(debugColor)
 )
