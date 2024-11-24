@@ -1,47 +1,28 @@
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+var (
+	HTTPStatus1xxTextStyle  = underlineStyle
+	HTTPStatus1xxBlockStyle = paddedStyle.
+				Background(httpStatus1xxColor).
+				Foreground(contrastColor)
 
-type StatusStyle struct {
-	BlockStyle         lipgloss.Style
-	MainTextStyle      lipgloss.Style
-	SecondaryTextStyle lipgloss.Style
-}
+	HTTPStatus2xxTextStyle  = underlineStyle
+	HTTPStatus2xxBlockStyle = paddedStyle.
+				Background(httpStatus2xxColor).
+				Foreground(contrastColor)
 
-var InformationalStyle = StatusStyle{
-	BlockStyle:         InfoBlock,
-	MainTextStyle:      InfoText,
-	SecondaryTextStyle: DisabledText,
-}
+	HTTPStatus3xxTextStyle  = underlineStyle
+	HTTPStatus3xxBlockStyle = paddedStyle.
+				Background(httpStatus3xxColor).
+				Foreground(contrastColor)
 
-var SuccessStyle = StatusStyle{
-	BlockStyle:         SuccessBlock,
-	MainTextStyle:      SuccessText,
-	SecondaryTextStyle: DisabledText,
-}
+	HTTPStatus4xxTextStyle  = underlineStyle
+	HTTPStatus4xxBlockStyle = paddedStyle.
+				Background(httpStatus4xxColor).
+				Foreground(contrastColor)
 
-var RedirectionStyle = StatusStyle{
-	BlockStyle:         WarningBlock,
-	MainTextStyle:      WarningText,
-	SecondaryTextStyle: DisabledText,
-}
-
-var ClientErrorStyle = StatusStyle{
-	BlockStyle:         ErrorBlock,
-	MainTextStyle:      ErrorText,
-	SecondaryTextStyle: DisabledText,
-}
-
-var ServerErrorStyle = ClientErrorStyle
-
-var CanceledStyle = StatusStyle{
-	BlockStyle:         DisabledBlock,
-	MainTextStyle:      DisabledText.Strikethrough(true),
-	SecondaryTextStyle: DisabledText.Strikethrough(true),
-}
-
-var PendingStyle = StatusStyle{
-	BlockStyle:         DisabledBlock,
-	MainTextStyle:      DisabledText,
-	SecondaryTextStyle: DisabledText,
-}
+	HTTPStatus5xxTextStyle  = underlineStyle
+	HTTPStatus5xxBlockStyle = paddedStyle.
+				Background(httpStatus5xxColor).
+				Foreground(contrastColor)
+)

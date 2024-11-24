@@ -1,10 +1,11 @@
-package styles
+package tui
 
 import (
 	"math"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 var noLevel = log.Level(math.MaxInt32)
@@ -12,35 +13,39 @@ var noLevel = log.Level(math.MaxInt32)
 var (
 	boxLength = 8
 
-	debugPrefix = DebugBlock.Width(boxLength)
-	infoPrefix  = InfoBlock.Width(boxLength)
-	warnPrefix  = WarningBlock.Width(boxLength)
-	errorPrefix = ErrorBlock.Width(boxLength)
+	debugPrefix = styles.DebugBlockStyle.Width(boxLength)
+	infoPrefix  = styles.InfoBlockStyle.Width(boxLength)
+	warnPrefix  = styles.WarningBlockStyle.Width(boxLength)
+	errorPrefix = styles.ErrorBlockStyle.Width(boxLength)
+
+	defaultStyle = lipgloss.NewStyle()
 
 	DefaultStyles = log.Styles{
-		Timestamp: lipgloss.NewStyle(),
-		Caller:    lipgloss.NewStyle().Faint(true),
-		Prefix:    lipgloss.NewStyle().Bold(true).Faint(true),
-		Message:   lipgloss.NewStyle(),
-		Key:       lipgloss.NewStyle().Faint(true),
-		Value:     lipgloss.NewStyle(),
-		Separator: lipgloss.NewStyle().Faint(true),
+		Timestamp: defaultStyle,
+		Caller:    defaultStyle.Faint(true),
+		Prefix:    defaultStyle.Bold(true).Faint(true),
+		Message:   defaultStyle,
+		Key:       defaultStyle.Faint(true),
+		Value:     defaultStyle.Faint(true),
+		Separator: defaultStyle.Faint(true),
 		Levels: map[log.Level]lipgloss.Style{
-			noLevel: lipgloss.NewStyle().Margin(0).Padding(0),
-			log.DebugLevel: DebugText.
-				SetString(debugPrefix.Render(DebugLabel)).
+			noLevel: defaultStyle.
+				Margin(0).
+				Padding(0),
+			log.DebugLevel: defaultStyle.
+				SetString(debugPrefix.Render(debugLabel)).
 				Bold(true),
-			log.InfoLevel: InfoText.
-				SetString(infoPrefix.Render(InfoLabel)).
+			log.InfoLevel: defaultStyle.
+				SetString(infoPrefix.Render(infoLabel)).
 				Bold(true),
-			log.WarnLevel: WarningText.
-				SetString(warnPrefix.Render(WarningLabel)).
+			log.WarnLevel: defaultStyle.
+				SetString(warnPrefix.Render(warningLabel)).
 				Bold(true),
-			log.ErrorLevel: ErrorText.
-				SetString(errorPrefix.Render(ErrorLabel)).
+			log.ErrorLevel: defaultStyle.
+				SetString(errorPrefix.Render(errorLabel)).
 				Bold(true),
-			log.FatalLevel: ErrorText.
-				SetString(errorPrefix.Render(FatalLabel)).
+			log.FatalLevel: defaultStyle.
+				SetString(errorPrefix.Render(fatalLabel)).
 				Bold(true),
 		},
 		Keys:   map[string]lipgloss.Style{},
@@ -49,7 +54,7 @@ var (
 )
 
 func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
-	newStyles := log.Styles{
+	newStyles := &log.Styles{
 		Timestamp: DefaultStyles.Timestamp,
 		Caller:    DefaultStyles.Caller,
 		Prefix:    DefaultStyles.Prefix,
@@ -74,7 +79,7 @@ func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
 	copyMap(DefaultStyles.Values, newStyles.Values)
 
 	newLogger := logger.With()
-	newLogger.SetStyles(&newStyles)
+	newLogger.SetStyles(newStyles)
 
 	return newLogger
 }
