@@ -49,12 +49,4 @@ var (
 
 	DebugText = lipgloss.NewStyle().
 			Foreground(grey)
-
-	DisabledBlock = lipgloss.NewStyle().
-			Background(darkGrey).
-			Foreground(black).
-			Padding(0, 1)
-
-	DisabledText = lipgloss.NewStyle().
-			Foreground(darkGrey)
 )
