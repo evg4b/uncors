@@ -32,6 +32,10 @@ func TestValidJsonSchema(t *testing.T) {
 			name: "short mapping",
 			file: testdir("short-mapping.yaml"),
 		},
+		{
+			name: "base mappings",
+			file: testdir("base-mappings.yaml"),
+		},
 	}
 
 	for _, testCase := range cases {
