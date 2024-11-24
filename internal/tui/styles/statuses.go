@@ -1,37 +1,28 @@
 package styles
 
-import "github.com/charmbracelet/lipgloss"
-
 var (
-	HTTPStatus1xxBlockStyle = lipgloss.NewStyle().
+	HTTPStatus1xxTextStyle  = underlineStyle
+	HTTPStatus1xxBlockStyle = paddedStyle.
 				Background(httpStatus1xxColor).
-				Foreground(contrastColor).
-				Padding(0, 1)
-	HTTPStatus1xxTextStyle = lipgloss.NewStyle()
+				Foreground(contrastColor)
 
-	HTTPStatus2xxBlockStyle = lipgloss.NewStyle().
+	HTTPStatus2xxTextStyle  = underlineStyle
+	HTTPStatus2xxBlockStyle = paddedStyle.
 				Background(httpStatus2xxColor).
-				Foreground(contrastColor).
-				Padding(0, 1)
-	HTTPStatus2xxTextStyle = lipgloss.NewStyle()
+				Foreground(contrastColor)
 
-	HTTPStatus3xxBlockStyle = lipgloss.NewStyle().
+	HTTPStatus3xxTextStyle  = underlineStyle
+	HTTPStatus3xxBlockStyle = paddedStyle.
 				Background(httpStatus3xxColor).
-				Foreground(contrastColor).
-				Padding(0, 1)
-	HTTPStatus3xxTextStyle = lipgloss.NewStyle()
+				Foreground(contrastColor)
 
-	HTTPStatus4xxBlockStyle = lipgloss.NewStyle().
+	HTTPStatus4xxTextStyle  = underlineStyle
+	HTTPStatus4xxBlockStyle = paddedStyle.
 				Background(httpStatus4xxColor).
-				Foreground(contrastColor).
-				Padding(0, 1)
-	HTTPStatus4xxTextStyle = lipgloss.NewStyle().
-				Foreground(httpStatus4xxColor)
+				Foreground(contrastColor)
 
-	HTTPStatus5xxBlockStyle = lipgloss.NewStyle().
+	HTTPStatus5xxTextStyle  = underlineStyle
+	HTTPStatus5xxBlockStyle = paddedStyle.
 				Background(httpStatus5xxColor).
-				Foreground(contrastColor).
-				Padding(0, 1)
-	HTTPStatus5xxTextStyle = lipgloss.NewStyle().
-				Foreground(httpStatus5xxColor)
+				Foreground(contrastColor)
 )

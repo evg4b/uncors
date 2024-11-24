@@ -14,7 +14,7 @@ func PrintWarningBox(out io.Writer, message string) {
 		out,
 		message,
 		warningLabel,
-		styles.WarningBlock,
+		styles.WarningBlockStyle,
 	)
 }
 
@@ -23,7 +23,7 @@ func PrintInfoBox(out io.Writer, message string) {
 		out,
 		message,
 		infoLabel,
-		styles.InfoBlock,
+		styles.InfoBlockStyle,
 	)
 }
 

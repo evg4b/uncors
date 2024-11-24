@@ -13,34 +13,38 @@ var noLevel = log.Level(math.MaxInt32)
 var (
 	boxLength = 8
 
-	debugPrefix = styles.DebugBlock.Width(boxLength)
-	infoPrefix  = styles.InfoBlock.Width(boxLength)
-	warnPrefix  = styles.WarningBlock.Width(boxLength)
-	errorPrefix = styles.ErrorBlock.Width(boxLength)
+	debugPrefix = styles.DebugBlockStyle.Width(boxLength)
+	infoPrefix  = styles.InfoBlockStyle.Width(boxLength)
+	warnPrefix  = styles.WarningBlockStyle.Width(boxLength)
+	errorPrefix = styles.ErrorBlockStyle.Width(boxLength)
+
+	defaultStyle = lipgloss.NewStyle()
 
 	DefaultStyles = log.Styles{
-		Timestamp: lipgloss.NewStyle(),
-		Caller:    lipgloss.NewStyle().Faint(true),
-		Prefix:    lipgloss.NewStyle().Bold(true).Faint(true),
-		Message:   lipgloss.NewStyle(),
-		Key:       lipgloss.NewStyle().Faint(true),
-		Value:     lipgloss.NewStyle().Faint(true),
-		Separator: lipgloss.NewStyle().Faint(true),
+		Timestamp: defaultStyle,
+		Caller:    defaultStyle.Faint(true),
+		Prefix:    defaultStyle.Bold(true).Faint(true),
+		Message:   defaultStyle,
+		Key:       defaultStyle.Faint(true),
+		Value:     defaultStyle.Faint(true),
+		Separator: defaultStyle.Faint(true),
 		Levels: map[log.Level]lipgloss.Style{
-			noLevel: lipgloss.NewStyle().Margin(0).Padding(0),
-			log.DebugLevel: styles.DebugText.
+			noLevel: defaultStyle.
+				Margin(0).
+				Padding(0),
+			log.DebugLevel: defaultStyle.
 				SetString(debugPrefix.Render(debugLabel)).
 				Bold(true),
-			log.InfoLevel: styles.InfoText.
+			log.InfoLevel: defaultStyle.
 				SetString(infoPrefix.Render(infoLabel)).
 				Bold(true),
-			log.WarnLevel: styles.WarningText.
+			log.WarnLevel: defaultStyle.
 				SetString(warnPrefix.Render(warningLabel)).
 				Bold(true),
-			log.ErrorLevel: styles.ErrorText.
+			log.ErrorLevel: defaultStyle.
 				SetString(errorPrefix.Render(errorLabel)).
 				Bold(true),
-			log.FatalLevel: styles.ErrorText.
+			log.FatalLevel: defaultStyle.
 				SetString(errorPrefix.Render(fatalLabel)).
 				Bold(true),
 		},
