@@ -54,16 +54,11 @@ func main() {
 	viperInstance.WatchConfig()
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 	app.Start(ctx, uncorsConfig)
-	go func() {
-		shutdownErr := helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-			log.Debug("shutdown signal received")
+	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
+		log.Debug("shutdown signal received")
 
-			return app.Shutdown(shutdownCtx)
-		})
-		if shutdownErr != nil {
-			panic(shutdownErr)
-		}
-	}()
+		return app.Shutdown(shutdownCtx)
+	})
 	app.Wait()
 	log.Info("Server was stopped")
 }

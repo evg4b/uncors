@@ -15,12 +15,14 @@ var (
 	}
 )
 
-func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context) error) error {
+func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context) error) {
 	if done := waiteSignal(ctx); done {
-		return nil
+		return
 	}
 
-	return shutdownFunc(ctx)
+	if err := shutdownFunc(ctx); err != nil {
+		panic(err)
+	}
 }
 
 func waiteSignal(ctx context.Context) bool {

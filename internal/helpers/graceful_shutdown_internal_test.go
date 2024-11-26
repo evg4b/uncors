@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
@@ -58,12 +57,11 @@ func TestGracefulShutdown(t *testing.T) {
 		called := &atomic.Bool{}
 
 		env.Go(func() {
-			err := GracefulShutdown(ctx, func(_ context.Context) error {
+			GracefulShutdown(ctx, func(_ context.Context) error {
 				called.Store(true)
 
 				return nil
 			})
-			require.NoError(t, err)
 		})
 
 		env.CheckAfterAll(func() {
@@ -107,12 +105,11 @@ func TestGracefulShutdown(t *testing.T) {
 
 				called := false
 				env.Go(func() {
-					err := GracefulShutdown(context.Background(), func(_ context.Context) error {
+					GracefulShutdown(context.Background(), func(_ context.Context) error {
 						called = true
 
 						return nil
 					})
-					require.NoError(t, err)
 				})
 
 				<-time.After(50 * time.Millisecond)
@@ -143,10 +140,9 @@ func TestGracefulShutdown(t *testing.T) {
 		})
 
 		env.Go(func() {
-			err := GracefulShutdown(context.Background(), func(_ context.Context) error {
+			GracefulShutdown(context.Background(), func(_ context.Context) error {
 				return nil
 			})
-			require.NoError(t, err)
 		})
 
 		<-time.After(50 * time.Millisecond)
