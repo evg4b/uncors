@@ -5,12 +5,15 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/samber/lo"
+	"sort"
 )
 
 func generateFakeDataNodes() []*gabs.Container {
 	items := lo.Filter(fakedata.GetTypes(), func(key string, _ int) bool {
 		return key != "object" && key != "array"
 	})
+
+	sort.Strings(items)
 
 	array := lo.Map(items, func(key string, _ int) *gabs.Container {
 		info := gofakeit.GetFuncLookup(key)
