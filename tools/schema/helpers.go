@@ -32,3 +32,11 @@ func open(path string, clear bool) *gabs.Container {
 
 	return uncorsJSONSchema
 }
+
+func o() *gabs.Container {
+	item := gabs.New()
+	p(item, "type", "object")
+	p(item, "additionalProperties", false)
+
+	return item
+}
