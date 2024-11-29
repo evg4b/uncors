@@ -2,12 +2,11 @@ package schema
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/samber/lo"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -63,27 +62,29 @@ func loadTestCasesInternal(t *testing.T, errors bool, parts ...string) []TestCas
 	t.Helper()
 	dir := filepath.Join(parts...)
 
-	entries, err := os.ReadDir(dir)
-	require.NoError(t, err, "Failed to read dir: %v", err)
+	testCases := make([]TestCase, 0, 30) //nolint:mnd
+	err := fs.WalkDir(os.DirFS(dir), ".", func(path string, entry fs.DirEntry, err error) error {
+		require.NoError(t, err)
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".yaml") {
+			var errorsArray []string
+			if errors {
+				errorsArray = readErrors(t, filepath.Join(dir, entry.Name()+".errors"))
+			}
 
-	files := lo.Filter(entries, func(file os.DirEntry, _ int) bool {
-		return !file.IsDir() && strings.HasSuffix(file.Name(), ".yaml")
-	})
-
-	return lo.Map(files, func(file os.DirEntry, _ int) TestCase {
-		var errorsArray []string
-		if errors {
-			errorsArray = readErrors(t, filepath.Join(dir, file.Name()+".errors"))
+			testCases = append(testCases, TestCase{
+				Name: strings.ReplaceAll(
+					strings.ReplaceAll(path, ".yaml", ""),
+					"-",
+					" ",
+				),
+				File:   filepath.Join(dir, path),
+				Errors: errorsArray,
+			})
 		}
 
-		return TestCase{
-			Name: strings.ReplaceAll(
-				strings.ReplaceAll(file.Name(), ".yaml", ""),
-				"-",
-				" ",
-			),
-			File:   filepath.Join(dir, file.Name()),
-			Errors: errorsArray,
-		}
+		return nil
 	})
+	require.NoError(t, err)
+
+	return testCases
 }

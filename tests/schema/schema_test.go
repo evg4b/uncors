@@ -1,9 +1,10 @@
 package schema_test
 
 import (
-	"github.com/samber/lo"
 	"path/filepath"
 	"testing"
+
+	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/tests/schema"
