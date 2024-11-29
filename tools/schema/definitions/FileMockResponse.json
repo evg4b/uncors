@@ -4,8 +4,7 @@
   "description": "Mock response definition based on file content",
   "properties": {
     "code": {
-      "type": "integer",
-      "description": "HTTP response status code"
+      "$ref": "#/definitions/StatusCode"
     },
     "delay": {
       "$ref": "#/definitions/Duration",

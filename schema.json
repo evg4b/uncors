@@ -21,8 +21,7 @@
       "description": "Mock response definition based on fake data content",
       "properties": {
         "code": {
-          "description": "HTTP response status code",
-          "type": "integer"
+          "$ref": "#/definitions/StatusCode"
         },
         "delay": {
           "$ref": "#/definitions/Duration",
@@ -3364,8 +3363,7 @@
       "description": "Mock response definition based on file content",
       "properties": {
         "code": {
-          "description": "HTTP response status code",
-          "type": "integer"
+          "$ref": "#/definitions/StatusCode"
         },
         "delay": {
           "$ref": "#/definitions/Duration",
@@ -3516,8 +3514,7 @@
       "description": "Mock response definition based on raw content",
       "properties": {
         "code": {
-          "description": "HTTP response status code",
-          "type": "integer"
+          "$ref": "#/definitions/StatusCode"
         },
         "delay": {
           "$ref": "#/definitions/Duration",
@@ -3560,6 +3557,17 @@
         "dir"
       ],
       "type": "object"
+    },
+    "StatusCode": {
+      "description": "HTTP response status code",
+      "examples": [
+        200,
+        404,
+        500
+      ],
+      "maximum": 599,
+      "minimum": 100,
+      "type": "integer"
     }
   },
   "description": "Configuration file for uncors reverse proxy",
