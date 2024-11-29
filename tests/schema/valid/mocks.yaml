@@ -7,15 +7,15 @@ mappings:
         response:
           headers:
             Content-Type: application/json
-          status: 200
+          code: 200
           raw: "Hello, World!"
       - path: /demo2
         response:
-          status: 200
+          code: 200
           file: /tmp/demo.json
       - path: /demo3
         response:
-          status: 200
+          code: 200
           fake:
             type: object
             properties:
@@ -27,6 +27,6 @@ mappings:
                 type: email
               phones:
                 type: array
-                item:
+                items:
                   type: phoneformatted
                 count: 3

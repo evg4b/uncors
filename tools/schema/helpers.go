@@ -1,8 +1,10 @@
 package main
 
 import (
-	"github.com/Jeffail/gabs"
+	"os"
 	"strings"
+
+	"github.com/Jeffail/gabs"
 )
 
 func ref(name string) string {
@@ -18,19 +20,29 @@ func p(object *gabs.Container, path string, value any) {
 	requireNoError(err)
 }
 
+func apnd(object *gabs.Container, path string, value any) {
+	err := object.ArrayAppendP(value, path)
+	requireNoError(err)
+}
+
 func f(path string) *gabs.Container {
 	return open(path, true)
 }
 
-func open(path string, clear bool) *gabs.Container {
+func open(path string, clean bool) *gabs.Container {
 	uncorsJSONSchema, err := gabs.ParseJSONFile(path)
 	requireNoError(err)
-	if clear {
+	if clean {
 		err = uncorsJSONSchema.Delete("$schema")
 		requireNoError(err)
 	}
 
 	return uncorsJSONSchema
+}
+
+func write(path string, object *gabs.Container) {
+	err := os.WriteFile(path, object.BytesIndent("", "  "), os.ModePerm) //nolint:gosec
+	requireNoError(err)
 }
 
 func o() *gabs.Container {
