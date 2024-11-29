@@ -1,0 +1,3 @@
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0.mocks.0.response: Must validate one and only one schema (oneOf)
+mappings.0.mocks.0.response.code: Must be greater than or equal to 100

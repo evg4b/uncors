@@ -68,7 +68,7 @@ func loadTestCasesInternal(t *testing.T, errors bool, parts ...string) []TestCas
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".yaml") {
 			var errorsArray []string
 			if errors {
-				errorsArray = readErrors(t, filepath.Join(dir, entry.Name()+".errors"))
+				errorsArray = readErrors(t, filepath.Join(dir, path+".errors"))
 			}
 
 			testCases = append(testCases, TestCase{

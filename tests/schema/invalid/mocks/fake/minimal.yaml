@@ -1,0 +1,18 @@
+mappings:
+  - from: http://localhost
+    to: https://github.com
+    mocks:
+      - path: /path-to-mock
+        response:
+          code: 200
+          fake:
+            type: object
+            property:
+              first-name:
+                type: firstname
+              last-name:
+                type: lastname
+              about:
+                type: sentence
+                options:
+                  wordcount: 15

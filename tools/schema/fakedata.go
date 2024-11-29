@@ -1,11 +1,12 @@
 package main
 
 import (
+	"sort"
+
 	"github.com/Jeffail/gabs"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/samber/lo"
-	"sort"
 )
 
 func generateFakeDataNodes() []*gabs.Container {
