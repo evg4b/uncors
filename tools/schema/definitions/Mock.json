@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "description": "Mocked request definition",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Mocked request path"
+    },
+    "method": {
+      "$ref": "#/definitions/Method",
+      "description": "Mocked request method"
+    },
+    "queries": {
+      "$ref": "#/definitions/Queries",
+      "description": "Mocked request queries"
+    },
+    "headers": {
+      "$ref": "#/definitions/Headers",
+      "description": "Mocked request headers"
+    },
+    "response": {
+      "description": "Mock response definition",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/RawMockResponse"
+        },
+        {
+          "$ref": "#/definitions/FileMockResponse"
+        },
+        {
+          "$ref": "#/definitions/FakeDataMockResponse"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "response"
+  ]
+}

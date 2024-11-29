@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "description": "Mock response definition based on fake data content",
+  "properties": {
+    "code": {
+      "type": "integer",
+      "description": "HTTP response status code"
+    },
+    "delay": {
+      "$ref": "#/definitions/Duration",
+      "description": "Delay before sending the mock response"
+    },
+    "headers": {
+      "$ref": "#/definitions/Headers",
+      "description": "HTTP headers which will be sent in the mock response"
+    },
+    "fake": {
+      "$ref": "#/definitions/FakeDataNode",
+      "description": "Fake data definition"
+    }
+  },
+  "required": [
+    "code",
+    "fake"
+  ],
+  "additionalProperties": false
+}

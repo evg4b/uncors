@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "description": "Mock response definition based on file content",
+  "properties": {
+    "code": {
+      "type": "integer",
+      "description": "HTTP response status code"
+    },
+    "delay": {
+      "$ref": "#/definitions/Duration",
+      "description": "Delay before sending the mock response"
+    },
+    "headers": {
+      "$ref": "#/definitions/Headers",
+      "description": "HTTP headers which will be sent in the mock response"
+    },
+    "file": {
+      "type": "string",
+      "description": "Path to the file whose content will be sent in the mock response"
+    }
+  },
+  "required": [
+    "code",
+    "file"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,13 @@
+{
+  "type": "string",
+  "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$",
+  "description": "Duration in human-readable format",
+  "examples": [
+    "1h",
+    "1h 30m",
+    "1h 30m 15s",
+    "1h 30m 15s 500ms",
+    "1h 30m 15s 500ms 100us",
+    "1h 30m 15s 500ms 100us 50ns"
+  ]
+}
