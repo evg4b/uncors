@@ -19,9 +19,8 @@ func loadDefinitions() map[string]*gabs.Container {
 	storage := make(map[string]*gabs.Container, len(files))
 
 	return lo.Reduce(files, func(storage map[string]*gabs.Container, entry os.DirEntry, _ int) map[string]*gabs.Container {
-		parseJSONFile, err := gabs.ParseJSONFile(filepath.Join("definitions", entry.Name()))
-		requireNoError(err)
-		storage[ref(entry.Name())] = parseJSONFile
+		refName := ref(entry.Name())
+		storage[refName] = f(filepath.Join("definitions", entry.Name()))
 
 		return storage
 	}, storage)
