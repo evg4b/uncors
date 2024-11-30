@@ -13,6 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testCase struct {
+	code     int
+	expected bool
+}
+
+func describe(c testCase) string {
+	return fmt.Sprintf("should return %t for code %d", c.expected, c.code)
+}
+
 func TestNormaliseRequest(t *testing.T) {
 	url, err := urlx.Parse(hosts.Localhost.HTTP())
 	testutils.CheckNoError(t, err)
@@ -56,10 +65,7 @@ func TestNormaliseRequest(t *testing.T) {
 }
 
 func TestIs1xxCode(t *testing.T) {
-	cases := []struct {
-		code     int
-		expected bool
-	}{
+	cases := []testCase{
 		{http.StatusContinue, true},
 		{http.StatusSwitchingProtocols, true},
 		{http.StatusOK, false},
@@ -68,19 +74,16 @@ func TestIs1xxCode(t *testing.T) {
 		{http.StatusInternalServerError, false},
 	}
 
-	for _, testCase := range cases {
-		t.Run(fmt.Sprintf("shoul return %t for code %d", testCase.expected, testCase.code), func(t *testing.T) {
-			actual := helpers.Is1xxCode(testCase.code)
-			assert.Equal(t, testCase.expected, actual)
+	for _, c := range cases {
+		t.Run(describe(c), func(t *testing.T) {
+			actual := helpers.Is1xxCode(c.code)
+			assert.Equal(t, c.expected, actual)
 		})
 	}
 }
 
 func TestIs2xxCode(t *testing.T) {
-	cases := []struct {
-		code     int
-		expected bool
-	}{
+	cases := []testCase{
 		{http.StatusOK, true},
 		{http.StatusCreated, true},
 		{http.StatusAccepted, true},
@@ -91,7 +94,7 @@ func TestIs2xxCode(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+		t.Run(describe(c), func(t *testing.T) {
 			actual := helpers.Is2xxCode(c.code)
 
 			assert.Equal(t, c.expected, actual)
@@ -100,10 +103,7 @@ func TestIs2xxCode(t *testing.T) {
 }
 
 func TestIs3xxCode(t *testing.T) {
-	cases := []struct {
-		code     int
-		expected bool
-	}{
+	cases := []testCase{
 		{http.StatusMultipleChoices, true},
 		{http.StatusMovedPermanently, true},
 		{http.StatusFound, true},
@@ -114,7 +114,7 @@ func TestIs3xxCode(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+		t.Run(describe(c), func(t *testing.T) {
 			actual := helpers.Is3xxCode(c.code)
 
 			assert.Equal(t, c.expected, actual)
@@ -123,10 +123,7 @@ func TestIs3xxCode(t *testing.T) {
 }
 
 func TestIs4xxCode(t *testing.T) {
-	cases := []struct {
-		code     int
-		expected bool
-	}{
+	cases := []testCase{
 		{http.StatusBadRequest, true},
 		{http.StatusUnauthorized, true},
 		{http.StatusForbidden, true},
@@ -137,7 +134,7 @@ func TestIs4xxCode(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+		t.Run(describe(c), func(t *testing.T) {
 			actual := helpers.Is4xxCode(c.code)
 
 			assert.Equal(t, c.expected, actual)
@@ -146,10 +143,7 @@ func TestIs4xxCode(t *testing.T) {
 }
 
 func TestIs5xxCode(t *testing.T) {
-	cases := []struct {
-		code     int
-		expected bool
-	}{
+	cases := []testCase{
 		{http.StatusBadRequest, false},
 		{http.StatusUnauthorized, false},
 		{http.StatusForbidden, false},
@@ -162,7 +156,7 @@ func TestIs5xxCode(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("shoul return %t for code %d", c.expected, c.code), func(t *testing.T) {
+		t.Run(describe(c), func(t *testing.T) {
 			actual := helpers.Is5xxCode(c.code)
 
 			assert.Equal(t, c.expected, actual)
