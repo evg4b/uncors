@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "object"
+    },
+    "seed": {
+      "$ref": "#/definitions/Seed"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/FakeDataNode"
+      }
+    }
+  },
+  "required": [
+    "type"
+  ]
+}

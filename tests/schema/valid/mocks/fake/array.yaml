@@ -1,0 +1,12 @@
+mappings:
+  - from: http://localhost
+    to: https://github.com
+    mocks:
+      - path: /path-to-mock
+        response:
+          code: 200
+          fake:
+            type: array
+            item:
+              type: firstname
+            count: 5

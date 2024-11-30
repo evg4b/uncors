@@ -1,0 +1,80 @@
+{
+  "$id": "https://raw.githubusercontent.com/evg4b/uncors/main/schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "title": "Uncors configuration",
+  "description": "Configuration file for uncors reverse proxy",
+  "properties": {
+    "mappings": {
+      "type": "array",
+      "description": "A list of mappings that describe how to forward requests.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Mapping"
+      }
+    },
+    "http-port": {
+      "type": "integer",
+      "description": "Local HTTP listened port",
+      "default": 80,
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "https-port": {
+      "type": "integer",
+      "description": "Local HTTPS listened port",
+      "default": 443,
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "cert-file": {
+      "type": "string",
+      "description": "Path to HTTPS certificate file"
+    },
+    "key-file": {
+      "type": "string",
+      "description": "Path to matching for certificate private key"
+    },
+    "debug": {
+      "type": "boolean",
+      "description": "Show debug output",
+      "default": false
+    },
+    "proxy": {
+      "type": "string",
+      "description": "HTTP/HTTPS proxy to provide requests to real server (used system by default)",
+      "format": "uri"
+    },
+    "cache-config": {
+      "description": "Global cache configuration",
+      "type": "object",
+      "properties": {
+        "expiration-time": {
+          "description": "Cache expiration time",
+          "type": "string"
+        },
+        "clear-time": {
+          "description": "Expired cache clear time",
+          "type": "string"
+        },
+        "methods": {
+          "description": "List of http methods with can be cached",
+          "default": [
+            "GET"
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Method"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "mappings"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "oneOf": [
+    {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "description": "Host mapping definition",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    {
+      "type": "object",
+      "description": "Host mapping definition",
+      "properties": {
+        "from": {
+          "description": "The local host with protocol for the resource from which proxying will take place",
+          "type": "string"
+        },
+        "to": {
+          "description": "The target host and protocol for the resource that needs to be proxy",
+          "type": "string"
+        },
+        "cache": {
+          "type": "array",
+          "description": "List the paths that will be cached.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "mocks": {
+          "type": "array",
+          "description": "List the mocked requests",
+          "items": {
+            "$ref": "#/definitions/Mock"
+          },
+          "minItems": 1
+        },
+        "statics": {
+          "type": "array",
+          "description": "List of paths that will be served from the directory.",
+          "items": {
+            "$ref": "#/definitions/StaticDirectory"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -68,6 +68,7 @@ func (c *FakedataNodeValidator) validateAsObject(errors *validate.Errors) {
 		errors.Append(validate.Validate(&FakedataNodeValidator{
 			Field: joinPath(c.Field, key),
 			Value: &node,
+			Root:  false,
 		}))
 	}
 }

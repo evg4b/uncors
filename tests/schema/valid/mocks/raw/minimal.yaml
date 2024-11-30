@@ -1,0 +1,8 @@
+mappings:
+  - from: http://localhost
+    to: https://github.com
+    mocks:
+      - path: /path-to-mock
+        response:
+          code: 200
+          raw: "Hello, World!"

@@ -3,6 +3,7 @@ module github.com/evg4b/uncors
 go 1.22.2
 
 require (
+	github.com/Jeffail/gabs v1.4.0
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.7.1
 	github.com/brianvoe/gofakeit/v7 v7.1.2

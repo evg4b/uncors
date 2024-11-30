@@ -44,6 +44,7 @@ func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 		errors.Append(validate.Validate(&FakedataNodeValidator{
 			Field: joinPath(r.Field, "fake"),
 			Value: r.Value.Fake,
+			Root:  true,
 		}))
 	}
 }
