@@ -51,6 +51,9 @@
             "491527954328"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "achaccount"
             }
@@ -68,6 +71,9 @@
             "513715684"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "achrouting"
             }
@@ -85,6 +91,9 @@
             "genuine"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjective"
             }
@@ -102,6 +111,9 @@
             "this"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectivedemonstrative"
             }
@@ -119,6 +131,9 @@
             "brave"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectivedescriptive"
             }
@@ -136,6 +151,9 @@
             "few"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectiveindefinite"
             }
@@ -153,6 +171,9 @@
             "what"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectiveinterrogative"
             }
@@ -170,6 +191,9 @@
             "my"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectivepossessive"
             }
@@ -187,6 +211,9 @@
             "Afghan"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectiveproper"
             }
@@ -204,6 +231,9 @@
             "a little"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adjectivequantitative"
             }
@@ -221,6 +251,9 @@
             "smoothly"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverb"
             }
@@ -238,6 +271,9 @@
             "intensely"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbdegree"
             }
@@ -255,6 +291,9 @@
             "hourly"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbfrequencydefinite"
             }
@@ -272,6 +311,9 @@
             "occasionally"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbfrequencyindefinite"
             }
@@ -289,6 +331,9 @@
             "stupidly"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbmanner"
             }
@@ -306,6 +351,9 @@
             "east"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbplace"
             }
@@ -323,6 +371,9 @@
             "now"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbtimedefinite"
             }
@@ -340,6 +391,9 @@
             "already"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "adverbtimeindefinite"
             }
@@ -357,6 +411,9 @@
             "1lWLbxojXq6BqWX7X60VkcDIvYA"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "bitcoinaddress"
             }
@@ -374,6 +431,9 @@
             "5vrbXTADWJ6sQBSYd6lLkG97jljNc0X9VPBvbVqsIH9lWOLcoqg"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "bitcoinprivatekey"
             }
@@ -391,6 +451,9 @@
             "word"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "blurb"
             }
@@ -408,6 +471,9 @@
             "true"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "bool"
             }
@@ -425,6 +491,9 @@
             "front-end"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "bs"
             }
@@ -442,6 +511,9 @@
             "disintermediate"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "buzzword"
             }
@@ -459,6 +531,9 @@
             "Mozilla/5.0 (X11; Linux i686) AppleWebKit/5312 (KHTML, like Gecko) Chrome/39.0.836.0 Mobile Safari/5312"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "chromeuseragent"
             }
@@ -476,6 +551,9 @@
             "Marcelside"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "city"
             }
@@ -493,6 +571,9 @@
             "MediumOrchid"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "color"
             }
@@ -510,6 +591,9 @@
             "Moen, Pagac and Wuckert"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "company"
             }
@@ -527,6 +611,9 @@
             "Inc"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "companysuffix"
             }
@@ -544,6 +631,9 @@
             "such as"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connective"
             }
@@ -561,6 +651,9 @@
             "an outcome of"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectivecasual"
             }
@@ -578,6 +671,9 @@
             "in addition"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectivecomparative"
             }
@@ -595,6 +691,9 @@
             "besides"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectivecomplaint"
             }
@@ -612,6 +711,9 @@
             "then"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectiveexamplify"
             }
@@ -629,6 +731,9 @@
             "firstly"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectivelisting"
             }
@@ -646,6 +751,9 @@
             "finally"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "connectivetime"
             }
@@ -663,6 +771,9 @@
             "United States of America"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "country"
             }
@@ -680,6 +791,9 @@
             "US"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "countryabr"
             }
@@ -697,6 +811,9 @@
             "513"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "creditcardcvv"
             }
@@ -714,6 +831,9 @@
             "01/21"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "creditcardexp"
             }
@@ -761,6 +881,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "creditcardnumber"
             }
@@ -778,6 +901,9 @@
             "Visa"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "creditcardtype"
             }
@@ -795,6 +921,9 @@
             "United States Dollar"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "currencylong"
             }
@@ -812,6 +941,9 @@
             "USD"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "currencyshort"
             }
@@ -829,6 +961,9 @@
             "38259P508"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "cusip"
             }
@@ -857,6 +992,9 @@
                 }
               },
               "type": "object"
+            },
+            "seed": {
+              "type": "number"
             },
             "type": {
               "const": "date"
@@ -899,6 +1037,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "daterange"
             }
@@ -916,6 +1057,9 @@
             "12"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "day"
             }
@@ -933,6 +1077,9 @@
             "0"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "digit"
             }
@@ -962,6 +1109,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "digitn"
             }
@@ -979,6 +1129,9 @@
             "centraltarget.biz"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "domainname"
             }
@@ -996,6 +1149,9 @@
             "org"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "domainsuffix"
             }
@@ -1013,6 +1169,9 @@
             "markusmoen@pagac.net"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "email"
             }
@@ -1030,6 +1189,9 @@
             "🤣"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "emoji"
             }
@@ -1047,6 +1209,9 @@
             "smile"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "emojialias"
             }
@@ -1064,6 +1229,9 @@
             "Smileys \u0026 Emotion"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "emojicategory"
             }
@@ -1081,6 +1249,9 @@
             "face vomiting"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "emojidescription"
             }
@@ -1098,6 +1269,9 @@
             "happy"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "emojitag"
             }
@@ -1115,6 +1289,9 @@
             "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_8_3 rv:7.0) Gecko/1900-07-01 Firefox/37.0"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "firefoxuseragent"
             }
@@ -1132,6 +1309,9 @@
             "Markus"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "firstname"
             }
@@ -1149,6 +1329,9 @@
             "3.1128167e+37"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "float32"
             }
@@ -1184,6 +1367,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "float32range"
             }
@@ -1201,6 +1387,9 @@
             "1.644484108270445e+307"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "float64"
             }
@@ -1236,6 +1425,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "float64range"
             }
@@ -1253,6 +1445,9 @@
             "2107-01-24 13:00:35.820738079 +0000 UTC"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "futuredate"
             }
@@ -1270,6 +1465,9 @@
             "male"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "gender"
             }
@@ -1287,6 +1485,9 @@
             "#a99fb4"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "hexcolor"
             }
@@ -1304,6 +1505,9 @@
             "Swimming"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "hobby"
             }
@@ -1321,6 +1525,9 @@
             "8"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "hour"
             }
@@ -1338,6 +1545,9 @@
             "HEAD"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "httpmethod"
             }
@@ -1355,6 +1565,9 @@
             "200"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "httpstatuscode"
             }
@@ -1372,6 +1585,9 @@
             "404"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "httpstatuscodesimple"
             }
@@ -1389,6 +1605,9 @@
             "HTTP/1.1"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "httpversion"
             }
@@ -1406,6 +1625,9 @@
             "14866"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "int"
             }
@@ -1423,6 +1645,9 @@
             "2200"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "int16"
             }
@@ -1440,6 +1665,9 @@
             "-1072427943"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "int32"
             }
@@ -1457,6 +1685,9 @@
             "-8379641344161477543"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "int64"
             }
@@ -1474,6 +1705,9 @@
             "24"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "int8"
             }
@@ -1503,6 +1737,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "intn"
             }
@@ -1520,6 +1757,9 @@
             "222.83.191.222"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "ipv4address"
             }
@@ -1537,6 +1777,9 @@
             "2001:cafe:8898:ee17:bc35:9064:5866:d019"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "ipv6address"
             }
@@ -1554,6 +1797,9 @@
             "CVLRQCZBXQ97"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "isin"
             }
@@ -1571,6 +1817,9 @@
             "Central"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "jobdescriptor"
             }
@@ -1588,6 +1837,9 @@
             "Assurance"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "joblevel"
             }
@@ -1605,6 +1857,9 @@
             "Director"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "jobtitle"
             }
@@ -1622,6 +1877,9 @@
             "Kazakh"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "language"
             }
@@ -1639,6 +1897,9 @@
             "kk"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "languageabbreviation"
             }
@@ -1656,6 +1917,9 @@
             "Daniel"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "lastname"
             }
@@ -1673,6 +1937,9 @@
             "-73.534056"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "latitude"
             }
@@ -1690,6 +1957,9 @@
             "g"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "letter"
             }
@@ -1719,6 +1989,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "lettern"
             }
@@ -1736,6 +2009,9 @@
             "error"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "loglevel"
             }
@@ -1753,6 +2029,9 @@
             "-147.068112"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "longitude"
             }
@@ -1800,6 +2079,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "loremipsumparagraph"
             }
@@ -1829,6 +2111,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "loremipsumsentence"
             }
@@ -1846,6 +2131,9 @@
             "quia"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "loremipsumword"
             }
@@ -1863,6 +2151,9 @@
             "cb:ce:06:94:22:e9"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "macaddress"
             }
@@ -1880,6 +2171,9 @@
             "Belinda"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "middlename"
             }
@@ -1897,6 +2191,9 @@
             "34"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "minute"
             }
@@ -1914,6 +2211,9 @@
             "1"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "month"
             }
@@ -1931,6 +2231,9 @@
             "September"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "monthstring"
             }
@@ -1948,6 +2251,9 @@
             "Markus Moen"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "name"
             }
@@ -1965,6 +2271,9 @@
             "Mr."
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nameprefix"
             }
@@ -1982,6 +2291,9 @@
             "Jr."
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "namesuffix"
             }
@@ -1999,6 +2311,9 @@
             "196446360"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nanosecond"
             }
@@ -2016,6 +2331,9 @@
             "aunt"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "noun"
             }
@@ -2033,6 +2351,9 @@
             "confusion"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nounabstract"
             }
@@ -2050,6 +2371,9 @@
             "party"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nouncollectiveanimal"
             }
@@ -2067,6 +2391,9 @@
             "body"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nouncollectivepeople"
             }
@@ -2084,6 +2411,9 @@
             "hand"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nouncollectivething"
             }
@@ -2101,6 +2431,9 @@
             "part"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nouncommon"
             }
@@ -2118,6 +2451,9 @@
             "snowman"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nounconcrete"
             }
@@ -2135,6 +2471,9 @@
             "neck"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "nouncountable"
             }
@@ -2152,6 +2491,9 @@
             "seafood"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "noununcountable"
             }
@@ -2187,6 +2529,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "number"
             }
@@ -2204,6 +2549,9 @@
             "Opera/8.39 (Macintosh; U; PPC Mac OS X 10_8_7; en-US) Presto/2.9.335 Version/10.00"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "operauseragent"
             }
@@ -2250,6 +2598,9 @@
                 }
               },
               "type": "object"
+            },
+            "seed": {
+              "type": "number"
             },
             "type": {
               "const": "paragraph"
@@ -2310,6 +2661,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "password"
             }
@@ -2327,6 +2681,9 @@
             "2007-01-24 13:00:35.820738079 +0000 UTC"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pastdate"
             }
@@ -2344,6 +2701,9 @@
             "6136459948"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "phone"
             }
@@ -2361,6 +2721,9 @@
             "136-459-9489"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "phoneformatted"
             }
@@ -2378,6 +2741,9 @@
             "time will tell"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "phrase"
             }
@@ -2395,6 +2761,9 @@
             "other than"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "preposition"
             }
@@ -2412,6 +2781,9 @@
             "according to"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "prepositioncompound"
             }
@@ -2429,6 +2801,9 @@
             "before"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "prepositiondouble"
             }
@@ -2446,6 +2821,9 @@
             "out"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "prepositionsimple"
             }
@@ -2481,6 +2859,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "price"
             }
@@ -2498,6 +2879,9 @@
             "me"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronoun"
             }
@@ -2515,6 +2899,9 @@
             "this"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronoundemonstrative"
             }
@@ -2532,6 +2919,9 @@
             "what"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronouninterrogative"
             }
@@ -2549,6 +2939,9 @@
             "it"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronounobject"
             }
@@ -2566,6 +2959,9 @@
             "it"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronounpersonal"
             }
@@ -2583,6 +2979,9 @@
             "mine"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronounpossessive"
             }
@@ -2600,6 +2999,9 @@
             "myself"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronounreflective"
             }
@@ -2617,6 +3019,9 @@
             "as"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "pronounrelative"
             }
@@ -2634,6 +3039,9 @@
             "Roof chia echo?"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "question"
             }
@@ -2651,6 +3059,9 @@
             "\"Roof chia echo.\" - Lura Lockman"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "quote"
             }
@@ -2668,6 +3079,9 @@
             "[85, 224, 195]"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "rgbcolor"
             }
@@ -2685,6 +3099,9 @@
             "Mozilla/5.0 (iPad; CPU OS 8_3_2 like Mac OS X; en-US) AppleWebKit/531.15.6 (KHTML, like Gecko) Version/4.0.5 Mobile/8B120 Safari/6531.15.6"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "safariuseragent"
             }
@@ -2702,6 +3119,9 @@
             "43"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "second"
             }
@@ -2731,6 +3151,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "sentence"
             }
@@ -2748,6 +3171,9 @@
             "Universal seamless Focus, interactive."
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "slogan"
             }
@@ -2765,6 +3191,9 @@
             "296446360"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "ssn"
             }
@@ -2782,6 +3211,9 @@
             "Illinois"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "state"
             }
@@ -2799,6 +3231,9 @@
             "IL"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "stateabr"
             }
@@ -2816,6 +3251,9 @@
             "364 East Rapidsborough"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "street"
             }
@@ -2833,6 +3271,9 @@
             "View"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "streetname"
             }
@@ -2850,6 +3291,9 @@
             "13645"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "streetnumber"
             }
@@ -2867,6 +3311,9 @@
             "Lake"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "streetprefix"
             }
@@ -2884,6 +3331,9 @@
             "land"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "streetsuffix"
             }
@@ -2913,6 +3363,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "string"
             }
@@ -2930,6 +3383,9 @@
             "Kaliningrad Standard Time"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "timezone"
             }
@@ -2947,6 +3403,9 @@
             "KST"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "timezoneabv"
             }
@@ -2964,6 +3423,9 @@
             "(UTC+03:00) Kaliningrad, Minsk"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "timezonefull"
             }
@@ -2981,6 +3443,9 @@
             "3"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "timezoneoffset"
             }
@@ -2998,6 +3463,9 @@
             "America/Alaska"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "timezoneregion"
             }
@@ -3015,6 +3483,9 @@
             "14866"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uint"
             }
@@ -3032,6 +3503,9 @@
             "34968"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uint16"
             }
@@ -3049,6 +3523,9 @@
             "1075055705"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uint32"
             }
@@ -3066,6 +3543,9 @@
             "843730692693298265"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uint64"
             }
@@ -3083,6 +3563,9 @@
             "152"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uint8"
             }
@@ -3112,6 +3595,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uintn"
             }
@@ -3129,6 +3615,9 @@
             "http://www.principalproductize.biz/target"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "url"
             }
@@ -3146,6 +3635,9 @@
             "Mozilla/5.0 (Windows NT 5.0) AppleWebKit/5362 (KHTML, like Gecko) Chrome/37.0.834.0 Mobile Safari/5362"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "useragent"
             }
@@ -3163,6 +3655,9 @@
             "Daniel1364"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "username"
             }
@@ -3180,6 +3675,9 @@
             "590c1440-9888-45b0-bd51-a817ee07c3f2"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "uuid"
             }
@@ -3197,6 +3695,9 @@
             "release"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "verb"
             }
@@ -3214,6 +3715,9 @@
             "close"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "verbaction"
             }
@@ -3231,6 +3735,9 @@
             "be"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "verbhelping"
             }
@@ -3248,6 +3755,9 @@
             "was"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "verblinking"
             }
@@ -3265,6 +3775,9 @@
             "Friday"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "weekday"
             }
@@ -3282,6 +3795,9 @@
             "man"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "word"
             }
@@ -3299,6 +3815,9 @@
             "1900"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "year"
             }
@@ -3316,6 +3835,9 @@
             "13645"
           ],
           "properties": {
+            "seed": {
+              "type": "number"
+            },
             "type": {
               "const": "zip"
             }
@@ -3335,6 +3857,9 @@
               },
               "type": "object"
             },
+            "seed": {
+              "type": "integer"
+            },
             "type": {
               "const": "object"
             }
@@ -3352,6 +3877,9 @@
             },
             "item": {
               "$ref": "#/definitions/FakeDataNode"
+            },
+            "seed": {
+              "type": "integer"
             },
             "type": {
               "const": "array"

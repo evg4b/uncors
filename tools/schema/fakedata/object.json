@@ -6,6 +6,9 @@
     "type": {
       "const": "object"
     },
+    "seed": {
+      "type": "integer"
+    },
     "properties": {
       "type": "object",
       "additionalProperties": {

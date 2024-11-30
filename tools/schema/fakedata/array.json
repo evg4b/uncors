@@ -6,6 +6,9 @@
     "count": {
       "type": "integer"
     },
+    "seed": {
+      "type": "integer"
+    },
     "item": {
       "$ref": "#/definitions/FakeDataNode"
     },
