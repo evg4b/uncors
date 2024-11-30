@@ -51,7 +51,7 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 
 	switch {
 	case response.IsFake():
-		if err := h.serveFakeContent(writer); err != nil {
+		if err := h.serveFakeContent(writer, request); err != nil {
 			return err
 		}
 	case response.IsFile():
