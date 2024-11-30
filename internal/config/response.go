@@ -26,6 +26,7 @@ func (r *Response) Clone() Response {
 		File:    r.File,
 		Delay:   r.Delay,
 		Fake:    r.Fake,
+		Seed:    r.Seed,
 	}
 }
 
