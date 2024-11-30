@@ -23,7 +23,7 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 			},
 		},
 		{
@@ -33,8 +33,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"    static: /static => /tmp",
 				"    static: /static2 => /tmp2",
 			},
@@ -75,7 +75,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"    cache: /static",
 				"    cache: /static2",
 			},
@@ -122,8 +122,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
-				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"mock: [POST 200] /endpoint-1",
 				"mock: [GET 500] /demo",
 				"mock: [GET 403] /healthcheck",
@@ -147,4 +147,8 @@ func TestMappings(t *testing.T) {
 
 		assert.Equal(t, "", actual)
 	})
+}
+
+func mapping(from string, to string) string {
+	return fmt.Sprintf("%s => %s", from, to)
 }
