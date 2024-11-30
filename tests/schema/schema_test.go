@@ -13,11 +13,21 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-func TestJsonSchema(t *testing.T) {
+func loadUncorsSchema(t *testing.T) gojsonschema.JSONLoader {
 	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
 
+	return gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
+}
+
+func loadFileSchema(t *testing.T, file string) gojsonschema.JSONLoader {
+	targetJSONFile := schema.TransformToJSON(t, file)
+
+	return gojsonschema.NewReferenceLoader("file://" + targetJSONFile)
+}
+
+func TestJsonSchema(t *testing.T) {
 	schemaLoader := gojsonschema.NewReferenceLoader("http://json-schema.org/draft-07/schema#")
-	documentLoader := gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
+	documentLoader := loadUncorsSchema(t)
 
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	require.NoError(t, err)
@@ -27,15 +37,11 @@ func TestJsonSchema(t *testing.T) {
 
 func TestInvalidJsonSchema(t *testing.T) {
 	testCases := schema.LoadTestCasesWithErrors(t, testutils.CurrentDir(t), "invalid")
-
-	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
+	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			targetJSONFile := schema.TransformToJSON(t, testCase.File)
-
-			schemaLoader := gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
-			documentLoader := gojsonschema.NewReferenceLoader("file://" + targetJSONFile)
+			documentLoader := loadFileSchema(t, testCase.File)
 
 			result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 			require.NoError(t, err)
@@ -51,15 +57,11 @@ func TestInvalidJsonSchema(t *testing.T) {
 
 func TestValidJsonSchema(t *testing.T) {
 	testCases := schema.LoadTestCases(t, testutils.CurrentDir(t), "valid")
-
-	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
+	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			targetJSONFile := schema.TransformToJSON(t, testCase.File)
-
-			schemaLoader := gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
-			documentLoader := gojsonschema.NewReferenceLoader("file://" + targetJSONFile)
+			documentLoader := loadFileSchema(t, testCase.File)
 
 			result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 			require.NoError(t, err)
