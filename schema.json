@@ -737,8 +737,11 @@
                 "bins": {
                   "default": "",
                   "description": "Optional list of prepended bin numbers to pick from",
+                  "items": {
+                    "type": "string"
+                  },
                   "title": "Bins",
-                  "type": "string"
+                  "type": "array"
                 },
                 "gaps": {
                   "default": "false",
@@ -749,8 +752,11 @@
                 "types": {
                   "default": "all",
                   "description": "A select number of types you want to use when generating a credit card number",
+                  "items": {
+                    "type": "string"
+                  },
                   "title": "Types",
-                  "type": "string"
+                  "type": "array"
                 }
               },
               "type": "object"

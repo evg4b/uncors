@@ -33,8 +33,7 @@ func generateFakeDataNodes() []*gabs.Container {
 			options := o()
 
 			for _, param := range info.Params {
-				property := gabs.New()
-				p(property, "type", getSchemaType(param.Type))
+				property := getPropertyBase(param.Type)
 				p(property, "title", param.Display)
 				p(property, "description", param.Description)
 				p(property, "default", param.Default)
@@ -55,21 +54,28 @@ func generateFakeDataNodes() []*gabs.Container {
 	)
 }
 
-func getSchemaType(typeDef string) string {
+func getPropertyBase(typeDef string) *gabs.Container {
+	object := gabs.New()
+
 	switch typeDef {
-	case "string": // nolint: goconst
-		return "string"
+	case "string":
+		p(object, "type", "string")
 	case "int":
-		return "number" // nolint: goconst
+		p(object, "type", "number")
 	case "uint":
-		return "number" // nolint: goconst
+		p(object, "type", "number")
 	case "float64":
-		return "number" // nolint: goconst
+		p(object, "type", "number")
 	case "float":
-		return "number" // nolint: goconst
+		p(object, "type", "number")
 	case "bool":
-		return "boolean"
+		p(object, "type", "boolean")
+	case "[]string":
+		p(object, "type", "array")
+		p(object, "items.type", "string")
 	default:
-		return "string"
+		panic("Unknown type: " + typeDef)
 	}
+
+	return object
 }
