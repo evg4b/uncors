@@ -26,7 +26,6 @@ func generateFakeDataNodes() []*gabs.Container {
 		p(item, "title", info.Display)
 		p(item, "description", info.Description)
 		p(item, "properties.type.const", key)
-		p(item, "properties.seed.$ref", "#/definitions/Seed")
 		p(item, "required", []string{"type"})
 		p(item, "examples", []string{info.Example})
 

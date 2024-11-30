@@ -15,7 +15,7 @@ func (h *Handler) serveFakeContent(writer contracts.ResponseWriter) error {
 		header.Set(headers.ContentType, "application/json")
 	}
 
-	data, err := response.Fake.Compile()
+	data, err := response.Fake.Compile(response.Seed)
 	if err != nil {
 		return err
 	}

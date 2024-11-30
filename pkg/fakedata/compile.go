@@ -11,10 +11,10 @@ import (
 
 var ErrUnknownType = errors.New("unknown type")
 
-func (root *Node) Compile() (any, error) {
+func (root *Node) Compile(seed uint64) (any, error) {
 	initPackage()
 
-	return root.compileInternal(gofakeit.New(root.Seed))
+	return root.compileInternal(gofakeit.New(seed))
 }
 
 func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {

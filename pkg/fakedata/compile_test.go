@@ -15,7 +15,6 @@ func TestFakedataNode(t *testing.T) {
 
 	t.Run("seed produces deterministic results", func(t *testing.T) {
 		node := &fakedata.Node{
-			Seed: seed,
 			Type: "object",
 			Properties: map[string]fakedata.Node{
 				"foo": {Type: "sentence"},
@@ -32,11 +31,11 @@ func TestFakedataNode(t *testing.T) {
 			},
 		}
 
-		expected, err := node.Compile()
+		expected, err := node.Compile(seed)
 		require.NoError(t, err)
 
 		for _, clonedNode := range lo.Repeat(50, node) {
-			actual, err := clonedNode.Compile()
+			actual, err := clonedNode.Compile(seed)
 			require.NoError(t, err)
 
 			assert.Equal(t, expected, actual)
@@ -61,11 +60,11 @@ func TestFakedataNode(t *testing.T) {
 			},
 		}
 
-		expected, err := node.Compile()
+		expected, err := node.Compile(0)
 		require.NoError(t, err)
 
 		for _, clonedNode := range lo.Repeat(50, node) {
-			actual, err := clonedNode.Compile()
+			actual, err := clonedNode.Compile(0)
 			require.NoError(t, err)
 
 			assert.NotEqual(t, expected, actual)
@@ -83,7 +82,6 @@ func TestFakedataNode(t *testing.T) {
 		{
 			name: "sentence",
 			node: fakedata.Node{
-				Seed: seed,
 				Type: "sentence",
 			},
 			expect: "Who generally yourselves one lean.",
@@ -91,7 +89,6 @@ func TestFakedataNode(t *testing.T) {
 		{
 			name: "object",
 			node: fakedata.Node{
-				Seed: seed,
 				Type: "object",
 				Properties: map[string]fakedata.Node{
 					"foo": {Type: "sentence"},
@@ -106,7 +103,6 @@ func TestFakedataNode(t *testing.T) {
 		{
 			name: "array",
 			node: fakedata.Node{
-				Seed: seed,
 				Type: "array",
 				Item: &fakedata.Node{
 					Type: "sentence",
@@ -122,7 +118,6 @@ func TestFakedataNode(t *testing.T) {
 		{
 			name: "array of objects",
 			node: fakedata.Node{
-				Seed: seed,
 				Type: "array",
 				Item: &fakedata.Node{
 					Type: "object",
@@ -152,7 +147,7 @@ func TestFakedataNode(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := testCase.node.Compile()
+			actual, err := testCase.node.Compile(seed)
 			require.NoError(t, err)
 
 			assert.Equal(t, testCase.expect, actual)
@@ -168,7 +163,6 @@ func TestFakedataNode(t *testing.T) {
 			{
 				name: "number",
 				node: fakedata.Node{
-					Seed: seed,
 					Type: "number",
 				},
 				expect: 1321272094,
@@ -176,7 +170,6 @@ func TestFakedataNode(t *testing.T) {
 			{
 				name: "bool",
 				node: fakedata.Node{
-					Seed: seed,
 					Type: "bool",
 				},
 				expect: false,
@@ -184,7 +177,6 @@ func TestFakedataNode(t *testing.T) {
 			{
 				name: "string",
 				node: fakedata.Node{
-					Seed: seed,
 					Type: "string",
 				},
 				expect: "Necessitatibus natus numquam consequatur eos.",
@@ -192,7 +184,6 @@ func TestFakedataNode(t *testing.T) {
 			{
 				name: "date",
 				node: fakedata.Node{
-					Seed: seed,
 					Type: "date",
 				},
 				expect: "2010-07-07T19:51:28Z",
@@ -201,7 +192,7 @@ func TestFakedataNode(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := testCase.node.Compile()
+				actual, err := testCase.node.Compile(seed)
 				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expect, actual)

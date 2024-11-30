@@ -69,13 +69,15 @@ func TestHandler(t *testing.T) {
 			},
 			{
 				name: "fake content",
-				response: config.Response{Fake: &fakedata.Node{
+				response: config.Response{
 					Seed: 123,
-					Type: "object",
-					Properties: map[string]fakedata.Node{
-						"foo": {Type: "sentence"},
+					Fake: &fakedata.Node{
+						Type: "object",
+						Properties: map[string]fakedata.Node{
+							"foo": {Type: "sentence"},
+						},
 					},
-				}},
+				},
 				expected: fakeJSONContent,
 			},
 		}

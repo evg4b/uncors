@@ -14,6 +14,7 @@ type Response struct {
 	Delay   time.Duration     `mapstructure:"delay"`
 	Raw     string            `mapstructure:"raw"`
 	File    string            `mapstructure:"file"`
+	Seed    uint64            `mapstructure:"seed"`
 	Fake    *fakedata.Node    `mapstructure:"fake"`
 }
 

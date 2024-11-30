@@ -6,9 +6,6 @@
     "type": {
       "const": "object"
     },
-    "seed": {
-      "$ref": "#/definitions/Seed"
-    },
     "properties": {
       "type": "object",
       "additionalProperties": {

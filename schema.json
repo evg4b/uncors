@@ -34,6 +34,12 @@
         "headers": {
           "$ref": "#/definitions/Headers",
           "description": "HTTP headers which will be sent in the mock response"
+        },
+        "seed": {
+          "description": "If specified, the same data will be generated each time. If not specified, a random seed will be used.",
+          "minimum": 0,
+          "title": "Seed for random data generation",
+          "type": "integer"
         }
       },
       "required": [
@@ -51,9 +57,6 @@
             "491527954328"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "achaccount"
             }
@@ -71,9 +74,6 @@
             "513715684"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "achrouting"
             }
@@ -91,9 +91,6 @@
             "genuine"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjective"
             }
@@ -111,9 +108,6 @@
             "this"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectivedemonstrative"
             }
@@ -131,9 +125,6 @@
             "brave"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectivedescriptive"
             }
@@ -151,9 +142,6 @@
             "few"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectiveindefinite"
             }
@@ -171,9 +159,6 @@
             "what"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectiveinterrogative"
             }
@@ -191,9 +176,6 @@
             "my"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectivepossessive"
             }
@@ -211,9 +193,6 @@
             "Afghan"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectiveproper"
             }
@@ -231,9 +210,6 @@
             "a little"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adjectivequantitative"
             }
@@ -251,9 +227,6 @@
             "smoothly"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverb"
             }
@@ -271,9 +244,6 @@
             "intensely"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbdegree"
             }
@@ -291,9 +261,6 @@
             "hourly"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbfrequencydefinite"
             }
@@ -311,9 +278,6 @@
             "occasionally"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbfrequencyindefinite"
             }
@@ -331,9 +295,6 @@
             "stupidly"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbmanner"
             }
@@ -351,9 +312,6 @@
             "east"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbplace"
             }
@@ -371,9 +329,6 @@
             "now"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbtimedefinite"
             }
@@ -391,9 +346,6 @@
             "already"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "adverbtimeindefinite"
             }
@@ -411,9 +363,6 @@
             "1lWLbxojXq6BqWX7X60VkcDIvYA"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "bitcoinaddress"
             }
@@ -431,9 +380,6 @@
             "5vrbXTADWJ6sQBSYd6lLkG97jljNc0X9VPBvbVqsIH9lWOLcoqg"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "bitcoinprivatekey"
             }
@@ -451,9 +397,6 @@
             "word"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "blurb"
             }
@@ -471,9 +414,6 @@
             "true"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "bool"
             }
@@ -491,9 +431,6 @@
             "front-end"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "bs"
             }
@@ -511,9 +448,6 @@
             "disintermediate"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "buzzword"
             }
@@ -531,9 +465,6 @@
             "Mozilla/5.0 (X11; Linux i686) AppleWebKit/5312 (KHTML, like Gecko) Chrome/39.0.836.0 Mobile Safari/5312"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "chromeuseragent"
             }
@@ -551,9 +482,6 @@
             "Marcelside"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "city"
             }
@@ -571,9 +499,6 @@
             "MediumOrchid"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "color"
             }
@@ -591,9 +516,6 @@
             "Moen, Pagac and Wuckert"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "company"
             }
@@ -611,9 +533,6 @@
             "Inc"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "companysuffix"
             }
@@ -631,9 +550,6 @@
             "such as"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connective"
             }
@@ -651,9 +567,6 @@
             "an outcome of"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectivecasual"
             }
@@ -671,9 +584,6 @@
             "in addition"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectivecomparative"
             }
@@ -691,9 +601,6 @@
             "besides"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectivecomplaint"
             }
@@ -711,9 +618,6 @@
             "then"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectiveexamplify"
             }
@@ -731,9 +635,6 @@
             "firstly"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectivelisting"
             }
@@ -751,9 +652,6 @@
             "finally"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "connectivetime"
             }
@@ -771,9 +669,6 @@
             "United States of America"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "country"
             }
@@ -791,9 +686,6 @@
             "US"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "countryabr"
             }
@@ -811,9 +703,6 @@
             "513"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "creditcardcvv"
             }
@@ -831,9 +720,6 @@
             "01/21"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "creditcardexp"
             }
@@ -881,9 +767,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "creditcardnumber"
             }
@@ -901,9 +784,6 @@
             "Visa"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "creditcardtype"
             }
@@ -921,9 +801,6 @@
             "United States Dollar"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "currencylong"
             }
@@ -941,9 +818,6 @@
             "USD"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "currencyshort"
             }
@@ -961,9 +835,6 @@
             "38259P508"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "cusip"
             }
@@ -992,9 +863,6 @@
                 }
               },
               "type": "object"
-            },
-            "seed": {
-              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "date"
@@ -1037,9 +905,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "daterange"
             }
@@ -1057,9 +922,6 @@
             "12"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "day"
             }
@@ -1077,9 +939,6 @@
             "0"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "digit"
             }
@@ -1110,9 +969,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "digitn"
             }
@@ -1130,9 +986,6 @@
             "centraltarget.biz"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "domainname"
             }
@@ -1150,9 +1003,6 @@
             "org"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "domainsuffix"
             }
@@ -1170,9 +1020,6 @@
             "markusmoen@pagac.net"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "email"
             }
@@ -1190,9 +1037,6 @@
             "🤣"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "emoji"
             }
@@ -1210,9 +1054,6 @@
             "smile"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "emojialias"
             }
@@ -1230,9 +1071,6 @@
             "Smileys \u0026 Emotion"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "emojicategory"
             }
@@ -1250,9 +1088,6 @@
             "face vomiting"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "emojidescription"
             }
@@ -1270,9 +1105,6 @@
             "happy"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "emojitag"
             }
@@ -1290,9 +1122,6 @@
             "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_8_3 rv:7.0) Gecko/1900-07-01 Firefox/37.0"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "firefoxuseragent"
             }
@@ -1310,9 +1139,6 @@
             "Markus"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "firstname"
             }
@@ -1330,9 +1156,6 @@
             "3.1128167e+37"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "float32"
             }
@@ -1368,9 +1191,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "float32range"
             }
@@ -1388,9 +1208,6 @@
             "1.644484108270445e+307"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "float64"
             }
@@ -1426,9 +1243,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "float64range"
             }
@@ -1446,9 +1260,6 @@
             "2107-01-24 13:00:35.820738079 +0000 UTC"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "futuredate"
             }
@@ -1466,9 +1277,6 @@
             "male"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "gender"
             }
@@ -1486,9 +1294,6 @@
             "#a99fb4"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "hexcolor"
             }
@@ -1506,9 +1311,6 @@
             "Swimming"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "hobby"
             }
@@ -1526,9 +1328,6 @@
             "8"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "hour"
             }
@@ -1546,9 +1345,6 @@
             "HEAD"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "httpmethod"
             }
@@ -1566,9 +1362,6 @@
             "200"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "httpstatuscode"
             }
@@ -1586,9 +1379,6 @@
             "404"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "httpstatuscodesimple"
             }
@@ -1606,9 +1396,6 @@
             "HTTP/1.1"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "httpversion"
             }
@@ -1626,9 +1413,6 @@
             "14866"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "int"
             }
@@ -1646,9 +1430,6 @@
             "2200"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "int16"
             }
@@ -1666,9 +1447,6 @@
             "-1072427943"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "int32"
             }
@@ -1686,9 +1464,6 @@
             "-8379641344161477543"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "int64"
             }
@@ -1706,9 +1481,6 @@
             "24"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "int8"
             }
@@ -1738,9 +1510,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "intn"
             }
@@ -1758,9 +1527,6 @@
             "222.83.191.222"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "ipv4address"
             }
@@ -1778,9 +1544,6 @@
             "2001:cafe:8898:ee17:bc35:9064:5866:d019"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "ipv6address"
             }
@@ -1798,9 +1561,6 @@
             "CVLRQCZBXQ97"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "isin"
             }
@@ -1818,9 +1578,6 @@
             "Central"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "jobdescriptor"
             }
@@ -1838,9 +1595,6 @@
             "Assurance"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "joblevel"
             }
@@ -1858,9 +1612,6 @@
             "Director"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "jobtitle"
             }
@@ -1878,9 +1629,6 @@
             "Kazakh"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "language"
             }
@@ -1898,9 +1646,6 @@
             "kk"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "languageabbreviation"
             }
@@ -1918,9 +1663,6 @@
             "Daniel"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "lastname"
             }
@@ -1938,9 +1680,6 @@
             "-73.534056"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "latitude"
             }
@@ -1958,9 +1697,6 @@
             "g"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "letter"
             }
@@ -1991,9 +1727,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "lettern"
             }
@@ -2011,9 +1744,6 @@
             "error"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "loglevel"
             }
@@ -2031,9 +1761,6 @@
             "-147.068112"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "longitude"
             }
@@ -2081,9 +1808,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "loremipsumparagraph"
             }
@@ -2113,9 +1837,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "loremipsumsentence"
             }
@@ -2133,9 +1854,6 @@
             "quia"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "loremipsumword"
             }
@@ -2153,9 +1871,6 @@
             "cb:ce:06:94:22:e9"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "macaddress"
             }
@@ -2173,9 +1888,6 @@
             "Belinda"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "middlename"
             }
@@ -2193,9 +1905,6 @@
             "34"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "minute"
             }
@@ -2213,9 +1922,6 @@
             "1"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "month"
             }
@@ -2233,9 +1939,6 @@
             "September"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "monthstring"
             }
@@ -2253,9 +1956,6 @@
             "Markus Moen"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "name"
             }
@@ -2273,9 +1973,6 @@
             "Mr."
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nameprefix"
             }
@@ -2293,9 +1990,6 @@
             "Jr."
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "namesuffix"
             }
@@ -2313,9 +2007,6 @@
             "196446360"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nanosecond"
             }
@@ -2333,9 +2024,6 @@
             "aunt"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "noun"
             }
@@ -2353,9 +2041,6 @@
             "confusion"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nounabstract"
             }
@@ -2373,9 +2058,6 @@
             "party"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nouncollectiveanimal"
             }
@@ -2393,9 +2075,6 @@
             "body"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nouncollectivepeople"
             }
@@ -2413,9 +2092,6 @@
             "hand"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nouncollectivething"
             }
@@ -2433,9 +2109,6 @@
             "part"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nouncommon"
             }
@@ -2453,9 +2126,6 @@
             "snowman"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nounconcrete"
             }
@@ -2473,9 +2143,6 @@
             "neck"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "nouncountable"
             }
@@ -2493,9 +2160,6 @@
             "seafood"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "noununcountable"
             }
@@ -2531,9 +2195,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "number"
             }
@@ -2551,9 +2212,6 @@
             "Opera/8.39 (Macintosh; U; PPC Mac OS X 10_8_7; en-US) Presto/2.9.335 Version/10.00"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "operauseragent"
             }
@@ -2600,9 +2258,6 @@
                 }
               },
               "type": "object"
-            },
-            "seed": {
-              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "paragraph"
@@ -2663,9 +2318,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "password"
             }
@@ -2683,9 +2335,6 @@
             "2007-01-24 13:00:35.820738079 +0000 UTC"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pastdate"
             }
@@ -2703,9 +2352,6 @@
             "6136459948"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "phone"
             }
@@ -2723,9 +2369,6 @@
             "136-459-9489"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "phoneformatted"
             }
@@ -2743,9 +2386,6 @@
             "time will tell"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "phrase"
             }
@@ -2763,9 +2403,6 @@
             "other than"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "preposition"
             }
@@ -2783,9 +2420,6 @@
             "according to"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "prepositioncompound"
             }
@@ -2803,9 +2437,6 @@
             "before"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "prepositiondouble"
             }
@@ -2823,9 +2454,6 @@
             "out"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "prepositionsimple"
             }
@@ -2861,9 +2489,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "price"
             }
@@ -2881,9 +2506,6 @@
             "me"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronoun"
             }
@@ -2901,9 +2523,6 @@
             "this"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronoundemonstrative"
             }
@@ -2921,9 +2540,6 @@
             "what"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronouninterrogative"
             }
@@ -2941,9 +2557,6 @@
             "it"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronounobject"
             }
@@ -2961,9 +2574,6 @@
             "it"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronounpersonal"
             }
@@ -2981,9 +2591,6 @@
             "mine"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronounpossessive"
             }
@@ -3001,9 +2608,6 @@
             "myself"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronounreflective"
             }
@@ -3021,9 +2625,6 @@
             "as"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "pronounrelative"
             }
@@ -3041,9 +2642,6 @@
             "Roof chia echo?"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "question"
             }
@@ -3061,9 +2659,6 @@
             "\"Roof chia echo.\" - Lura Lockman"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "quote"
             }
@@ -3081,9 +2676,6 @@
             "[85, 224, 195]"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "rgbcolor"
             }
@@ -3101,9 +2693,6 @@
             "Mozilla/5.0 (iPad; CPU OS 8_3_2 like Mac OS X; en-US) AppleWebKit/531.15.6 (KHTML, like Gecko) Version/4.0.5 Mobile/8B120 Safari/6531.15.6"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "safariuseragent"
             }
@@ -3121,9 +2710,6 @@
             "43"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "second"
             }
@@ -3153,9 +2739,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "sentence"
             }
@@ -3173,9 +2756,6 @@
             "Universal seamless Focus, interactive."
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "slogan"
             }
@@ -3193,9 +2773,6 @@
             "296446360"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "ssn"
             }
@@ -3213,9 +2790,6 @@
             "Illinois"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "state"
             }
@@ -3233,9 +2807,6 @@
             "IL"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "stateabr"
             }
@@ -3253,9 +2824,6 @@
             "364 East Rapidsborough"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "street"
             }
@@ -3273,9 +2841,6 @@
             "View"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "streetname"
             }
@@ -3293,9 +2858,6 @@
             "13645"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "streetnumber"
             }
@@ -3313,9 +2875,6 @@
             "Lake"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "streetprefix"
             }
@@ -3333,9 +2892,6 @@
             "land"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "streetsuffix"
             }
@@ -3365,9 +2921,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "string"
             }
@@ -3385,9 +2938,6 @@
             "Kaliningrad Standard Time"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "timezone"
             }
@@ -3405,9 +2955,6 @@
             "KST"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "timezoneabv"
             }
@@ -3425,9 +2972,6 @@
             "(UTC+03:00) Kaliningrad, Minsk"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "timezonefull"
             }
@@ -3445,9 +2989,6 @@
             "3"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "timezoneoffset"
             }
@@ -3465,9 +3006,6 @@
             "America/Alaska"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "timezoneregion"
             }
@@ -3485,9 +3023,6 @@
             "14866"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uint"
             }
@@ -3505,9 +3040,6 @@
             "34968"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uint16"
             }
@@ -3525,9 +3057,6 @@
             "1075055705"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uint32"
             }
@@ -3545,9 +3074,6 @@
             "843730692693298265"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uint64"
             }
@@ -3565,9 +3091,6 @@
             "152"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uint8"
             }
@@ -3598,9 +3121,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uintn"
             }
@@ -3618,9 +3138,6 @@
             "http://www.principalproductize.biz/target"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "url"
             }
@@ -3638,9 +3155,6 @@
             "Mozilla/5.0 (Windows NT 5.0) AppleWebKit/5362 (KHTML, like Gecko) Chrome/37.0.834.0 Mobile Safari/5362"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "useragent"
             }
@@ -3658,9 +3172,6 @@
             "Daniel1364"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "username"
             }
@@ -3678,9 +3189,6 @@
             "590c1440-9888-45b0-bd51-a817ee07c3f2"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "uuid"
             }
@@ -3698,9 +3206,6 @@
             "release"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "verb"
             }
@@ -3718,9 +3223,6 @@
             "close"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "verbaction"
             }
@@ -3738,9 +3240,6 @@
             "be"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "verbhelping"
             }
@@ -3758,9 +3257,6 @@
             "was"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "verblinking"
             }
@@ -3778,9 +3274,6 @@
             "Friday"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "weekday"
             }
@@ -3798,9 +3291,6 @@
             "man"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "word"
             }
@@ -3818,9 +3308,6 @@
             "1900"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "year"
             }
@@ -3838,9 +3325,6 @@
             "13645"
           ],
           "properties": {
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "zip"
             }
@@ -3860,9 +3344,6 @@
               },
               "type": "object"
             },
-            "seed": {
-              "$ref": "#/definitions/Seed"
-            },
             "type": {
               "const": "object"
             }
@@ -3880,9 +3361,6 @@
             },
             "item": {
               "$ref": "#/definitions/FakeDataNode"
-            },
-            "seed": {
-              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "array"
@@ -4074,12 +3552,6 @@
         "raw"
       ],
       "type": "object"
-    },
-    "Seed": {
-      "description": "If specified, the same data will be generated each time. If not specified, a random seed will be used.",
-      "minimum": 0,
-      "title": "Seed for random data generation",
-      "type": "integer"
     },
     "StaticDirectory": {
       "additionalProperties": false,

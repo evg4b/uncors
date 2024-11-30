@@ -10,7 +10,6 @@ type Node struct {
 	Properties map[string]Node `mapstructure:"properties"`
 	Options    map[string]any  `mapstructure:"options"`
 	Count      int             `mapstructure:"count"`
-	Seed       uint64          `mapstructure:"seed"`
 }
 
 func (root *Node) Clone() *Node {
@@ -20,6 +19,5 @@ func (root *Node) Clone() *Node {
 		Properties: helpers.CloneMap(root.Properties),
 		Options:    helpers.CloneMap(root.Options),
 		Count:      root.Count,
-		Seed:       root.Seed,
 	}
 }

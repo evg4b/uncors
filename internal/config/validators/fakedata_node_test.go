@@ -64,12 +64,6 @@ func TestFakedataNodeValidator(t *testing.T) {
 				err:   unknownErrorMessage,
 			},
 			{
-				name:  "unknown fake data type",
-				value: &fakedata.Node{Type: "number", Seed: 1},
-				root:  false,
-				err:   "property 'seed' is not allowed in nested nodes",
-			},
-			{
 				name:  "array without items template",
 				value: &fakedata.Node{Type: "array"},
 				err:   "property 'item' is required for array nodes",
