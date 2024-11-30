@@ -27,6 +27,6 @@ mappings:
                 type: email
               phones:
                 type: array
-                items:
+                item:
                   type: phoneformatted
                 count: 3

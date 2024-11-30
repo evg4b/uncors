@@ -3350,7 +3350,7 @@
             "count": {
               "type": "integer"
             },
-            "items": {
+            "item": {
               "$ref": "#/definitions/FakeDataNode"
             },
             "type": {
