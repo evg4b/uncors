@@ -26,7 +26,7 @@ func generateFakeDataNodes() []*gabs.Container {
 		p(item, "title", info.Display)
 		p(item, "description", info.Description)
 		p(item, "properties.type.const", key)
-		p(item, "properties.seed.type", "number")
+		p(item, "properties.seed.$ref", "#/definitions/Seed")
 		p(item, "required", []string{"type"})
 		p(item, "examples", []string{info.Example})
 
@@ -62,9 +62,10 @@ func getPropertyBase(typeDef string) *gabs.Container {
 	case "string":
 		p(object, "type", "string")
 	case "int":
-		p(object, "type", "number")
+		p(object, "type", "integer")
 	case "uint":
-		p(object, "type", "number")
+		p(object, "type", "integer")
+		p(object, "minimum", 0)
 	case "float64":
 		p(object, "type", "number")
 	case "float":

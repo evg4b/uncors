@@ -52,7 +52,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "achaccount"
@@ -72,7 +72,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "achrouting"
@@ -92,7 +92,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjective"
@@ -112,7 +112,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectivedemonstrative"
@@ -132,7 +132,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectivedescriptive"
@@ -152,7 +152,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectiveindefinite"
@@ -172,7 +172,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectiveinterrogative"
@@ -192,7 +192,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectivepossessive"
@@ -212,7 +212,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectiveproper"
@@ -232,7 +232,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adjectivequantitative"
@@ -252,7 +252,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverb"
@@ -272,7 +272,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbdegree"
@@ -292,7 +292,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbfrequencydefinite"
@@ -312,7 +312,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbfrequencyindefinite"
@@ -332,7 +332,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbmanner"
@@ -352,7 +352,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbplace"
@@ -372,7 +372,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbtimedefinite"
@@ -392,7 +392,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "adverbtimeindefinite"
@@ -412,7 +412,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "bitcoinaddress"
@@ -432,7 +432,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "bitcoinprivatekey"
@@ -452,7 +452,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "blurb"
@@ -472,7 +472,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "bool"
@@ -492,7 +492,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "bs"
@@ -512,7 +512,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "buzzword"
@@ -532,7 +532,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "chromeuseragent"
@@ -552,7 +552,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "city"
@@ -572,7 +572,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "color"
@@ -592,7 +592,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "company"
@@ -612,7 +612,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "companysuffix"
@@ -632,7 +632,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connective"
@@ -652,7 +652,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectivecasual"
@@ -672,7 +672,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectivecomparative"
@@ -692,7 +692,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectivecomplaint"
@@ -712,7 +712,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectiveexamplify"
@@ -732,7 +732,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectivelisting"
@@ -752,7 +752,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "connectivetime"
@@ -772,7 +772,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "country"
@@ -792,7 +792,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "countryabr"
@@ -812,7 +812,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "creditcardcvv"
@@ -832,7 +832,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "creditcardexp"
@@ -882,7 +882,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "creditcardnumber"
@@ -902,7 +902,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "creditcardtype"
@@ -922,7 +922,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "currencylong"
@@ -942,7 +942,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "currencyshort"
@@ -962,7 +962,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "cusip"
@@ -994,7 +994,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "date"
@@ -1038,7 +1038,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "daterange"
@@ -1058,7 +1058,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "day"
@@ -1078,7 +1078,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "digit"
@@ -1103,14 +1103,15 @@
                 "count": {
                   "default": "",
                   "description": "Number of digits to generate",
+                  "minimum": 0,
                   "title": "Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "digitn"
@@ -1130,7 +1131,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "domainname"
@@ -1150,7 +1151,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "domainsuffix"
@@ -1170,7 +1171,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "email"
@@ -1190,7 +1191,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "emoji"
@@ -1210,7 +1211,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "emojialias"
@@ -1230,7 +1231,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "emojicategory"
@@ -1250,7 +1251,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "emojidescription"
@@ -1270,7 +1271,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "emojitag"
@@ -1290,7 +1291,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "firefoxuseragent"
@@ -1310,7 +1311,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "firstname"
@@ -1330,7 +1331,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "float32"
@@ -1368,7 +1369,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "float32range"
@@ -1388,7 +1389,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "float64"
@@ -1426,7 +1427,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "float64range"
@@ -1446,7 +1447,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "futuredate"
@@ -1466,7 +1467,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "gender"
@@ -1486,7 +1487,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "hexcolor"
@@ -1506,7 +1507,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "hobby"
@@ -1526,7 +1527,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "hour"
@@ -1546,7 +1547,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "httpmethod"
@@ -1566,7 +1567,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "httpstatuscode"
@@ -1586,7 +1587,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "httpstatuscodesimple"
@@ -1606,7 +1607,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "httpversion"
@@ -1626,7 +1627,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "int"
@@ -1646,7 +1647,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "int16"
@@ -1666,7 +1667,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "int32"
@@ -1686,7 +1687,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "int64"
@@ -1706,7 +1707,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "int8"
@@ -1732,13 +1733,13 @@
                   "default": "2147483647",
                   "description": "Maximum int value",
                   "title": "N",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "intn"
@@ -1758,7 +1759,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "ipv4address"
@@ -1778,7 +1779,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "ipv6address"
@@ -1798,7 +1799,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "isin"
@@ -1818,7 +1819,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "jobdescriptor"
@@ -1838,7 +1839,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "joblevel"
@@ -1858,7 +1859,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "jobtitle"
@@ -1878,7 +1879,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "language"
@@ -1898,7 +1899,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "languageabbreviation"
@@ -1918,7 +1919,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "lastname"
@@ -1938,7 +1939,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "latitude"
@@ -1958,7 +1959,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "letter"
@@ -1983,14 +1984,15 @@
                 "count": {
                   "default": "",
                   "description": "Number of digits to generate",
+                  "minimum": 0,
                   "title": "Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "lettern"
@@ -2010,7 +2012,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "loglevel"
@@ -2030,7 +2032,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "longitude"
@@ -2056,7 +2058,7 @@
                   "default": "2",
                   "description": "Number of paragraphs",
                   "title": "Paragraph Count",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "paragraphseparator": {
                   "default": "\u003cbr /\u003e",
@@ -2068,19 +2070,19 @@
                   "default": "2",
                   "description": "Number of sentences in a paragraph",
                   "title": "Sentence Count",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "wordcount": {
                   "default": "5",
                   "description": "Number of words in a sentence",
                   "title": "Word Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "loremipsumparagraph"
@@ -2106,13 +2108,13 @@
                   "default": "5",
                   "description": "Number of words in a sentence",
                   "title": "Word Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "loremipsumsentence"
@@ -2132,7 +2134,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "loremipsumword"
@@ -2152,7 +2154,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "macaddress"
@@ -2172,7 +2174,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "middlename"
@@ -2192,7 +2194,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "minute"
@@ -2212,7 +2214,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "month"
@@ -2232,7 +2234,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "monthstring"
@@ -2252,7 +2254,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "name"
@@ -2272,7 +2274,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nameprefix"
@@ -2292,7 +2294,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "namesuffix"
@@ -2312,7 +2314,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nanosecond"
@@ -2332,7 +2334,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "noun"
@@ -2352,7 +2354,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nounabstract"
@@ -2372,7 +2374,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nouncollectiveanimal"
@@ -2392,7 +2394,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nouncollectivepeople"
@@ -2412,7 +2414,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nouncollectivething"
@@ -2432,7 +2434,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nouncommon"
@@ -2452,7 +2454,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nounconcrete"
@@ -2472,7 +2474,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "nouncountable"
@@ -2492,7 +2494,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "noununcountable"
@@ -2518,19 +2520,19 @@
                   "default": "2147483647",
                   "description": "Maximum integer value",
                   "title": "Max",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "min": {
                   "default": "-2147483648",
                   "description": "Minimum integer value",
                   "title": "Min",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "number"
@@ -2550,7 +2552,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "operauseragent"
@@ -2576,7 +2578,7 @@
                   "default": "2",
                   "description": "Number of paragraphs",
                   "title": "Paragraph Count",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "paragraphseparator": {
                   "default": "\u003cbr /\u003e",
@@ -2588,19 +2590,19 @@
                   "default": "2",
                   "description": "Number of sentences in a paragraph",
                   "title": "Sentence Count",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "wordcount": {
                   "default": "5",
                   "description": "Number of words in a sentence",
                   "title": "Word Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "paragraph"
@@ -2626,7 +2628,7 @@
                   "default": "12",
                   "description": "Number of characters in password",
                   "title": "Length",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "lower": {
                   "default": "true",
@@ -2662,7 +2664,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "password"
@@ -2682,7 +2684,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pastdate"
@@ -2702,7 +2704,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "phone"
@@ -2722,7 +2724,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "phoneformatted"
@@ -2742,7 +2744,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "phrase"
@@ -2762,7 +2764,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "preposition"
@@ -2782,7 +2784,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "prepositioncompound"
@@ -2802,7 +2804,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "prepositiondouble"
@@ -2822,7 +2824,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "prepositionsimple"
@@ -2860,7 +2862,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "price"
@@ -2880,7 +2882,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronoun"
@@ -2900,7 +2902,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronoundemonstrative"
@@ -2920,7 +2922,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronouninterrogative"
@@ -2940,7 +2942,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronounobject"
@@ -2960,7 +2962,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronounpersonal"
@@ -2980,7 +2982,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronounpossessive"
@@ -3000,7 +3002,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronounreflective"
@@ -3020,7 +3022,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "pronounrelative"
@@ -3040,7 +3042,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "question"
@@ -3060,7 +3062,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "quote"
@@ -3080,7 +3082,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "rgbcolor"
@@ -3100,7 +3102,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "safariuseragent"
@@ -3120,7 +3122,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "second"
@@ -3146,13 +3148,13 @@
                   "default": "5",
                   "description": "Number of words in a sentence",
                   "title": "Word Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "sentence"
@@ -3172,7 +3174,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "slogan"
@@ -3192,7 +3194,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "ssn"
@@ -3212,7 +3214,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "state"
@@ -3232,7 +3234,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "stateabr"
@@ -3252,7 +3254,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "street"
@@ -3272,7 +3274,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "streetname"
@@ -3292,7 +3294,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "streetnumber"
@@ -3312,7 +3314,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "streetprefix"
@@ -3332,7 +3334,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "streetsuffix"
@@ -3358,13 +3360,13 @@
                   "default": "5",
                   "description": "Number of words in a sentence",
                   "title": "Word Count",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "string"
@@ -3384,7 +3386,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "timezone"
@@ -3404,7 +3406,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "timezoneabv"
@@ -3424,7 +3426,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "timezonefull"
@@ -3444,7 +3446,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "timezoneoffset"
@@ -3464,7 +3466,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "timezoneregion"
@@ -3484,7 +3486,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uint"
@@ -3504,7 +3506,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uint16"
@@ -3524,7 +3526,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uint32"
@@ -3544,7 +3546,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uint64"
@@ -3564,7 +3566,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uint8"
@@ -3589,14 +3591,15 @@
                 "n": {
                   "default": "4294967295",
                   "description": "Maximum uint value",
+                  "minimum": 0,
                   "title": "N",
-                  "type": "number"
+                  "type": "integer"
                 }
               },
               "type": "object"
             },
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uintn"
@@ -3616,7 +3619,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "url"
@@ -3636,7 +3639,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "useragent"
@@ -3656,7 +3659,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "username"
@@ -3676,7 +3679,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "uuid"
@@ -3696,7 +3699,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "verb"
@@ -3716,7 +3719,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "verbaction"
@@ -3736,7 +3739,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "verbhelping"
@@ -3756,7 +3759,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "verblinking"
@@ -3776,7 +3779,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "weekday"
@@ -3796,7 +3799,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "word"
@@ -3816,7 +3819,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "year"
@@ -3836,7 +3839,7 @@
           ],
           "properties": {
             "seed": {
-              "type": "number"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "zip"
@@ -3858,7 +3861,7 @@
               "type": "object"
             },
             "seed": {
-              "type": "integer"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "object"
@@ -3879,7 +3882,7 @@
               "$ref": "#/definitions/FakeDataNode"
             },
             "seed": {
-              "type": "integer"
+              "$ref": "#/definitions/Seed"
             },
             "type": {
               "const": "array"
@@ -4071,6 +4074,12 @@
         "raw"
       ],
       "type": "object"
+    },
+    "Seed": {
+      "description": "If specified, the same data will be generated each time. If not specified, a random seed will be used.",
+      "minimum": 0,
+      "title": "Seed for random data generation",
+      "type": "integer"
     },
     "StaticDirectory": {
       "additionalProperties": false,

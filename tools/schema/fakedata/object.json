@@ -7,7 +7,7 @@
       "const": "object"
     },
     "seed": {
-      "type": "integer"
+      "$ref": "#/definitions/Seed"
     },
     "properties": {
       "type": "object",

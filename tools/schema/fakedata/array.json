@@ -7,7 +7,7 @@
       "type": "integer"
     },
     "seed": {
-      "type": "integer"
+      "$ref": "#/definitions/Seed"
     },
     "item": {
       "$ref": "#/definitions/FakeDataNode"
