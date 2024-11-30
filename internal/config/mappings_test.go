@@ -2,6 +2,7 @@
 package config_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -21,7 +22,9 @@ func TestMappings(t *testing.T) {
 			mappings: config.Mappings{
 				{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 			},
-			expected: []string{"http://localhost => https://github.com"},
+			expected: []string{
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+			},
 		},
 		{
 			name: "http and https mappings",
@@ -30,8 +33,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				"https://localhost => https://github.com",
-				"http://localhost => https://github.com",
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 			},
 		},
 		{
@@ -54,7 +57,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				"http://localhost => https://github.com",
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"    static: /static => /tmp",
 				"    static: /static2 => /tmp2",
 			},
@@ -72,7 +75,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				"http://localhost => https://github.com",
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"    cache: /static",
 				"    cache: /static2",
 			},
@@ -119,8 +122,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				"https://localhost => https://github.com",
-				"http://localhost => https://github.com",
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
+				fmt.Sprintf("%s => %s", hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
 				"mock: [POST 200] /endpoint-1",
 				"mock: [GET 500] /demo",
 				"mock: [GET 403] /healthcheck",
