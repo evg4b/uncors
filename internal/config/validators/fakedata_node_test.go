@@ -11,6 +11,7 @@ import (
 
 func TestFakedataNodeValidator(t *testing.T) {
 	const field = "fake"
+	const unknownErrorMessage = "'unknown' is not a valid option"
 
 	t.Run("valid options", func(t *testing.T) {
 		tests := []struct {
@@ -60,7 +61,7 @@ func TestFakedataNodeValidator(t *testing.T) {
 			{
 				name:  "unknown fake data type",
 				value: &fakedata.Node{Type: "unknown"},
-				err:   "'unknown' is not a valid option",
+				err:   unknownErrorMessage,
 			},
 			{
 				name:  "unknown fake data type",
@@ -91,7 +92,7 @@ func TestFakedataNodeValidator(t *testing.T) {
 					},
 					Count: 1,
 				},
-				err: "'unknown' is not a valid option",
+				err: unknownErrorMessage,
 			},
 			{
 				name: "object with count property",
@@ -137,7 +138,7 @@ func TestFakedataNodeValidator(t *testing.T) {
 						"key": {Type: "unknown"},
 					},
 				},
-				err: "'unknown' is not a valid option",
+				err: unknownErrorMessage,
 			},
 		}
 		for _, testCase := range tests {
