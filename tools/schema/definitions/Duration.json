@@ -2,13 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "string",
   "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$",
-  "description": "Duration in human-readable format",
+  "title": "Duration",
+  "description": "Duration in human-readable format. Supported units are 'h' (hours), 'm' (minutes), 's' (seconds), 'ms' (milliseconds), 'us' (microseconds), 'ns' (nanoseconds).",
   "examples": [
-    "1h",
-    "1h 30m",
-    "1h 30m 15s",
-    "1h 30m 15s 500ms",
-    "1h 30m 15s 500ms 100us",
-    "1h 30m 15s 500ms 100us 50ns"
+    "3s",
+    "1m 30s",
+    "500ms",
+    "1h 30m 15s 500ms 100us 200ns"
   ]
 }

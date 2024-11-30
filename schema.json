@@ -4,16 +4,15 @@
   "additionalProperties": false,
   "definitions": {
     "Duration": {
-      "description": "Duration in human-readable format",
+      "description": "Duration in human-readable format. Supported units are 'h' (hours), 'm' (minutes), 's' (seconds), 'ms' (milliseconds), 'us' (microseconds), 'ns' (nanoseconds).",
       "examples": [
-        "1h",
-        "1h 30m",
-        "1h 30m 15s",
-        "1h 30m 15s 500ms",
-        "1h 30m 15s 500ms 100us",
-        "1h 30m 15s 500ms 100us 50ns"
+        "3s",
+        "1m 30s",
+        "500ms",
+        "1h 30m 15s 500ms 100us 200ns"
       ],
       "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$",
+      "title": "Duration",
       "type": "string"
     },
     "FakeDataMockResponse": {
@@ -21,7 +20,8 @@
       "description": "Mock response definition based on fake data content",
       "properties": {
         "code": {
-          "$ref": "#/definitions/StatusCode"
+          "$ref": "#/definitions/StatusCode",
+          "description": "HTTP status code which will be sent in the mock response"
         },
         "delay": {
           "$ref": "#/definitions/Duration",
@@ -3369,7 +3369,8 @@
       "description": "Mock response definition based on file content",
       "properties": {
         "code": {
-          "$ref": "#/definitions/StatusCode"
+          "$ref": "#/definitions/StatusCode",
+          "description": "HTTP status code which will be sent in the mock response"
         },
         "delay": {
           "$ref": "#/definitions/Duration",
@@ -3394,6 +3395,7 @@
       "additionalProperties": {
         "type": "string"
       },
+      "description": "HTTP headers definition",
       "minProperties": 1,
       "type": "object"
     },
@@ -3512,6 +3514,7 @@
       "additionalProperties": {
         "type": "string"
       },
+      "description": "HTTP query parameters definition",
       "minProperties": 1,
       "type": "object"
     },
@@ -3543,6 +3546,7 @@
     },
     "StaticDirectory": {
       "additionalProperties": false,
+      "description": "Static serving directory definition",
       "properties": {
         "dir": {
           "description": "Path to the folder from which the static files will be served",
