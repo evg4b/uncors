@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/evg4b/uncors/pkg/fakedata"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -14,10 +16,11 @@ import (
 )
 
 type Handler struct {
-	response config.Response
-	logger   contracts.Logger
-	fs       afero.Fs
-	after    func(duration time.Duration) <-chan time.Time
+	response  config.Response
+	logger    contracts.Logger
+	fs        afero.Fs
+	after     func(duration time.Duration) <-chan time.Time
+	generator fakedata.Generator
 }
 
 var ErrResponseIsNotDefined = errors.New("response is not defined")

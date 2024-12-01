@@ -12,6 +12,7 @@ import (
 
 func TestFakedataNode(t *testing.T) {
 	const seed = 129
+	compiler := fakedata.NewGoFakeItGenerator()
 
 	t.Run("seed produces deterministic results", func(t *testing.T) {
 		node := &fakedata.Node{
@@ -31,11 +32,11 @@ func TestFakedataNode(t *testing.T) {
 			},
 		}
 
-		expected, err := node.Compile(seed)
+		expected, err := compiler.Generate(node, seed)
 		require.NoError(t, err)
 
 		for _, clonedNode := range lo.Repeat(50, node) {
-			actual, err := clonedNode.Compile(seed)
+			actual, err := compiler.Generate(clonedNode, seed)
 			require.NoError(t, err)
 
 			assert.Equal(t, expected, actual)
@@ -60,11 +61,11 @@ func TestFakedataNode(t *testing.T) {
 			},
 		}
 
-		expected, err := node.Compile(0)
+		expected, err := compiler.Generate(node, 0)
 		require.NoError(t, err)
 
 		for _, clonedNode := range lo.Repeat(50, node) {
-			actual, err := clonedNode.Compile(0)
+			actual, err := compiler.Generate(clonedNode, 0)
 			require.NoError(t, err)
 
 			assert.NotEqual(t, expected, actual)
@@ -147,7 +148,7 @@ func TestFakedataNode(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual, err := testCase.node.Compile(seed)
+			actual, err := compiler.Generate(&testCase.node, seed)
 			require.NoError(t, err)
 
 			assert.Equal(t, testCase.expect, actual)
@@ -192,7 +193,7 @@ func TestFakedataNode(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, err := testCase.node.Compile(seed)
+				actual, err := compiler.Generate(&testCase.node, seed)
 				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expect, actual)

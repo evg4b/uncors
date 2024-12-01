@@ -10,7 +10,9 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-const seedQueryParamName = "$__uncors__seed"
+var ErrInvalidSeed = errors.New("invalid $__uncors__seed parameter")
+
+const seedKeyName = "$__uncors__seed"
 
 func (h *Handler) serveFakeContent(writer contracts.ResponseWriter, request *contracts.Request) error {
 	response := h.response
@@ -25,7 +27,7 @@ func (h *Handler) serveFakeContent(writer contracts.ResponseWriter, request *con
 		return err
 	}
 
-	data, err := response.Fake.Compile(seed)
+	data, err := h.generator.Generate(response.Fake, seed)
 	if err != nil {
 		return err
 	}
@@ -42,19 +44,17 @@ func extractSeed(response config.Response, request *contracts.Request) (uint64, 
 	}
 
 	queries := request.URL.Query()
-	if queries.Has(seedQueryParamName) {
-		return parseUint(queries.Get(seedQueryParamName))
+	if queries.Has(seedKeyName) {
+		return parseUint(queries.Get(seedKeyName))
 	}
 
-	header := request.Header.Get(seedQueryParamName)
+	header := request.Header.Get(seedKeyName)
 	if header != "" {
 		return parseUint(header)
 	}
 
 	return 0, nil
 }
-
-var ErrInvalidSeed = errors.New("invalid $__uncors__seed parameter")
 
 func parseUint(value string) (uint64, error) {
 	seed, err := strconv.ParseUint(value, 10, 64)

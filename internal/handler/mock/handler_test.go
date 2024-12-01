@@ -87,6 +87,7 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(log.New(io.Discard)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
+					mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),

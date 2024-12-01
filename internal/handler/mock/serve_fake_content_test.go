@@ -19,6 +19,7 @@ func TestFakeResponse(t *testing.T) {
 
 	handler := mock.NewMockHandler(
 		mock.WithLogger(loggerMock),
+		mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
 		mock.WithResponse(config.Response{
 			Code: http.StatusOK,
 			Fake: &fakedata.Node{

@@ -11,25 +11,19 @@ import (
 
 var ErrUnknownType = errors.New("unknown type")
 
-func (root *Node) Compile(seed uint64) (any, error) {
-	initPackage()
-
-	return root.compileInternal(gofakeit.New(seed))
-}
-
-func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
-	switch root.Type {
+func (s *GoFakeItGenerator) compileInternal(faker *gofakeit.Faker, node *Node) (any, error) {
+	switch node.Type {
 	case "object":
-		return compileToMap(root.Properties, faker)
+		return s.compileToMap(node.Properties, faker)
 	case "array":
-		return compileToArray(root.Item, root.Count, faker)
+		return s.compileToArray(node.Item, node.Count, faker)
 	default:
-		funcInfo := gofakeit.GetFuncLookup(root.Type)
+		funcInfo := gofakeit.GetFuncLookup(node.Type)
 		if funcInfo == nil {
-			return nil, fmt.Errorf("incorrect fake function %s: %w", root.Type, ErrUnknownType)
+			return nil, fmt.Errorf("incorrect fake function %s: %w", node.Type, ErrUnknownType)
 		}
 
-		options, err := transformOptions(root.Options)
+		options, err := transformOptions(node.Options)
 		if err != nil {
 			return nil, err
 		}
@@ -38,10 +32,10 @@ func (root *Node) compileInternal(faker *gofakeit.Faker) (any, error) {
 	}
 }
 
-func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error) {
+func (s *GoFakeItGenerator) compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error) {
 	result := make([]any, 0, count)
 	for range count {
-		compiled, err := item.compileInternal(faker)
+		compiled, err := s.compileInternal(faker, item)
 		if err != nil {
 			return nil, err
 		}
@@ -51,13 +45,13 @@ func compileToArray(item *Node, count int, faker *gofakeit.Faker) ([]any, error)
 	return result, nil
 }
 
-func compileToMap(properties map[string]Node, faker *gofakeit.Faker) (any, error) {
+func (s *GoFakeItGenerator) compileToMap(properties map[string]Node, faker *gofakeit.Faker) (any, error) {
 	result := make(map[string]any)
 	keys := lo.Keys(properties)
 	sort.Strings(keys) // it is important to sort keys to get the same result every time
 	for _, property := range keys {
 		node := properties[property]
-		compiledValue, err := node.compileInternal(faker)
+		compiledValue, err := s.compileInternal(faker, &node)
 		if err != nil {
 			return nil, err
 		}
