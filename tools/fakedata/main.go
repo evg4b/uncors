@@ -1,5 +1,7 @@
 package main
 
+//go:generate go run .
 func main() {
-	generateMdData()
+	generateShortDocs()
+	generateFullDocs()
 }
