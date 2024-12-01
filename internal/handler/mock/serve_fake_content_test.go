@@ -1,7 +1,6 @@
 package mock_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFakeResponse(t *testing.T) {
@@ -47,7 +47,7 @@ func TestFakeResponse(t *testing.T) {
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
 
-		assert.Equal(t, responseRecorder.Code, http.StatusOK)
+		assert.Equal(t, http.StatusOK, responseRecorder.Code)
 		actual := responseRecorder.Body.String()
 		assert.Equal(t, "{\"hello\":\"At esse ea.\",\"world\":\"Sint ut culpa.\"}\n", actual)
 	})
@@ -59,7 +59,7 @@ func TestFakeResponse(t *testing.T) {
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
 
-		assert.Equal(t, responseRecorder.Code, http.StatusOK)
+		assert.Equal(t, http.StatusOK, responseRecorder.Code)
 		actual := responseRecorder.Body.String()
 		assert.Equal(t, "{\"hello\":\"At esse ea.\",\"world\":\"Sint ut culpa.\"}\n", actual)
 	})
