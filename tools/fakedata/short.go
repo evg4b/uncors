@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"sort"
@@ -45,7 +46,11 @@ func generateShortDocs() {
 			},
 			lo.Map(rows, func(row MdTableRow, _ int) []string {
 				return []string{
-					process(row.Type),
+					fmt.Sprintf(
+						"[%s](https://github.com/evg4b/uncors/tree/pkg/fakedata#%s)",
+						process(row.Type),
+						strings.Trim(strings.ToLower(row.Type), " \n\t"),
+					),
 					process(row.Description),
 					processLi(row.Options),
 				}
