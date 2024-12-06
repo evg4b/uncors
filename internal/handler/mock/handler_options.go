@@ -3,6 +3,8 @@ package mock
 import (
 	"time"
 
+	"github.com/evg4b/uncors/pkg/fakedata"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/spf13/afero"
@@ -31,5 +33,11 @@ func WithFileSystem(fs afero.Fs) HandlerOption {
 func WithAfter(after func(duration time.Duration) <-chan time.Time) HandlerOption {
 	return func(h *Handler) {
 		h.after = after
+	}
+}
+
+func WithGenerator(generator fakedata.Generator) HandlerOption {
+	return func(h *Handler) {
+		h.generator = generator
 	}
 }

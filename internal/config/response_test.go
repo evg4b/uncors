@@ -22,6 +22,7 @@ func TestResponseClone(t *testing.T) {
 		Raw:   "this is plain text",
 		File:  "~/projects/uncors/response/demo.json",
 		Delay: time.Hour,
+		Seed:  8123,
 	}
 
 	clonedResponse := response.Clone()

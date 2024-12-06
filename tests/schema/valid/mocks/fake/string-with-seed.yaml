@@ -5,6 +5,6 @@ mappings:
       - path: /path-to-mock
         response:
           code: 200
+          seed: 3
           fake:
-            seed: 3
             type: string

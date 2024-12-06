@@ -2,17 +2,22 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"sort"
+	"io"
 	"strings"
 	"unicode"
 
-	"github.com/charmbracelet/log"
-
-	"github.com/samber/lo"
-
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/pkg/fakedata"
+	"github.com/samber/lo"
+)
+
+const (
+	h1 = 1
+	h2 = 2
+	h3 = 2
+	h4 = 4
+	h5 = 5
 )
 
 type MdTableRow struct {
@@ -24,95 +29,61 @@ type MdTableRow struct {
 	Output      string
 }
 
-//nolint:cyclop
-func generateMdData() {
-	rows := make([]MdTableRow, 0)
-	for _, typeKey := range fakedata.GetTypes() {
-		info := gofakeit.GetFuncLookup(typeKey)
-		if info == nil {
-			if typeKey != "array" && typeKey != "object" {
-				log.Warnf("Type %s not found in fakedata", typeKey)
-			}
-
-			continue
-		}
-
-		rows = append(rows, MdTableRow{
-			Type:        typeKey,
-			Description: info.Description,
-			Example:     info.Example,
-			Group:       info.Category,
-			Output:      info.Output,
-			Options: lo.Map(info.Params, func(param gofakeit.Param, _ int) string {
-				return fmt.Sprintf("%s (%s) - %s", param.Field, param.Type, param.Description)
-			}),
-		})
-	}
-
-	mdFile, err := os.OpenFile("tools/fakedata/docs.md", os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-	if err != nil {
+func table(out io.Writer, header []string, rows [][]string) {
+	if _, err := fmt.Fprintln(out, "| "+strings.Join(header, " | ")+" |"); err != nil {
 		panic(err)
 	}
-
-	groupedData := lo.GroupBy(rows, func(item MdTableRow) string {
-		return item.Group
+	headerSeparators := lo.Map(header, func(item string, _ int) string {
+		return strings.Repeat("-", len(item))
 	})
-
-	groupKeys := lo.Keys(groupedData)
-
-	sort.Strings(groupKeys)
-
-	lo.ForEach(groupKeys, func(item string, _ int) {
-		rows := groupedData[item]
-
-		if _, err = fmt.Fprintf(mdFile, "#### %s\n", capitalizeFirstLetter(item)); err != nil {
+	if _, err := fmt.Fprintln(out, "| "+strings.Join(headerSeparators, " | ")+" |"); err != nil {
+		panic(err)
+	}
+	lo.ForEach(rows, func(cells []string, _ int) {
+		if _, err := fmt.Fprintln(out, "| "+strings.Join(cells, " | ")+" |"); err != nil {
 			panic(err)
 		}
-
-		if _, err = mdFile.WriteString("| Type | Description | Options | Return Type | Example |\n"); err != nil {
-			panic(err)
-		}
-
-		if _, err = mdFile.WriteString("| ---- | ----------- | ------- | ------- | ------- |\n"); err != nil {
-			panic(err)
-		}
-
-		data := lo.Map(rows, func(item MdTableRow, _ int) string {
-			return item.Type
-		})
-
-		sort.Strings(data)
-
-		for _, typeStr := range data {
-			row, ok := lo.Find(rows, func(item MdTableRow) bool {
-				return item.Type == typeStr
-			})
-
-			if !ok {
-				log.Warnf("Type %s not found in fakedata", typeStr)
-
-				continue
-			}
-
-			if _, err = fmt.Fprintf(
-				mdFile,
-				"| %s | %s | %s | %s | %s |\n",
-				process(row.Type),
-				process(row.Description),
-				processLi(row.Options),
-				process(row.Output),
-				process(row.Example),
-			); err != nil {
-				panic(err)
-			}
-		}
-
-		if _, err = mdFile.WriteString("\n\n"); err != nil {
-			panic(err)
-		}
-
-		log.Infof("Generated faked data for %s", item)
 	})
+	br(out)
+}
+
+func h(out io.Writer, level int, text string) {
+	if _, err := fmt.Fprintln(out, strings.Repeat("#", level)+" "+text); err != nil {
+		panic(err)
+	}
+	br(out)
+}
+
+func br(out io.Writer) {
+	if _, err := fmt.Fprintln(out, ""); err != nil {
+		panic(err)
+	}
+}
+
+func p(out io.Writer, text string) {
+	br(out)
+	if _, err := fmt.Fprintln(out, text); err != nil {
+		panic(err)
+	}
+	br(out)
+}
+
+func li(out io.Writer, items []string) {
+	br(out)
+	lo.ForEach(items, func(item string, _ int) {
+		if _, err := fmt.Fprintln(out, " - "+item); err != nil {
+			panic(err)
+		}
+	})
+	br(out)
+}
+
+func code(out io.Writer, text string) {
+	br(out)
+	if _, err := fmt.Fprintln(out, "```\n"+text+"\n```"); err != nil {
+		panic(err)
+	}
+	br(out)
 }
 
 func process(lines string) string {
@@ -138,4 +109,31 @@ func capitalizeFirstLetter(str string) string {
 	runes[0] = unicode.ToUpper(runes[0])
 
 	return string(runes)
+}
+
+func loadMdData() []MdTableRow {
+	rows := make([]MdTableRow, 0)
+	for _, typeKey := range fakedata.GetTypes() {
+		info := gofakeit.GetFuncLookup(typeKey)
+		if info == nil {
+			if typeKey != "array" && typeKey != "object" {
+				log.Warnf("Type %s not found in fakedata", typeKey)
+			}
+
+			continue
+		}
+
+		rows = append(rows, MdTableRow{
+			Type:        typeKey,
+			Description: info.Description,
+			Example:     info.Example,
+			Group:       info.Category,
+			Output:      info.Output,
+			Options: lo.Map(info.Params, func(param gofakeit.Param, _ int) string {
+				return fmt.Sprintf("%s (%s) - %s", param.Field, param.Type, param.Description)
+			}),
+		})
+	}
+
+	return rows
 }

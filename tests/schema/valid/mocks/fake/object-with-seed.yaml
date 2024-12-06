@@ -5,9 +5,9 @@ mappings:
       - path: /path-to-mock
         response:
           code: 200
+          seed: 2
           fake:
             type: object
-            seed: 2
             properties:
               first-name:
                 type: firstname

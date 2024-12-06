@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/pkg/fakedata"
+
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -102,6 +104,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),
+			mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
 		)
 	}
 }

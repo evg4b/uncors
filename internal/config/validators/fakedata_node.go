@@ -19,10 +19,6 @@ func (c *FakedataNodeValidator) IsValid(errors *validate.Errors) {
 		Options: fakedata.GetTypes(),
 	}))
 
-	if !c.Root && c.Value.Seed != uint64(0) {
-		errors.Add(joinPath(c.Field, "seed"), "property 'seed' is not allowed in nested nodes")
-	}
-
 	if c.Value.Type == "object" {
 		c.validateAsObject(errors)
 	}

@@ -18,6 +18,12 @@
     "fake": {
       "$ref": "#/definitions/FakeDataNode",
       "description": "Fake data definition"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "Seed for random data generation",
+      "description": "If specified, the same data will be generated each time. If not specified, a random seed will be used."
     }
   },
   "required": [
