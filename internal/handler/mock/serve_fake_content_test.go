@@ -1,6 +1,7 @@
 package mock_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,16 +11,21 @@ import (
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFakeResponse(t *testing.T) {
+func generateHandler(t *testing.T) (*mock.Handler, *mocks.GeneratorMock) {
 	loggerMock := mocks.NewLoggerMock(t).
-		PrintMock.Return()
+		PrintMock.
+		Optional().
+		Return()
 
-	handler := mock.NewMockHandler(
+	generatorMock := mocks.NewGeneratorMock(t)
+
+	return mock.NewMockHandler(
 		mock.WithLogger(loggerMock),
-		mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
+		mock.WithGenerator(generatorMock),
 		mock.WithResponse(config.Response{
 			Code: http.StatusOK,
 			Fake: &fakedata.Node{
@@ -40,39 +46,69 @@ func TestFakeResponse(t *testing.T) {
 				},
 			},
 		}),
-	)
+	), generatorMock
+}
+
+func TestFakeResponse(t *testing.T) {
+	expectedString := "{\"hello\":\"world\",\"world\":\"hello\"}\n"
+	responceObject := map[string]string{
+		"hello": "world",
+		"world": "hello",
+	}
 
 	t.Run("seed from query", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/hello?$__uncors__seed=123", nil)
+		handler, generatorMock := generateHandler(t)
+		req := httptest.NewRequest(http.MethodGet, "/hello?$__uncors__seed=1", nil)
+
+		generatorMock.GenerateMock.
+			ExpectSeedParam2(1).
+			Return(responceObject, nil)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
 
 		assert.Equal(t, http.StatusOK, responseRecorder.Code)
-		actual := responseRecorder.Body.String()
-		assert.Equal(t, "{\"hello\":\"At esse ea.\",\"world\":\"Sint ut culpa.\"}\n", actual)
+		assert.Equal(t, expectedString, testutils.ReadBody(t, responseRecorder))
 	})
 
 	t.Run("seed from header", func(t *testing.T) {
+		handler, generatorMock := generateHandler(t)
 		req := httptest.NewRequest(http.MethodGet, "/hello", nil)
-		req.Header.Set("$__uncors__seed", "123")
+		req.Header.Set("$__uncors__seed", "2")
+
+		generatorMock.GenerateMock.
+			ExpectSeedParam2(2).
+			Return(responceObject, nil)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
 
 		assert.Equal(t, http.StatusOK, responseRecorder.Code)
-		actual := responseRecorder.Body.String()
-		assert.Equal(t, "{\"hello\":\"At esse ea.\",\"world\":\"Sint ut culpa.\"}\n", actual)
+		assert.Equal(t, expectedString, testutils.ReadBody(t, responseRecorder))
 	})
 
 	t.Run("invalid seed", func(t *testing.T) {
+		handler, _ := generateHandler(t)
 		req := httptest.NewRequest(http.MethodGet, "/hello?$__uncors__seed=invalid", nil)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
 
 		assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-		actual := responseRecorder.Body.String()
-		assert.Contains(t, actual, "invalid $__uncors__seed parameter")
+		assert.Contains(t, testutils.ReadBody(t, responseRecorder), "invalid $__uncors__seed parameter")
+	})
+
+	t.Run("generation failed", func(t *testing.T) {
+		handler, generatorMock := generateHandler(t)
+		req := httptest.NewRequest(http.MethodGet, "/hello", nil)
+		testErr := errors.ErrUnsupported
+		generatorMock.GenerateMock.Return(responceObject, testErr)
+
+		responseRecorder := httptest.NewRecorder()
+		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
+
+		assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+		assert.Contains(t, testutils.ReadBody(t, responseRecorder), "Occurred error: unsupported operation")
+		assert.Len(t, generatorMock.GenerateMock.Calls(), 1)
 	})
 }
