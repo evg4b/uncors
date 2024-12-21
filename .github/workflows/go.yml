@@ -104,9 +104,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACCOUNT_GITHUB_TOKEN: ${{ secrets.ACCOUNT_GITHUB_TOKEN }}
 
-
       - name: Build and publish NPM packages
-        uses: evg4b/goreleaser-npm-publisher-action@v1.0.0
+        uses: evg4b/goreleaser-npm-publisher-action@v1
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
           description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
+          files: -|
+            README.md
+            LICENSE
+          keywords: -|
+            cors
+            proxy
+            reverse-proxy
+            http
+            https
+            cli
+            devtool
