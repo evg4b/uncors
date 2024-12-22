@@ -13,6 +13,7 @@ type Mapping struct {
 	Statics StaticDirectories `mapstructure:"statics"`
 	Mocks   Mocks             `mapstructure:"mocks"`
 	Cache   CacheGlobs        `mapstructure:"cache"`
+	Rewrite RewriteOptions    `mapstructure:"rewrite"`
 }
 
 func (m *Mapping) Clone() Mapping {
@@ -22,6 +23,7 @@ func (m *Mapping) Clone() Mapping {
 		Statics: m.Statics.Clone(),
 		Mocks:   m.Mocks.Clone(),
 		Cache:   m.Cache.Clone(),
+		Rewrite: m.Rewrite.Clone(),
 	}
 }
 
