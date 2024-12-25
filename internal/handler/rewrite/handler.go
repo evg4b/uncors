@@ -37,7 +37,7 @@ func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Reque
 	}
 
 	return request.WithContext(
-		context.WithValue(request.Context(), rewriteHostKey, m.rewrite.Host),
+		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host),
 	)
 }
 
