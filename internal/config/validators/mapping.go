@@ -41,7 +41,7 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 		}))
 	}
 
-	for i, rewrite := range m.Value.Rewrite {
+	for i, rewrite := range m.Value.Rewrites {
 		errors.Append(validate.Validate(&RewritingOptionValidator{
 			Field: joinPath(m.Field, "rewrite", index(i)),
 			Value: rewrite,

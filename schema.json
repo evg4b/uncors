@@ -885,7 +885,7 @@
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2024-12-22",
+                  "default": "2024-12-25",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -3443,7 +3443,7 @@
               "minItems": 1,
               "type": "array"
             },
-            "rewrite": {
+            "rewrites": {
               "description": "List of paths that will be rewritten.",
               "items": {
                 "$ref": "#/definitions/Rewrite"

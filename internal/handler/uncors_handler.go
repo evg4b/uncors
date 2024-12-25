@@ -59,7 +59,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
-		handler.makeRewritedRoutes(router, mapping.Rewrite, proxyHandler)
+		handler.makeRewritedRoutes(router, mapping.Rewrites, proxyHandler)
 
 		defaultHandler := proxyHandler
 		if len(mapping.Cache) > 0 {

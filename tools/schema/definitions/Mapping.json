@@ -46,7 +46,7 @@
           },
           "minItems": 1
         },
-        "rewrite": {
+        "rewrites": {
           "type": "array",
           "description": "List of paths that will be rewritten.",
           "items": {
