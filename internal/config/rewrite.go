@@ -17,6 +17,10 @@ func (r RewritingOption) Clone() RewritingOption {
 type RewriteOptions []RewritingOption
 
 func (r RewriteOptions) Clone() RewriteOptions {
+	if r == nil {
+		return nil
+	}
+
 	clone := make(RewriteOptions, len(r))
 	for i, rewrite := range r {
 		clone[i] = rewrite.Clone()
