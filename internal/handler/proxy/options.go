@@ -19,8 +19,14 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	}
 }
 
-func WithLogger(logger contracts.Logger) HandlerOption {
+func WithProxyLogger(logger contracts.Logger) HandlerOption {
 	return func(m *Handler) {
-		m.logger = logger
+		m.proxyLogger = logger
+	}
+}
+
+func WithRewriteLogger(logger contracts.Logger) HandlerOption {
+	return func(m *Handler) {
+		m.rewriteLogger = logger
 	}
 }

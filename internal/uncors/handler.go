@@ -50,7 +50,8 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),
 				proxy.WithHTTPClient(httpClient),
-				proxy.WithLogger(NewProxyLogger(app.logger)),
+				proxy.WithProxyLogger(NewProxyLogger(app.logger)),
+				proxy.WithRewriteLogger(NewRewriteLogger(app.logger)),
 			)
 		}),
 		app.getWithStaticHandlerFactory(),

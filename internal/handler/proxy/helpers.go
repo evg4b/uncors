@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
 )
 
@@ -39,4 +40,20 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) error
 	}
 
 	return nil
+}
+
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
+	for _, cookie := range target.Cookies() {
+		cookie.Secure = replacer.IsTargetSecure()
+		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
+		http.SetCookie(source, cookie)
+	}
+}
+
+func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) {
+	for _, cookie := range source.Cookies() {
+		cookie.Secure = replacer.IsTargetSecure()
+		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
+		target.AddCookie(cookie)
+	}
 }

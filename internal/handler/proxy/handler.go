@@ -14,16 +14,18 @@ import (
 )
 
 type Handler struct {
-	replacers urlreplacer.ReplacerFactory
-	http      contracts.HTTPClient
-	logger    contracts.Logger
+	replacers     urlreplacer.ReplacerFactory
+	http          contracts.HTTPClient
+	proxyLogger   contracts.Logger
+	rewriteLogger contracts.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
 	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middleware.logger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.proxyLogger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.rewriteLogger, "ProxyHandler: Logger is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
 
 	return middleware
@@ -100,23 +102,15 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	tui.PrintResponse(h.logger, originalResponse.Request, originalResponse.StatusCode)
+	tui.PrintResponse(h.logger(request), originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }
 
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
-	for _, cookie := range target.Cookies() {
-		cookie.Secure = replacer.IsTargetSecure()
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-		http.SetCookie(source, cookie)
+func (h *Handler) logger(requst *http.Request) contracts.Logger {
+	if rewrite.IsRewriteRequest(requst) {
+		return h.rewriteLogger
 	}
-}
 
-func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) {
-	for _, cookie := range source.Cookies() {
-		cookie.Secure = replacer.IsTargetSecure()
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-		target.AddCookie(cookie)
-	}
+	return h.proxyLogger
 }

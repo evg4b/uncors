@@ -70,7 +70,8 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithLogger(log.New(io.Discard)),
+					proxy.WithProxyLogger(log.New(io.Discard)),
+					proxy.WithRewriteLogger(log.New(io.Discard)),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
@@ -123,7 +124,8 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithLogger(log.New(io.Discard)),
+					proxy.WithProxyLogger(log.New(io.Discard)),
+					proxy.WithRewriteLogger(log.New(io.Discard)),
 				)
 
 				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
@@ -157,7 +159,8 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithLogger(log.New(io.Discard)),
+			proxy.WithProxyLogger(log.New(io.Discard)),
+			proxy.WithRewriteLogger(log.New(io.Discard)),
 		)
 
 		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
@@ -184,7 +187,8 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithLogger(log.New(io.Discard)),
+			proxy.WithProxyLogger(log.New(io.Discard)),
+			proxy.WithRewriteLogger(log.New(io.Discard)),
 		)
 
 		t.Run("should correctly create response", func(t *testing.T) {

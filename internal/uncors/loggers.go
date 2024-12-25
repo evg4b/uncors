@@ -24,5 +24,5 @@ func NewCacheLogger(logger *log.Logger) *log.Logger {
 }
 
 func NewRewriteLogger(logger *log.Logger) *log.Logger {
-	return tui.CreateLogger(logger, styles.RewriteStyle.Render("REWRITE"))
+	return tui.CreateLogger(logger, styles.RewriteStyle.Render("REWRT"))
 }
