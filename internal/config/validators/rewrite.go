@@ -17,14 +17,18 @@ func (m *RewritingOptionValidator) IsValid(errors *validate.Errors) {
 			Field: joinPath(m.Field, "from"),
 			Value: m.Value.From,
 		},
-		&base.MethodValidator{
-			Field:      joinPath(m.Field, "to"),
-			Value:      m.Value.To,
-			AllowEmpty: true,
-		},
-		&base.HostValidator{
-			Field: joinPath(m.Field, "host"),
-			Value: m.Value.Host,
+		&base.PathValidator{
+			Field: joinPath(m.Field, "to"),
+			Value: m.Value.To,
 		},
 	))
+
+	if len(m.Value.Host) > 0 {
+		errors.Append(validate.Validate(
+			&base.HostValidator{
+				Field: joinPath(m.Field, "host"),
+				Value: m.Value.Host,
+			},
+		))
+	}
 }

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 )
@@ -22,5 +23,25 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 func WithLogger(logger contracts.Logger) HandlerOption {
 	return func(m *Handler) {
 		m.logger = logger
+	}
+}
+
+type RewriteOption = func(*RwreiteHandler)
+
+func WithRewritingOptions(rewrite config.RewritingOption) RewriteOption {
+	return func(h *RwreiteHandler) {
+		h.rewrite = rewrite
+	}
+}
+
+func WithHTTPClientR(http contracts.HTTPClient) RewriteOption {
+	return func(h *RwreiteHandler) {
+		h.http = http
+	}
+}
+
+func WithLoggerR(logger contracts.Logger) RewriteOption {
+	return func(h *RwreiteHandler) {
+		h.logger = logger
 	}
 }
