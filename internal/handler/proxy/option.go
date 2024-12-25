@@ -12,8 +12,3 @@ func (h *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Requ
 	infra.WriteCorsHeaders(writer.Header())
 	tui.PrintResponse(h.logger, req, http.StatusOK)
 }
-
-func (h *RwreiteHandler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) {
-	infra.WriteCorsHeaders(writer.Header())
-	tui.PrintResponse(nil, req, http.StatusOK)
-}

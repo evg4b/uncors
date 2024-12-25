@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
@@ -41,9 +42,9 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return nil
 	}
 
-	targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
+	targetReplacer, sourceReplacer, err := h.careteReplacers(req)
 	if err != nil {
-		return fmt.Errorf("failed to transform general url: %w", err)
+		return err
 	}
 
 	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
@@ -64,6 +65,34 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	}
 
 	return nil
+}
+
+func (h *Handler) careteReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
+	rewriteHost, err := rewrite.GetRewriteHost(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
+	}
+
+	if rewriteHost == "" {
+		targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to transform general url: %w", err)
+		}
+
+		return targetReplacer, sourceReplacer, nil
+	}
+
+	target, err := urlreplacer.NewReplacer(req.URL.Host, rewriteHost)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	source, err := urlreplacer.NewReplacer(rewriteHost, req.URL.Host)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return target, source, nil
 }
 
 func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {

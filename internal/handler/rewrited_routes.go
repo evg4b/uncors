@@ -11,13 +11,16 @@ import (
 func (h *RequestHandler) makeRewritedRoutes(
 	router *mux.Router,
 	rewrites config.RewriteOptions,
+	next contracts.Handler,
 ) {
 	for _, rewrite := range rewrites {
 		clearPath := strings.TrimSuffix(rewrite.From, "/")
 		path := clearPath + "/"
 
+		middleware := h.rewriteMiddlewareFactory(rewrite)
+
 		handler := contracts.CastToHTTPHandler(
-			h.rewriteHandlerFactory(rewrite),
+			middleware.Wrap(next),
 		)
 
 		redirect := router.NewRoute()

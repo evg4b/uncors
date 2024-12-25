@@ -9,8 +9,9 @@ import (
 )
 
 type PathValidator struct {
-	Field string
-	Value string
+	Field    string
+	Value    string
+	Relative bool
 }
 
 func (p *PathValidator) IsValid(errors *validate.Errors) {

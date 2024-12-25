@@ -43,8 +43,8 @@ func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
 	}
 }
 
-func WithRewriteHandlerFactory(factory RewriteHandlerFactory) RequestHandlerOption {
+func WithRewriteHandlerFactory(factory RewriteMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
-		h.rewriteHandlerFactory = factory
+		h.rewriteMiddlewareFactory = factory
 	}
 }
