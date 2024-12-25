@@ -54,6 +54,7 @@
 - [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/2.-Configuration#proxy-configuration)
 - [Static file serving](https://github.com/evg4b/uncors/wiki/4.-Static-file-serving)
 - [Response caching](https://github.com/evg4b/uncors/wiki/5.-Response-caching)
+- [Request rewriting](https://github.com/evg4b/uncors/wiki/6.-Request-rewriting)
 
 Other new features you can find in [roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md).
 
@@ -79,7 +80,7 @@ scoop install evg4b/uncors
 #### [NPM](https://npmjs.com) (Cross-platform)
 
 ```bash
-# Run as a independent CLI tool 
+# Run as a independent CLI tool
 npx -y uncors ...
 # Or add as dependency in your package
 npm install uncors --save-dev
