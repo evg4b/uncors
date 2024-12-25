@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsRewriteRequest(t *testing.T) {
@@ -42,7 +43,7 @@ func TestGetRewriteHost(t *testing.T) {
 			request.WithContext(ctx),
 		)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, expected, result)
 	})
 
@@ -53,7 +54,7 @@ func TestGetRewriteHost(t *testing.T) {
 			request.WithContext(context.Background()),
 		)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, result)
 	})
 
@@ -65,7 +66,7 @@ func TestGetRewriteHost(t *testing.T) {
 			request.WithContext(ctx),
 		)
 
-		assert.ErrorIs(t, err, rewrite.ErrInvalidHost)
+		require.ErrorIs(t, err, rewrite.ErrInvalidHost)
 		assert.Empty(t, result)
 	})
 }

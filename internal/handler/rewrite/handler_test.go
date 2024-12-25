@@ -29,10 +29,10 @@ func TestMiddleware_Wrap(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {
 			nextCalled = true
-			assert.Equal(t, expectedURL, r.URL.Path)
-			assert.Equal(t, expectedHost, r.Context().Value(rewrite.RewriteHostKey))
+			assert.Equal(t, expectedURL, request.URL.Path)
+			assert.Equal(t, expectedHost, request.Context().Value(rewrite.RewriteHostKey))
 		})
 
 		handler := middleware.Wrap(next)
@@ -55,10 +55,10 @@ func TestMiddleware_Wrap(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {
 			nextCalled = true
-			assert.Equal(t, expectedURL, r.URL.Path)
-			assert.Nil(t, r.Context().Value(rewrite.RewriteHostKey))
+			assert.Equal(t, expectedURL, request.URL.Path)
+			assert.Nil(t, request.Context().Value(rewrite.RewriteHostKey))
 		})
 
 		handler := middleware.Wrap(next)
