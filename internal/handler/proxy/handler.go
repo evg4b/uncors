@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
@@ -13,16 +14,18 @@ import (
 )
 
 type Handler struct {
-	replacers urlreplacer.ReplacerFactory
-	http      contracts.HTTPClient
-	logger    contracts.Logger
+	replacers     urlreplacer.ReplacerFactory
+	http          contracts.HTTPClient
+	proxyLogger   contracts.Logger
+	rewriteLogger contracts.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
 	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middleware.logger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.proxyLogger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.rewriteLogger, "ProxyHandler: Logger is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
 
 	return middleware
@@ -41,9 +44,9 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return nil
 	}
 
-	targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
+	targetReplacer, sourceReplacer, err := h.careteReplacers(req)
 	if err != nil {
-		return fmt.Errorf("failed to transform general url: %w", err)
+		return err
 	}
 
 	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
@@ -66,28 +69,48 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
+func (h *Handler) careteReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
+	rewriteHost, err := rewrite.GetRewriteHost(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
+	}
+
+	if rewriteHost == "" {
+		targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to transform general url: %w", err)
+		}
+
+		return targetReplacer, sourceReplacer, nil
+	}
+
+	target, err := urlreplacer.NewReplacer(req.URL.Host, rewriteHost)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	source, err := urlreplacer.NewReplacer(rewriteHost, req.URL.Host)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return target, source, nil
+}
+
 func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do reuest: %w", err)
 	}
-	tui.PrintResponse(h.logger, originalResponse.Request, originalResponse.StatusCode)
+	tui.PrintResponse(h.logger(request), originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }
 
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
-	for _, cookie := range target.Cookies() {
-		cookie.Secure = replacer.IsTargetSecure()
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-		http.SetCookie(source, cookie)
+func (h *Handler) logger(requst *http.Request) contracts.Logger {
+	if rewrite.IsRewriteRequest(requst) {
+		return h.rewriteLogger
 	}
-}
 
-func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) {
-	for _, cookie := range source.Cookies() {
-		cookie.Secure = replacer.IsTargetSecure()
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-		target.AddCookie(cookie)
-	}
+	return h.proxyLogger
 }

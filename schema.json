@@ -885,7 +885,7 @@
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2024-11-29",
+                  "default": "2024-12-25",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -3443,6 +3443,14 @@
               "minItems": 1,
               "type": "array"
             },
+            "rewrites": {
+              "description": "List of paths that will be rewritten.",
+              "items": {
+                "$ref": "#/definitions/Rewrite"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
             "statics": {
               "description": "List of paths that will be served from the directory.",
               "items": {
@@ -3550,6 +3558,25 @@
       "required": [
         "code",
         "raw"
+      ],
+      "type": "object"
+    },
+    "Rewrite": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
       ],
       "type": "object"
     },

@@ -11,6 +11,7 @@ import (
 	cache2 "github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -39,6 +40,9 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 				cache2.WithGlobs(globs),
 			)
 		}),
+		handler.WithRewriteHandlerFactory(func(rewriting config.RewritingOption) contracts.Middleware {
+			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
 			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
 			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
@@ -46,7 +50,8 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 			return proxy.NewProxyHandler(
 				proxy.WithURLReplacerFactory(factory),
 				proxy.WithHTTPClient(httpClient),
-				proxy.WithLogger(NewProxyLogger(app.logger)),
+				proxy.WithProxyLogger(NewProxyLogger(app.logger)),
+				proxy.WithRewriteLogger(NewRewriteLogger(app.logger)),
 			)
 		}),
 		app.getWithStaticHandlerFactory(),

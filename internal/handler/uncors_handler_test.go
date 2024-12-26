@@ -77,7 +77,8 @@ func proxyFactory(
 		return proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(replacerFactory),
 			proxy.WithHTTPClient(httpClient),
-			proxy.WithLogger(log.New(io.Discard)),
+			proxy.WithProxyLogger(log.New(io.Discard)),
+			proxy.WithRewriteLogger(log.New(io.Discard)),
 		)
 	}
 }

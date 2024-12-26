@@ -10,5 +10,5 @@ import (
 
 func (h *Handler) makeOptionsResponse(writer http.ResponseWriter, req *http.Request) {
 	infra.WriteCorsHeaders(writer.Header())
-	tui.PrintResponse(h.logger, req, http.StatusOK)
+	tui.PrintResponse(h.logger(req), req, http.StatusOK)
 }

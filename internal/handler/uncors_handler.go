@@ -15,10 +15,11 @@ import (
 )
 
 type (
-	CacheMiddlewareFactory  = func(globs config.CacheGlobs) contracts.Middleware
-	ProxyHandlerFactory     = func() contracts.Handler
-	StaticMiddlewareFactory = func(path string, dir config.StaticDirectory) contracts.Middleware
-	MockHandlerFactory      = func(response config.Response) contracts.Handler
+	CacheMiddlewareFactory   = func(globs config.CacheGlobs) contracts.Middleware
+	ProxyHandlerFactory      = func() contracts.Handler
+	StaticMiddlewareFactory  = func(path string, dir config.StaticDirectory) contracts.Middleware
+	MockHandlerFactory       = func(response config.Response) contracts.Handler
+	RewriteMiddlewareFactory = func(rewrite config.RewritingOption) contracts.Middleware
 )
 
 type RequestHandler struct {
@@ -27,10 +28,11 @@ type RequestHandler struct {
 	logger   contracts.Logger
 	mappings config.Mappings
 
-	cacheMiddlewareFactory  CacheMiddlewareFactory
-	staticMiddlewareFactory StaticMiddlewareFactory
-	proxyHandlerFactory     ProxyHandlerFactory
-	mockHandlerFactory      MockHandlerFactory
+	cacheMiddlewareFactory   CacheMiddlewareFactory
+	staticMiddlewareFactory  StaticMiddlewareFactory
+	proxyHandlerFactory      ProxyHandlerFactory
+	mockHandlerFactory       MockHandlerFactory
+	rewriteMiddlewareFactory RewriteMiddlewareFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -57,6 +59,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		handler.makeStaticRoutes(router, mapping.Statics, proxyHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
+		handler.makeRewritedRoutes(router, mapping.Rewrites, proxyHandler)
 
 		defaultHandler := proxyHandler
 		if len(mapping.Cache) > 0 {

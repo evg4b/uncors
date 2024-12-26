@@ -45,6 +45,14 @@
             "$ref": "#/definitions/StaticDirectory"
           },
           "minItems": 1
+        },
+        "rewrites": {
+          "type": "array",
+          "description": "List of paths that will be rewritten.",
+          "items": {
+            "$ref": "#/definitions/Rewrite"
+          },
+          "minItems": 1
         }
       },
       "required": [

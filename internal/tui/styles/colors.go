@@ -52,6 +52,10 @@ var (
 		Light: "#CCC906",
 		Dark:  "#FEFC7F",
 	}
+	rewriteColor = lipgloss.AdaptiveColor{
+		Light: "#FF7F00",
+		Dark:  "#FF7F00",
+	}
 
 	// Http status colors.
 	httpStatus1xxColor = lipgloss.AdaptiveColor{
