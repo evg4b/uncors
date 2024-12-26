@@ -21,13 +21,13 @@ func (p *PathValidator) IsValid(errors *validate.Errors) {
 		return
 	}
 
-	if !strings.HasPrefix(p.Value, "/") {
-		errors.Add(p.Field, fmt.Sprintf("%s must start with /", p.Field))
+	if !p.Relative && !strings.HasPrefix(p.Value, "/") {
+		errors.Add(p.Field, fmt.Sprintf("%s must be absolute and start with /", p.Field))
 
 		return
 	}
 
-	uri, err := urlx.Parse("localhost" + p.Value)
+	uri, err := urlx.Parse("//localhost/" + strings.TrimPrefix(p.Value, "/"))
 	if err != nil {
 		errors.Add(p.Field, fmt.Sprintf("%s is not valid path", p.Field))
 	}

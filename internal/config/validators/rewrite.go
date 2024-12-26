@@ -12,18 +12,18 @@ type RewritingOptionValidator struct {
 }
 
 func (m *RewritingOptionValidator) IsValid(errors *validate.Errors) {
-	// errors.Append(validate.Validate(
-	// 	&base.PathValidator{
-	// 		Field:    joinPath(m.Field, "from"),
-	// 		Value:    m.Value.From,
-	// 		Relative: true,
-	// 	},
-	// 	&base.PathValidator{
-	// 		Field:    joinPath(m.Field, "to"),
-	// 		Value:    m.Value.To,
-	// 		Relative: true,
-	// 	},
-	// ))
+	errors.Append(validate.Validate(
+		&base.PathValidator{
+			Field:    joinPath(m.Field, "from"),
+			Value:    m.Value.From,
+			Relative: true,
+		},
+		&base.PathValidator{
+			Field:    joinPath(m.Field, "to"),
+			Value:    m.Value.To,
+			Relative: true,
+		},
+	))
 
 	if len(m.Value.Host) > 0 {
 		errors.Append(validate.Validate(
