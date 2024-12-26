@@ -109,10 +109,10 @@ jobs:
         with:
           token: ${{ secrets.NPM_TOKEN }}
           description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
-          files: -|
-            README.md
+          files: |-
             LICENSE
-          keywords: -|
+            README.md
+          keywords: |-
             cors
             proxy
             reverse-proxy
