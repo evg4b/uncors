@@ -15,7 +15,3 @@ func (o *Options) Clone() Options {
 		Code:     o.Code,
 	}
 }
-
-func (o *Options) String() string {
-	return helpers.Sprintf("[code: %d]", o.Code)
-}

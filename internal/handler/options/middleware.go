@@ -31,9 +31,9 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
-	if len(m.headers) == 0 {
-		infra.WriteCorsHeaders(resp.Header())
-	} else {
+	infra.WriteCorsHeaders(resp.Header())
+
+	if len(m.headers) != 0 {
 		for key, value := range m.headers {
 			resp.Header().Set(key, value)
 		}
