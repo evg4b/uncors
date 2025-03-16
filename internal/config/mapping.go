@@ -25,6 +25,7 @@ func (m *Mapping) Clone() Mapping {
 		Mocks:    m.Mocks.Clone(),
 		Cache:    m.Cache.Clone(),
 		Rewrites: m.Rewrites.Clone(),
+		Options:  m.Options.Clone(),
 	}
 }
 
