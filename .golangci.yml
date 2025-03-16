@@ -20,9 +20,7 @@ linters:
     - wrapcheck
     - perfsprint
     - contextcheck
-    - gomnd
-    - execinquery
-    - exportloopref
+    - tenv
 linters-settings:
   varnamelen:
     ignore-names:

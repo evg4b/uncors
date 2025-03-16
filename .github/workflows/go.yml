@@ -27,7 +27,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.60.3
+          version: v1.64.7
 
       - name: Build
         run: go build -tags release -v .

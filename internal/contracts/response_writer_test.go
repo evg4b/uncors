@@ -25,6 +25,6 @@ func TestResponseWriterWrapper(t *testing.T) {
 	})
 
 	t.Run("write body", func(t *testing.T) {
-		assert.Equal(t, expectedValue, testutils.ReadBody(t, recorder))
+		assert.JSONEq(t, expectedValue, testutils.ReadBody(t, recorder))
 	})
 }

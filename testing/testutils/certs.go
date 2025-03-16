@@ -1,4 +1,3 @@
-// nolint: gomnd
 package testutils
 
 import (
