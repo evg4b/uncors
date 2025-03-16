@@ -12,11 +12,11 @@ func TestOptionsClone(t *testing.T) {
 
 	cases := []struct {
 		name   string
-		config config.Options
+		config config.OptionsHandling
 	}{
 		{
 			name: "filled",
-			config: config.Options{
+			config: config.OptionsHandling{
 				Disabled: true,
 				Headers: map[string]string{
 					"Content-Type":  "application/json",
@@ -27,11 +27,11 @@ func TestOptionsClone(t *testing.T) {
 		},
 		{
 			name:   "empty",
-			config: config.Options{},
+			config: config.OptionsHandling{},
 		},
 		{
 			name: "nil headers",
-			config: config.Options{
+			config: config.OptionsHandling{
 				Disabled: false,
 				Code:     404,
 			},

@@ -6,12 +6,12 @@ import (
 	"github.com/gobuffalo/validate"
 )
 
-type OptionsValidator struct {
+type OptionsHandlingValidator struct {
 	Field string
-	Value config.Options
+	Value config.OptionsHandling
 }
 
-func (o *OptionsValidator) IsValid(errors *validate.Errors) {
+func (o *OptionsHandlingValidator) IsValid(errors *validate.Errors) {
 	if o.Value.Code != 0 {
 		errors.Append(validate.Validate(
 			&base.StatusValidator{

@@ -53,6 +53,9 @@
             "$ref": "#/definitions/Rewrite"
           },
           "minItems": 1
+        },
+        "options-handling": {
+          "$ref": "#/definitions/OptionsHandling"
         }
       },
       "required": [

@@ -20,7 +20,7 @@ type (
 	StaticMiddlewareFactory  = func(path string, dir config.StaticDirectory) contracts.Middleware
 	MockHandlerFactory       = func(response config.Response) contracts.Handler
 	RewriteMiddlewareFactory = func(rewrite config.RewritingOption) contracts.Middleware
-	OptionsMiddlewareFactory = func(options config.Options) contracts.Middleware
+	OptionsMiddlewareFactory = func(options config.OptionsHandling) contracts.Middleware
 )
 
 type RequestHandler struct {
@@ -59,7 +59,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		router := handler.Host(replaceWildcards(host)).Subrouter()
 
-		defaultHandler := handler.wrapOptionsMiddleware(mapping.Options, proxyHandler)
+		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, proxyHandler)
 		defaultHandler = handler.wrapCacheMiddleware(mapping.Cache, defaultHandler)
 
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)

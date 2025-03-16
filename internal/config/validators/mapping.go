@@ -17,6 +17,10 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
 		&base.HostValidator{Field: joinPath(m.Field, "from"), Value: m.Value.From},
 		&base.HostValidator{Field: joinPath(m.Field, "to"), Value: m.Value.To},
+		&OptionsHandlingValidator{
+			Field: joinPath(m.Field, "options-handling"),
+			Value: m.Value.OptionsHandling,
+		},
 	))
 
 	for i, static := range m.Value.Statics {

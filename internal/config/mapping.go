@@ -8,24 +8,24 @@ import (
 )
 
 type Mapping struct {
-	From     string            `mapstructure:"from"`
-	To       string            `mapstructure:"to"`
-	Statics  StaticDirectories `mapstructure:"statics"`
-	Mocks    Mocks             `mapstructure:"mocks"`
-	Cache    CacheGlobs        `mapstructure:"cache"`
-	Rewrites RewriteOptions    `mapstructure:"rewrites"`
-	Options  Options           `mapstructure:"options-handling"`
+	From            string            `mapstructure:"from"`
+	To              string            `mapstructure:"to"`
+	Statics         StaticDirectories `mapstructure:"statics"`
+	Mocks           Mocks             `mapstructure:"mocks"`
+	Cache           CacheGlobs        `mapstructure:"cache"`
+	Rewrites        RewriteOptions    `mapstructure:"rewrites"`
+	OptionsHandling OptionsHandling   `mapstructure:"options-handling"`
 }
 
 func (m *Mapping) Clone() Mapping {
 	return Mapping{
-		From:     m.From,
-		To:       m.To,
-		Statics:  m.Statics.Clone(),
-		Mocks:    m.Mocks.Clone(),
-		Cache:    m.Cache.Clone(),
-		Rewrites: m.Rewrites.Clone(),
-		Options:  m.Options.Clone(),
+		From:            m.From,
+		To:              m.To,
+		Statics:         m.Statics.Clone(),
+		Mocks:           m.Mocks.Clone(),
+		Cache:           m.Cache.Clone(),
+		Rewrites:        m.Rewrites.Clone(),
+		OptionsHandling: m.OptionsHandling.Clone(),
 	}
 }
 

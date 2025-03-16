@@ -12,18 +12,18 @@ import (
 func TestOptionsValidator(t *testing.T) {
 	t.Run("should return true", func(t *testing.T) {
 		t.Run("for default options", func(t *testing.T) {
-			errors := validate.Validate(&validators.OptionsValidator{
+			errors := validate.Validate(&validators.OptionsHandlingValidator{
 				Field: "options",
-				Value: config.Options{},
+				Value: config.OptionsHandling{},
 			})
 
 			assert.False(t, errors.HasAny())
 		})
 
 		t.Run("for correct status code", func(t *testing.T) {
-			errors := validate.Validate(&validators.OptionsValidator{
+			errors := validate.Validate(&validators.OptionsHandlingValidator{
 				Field: "options",
-				Value: config.Options{
+				Value: config.OptionsHandling{
 					Headers: map[string]string{
 						"Content-Type": "application/json",
 					},
@@ -36,9 +36,9 @@ func TestOptionsValidator(t *testing.T) {
 	})
 
 	t.Run("should return false", func(t *testing.T) {
-		errors := validate.Validate(&validators.OptionsValidator{
+		errors := validate.Validate(&validators.OptionsHandlingValidator{
 			Field: "options",
-			Value: config.Options{
+			Value: config.OptionsHandling{
 				Headers: map[string]string{
 					"Content-Type": "application/json",
 				},

@@ -85,7 +85,7 @@ func proxyFactory(
 }
 
 func optionsFactory() handler.OptionsMiddlewareFactory {
-	return func(config config.Options) contracts.Middleware {
+	return func(config config.OptionsHandling) contracts.Middleware {
 		return options.NewMiddleware(
 			options.WithLogger(log.New(io.Discard)),
 			options.WithHeaders(config.Headers),

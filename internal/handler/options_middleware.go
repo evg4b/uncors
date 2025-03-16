@@ -5,7 +5,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-func (h *RequestHandler) wrapOptionsMiddleware(options config.Options, next contracts.Handler) contracts.Handler {
+func (h *RequestHandler) wrapOptionsMiddleware(
+	options config.OptionsHandling,
+	next contracts.Handler,
+) contracts.Handler {
 	if options.Disabled {
 		return next
 	}

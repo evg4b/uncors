@@ -44,7 +44,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 		handler.WithRewriteHandlerFactory(func(rewriting config.RewritingOption) contracts.Middleware {
 			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
 		}),
-		handler.WithOptionsHandlerFactory(func(config config.Options) contracts.Middleware {
+		handler.WithOptionsHandlerFactory(func(config config.OptionsHandling) contracts.Middleware {
 			return options.NewMiddleware(
 				options.WithLogger(NewOptionsLogger(app.logger)),
 				options.WithHeaders(config.Headers),
