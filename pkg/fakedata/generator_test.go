@@ -187,7 +187,7 @@ func TestFakedataNode(t *testing.T) {
 				node: fakedata.Node{
 					Type: "date",
 				},
-				expect: "2010-07-07T19:51:28Z",
+				expect: "2011-07-07T19:51:28Z",
 			},
 		}
 
