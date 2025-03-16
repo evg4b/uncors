@@ -31,3 +31,11 @@ func Is4xxCode(code int) bool {
 func Is5xxCode(code int) bool {
 	return 500 <= code && code < 600
 }
+
+func NormaliseStatucCode(code int) int {
+	if code == 0 {
+		return http.StatusOK
+	}
+
+	return code
+}

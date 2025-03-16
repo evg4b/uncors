@@ -18,7 +18,7 @@ func WithHeaders(headers map[string]string) MiddlewareOption {
 	}
 }
 
-func WithCode(code uint) MiddlewareOption {
+func WithCode(code int) MiddlewareOption {
 	return func(m *Middleware) {
 		m.code = code
 	}

@@ -13,7 +13,7 @@ import (
 type Middleware struct {
 	logger  contracts.Logger
 	headers map[string]string
-	code    uint
+	code    int
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
@@ -31,6 +31,16 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
-	infra.WriteCorsHeaders(resp.Header())
-	tui.PrintResponse(m.logger, req, http.StatusOK)
+	if len(m.headers) == 0 {
+		infra.WriteCorsHeaders(resp.Header())
+	} else {
+		for key, value := range m.headers {
+			resp.Header().Set(key, value)
+		}
+	}
+
+	statucCode := helpers.NormaliseStatucCode(m.code)
+	resp.WriteHeader(statucCode)
+
+	tui.PrintResponse(m.logger, req, statucCode)
 }

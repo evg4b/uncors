@@ -40,6 +40,8 @@ func TestOptionsClone(t *testing.T) {
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			options := testCase.config
 
 			clonedMock := options.Clone()
@@ -69,5 +71,4 @@ func TestOptionsClone(t *testing.T) {
 			})
 		})
 	}
-
 }
