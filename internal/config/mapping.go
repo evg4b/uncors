@@ -14,6 +14,7 @@ type Mapping struct {
 	Mocks    Mocks             `mapstructure:"mocks"`
 	Cache    CacheGlobs        `mapstructure:"cache"`
 	Rewrites RewriteOptions    `mapstructure:"rewrites"`
+	Options  Options           `mapstructure:"options-handling"`
 }
 
 func (m *Mapping) Clone() Mapping {

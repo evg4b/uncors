@@ -48,3 +48,9 @@ func WithRewriteHandlerFactory(factory RewriteMiddlewareFactory) RequestHandlerO
 		h.rewriteMiddlewareFactory = factory
 	}
 }
+
+func WithOptionsHandlerFactory(factory OptionsMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.optionsMiddlewareFactory = factory
+	}
+}

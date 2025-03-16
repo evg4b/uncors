@@ -16,6 +16,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -79,6 +80,16 @@ func proxyFactory(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithProxyLogger(log.New(io.Discard)),
 			proxy.WithRewriteLogger(log.New(io.Discard)),
+		)
+	}
+}
+
+func optionsFactory() handler.OptionsMiddlewareFactory {
+	return func(config config.Options) contracts.Middleware {
+		return options.NewMiddleware(
+			options.WithLogger(log.New(io.Discard)),
+			options.WithHeaders(config.Headers),
+			options.WithCode(config.Code),
 		)
 	}
 }
@@ -190,6 +201,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 		handler.WithProxyHandlerFactory(proxyFactory(t, factory, httpMock)),
 		handler.WithStaticHandlerFactory(staticFactory(fs)),
 		handler.WithMockHandlerFactory(mockFactory(fs)),
+		handler.WithOptionsHandlerFactory(optionsFactory()),
 	)
 
 	t.Run("statics directory", func(t *testing.T) {
@@ -380,6 +392,7 @@ func TestMockMiddleware(t *testing.T) {
 				}),
 				handler.WithCacheMiddlewareFactory(cacheFactory()),
 				handler.WithMockHandlerFactory(mockFactory(nil)),
+				handler.WithOptionsHandlerFactory(optionsFactory()),
 			)
 
 			methods := []string{
@@ -434,6 +447,7 @@ func TestMockMiddleware(t *testing.T) {
 						}, nil
 					}))),
 				handler.WithMockHandlerFactory(mockFactory(nil)),
+				handler.WithOptionsHandlerFactory(optionsFactory()),
 			)
 
 			t.Run("method is not matched", func(t *testing.T) {
@@ -532,6 +546,7 @@ func TestMockMiddleware(t *testing.T) {
 					}, nil
 				}))),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
+			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
 
 		tests := []struct {
@@ -629,6 +644,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
 			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
+			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
 
 		tests := []struct {
@@ -726,6 +742,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
 			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
+			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
 
 		tests := []struct {

@@ -3,7 +3,6 @@ package proxy
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
@@ -38,12 +37,6 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	if strings.EqualFold(req.Method, http.MethodOptions) {
-		h.makeOptionsResponse(resp, req)
-
-		return nil
-	}
-
 	targetReplacer, sourceReplacer, err := h.careteReplacers(req)
 	if err != nil {
 		return err
