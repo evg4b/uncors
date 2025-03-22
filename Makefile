@@ -1,3 +1,5 @@
+default: clean check build test
+
 format:
 	gofmt -l -s -w .
 	gofumpt -l -w .
@@ -27,4 +29,3 @@ check:
 	make format
 	make test
 	make build
-
