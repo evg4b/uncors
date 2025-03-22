@@ -1,7 +1,6 @@
 package uncors
 
 import (
-	// "github.com/evg4b/uncors/internal/log".
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"

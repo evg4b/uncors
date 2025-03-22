@@ -4,10 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/samber/lo"
-
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/tests/schema"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xeipuuv/gojsonschema"

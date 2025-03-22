@@ -8,13 +8,12 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/gkampitakis/go-snaps/snaps"
-
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 )
 

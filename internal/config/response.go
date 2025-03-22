@@ -3,9 +3,8 @@ package config
 import (
 	"time"
 
-	"github.com/evg4b/uncors/pkg/fakedata"
-
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/pkg/fakedata"
 )
 
 type Response struct {
