@@ -163,3 +163,32 @@ func TestIs5xxCode(t *testing.T) {
 		})
 	}
 }
+
+func TestNormaliseStatucCode(t *testing.T) {
+	t.Run("return 200 for 0", func(t *testing.T) {
+		actual := helpers.NormaliseStatucCode(0)
+
+		assert.Equal(t, http.StatusOK, actual)
+	})
+
+	t.Run("return code for non-zero", func(t *testing.T) {
+		codes := []int{
+			http.StatusContinue,
+			http.StatusSwitchingProtocols,
+			http.StatusOK,
+			http.StatusCreated,
+			http.StatusAccepted,
+			http.StatusMultipleChoices,
+			http.StatusBadRequest,
+			http.StatusInternalServerError,
+		}
+
+		for _, code := range codes {
+			t.Run(fmt.Sprintf("return %d for %d", code, code), func(t *testing.T) {
+				actual := helpers.NormaliseStatucCode(code)
+
+				assert.Equal(t, code, actual)
+			})
+		}
+	})
+}
