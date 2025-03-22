@@ -6,7 +6,7 @@ require (
 	github.com/Jeffail/gabs v1.4.0
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.8.1
-	github.com/brianvoe/gofakeit/v7 v7.1.2
+	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.0
 	github.com/deckarep/golang-set/v2 v2.8.0
