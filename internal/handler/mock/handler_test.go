@@ -402,7 +402,7 @@ func TestHandler(t *testing.T) {
 			)
 
 			request := httptest.NewRequest(http.MethodGet, "/", nil)
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			recorder := httptest.NewRecorder()
 
 			var waitGroup sync.WaitGroup

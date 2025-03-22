@@ -1,6 +1,6 @@
 module github.com/evg4b/uncors
 
-go 1.22.2
+go 1.24.1
 
 require (
 	github.com/Jeffail/gabs v1.4.0
