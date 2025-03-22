@@ -9,13 +9,13 @@
 </p>
 <p align="center">
   <a href="https://go.dev">
-    <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/evg4b/uncors/develop?label=go">
+    <img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/evg4b/uncors/main?label=go">
   </a>
   <a href="https://github.com/evg4b/uncors/releases/latest">
     <img alt="GitHub Release" src="https://img.shields.io/github/v/release/evg4b/uncors">
   </a>
   <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license&branch=develop">
+    <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license&branch=main">
   </a>
   <br/>
   <a href="https://www.npmjs.com/package/uncors">
