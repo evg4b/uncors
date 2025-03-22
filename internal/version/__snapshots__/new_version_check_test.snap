@@ -1,0 +1,29 @@
+
+[TestCheckNewVersion/do_not_panic_where/current_version_is_not_correct - 1]
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/http_error_is_occupied - 1]
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/invalid_json_received - 1]
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/incorrect_json_from_api_received - 1]
+
+---
+
+[TestCheckNewVersion/should_print_/prop1 - 1]
+[1m INFO   [0m NEW VERSION IS Available!
+0.0.4 is not latest, you should upgrade to 0.0.7.
+See more information on https://github.com/evg4b/uncors/releases
+
+[1m INFO   [0m
+
+---
+
+[TestCheckNewVersion/should_print_/prop2 - 1]
+
+---
