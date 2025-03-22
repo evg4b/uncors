@@ -233,6 +233,11 @@ func TestGetTypes(t *testing.T) {
 		"achaccount",
 		"bitcoinaddress",
 		"bitcoinprivatekey",
+
+		// Song
+		"songartist",
+		"songgenre",
+		"songname",
 	}
 
 	actual := fakedata.GetTypes()

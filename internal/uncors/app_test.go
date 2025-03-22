@@ -2,7 +2,6 @@ package uncors_test
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,7 +21,7 @@ import (
 const delay = 10 * time.Millisecond
 
 func TestUncorsApp(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := afero.NewOsFs()
 	expectedResponse := "UNCORS OK!"
 

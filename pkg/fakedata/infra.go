@@ -214,6 +214,9 @@ var disablesFunctions = []string{
 	"verbintransitive",
 	"verbtransitive",
 	"vowel",
+
+	// Song
+	"song",
 }
 
 var initPackage = sync.OnceFunc(func() {

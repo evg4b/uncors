@@ -1,7 +1,6 @@
 package proxy_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -74,7 +73,7 @@ func TestProxyHandler(t *testing.T) {
 					proxy.WithRewriteLogger(log.New(io.Discard)),
 				)
 
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, targetURL.Path, nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
 				testutils.CheckNoError(t, err)
 
 				req.URL.Scheme = targetURL.Scheme
@@ -128,7 +127,7 @@ func TestProxyHandler(t *testing.T) {
 					proxy.WithRewriteLogger(log.New(io.Discard)),
 				)
 
-				req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, expectedURL.Path, nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
 				testutils.CheckNoError(t, err)
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
@@ -163,7 +162,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithRewriteLogger(log.New(io.Discard)),
 		)
 
-		req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, "/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
 		req.URL.Scheme = "http"
 		req.Host = "premium.local.com"
@@ -244,7 +243,7 @@ func TestProxyHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := testCase.recorderFactory()
-					req, err := http.NewRequestWithContext(context.TODO(), http.MethodOptions, "/", nil)
+					req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
 					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)

@@ -52,7 +52,7 @@ func WithGoroutines(test func(t *testing.T, env *Env)) func(t *testing.T) {
 
 func TestGracefulShutdown(t *testing.T) {
 	t.Run("shutdown when context is done", WithGoroutines(func(t *testing.T, env *Env) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 
 		called := &atomic.Bool{}
 
@@ -105,7 +105,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 				called := false
 				env.Go(func() {
-					GracefulShutdown(context.Background(), func(_ context.Context) error {
+					GracefulShutdown(t.Context(), func(_ context.Context) error {
 						called = true
 
 						return nil
@@ -140,7 +140,7 @@ func TestGracefulShutdown(t *testing.T) {
 		})
 
 		env.Go(func() {
-			GracefulShutdown(context.Background(), func(_ context.Context) error {
+			GracefulShutdown(t.Context(), func(_ context.Context) error {
 				return nil
 			})
 		})

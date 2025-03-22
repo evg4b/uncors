@@ -1,11 +1,12 @@
+default: clean check build test
+
 format:
 	gofmt -l -s -w .
 	gofumpt -l -w .
 	golangci-lint run --fix
 
-update_deps:
-	go get -u ./...
-	go mod tidy
+upgrade:
+	go-mod-upgrade && go mod tidy && make
 
 test:
 	go test ./...
@@ -27,4 +28,3 @@ check:
 	make format
 	make test
 	make build
-

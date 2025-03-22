@@ -1575,6 +1575,56 @@ Example:
 296446360
 ```
 
+## Song
+
+## Songartist
+
+
+The artist of maker of song
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Dua Lipa
+```
+
+## Songgenre
+
+
+Category that classifies song based on common themes, styles, and storytelling approaches
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Action
+```
+
+## Songname
+
+
+Title or name of a specific song used for identification and reference
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+New Rules
+```
+
 ## String
 
 ## Digit
