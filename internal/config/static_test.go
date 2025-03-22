@@ -16,6 +16,10 @@ const (
 	staticDir        = "/static-dir"
 )
 
+const (
+	indexHTML = "index.html"
+)
+
 func TestStaticDirMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
 	type testType struct {
@@ -59,7 +63,7 @@ statics:
   /another-path: { dir: /another-static-dir, index: default.html }
 `,
 			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: "index.html"},
+				{Path: path, Dir: staticDir, Index: indexHTML},
 				{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
 			},
 		},
@@ -71,7 +75,7 @@ statics:
   /another-path: /another-static-dir
 `,
 			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: "index.html"},
+				{Path: path, Dir: staticDir, Index: indexHTML},
 				{Path: anotherPath, Dir: anotherStaticDir},
 			},
 		},
@@ -125,7 +129,7 @@ func TestStaticDirMappingClone(t *testing.T) {
 			expected: config.StaticDirectory{
 				Dir:   "dir",
 				Path:  "/one-more-path",
-				Index: "index.html",
+				Index: indexHTML,
 			},
 		},
 	}

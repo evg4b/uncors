@@ -5,12 +5,18 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRewritingOptionValidator_IsValid_NoError(t *testing.T) {
+const (
+	fromPath = "/from/path"
+	toPath   = "/to/path"
+)
+
+func TestRewritingOptionValidatorIsValidNoError(t *testing.T) {
 	t.Run("valid host", func(t *testing.T) {
 		tests := []struct {
 			name  string
@@ -21,17 +27,17 @@ func TestRewritingOptionValidator_IsValid_NoError(t *testing.T) {
 				name:  "valid paths and host",
 				field: "testField",
 				value: config.RewritingOption{
-					From: "/from/path",
-					To:   "/to/path",
-					Host: "example.com",
+					From: fromPath,
+					To:   toPath,
+					Host: hosts.Github.Host(),
 				},
 			},
 			{
 				name:  "invalid host",
 				field: "testField",
 				value: config.RewritingOption{
-					From: "/from/path",
-					To:   "/to/path",
+					From: fromPath,
+					To:   toPath,
 					Host: "",
 				},
 			},
@@ -40,17 +46,17 @@ func TestRewritingOptionValidator_IsValid_NoError(t *testing.T) {
 				field: "testField",
 				value: config.RewritingOption{
 					From: "../relative/from/path",
-					To:   "/to/path",
-					Host: "example.com",
+					To:   toPath,
+					Host: hosts.Github.Host(),
 				},
 			},
 			{
 				name:  "relative to path",
 				field: "testField",
 				value: config.RewritingOption{
-					From: "/from/path",
+					From: fromPath,
 					To:   "../relative/to/path",
-					Host: "example.com",
+					Host: hosts.Github.Host(),
 				},
 			},
 		}
@@ -70,7 +76,7 @@ func TestRewritingOptionValidator_IsValid_NoError(t *testing.T) {
 	})
 }
 
-func TestRewritingOptionValidator_IsValid_WithError(t *testing.T) {
+func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 	tests := []struct {
 		name          string
 		field         string
@@ -82,8 +88,8 @@ func TestRewritingOptionValidator_IsValid_WithError(t *testing.T) {
 			field: "testField",
 			value: config.RewritingOption{
 				From: "",
-				To:   "/to/path",
-				Host: "example.com",
+				To:   toPath,
+				Host: hosts.Github.Host(),
 			},
 			expectedError: "testField.from must not be empty",
 		},
@@ -91,9 +97,9 @@ func TestRewritingOptionValidator_IsValid_WithError(t *testing.T) {
 			name:  "invalid to path",
 			field: "testField",
 			value: config.RewritingOption{
-				From: "/from/path",
+				From: fromPath,
 				To:   "",
-				Host: "example.com",
+				Host: hosts.Github.Host(),
 			},
 			expectedError: "testField.to must not be empty",
 		},
@@ -101,8 +107,8 @@ func TestRewritingOptionValidator_IsValid_WithError(t *testing.T) {
 			name:  "invalid host format",
 			field: "testField",
 			value: config.RewritingOption{
-				From: "/from/path",
-				To:   "/to/path",
+				From: fromPath,
+				To:   toPath,
 				Host: "&&&",
 			},
 			expectedError: "testField.host is not valid host",

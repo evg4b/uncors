@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMiddleware_Wrap(t *testing.T) {
+func TestMiddlewareWrap(t *testing.T) {
 	t.Run("rewrites URL and calls next handler", func(t *testing.T) {
 		expectedURL := "/rewritten"
 		expectedHost := "example.com"
