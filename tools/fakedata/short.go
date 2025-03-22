@@ -15,7 +15,7 @@ import (
 func generateShortDocs() {
 	rows := loadMdData()
 
-	mdFile, err := os.OpenFile("docs.md", os.O_TRUNC|os.O_WRONLY, os.ModePerm)
+	mdFile, err := os.OpenFile("docs.md", os.O_TRUNC|os.O_WRONLY|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +47,7 @@ func generateShortDocs() {
 			lo.Map(rows, func(row MdTableRow, _ int) []string {
 				return []string{
 					fmt.Sprintf(
-						"[%s](https://github.com/evg4b/uncors/tree/pkg/fakedata#%s)",
+						"[%s](https://github.com/evg4b/uncors/tree/main/pkg/fakedata#%s)",
 						process(row.Type),
 						strings.Trim(strings.ToLower(row.Type), " \n\t"),
 					),

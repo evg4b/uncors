@@ -885,7 +885,7 @@
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2025-03-16",
+                  "default": "2025-03-22",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -2764,6 +2764,57 @@
             "type"
           ],
           "title": "Slogan",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "The artist of maker of song",
+          "examples": [
+            "Dua Lipa"
+          ],
+          "properties": {
+            "type": {
+              "const": "songartist"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Song Artist",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Category that classifies song based on common themes, styles, and storytelling approaches",
+          "examples": [
+            "Action"
+          ],
+          "properties": {
+            "type": {
+              "const": "songgenre"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Genre",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Title or name of a specific song used for identification and reference",
+          "examples": [
+            "New Rules"
+          ],
+          "properties": {
+            "type": {
+              "const": "songname"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Song Name",
           "type": "object"
         },
         {
