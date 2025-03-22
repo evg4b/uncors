@@ -66,10 +66,19 @@
 - [X] Fake Data generation - [PR](https://github.com/evg4b/uncors/pull/33)
 - [X] Changed console rendering lib - [PR](https://github.com/evg4b/uncors/pull/29)
 
-## Next Release
+## [0.4.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.4.0)
+- [X] Update GoReleaser to the last version
+- [X] Add support of dark and light terminal themes - [PR](https://github.com/evg4b/uncors/pull/36)
+- [X] URL Rewriting - [PR](https://github.com/evg4b/uncors/pull/41)
 
-- [ ] Update GoReleaser to the last version
-- [ ] Add support of dark and light terminal themes
+
+## [0.5.0 Release](https://github.com/evg4b/uncors/releases/tag/v0.5.0)
+- [X] Custom OPTIONS response handling - [PR](https://github.com/evg4b/uncors/pull/44)
+- [X] Security updates - [PR](https://github.com/evg4b/uncors/pull/45)
+
+
+## Next Release
+- [ ] Intrnal opmization and refactoring
 
 ## Future features
 - [ ] Informative error messages
