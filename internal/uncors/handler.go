@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler"
 	cache2 "github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/handler/static"
@@ -42,6 +43,13 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 		}),
 		handler.WithRewriteHandlerFactory(func(rewriting config.RewritingOption) contracts.Middleware {
 			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+		}),
+		handler.WithOptionsHandlerFactory(func(config config.OptionsHandling) contracts.Middleware {
+			return options.NewMiddleware(
+				options.WithLogger(NewOptionsLogger(app.logger)),
+				options.WithHeaders(config.Headers),
+				options.WithCode(config.Code),
+			)
 		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
 			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)

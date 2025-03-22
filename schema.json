@@ -885,7 +885,7 @@
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2024-12-25",
+                  "default": "2025-03-16",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -3443,6 +3443,9 @@
               "minItems": 1,
               "type": "array"
             },
+            "options-handling": {
+              "$ref": "#/definitions/OptionsHandling"
+            },
             "rewrites": {
               "description": "List of paths that will be rewritten.",
               "items": {
@@ -3525,6 +3528,25 @@
         "path",
         "response"
       ],
+      "type": "object"
+    },
+    "OptionsHandling": {
+      "description": "OPTIONS request handling configuration",
+      "properties": {
+        "disabled": {
+          "default": false,
+          "description": "Disable OPTIONS request handling and all requests will be proxied to the target server",
+          "type": "boolean"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "Custom headers to be sent in response to OPTIONS requests"
+        },
+        "status": {
+          "$ref": "#/definitions/StatusCode",
+          "description": "Custom status code to be sent in response to OPTIONS requests"
+        }
+      },
       "type": "object"
     },
     "Queries": {

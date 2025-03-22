@@ -11,6 +11,11 @@ func NewProxyLogger(logger *log.Logger) *log.Logger {
 	return tui.CreateLogger(logger, styles.ProxyStyle.Render("PROXY"))
 }
 
+func NewOptionsLogger(logger *log.Logger) *log.Logger {
+	// TODO: Provide a logger with a specific style
+	return tui.CreateLogger(logger, styles.ProxyStyle.Render("OPTNS"))
+}
+
 func NewMockLogger(logger *log.Logger) *log.Logger {
 	return tui.CreateLogger(logger, styles.MockStyle.Render("MOCK"))
 }

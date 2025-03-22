@@ -2,7 +2,7 @@
 
 package mocks
 
-//go:generate minimock -i github.com/evg4b/uncors/pkg/fakedata.Generator -o fakedata_generator.go -n GeneratorMock -p mocks
+//go:generate minimock -i github.com/evg4b/uncors/pkg/fakedata.Generator -o fakedata_generator_mock.go -n GeneratorMock -p mocks
 
 import (
 	"sync"

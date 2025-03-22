@@ -157,7 +157,7 @@ func TestStaticMiddleware(t *testing.T) {
 			static.WithIndex(indexHTML),
 		)
 
-		handler := middleware.Wrap(mocks.FailNowMock(t))
+		handler := middleware.Wrap(mocks.FailNowHandlerMock(t))
 
 		t.Run("send index file", func(t *testing.T) {
 			for _, testCase := range staticFileTests {
@@ -202,7 +202,7 @@ func TestStaticMiddleware(t *testing.T) {
 				static.WithIndex("/not-exists.html"),
 			)
 
-			handler := middleware.Wrap(mocks.FailNowMock(t))
+			handler := middleware.Wrap(mocks.FailNowHandlerMock(t))
 
 			recorder := httptest.NewRecorder()
 			requestURI, err := url.Parse("/options/")

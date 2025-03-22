@@ -1,0 +1,5 @@
+mappings:
+  - from: http://localhost
+    to: https://github.com
+    options-handling:
+      disabled: true
