@@ -632,7 +632,7 @@ func TestMockMiddleware(t *testing.T) {
 						Path: userPath,
 						Queries: map[string]string{
 							"id":    "99",
-							"token": "fe145b54563d9be1b2a476f56b0a412b",
+							"token": "000000000000000000000000000000",
 						},
 						Response: config.Response{
 							Code: http.StatusAccepted,
@@ -679,13 +679,13 @@ func TestMockMiddleware(t *testing.T) {
 			},
 			{
 				name:       "passed all of multiple parameters",
-				url:        "http://localhost/api/user?id=99&token=fe145b54563d9be1b2a476f56b0a412b",
+				url:        "http://localhost/api/user?id=99&token=000000000000000000000000000000",
 				expected:   mock3Body,
 				statusCode: http.StatusAccepted,
 			},
 			{
 				name:       "passed extra parameters",
-				url:        "http://localhost/api/user?id=99&token=fe145b54563d9be1b2a476f56b0a412b&demo=true",
+				url:        "http://localhost/api/user?id=99&token=000000000000000000000000000000&demo=true",
 				expected:   mock3Body,
 				statusCode: http.StatusAccepted,
 			},
@@ -730,7 +730,7 @@ func TestMockMiddleware(t *testing.T) {
 						Path: userPath,
 						Headers: map[string]string{
 							userIDHeader:       "99",
-							headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
+							headers.XCSRFToken: "000000000000000000000000000000",
 						},
 						Response: config.Response{
 							Code: http.StatusAccepted,
@@ -790,7 +790,7 @@ func TestMockMiddleware(t *testing.T) {
 				url:  apiUser,
 				headers: map[string]string{
 					userIDHeader:       "99",
-					headers.XCSRFToken: "fe145b54563d9be1b2a476f56b0a412b",
+					headers.XCSRFToken: "000000000000000000000000000000",
 				},
 				expected:   mock3Body,
 				statusCode: http.StatusAccepted,
@@ -800,7 +800,7 @@ func TestMockMiddleware(t *testing.T) {
 				url:  apiUser,
 				headers: map[string]string{
 					userIDHeader:           "99",
-					headers.XCSRFToken:     "fe145b54563d9be1b2a476f56b0a412b",
+					headers.XCSRFToken:     "000000000000000000000000000000",
 					headers.AcceptEncoding: "deflate",
 				},
 				expected:   mock3Body,
