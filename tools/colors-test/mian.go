@@ -6,9 +6,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
-
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"

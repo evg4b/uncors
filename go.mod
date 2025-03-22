@@ -11,6 +11,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/dustin/go-humanize v1.0.1
+	github.com/gkampitakis/go-snaps v0.5.11
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/gobuffalo/validate v2.0.4+incompatible
 	github.com/gojuno/minimock/v3 v3.4.5
@@ -34,13 +35,24 @@ require (
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
+	github.com/gkampitakis/ciinfo v0.3.1 // indirect
+	github.com/gkampitakis/go-diff v1.3.2 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/goccy/go-yaml v1.15.13 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/maruel/natural v1.1.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/sagikazarmark/locafero v0.8.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect

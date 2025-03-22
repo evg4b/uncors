@@ -6,9 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 )
 
 // FsFromMap creates afero.Fs in memory from map.

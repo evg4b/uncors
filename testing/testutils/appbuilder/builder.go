@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/testutils"

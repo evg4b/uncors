@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

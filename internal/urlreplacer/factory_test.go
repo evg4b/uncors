@@ -3,14 +3,13 @@ package urlreplacer_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewUrlReplacerFactory(t *testing.T) {

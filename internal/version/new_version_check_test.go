@@ -15,30 +15,27 @@ import (
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckNewVersion(t *testing.T) {
 	t.Run("do not panic where", func(t *testing.T) {
-		t.Skip()
 		tests := []struct {
-			name     string
-			client   contracts.HTTPClient
-			version  string
-			expected string
+			name    string
+			client  contracts.HTTPClient
+			version string
 		}{
 			{
-				name:     "current version is not correct",
-				client:   mocks.NewHTTPClientMock(t),
-				version:  "#",
-				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse current version: Malformed version: #\n",
+				name:    "current version is not correct",
+				client:  mocks.NewHTTPClientMock(t),
+				version: "#",
 			},
 			{
 				name: "http error is occupied",
 				client: mocks.NewHTTPClientMock(t).
 					DoMock.Return(nil, errors.New("some http error")),
-				version:  "0.0.3",
-				expected: "   DEBUG  Checking new version\n   DEBUG  http error occupied: some http error\n",
+				version: "0.0.3",
 			},
 			{
 				name: "invalid json received",
@@ -46,8 +43,7 @@ func TestCheckNewVersion(t *testing.T) {
 					DoMock.Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader(`{ "version"`)),
 				}, nil),
-				version:  "0.0.3",
-				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse last version response: unexpected EOF\n",
+				version: "0.0.3",
 			},
 			{
 				name: "incorrect json from api received",
@@ -55,8 +51,7 @@ func TestCheckNewVersion(t *testing.T) {
 					DoMock.Return(&http.Response{
 					Body: io.NopCloser(strings.NewReader(`{ "tag_name": "#" }`)),
 				}, nil),
-				version:  "0.0.3",
-				expected: "   DEBUG  Checking new version\n   DEBUG  failed to parse last version: Malformed version: #\n",
+				version: "0.0.3",
 			},
 		}
 		for _, testCase := range tests {
@@ -67,14 +62,13 @@ func TestCheckNewVersion(t *testing.T) {
 					outputData, err := io.ReadAll(output)
 					testutils.CheckNoError(t, err)
 
-					assert.Equal(t, testCase.expected, string(outputData))
+					snaps.MatchSnapshot(t, string(outputData))
 				})
 			}))
 		}
 	})
 
 	t.Run("should print ", func(t *testing.T) {
-		t.Skip()
 		t.Run("prop1", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 			httpClient := mocks.NewHTTPClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
@@ -83,13 +77,8 @@ func TestCheckNewVersion(t *testing.T) {
 
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
-			expected := `   DEBUG  Checking new version
-    INFO  NEW VERSION IS Available!
-          0.0.4 is not latest, you should upgrade to 0.0.7.
-          See more information on https://github.com/evg4b/uncors/releases
-    INFO  
-`
-			assert.Equal(t, expected, string(outputData))
+
+			snaps.MatchSnapshot(t, string(outputData))
 		}))
 
 		t.Run("prop2", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
@@ -100,8 +89,8 @@ func TestCheckNewVersion(t *testing.T) {
 
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
-			expected := "   DEBUG  Checking new version\n   DEBUG  Version is up to date\n"
-			assert.Equal(t, expected, string(outputData))
+
+			snaps.MatchSnapshot(t, string(outputData))
 		}))
 	})
 }

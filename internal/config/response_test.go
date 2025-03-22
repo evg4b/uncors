@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/pkg/fakedata"
-
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
