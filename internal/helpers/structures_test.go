@@ -34,6 +34,6 @@ func TestApplyOptions(t *testing.T) {
 		result := helpers.ApplyOptions(service, nil)
 
 		assert.Equal(t, service, result, "The same service should be returned")
-		assert.Equal(t, "", result.service, "Service value should not be applied")
+		assert.Empty(t, result.service, "Service value should not be applied")
 	})
 }

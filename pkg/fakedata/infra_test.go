@@ -53,12 +53,15 @@ func TestGetTypes(t *testing.T) {
 		// misc
 		"bool",
 		"uuid",
+		"unit",
 
 		// date/time
 		"date",
 		"pastdate",
 		"futuredate",
 		"daterange",
+		"time",
+		"timerange",
 		"nanosecond",
 		"second",
 		"minute",
@@ -122,6 +125,7 @@ func TestGetTypes(t *testing.T) {
 		// finance
 		"cusip",
 		"isin",
+		"ein",
 
 		// internet
 		"url",
@@ -223,6 +227,8 @@ func TestGetTypes(t *testing.T) {
 
 		// payment
 		"price",
+		"bankname",
+		"banktype",
 		"creditcardcvv",
 		"creditcardexp",
 		"creditcardnumber",
@@ -233,6 +239,7 @@ func TestGetTypes(t *testing.T) {
 		"achaccount",
 		"bitcoinaddress",
 		"bitcoinprivatekey",
+		"productisbn",
 
 		// Song
 		"songartist",

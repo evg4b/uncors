@@ -89,7 +89,7 @@ func TestCloneMap(t *testing.T) {
 		actual := helpers.CloneMap(data)
 
 		assert.NotSame(t, &data, &actual)
-		assert.EqualValues(t, &expected, &actual)
+		assert.Equal(t, &expected, &actual)
 	})
 
 	t.Run("non cloneable objects", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestCloneMap(t *testing.T) {
 		actual := helpers.CloneMap(data)
 
 		assert.NotSame(t, &data, &actual)
-		assert.EqualValues(t, &data, &actual)
+		assert.Equal(t, &data, &actual)
 	})
 
 	t.Run("nil", func(t *testing.T) {
@@ -117,6 +117,6 @@ func assertClone[K comparable, V any](t *testing.T, data map[K]V) {
 
 	actual := helpers.CloneMap(data)
 
-	assert.EqualValues(t, data, actual)
+	assert.Equal(t, data, actual)
 	assert.NotSame(t, &data, &actual)
 }

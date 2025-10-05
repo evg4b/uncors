@@ -23,7 +23,7 @@ func TransformToJSON(t *testing.T, yamlFilePath string) string {
 
 	jsonFile, err := os.OpenFile(jsonFilePath, os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	require.NoError(t, err, "Failed to open file: %v", err)
-	defer yamlFile.Close()
+	defer jsonFile.Close()
 
 	var data any
 	err = yaml.NewDecoder(yamlFile).Decode(&data)

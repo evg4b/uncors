@@ -51,7 +51,7 @@ func generateHandler(t *testing.T) (*mock.Handler, *mocks.GeneratorMock) {
 
 func TestFakeResponse(t *testing.T) {
 	expectedString := "{\"hello\":\"world\",\"world\":\"hello\"}\n"
-	responceObject := map[string]string{
+	responseObject := map[string]string{
 		"hello": "world",
 		"world": "hello",
 	}
@@ -62,7 +62,7 @@ func TestFakeResponse(t *testing.T) {
 
 		generatorMock.GenerateMock.
 			ExpectSeedParam2(1).
-			Return(responceObject, nil)
+			Return(responseObject, nil)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
@@ -78,7 +78,7 @@ func TestFakeResponse(t *testing.T) {
 
 		generatorMock.GenerateMock.
 			ExpectSeedParam2(2).
-			Return(responceObject, nil)
+			Return(responseObject, nil)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)
@@ -102,7 +102,7 @@ func TestFakeResponse(t *testing.T) {
 		handler, generatorMock := generateHandler(t)
 		req := httptest.NewRequest(http.MethodGet, "/hello", nil)
 		testErr := errors.ErrUnsupported
-		generatorMock.GenerateMock.Return(responceObject, testErr)
+		generatorMock.GenerateMock.Return(responseObject, testErr)
 
 		responseRecorder := httptest.NewRecorder()
 		handler.ServeHTTP(contracts.WrapResponseWriter(responseRecorder), req)

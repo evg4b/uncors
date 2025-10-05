@@ -81,7 +81,7 @@ func TestNormaliseMappings(t *testing.T) {
 					testCase.useHTTPS,
 				)
 
-				assert.EqualValues(t, testCase.expected, actual)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})
@@ -153,7 +153,7 @@ func TestNormaliseMappings(t *testing.T) {
 					testCase.useHTTPS,
 				)
 
-				assert.EqualValues(t, testCase.expected, actual)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})
