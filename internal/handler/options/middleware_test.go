@@ -119,7 +119,7 @@ func TestMiddleware(t *testing.T) {
 					)
 
 				assert.Equal(t, testCase.expected.code, recorder.Code)
-				assert.EqualValues(t, testCase.expected.headers, recorder.Header())
+				assert.Equal(t, testCase.expected.headers, recorder.Header())
 			})
 		}
 	})

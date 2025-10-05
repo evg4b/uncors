@@ -51,7 +51,7 @@ func TestOptionsClone(t *testing.T) {
 			})
 
 			t.Run("equals values", func(t *testing.T) {
-				assert.EqualValues(t, options, clonedMock)
+				assert.Equal(t, options, clonedMock)
 			})
 
 			t.Run("not same headers map", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestOptionsClone(t *testing.T) {
 			})
 
 			t.Run("equals headers map", func(t *testing.T) {
-				assert.EqualValues(t, options.Headers, clonedMock.Headers)
+				assert.Equal(t, options.Headers, clonedMock.Headers)
 			})
 
 			t.Run("equals code", func(t *testing.T) {

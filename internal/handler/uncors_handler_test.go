@@ -479,7 +479,7 @@ func TestMockMiddleware(t *testing.T) {
 					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
-					assert.Equal(t, "", testutils.ReadBody(t, recorder))
+					assert.Empty(t, testutils.ReadBody(t, recorder))
 				})
 			})
 

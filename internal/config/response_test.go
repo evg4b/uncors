@@ -31,7 +31,7 @@ func TestResponseClone(t *testing.T) {
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, response, clonedResponse)
+		assert.Equal(t, response, clonedResponse)
 	})
 
 	t.Run("not same Headers map", func(t *testing.T) {

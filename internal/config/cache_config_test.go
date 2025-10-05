@@ -24,7 +24,7 @@ func TestCacheGlobsClone(t *testing.T) {
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, globs, cacheGlobs)
+		assert.Equal(t, globs, cacheGlobs)
 	})
 }
 
@@ -42,7 +42,7 @@ func TestCacheConfigClone(t *testing.T) {
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, cacheConfig, clonedCacheConfig)
+		assert.Equal(t, cacheConfig, clonedCacheConfig)
 	})
 
 	t.Run("not same methods", func(t *testing.T) {
