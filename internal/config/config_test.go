@@ -319,7 +319,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: []string{
 					"filed parsing config: decoding failed due to the following error(s):\n\n" +
-						"cannot parse 'http-port' as int: strconv.ParseInt: parsing \"xxx\": invalid syntax",
+						"'http-port' cannot parse value as 'int': strconv.ParseInt: invalid syntax",
 				},
 			},
 		}
