@@ -100,14 +100,22 @@ func (app *App) HTTPAddr() net.Addr {
 	app.httpListenerMutex.Lock()
 	defer app.httpListenerMutex.Unlock()
 
-	return app.httpListener.Addr() // TODO: Add nil handing
+	if app.httpListener == nil {
+		return nil
+	}
+
+	return app.httpListener.Addr()
 }
 
 func (app *App) HTTPSAddr() net.Addr {
 	app.httpsListenerMutex.Lock()
 	defer app.httpsListenerMutex.Unlock()
 
-	return app.httpsListener.Addr() // TODO: Add nil handing
+	if app.httpsListener == nil {
+		return nil
+	}
+
+	return app.httpsListener.Addr()
 }
 
 func handleHTTPServerError(serverName string, err error) {

@@ -52,7 +52,7 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "A bank account number used for Automated Clearing House transactions and electronic transfers",
+          "description": "Bank account number used for Automated Clearing House transactions",
           "examples": [
             "491527954328"
           ],
@@ -69,7 +69,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unique nine-digit code used in the U.S. for identifying the bank and processing electronic transactions",
+          "description": "Nine-digit code used in the U.S. for identifying a bank in ACH transactions",
           "examples": [
             "513715684"
           ],
@@ -358,9 +358,43 @@
         },
         {
           "additionalProperties": false,
-          "description": "Cryptographic identifier used to receive, store, and send Bitcoin cryptocurrency in a peer-to-peer network",
+          "description": "Name of a financial institution that offers banking services",
           "examples": [
-            "1lWLbxojXq6BqWX7X60VkcDIvYA"
+            "Wells Fargo"
+          ],
+          "properties": {
+            "type": {
+              "const": "bankname"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Bank Name",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Classification of a bank based on its services and operations",
+          "examples": [
+            "Investment Bank"
+          ],
+          "properties": {
+            "type": {
+              "const": "banktype"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Bank Type",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Cryptographic identifier used to send and receive Bitcoin",
+          "examples": [
+            "1BoatSLRHtKNngkdXEeobR76b53LETtpyT"
           ],
           "properties": {
             "type": {
@@ -375,9 +409,9 @@
         },
         {
           "additionalProperties": false,
-          "description": "Secret, secure code that allows the owner to access and control their Bitcoin holdings",
+          "description": "Secret key that allows access and control over Bitcoin holdings",
           "examples": [
-            "5vrbXTADWJ6sQBSYd6lLkG97jljNc0X9VPBvbVqsIH9lWOLcoqg"
+            "5HueCGU8rMjxEXxiPuD5BDuG6o5xjA7QkbPp"
           ],
           "properties": {
             "type": {
@@ -698,7 +732,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Three or four-digit security code on a credit card used for online and remote transactions",
+          "description": "Three or four-digit security code on a credit card",
           "examples": [
             "513"
           ],
@@ -715,9 +749,9 @@
         },
         {
           "additionalProperties": false,
-          "description": "Date when a credit card becomes invalid and cannot be used for transactions",
+          "description": "Expiration date of a credit card",
           "examples": [
-            "01/21"
+            "01/27"
           ],
           "properties": {
             "type": {
@@ -732,9 +766,9 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unique numerical identifier on a credit card used for making electronic payments and transactions",
+          "description": "Unique number on a credit card used for electronic payments",
           "examples": [
-            "4136459948995369"
+            "4111111111111111"
           ],
           "properties": {
             "options": {
@@ -796,7 +830,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Complete name of a specific currency used for official identification in financial transactions",
+          "description": "Complete name of a specific currency used in financial transactions",
           "examples": [
             "United States Dollar"
           ],
@@ -813,7 +847,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Short 3-letter word used to represent a specific currency",
+          "description": "Short 3-letter ISO code used to represent a specific currency",
           "examples": [
             "USD"
           ],
@@ -878,14 +912,14 @@
           "additionalProperties": false,
           "description": "Random date between two ranges",
           "examples": [
-            "2006-01-02T15:04:05Z07:00"
+            "1995-06-15T14:30:00Z"
           ],
           "properties": {
             "options": {
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2025-03-22",
+                  "default": "2025-10-05",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -912,7 +946,7 @@
           "required": [
             "type"
           ],
-          "title": "DateRange",
+          "title": "Date Range",
           "type": "object"
         },
         {
@@ -951,7 +985,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "string of length N consisting of ASCII digits",
+          "description": "String of length N consisting of ASCII digits",
           "examples": [
             "0136459948"
           ],
@@ -1015,7 +1049,24 @@
         },
         {
           "additionalProperties": false,
-          "description": "Electronic mail used for sending digital messages and communication over the internet",
+          "description": "Nine-digit Employer Identification Number used by businesses for tax purposes",
+          "examples": [
+            "12-3456789"
+          ],
+          "properties": {
+            "type": {
+              "const": "ein"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "EIN",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Electronic mail address",
           "examples": [
             "markusmoen@pagac.net"
           ],
@@ -1151,7 +1202,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Data type representing floating-point numbers with 32 bits of precision in computing",
+          "description": "Floating-point number with 32-bit single precision (IEEE 754)",
           "examples": [
             "3.1128167e+37"
           ],
@@ -1168,7 +1219,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Float32 value between given range",
+          "description": "Float32 value within a given range",
           "examples": [
             "914774.6"
           ],
@@ -1203,7 +1254,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Data type representing floating-point numbers with 64 bits of precision in computing",
+          "description": "Floating-point number with 64-bit double precision (IEEE 754)",
           "examples": [
             "1.644484108270445e+307"
           ],
@@ -1220,7 +1271,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Float64 value between given range",
+          "description": "Float64 value within a given range",
           "examples": [
             "914774.5585333086"
           ],
@@ -1272,7 +1323,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Classification based on social and cultural norms that identifies an individual",
+          "description": "Classification that identifies gender",
           "examples": [
             "male"
           ],
@@ -1289,7 +1340,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Six-digit code representing a color in the color model",
+          "description": "Six-digit hexadecimal code representing a color in the RGB color model",
           "examples": [
             "#a99fb4"
           ],
@@ -1357,7 +1408,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Random http status code",
+          "description": "Random HTTP status code",
           "examples": [
             "200"
           ],
@@ -1425,7 +1476,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Signed 16-bit integer, capable of representing values from 32,768 to 32,767",
+          "description": "Signed 16-bit integer, range −32,768–32,767",
           "examples": [
             "2200"
           ],
@@ -1442,7 +1493,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Signed 32-bit integer, capable of representing values from -2,147,483,648 to 2,147,483,647",
+          "description": "Signed 32-bit integer, range −2,147,483,648–2,147,483,647",
           "examples": [
             "-1072427943"
           ],
@@ -1459,7 +1510,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Signed 64-bit integer, capable of representing values from -9,223,372,036,854,775,808 to -9,223,372,036,854,775,807",
+          "description": "Signed 64-bit integer, range −9,223,372,036,854,775,808–9,223,372,036,854,775,807",
           "examples": [
             "-8379641344161477543"
           ],
@@ -1476,7 +1527,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Signed 8-bit integer, capable of representing values from -128 to 127",
+          "description": "Signed 8-bit integer, range −128–127",
           "examples": [
             "24"
           ],
@@ -1493,7 +1544,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Integer value between 0 and n",
+          "description": "Integer between 0 (inclusive) and n (exclusive)",
           "examples": [
             "32783"
           ],
@@ -1503,7 +1554,7 @@
               "properties": {
                 "n": {
                   "default": "2147483647",
-                  "description": "Maximum int value",
+                  "description": "Maximum int value (exclusive)",
                   "title": "N",
                   "type": "integer"
                 }
@@ -1934,7 +1985,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "String Representation of a month name",
+          "description": "String representation of a month name",
           "examples": [
             "September"
           ],
@@ -2002,7 +2053,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unit of time equal to One billionth (10^-9) of a second",
+          "description": "Unit of time equal to one billionth (10^-9) of a second",
           "examples": [
             "196446360"
           ],
@@ -2172,7 +2223,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Mathematical concept used for counting, measuring, and expressing quantities or values",
+          "description": "Integer used for counting or measuring, with optional bounds",
           "examples": [
             "14866"
           ],
@@ -2466,7 +2517,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "The amount of money or value assigned to a product, service, or asset in a transaction",
+          "description": "The amount of money assigned to a product, service, or asset in a transaction",
           "examples": [
             "92.26"
           ],
@@ -2497,6 +2548,23 @@
             "type"
           ],
           "title": "Price",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "ISBN-10 or ISBN-13 identifier for books",
+          "examples": [
+            "978-1-4028-9462-6"
+          ],
+          "properties": {
+            "type": {
+              "const": "productisbn"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Product ISBN",
           "type": "object"
         },
         {
@@ -2853,7 +2921,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Shortened 2-letter form of a country's state",
+          "description": "Shortened 2-letter form of a state or province",
           "examples": [
             "IL"
           ],
@@ -2921,9 +2989,9 @@
         },
         {
           "additionalProperties": false,
-          "description": "Directional or descriptive term preceding a street name, like 'East' or 'Main'",
+          "description": "Directional or descriptive term preceding a street name (e.g., 'East', 'N')",
           "examples": [
-            "Lake"
+            "East"
           ],
           "properties": {
             "type": {
@@ -2938,9 +3006,9 @@
         },
         {
           "additionalProperties": false,
-          "description": "Designation at the end of a street name indicating type, like 'Avenue' or 'Street'",
+          "description": "Designation at the end of a street name indicating type (e.g., 'Ave', 'St')",
           "examples": [
-            "land"
+            "Ave"
           ],
           "properties": {
             "type": {
@@ -2980,6 +3048,76 @@
             "type"
           ],
           "title": "Lorem Ipsum String",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Random time string in the specified format",
+          "examples": [
+            "14:30:25"
+          ],
+          "properties": {
+            "options": {
+              "additionalProperties": false,
+              "properties": {
+                "format": {
+                  "default": "HH:mm:ss",
+                  "description": "Time format string. Supports Java time format patterns or Go time format patterns",
+                  "title": "Format",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": {
+              "const": "time"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Time",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Random time string between start and end times",
+          "examples": [
+            "10:15:30"
+          ],
+          "properties": {
+            "options": {
+              "additionalProperties": false,
+              "properties": {
+                "endtime": {
+                  "default": "23:59:59",
+                  "description": "End time string in the specified format",
+                  "title": "End Time",
+                  "type": "string"
+                },
+                "format": {
+                  "default": "HH:mm:ss",
+                  "description": "Time format string. Supports Java time format patterns or Go time format patterns",
+                  "title": "Format",
+                  "type": "string"
+                },
+                "starttime": {
+                  "default": "00:00:00",
+                  "description": "Start time string in the specified format",
+                  "title": "Start Time",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": {
+              "const": "timerange"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Time Range",
           "type": "object"
         },
         {
@@ -3037,7 +3175,7 @@
           "additionalProperties": false,
           "description": "The difference in hours from Coordinated Universal Time (UTC) for a specific region",
           "examples": [
-            "3"
+            "-5"
           ],
           "properties": {
             "type": {
@@ -3069,7 +3207,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned integer",
+          "description": "Unsigned integer (nonnegative whole number)",
           "examples": [
             "14866"
           ],
@@ -3086,7 +3224,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned 16-bit integer, capable of representing values from 0 to 65,535",
+          "description": "Unsigned 16-bit integer, range 0–65,535",
           "examples": [
             "34968"
           ],
@@ -3103,7 +3241,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned 32-bit integer, capable of representing values from 0 to 4,294,967,295",
+          "description": "Unsigned 32-bit integer, range 0–4,294,967,295",
           "examples": [
             "1075055705"
           ],
@@ -3120,7 +3258,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned 64-bit integer, capable of representing values from 0 to 18,446,744,073,709,551,615",
+          "description": "Unsigned 64-bit integer, range 0–18,446,744,073,709,551,615",
           "examples": [
             "843730692693298265"
           ],
@@ -3137,7 +3275,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned 8-bit integer, capable of representing values from 0 to 255",
+          "description": "Unsigned 8-bit integer, range 0–255",
           "examples": [
             "152"
           ],
@@ -3154,7 +3292,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Unsigned integer between 0 and n",
+          "description": "Unsigned integer between 0 (inclusive) and n (exclusive)",
           "examples": [
             "32783"
           ],
@@ -3164,7 +3302,7 @@
               "properties": {
                 "n": {
                   "default": "4294967295",
-                  "description": "Maximum uint value",
+                  "description": "Maximum uint value (exclusive)",
                   "minimum": 0,
                   "title": "N",
                   "type": "integer"
@@ -3180,6 +3318,23 @@
             "type"
           ],
           "title": "UintN",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Unit identifier within a building, such as apartment number, suite, or office",
+          "examples": [
+            "Apt 123"
+          ],
+          "properties": {
+            "type": {
+              "const": "unit"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "Unit",
           "type": "object"
         },
         {
@@ -3269,7 +3424,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Verb Indicating a physical or mental action",
+          "description": "Verb indicating a physical or mental action",
           "examples": [
             "close"
           ],
@@ -3303,7 +3458,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Verb that Connects the subject of a sentence to a subject complement",
+          "description": "Verb that connects the subject of a sentence to a subject complement",
           "examples": [
             "was"
           ],

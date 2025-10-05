@@ -101,7 +101,7 @@ Illinois
 ## Stateabr
 
 
-Shortened 2-letter form of a country's state
+Shortened 2-letter form of a state or province
 
 
 Return type: `string`
@@ -165,7 +165,7 @@ Example:
 ## Streetprefix
 
 
-Directional or descriptive term preceding a street name, like 'East' or 'Main'
+Directional or descriptive term preceding a street name (e.g., 'East', 'N')
 
 
 Return type: `string`
@@ -175,13 +175,13 @@ Example:
 
 
 ```
-Lake
+East
 ```
 
 ## Streetsuffix
 
 
-Designation at the end of a street name indicating type, like 'Avenue' or 'Street'
+Designation at the end of a street name indicating type (e.g., 'Ave', 'St')
 
 
 Return type: `string`
@@ -191,7 +191,23 @@ Example:
 
 
 ```
-land
+Ave
+```
+
+## Unit
+
+
+Unit identifier within a building, such as apartment number, suite, or office
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Apt 123
 ```
 
 ## Zip
@@ -276,7 +292,7 @@ MediumOrchid
 ## Hexcolor
 
 
-Six-digit code representing a color in the color model
+Six-digit hexadecimal code representing a color in the RGB color model
 
 
 Return type: `string`
@@ -449,6 +465,344 @@ Example:
 
 ```
 Universal seamless Focus, interactive.
+```
+
+## Datetime
+
+## Date
+
+
+Representation of a specific day, month, and year, often used for chronological reference
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+2006-01-02T15:04:05Z07:00
+```
+
+## Daterange
+
+
+Random date between two ranges
+
+
+Return type: `string`
+
+
+Options:
+
+
+ - startdate (string) - Start date time string
+ - enddate (string) - End date time string
+ - format (string) - Date time string format
+
+
+Example:
+
+
+```
+1995-06-15T14:30:00Z
+```
+
+## Day
+
+
+24-hour period equivalent to one rotation of Earth on its axis
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+12
+```
+
+## Futuredate
+
+
+Date that has occurred after the current moment in time
+
+
+Return type: `time`
+
+
+Example:
+
+
+```
+2107-01-24 13:00:35.820738079 +0000 UTC
+```
+
+## Hour
+
+
+Unit of time equal to 60 minutes
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+8
+```
+
+## Minute
+
+
+Unit of time equal to 60 seconds
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+34
+```
+
+## Month
+
+
+Division of the year, typically 30 or 31 days long
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+1
+```
+
+## Monthstring
+
+
+String representation of a month name
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+September
+```
+
+## Nanosecond
+
+
+Unit of time equal to one billionth (10^-9) of a second
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+196446360
+```
+
+## Pastdate
+
+
+Date that has occurred before the current moment in time
+
+
+Return type: `time`
+
+
+Example:
+
+
+```
+2007-01-24 13:00:35.820738079 +0000 UTC
+```
+
+## Second
+
+
+Unit of time equal to 1/60th of a minute
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+43
+```
+
+## Time
+
+
+Random time string in the specified format
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+14:30:25
+```
+
+## Timerange
+
+
+Random time string between start and end times
+
+
+Return type: `string`
+
+
+Options:
+
+
+ - starttime (string) - Start time string in the specified format
+ - endtime (string) - End time string in the specified format
+ - format (string) - Time format string. Supports Java time format patterns or Go time format patterns
+
+
+Example:
+
+
+```
+10:15:30
+```
+
+## Timezone
+
+
+Region where the same standard time is used, based on longitudinal divisions of the Earth
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Kaliningrad Standard Time
+```
+
+## Timezoneabv
+
+
+Abbreviated 3-letter word of a timezone
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+KST
+```
+
+## Timezonefull
+
+
+Full name of a timezone
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+(UTC+03:00) Kaliningrad, Minsk
+```
+
+## Timezoneoffset
+
+
+The difference in hours from Coordinated Universal Time (UTC) for a specific region
+
+
+Return type: `float32`
+
+
+Example:
+
+
+```
+-5
+```
+
+## Timezoneregion
+
+
+Geographic area sharing the same standard time
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+America/Alaska
+```
+
+## Weekday
+
+
+Day of the week excluding the weekend
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Friday
+```
+
+## Year
+
+
+Period of 365 days, the time Earth takes to orbit the Sun
+
+
+Return type: `int`
+
+
+Example:
+
+
+```
+1900
 ```
 
 ## Emoji
@@ -652,7 +1006,7 @@ HEAD
 ## Httpstatuscode
 
 
-Random http status code
+Random HTTP status code
 
 
 Return type: `int`
@@ -898,7 +1252,7 @@ Example:
 ## Float32
 
 
-Data type representing floating-point numbers with 32 bits of precision in computing
+Floating-point number with 32-bit single precision (IEEE 754)
 
 
 Return type: `float32`
@@ -914,7 +1268,7 @@ Example:
 ## Float32range
 
 
-Float32 value between given range
+Float32 value within a given range
 
 
 Return type: `float32`
@@ -937,7 +1291,7 @@ Example:
 ## Float64
 
 
-Data type representing floating-point numbers with 64 bits of precision in computing
+Floating-point number with 64-bit double precision (IEEE 754)
 
 
 Return type: `float64`
@@ -953,7 +1307,7 @@ Example:
 ## Float64range
 
 
-Float64 value between given range
+Float64 value within a given range
 
 
 Return type: `float64`
@@ -992,7 +1346,7 @@ Example:
 ## Int16
 
 
-Signed 16-bit integer, capable of representing values from 32,768 to 32,767
+Signed 16-bit integer, range −32,768–32,767
 
 
 Return type: `int16`
@@ -1008,7 +1362,7 @@ Example:
 ## Int32
 
 
-Signed 32-bit integer, capable of representing values from -2,147,483,648 to 2,147,483,647
+Signed 32-bit integer, range −2,147,483,648–2,147,483,647
 
 
 Return type: `int32`
@@ -1024,7 +1378,7 @@ Example:
 ## Int64
 
 
-Signed 64-bit integer, capable of representing values from -9,223,372,036,854,775,808 to -9,223,372,036,854,775,807
+Signed 64-bit integer, range −9,223,372,036,854,775,808–9,223,372,036,854,775,807
 
 
 Return type: `int64`
@@ -1040,7 +1394,7 @@ Example:
 ## Int8
 
 
-Signed 8-bit integer, capable of representing values from -128 to 127
+Signed 8-bit integer, range −128–127
 
 
 Return type: `int8`
@@ -1056,7 +1410,7 @@ Example:
 ## Intn
 
 
-Integer value between 0 and n
+Integer between 0 (inclusive) and n (exclusive)
 
 
 Return type: `int`
@@ -1072,7 +1426,7 @@ Example:
 ## Number
 
 
-Mathematical concept used for counting, measuring, and expressing quantities or values
+Integer used for counting or measuring, with optional bounds
 
 
 Return type: `int`
@@ -1095,7 +1449,7 @@ Example:
 ## Uint
 
 
-Unsigned integer
+Unsigned integer (nonnegative whole number)
 
 
 Return type: `uint`
@@ -1111,7 +1465,7 @@ Example:
 ## Uint16
 
 
-Unsigned 16-bit integer, capable of representing values from 0 to 65,535
+Unsigned 16-bit integer, range 0–65,535
 
 
 Return type: `uint16`
@@ -1127,7 +1481,7 @@ Example:
 ## Uint32
 
 
-Unsigned 32-bit integer, capable of representing values from 0 to 4,294,967,295
+Unsigned 32-bit integer, range 0–4,294,967,295
 
 
 Return type: `uint32`
@@ -1143,7 +1497,7 @@ Example:
 ## Uint64
 
 
-Unsigned 64-bit integer, capable of representing values from 0 to 18,446,744,073,709,551,615
+Unsigned 64-bit integer, range 0–18,446,744,073,709,551,615
 
 
 Return type: `uint64`
@@ -1159,7 +1513,7 @@ Example:
 ## Uint8
 
 
-Unsigned 8-bit integer, capable of representing values from 0 to 255
+Unsigned 8-bit integer, range 0–255
 
 
 Return type: `uint8`
@@ -1175,7 +1529,7 @@ Example:
 ## Uintn
 
 
-Unsigned integer between 0 and n
+Unsigned integer between 0 (inclusive) and n (exclusive)
 
 
 Return type: `uint`
@@ -1193,7 +1547,7 @@ Example:
 ## Achaccount
 
 
-A bank account number used for Automated Clearing House transactions and electronic transfers
+Bank account number used for Automated Clearing House transactions
 
 
 Return type: `string`
@@ -1209,7 +1563,7 @@ Example:
 ## Achrouting
 
 
-Unique nine-digit code used in the U.S. for identifying the bank and processing electronic transactions
+Nine-digit code used in the U.S. for identifying a bank in ACH transactions
 
 
 Return type: `string`
@@ -1222,10 +1576,10 @@ Example:
 513715684
 ```
 
-## Bitcoinaddress
+## Bankname
 
 
-Cryptographic identifier used to receive, store, and send Bitcoin cryptocurrency in a peer-to-peer network
+Name of a financial institution that offers banking services
 
 
 Return type: `string`
@@ -1235,13 +1589,45 @@ Example:
 
 
 ```
-1lWLbxojXq6BqWX7X60VkcDIvYA
+Wells Fargo
+```
+
+## Banktype
+
+
+Classification of a bank based on its services and operations
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+Investment Bank
+```
+
+## Bitcoinaddress
+
+
+Cryptographic identifier used to send and receive Bitcoin
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+1BoatSLRHtKNngkdXEeobR76b53LETtpyT
 ```
 
 ## Bitcoinprivatekey
 
 
-Secret, secure code that allows the owner to access and control their Bitcoin holdings
+Secret key that allows access and control over Bitcoin holdings
 
 
 Return type: `string`
@@ -1251,13 +1637,13 @@ Example:
 
 
 ```
-5vrbXTADWJ6sQBSYd6lLkG97jljNc0X9VPBvbVqsIH9lWOLcoqg
+5HueCGU8rMjxEXxiPuD5BDuG6o5xjA7QkbPp
 ```
 
 ## Creditcardcvv
 
 
-Three or four-digit security code on a credit card used for online and remote transactions
+Three or four-digit security code on a credit card
 
 
 Return type: `string`
@@ -1273,7 +1659,7 @@ Example:
 ## Creditcardexp
 
 
-Date when a credit card becomes invalid and cannot be used for transactions
+Expiration date of a credit card
 
 
 Return type: `string`
@@ -1283,13 +1669,13 @@ Example:
 
 
 ```
-01/21
+01/27
 ```
 
 ## Creditcardnumber
 
 
-Unique numerical identifier on a credit card used for making electronic payments and transactions
+Unique number on a credit card used for electronic payments
 
 
 Return type: `string`
@@ -1307,7 +1693,7 @@ Example:
 
 
 ```
-4136459948995369
+4111111111111111
 ```
 
 ## Creditcardtype
@@ -1329,7 +1715,7 @@ Visa
 ## Currencylong
 
 
-Complete name of a specific currency used for official identification in financial transactions
+Complete name of a specific currency used in financial transactions
 
 
 Return type: `string`
@@ -1345,7 +1731,7 @@ United States Dollar
 ## Currencyshort
 
 
-Short 3-letter word used to represent a specific currency
+Short 3-letter ISO code used to represent a specific currency
 
 
 Return type: `string`
@@ -1361,7 +1747,7 @@ USD
 ## Price
 
 
-The amount of money or value assigned to a product, service, or asset in a transaction
+The amount of money assigned to a product, service, or asset in a transaction
 
 
 Return type: `float64`
@@ -1383,10 +1769,26 @@ Example:
 
 ## Person
 
+## Ein
+
+
+Nine-digit Employer Identification Number used by businesses for tax purposes
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+12-3456789
+```
+
 ## Email
 
 
-Electronic mail used for sending digital messages and communication over the internet
+Electronic mail address
 
 
 Return type: `string`
@@ -1418,7 +1820,7 @@ Markus
 ## Gender
 
 
-Classification based on social and cultural norms that identifies an individual
+Classification that identifies gender
 
 
 Return type: `string`
@@ -1575,6 +1977,24 @@ Example:
 296446360
 ```
 
+## Product
+
+## Productisbn
+
+
+ISBN-10 or ISBN-13 identifier for books
+
+
+Return type: `string`
+
+
+Example:
+
+
+```
+978-1-4028-9462-6
+```
+
 ## Song
 
 ## Songartist
@@ -1646,7 +2066,7 @@ Example:
 ## Digitn
 
 
-string of length N consisting of ASCII digits
+String of length N consisting of ASCII digits
 
 
 Return type: `string`
@@ -1707,28 +2127,12 @@ Example:
 Quia quae repellat consequatur quidem.
 ```
 
-## Time
+## Text
 
-## Date
-
-
-Representation of a specific day, month, and year, often used for chronological reference
+## Loremipsumparagraph
 
 
-Return type: `string`
-
-
-Example:
-
-
-```
-2006-01-02T15:04:05Z07:00
-```
-
-## Daterange
-
-
-Random date between two ranges
+Paragraph of the Lorem Ipsum placeholder text used in design and publishing
 
 
 Return type: `string`
@@ -1737,86 +2141,27 @@ Return type: `string`
 Options:
 
 
- - startdate (string) - Start date time string
- - enddate (string) - End date time string
- - format (string) - Date time string format
+ - paragraphcount (int) - Number of paragraphs
+ - sentencecount (int) - Number of sentences in a paragraph
+ - wordcount (int) - Number of words in a sentence
+ - paragraphseparator (string) - String value to add between paragraphs
 
 
 Example:
 
 
 ```
-2006-01-02T15:04:05Z07:00
+Quia quae repellat consequatur quidem nisi quo qui voluptatum accusantium quisquam amet. Quas et ut non dolorem ipsam aut enim assumenda mollitia harum ut. Dicta similique veniam nulla voluptas at excepturi non ad maxime at non. Eaque hic repellat praesentium voluptatem qui consequuntur dolor iusto autem velit aut. Fugit tempore exercitationem harum consequatur voluptatum modi minima aut eaque et et.
+
+Aut ea voluptatem dignissimos expedita odit tempore quod aut beatae ipsam iste. Minus voluptatibus dolorem maiores eius sed nihil vel enim odio voluptatem accusamus. Natus quibusdam temporibus tenetur cumque sint necessitatibus dolorem ex ducimus iusto ex. Voluptatem neque dicta explicabo officiis et ducimus sit ut ut praesentium pariatur. Illum molestias nisi at dolore ut voluptatem accusantium et fugiat et ut.
+
+Explicabo incidunt reprehenderit non quia dignissimos recusandae vitae soluta quia et quia. Aut veniam voluptas consequatur placeat sapiente non eveniet voluptatibus magni velit eum. Nobis vel repellendus sed est qui autem laudantium quidem quam ullam consequatur. Aut iusto ut commodi similique quae voluptatem atque qui fugiat eum aut. Quis distinctio consequatur voluptatem vel aliquid aut laborum facere officiis iure tempora.
 ```
 
-## Day
+## Loremipsumsentence
 
 
-24-hour period equivalent to one rotation of Earth on its axis
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-12
-```
-
-## Futuredate
-
-
-Date that has occurred after the current moment in time
-
-
-Return type: `time`
-
-
-Example:
-
-
-```
-2107-01-24 13:00:35.820738079 +0000 UTC
-```
-
-## Hour
-
-
-Unit of time equal to 60 minutes
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-8
-```
-
-## Minute
-
-
-Unit of time equal to 60 seconds
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-34
-```
-
-## Month
-
-
-Division of the year, typically 30 or 31 days long
+Sentence of the Lorem Ipsum placeholder text used in design and publishing
 
 
 Return type: `string`
@@ -1826,13 +2171,38 @@ Example:
 
 
 ```
-1
+Quia quae repellat consequatur quidem.
 ```
 
-## Monthstring
+## Paragraph
 
 
-String Representation of a month name
+Distinct section of writing covering a single theme, composed of multiple sentences
+
+
+Return type: `string`
+
+
+Options:
+
+
+ - paragraphcount (int) - Number of paragraphs
+ - sentencecount (int) - Number of sentences in a paragraph
+ - wordcount (int) - Number of words in a sentence
+ - paragraphseparator (string) - String value to add between paragraphs
+
+
+Example:
+
+
+```
+Interpret context record river mind press self should compare property outcome divide. Combine approach sustain consult discover explanation direct address church husband seek army. Begin own act welfare replace press suspect stay link place manchester specialist. Arrive price satisfy sign force application hair train provide basis right pay. Close mark teacher strengthen information attempt head touch aim iron tv take.
+```
+
+## Phrase
+
+
+A small group of words standing together
 
 
 Return type: `string`
@@ -1842,61 +2212,13 @@ Example:
 
 
 ```
-September
+time will tell
 ```
 
-## Nanosecond
+## Question
 
 
-Unit of time equal to One billionth (10^-9) of a second
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-196446360
-```
-
-## Pastdate
-
-
-Date that has occurred before the current moment in time
-
-
-Return type: `time`
-
-
-Example:
-
-
-```
-2007-01-24 13:00:35.820738079 +0000 UTC
-```
-
-## Second
-
-
-Unit of time equal to 1/60th of a minute
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-43
-```
-
-## Timezone
-
-
-Region where the same standard time is used, based on longitudinal divisions of the Earth
+Statement formulated to inquire or seek clarification
 
 
 Return type: `string`
@@ -1906,13 +2228,13 @@ Example:
 
 
 ```
-Kaliningrad Standard Time
+Roof chia echo?
 ```
 
-## Timezoneabv
+## Quote
 
 
-Abbreviated 3-letter word of a timezone
+Direct repetition of someone else's words
 
 
 Return type: `string`
@@ -1922,13 +2244,13 @@ Example:
 
 
 ```
-KST
+"Roof chia echo." - Lura Lockman
 ```
 
-## Timezonefull
+## Sentence
 
 
-Full name of a timezone
+Set of words expressing a statement, question, exclamation, or command
 
 
 Return type: `string`
@@ -1938,71 +2260,7 @@ Example:
 
 
 ```
-(UTC+03:00) Kaliningrad, Minsk
-```
-
-## Timezoneoffset
-
-
-The difference in hours from Coordinated Universal Time (UTC) for a specific region
-
-
-Return type: `float32`
-
-
-Example:
-
-
-```
-3
-```
-
-## Timezoneregion
-
-
-Geographic area sharing the same standard time
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-America/Alaska
-```
-
-## Weekday
-
-
-Day of the week excluding the weekend
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-Friday
-```
-
-## Year
-
-
-Period of 365 days, the time Earth takes to orbit the Sun
-
-
-Return type: `int`
-
-
-Example:
-
-
-```
-1900
+Interpret context record river mind.
 ```
 
 ## Word
@@ -2375,51 +2633,6 @@ Example:
 finally
 ```
 
-## Loremipsumparagraph
-
-
-Paragraph of the Lorem Ipsum placeholder text used in design and publishing
-
-
-Return type: `string`
-
-
-Options:
-
-
- - paragraphcount (int) - Number of paragraphs
- - sentencecount (int) - Number of sentences in a paragraph
- - wordcount (int) - Number of words in a sentence
- - paragraphseparator (string) - String value to add between paragraphs
-
-
-Example:
-
-
-```
-Quia quae repellat consequatur quidem nisi quo qui voluptatum accusantium quisquam amet. Quas et ut non dolorem ipsam aut enim assumenda mollitia harum ut. Dicta similique veniam nulla voluptas at excepturi non ad maxime at non. Eaque hic repellat praesentium voluptatem qui consequuntur dolor iusto autem velit aut. Fugit tempore exercitationem harum consequatur voluptatum modi minima aut eaque et et.
-
-Aut ea voluptatem dignissimos expedita odit tempore quod aut beatae ipsam iste. Minus voluptatibus dolorem maiores eius sed nihil vel enim odio voluptatem accusamus. Natus quibusdam temporibus tenetur cumque sint necessitatibus dolorem ex ducimus iusto ex. Voluptatem neque dicta explicabo officiis et ducimus sit ut ut praesentium pariatur. Illum molestias nisi at dolore ut voluptatem accusantium et fugiat et ut.
-
-Explicabo incidunt reprehenderit non quia dignissimos recusandae vitae soluta quia et quia. Aut veniam voluptas consequatur placeat sapiente non eveniet voluptatibus magni velit eum. Nobis vel repellendus sed est qui autem laudantium quidem quam ullam consequatur. Aut iusto ut commodi similique quae voluptatem atque qui fugiat eum aut. Quis distinctio consequatur voluptatem vel aliquid aut laborum facere officiis iure tempora.
-```
-
-## Loremipsumsentence
-
-
-Sentence of the Lorem Ipsum placeholder text used in design and publishing
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-Quia quae repellat consequatur quidem.
-```
-
 ## Loremipsumword
 
 
@@ -2578,47 +2791,6 @@ Example:
 
 ```
 seafood
-```
-
-## Paragraph
-
-
-Distinct section of writing covering a single theme, composed of multiple sentences
-
-
-Return type: `string`
-
-
-Options:
-
-
- - paragraphcount (int) - Number of paragraphs
- - sentencecount (int) - Number of sentences in a paragraph
- - wordcount (int) - Number of words in a sentence
- - paragraphseparator (string) - String value to add between paragraphs
-
-
-Example:
-
-
-```
-Interpret context record river mind press self should compare property outcome divide. Combine approach sustain consult discover explanation direct address church husband seek army. Begin own act welfare replace press suspect stay link place manchester specialist. Arrive price satisfy sign force application hair train provide basis right pay. Close mark teacher strengthen information attempt head touch aim iron tv take.
-```
-
-## Phrase
-
-
-A small group of words standing together
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-time will tell
 ```
 
 ## Preposition
@@ -2813,54 +2985,6 @@ Example:
 as
 ```
 
-## Question
-
-
-Statement formulated to inquire or seek clarification
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-Roof chia echo?
-```
-
-## Quote
-
-
-Direct repetition of someone else's words
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-"Roof chia echo." - Lura Lockman
-```
-
-## Sentence
-
-
-Set of words expressing a statement, question, exclamation, or command
-
-
-Return type: `string`
-
-
-Example:
-
-
-```
-Interpret context record river mind.
-```
-
 ## Verb
 
 
@@ -2880,7 +3004,7 @@ release
 ## Verbaction
 
 
-Verb Indicating a physical or mental action
+Verb indicating a physical or mental action
 
 
 Return type: `string`
@@ -2912,7 +3036,7 @@ be
 ## Verblinking
 
 
-Verb that Connects the subject of a sentence to a subject complement
+Verb that connects the subject of a sentence to a subject complement
 
 
 Return type: `string`
