@@ -34,7 +34,7 @@ func TestMockClone(t *testing.T) {
 	})
 
 	t.Run("equals values", func(t *testing.T) {
-		assert.EqualValues(t, mock, clonedMock)
+		assert.Equal(t, mock, clonedMock)
 	})
 
 	t.Run("not same headers map", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestMockClone(t *testing.T) {
 	})
 
 	t.Run("equals headers map", func(t *testing.T) {
-		assert.EqualValues(t, mock.Headers, clonedMock.Headers)
+		assert.Equal(t, mock.Headers, clonedMock.Headers)
 	})
 
 	t.Run("not same queries map", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestMockClone(t *testing.T) {
 	})
 
 	t.Run("equals queries map values", func(t *testing.T) {
-		assert.EqualValues(t, mock.Queries, clonedMock.Queries)
+		assert.Equal(t, mock.Queries, clonedMock.Queries)
 	})
 
 	t.Run("not same Response", func(t *testing.T) {
@@ -58,6 +58,6 @@ func TestMockClone(t *testing.T) {
 	})
 
 	t.Run("equals Response values", func(t *testing.T) {
-		assert.EqualValues(t, mock.Response, clonedMock.Response)
+		assert.Equal(t, mock.Response, clonedMock.Response)
 	})
 }

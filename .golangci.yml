@@ -1,31 +1,52 @@
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
+    - bodyclose
+    - contextcheck
+    - depguard
+    - exhaustruct
+    - funlen
+    - gochecknoglobals
+    - godox
+    - ireturn
+    - maintidx
+    - nolintlint
+    - paralleltest
+    - perfsprint
     - rowserrcheck
     - sqlclosecheck
-    - wastedassign
-    - funlen
-    - paralleltest
-    - gochecknoglobals
     - thelper
-    - godox
-    - exhaustruct
-    - wsl
-    - gci
-    - nolintlint
-    - maintidx
-    - ireturn
-    - bodyclose
-    - depguard
+    - wastedassign
     - wrapcheck
-    - perfsprint
-    - contextcheck
-    - tenv
-linters-settings:
-  varnamelen:
-    ignore-names:
-      - form
-      - to
-      - ok
-      - fs
-      - ca
+    - wsl
+  settings:
+    varnamelen:
+      ignore-names:
+        - form
+        - to
+        - ok
+        - fs
+        - ca
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

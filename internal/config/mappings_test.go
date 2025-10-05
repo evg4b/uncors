@@ -145,7 +145,7 @@ func TestMappings(t *testing.T) {
 
 		actual := mappings.String()
 
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 }
 

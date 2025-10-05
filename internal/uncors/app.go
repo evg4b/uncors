@@ -68,6 +68,56 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	app.initServer(ctx, uncorsConfig)
 }
 
+func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
+	defer app.waitGroup.Done()
+	app.waitGroup.Add(1)
+	log.Print("")
+	log.Info("Restarting server....")
+	log.Print("")
+	err := app.internalShutdown(ctx)
+	if err != nil {
+		panic(err) // TODO: refactor this error handling
+	}
+
+	log.Info(uncorsConfig.Mappings.String())
+	log.Print("")
+	app.initServer(ctx, uncorsConfig)
+}
+
+func (app *App) Close() error {
+	return app.server.Close()
+}
+
+func (app *App) Wait() {
+	app.waitGroup.Wait()
+}
+
+func (app *App) Shutdown(ctx context.Context) error {
+	return app.internalShutdown(ctx)
+}
+
+func (app *App) HTTPAddr() net.Addr {
+	app.httpListenerMutex.Lock()
+	defer app.httpListenerMutex.Unlock()
+
+	return app.httpListener.Addr() // TODO: Add nil handing
+}
+
+func (app *App) HTTPSAddr() net.Addr {
+	app.httpsListenerMutex.Lock()
+	defer app.httpsListenerMutex.Unlock()
+
+	return app.httpsListener.Addr() // TODO: Add nil handing
+}
+
+func handleHTTPServerError(serverName string, err error) {
+	if err == nil || errors.Is(err, http.ErrServerClosed) {
+		log.Debugf("%s server was stopped without errors", serverName)
+	} else {
+		panic(fmt.Errorf("%s server was stopped with error %w", serverName, err))
+	}
+}
+
 func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	app.shuttingDown.Store(false)
 	app.server = app.createServer(ctx, uncorsConfig)
@@ -117,54 +167,4 @@ func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsCon
 	server.RegisterOnShutdown(globalCtxCancel)
 
 	return server
-}
-
-func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
-	defer app.waitGroup.Done()
-	app.waitGroup.Add(1)
-	log.Print("")
-	log.Info("Restarting server....")
-	log.Print("")
-	err := app.internalShutdown(ctx)
-	if err != nil {
-		panic(err) // TODO: refactor this error handling
-	}
-
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("")
-	app.initServer(ctx, uncorsConfig)
-}
-
-func (app *App) Close() error {
-	return app.server.Close()
-}
-
-func (app *App) Wait() {
-	app.waitGroup.Wait()
-}
-
-func (app *App) Shutdown(ctx context.Context) error {
-	return app.internalShutdown(ctx)
-}
-
-func (app *App) HTTPAddr() net.Addr {
-	app.httpListenerMutex.Lock()
-	defer app.httpListenerMutex.Unlock()
-
-	return app.httpListener.Addr() // TODO: Add nil handing
-}
-
-func (app *App) HTTPSAddr() net.Addr {
-	app.httpsListenerMutex.Lock()
-	defer app.httpsListenerMutex.Unlock()
-
-	return app.httpsListener.Addr() // TODO: Add nil handing
-}
-
-func handleHTTPServerError(serverName string, err error) {
-	if err == nil || errors.Is(err, http.ErrServerClosed) {
-		log.Debugf("%s server was stopped without errors", serverName)
-	} else {
-		panic(fmt.Errorf("%s server was stopped with error %w", serverName, err))
-	}
 }

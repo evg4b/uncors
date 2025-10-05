@@ -98,7 +98,7 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
-				assert.EqualValues(t, testCase.expected, body)
+				assert.Equal(t, testCase.expected, body)
 			})
 		}
 	})
@@ -166,7 +166,7 @@ func TestHandler(t *testing.T) {
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				header := testutils.ReadHeader(t, recorder)
-				assert.EqualValues(t, testCase.expected, header.Get(headers.ContentType))
+				assert.Equal(t, testCase.expected, header.Get(headers.ContentType))
 			})
 		}
 	})
@@ -255,7 +255,7 @@ func TestHandler(t *testing.T) {
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
-				assert.EqualValues(t, testCase.expected, testutils.ReadHeader(t, recorder))
+				assert.Equal(t, testCase.expected, testutils.ReadHeader(t, recorder))
 				assert.Equal(t, http.StatusOK, recorder.Code)
 			})
 		}
@@ -416,7 +416,7 @@ func TestHandler(t *testing.T) {
 
 			waitGroup.Wait()
 
-			assert.Equal(t, "", testutils.ReadBody(t, recorder))
+			assert.Empty(t, testutils.ReadBody(t, recorder))
 			assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 		})
 	})

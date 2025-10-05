@@ -1,4 +1,4 @@
-// nolint: lll
+// nolint: lll, gosmopolitan
 package urlx_test
 
 import (
