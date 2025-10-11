@@ -54,7 +54,7 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 
 	defer helpers.CloseSafe(originalResponse.Body)
 
-	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer)
+	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer, req)
 	if err != nil {
 		return fmt.Errorf("failed to make uncors response: %w", err)
 	}

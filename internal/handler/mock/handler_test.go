@@ -186,6 +186,7 @@ func TestHandler(t *testing.T) {
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
+					headers.AccessControlAllowHeaders:     {"*"},
 					headers.ContentType:                   {textPlain},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
@@ -199,6 +200,7 @@ func TestHandler(t *testing.T) {
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
+					headers.AccessControlAllowHeaders:     {"*"},
 					headers.ContentType:                   {textPlain},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
@@ -215,6 +217,7 @@ func TestHandler(t *testing.T) {
 				expected: map[string][]string{
 					headers.AccessControlAllowOrigin:      {"*"},
 					headers.AccessControlAllowCredentials: {"true"},
+					headers.AccessControlAllowHeaders:     {"*"},
 					headers.ContentType:                   {textPlain},
 					"X-Key":                               {"X-Key-Value"},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
@@ -235,6 +238,7 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowOrigin:      {hosts.Localhost.Host()},
 					headers.AccessControlAllowCredentials: {"false"},
 					headers.ContentType:                   {"none"},
+					headers.AccessControlAllowHeaders:     {"*"},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
 				},
 			},
