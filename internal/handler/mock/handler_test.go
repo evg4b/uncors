@@ -189,6 +189,8 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowHeaders:     {"*"},
 					headers.ContentType:                   {textPlain},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
+					headers.AccessControlExposeHeaders:    {"*"},
+					headers.AccessControlMaxAge:           {"86400"},
 				},
 			},
 			{
@@ -203,6 +205,8 @@ func TestHandler(t *testing.T) {
 					headers.AccessControlAllowHeaders:     {"*"},
 					headers.ContentType:                   {textPlain},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
+					headers.AccessControlExposeHeaders:    {"*"},
+					headers.AccessControlMaxAge:           {"86400"},
 				},
 			},
 			{
@@ -221,6 +225,8 @@ func TestHandler(t *testing.T) {
 					headers.ContentType:                   {textPlain},
 					"X-Key":                               {"X-Key-Value"},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
+					headers.AccessControlExposeHeaders:    {"*"},
+					headers.AccessControlMaxAge:           {"86400"},
 				},
 			},
 			{
@@ -240,6 +246,8 @@ func TestHandler(t *testing.T) {
 					headers.ContentType:                   {"none"},
 					headers.AccessControlAllowHeaders:     {"*"},
 					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
+					headers.AccessControlExposeHeaders:    {"*"},
+					headers.AccessControlMaxAge:           {"86400"},
 				},
 			},
 		}

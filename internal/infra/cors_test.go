@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const expectedAllowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
+
 func TestWriteCorsHeaders(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -25,7 +27,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -38,7 +40,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"http://localhost:4000"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -55,7 +57,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -70,7 +72,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 				"X-DATA":                              []string{hosts.Github.HTTPS()},
@@ -86,40 +88,6 @@ func TestWriteCorsHeaders(t *testing.T) {
 	}
 }
 
-func TestSetHeaderOrDefault(t *testing.T) {
-	t.Run("sets value when not empty", func(t *testing.T) {
-		header := http.Header{}
-		infra.SetHeaderOrDefault(header, "X-Test-Header", "test-value", "default-value")
-		assert.Equal(t, "test-value", header.Get("X-Test-Header"))
-	})
-
-	t.Run("sets default when value is empty", func(t *testing.T) {
-		header := http.Header{}
-		infra.SetHeaderOrDefault(header, "X-Test-Header", "", "default-value")
-		assert.Equal(t, "default-value", header.Get("X-Test-Header"))
-	})
-
-	t.Run("sets default when value is empty string", func(t *testing.T) {
-		header := http.Header{}
-		infra.SetHeaderOrDefault(header, "X-Test-Header", "", "*")
-		assert.Equal(t, "*", header.Get("X-Test-Header"))
-	})
-
-	t.Run("overwrites existing header with value", func(t *testing.T) {
-		header := http.Header{}
-		header.Set("X-Test-Header", "old-value")
-		infra.SetHeaderOrDefault(header, "X-Test-Header", "new-value", "default-value")
-		assert.Equal(t, "new-value", header.Get("X-Test-Header"))
-	})
-
-	t.Run("overwrites existing header with default", func(t *testing.T) {
-		header := http.Header{}
-		header.Set("X-Test-Header", "old-value")
-		infra.SetHeaderOrDefault(header, "X-Test-Header", "", "default-value")
-		assert.Equal(t, "default-value", header.Get("X-Test-Header"))
-	})
-}
-
 func TestWriteCorsHeadersForOptions(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -133,7 +101,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -147,7 +115,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"http://localhost:4000"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -161,7 +129,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"Content-Type, Authorization"},
-				headers.AccessControlAllowMethods:     []string{"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
@@ -192,6 +160,52 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"X-Custom-Header"},
 				headers.AccessControlAllowMethods:     []string{"PUT"},
+				headers.AccessControlMaxAge:           []string{"86400"},
+				headers.AccessControlExposeHeaders:    []string{"*"},
+			},
+		},
+		{
+			name: "Overwrite existing response headers",
+			reqHeader: http.Header{
+				headers.Origin:                     []string{"http://example.com"},
+				headers.AccessControlRequestMethod: []string{"DELETE"},
+			},
+			expectedHeaders: http.Header{
+				headers.AccessControlAllowOrigin:      []string{"http://example.com"},
+				headers.AccessControlAllowCredentials: []string{"true"},
+				headers.AccessControlAllowHeaders:     []string{"*"},
+				headers.AccessControlAllowMethods:     []string{"DELETE"},
+				headers.AccessControlMaxAge:           []string{"86400"},
+				headers.AccessControlExposeHeaders:    []string{"*"},
+			},
+		},
+		{
+			name: "Ignore unrelated request headers",
+			reqHeader: http.Header{
+				headers.Origin:      []string{"http://localhost:3000"},
+				"X-Custom-Header":   []string{"custom-value"},
+				"User-Agent":        []string{"Mozilla/5.0"},
+				headers.ContentType: []string{"application/json"},
+			},
+			expectedHeaders: http.Header{
+				headers.AccessControlAllowOrigin:      []string{"http://localhost:3000"},
+				headers.AccessControlAllowCredentials: []string{"true"},
+				headers.AccessControlAllowHeaders:     []string{"*"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
+				headers.AccessControlMaxAge:           []string{"86400"},
+				headers.AccessControlExposeHeaders:    []string{"*"},
+			},
+		},
+		{
+			name: "Partial request headers with some defaults",
+			reqHeader: http.Header{
+				headers.AccessControlRequestHeaders: []string{"Authorization, Content-Type"},
+			},
+			expectedHeaders: http.Header{
+				headers.AccessControlAllowOrigin:      []string{"*"},
+				headers.AccessControlAllowCredentials: []string{"true"},
+				headers.AccessControlAllowHeaders:     []string{"Authorization, Content-Type"},
+				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},

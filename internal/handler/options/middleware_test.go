@@ -221,7 +221,8 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
-		assert.Equal(t, "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS", recorder.Header().Get(headers.AccessControlAllowMethods))
+		expectedMethods := "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
+		assert.Equal(t, expectedMethods, recorder.Header().Get(headers.AccessControlAllowMethods))
 		assert.Equal(t, "86400", recorder.Header().Get(headers.AccessControlMaxAge))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlExposeHeaders))
 	})
