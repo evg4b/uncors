@@ -35,6 +35,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 			if strings.EqualFold(configuration.Mappings[i].From, key) {
 				configuration.Mappings[i].To = to[index]
 				found = true
+
 				break
 			}
 		}

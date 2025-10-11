@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// portServer holds a server and its listener for a specific port
+// portServer holds a server and its listener for a specific port.
 type portServer struct {
 	server   *http.Server
 	listener net.Listener
@@ -97,6 +97,7 @@ func (app *App) Close() error {
 			firstErr = err
 		}
 	}
+
 	return firstErr
 }
 
@@ -108,7 +109,7 @@ func (app *App) Shutdown(ctx context.Context) error {
 	return app.internalShutdown(ctx)
 }
 
-// GetListenerAddr returns the listener address for a given port
+// GetListenerAddr returns the listener address for a given port.
 func (app *App) GetListenerAddr(port int) net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
@@ -128,7 +129,7 @@ func (app *App) GetListenerAddr(port int) net.Addr {
 	return ps.listener.Addr()
 }
 
-// HTTPAddr returns the first HTTP listener address (for backward compatibility)
+// HTTPAddr returns the first HTTP listener address (for backward compatibility).
 func (app *App) HTTPAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
@@ -138,10 +139,11 @@ func (app *App) HTTPAddr() net.Addr {
 			return ps.listener.Addr()
 		}
 	}
+
 	return nil
 }
 
-// HTTPSAddr returns the first HTTPS listener address (for backward compatibility)
+// HTTPSAddr returns the first HTTPS listener address (for backward compatibility).
 func (app *App) HTTPSAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
@@ -151,6 +153,7 @@ func (app *App) HTTPSAddr() net.Addr {
 			return ps.listener.Addr()
 		}
 	}
+
 	return nil
 }
 
@@ -208,6 +211,7 @@ func (app *App) startListener(ctx context.Context, ps *portServer, uncorsConfig 
 	if ps.scheme == "https" {
 		if !uncorsConfig.IsHTTPSEnabled() {
 			log.Warnf("HTTPS mapping on port %d found but no cert/key configured, skipping", ps.port)
+
 			return
 		}
 		err = app.listenAndServeTLSForPort(ps, addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)

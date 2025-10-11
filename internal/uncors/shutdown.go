@@ -13,6 +13,7 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 	app.serversMutex.RLock()
 	if len(app.servers) == 0 {
 		app.serversMutex.RUnlock()
+
 		return nil
 	}
 	app.serversMutex.RUnlock()

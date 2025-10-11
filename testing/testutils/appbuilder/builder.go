@@ -57,17 +57,19 @@ func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncor
 
 	// Wait for server to be ready with retries
 	maxRetries := 50
-	for i := 0; i < maxRetries; i++ {
+	for range maxRetries {
 		time.Sleep(delay)
 		if addr := a.getAddr(app); addr != nil {
 			var err error
 			a.uri, err = url.Parse(a.prefix() + addr.String())
 			testutils.CheckNoError(a.t, err)
+
 			return app
 		}
 	}
 
 	a.t.Fatal("server failed to start within timeout")
+
 	return app
 }
 
@@ -76,6 +78,7 @@ func (a *Builder) getAddr(app *uncors.App) net.Addr {
 	if a.https {
 		return app.HTTPSAddr()
 	}
+
 	return app.HTTPAddr()
 }
 
