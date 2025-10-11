@@ -63,12 +63,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		panic(err)
 	}
 
-	configuration.Mappings = NormaliseMappings(
-		configuration.Mappings,
-		configuration.HTTPPort,
-		configuration.HTTPSPort,
-		configuration.IsHTTPSEnabled(),
-	)
+	configuration.Mappings = NormaliseMappings(configuration.Mappings)
 
 	return configuration
 }

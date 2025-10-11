@@ -28,10 +28,9 @@ mappings&
 const (
 	fullConfigPath = "/full-config.yaml"
 	fullConfig     = `
-http-port: 8080
 mappings:
-  - http://localhost: https://github.com
-  - from: http://localhost2
+  - http://localhost:8080: https://github.com
+  - from: http://localhost2:8080
     to: https://stackoverflow.com
     mocks:
       - path: /demo
@@ -71,9 +70,8 @@ mappings:
 const (
 	minimalConfigPath = "/minimal-config.yaml"
 	minimalConfig     = `
-http-port: 8080
 mappings:
-  - http://localhost: https://github.com
+  - http://localhost:8080: https://github.com
 `
 )
 
@@ -108,7 +106,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "minimal config is set",
 				args: []string{params.Config, minimalConfigPath},
 				expected: &config.UncorsConfig{
-					HTTPPort: 8080,
+					HTTPPort: 80,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 					},
@@ -123,7 +121,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "read all fields from config file config is set",
 				args: []string{params.Config, fullConfigPath},
 				expected: &config.UncorsConfig{
-					HTTPPort: 8080,
+					HTTPPort: 80,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 						{
@@ -167,60 +165,21 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 			{
-				name: "read all fields from config file config is set",
+				name: "CLI args with default ports",
 				args: []string{
-					params.Config, fullConfigPath,
-					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
-					params.From, hosts.Localhost2.Host(), params.To, hosts.Stackoverflow.Host(),
-					params.From, hosts.Localhost3.Host(), params.To, hosts.APIGithub.Host(),
+					params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host(),
+					params.From, hosts.Localhost2.HTTPPort(9090), params.To, hosts.Stackoverflow.Host(),
 				},
 				expected: &config.UncorsConfig{
-					HTTPPort: 8080,
+					HTTPPort: 80,
 					Mappings: config.Mappings{
-						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
-						{
-							From: hosts.Localhost2.HTTPPort(8080),
-							To:   hosts.Stackoverflow.HTTPS(),
-							Mocks: config.Mocks{
-								{
-									Path:   "/demo",
-									Method: "POST",
-									Queries: map[string]string{
-										"foo": "bar",
-									},
-									Headers: map[string]string{
-										acceptEncoding: "deflate",
-									},
-									Response: config.Response{
-										Code: 201,
-										Headers: map[string]string{
-											acceptEncoding: "deflate",
-										},
-										Raw:  "demo",
-										File: "/demo.txt",
-									},
-								},
-							},
-						},
-						{From: hosts.Localhost1.HTTPPort(8080), To: hosts.Github.Host()},
-						{From: hosts.Localhost1.HTTPSPort(8081), To: hosts.Github.Host()},
-						{From: hosts.Localhost2.HTTPPort(8080), To: hosts.Stackoverflow.Host()},
-						{From: hosts.Localhost2.HTTPSPort(8081), To: hosts.Stackoverflow.Host()},
-						{From: hosts.Localhost3.HTTPPort(8080), To: hosts.APIGithub.Host()},
-						{From: hosts.Localhost3.HTTPSPort(8081), To: hosts.APIGithub.Host()},
+						{From: hosts.Localhost1.HTTP(), To: hosts.Github.Host()},
+						{From: hosts.Localhost2.HTTPPort(9090), To: hosts.Stackoverflow.Host()},
 					},
-					Proxy:     hosts.Localhost.Port(8080),
-					Debug:     true,
-					HTTPSPort: 8081,
-					CertFile:  testconstants.CertFilePath,
-					KeyFile:   testconstants.KeyFilePath,
 					CacheConfig: config.CacheConfig{
-						ExpirationTime: time.Hour,
-						ClearTime:      30 * time.Minute,
-						Methods: []string{
-							http.MethodGet,
-							http.MethodPost,
-						},
+						ExpirationTime: config.DefaultExpirationTime,
+						ClearTime:      config.DefaultClearTime,
+						Methods:        []string{http.MethodGet},
 					},
 				},
 			},

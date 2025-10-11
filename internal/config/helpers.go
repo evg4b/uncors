@@ -10,7 +10,6 @@ import (
 
 	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/mitchellh/mapstructure"
-	"github.com/samber/lo"
 	"github.com/spf13/viper"
 )
 
@@ -31,13 +30,16 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	}
 
 	for index, key := range from {
-		prev, ok := lo.Find(configuration.Mappings, func(item Mapping) bool {
-			return strings.EqualFold(item.From, key)
-		})
+		found := false
+		for i := range configuration.Mappings {
+			if strings.EqualFold(configuration.Mappings[i].From, key) {
+				configuration.Mappings[i].To = to[index]
+				found = true
+				break
+			}
+		}
 
-		if ok {
-			prev.To = to[index]
-		} else {
+		if !found {
 			configuration.Mappings = append(configuration.Mappings, Mapping{
 				From: key,
 				To:   to[index],
@@ -74,7 +76,7 @@ const (
 	httpsScheme = "https"
 )
 
-func NormaliseMappings(mappings Mappings, httpPort int, httpsPort int, useHTTPS bool) Mappings {
+func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := Mappings{}
 	for _, mapping := range mappings {
 		sourceURL, err := urlx.Parse(mapping.From)
@@ -82,27 +84,47 @@ func NormaliseMappings(mappings Mappings, httpPort int, httpsPort int, useHTTPS 
 			panic(fmt.Errorf("failed to parse source url: %w", err))
 		}
 
-		if isApplicableScheme(sourceURL.Scheme, httpScheme) {
-			httpMapping := mapping.Clone()
-			httpMapping.From = assignPortAndScheme(*sourceURL, httpScheme, httpPort)
-			processedMappings = append(processedMappings, httpMapping)
-		}
-
-		if useHTTPS && isApplicableScheme(sourceURL.Scheme, httpsScheme) {
-			httpsMapping := mapping.Clone()
-			httpsMapping.From = assignPortAndScheme(*sourceURL, httpsScheme, httpsPort)
-			processedMappings = append(processedMappings, httpsMapping)
-		}
+		// Normalize the mapping with port from URL
+		normalizedMapping := mapping.Clone()
+		normalizedMapping.From = normalizeURL(*sourceURL)
+		processedMappings = append(processedMappings, normalizedMapping)
 	}
 
 	return processedMappings
 }
 
-func assignPortAndScheme(parsedURL url.URL, scheme string, port int) string {
-	host, _, _ := urlx.SplitHostPort(&parsedURL)
+func normalizeURL(parsedURL url.URL) string {
+	host, portStr, err := urlx.SplitHostPort(&parsedURL)
+	if err != nil {
+		panic(fmt.Errorf("failed to split host and port: %w", err))
+	}
+
+	// Determine the scheme (default to http if not specified)
+	scheme := parsedURL.Scheme
+	if scheme == "" {
+		scheme = httpScheme
+	}
+
+	// Parse port or use default based on scheme
+	var port int
+	if portStr != "" {
+		port, err = strconv.Atoi(portStr)
+		if err != nil {
+			panic(fmt.Errorf("invalid port number: %w", err))
+		}
+	} else {
+		// Use default port based on scheme
+		if scheme == httpsScheme {
+			port = defaultHTTPSPort
+		} else {
+			port = defaultHTTPPort
+		}
+	}
+
 	parsedURL.Scheme = scheme
 
-	if !(isDefaultPort(scheme, port)) {
+	// Only include port in host if it's not the default port for the scheme
+	if !isDefaultPort(scheme, port) {
 		parsedURL.Host = net.JoinHostPort(host, strconv.Itoa(port))
 	} else {
 		parsedURL.Host = host
@@ -114,8 +136,4 @@ func assignPortAndScheme(parsedURL url.URL, scheme string, port int) string {
 func isDefaultPort(scheme string, port int) bool {
 	return strings.EqualFold(httpScheme, scheme) && port == defaultHTTPPort ||
 		strings.EqualFold(httpsScheme, scheme) && port == defaultHTTPSPort
-}
-
-func isApplicableScheme(scheme, expectedScheme string) bool {
-	return strings.EqualFold(scheme, expectedScheme) || len(scheme) == 0
 }
