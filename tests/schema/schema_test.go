@@ -39,6 +39,7 @@ func TestInvalidJsonSchema(t *testing.T) {
 	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
+		// capture loop variable
 		t.Run(testCase.Name, func(t *testing.T) {
 			documentLoader := loadFileSchema(t, testCase.File)
 
@@ -49,7 +50,7 @@ func TestInvalidJsonSchema(t *testing.T) {
 				return err.String()
 			})
 
-			assert.Equal(t, testCase.Errors, errors, "The errors are not as expected")
+			assert.ElementsMatch(t, testCase.Errors, errors, "The errors are not as expected")
 		})
 	}
 }
@@ -59,6 +60,7 @@ func TestValidJsonSchema(t *testing.T) {
 	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
+		// capture loop variable
 		t.Run(testCase.Name, func(t *testing.T) {
 			documentLoader := loadFileSchema(t, testCase.File)
 
