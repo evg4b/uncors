@@ -3,6 +3,7 @@ package appbuilder
 import (
 	"context"
 	"io"
+	"net"
 	"net/url"
 	"testing"
 	"time"
@@ -53,22 +54,32 @@ func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncor
 	a.t.Helper()
 	app := uncors.CreateApp(a.fs, log.New(io.Discard), "x.x.x")
 	go app.Start(ctx, config)
-	time.Sleep(delay)
-	var err error
-	a.uri, err = url.Parse(a.prefix() + a.addr(app))
-	testutils.CheckNoError(a.t, err)
+
+	// Wait for server to be ready with retries
+	maxRetries := 50
+	for range maxRetries {
+		time.Sleep(delay)
+		if addr := a.getAddr(app); addr != nil {
+			var err error
+			a.uri, err = url.Parse(a.prefix() + addr.String())
+			testutils.CheckNoError(a.t, err)
+
+			return app
+		}
+	}
+
+	a.t.Fatal("server failed to start within timeout")
 
 	return app
 }
 
-func (a *Builder) addr(app *uncors.App) string {
+func (a *Builder) getAddr(app *uncors.App) net.Addr {
 	a.t.Helper()
-	addr := app.HTTPAddr().String()
 	if a.https {
-		addr = app.HTTPSAddr().String()
+		return app.HTTPSAddr()
 	}
 
-	return addr
+	return app.HTTPAddr()
 }
 
 func (a *Builder) prefix() string {

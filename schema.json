@@ -919,7 +919,7 @@
               "additionalProperties": false,
               "properties": {
                 "enddate": {
-                  "default": "2025-10-05",
+                  "default": "2025-10-11",
                   "description": "End date time string",
                   "title": "End Date",
                   "type": "string"
@@ -3638,7 +3638,7 @@
               "type": "array"
             },
             "from": {
-              "description": "The local host with protocol for the resource from which proxying will take place",
+              "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified.",
               "type": "string"
             },
             "mocks": {
@@ -3669,7 +3669,7 @@
               "type": "array"
             },
             "to": {
-              "description": "The target host and protocol for the resource that needs to be proxy",
+              "description": "The target host and protocol for the resource that needs to be proxied",
               "type": "string"
             }
           },
@@ -3880,28 +3880,12 @@
       "description": "Show debug output",
       "type": "boolean"
     },
-    "http-port": {
-      "default": 80,
-      "description": "Local HTTP listened port",
-      "format": "int32",
-      "maximum": 65535,
-      "minimum": 1,
-      "type": "integer"
-    },
-    "https-port": {
-      "default": 443,
-      "description": "Local HTTPS listened port",
-      "format": "int32",
-      "maximum": 65535,
-      "minimum": 1,
-      "type": "integer"
-    },
     "key-file": {
       "description": "Path to matching for certificate private key",
       "type": "string"
     },
     "mappings": {
-      "description": "A list of mappings that describe how to forward requests.",
+      "description": "A list of mappings that describe how to forward requests. Ports are specified in the 'from' URL (e.g., http://localhost:8080).",
       "items": {
         "$ref": "#/definitions/Mapping"
       },

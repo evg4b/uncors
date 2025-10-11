@@ -1,5 +1,5 @@
 mappings:
-  - from: http://localhost
+  - from: http://localhost:8080
     to: https://github.com
     mocks:
       - path: /path-to-mock

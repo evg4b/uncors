@@ -1,0 +1,4 @@
+https-port: 8443
+mappings:
+  - from: https://localhost
+    to: https://github.com

@@ -1,0 +1,4 @@
+http-port: 8080
+mappings:
+  - from: http://localhost
+    to: https://github.com

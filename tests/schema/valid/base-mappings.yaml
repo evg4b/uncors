@@ -2,14 +2,12 @@ debug: false
 proxy: http://localhost:8080
 key-file: /path/to/key.pem
 cert-file: /path/to/cert.pem
-http-port: 4080
-https-port: 4443
 cache-config:
   clear-time: 10m
   expiration-time: 1h
   methods: [GET, POST]
 mappings:
-  - http://localhost: https://github.com
+  - http://localhost:4080: https://github.com
   - from: http://demo:3000
     to: https://github.com:3000
   - from: http://localhost:3000

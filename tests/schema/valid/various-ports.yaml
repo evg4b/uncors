@@ -1,0 +1,8 @@
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+  - from: http://demo:8080
+    to: https://example.com:3000
+  - from: https://api:8443
+    to: https://backend.com:9000
+  - http://short:4000: https://target.com
