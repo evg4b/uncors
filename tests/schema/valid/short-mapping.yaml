@@ -1,3 +1,2 @@
-http-port: 3000
 mappings:
-  - http://localhost: https://github.com
+  - http://localhost:3000: https://github.com
