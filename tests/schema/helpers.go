@@ -47,7 +47,16 @@ func readErrors(t *testing.T, filePath string) []string {
 	content, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 
-	return strings.Split(string(content), "\n")
+	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+	// Filter out empty lines
+	result := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if line != "" {
+			result = append(result, line)
+		}
+	}
+
+	return result
 }
 
 func LoadTestCases(t *testing.T, parts ...string) []TestCase {
