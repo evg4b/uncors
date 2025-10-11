@@ -9,12 +9,15 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMiddleware(t *testing.T) {
+	testAllowedHeaders := "Content-Type, Authorization"
+
 	loggerMock := log.New(io.Discard)
 
 	t.Run("for OPTIONS request", func(t *testing.T) {
@@ -66,14 +69,14 @@ func TestMiddleware(t *testing.T) {
 				name: "with requested headers",
 				args: args{
 					requestHeaders: http.Header{
-						headers.AccessControlRequestHeaders: []string{"Content-Type, Authorization"},
+						headers.AccessControlRequestHeaders: []string{testAllowedHeaders},
 					},
 				},
 				expected: expected{
 					headers: http.Header{
 						headers.AccessControlAllowOrigin:      defaultControlAllowOrigin,
 						headers.AccessControlAllowCredentials: defaultControlAllowCredentials,
-						headers.AccessControlAllowHeaders:     []string{"Content-Type, Authorization"},
+						headers.AccessControlAllowHeaders:     []string{testAllowedHeaders},
 						headers.AccessControlAllowMethods:     defaultControlAllowMethods,
 						headers.AccessControlMaxAge:           defaultControlMaxAge,
 						headers.AccessControlExposeHeaders:    defaultControlExposeHeaders,
@@ -104,7 +107,7 @@ func TestMiddleware(t *testing.T) {
 				name: "with requested headers and method",
 				args: args{
 					requestHeaders: http.Header{
-						headers.AccessControlRequestHeaders: []string{"Content-Type, Authorization"},
+						headers.AccessControlRequestHeaders: []string{testAllowedHeaders},
 						headers.AccessControlRequestMethod:  []string{"PUT"},
 					},
 				},
@@ -112,7 +115,7 @@ func TestMiddleware(t *testing.T) {
 					headers: http.Header{
 						headers.AccessControlAllowOrigin:      defaultControlAllowOrigin,
 						headers.AccessControlAllowCredentials: defaultControlAllowCredentials,
-						headers.AccessControlAllowHeaders:     []string{"Content-Type, Authorization"},
+						headers.AccessControlAllowHeaders:     []string{testAllowedHeaders},
 						headers.AccessControlAllowMethods:     []string{"PUT"},
 						headers.AccessControlMaxAge:           defaultControlMaxAge,
 						headers.AccessControlExposeHeaders:    defaultControlExposeHeaders,
@@ -145,12 +148,12 @@ func TestMiddleware(t *testing.T) {
 				args: args{
 					headers: map[string]string{
 						headers.AcceptLanguage:           "en",
-						headers.AccessControlAllowOrigin: "https://example.com",
+						headers.AccessControlAllowOrigin: hosts.Example.HTTPS(),
 					},
 				},
 				expected: expected{
 					headers: http.Header{
-						headers.AccessControlAllowOrigin:      []string{"https://example.com"},
+						headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTPS()},
 						headers.AccessControlAllowCredentials: defaultControlAllowCredentials,
 						headers.AccessControlAllowHeaders:     defaultControlAllowHeaders,
 						headers.AccessControlAllowMethods:     defaultControlAllowMethods,
@@ -202,7 +205,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("for OPTIONS request with origin", func(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
 
-		testOrigin := "https://example.com"
+		testOrigin := hosts.Example.HTTPS()
 		middleware := options.NewMiddleware(
 			options.WithLogger(loggerMock),
 		)

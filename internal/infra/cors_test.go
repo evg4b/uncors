@@ -35,9 +35,9 @@ func TestWriteCorsHeaders(t *testing.T) {
 		{
 			name:   "Empty headers with origin",
 			header: http.Header{},
-			origin: "http://localhost:4000",
+			origin: hosts.Localhost.HTTPPort(4000),
 			expected: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"http://localhost:4000"},
+				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000)},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
@@ -89,6 +89,9 @@ func TestWriteCorsHeaders(t *testing.T) {
 }
 
 func TestWriteCorsHeadersForOptions(t *testing.T) {
+	testAllowHeaders := "Content-Type, Authorization"
+	xCustomHeader := "X-Custom-Header"
+
 	tests := []struct {
 		name            string
 		reqHeader       http.Header
@@ -109,10 +112,10 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "With Origin header",
 			reqHeader: http.Header{
-				headers.Origin: []string{"http://localhost:4000"},
+				headers.Origin: []string{hosts.Localhost.HTTPPort(4000)},
 			},
 			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"http://localhost:4000"},
+				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000)},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
@@ -123,12 +126,12 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "With AccessControlRequestHeaders",
 			reqHeader: http.Header{
-				headers.AccessControlRequestHeaders: []string{"Content-Type, Authorization"},
+				headers.AccessControlRequestHeaders: []string{testAllowHeaders},
 			},
 			expectedHeaders: http.Header{
 				headers.AccessControlAllowOrigin:      []string{"*"},
 				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"Content-Type, Authorization"},
+				headers.AccessControlAllowHeaders:     []string{testAllowHeaders},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
@@ -152,13 +155,13 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 			name: "With all request headers",
 			reqHeader: http.Header{
 				headers.Origin:                      []string{hosts.Github.HTTPS()},
-				headers.AccessControlRequestHeaders: []string{"X-Custom-Header"},
+				headers.AccessControlRequestHeaders: []string{xCustomHeader},
 				headers.AccessControlRequestMethod:  []string{"PUT"},
 			},
 			expectedHeaders: http.Header{
 				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS()},
 				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"X-Custom-Header"},
+				headers.AccessControlAllowHeaders:     []string{xCustomHeader},
 				headers.AccessControlAllowMethods:     []string{"PUT"},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
@@ -183,7 +186,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 			name: "Ignore unrelated request headers",
 			reqHeader: http.Header{
 				headers.Origin:      []string{"http://localhost:3000"},
-				"X-Custom-Header":   []string{"custom-value"},
+				xCustomHeader:       []string{"custom-value"},
 				"User-Agent":        []string{"Mozilla/5.0"},
 				headers.ContentType: []string{"application/json"},
 			},
