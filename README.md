@@ -107,7 +107,7 @@ Or find more installation methods in [uncors wiki](https://github.com/evg4b/unco
 The following command can be used to start the UNCORS proxy server:
 
 ```
-uncors --from 'http://localhost' --to 'https://github.com' --http-port 8080
+uncors --from 'http://localhost:8080' --to 'https://github.com'
 ```
 
 More information about configuration and usage you can find on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
