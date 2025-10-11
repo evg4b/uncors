@@ -14,6 +14,7 @@ func (h *Handler) makeUncorsResponse(
 	original *http.Response,
 	target http.ResponseWriter,
 	replacer *urlreplacer.Replacer,
+	req *http.Request,
 ) error {
 	copyCookiesToSource(original, replacer, target)
 
@@ -27,7 +28,8 @@ func (h *Handler) makeUncorsResponse(
 		return err
 	}
 
-	infra.WriteCorsHeaders(target.Header())
+	origin := req.Header.Get(headers.Origin)
+	infra.WriteCorsHeaders(target.Header(), origin)
 
 	return copyResponseData(target, original)
 }

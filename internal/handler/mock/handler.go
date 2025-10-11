@@ -47,7 +47,8 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 	header := writer.Header()
 	response := h.response
 
-	infra.WriteCorsHeaders(header)
+	origin := request.Header.Get("Origin")
+	infra.WriteCorsHeaders(header, origin)
 	for key, value := range response.Headers {
 		header.Set(key, value)
 	}
