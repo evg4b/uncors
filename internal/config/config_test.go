@@ -312,33 +312,22 @@ func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
 		{
 			name: "true when https configured",
 			config: &config.UncorsConfig{
-				HTTPSPort: 443,
-				CertFile:  testconstants.CertFilePath,
-				KeyFile:   testconstants.KeyFilePath,
+				CertFile: testconstants.CertFilePath,
+				KeyFile:  testconstants.KeyFilePath,
 			},
 			expected: true,
 		},
 		{
-			name: "false when https port is not configured",
-			config: &config.UncorsConfig{
-				CertFile: testconstants.CertFilePath,
-				KeyFile:  testconstants.KeyFilePath,
-			},
-			expected: false,
-		},
-		{
 			name: "false when cert file is not configured",
 			config: &config.UncorsConfig{
-				HTTPSPort: 443,
-				KeyFile:   testconstants.KeyFilePath,
+				KeyFile: testconstants.KeyFilePath,
 			},
 			expected: false,
 		},
 		{
 			name: "false when key file is not configured",
 			config: &config.UncorsConfig{
-				HTTPSPort: 443,
-				CertFile:  testconstants.CertFilePath,
+				CertFile: testconstants.CertFilePath,
 			},
 			expected: false,
 		},
