@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,20 +22,24 @@ import (
 	"golang.org/x/net/context"
 )
 
+// portServer holds a server and its listener for a specific port
+type portServer struct {
+	server   *http.Server
+	listener net.Listener
+	port     int
+	scheme   string
+	mutex    *sync.Mutex
+}
+
 type App struct {
-	fs                 afero.Fs
-	version            string
-	waitGroup          *sync.WaitGroup
-	httpMutex          *sync.Mutex
-	httpsMutex         *sync.Mutex
-	server             *http.Server
-	shuttingDown       *atomic.Bool
-	httpListenerMutex  *sync.Mutex
-	httpListener       net.Listener
-	httpsListenerMutex *sync.Mutex
-	httpsListener      net.Listener
-	cache              appCache
-	logger             *log.Logger
+	fs           afero.Fs
+	version      string
+	waitGroup    *sync.WaitGroup
+	servers      map[int]*portServer // map port -> server
+	serversMutex *sync.RWMutex
+	shuttingDown *atomic.Bool
+	cache        appCache
+	logger       *log.Logger
 }
 
 const (
@@ -45,15 +50,13 @@ const (
 
 func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 	return &App{
-		fs:                 fs,
-		version:            version,
-		waitGroup:          &sync.WaitGroup{},
-		httpMutex:          &sync.Mutex{},
-		httpsMutex:         &sync.Mutex{},
-		shuttingDown:       &atomic.Bool{},
-		httpListenerMutex:  &sync.Mutex{},
-		httpsListenerMutex: &sync.Mutex{},
-		logger:             logger,
+		fs:           fs,
+		version:      version,
+		waitGroup:    &sync.WaitGroup{},
+		servers:      make(map[int]*portServer),
+		serversMutex: &sync.RWMutex{},
+		shuttingDown: &atomic.Bool{},
+		logger:       logger,
 	}
 }
 
@@ -85,7 +88,16 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 }
 
 func (app *App) Close() error {
-	return app.server.Close()
+	app.serversMutex.RLock()
+	defer app.serversMutex.RUnlock()
+
+	var firstErr error
+	for _, ps := range app.servers {
+		if err := ps.server.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
 }
 
 func (app *App) Wait() {
@@ -96,26 +108,50 @@ func (app *App) Shutdown(ctx context.Context) error {
 	return app.internalShutdown(ctx)
 }
 
-func (app *App) HTTPAddr() net.Addr {
-	app.httpListenerMutex.Lock()
-	defer app.httpListenerMutex.Unlock()
+// GetListenerAddr returns the listener address for a given port
+func (app *App) GetListenerAddr(port int) net.Addr {
+	app.serversMutex.RLock()
+	defer app.serversMutex.RUnlock()
 
-	if app.httpListener == nil {
+	ps, exists := app.servers[port]
+	if !exists || ps == nil {
 		return nil
 	}
 
-	return app.httpListener.Addr()
+	ps.mutex.Lock()
+	defer ps.mutex.Unlock()
+
+	if ps.listener == nil {
+		return nil
+	}
+
+	return ps.listener.Addr()
 }
 
-func (app *App) HTTPSAddr() net.Addr {
-	app.httpsListenerMutex.Lock()
-	defer app.httpsListenerMutex.Unlock()
+// HTTPAddr returns the first HTTP listener address (for backward compatibility)
+func (app *App) HTTPAddr() net.Addr {
+	app.serversMutex.RLock()
+	defer app.serversMutex.RUnlock()
 
-	if app.httpsListener == nil {
-		return nil
+	for _, ps := range app.servers {
+		if ps.scheme == "http" && ps.listener != nil {
+			return ps.listener.Addr()
+		}
 	}
+	return nil
+}
 
-	return app.httpsListener.Addr()
+// HTTPSAddr returns the first HTTPS listener address (for backward compatibility)
+func (app *App) HTTPSAddr() net.Addr {
+	app.serversMutex.RLock()
+	defer app.serversMutex.RUnlock()
+
+	for _, ps := range app.servers {
+		if ps.scheme == "https" && ps.listener != nil {
+			return ps.listener.Addr()
+		}
+	}
+	return nil
 }
 
 func handleHTTPServerError(serverName string, err error) {
@@ -128,51 +164,75 @@ func handleHTTPServerError(serverName string, err error) {
 
 func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	app.shuttingDown.Store(false)
-	app.server = app.createServer(ctx, uncorsConfig)
 
-	app.waitGroup.Add(1)
-	go func() {
-		defer app.waitGroup.Done()
-		defer app.httpMutex.Unlock()
+	// Group mappings by port
+	portGroups := uncorsConfig.Mappings.GroupByPort()
 
-		app.httpMutex.Lock()
-		log.Debugf("Starting http server on port %d", uncorsConfig.HTTPPort)
-		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPPort))
-		err := app.listenAndServe(addr)
-		handleHTTPServerError("HTTP", err)
-	}()
+	app.serversMutex.Lock()
+	app.servers = make(map[int]*portServer)
+	app.serversMutex.Unlock()
 
-	if uncorsConfig.IsHTTPSEnabled() {
-		log.Debug("Found cert file and key file. Https server will be started")
-		addr := net.JoinHostPort(baseAddress, strconv.Itoa(uncorsConfig.HTTPSPort))
+	// Create a server for each port group
+	for _, group := range portGroups {
+		ps := &portServer{
+			port:   group.Port,
+			scheme: group.Scheme,
+			mutex:  &sync.Mutex{},
+		}
+
+		// Create server with handler for this port's mappings
+		ps.server = app.createServerForPort(ctx, uncorsConfig, group.Mappings)
+
+		app.serversMutex.Lock()
+		app.servers[group.Port] = ps
+		app.serversMutex.Unlock()
+
+		// Start listener for this port
 		app.waitGroup.Add(1)
-		go func(app *App) {
-			defer app.waitGroup.Done()
-			defer app.httpsMutex.Unlock()
-
-			app.httpsMutex.Lock()
-			log.Debugf("Starting https server on port %d", uncorsConfig.HTTPSPort)
-			err := app.listenAndServeTLS(addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
-			handleHTTPServerError("HTTPS", err)
-		}(app)
+		go app.startListener(ctx, ps, uncorsConfig)
 	}
 }
 
-func (app *App) createServer(ctx context.Context, uncorsConfig *config.UncorsConfig) *http.Server {
-	globalHandler := app.buildHandler(uncorsConfig)
-	globalCtx, globalCtxCancel := context.WithCancel(ctx)
+func (app *App) startListener(ctx context.Context, ps *portServer, uncorsConfig *config.UncorsConfig) {
+	defer app.waitGroup.Done()
+	defer ps.mutex.Unlock()
+
+	ps.mutex.Lock()
+
+	addr := net.JoinHostPort(baseAddress, strconv.Itoa(ps.port))
+	serverName := fmt.Sprintf("%s:%d", strings.ToUpper(ps.scheme), ps.port)
+
+	log.Debugf("Starting %s server on port %d", ps.scheme, ps.port)
+
+	var err error
+	if ps.scheme == "https" {
+		if !uncorsConfig.IsHTTPSEnabled() {
+			log.Warnf("HTTPS mapping on port %d found but no cert/key configured, skipping", ps.port)
+			return
+		}
+		err = app.listenAndServeTLSForPort(ps, addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
+	} else {
+		err = app.listenAndServeForPort(ps, addr)
+	}
+
+	handleHTTPServerError(serverName, err)
+}
+
+func (app *App) createServerForPort(ctx context.Context, uncorsConfig *config.UncorsConfig, mappings config.Mappings) *http.Server {
+	portHandler := app.buildHandlerForMappings(uncorsConfig, mappings)
+	portCtx, portCtxCancel := context.WithCancel(ctx)
 	server := &http.Server{
 		BaseContext: func(_ net.Listener) context.Context {
-			return globalCtx
+			return portCtx
 		},
 		ReadHeaderTimeout: readHeaderTimeout,
 		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			helpers.NormaliseRequest(request)
-			globalHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
+			portHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
 		ErrorLog: log.StandardLog(),
 	}
-	server.RegisterOnShutdown(globalCtxCancel)
+	server.RegisterOnShutdown(portCtxCancel)
 
 	return server
 }
