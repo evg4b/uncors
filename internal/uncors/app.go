@@ -92,8 +92,8 @@ func (app *App) Close() error {
 	defer app.serversMutex.RUnlock()
 
 	var firstErr error
-	for _, ps := range app.servers {
-		if err := ps.server.Close(); err != nil && firstErr == nil {
+	for _, portSrv := range app.servers {
+		if err := portSrv.server.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
@@ -114,19 +114,19 @@ func (app *App) GetListenerAddr(port int) net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
 
-	ps, exists := app.servers[port]
-	if !exists || ps == nil {
+	portSrv, exists := app.servers[port]
+	if !exists || portSrv == nil {
 		return nil
 	}
 
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
+	portSrv.mutex.Lock()
+	defer portSrv.mutex.Unlock()
 
-	if ps.listener == nil {
+	if portSrv.listener == nil {
 		return nil
 	}
 
-	return ps.listener.Addr()
+	return portSrv.listener.Addr()
 }
 
 // HTTPAddr returns the first HTTP listener address (for backward compatibility).
@@ -134,9 +134,9 @@ func (app *App) HTTPAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
 
-	for _, ps := range app.servers {
-		if ps.scheme == "http" && ps.listener != nil {
-			return ps.listener.Addr()
+	for _, portSrv := range app.servers {
+		if portSrv.scheme == "http" && portSrv.listener != nil {
+			return portSrv.listener.Addr()
 		}
 	}
 
@@ -148,9 +148,9 @@ func (app *App) HTTPSAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
 
-	for _, ps := range app.servers {
-		if ps.scheme == "https" && ps.listener != nil {
-			return ps.listener.Addr()
+	for _, portSrv := range app.servers {
+		if portSrv.scheme == "https" && portSrv.listener != nil {
+			return portSrv.listener.Addr()
 		}
 	}
 
@@ -177,52 +177,56 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 	// Create a server for each port group
 	for _, group := range portGroups {
-		ps := &portServer{
+		portSrv := &portServer{
 			port:   group.Port,
 			scheme: group.Scheme,
 			mutex:  &sync.Mutex{},
 		}
 
 		// Create server with handler for this port's mappings
-		ps.server = app.createServerForPort(ctx, uncorsConfig, group.Mappings)
+		portSrv.server = app.createServerForPort(ctx, uncorsConfig, group.Mappings)
 
 		app.serversMutex.Lock()
-		app.servers[group.Port] = ps
+		app.servers[group.Port] = portSrv
 		app.serversMutex.Unlock()
 
 		// Start listener for this port
 		app.waitGroup.Add(1)
-		go app.startListener(ctx, ps, uncorsConfig)
+		go app.startListener(ctx, portSrv, uncorsConfig)
 	}
 }
 
-func (app *App) startListener(ctx context.Context, ps *portServer, uncorsConfig *config.UncorsConfig) {
+func (app *App) startListener(_ context.Context, portSrv *portServer, uncorsConfig *config.UncorsConfig) {
 	defer app.waitGroup.Done()
-	defer ps.mutex.Unlock()
+	defer portSrv.mutex.Unlock()
 
-	ps.mutex.Lock()
+	portSrv.mutex.Lock()
 
-	addr := net.JoinHostPort(baseAddress, strconv.Itoa(ps.port))
-	serverName := fmt.Sprintf("%s:%d", strings.ToUpper(ps.scheme), ps.port)
+	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
+	serverName := fmt.Sprintf("%s:%d", strings.ToUpper(portSrv.scheme), portSrv.port)
 
-	log.Debugf("Starting %s server on port %d", ps.scheme, ps.port)
+	log.Debugf("Starting %s server on port %d", portSrv.scheme, portSrv.port)
 
 	var err error
-	if ps.scheme == "https" {
+	if portSrv.scheme == "https" {
 		if !uncorsConfig.IsHTTPSEnabled() {
-			log.Warnf("HTTPS mapping on port %d found but no cert/key configured, skipping", ps.port)
+			log.Warnf("HTTPS mapping on port %d found but no cert/key configured, skipping", portSrv.port)
 
 			return
 		}
-		err = app.listenAndServeTLSForPort(ps, addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
+		err = app.listenAndServeTLSForPort(portSrv, addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
 	} else {
-		err = app.listenAndServeForPort(ps, addr)
+		err = app.listenAndServeForPort(portSrv, addr)
 	}
 
 	handleHTTPServerError(serverName, err)
 }
 
-func (app *App) createServerForPort(ctx context.Context, uncorsConfig *config.UncorsConfig, mappings config.Mappings) *http.Server {
+func (app *App) createServerForPort(
+	ctx context.Context,
+	uncorsConfig *config.UncorsConfig,
+	mappings config.Mappings,
+) *http.Server {
 	portHandler := app.buildHandlerForMappings(uncorsConfig, mappings)
 	portCtx, portCtxCancel := context.WithCancel(ctx)
 	server := &http.Server{

@@ -92,7 +92,7 @@ func (m Mappings) GroupByPort() PortGroups {
 		grouped[key] = append(grouped[key], mapping)
 	}
 
-	var result PortGroups
+	result := make(PortGroups, 0, len(grouped))
 	for key, mappings := range grouped {
 		result = append(result, PortGroup{
 			Port:     key.port,

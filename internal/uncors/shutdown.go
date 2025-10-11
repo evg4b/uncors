@@ -25,18 +25,18 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 	log.Debug("uncors: shutting down all servers ...")
 
 	// Shutdown all servers in parallel
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
 	errChan := make(chan error, len(app.servers))
 
 	app.serversMutex.RLock()
-	for port, ps := range app.servers {
-		if ps == nil || ps.server == nil {
+	for port, portSrv := range app.servers {
+		if portSrv == nil || portSrv.server == nil {
 			continue
 		}
 
-		wg.Add(1)
+		waitGroup.Add(1)
 		go func(port int, server *http.Server) {
-			defer wg.Done()
+			defer waitGroup.Done()
 
 			log.Debugf("Shutting down server on port %d", port)
 			if err := server.Shutdown(ctx); err != nil {
@@ -47,11 +47,11 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 				}
 				errChan <- err
 			}
-		}(port, ps.server)
+		}(port, portSrv.server)
 	}
 	app.serversMutex.RUnlock()
 
-	wg.Wait()
+	waitGroup.Wait()
 	close(errChan)
 
 	// Return first error if any

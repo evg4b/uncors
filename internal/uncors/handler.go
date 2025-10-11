@@ -25,7 +25,10 @@ type appCache struct {
 	mockHandlerFactory   handler.RequestHandlerOption
 }
 
-func (app *App) buildHandlerForMappings(uncorsConfig *config.UncorsConfig, mappings config.Mappings) *handler.RequestHandler {
+func (app *App) buildHandlerForMappings(
+	uncorsConfig *config.UncorsConfig,
+	mappings config.Mappings,
+) *handler.RequestHandler {
 	portHandler := handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(NewMockLogger(app.logger)),
