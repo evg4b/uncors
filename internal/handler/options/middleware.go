@@ -6,8 +6,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/go-http-utils/headers"
 )
 
 type Middleware struct {
@@ -30,29 +30,8 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	})
 }
 
-const (
-	defaultAllowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
-	defaultMaxAge       = "86400" // 24 hours in seconds
-)
-
-// SetHeaderOrDefault sets a header to the provided value if not empty, otherwise sets it to the default value.
-func SetHeaderOrDefault(header http.Header, key, value, defaultValue string) {
-	if value != "" {
-		header.Set(key, value)
-	} else {
-		header.Set(key, defaultValue)
-	}
-}
-
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
-	header := resp.Header()
-
-	SetHeaderOrDefault(header, headers.AccessControlAllowOrigin, req.Header.Get(headers.Origin), "*")
-	header.Set(headers.AccessControlAllowCredentials, "true")
-	SetHeaderOrDefault(header, headers.AccessControlAllowHeaders, req.Header.Get(headers.AccessControlRequestHeaders), "*")
-	SetHeaderOrDefault(header, headers.AccessControlAllowMethods, req.Header.Get(headers.AccessControlRequestMethod), defaultAllowMethods)
-	header.Set(headers.AccessControlMaxAge, defaultMaxAge)
-	header.Set(headers.AccessControlExposeHeaders, "*")
+	infra.WriteCorsHeadersForOptions(resp.Header(), req.Header)
 
 	if len(m.headers) != 0 {
 		for key, value := range m.headers {
