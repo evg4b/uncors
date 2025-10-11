@@ -18,7 +18,9 @@ func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
 		addr:  addr,
 		serve: portSrv.server.Serve,
 		setListener: func(l net.Listener) {
+			portSrv.mutex.Lock()
 			portSrv.listener = l
+			portSrv.mutex.Unlock()
 		},
 	})
 }
@@ -30,7 +32,9 @@ func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, certF
 			return portSrv.server.ServeTLS(l, certFile, keyFile)
 		},
 		setListener: func(l net.Listener) {
+			portSrv.mutex.Lock()
 			portSrv.listener = l
+			portSrv.mutex.Unlock()
 		},
 	})
 }

@@ -135,8 +135,14 @@ func (app *App) HTTPAddr() net.Addr {
 	defer app.serversMutex.RUnlock()
 
 	for _, portSrv := range app.servers {
-		if portSrv.scheme == "http" && portSrv.listener != nil {
-			return portSrv.listener.Addr()
+		if portSrv.scheme == "http" {
+			portSrv.mutex.Lock()
+			listener := portSrv.listener
+			portSrv.mutex.Unlock()
+
+			if listener != nil {
+				return listener.Addr()
+			}
 		}
 	}
 
@@ -149,8 +155,14 @@ func (app *App) HTTPSAddr() net.Addr {
 	defer app.serversMutex.RUnlock()
 
 	for _, portSrv := range app.servers {
-		if portSrv.scheme == "https" && portSrv.listener != nil {
-			return portSrv.listener.Addr()
+		if portSrv.scheme == "https" {
+			portSrv.mutex.Lock()
+			listener := portSrv.listener
+			portSrv.mutex.Unlock()
+
+			if listener != nil {
+				return listener.Addr()
+			}
 		}
 	}
 
@@ -198,9 +210,6 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 func (app *App) startListener(_ context.Context, portSrv *portServer, uncorsConfig *config.UncorsConfig) {
 	defer app.waitGroup.Done()
-	defer portSrv.mutex.Unlock()
-
-	portSrv.mutex.Lock()
 
 	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
 	serverName := fmt.Sprintf("%s:%d", strings.ToUpper(portSrv.scheme), portSrv.port)

@@ -49,7 +49,7 @@ func TestInvalidJsonSchema(t *testing.T) {
 				return err.String()
 			})
 
-			assert.Equal(t, testCase.Errors, errors, "The errors are not as expected")
+			assert.ElementsMatch(t, testCase.Errors, errors, "The errors are not as expected")
 		})
 	}
 }
