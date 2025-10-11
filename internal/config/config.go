@@ -23,7 +23,7 @@ type UncorsConfig struct {
 }
 
 func (c *UncorsConfig) IsHTTPSEnabled() bool {
-	return len(c.CertFile) > 0 && len(c.KeyFile) > 0 && c.HTTPSPort > 0
+	return len(c.CertFile) > 0 && len(c.KeyFile) > 0
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
@@ -63,12 +63,7 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 		panic(err)
 	}
 
-	configuration.Mappings = NormaliseMappings(
-		configuration.Mappings,
-		configuration.HTTPPort,
-		configuration.HTTPSPort,
-		configuration.IsHTTPSEnabled(),
-	)
+	configuration.Mappings = NormaliseMappings(configuration.Mappings)
 
 	return configuration
 }

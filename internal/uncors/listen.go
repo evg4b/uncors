@@ -13,33 +13,33 @@ type serveConfig struct {
 	setListener func(l net.Listener)
 }
 
-func (app *App) listenAndServe(addr string) error {
-	return app.internalServe(&serveConfig{
+func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
+	return app.internalServeForPort(portSrv, &serveConfig{
 		addr:  addr,
-		serve: app.server.Serve,
+		serve: portSrv.server.Serve,
 		setListener: func(l net.Listener) {
-			app.httpListenerMutex.Lock()
-			defer app.httpListenerMutex.Unlock()
-			app.httpListener = l
+			portSrv.mutex.Lock()
+			portSrv.listener = l
+			portSrv.mutex.Unlock()
 		},
 	})
 }
 
-func (app *App) listenAndServeTLS(addr string, certFile, keyFile string) error {
-	return app.internalServe(&serveConfig{
+func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, certFile, keyFile string) error {
+	return app.internalServeForPort(portSrv, &serveConfig{
 		addr: addr,
 		serve: func(l net.Listener) error {
-			return app.server.ServeTLS(l, certFile, keyFile)
+			return portSrv.server.ServeTLS(l, certFile, keyFile)
 		},
 		setListener: func(l net.Listener) {
-			app.httpsListenerMutex.Lock()
-			defer app.httpsListenerMutex.Unlock()
-			app.httpsListener = l
+			portSrv.mutex.Lock()
+			portSrv.listener = l
+			portSrv.mutex.Unlock()
 		},
 	})
 }
 
-func (app *App) internalServe(config *serveConfig) error {
+func (app *App) internalServeForPort(_ *portServer, config *serveConfig) error {
 	if app.shuttingDown.Load() {
 		return http.ErrServerClosed
 	}

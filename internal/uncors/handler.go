@@ -25,9 +25,12 @@ type appCache struct {
 	mockHandlerFactory   handler.RequestHandlerOption
 }
 
-func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.RequestHandler {
-	globalHandler := handler.NewUncorsRequestHandler(
-		handler.WithMappings(uncorsConfig.Mappings),
+func (app *App) buildHandlerForMappings(
+	uncorsConfig *config.UncorsConfig,
+	mappings config.Mappings,
+) *handler.RequestHandler {
+	portHandler := handler.NewUncorsRequestHandler(
+		handler.WithMappings(mappings),
 		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
@@ -52,7 +55,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 			)
 		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
-			factory := urlreplacer.NewURLReplacerFactory(uncorsConfig.Mappings)
+			factory := urlreplacer.NewURLReplacerFactory(mappings)
 			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
 
 			return proxy.NewProxyHandler(
@@ -66,7 +69,7 @@ func (app *App) buildHandler(uncorsConfig *config.UncorsConfig) *handler.Request
 		app.getMockHandlerFactory(),
 	)
 
-	return globalHandler
+	return portHandler
 }
 
 func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {

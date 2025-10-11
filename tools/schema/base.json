@@ -8,27 +8,11 @@
   "properties": {
     "mappings": {
       "type": "array",
-      "description": "A list of mappings that describe how to forward requests.",
+      "description": "A list of mappings that describe how to forward requests. Ports are specified in the 'from' URL (e.g., http://localhost:8080).",
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/Mapping"
       }
-    },
-    "http-port": {
-      "type": "integer",
-      "description": "Local HTTP listened port",
-      "default": 80,
-      "format": "int32",
-      "minimum": 1,
-      "maximum": 65535
-    },
-    "https-port": {
-      "type": "integer",
-      "description": "Local HTTPS listened port",
-      "default": 443,
-      "format": "int32",
-      "minimum": 1,
-      "maximum": 65535
     },
     "cert-file": {
       "type": "string",

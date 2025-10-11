@@ -1,6 +1,5 @@
-http-port: 3000
 mappings:
-  - from: http://localhost
+  - from: http://localhost:3000
     to: https://github.com
     mocks:
       - path: /demo1

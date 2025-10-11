@@ -11,6 +11,17 @@
 
 UNCORS is a powerful development tool designed to simplify HTTP/HTTPS proxying and CORS header management during local development. It provides a comprehensive suite of features including HTTPS support, wildcard host mapping, request/response mocking, static file serving, response caching, and full proxy functionality. UNCORS streamlines your development workflow by eliminating common CORS-related obstacles without requiring backend modifications.
 
+## Documentation
+
+- [Installation](./1.-Installation)
+- [Configuration](./2.-Configuration)
+- [Response mocking](./3.-Response-mocking)
+- [Static file serving](./4.-Static-file-serving)
+- [Response caching](./5.-Response-caching)
+- [Request rewriting](./6.-Request-rewriting)
+- [Request flow](./7.-Request-flow)
+- [Migration guide](./8.-Migration-Guide)
+
 ## List of core features
 
 - CORS header replacement

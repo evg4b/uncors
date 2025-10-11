@@ -37,8 +37,8 @@ var defaultValues = map[string]string{
 	headers.AccessControlAllowMethods: allowMethods,
 }
 
-// WriteCorsHeadersForOptions writes CORS headers for OPTIONS preflight requests.
-// It uses request headers to set appropriate CORS response headers with fallback defaults.
+// WriteCorsHeadersForOptions writes CORS headers for OPTIONS preflight requests
+// using request headers with fallback to defaults.
 func WriteCorsHeadersForOptions(respHeader http.Header, reqHeader http.Header) {
 	for respKey, reqKey := range mapping {
 		if value := reqHeader.Get(reqKey); value != "" {
