@@ -149,8 +149,7 @@ const normalizeFlags = purell.FlagRemoveDefaultPort |
 	purell.FlagUppercaseEscapes | purell.FlagDecodeUnnecessaryEscapes | purell.FlagEncodeNecessaryEscapes |
 	purell.FlagSortQuery
 
-// Normalize returns normalized URL string.
-// Behavior:
+// Normalize normalizes URL with the following behavior:
 // 1. Remove unnecessary host dots.
 // 2. Remove default port (http://localhost:80 becomes http://localhost).
 // 3. Remove duplicate slashes.
@@ -183,8 +182,7 @@ func Normalize(parsedURL *url.URL) (string, error) {
 	return purell.NormalizeURL(parsedURL, normalizeFlags), nil
 }
 
-// NormalizeString returns normalized URL string.
-// It's a shortcut for Parse() and Normalize() functions.
+// NormalizeString is a shortcut for Parse() and Normalize() functions.
 func NormalizeString(rawURL string) (string, error) {
 	u, err := Parse(rawURL)
 	if err != nil {
@@ -194,7 +192,6 @@ func NormalizeString(rawURL string) (string, error) {
 	return Normalize(u)
 }
 
-// Resolve resolves the URL host to its IP address.
 func Resolve(parsedURL *url.URL) (*net.IPAddr, error) {
 	host, _, err := SplitHostPort(parsedURL)
 	if err != nil {
@@ -209,8 +206,7 @@ func Resolve(parsedURL *url.URL) (*net.IPAddr, error) {
 	return addr, nil
 }
 
-// ResolveString resolves the URL host to its IP address.
-// It's a shortcut for Parse() and Resolve() functions.
+// ResolveString is a shortcut for Parse() and Resolve() functions.
 func ResolveString(rawURL string) (*net.IPAddr, error) {
 	u, err := Parse(rawURL)
 	if err != nil {

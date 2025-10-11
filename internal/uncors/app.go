@@ -22,7 +22,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// portServer holds a server and its listener for a specific port.
 type portServer struct {
 	server   *http.Server
 	listener net.Listener
@@ -109,7 +108,6 @@ func (app *App) Shutdown(ctx context.Context) error {
 	return app.internalShutdown(ctx)
 }
 
-// GetListenerAddr returns the listener address for a given port.
 func (app *App) GetListenerAddr(port int) net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
@@ -129,7 +127,7 @@ func (app *App) GetListenerAddr(port int) net.Addr {
 	return portSrv.listener.Addr()
 }
 
-// HTTPAddr returns the first HTTP listener address (for backward compatibility).
+// HTTPAddr returns the first HTTP listener address for backward compatibility.
 func (app *App) HTTPAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
@@ -149,7 +147,7 @@ func (app *App) HTTPAddr() net.Addr {
 	return nil
 }
 
-// HTTPSAddr returns the first HTTPS listener address (for backward compatibility).
+// HTTPSAddr returns the first HTTPS listener address for backward compatibility.
 func (app *App) HTTPSAddr() net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()

@@ -12,7 +12,6 @@ import (
 
 type Mappings []Mapping
 
-// PortGroup represents mappings grouped by port.
 type PortGroup struct {
 	Port     int
 	Scheme   string
@@ -58,7 +57,6 @@ func extractHost(item Mapping) string {
 	return host
 }
 
-// GroupByPort groups mappings by their port and scheme.
 func (m Mappings) GroupByPort() PortGroups {
 	type portKey struct {
 		port   int
