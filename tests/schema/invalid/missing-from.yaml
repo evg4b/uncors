@@ -1,0 +1,4 @@
+mappings:
+  - to: https://github.com
+    cache:
+      - /api/*
