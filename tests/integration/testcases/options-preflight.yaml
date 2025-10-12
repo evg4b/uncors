@@ -1,0 +1,78 @@
+name: "OPTIONS Preflight Requests"
+description: "Test CORS preflight OPTIONS request handling"
+
+backend:
+  endpoints:
+    - path: /api/data
+      method: OPTIONS
+      response:
+        status: 204
+        headers:
+          Access-Control-Allow-Origin: https://example.com
+          Access-Control-Allow-Methods: GET, POST
+          Access-Control-Max-Age: "3600"
+
+    - path: /api/data
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"created":true}'
+
+uncors:
+  http-port: 3010
+  mappings:
+    - from: http://test.local:3010
+      to: "{{backend}}"
+
+tests:
+  - name: "OPTIONS preflight request"
+    requests:
+      - method: OPTIONS
+        path: /api/data
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: "*/*"
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Origin: http://test.local:3010
+          Access-Control-Request-Method: POST
+          Access-Control-Request-Headers: Content-Type
+          Referer: http://test.local:3010/
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+    expected:
+      status: 200
+      headers:
+        Access-Control-Allow-Origin: http://test.local:3010
+        Access-Control-Allow-Methods: POST
+        Access-Control-Allow-Headers: Content-Type
+        Access-Control-Allow-Credentials: "true"
+
+  - name: "Actual POST request after preflight"
+    requests:
+      - method: POST
+        path: /api/data
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Origin: http://test.local:3010
+          Content-Type: application/json
+          Referer: http://test.local:3010/
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+        body: '{"test":"data"}'
+    expected:
+      status: 201
+      headers:
+        Access-Control-Allow-Origin: http://test.local:3010
+        Access-Control-Allow-Credentials: "true"
+      body-contains:
+        - "created"

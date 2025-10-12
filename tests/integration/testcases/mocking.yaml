@@ -1,0 +1,55 @@
+name: "Response Mocking"
+description: "Test uncors mock response functionality"
+
+backend:
+  endpoints:
+    - path: /api/real
+      method: GET
+      response:
+        status: 200
+        body: '{"source":"backend"}'
+
+uncors:
+  http-port: 3006
+  mappings:
+    - from: http://test.local:3006
+      to: "{{backend}}"
+      mocks:
+        - path: /api/mocked
+          response:
+            code: 200
+            raw: '{"source":"mock","mocked":true}'
+
+tests:
+  - name: "Mocked endpoint returns mock response"
+    requests:
+      - method: GET
+        path: /api/mocked
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Cache-Control: no-cache
+          Pragma: no-cache
+    expected:
+      status: 200
+      body-json:
+        source: mock
+        mocked: true
+
+  - name: "Non-mocked endpoint goes to backend"
+    requests:
+      - method: GET
+        path: /api/real
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+    expected:
+      status: 200
+      body-json:
+        source: backend

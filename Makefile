@@ -20,7 +20,7 @@ CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE) \
 .DEFAULT_GOAL := all
 
 # Phony targets (targets that don't represent files)
-.PHONY: all help clean format upgrade test test-cover build build-release install check colors
+.PHONY: all help clean format upgrade test test-integration test-all test-cover build build-release install check colors
 
 # Target descriptions and implementations
 
@@ -48,10 +48,19 @@ upgrade:
 	@gum style --foreground 11 "Running full build after upgrade..."
 	@$(MAKE) all
 
-## test: Run all tests
+## test: Run all tests (unit tests only)
 test:
 	@gum style --foreground 11 "Running tests..."
-	@$(GOTEST) ./...
+	@$(GOTEST) -short ./...
+
+## test-integration: Run integration tests
+test-integration: build-release
+	@gum style --foreground 11 "Running integration tests..."
+	@cd tests/integration && $(GOTEST) -v .
+
+## test-all: Run all tests including integration tests
+test-all: test test-integration
+	@gum style --bold --foreground 10 "✓ All tests passed!"
 
 ## test-cover: Run tests with race detection and generate coverage report
 test-cover:
@@ -82,10 +91,3 @@ clean:
 ## check: Run format, test, and build (quality checks)
 check: format test build
 	@gum style --bold --foreground 10 "✓ All checks passed!"
-
-## colors: Display all available gum color codes
-colors:
-	@echo "Gum color palette (256 colors):"
-	@for i in $$(seq 0 255); do \
-		gum style --foreground $$i "Color $$i: Sample text"; \
-	done

@@ -1,0 +1,5 @@
+mappings:
+  - from: http://localhost:8080
+    to: https://github.com
+    statics:
+      - path: /static

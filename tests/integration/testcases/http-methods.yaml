@@ -1,0 +1,170 @@
+name: "HTTP Methods Support"
+description: "Test various HTTP methods (GET, POST, PUT, DELETE, PATCH)"
+
+backend:
+  endpoints:
+    - path: /api/resource
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"GET"}'
+
+    - path: /api/resource
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"method":"POST","created":true}'
+
+    - path: /api/resource
+      method: PUT
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"PUT","updated":true}'
+
+    - path: /api/resource
+      method: DELETE
+      response:
+        status: 204
+        headers:
+          Content-Type: application/json
+        body: ''
+
+    - path: /api/resource
+      method: PATCH
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"PATCH","patched":true}'
+
+uncors:
+  http-port: 3002
+  mappings:
+    - from: http://test.local:3002
+      to: "{{backend}}"
+
+tests:
+  - name: "GET method"
+    requests:
+      - method: GET
+        url: http://test.local:3002/api/resource
+        headers:
+          Host: test.local:3002
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.5
+          Connection: keep-alive
+          Cache-Control: no-cache
+          Pragma: no-cache
+          Referer: http://test.local:3002/
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
+          DNT: "1"
+    expected:
+      status: 200
+      body-contains:
+        - "GET"
+
+  - name: "POST method"
+    requests:
+      - method: POST
+        url: http://test.local:3002/api/resource
+        headers:
+          Host: test.local:3002
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "15"
+          Origin: http://test.local:3002
+          Referer: http://test.local:3002/create
+          Connection: keep-alive
+        body: '{"name":"test"}'
+    expected:
+      status: 201
+      body-contains:
+        - "POST"
+        - "created"
+
+  - name: "PUT method"
+    requests:
+      - method: PUT
+        url: http://test.local:3002/api/resource
+        headers:
+          Host: test.local:3002
+          User-Agent: Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "18"
+          Origin: http://test.local:3002
+          Referer: http://test.local:3002/edit/123
+          Connection: keep-alive
+        body: '{"name":"updated"}'
+    expected:
+      status: 200
+      body-contains:
+        - "PUT"
+        - "updated"
+
+  - name: "DELETE method"
+    requests:
+      - method: DELETE
+        url: http://test.local:3002/api/resource
+        headers:
+          Host: test.local:3002
+          User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: "*/*"
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Origin: http://test.local:3002
+          Referer: http://test.local:3002/manage
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
+          DNT: "1"
+    expected:
+      status: 204
+
+  - name: "PATCH method"
+    requests:
+      - method: PATCH
+        url: http://test.local:3002/api/resource
+        headers:
+          Host: test.local:3002
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "18"
+          Origin: http://test.local:3002
+          Referer: http://test.local:3002/update
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
+          Priority: u=1, i
+        body: '{"name":"patched"}'
+    expected:
+      status: 200
+      body-contains:
+        - "PATCH"
+        - "patched"

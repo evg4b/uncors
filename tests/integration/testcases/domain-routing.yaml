@@ -1,0 +1,94 @@
+name: "Domain Routing"
+description: "Test domain-based routing with custom DNS resolver"
+
+backend:
+  port: 8080
+  endpoints:
+    - path: /api/data
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"source":"backend","domain":"test"}'
+
+    - path: /api/users
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"users":["alice","bob"]}'
+
+uncors:
+  http-port: 3000
+  mappings:
+    # Test routing to backend using test.local domain
+    - from: http://api.test.local:3000
+      to: "{{backend}}"
+
+    # Test routing with wildcard domain
+    - from: http://app.test.local:3000
+      to: "{{backend}}"
+
+tests:
+  - name: "Route to backend via test.local domain"
+    requests:
+      - method: GET
+        url: http://api.test.local:3000/api/data
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Host: api.test.local:3000
+    expected:
+      status: 200
+      body: '{"source":"backend","domain":"test"}'
+      headers:
+        Content-Type: application/json
+
+  - name: "Route to backend via wildcard domain"
+    requests:
+      - method: GET
+        url: http://app.test.local:3000/api/users
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Host: app.test.local:3000
+    expected:
+      status: 200
+      body: '{"users":["alice","bob"]}'
+      headers:
+        Content-Type: application/json
+
+  - name: "Multiple requests to different domain endpoints"
+    requests:
+      - method: GET
+        url: http://api.test.local:3000/api/data
+        headers:
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Connection: keep-alive
+          Host: api.test.local:3000
+      - method: GET
+        url: http://app.test.local:3000/api/users
+        headers:
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Connection: keep-alive
+          Host: app.test.local:3000
+    expected:
+      status: 200
+      body: '{"users":["alice","bob"]}'
+    endpoint-calls-count:
+      /api/data: 1
+      /api/users: 1

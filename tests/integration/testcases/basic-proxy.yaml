@@ -1,0 +1,34 @@
+name: "Basic Proxy"
+description: "Test basic HTTP proxying functionality"
+
+backend:
+  endpoints:
+    - path: /api/hello
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"message":"hello world"}'
+
+uncors:
+  http-port: 3000
+  mappings:
+    - from: http://test.local:3000
+      to: "{{backend}}"
+
+tests:
+  - name: "GET request proxying"
+    requests:
+      - method: GET
+        path: /api/hello
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+    expected:
+      status: 200
+      body: '{"message":"hello world"}'
+      headers:
+        Content-Type: application/json

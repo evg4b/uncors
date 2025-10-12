@@ -1,0 +1,108 @@
+name: "Error Handling"
+description: "Test proxy behavior with backend errors and edge cases"
+
+backend:
+  endpoints:
+    - path: /api/timeout
+      method: GET
+      response:
+        status: 504
+        body: '{"error":"gateway timeout"}'
+
+    - path: /api/server-error
+      method: GET
+      response:
+        status: 500
+        body: '{"error":"internal server error"}'
+
+    - path: /api/bad-gateway
+      method: GET
+      response:
+        status: 502
+        body: '{"error":"bad gateway"}'
+
+    - path: /api/success
+      method: GET
+      response:
+        status: 200
+        body: '{"status":"ok"}'
+
+uncors:
+  http-port: 3011
+  mappings:
+    - from: http://test.local:3011
+      to: "{{backend}}"
+
+tests:
+  - name: "Backend timeout error"
+    requests:
+      - method: GET
+        path: /api/timeout
+        headers:
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.5
+          Connection: keep-alive
+    expected:
+      status: 504
+      body-contains:
+        - "timeout"
+
+  - name: "Backend server error"
+    requests:
+      - method: GET
+        path: /api/server-error
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+    expected:
+      status: 500
+      body-contains:
+        - "internal server error"
+
+  - name: "Bad gateway error"
+    requests:
+      - method: GET
+        path: /api/bad-gateway
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15
+          Accept: application/json, */*
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+    expected:
+      status: 502
+      body-contains:
+        - "bad gateway"
+
+  - name: "Non-existent endpoint"
+    requests:
+      - method: GET
+        path: /api/does-not-exist
+        headers:
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+    expected:
+      status: 404
+
+  - name: "Successful request after errors"
+    requests:
+      - method: GET
+        path: /api/success
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+    expected:
+      status: 200
+      body-contains:
+        - "ok"
