@@ -1,0 +1,127 @@
+name: "Cookie Handling"
+description: "Test cookie setting and forwarding"
+
+backend:
+  endpoints:
+    - path: /api/set-cookie
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+          Set-Cookie: session_id=abc123; Path=/; HttpOnly
+        body: '{"message":"cookie set"}'
+
+    - path: /api/set-multiple-cookies
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+          Set-Cookie: user_token=xyz789; Path=/; Secure
+        body: '{"message":"multiple cookies set"}'
+
+    - path: /api/read-cookie
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"received":"cookie"}'
+
+    - path: /api/auth
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+          Set-Cookie: auth_token=secure123; Path=/; HttpOnly; Secure; SameSite=Strict
+        body: '{"authenticated":true}'
+
+    - path: /api/profile
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"user":"authenticated"}'
+
+uncors:
+  http-port: 3015
+  mappings:
+    - from: http://test.local:3015
+      to: "{{backend}}"
+
+tests:
+  - name: "Set-Cookie header is forwarded from backend"
+    requests:
+      - method: GET
+        path: /api/set-cookie
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+          Accept: application/json
+    expected:
+      status: 200
+      headers-exist:
+        - Set-Cookie
+      body-json:
+        message: "cookie set"
+
+  - name: "Multiple Set-Cookie headers are forwarded"
+    requests:
+      - method: GET
+        path: /api/set-multiple-cookies
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+          Accept: application/json
+          Accept-Language: en-US,en;q=0.9
+    expected:
+      status: 200
+      body-json:
+        message: "multiple cookies set"
+
+  - name: "Cookie header is forwarded to backend"
+    requests:
+      - method: GET
+        path: /api/read-cookie
+        headers:
+          Cookie: session_id=test123; user_pref=light
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64)
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+    expected:
+      status: 200
+      body-json:
+        received: "cookie"
+
+  - name: "Authentication flow with secure cookie"
+    requests:
+      - method: POST
+        path: /api/auth
+        headers:
+          Content-Type: application/json
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)
+          Accept: application/json
+          Accept-Language: en-US
+        body: '{"username":"testuser","password":"testpass"}'
+    expected:
+      status: 201
+      headers-exist:
+        - Set-Cookie
+      body-json:
+        authenticated: true
+
+  - name: "Request with cookie after authentication"
+    requests:
+      - method: GET
+        path: /api/profile
+        headers:
+          Cookie: auth_token=secure123
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+          Accept: application/json
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+    expected:
+      status: 200
+      body-json:
+        user: "authenticated"
