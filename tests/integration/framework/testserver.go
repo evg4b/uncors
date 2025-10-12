@@ -43,28 +43,29 @@ type RecordedRequest struct {
 
 // NewTestServer creates a new test server with the given endpoint configurations.
 func NewTestServer(endpoints []EndpointConfig) *TestServer {
-	ts := &TestServer{
+	testServer := &TestServer{
 		endpoints: endpoints,
 		requests:  make([]RecordedRequest, 0),
 	}
 
-	ts.server = httptest.NewServer(http.HandlerFunc(ts.handler))
+	testServer.server = httptest.NewServer(http.HandlerFunc(testServer.handler))
 
-	return ts
+	return testServer
 }
 
 // NewTestServerTLS creates a new TLS test server with the given endpoint configurations.
 func NewTestServerTLS(endpoints []EndpointConfig) *TestServer {
-	ts := &TestServer{
+	testServer := &TestServer{
 		endpoints: endpoints,
 		requests:  make([]RecordedRequest, 0),
 	}
 
-	ts.server = httptest.NewTLSServer(http.HandlerFunc(ts.handler))
+	testServer.server = httptest.NewTLSServer(http.HandlerFunc(testServer.handler))
 
-	return ts
+	return testServer
 }
 
+//nolint:funcorder,varnamelen // Handler methods grouped with NewTestServer, standard HTTP handler signature
 func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 	// Record the request
 	bodyBytes, _ := io.ReadAll(r.Body)
@@ -91,11 +92,12 @@ func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(map[string]string{
 		"error": "endpoint not found",
 	}); err != nil {
-		// Log error but don't fail - response already sent
-		fmt.Printf("failed to encode error response: %v\n", err)
+		// Ignore error - response already sent
+		_ = err
 	}
 }
 
+//nolint:funcorder // Handler methods grouped with NewTestServer
 func (ts *TestServer) matchEndpoint(endpoint EndpointConfig, method, path string) bool {
 	methodMatch := strings.EqualFold(endpoint.Method, method)
 	pathMatch := endpoint.Path == path
@@ -103,6 +105,7 @@ func (ts *TestServer) matchEndpoint(endpoint EndpointConfig, method, path string
 	return methodMatch && pathMatch
 }
 
+//nolint:funcorder,varnamelen // Handler methods grouped with NewTestServer, standard HTTP handler signature
 func (ts *TestServer) serveEndpoint(w http.ResponseWriter, endpoint EndpointConfig) {
 	// Set response headers
 	for key, value := range endpoint.Response.Headers {
@@ -119,8 +122,8 @@ func (ts *TestServer) serveEndpoint(w http.ResponseWriter, endpoint EndpointConf
 	// Write body
 	if endpoint.Response.Body != "" {
 		if _, err := w.Write([]byte(endpoint.Response.Body)); err != nil {
-			// Log error but don't fail - response already started
-			fmt.Printf("failed to write response body: %v\n", err)
+			// Ignore error - response already started
+			_ = err
 		}
 	}
 }
