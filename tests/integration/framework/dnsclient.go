@@ -64,6 +64,10 @@ func CreateHTTPClient(resolver *DNSResolver) *http.Client {
 	return &http.Client{
 		Transport: transport,
 		Timeout:   30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Don't follow redirects - return the redirect response
+			return http.ErrUseLastResponse
+		},
 	}
 }
 

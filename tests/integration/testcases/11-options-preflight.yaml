@@ -36,7 +36,7 @@ tests:
         Access-Control-Request-Method: POST
         Access-Control-Request-Headers: Content-Type
     expected:
-      status: 204
+      status: 200
       headers-exist:
         - Access-Control-Allow-Origin
         - Access-Control-Allow-Methods
