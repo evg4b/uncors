@@ -23,7 +23,7 @@ backend:
 uncors:
   http-port: 3010
   mappings:
-    - from: http://localhost:3010
+    - from: http://test.local:3010
       to: "{{backend}}"
 
 tests:
@@ -32,13 +32,13 @@ tests:
       - method: OPTIONS
         path: /api/data
         headers:
-          Origin: http://localhost:3010
+          Origin: http://test.local:3010
           Access-Control-Request-Method: POST
           Access-Control-Request-Headers: Content-Type
     expected:
       status: 200
       headers:
-        Access-Control-Allow-Origin: http://localhost:3010
+        Access-Control-Allow-Origin: http://test.local:3010
         Access-Control-Allow-Methods: POST
         Access-Control-Allow-Headers: Content-Type
         Access-Control-Allow-Credentials: "true"
@@ -48,13 +48,13 @@ tests:
       - method: POST
         path: /api/data
         headers:
-          Origin: http://localhost:3010
+          Origin: http://test.local:3010
           Content-Type: application/json
         body: '{"test":"data"}'
     expected:
       status: 201
       headers:
-        Access-Control-Allow-Origin: http://localhost:3010
+        Access-Control-Allow-Origin: http://test.local:3010
         Access-Control-Allow-Credentials: "true"
       body-contains:
         - "created"

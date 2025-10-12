@@ -16,7 +16,7 @@ backend:
 uncors:
   http-port: 3001
   mappings:
-    - from: http://localhost:3001
+    - from: http://test.local:3001
       to: "{{backend}}"
 
 tests:
@@ -25,10 +25,10 @@ tests:
       - method: GET
         path: /api/data
         headers:
-          Origin: http://localhost:3001
+          Origin: http://test.local:3001
     expected:
       status: 200
       headers:
-        Access-Control-Allow-Origin: http://localhost:3001
+        Access-Control-Allow-Origin: http://test.local:3001
         Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
         Access-Control-Allow-Credentials: "true"

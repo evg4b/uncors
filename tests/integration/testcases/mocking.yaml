@@ -12,7 +12,7 @@ backend:
 uncors:
   http-port: 3006
   mappings:
-    - from: http://localhost:3006
+    - from: http://test.local:3006
       to: "{{backend}}"
       mocks:
         - path: /api/mocked
