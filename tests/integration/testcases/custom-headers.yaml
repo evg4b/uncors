@@ -21,12 +21,12 @@ uncors:
 
 tests:
   - name: "Forward custom request headers"
-    request:
-      method: GET
-      path: /api/headers
-      headers:
-        X-Client-Id: client-456
-        Authorization: Bearer token123
+    requests:
+      - method: GET
+        path: /api/headers
+        headers:
+          X-Client-Id: client-456
+          Authorization: Bearer token123
     expected:
       status: 200
       headers:

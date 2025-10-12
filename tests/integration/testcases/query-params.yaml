@@ -27,26 +27,26 @@ uncors:
 
 tests:
   - name: "Single query parameter"
-    request:
-      method: GET
-      url: http://localhost:3007/api/search?q=test
+    requests:
+      - method: GET
+        url: http://localhost:3007/api/search?q=test
     expected:
       status: 200
       body-contains:
         - "query"
 
   - name: "Multiple query parameters"
-    request:
-      method: GET
-      url: http://localhost:3007/api/filter?category=books&sort=price&order=asc
+    requests:
+      - method: GET
+        url: http://localhost:3007/api/filter?category=books&sort=price&order=asc
     expected:
       status: 200
       body-contains:
         - "filters"
 
   - name: "Query parameters with special characters"
-    request:
-      method: GET
-      url: http://localhost:3007/api/search?q=hello%20world&lang=en-US
+    requests:
+      - method: GET
+        url: http://localhost:3007/api/search?q=hello%20world&lang=en-US
     expected:
       status: 200

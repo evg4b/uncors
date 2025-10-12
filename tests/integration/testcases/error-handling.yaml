@@ -35,43 +35,43 @@ uncors:
 
 tests:
   - name: "Backend timeout error"
-    request:
-      method: GET
-      path: /api/timeout
+    requests:
+      - method: GET
+        path: /api/timeout
     expected:
       status: 504
       body-contains:
         - "timeout"
 
   - name: "Backend server error"
-    request:
-      method: GET
-      path: /api/server-error
+    requests:
+      - method: GET
+        path: /api/server-error
     expected:
       status: 500
       body-contains:
         - "internal server error"
 
   - name: "Bad gateway error"
-    request:
-      method: GET
-      path: /api/bad-gateway
+    requests:
+      - method: GET
+        path: /api/bad-gateway
     expected:
       status: 502
       body-contains:
         - "bad gateway"
 
   - name: "Non-existent endpoint"
-    request:
-      method: GET
-      path: /api/does-not-exist
+    requests:
+      - method: GET
+        path: /api/does-not-exist
     expected:
       status: 404
 
   - name: "Successful request after errors"
-    request:
-      method: GET
-      path: /api/success
+    requests:
+      - method: GET
+        path: /api/success
     expected:
       status: 200
       body-contains:

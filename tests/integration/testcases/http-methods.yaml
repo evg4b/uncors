@@ -51,19 +51,19 @@ uncors:
 
 tests:
   - name: "GET method"
-    request:
-      method: GET
-      path: /api/resource
+    requests:
+      - method: GET
+        path: /api/resource
     expected:
       status: 200
       body-contains:
         - "GET"
 
   - name: "POST method"
-    request:
-      method: POST
-      path: /api/resource
-      body: '{"name":"test"}'
+    requests:
+      - method: POST
+        path: /api/resource
+        body: '{"name":"test"}'
     expected:
       status: 201
       body-contains:
@@ -71,10 +71,10 @@ tests:
         - "created"
 
   - name: "PUT method"
-    request:
-      method: PUT
-      path: /api/resource
-      body: '{"name":"updated"}'
+    requests:
+      - method: PUT
+        path: /api/resource
+        body: '{"name":"updated"}'
     expected:
       status: 200
       body-contains:
@@ -82,17 +82,17 @@ tests:
         - "updated"
 
   - name: "DELETE method"
-    request:
-      method: DELETE
-      path: /api/resource
+    requests:
+      - method: DELETE
+        path: /api/resource
     expected:
       status: 204
 
   - name: "PATCH method"
-    request:
-      method: PATCH
-      path: /api/resource
-      body: '{"name":"patched"}'
+    requests:
+      - method: PATCH
+        path: /api/resource
+        body: '{"name":"patched"}'
     expected:
       status: 200
       body-contains:

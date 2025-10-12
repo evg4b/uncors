@@ -49,9 +49,9 @@ uncors:
 
 tests:
   - name: "JSON response"
-    request:
-      method: GET
-      path: /api/json
+    requests:
+      - method: GET
+        path: /api/json
     expected:
       status: 200
       headers:
@@ -63,9 +63,9 @@ tests:
         - '"age":30'
 
   - name: "Plain text response"
-    request:
-      method: GET
-      path: /api/text
+    requests:
+      - method: GET
+        path: /api/text
     expected:
       status: 200
       headers:
@@ -73,9 +73,9 @@ tests:
       body: 'Plain text response'
 
   - name: "HTML response"
-    request:
-      method: GET
-      path: /api/html
+    requests:
+      - method: GET
+        path: /api/html
     expected:
       status: 200
       headers:
@@ -85,17 +85,17 @@ tests:
         - '<h1>Hello</h1>'
 
   - name: "Empty response"
-    request:
-      method: GET
-      path: /api/empty
+    requests:
+      - method: GET
+        path: /api/empty
     expected:
       status: 200
       body: ''
 
   - name: "Large response"
-    request:
-      method: GET
-      path: /api/large
+    requests:
+      - method: GET
+        path: /api/large
     expected:
       status: 200
       body-contains:

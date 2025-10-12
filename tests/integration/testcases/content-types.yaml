@@ -43,36 +43,36 @@ uncors:
 
 tests:
   - name: "JSON content type"
-    request:
-      method: POST
-      path: /api/json
-      headers:
-        Content-Type: application/json
-      body: '{"test":"data"}'
+    requests:
+      - method: POST
+        path: /api/json
+        headers:
+          Content-Type: application/json
+        body: '{"test":"data"}'
     expected:
       status: 200
       headers:
         Content-Type: application/json
 
   - name: "XML content type"
-    request:
-      method: POST
-      path: /api/xml
-      headers:
-        Content-Type: application/xml
-      body: '<request><test>data</test></request>'
+    requests:
+      - method: POST
+        path: /api/xml
+        headers:
+          Content-Type: application/xml
+        body: '<request><test>data</test></request>'
     expected:
       status: 200
       headers:
         Content-Type: application/xml
 
   - name: "Form URL encoded"
-    request:
-      method: POST
-      path: /api/form
-      headers:
-        Content-Type: application/x-www-form-urlencoded
-      body: 'key1=value1&key2=value2'
+    requests:
+      - method: POST
+        path: /api/form
+        headers:
+          Content-Type: application/x-www-form-urlencoded
+        body: 'key1=value1&key2=value2'
     expected:
       status: 200
       headers:
