@@ -58,8 +58,9 @@ tests:
         Content-Type: application/json
       body-json:
         name: John
-        age: 30
         active: true
+      body-contains:
+        - '"age":30'
 
   - name: "Plain text response"
     request:

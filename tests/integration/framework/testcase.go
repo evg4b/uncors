@@ -44,8 +44,16 @@ type MappingConfig struct {
 
 // MockConfig represents a mock endpoint in uncors configuration.
 type MockConfig struct {
-	Path     string         `yaml:"path"`
-	Response ResponseConfig `yaml:"response"`
+	Path     string            `yaml:"path"`
+	Response MockResponseConfig `yaml:"response"`
+}
+
+// MockResponseConfig defines the mock response in uncors format.
+type MockResponseConfig struct {
+	Code    int               `yaml:"code"`
+	Raw     string            `yaml:"raw,omitempty"`
+	File    string            `yaml:"file,omitempty"`
+	Headers map[string]string `yaml:"headers,omitempty"`
 }
 
 // StaticConfig represents static file serving configuration.
