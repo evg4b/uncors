@@ -38,7 +38,7 @@ backend:
 uncors:
   http-port: 3009
   mappings:
-    - from: http://localhost:3009
+    - from: http://test.local:3009
       to: "{{backend}}"
 
 tests:

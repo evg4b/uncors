@@ -91,10 +91,3 @@ clean:
 ## check: Run format, test, and build (quality checks)
 check: format test build
 	@gum style --bold --foreground 10 "✓ All checks passed!"
-
-## colors: Display all available gum color codes
-colors:
-	@echo "Gum color palette (256 colors):"
-	@for i in $$(seq 0 255); do \
-		gum style --foreground $$i "Color $$i: Sample text"; \
-	done

@@ -64,13 +64,8 @@ func (r *TestRunner) Setup() error {
 		r.t.Logf("Started backend server at: %s", r.backendServer.URL())
 	}
 
-	// Create HTTP client
-	r.httpClient = &http.Client{
-		Timeout: requestTimeout,
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	// Create HTTP client with custom DNS resolver
+	r.httpClient = createTestHTTPClient()
 
 	// Generate uncors configuration
 	if err := r.generateUncorsConfig(); err != nil {
@@ -270,9 +265,9 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 		}
 	}
 
-	// Build the binary from project root
-	r.t.Logf("Building uncors binary...")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath, ".")
+	// Build the binary from project root with integration_test build tag
+	r.t.Logf("Building uncors binary with integration_test tag...")
+	buildCmd := exec.Command("go", "build", "-tags", "integration_test", "-o", binaryPath, ".")
 	buildCmd.Dir = projectRoot
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
@@ -281,7 +276,7 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 		return "", fmt.Errorf("failed to build uncors: %w", err)
 	}
 
-	r.t.Logf("Built uncors binary at: %s", binaryPath)
+	r.t.Logf("Built uncors binary at: %s with integration_test tag", binaryPath)
 
 	return binaryPath, nil
 }
@@ -300,18 +295,19 @@ func (r *TestRunner) waitForUncors() error {
 		case <-timeout:
 			return ErrUncorsStartTimeout
 		case <-ticker.C:
-			// Try to connect
+			// Try to connect using test.local domain
 			req, err := http.NewRequestWithContext(
 				context.Background(),
 				http.MethodGet,
-				fmt.Sprintf("http://localhost:%d", port),
+				fmt.Sprintf("http://test.local:%d", port),
 				http.NoBody,
 			)
 			if err != nil {
 				continue
 			}
 
-			resp, err := http.DefaultClient.Do(req)
+			// Use the test HTTP client with custom DNS resolver
+			resp, err := r.httpClient.Do(req)
 			if err == nil {
 				resp.Body.Close()
 				r.t.Logf("Uncors is ready on port %d", port)
@@ -353,7 +349,7 @@ func (r *TestRunner) buildRequestURLFromConfig(req RequestConfig) string {
 	if req.Path != "" {
 		port := r.getHTTPPort()
 
-		return fmt.Sprintf("http://localhost:%d%s", port, req.Path)
+		return fmt.Sprintf("http://test.local:%d%s", port, req.Path)
 	}
 
 	return ""

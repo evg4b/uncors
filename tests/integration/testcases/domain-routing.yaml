@@ -1,0 +1,66 @@
+name: "Domain Routing"
+description: "Test domain-based routing with custom DNS resolver"
+
+backend:
+  port: 8080
+  endpoints:
+    - path: /api/data
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"source":"backend","domain":"test"}'
+
+    - path: /api/users
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"users":["alice","bob"]}'
+
+uncors:
+  http-port: 3000
+  mappings:
+    # Test routing to backend using test.local domain
+    - from: http://api.test.local:3000
+      to: "{{backend}}"
+
+    # Test routing with wildcard domain
+    - from: http://app.test.local:3000
+      to: "{{backend}}"
+
+tests:
+  - name: "Route to backend via test.local domain"
+    requests:
+      - method: GET
+        url: http://api.test.local:3000/api/data
+    expected:
+      status: 200
+      body: '{"source":"backend","domain":"test"}'
+      headers:
+        Content-Type: application/json
+
+  - name: "Route to backend via wildcard domain"
+    requests:
+      - method: GET
+        url: http://app.test.local:3000/api/users
+    expected:
+      status: 200
+      body: '{"users":["alice","bob"]}'
+      headers:
+        Content-Type: application/json
+
+  - name: "Multiple requests to different domain endpoints"
+    requests:
+      - method: GET
+        url: http://api.test.local:3000/api/data
+      - method: GET
+        url: http://app.test.local:3000/api/users
+    expected:
+      status: 200
+      body: '{"users":["alice","bob"]}'
+    endpoint-calls-count:
+      /api/data: 1
+      /api/users: 1

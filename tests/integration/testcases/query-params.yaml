@@ -22,14 +22,14 @@ backend:
 uncors:
   http-port: 3007
   mappings:
-    - from: http://localhost:3007
+    - from: http://test.local:3007
       to: "{{backend}}"
 
 tests:
   - name: "Single query parameter"
     requests:
       - method: GET
-        url: http://localhost:3007/api/search?q=test
+        url: http://test.local:3007/api/search?q=test
     expected:
       status: 200
       body-contains:
@@ -38,7 +38,7 @@ tests:
   - name: "Multiple query parameters"
     requests:
       - method: GET
-        url: http://localhost:3007/api/filter?category=books&sort=price&order=asc
+        url: http://test.local:3007/api/filter?category=books&sort=price&order=asc
     expected:
       status: 200
       body-contains:
@@ -47,6 +47,6 @@ tests:
   - name: "Query parameters with special characters"
     requests:
       - method: GET
-        url: http://localhost:3007/api/search?q=hello%20world&lang=en-US
+        url: http://test.local:3007/api/search?q=hello%20world&lang=en-US
     expected:
       status: 200

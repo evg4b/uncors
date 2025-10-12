@@ -22,7 +22,7 @@ backend:
 uncors:
   http-port: 3008
   mappings:
-    - from: http://localhost:3008
+    - from: http://test.local:3008
       to: "{{backend}}"
 
 tests:

@@ -46,7 +46,7 @@ backend:
 uncors:
   http-port: 3002
   mappings:
-    - from: http://localhost:3002
+    - from: http://test.local:3002
       to: "{{backend}}"
 
 tests:

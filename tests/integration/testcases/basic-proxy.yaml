@@ -14,7 +14,7 @@ backend:
 uncors:
   http-port: 3000
   mappings:
-    - from: http://localhost:3000
+    - from: http://test.local:3000
       to: "{{backend}}"
 
 tests:

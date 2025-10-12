@@ -38,7 +38,7 @@ backend:
 uncors:
   http-port: 3014
   mappings:
-    - from: http://localhost:3014
+    - from: http://test.local:3014
       to: "{{backend}}"
       cache:
         - /api/cached*
