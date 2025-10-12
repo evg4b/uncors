@@ -1,0 +1,84 @@
+name: "Cache Configuration"
+description: "Test cache headers and configuration"
+
+backend:
+  endpoints:
+    - path: /api/cached
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+          Cache-Control: no-cache
+        body: '{"cached":false,"timestamp":"backend"}'
+
+    - path: /api/cached
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"created":true,"cached":false}'
+
+    - path: /api/uncached
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"cached":false}'
+
+    - path: /images/logo.png
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: image/png
+        body: 'fake-image-data'
+
+uncors:
+  http-port: 3014
+  mappings:
+    - from: http://localhost:3014
+      to: "{{backend}}"
+      cache:
+        - /api/cached
+        - /images/*
+
+tests:
+  - name: "Cached endpoint has cache headers"
+    request:
+      method: GET
+      path: /api/cached
+    expected:
+      status: 200
+      headers-exist:
+        - Cache-Control
+
+  - name: "Wildcard cache pattern"
+    request:
+      method: GET
+      path: /images/logo.png
+    expected:
+      status: 200
+
+  - name: "Uncached endpoint works normally"
+    request:
+      method: GET
+      path: /api/uncached
+    expected:
+      status: 200
+      body-json:
+        cached: false
+
+  - name: "POST requests bypass cache"
+    request:
+      method: POST
+      path: /api/cached
+      headers:
+        Content-Type: application/json
+      body: '{"test":"data"}'
+    expected:
+      status: 201
+      body-json:
+        created: true

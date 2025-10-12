@@ -49,6 +49,7 @@ func NewTestServer(endpoints []EndpointConfig) *TestServer {
 	}
 
 	ts.server = httptest.NewServer(http.HandlerFunc(ts.handler))
+
 	return ts
 }
 
@@ -60,6 +61,7 @@ func NewTestServerTLS(endpoints []EndpointConfig) *TestServer {
 	}
 
 	ts.server = httptest.NewTLSServer(http.HandlerFunc(ts.handler))
+
 	return ts
 }
 
@@ -79,15 +81,19 @@ func (ts *TestServer) handler(w http.ResponseWriter, r *http.Request) {
 	for _, endpoint := range ts.endpoints {
 		if ts.matchEndpoint(endpoint, r.Method, r.URL.Path) {
 			ts.serveEndpoint(w, endpoint)
+
 			return
 		}
 	}
 
 	// No matching endpoint found
 	w.WriteHeader(http.StatusNotFound)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"error": "endpoint not found",
-	})
+	}); err != nil {
+		// Log error but don't fail - response already sent
+		fmt.Printf("failed to encode error response: %v\n", err)
+	}
 }
 
 func (ts *TestServer) matchEndpoint(endpoint EndpointConfig, method, path string) bool {
@@ -112,7 +118,10 @@ func (ts *TestServer) serveEndpoint(w http.ResponseWriter, endpoint EndpointConf
 
 	// Write body
 	if endpoint.Response.Body != "" {
-		w.Write([]byte(endpoint.Response.Body))
+		if _, err := w.Write([]byte(endpoint.Response.Body)); err != nil {
+			// Log error but don't fail - response already started
+			fmt.Printf("failed to write response body: %v\n", err)
+		}
 	}
 }
 
@@ -130,6 +139,7 @@ func (ts *TestServer) Close() {
 func (ts *TestServer) GetRequests() []RecordedRequest {
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
+
 	return append([]RecordedRequest{}, ts.requests...)
 }
 
@@ -147,6 +157,7 @@ func (ts *TestServer) GetPort() string {
 	if len(parts) > 0 {
 		return parts[len(parts)-1]
 	}
+
 	return ""
 }
 

@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
 // DNSResolver provides custom DNS resolution for testing.
 type DNSResolver struct {
 	mappings map[string]string
+	mu       sync.RWMutex
 }
 
 // NewDNSResolver creates a new DNS resolver with the given hostname mappings.
@@ -18,6 +20,7 @@ func NewDNSResolver(mappings map[string]string) *DNSResolver {
 	if mappings == nil {
 		mappings = make(map[string]string)
 	}
+
 	return &DNSResolver{
 		mappings: mappings,
 	}
@@ -25,12 +28,17 @@ func NewDNSResolver(mappings map[string]string) *DNSResolver {
 
 // Resolve returns the IP address for the given hostname.
 func (r *DNSResolver) Resolve(hostname string) (string, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	ip, ok := r.mappings[hostname]
+
 	return ip, ok
 }
 
 // AddMapping adds a hostname to IP address mapping.
 func (r *DNSResolver) AddMapping(hostname, ip string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.mappings[hostname] = ip
 }
 
@@ -76,6 +84,7 @@ func CreateHTTPClientWithDefaults() *http.Client {
 	resolver := NewDNSResolver(map[string]string{
 		"localhost": "127.0.0.1",
 	})
+
 	return CreateHTTPClient(resolver)
 }
 

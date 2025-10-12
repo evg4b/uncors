@@ -20,13 +20,13 @@ import (
 
 // TestRunner orchestrates integration tests.
 type TestRunner struct {
-	t              *testing.T
-	testCase       *TestCase
-	backendServer  *TestServer
-	uncorsCmd      *exec.Cmd
+	t                *testing.T
+	testCase         *TestCase
+	backendServer    *TestServer
+	uncorsCmd        *exec.Cmd
 	uncorsConfigPath string
-	httpClient     *http.Client
-	resolver       *DNSResolver
+	httpClient       *http.Client
+	resolver         *DNSResolver
 }
 
 // NewTestRunner creates a new test runner for the given test case.
@@ -96,56 +96,7 @@ func (r *TestRunner) Teardown() {
 
 // generateUncorsConfig creates a configuration file for uncors.
 func (r *TestRunner) generateUncorsConfig() error {
-	config := make(map[string]any)
-
-	// Set HTTP port
-	if r.testCase.Uncors.HTTPPort != 0 {
-		config["http-port"] = r.testCase.Uncors.HTTPPort
-	}
-
-	// Set HTTPS port
-	if r.testCase.Uncors.HTTPSPort != 0 {
-		config["https-port"] = r.testCase.Uncors.HTTPSPort
-	}
-
-	// Process mappings
-	if len(r.testCase.Uncors.Mappings) > 0 {
-		mappings := make([]map[string]any, 0, len(r.testCase.Uncors.Mappings))
-		for _, mapping := range r.testCase.Uncors.Mappings {
-			m := make(map[string]any)
-
-			// Replace backend URL placeholder with actual server URL
-			from := mapping.From
-			to := mapping.To
-			if r.backendServer != nil && to == "{{backend}}" {
-				to = r.backendServer.URL()
-			}
-
-			m["from"] = from
-			m["to"] = to
-
-			if len(mapping.Mocks) > 0 {
-				m["mocks"] = mapping.Mocks
-			}
-			if len(mapping.Statics) > 0 {
-				m["statics"] = mapping.Statics
-			}
-			if len(mapping.Cache) > 0 {
-				m["cache"] = mapping.Cache
-			}
-			if len(mapping.Rewrites) > 0 {
-				m["rewrites"] = mapping.Rewrites
-			}
-
-			mappings = append(mappings, m)
-		}
-		config["mappings"] = mappings
-	}
-
-	// Merge with custom config
-	for k, v := range r.testCase.Uncors.Config {
-		config[k] = v
-	}
+	config := r.buildConfigMap()
 
 	// Create temporary config file
 	tmpFile, err := os.CreateTemp("", "uncors-test-*.yaml")
@@ -159,12 +110,95 @@ func (r *TestRunner) generateUncorsConfig() error {
 	encoder.SetIndent(2)
 	if err := encoder.Encode(config); err != nil {
 		tmpFile.Close()
+
 		return err
 	}
 	tmpFile.Close()
 
 	r.t.Logf("Generated uncors config at: %s", r.uncorsConfigPath)
+
 	return nil
+}
+
+// buildConfigMap constructs the uncors configuration map.
+func (r *TestRunner) buildConfigMap() map[string]any {
+	config := make(map[string]any)
+
+	// Set ports if specified
+	if r.testCase.Uncors.HTTPPort != 0 {
+		config["http-port"] = r.testCase.Uncors.HTTPPort
+	}
+	if r.testCase.Uncors.HTTPSPort != 0 {
+		config["https-port"] = r.testCase.Uncors.HTTPSPort
+	}
+
+	// Process mappings
+	if len(r.testCase.Uncors.Mappings) > 0 {
+		config["mappings"] = r.buildMappingsConfig()
+	}
+
+	// Merge with custom config
+	for k, v := range r.testCase.Uncors.Config {
+		config[k] = v
+	}
+
+	return config
+}
+
+// buildMappingsConfig constructs the mappings configuration array.
+func (r *TestRunner) buildMappingsConfig() []map[string]any {
+	mappings := make([]map[string]any, 0, len(r.testCase.Uncors.Mappings))
+	for _, mapping := range r.testCase.Uncors.Mappings {
+		m := r.buildSingleMapping(mapping)
+		mappings = append(mappings, m)
+	}
+
+	return mappings
+}
+
+// buildSingleMapping constructs a single mapping configuration.
+func (r *TestRunner) buildSingleMapping(mapping MappingConfig) map[string]any {
+	m := make(map[string]any)
+
+	// Replace backend URL placeholder with actual server URL
+	to := mapping.To
+	if r.backendServer != nil && to == "{{backend}}" {
+		to = r.backendServer.URL()
+	}
+
+	m["from"] = mapping.From
+	m["to"] = to
+
+	// Add optional configurations if present
+	r.addIfNotEmpty(m, "mocks", mapping.Mocks)
+	r.addIfNotEmpty(m, "statics", mapping.Statics)
+	r.addIfNotEmpty(m, "cache", mapping.Cache)
+	r.addIfNotEmpty(m, "rewrites", mapping.Rewrites)
+
+	return m
+}
+
+// addIfNotEmpty adds a value to the map if the slice is not empty.
+func (r *TestRunner) addIfNotEmpty(m map[string]any, key string, value any) {
+	// Use reflection to check if value is a slice and not empty
+	switch v := value.(type) {
+	case []MockConfig:
+		if len(v) > 0 {
+			m[key] = v
+		}
+	case []StaticConfig:
+		if len(v) > 0 {
+			m[key] = v
+		}
+	case []string:
+		if len(v) > 0 {
+			m[key] = v
+		}
+	case []RewriteConfig:
+		if len(v) > 0 {
+			m[key] = v
+		}
+	}
 }
 
 // startUncors starts the uncors proxy server.
@@ -185,6 +219,7 @@ func (r *TestRunner) startUncors() error {
 	}
 
 	r.t.Logf("Started uncors with PID: %d", r.uncorsCmd.Process.Pid)
+
 	return nil
 }
 
@@ -203,6 +238,7 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 		// Binary exists, check if it's newer than the source files
 		if time.Since(info.ModTime()) < 5*time.Minute {
 			r.t.Logf("Using existing uncors binary: %s", binaryPath)
+
 			return binaryPath, nil
 		}
 	}
@@ -219,16 +255,13 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 	}
 
 	r.t.Logf("Built uncors binary at: %s", binaryPath)
+
 	return binaryPath, nil
 }
 
 // waitForUncors waits for uncors to be ready to accept connections.
 func (r *TestRunner) waitForUncors() error {
-	port := r.testCase.Uncors.HTTPPort
-	if port == 0 {
-		port = 3000 // default port
-	}
-
+	port := r.getHTTPPort()
 	timeout := time.After(10 * time.Second)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -243,10 +276,37 @@ func (r *TestRunner) waitForUncors() error {
 			if err == nil {
 				resp.Body.Close()
 				r.t.Logf("Uncors is ready on port %d", port)
+
 				return nil
 			}
 		}
 	}
+}
+
+// getHTTPPort returns the HTTP port for uncors, using default if not specified.
+func (r *TestRunner) getHTTPPort() int {
+	if r.testCase.Uncors.HTTPPort != 0 {
+		return r.testCase.Uncors.HTTPPort
+	}
+
+	return 3000 // default port
+}
+
+// buildRequestURL constructs the request URL from test definition.
+func (r *TestRunner) buildRequestURL(test TestDefinition) string {
+	// Use explicit URL if provided
+	if test.Request.URL != "" {
+		return test.Request.URL
+	}
+
+	// Build URL from path
+	if test.Request.Path != "" {
+		port := r.getHTTPPort()
+
+		return fmt.Sprintf("http://localhost:%d%s", port, test.Request.Path)
+	}
+
+	return ""
 }
 
 // Run executes all tests in the test case.
@@ -266,14 +326,7 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	}
 
 	// Build request URL
-	url := test.Request.URL
-	if url == "" && test.Request.Path != "" {
-		port := r.testCase.Uncors.HTTPPort
-		if port == 0 {
-			port = 3000
-		}
-		url = fmt.Sprintf("http://localhost:%d%s", port, test.Request.Path)
-	}
+	url := r.buildRequestURL(test)
 
 	// Create request
 	var bodyReader io.Reader
@@ -290,7 +343,7 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	}
 
 	// Execute request
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 	req = req.WithContext(ctx)
 
