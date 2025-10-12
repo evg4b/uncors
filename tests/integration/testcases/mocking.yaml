@@ -22,9 +22,9 @@ uncors:
 
 tests:
   - name: "Mocked endpoint returns mock response"
-    request:
-      method: GET
-      path: /api/mocked
+    requests:
+      - method: GET
+        path: /api/mocked
     expected:
       status: 200
       body-json:
@@ -32,9 +32,9 @@ tests:
         mocked: true
 
   - name: "Non-mocked endpoint goes to backend"
-    request:
-      method: GET
-      path: /api/real
+    requests:
+      - method: GET
+        path: /api/real
     expected:
       status: 200
       body-json:

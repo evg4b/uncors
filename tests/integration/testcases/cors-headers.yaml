@@ -21,11 +21,11 @@ uncors:
 
 tests:
   - name: "CORS headers are replaced"
-    request:
-      method: GET
-      path: /api/data
-      headers:
-        Origin: http://localhost:3001
+    requests:
+      - method: GET
+        path: /api/data
+        headers:
+          Origin: http://localhost:3001
     expected:
       status: 200
       headers-exist:

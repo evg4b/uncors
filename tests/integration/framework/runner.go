@@ -334,20 +334,27 @@ func (r *TestRunner) getHTTPPort() int {
 	return defaultHTTPPort
 }
 
-// buildRequestURL constructs the request URL from test definition.
+// collectRequests collects all requests to execute from the test definition.
 //
 //nolint:funcorder // Helper methods grouped logically with usage
-func (r *TestRunner) buildRequestURL(test TestDefinition) string {
+func (r *TestRunner) collectRequests(test TestDefinition) []RequestConfig {
+	return test.Requests
+}
+
+// buildRequestURLFromConfig constructs the request URL from request config.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
+func (r *TestRunner) buildRequestURLFromConfig(req RequestConfig) string {
 	// Use explicit URL if provided
-	if test.Request.URL != "" {
-		return test.Request.URL
+	if req.URL != "" {
+		return req.URL
 	}
 
 	// Build URL from path
-	if test.Request.Path != "" {
+	if req.Path != "" {
 		port := r.getHTTPPort()
 
-		return fmt.Sprintf("http://localhost:%d%s", port, test.Request.Path)
+		return fmt.Sprintf("http://localhost:%d%s", port, req.Path)
 	}
 
 	return ""
@@ -372,33 +379,81 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 		r.backendServer.ClearRequests()
 	}
 
-	// Determine how many times to execute the request
-	repeatCount := test.Repeat
-	if repeatCount == 0 {
-		repeatCount = 1
-	}
-
-	// Execute request(s)
-	var resp *http.Response
-	var bodyBytes []byte
-	for i := range repeatCount {
-		req := r.createRequest(t, test)
-		resp, bodyBytes = r.executeRequest(t, req)
-		if i < repeatCount-1 {
-			// Close response for all but the last iteration
-			resp.Body.Close()
-		}
-	}
+	// Execute request sequence and get last response
+	resp, bodyBytes := r.executeRequestSequence(t, test)
 	defer resp.Body.Close()
 
 	// Verify response from last request
 	r.verifyResponse(t, test, resp, bodyBytes)
 
-	// Verify backend call count if specified
-	if test.BackendCallsCount > 0 && r.backendServer != nil {
+	// Verify backend call counts
+	r.verifyBackendCalls(t, test)
+}
+
+// executeRequestSequence executes all requests for a test with repetitions.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
+func (r *TestRunner) executeRequestSequence(
+	t *testing.T,
+	test TestDefinition,
+) (*http.Response, []byte) {
+	requests := r.collectRequests(test)
+
+	repeatCount := test.Repeat
+	if repeatCount == 0 {
+		repeatCount = 1
+	}
+
+	var resp *http.Response
+	var bodyBytes []byte
+	for iteration := range repeatCount {
+		for reqIndex, reqConfig := range requests {
+			req := r.createRequestFromConfig(t, reqConfig)
+			resp, bodyBytes = r.executeRequest(t, req)
+			// Close response for all but the last request
+			if iteration < repeatCount-1 || reqIndex < len(requests)-1 {
+				resp.Body.Close()
+			}
+		}
+	}
+
+	return resp, bodyBytes
+}
+
+// verifyBackendCalls verifies backend call counts match expectations.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
+func (r *TestRunner) verifyBackendCalls(t *testing.T, test TestDefinition) {
+	if r.backendServer == nil {
+		return
+	}
+
+	// Verify total backend call count
+	if test.BackendCallsCount > 0 {
 		actualCalls := len(r.backendServer.GetRequests())
 		assert.Equal(t, test.BackendCallsCount, actualCalls,
 			"expected %d backend call(s) but got %d", test.BackendCallsCount, actualCalls)
+	}
+
+	// Verify endpoint-specific call counts
+	if len(test.EndpointCallsCount) > 0 {
+		r.verifyEndpointCallCounts(t, test)
+	}
+}
+
+// verifyEndpointCallCounts verifies per-endpoint call counts.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
+func (r *TestRunner) verifyEndpointCallCounts(t *testing.T, test TestDefinition) {
+	allRequests := r.backendServer.GetRequests()
+	endpointCounts := make(map[string]int)
+	for _, req := range allRequests {
+		endpointCounts[req.Path]++
+	}
+	for endpoint, expectedCount := range test.EndpointCallsCount {
+		actualCount := endpointCounts[endpoint]
+		assert.Equal(t, expectedCount, actualCount,
+			"expected %d call(s) to %s but got %d", expectedCount, endpoint, actualCount)
 	}
 }
 
@@ -409,20 +464,20 @@ func (r *TestRunner) configureDNS(test TestDefinition) {
 	}
 }
 
-// createRequest builds an HTTP request from test definition.
-func (r *TestRunner) createRequest(t *testing.T, test TestDefinition) *http.Request {
-	url := r.buildRequestURL(test)
+// createRequestFromConfig builds an HTTP request from request configuration.
+func (r *TestRunner) createRequestFromConfig(t *testing.T, reqConfig RequestConfig) *http.Request {
+	url := r.buildRequestURLFromConfig(reqConfig)
 
 	var bodyReader io.Reader
-	if test.Request.Body != "" {
-		bodyReader = strings.NewReader(test.Request.Body)
+	if reqConfig.Body != "" {
+		bodyReader = strings.NewReader(reqConfig.Body)
 	}
 
-	req, err := http.NewRequestWithContext(t.Context(), test.Request.Method, url, bodyReader)
+	req, err := http.NewRequestWithContext(t.Context(), reqConfig.Method, url, bodyReader)
 	require.NoError(t, err, "failed to create request")
 
 	// Set headers
-	for key, value := range test.Request.Headers {
+	for key, value := range reqConfig.Headers {
 		req.Header.Set(key, value)
 	}
 

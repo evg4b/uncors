@@ -65,75 +65,75 @@ uncors:
 
 tests:
   - name: "200 OK"
-    request:
-      method: GET
-      path: /api/success
+    requests:
+      - method: GET
+        path: /api/success
     expected:
       status: 200
 
   - name: "201 Created"
-    request:
-      method: POST
-      path: /api/created
+    requests:
+      - method: POST
+        path: /api/created
     expected:
       status: 201
 
   - name: "204 No Content"
-    request:
-      method: DELETE
-      path: /api/no-content
+    requests:
+      - method: DELETE
+        path: /api/no-content
     expected:
       status: 204
 
   - name: "302 Redirect"
-    request:
-      method: GET
-      path: /api/redirect
+    requests:
+      - method: GET
+        path: /api/redirect
     expected:
       status: 302
       headers:
         Location: /api/success
 
   - name: "400 Bad Request"
-    request:
-      method: GET
-      path: /api/bad-request
+    requests:
+      - method: GET
+        path: /api/bad-request
     expected:
       status: 400
       body-contains:
         - "bad request"
 
   - name: "401 Unauthorized"
-    request:
-      method: GET
-      path: /api/unauthorized
+    requests:
+      - method: GET
+        path: /api/unauthorized
     expected:
       status: 401
       body-contains:
         - "unauthorized"
 
   - name: "403 Forbidden"
-    request:
-      method: GET
-      path: /api/forbidden
+    requests:
+      - method: GET
+        path: /api/forbidden
     expected:
       status: 403
       body-contains:
         - "forbidden"
 
   - name: "404 Not Found"
-    request:
-      method: GET
-      path: /api/not-found
+    requests:
+      - method: GET
+        path: /api/not-found
     expected:
       status: 404
       body-contains:
         - "not found"
 
   - name: "500 Server Error"
-    request:
-      method: GET
-      path: /api/server-error
+    requests:
+      - method: GET
+        path: /api/server-error
     expected:
       status: 500
       body-contains:
