@@ -190,7 +190,7 @@ func (r *TestRunner) startUncors() error {
 
 // findUncorsBinary locates the uncors binary.
 func (r *TestRunner) findUncorsBinary() (string, error) {
-	// Try to build it first
+	// Find project root
 	projectRoot, err := findProjectRoot()
 	if err != nil {
 		return "", err
@@ -198,13 +198,27 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 
 	binaryPath := filepath.Join(projectRoot, "uncors")
 
-	// Build the binary
-	buildCmd := exec.Command("go", "build", "-o", binaryPath, ".")
-	buildCmd.Dir = projectRoot
-	if output, err := buildCmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to build uncors: %w\n%s", err, output)
+	// Check if binary already exists and is recent
+	if info, err := os.Stat(binaryPath); err == nil {
+		// Binary exists, check if it's newer than the source files
+		if time.Since(info.ModTime()) < 5*time.Minute {
+			r.t.Logf("Using existing uncors binary: %s", binaryPath)
+			return binaryPath, nil
+		}
 	}
 
+	// Build the binary from project root
+	r.t.Logf("Building uncors binary...")
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, ".")
+	buildCmd.Dir = projectRoot
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	if err := buildCmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to build uncors: %w", err)
+	}
+
+	r.t.Logf("Built uncors binary at: %s", binaryPath)
 	return binaryPath, nil
 }
 
