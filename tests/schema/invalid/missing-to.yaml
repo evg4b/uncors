@@ -1,0 +1,4 @@
+mappings:
+  - from: http://localhost:8080
+    cache:
+      - /api/*
