@@ -56,7 +56,7 @@ test:
 ## test-integration: Run integration tests
 test-integration: build-release
 	@gum style --foreground 11 "Running integration tests..."
-	@$(GOTEST) -v ./tests/integration/...
+	@cd tests/integration && $(GOTEST) -v .
 
 ## test-all: Run all tests including integration tests
 test-all: test test-integration
