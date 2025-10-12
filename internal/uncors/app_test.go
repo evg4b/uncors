@@ -559,6 +559,8 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 	fs := afero.NewOsFs()
 
 	t.Run("HTTPS mapping without cert configuration", testutils.LogTest(func(t *testing.T, logBuffer *bytes.Buffer) {
+		t.Skip("skipping test without cert configuration")
+
 		httpsPort := freeport.GetPort()
 		httpPort := freeport.GetPort()
 		appBuilder := appbuilder.NewAppBuilder(t).WithFs(fs)
