@@ -1,0 +1,7 @@
+mappings:
+  - from: http://localhost:8080
+    to: https://github.com
+    cache:
+      - /api/*
+      - /static/**/*
+      - /resources

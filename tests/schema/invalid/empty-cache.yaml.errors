@@ -1,0 +1,2 @@
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0.cache: Array must have at least 1 items
