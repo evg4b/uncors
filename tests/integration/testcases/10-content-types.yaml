@@ -1,0 +1,79 @@
+name: "Content Type Handling"
+description: "Test handling of various content types"
+
+backend:
+  endpoints:
+    - path: /api/json
+      method: POST
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"contentType":"json"}'
+
+    - path: /api/xml
+      method: POST
+      response:
+        status: 200
+        headers:
+          Content-Type: application/xml
+        body: '<response><contentType>xml</contentType></response>'
+
+    - path: /api/form
+      method: POST
+      response:
+        status: 200
+        headers:
+          Content-Type: application/x-www-form-urlencoded
+        body: 'status=ok&processed=true'
+
+    - path: /api/multipart
+      method: POST
+      response:
+        status: 200
+        headers:
+          Content-Type: multipart/form-data
+        body: 'multipart-response'
+
+uncors:
+  http-port: 3009
+  mappings:
+    - from: http://localhost:3009
+      to: "{{backend}}"
+
+tests:
+  - name: "JSON content type"
+    request:
+      method: POST
+      path: /api/json
+      headers:
+        Content-Type: application/json
+      body: '{"test":"data"}'
+    expected:
+      status: 200
+      headers:
+        Content-Type: application/json
+
+  - name: "XML content type"
+    request:
+      method: POST
+      path: /api/xml
+      headers:
+        Content-Type: application/xml
+      body: '<request><test>data</test></request>'
+    expected:
+      status: 200
+      headers:
+        Content-Type: application/xml
+
+  - name: "Form URL encoded"
+    request:
+      method: POST
+      path: /api/form
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: 'key1=value1&key2=value2'
+    expected:
+      status: 200
+      headers:
+        Content-Type: application/x-www-form-urlencoded

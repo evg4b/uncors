@@ -1,0 +1,55 @@
+name: "OPTIONS Preflight Requests"
+description: "Test CORS preflight OPTIONS request handling"
+
+backend:
+  endpoints:
+    - path: /api/data
+      method: OPTIONS
+      response:
+        status: 204
+        headers:
+          Access-Control-Allow-Origin: https://example.com
+          Access-Control-Allow-Methods: GET, POST
+          Access-Control-Max-Age: "3600"
+
+    - path: /api/data
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"created":true}'
+
+uncors:
+  http-port: 3010
+  mappings:
+    - from: http://localhost:3010
+      to: "{{backend}}"
+
+tests:
+  - name: "OPTIONS preflight request"
+    request:
+      method: OPTIONS
+      path: /api/data
+      headers:
+        Origin: http://localhost:3010
+        Access-Control-Request-Method: POST
+        Access-Control-Request-Headers: Content-Type
+    expected:
+      status: 204
+      headers-exist:
+        - Access-Control-Allow-Origin
+        - Access-Control-Allow-Methods
+
+  - name: "Actual POST request after preflight"
+    request:
+      method: POST
+      path: /api/data
+      headers:
+        Origin: http://localhost:3010
+        Content-Type: application/json
+      body: '{"test":"data"}'
+    expected:
+      status: 201
+      body-contains:
+        - "created"

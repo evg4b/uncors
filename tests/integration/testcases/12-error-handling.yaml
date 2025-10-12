@@ -1,0 +1,78 @@
+name: "Error Handling"
+description: "Test proxy behavior with backend errors and edge cases"
+
+backend:
+  endpoints:
+    - path: /api/timeout
+      method: GET
+      response:
+        status: 504
+        body: '{"error":"gateway timeout"}'
+
+    - path: /api/server-error
+      method: GET
+      response:
+        status: 500
+        body: '{"error":"internal server error"}'
+
+    - path: /api/bad-gateway
+      method: GET
+      response:
+        status: 502
+        body: '{"error":"bad gateway"}'
+
+    - path: /api/success
+      method: GET
+      response:
+        status: 200
+        body: '{"status":"ok"}'
+
+uncors:
+  http-port: 3011
+  mappings:
+    - from: http://localhost:3011
+      to: "{{backend}}"
+
+tests:
+  - name: "Backend timeout error"
+    request:
+      method: GET
+      path: /api/timeout
+    expected:
+      status: 504
+      body-contains:
+        - "timeout"
+
+  - name: "Backend server error"
+    request:
+      method: GET
+      path: /api/server-error
+    expected:
+      status: 500
+      body-contains:
+        - "internal server error"
+
+  - name: "Bad gateway error"
+    request:
+      method: GET
+      path: /api/bad-gateway
+    expected:
+      status: 502
+      body-contains:
+        - "bad gateway"
+
+  - name: "Non-existent endpoint"
+    request:
+      method: GET
+      path: /api/does-not-exist
+    expected:
+      status: 404
+
+  - name: "Successful request after errors"
+    request:
+      method: GET
+      path: /api/success
+    expected:
+      status: 200
+      body-contains:
+        - "ok"
