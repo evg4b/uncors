@@ -1,0 +1,29 @@
+name: "Basic Proxy"
+description: "Test basic HTTP proxying functionality"
+
+backend:
+  endpoints:
+    - path: /api/hello
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"message":"hello world"}'
+
+uncors:
+  http-port: 3000
+  mappings:
+    - from: http://localhost:3000
+      to: "{{backend}}"
+
+tests:
+  - name: "GET request proxying"
+    request:
+      method: GET
+      path: /api/hello
+    expected:
+      status: 200
+      body: '{"message":"hello world"}'
+      headers:
+        Content-Type: application/json

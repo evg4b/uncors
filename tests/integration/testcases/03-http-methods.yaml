@@ -1,0 +1,100 @@
+name: "HTTP Methods Support"
+description: "Test various HTTP methods (GET, POST, PUT, DELETE, PATCH)"
+
+backend:
+  endpoints:
+    - path: /api/resource
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"GET"}'
+
+    - path: /api/resource
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"method":"POST","created":true}'
+
+    - path: /api/resource
+      method: PUT
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"PUT","updated":true}'
+
+    - path: /api/resource
+      method: DELETE
+      response:
+        status: 204
+        headers:
+          Content-Type: application/json
+        body: ''
+
+    - path: /api/resource
+      method: PATCH
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"method":"PATCH","patched":true}'
+
+uncors:
+  http-port: 3002
+  mappings:
+    - from: http://localhost:3002
+      to: "{{backend}}"
+
+tests:
+  - name: "GET method"
+    request:
+      method: GET
+      path: /api/resource
+    expected:
+      status: 200
+      body-contains:
+        - "GET"
+
+  - name: "POST method"
+    request:
+      method: POST
+      path: /api/resource
+      body: '{"name":"test"}'
+    expected:
+      status: 201
+      body-contains:
+        - "POST"
+        - "created"
+
+  - name: "PUT method"
+    request:
+      method: PUT
+      path: /api/resource
+      body: '{"name":"updated"}'
+    expected:
+      status: 200
+      body-contains:
+        - "PUT"
+        - "updated"
+
+  - name: "DELETE method"
+    request:
+      method: DELETE
+      path: /api/resource
+    expected:
+      status: 204
+
+  - name: "PATCH method"
+    request:
+      method: PATCH
+      path: /api/resource
+      body: '{"name":"patched"}'
+    expected:
+      status: 200
+      body-contains:
+        - "PATCH"
+        - "patched"
