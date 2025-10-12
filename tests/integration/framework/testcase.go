@@ -25,26 +25,26 @@ type BackendConfig struct {
 
 // UncorsConfig defines the uncors proxy configuration.
 type UncorsConfig struct {
-	HTTPPort  int               `yaml:"http-port"`
-	HTTPSPort int               `yaml:"https-port"`
-	Config    map[string]any    `yaml:"config"`
-	ConfigRaw string            `yaml:"config-raw"`
-	Mappings  []MappingConfig   `yaml:"mappings"`
+	HTTPPort  int             `yaml:"http-port"`
+	HTTPSPort int             `yaml:"https-port"`
+	Config    map[string]any  `yaml:"config"`
+	ConfigRaw string          `yaml:"config-raw"`
+	Mappings  []MappingConfig `yaml:"mappings"`
 }
 
 // MappingConfig represents a single mapping in uncors configuration.
 type MappingConfig struct {
-	From     string            `yaml:"from"`
-	To       string            `yaml:"to"`
-	Mocks    []MockConfig      `yaml:"mocks"`
-	Statics  []StaticConfig    `yaml:"statics"`
-	Cache    []string          `yaml:"cache"`
-	Rewrites []RewriteConfig   `yaml:"rewrites"`
+	From     string          `yaml:"from"`
+	To       string          `yaml:"to"`
+	Mocks    []MockConfig    `yaml:"mocks"`
+	Statics  []StaticConfig  `yaml:"statics"`
+	Cache    []string        `yaml:"cache"`
+	Rewrites []RewriteConfig `yaml:"rewrites"`
 }
 
 // MockConfig represents a mock endpoint in uncors configuration.
 type MockConfig struct {
-	Path     string            `yaml:"path"`
+	Path     string             `yaml:"path"`
 	Response MockResponseConfig `yaml:"response"`
 }
 
@@ -58,8 +58,9 @@ type MockResponseConfig struct {
 
 // StaticConfig represents static file serving configuration.
 type StaticConfig struct {
-	Path      string `yaml:"path"`
-	Directory string `yaml:"directory"`
+	Path  string `yaml:"path"`
+	Dir   string `yaml:"dir"`
+	Index string `yaml:"index,omitempty"`
 }
 
 // RewriteConfig represents URL rewriting configuration.
@@ -70,10 +71,10 @@ type RewriteConfig struct {
 
 // TestDefinition represents a single test within a test case.
 type TestDefinition struct {
-	Name        string           `yaml:"name"`
-	Request     RequestConfig    `yaml:"request"`
-	Expected    ExpectedResponse `yaml:"expected"`
-	DNS         map[string]string `yaml:"dns"`
+	Name     string            `yaml:"name"`
+	Request  RequestConfig     `yaml:"request"`
+	Expected ExpectedResponse  `yaml:"expected"`
+	DNS      map[string]string `yaml:"dns"`
 }
 
 // RequestConfig defines the HTTP request to be made.
