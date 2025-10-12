@@ -37,9 +37,11 @@ tests:
           Access-Control-Request-Headers: Content-Type
     expected:
       status: 200
-      headers-exist:
-        - Access-Control-Allow-Origin
-        - Access-Control-Allow-Methods
+      headers:
+        Access-Control-Allow-Origin: http://localhost:3010
+        Access-Control-Allow-Methods: POST
+        Access-Control-Allow-Headers: Content-Type
+        Access-Control-Allow-Credentials: "true"
 
   - name: "Actual POST request after preflight"
     requests:
@@ -51,5 +53,8 @@ tests:
         body: '{"test":"data"}'
     expected:
       status: 201
+      headers:
+        Access-Control-Allow-Origin: http://localhost:3010
+        Access-Control-Allow-Credentials: "true"
       body-contains:
         - "created"
