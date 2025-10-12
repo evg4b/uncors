@@ -3,16 +3,15 @@ description: "Test cache headers and configuration"
 
 backend:
   endpoints:
-    - path: /api/cached
+    - path: /api/cached2
       method: GET
       response:
         status: 200
         headers:
           Content-Type: application/json
-          Cache-Control: no-cache
-        body: '{"cached":false,"timestamp":"backend"}'
+        body: '{"test":"multiple-requests","cached":false}'
 
-    - path: /api/cached
+    - path: /api/cached3
       method: POST
       response:
         status: 201
@@ -42,42 +41,51 @@ uncors:
     - from: http://localhost:3014
       to: "{{backend}}"
       cache:
-        - /api/cached
+        - /api/cached*
         - /images/*
 
 tests:
-  - name: "Cached endpoint has cache headers"
+  - name: "Cached endpoint - backend called only once for multiple requests"
     request:
       method: GET
-      path: /api/cached
+      path: /api/cached2
+    repeat: 5
+    backend-calls-count: 1
     expected:
       status: 200
-      headers-exist:
-        - Cache-Control
+      body-json:
+        test: multiple-requests
+        cached: false
 
-  - name: "Wildcard cache pattern"
+  - name: "Wildcard cache pattern - backend called only once"
     request:
       method: GET
       path: /images/logo.png
+    repeat: 3
+    backend-calls-count: 1
     expected:
       status: 200
 
-  - name: "Uncached endpoint works normally"
+  - name: "Uncached endpoint - backend called every time"
     request:
       method: GET
       path: /api/uncached
+    repeat: 3
+    backend-calls-count: 3
     expected:
       status: 200
       body-json:
         cached: false
 
-  - name: "POST requests bypass cache"
+  - name: "POST requests bypass cache - backend called every time"
     request:
       method: POST
-      path: /api/cached
+      path: /api/cached3
       headers:
         Content-Type: application/json
       body: '{"test":"data"}'
+    repeat: 2
+    backend-calls-count: 2
     expected:
       status: 201
       body-json:

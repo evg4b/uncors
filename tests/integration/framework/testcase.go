@@ -71,10 +71,12 @@ type RewriteConfig struct {
 
 // TestDefinition represents a single test within a test case.
 type TestDefinition struct {
-	Name     string            `yaml:"name"`
-	Request  RequestConfig     `yaml:"request"`
-	Expected ExpectedResponse  `yaml:"expected"`
-	DNS      map[string]string `yaml:"dns"`
+	Name              string            `yaml:"name"`
+	Request           RequestConfig     `yaml:"request"`
+	Expected          ExpectedResponse  `yaml:"expected"`
+	DNS               map[string]string `yaml:"dns"`
+	Repeat            int               `yaml:"repeat"`                        // Number of times to repeat the request
+	BackendCallsCount int               `yaml:"backend-calls-count,omitempty"` //nolint:tagliatelle
 }
 
 // RequestConfig defines the HTTP request to be made.
