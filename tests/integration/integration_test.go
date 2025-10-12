@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/tests/integration/framework"
@@ -14,7 +13,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// Load all test cases from testcases directory
-	testCasesDir := filepath.Join("testcases")
+	testCasesDir := "testcases"
 	testCases, err := framework.LoadTestCasesFromDir(testCasesDir)
 	require.NoError(t, err, "failed to load test cases")
 

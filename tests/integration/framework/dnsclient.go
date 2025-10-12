@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+// HTTP client constants.
+const (
+	defaultDialTimeout         = 30 * time.Second
+	defaultKeepAlive           = 30 * time.Second
+	defaultMaxIdleConns        = 100
+	defaultIdleConnTimeout     = 90 * time.Second
+	defaultTLSHandshakeTimeout = 10 * time.Second
+	defaultClientTimeout       = 30 * time.Second
+)
+
 // DNSResolver provides custom DNS resolution for testing.
 type DNSResolver struct {
 	mappings map[string]string
@@ -45,8 +55,8 @@ func (r *DNSResolver) AddMapping(hostname, ip string) {
 // CreateHTTPClient creates an HTTP client with custom DNS resolution.
 func CreateHTTPClient(resolver *DNSResolver) *http.Client {
 	dialer := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
+		Timeout:   defaultDialTimeout,
+		KeepAlive: defaultKeepAlive,
 	}
 
 	transport := &http.Transport{
@@ -63,16 +73,16 @@ func CreateHTTPClient(resolver *DNSResolver) *http.Client {
 
 			return dialer.DialContext(ctx, network, addr)
 		},
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
+		MaxIdleConns:          defaultMaxIdleConns,
+		IdleConnTimeout:       defaultIdleConnTimeout,
+		TLSHandshakeTimeout:   defaultTLSHandshakeTimeout,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
 	return &http.Client{
 		Transport: transport,
-		Timeout:   30 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		Timeout:   defaultClientTimeout,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			// Don't follow redirects - return the redirect response
 			return http.ErrUseLastResponse
 		},

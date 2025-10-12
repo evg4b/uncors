@@ -25,10 +25,10 @@ type BackendConfig struct {
 
 // UncorsConfig defines the uncors proxy configuration.
 type UncorsConfig struct {
-	HTTPPort  int             `yaml:"http-port"`
-	HTTPSPort int             `yaml:"https-port"`
+	HTTPPort  int             `yaml:"http-port"`  //nolint:tagliatelle // YAML format from test cases
+	HTTPSPort int             `yaml:"https-port"` //nolint:tagliatelle // YAML format from test cases
 	Config    map[string]any  `yaml:"config"`
-	ConfigRaw string          `yaml:"config-raw"`
+	ConfigRaw string          `yaml:"config-raw"` //nolint:tagliatelle // YAML format from test cases
 	Mappings  []MappingConfig `yaml:"mappings"`
 }
 
@@ -90,10 +90,10 @@ type RequestConfig struct {
 type ExpectedResponse struct {
 	Status       int                    `yaml:"status"`
 	Body         string                 `yaml:"body"`
-	BodyContains []string               `yaml:"body-contains"`
-	BodyJSON     map[string]interface{} `yaml:"body-json"`
+	BodyContains []string               `yaml:"body-contains"` //nolint:tagliatelle // YAML format from test cases
+	BodyJSON     map[string]interface{} `yaml:"body-json"`     //nolint:tagliatelle // YAML format from test cases
 	Headers      map[string]string      `yaml:"headers"`
-	HeadersExist []string               `yaml:"headers-exist"`
+	HeadersExist []string               `yaml:"headers-exist"` //nolint:tagliatelle // YAML format from test cases
 }
 
 // LoadTestCase loads a test case from a YAML file.

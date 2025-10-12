@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+)
+
+// Errors.
+var (
+	ErrUncorsStartTimeout  = errors.New("timeout waiting for uncors to start")
+	ErrProjectRootNotFound = errors.New("project root not found")
+)
+
+// Constants.
+const (
+	defaultHTTPPort      = 3000
+	yamlIndent           = 2
+	uncorsStartupTimeout = 10 * time.Second
+	startupCheckInterval = 100 * time.Millisecond
+	requestTimeout       = 30 * time.Second
 )
 
 // TestRunner orchestrates integration tests.
@@ -79,13 +95,13 @@ func (r *TestRunner) Setup() error {
 func (r *TestRunner) Teardown() {
 	// Stop uncors
 	if r.uncorsCmd != nil && r.uncorsCmd.Process != nil {
-		r.uncorsCmd.Process.Kill()
-		r.uncorsCmd.Wait()
+		_ = r.uncorsCmd.Process.Kill()
+		_ = r.uncorsCmd.Wait()
 	}
 
 	// Clean up config file
 	if r.uncorsConfigPath != "" {
-		os.Remove(r.uncorsConfigPath)
+		_ = os.Remove(r.uncorsConfigPath)
 	}
 
 	// Stop backend server
@@ -94,7 +110,7 @@ func (r *TestRunner) Teardown() {
 	}
 }
 
-// generateUncorsConfig creates a configuration file for uncors.
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) generateUncorsConfig() error {
 	config := r.buildConfigMap()
 
@@ -107,7 +123,7 @@ func (r *TestRunner) generateUncorsConfig() error {
 
 	// Write config as YAML
 	encoder := yaml.NewEncoder(tmpFile)
-	encoder.SetIndent(2)
+	encoder.SetIndent(yamlIndent)
 	if err := encoder.Encode(config); err != nil {
 		tmpFile.Close()
 
@@ -121,6 +137,8 @@ func (r *TestRunner) generateUncorsConfig() error {
 }
 
 // buildConfigMap constructs the uncors configuration map.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) buildConfigMap() map[string]any {
 	config := make(map[string]any)
 
@@ -146,6 +164,8 @@ func (r *TestRunner) buildConfigMap() map[string]any {
 }
 
 // buildMappingsConfig constructs the mappings configuration array.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) buildMappingsConfig() []map[string]any {
 	mappings := make([]map[string]any, 0, len(r.testCase.Uncors.Mappings))
 	for _, mapping := range r.testCase.Uncors.Mappings {
@@ -157,8 +177,10 @@ func (r *TestRunner) buildMappingsConfig() []map[string]any {
 }
 
 // buildSingleMapping constructs a single mapping configuration.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) buildSingleMapping(mapping MappingConfig) map[string]any {
-	m := make(map[string]any)
+	mappingConfig := make(map[string]any)
 
 	// Replace backend URL placeholder with actual server URL
 	to := mapping.To
@@ -166,42 +188,46 @@ func (r *TestRunner) buildSingleMapping(mapping MappingConfig) map[string]any {
 		to = r.backendServer.URL()
 	}
 
-	m["from"] = mapping.From
-	m["to"] = to
+	mappingConfig["from"] = mapping.From
+	mappingConfig["to"] = to
 
 	// Add optional configurations if present
-	r.addIfNotEmpty(m, "mocks", mapping.Mocks)
-	r.addIfNotEmpty(m, "statics", mapping.Statics)
-	r.addIfNotEmpty(m, "cache", mapping.Cache)
-	r.addIfNotEmpty(m, "rewrites", mapping.Rewrites)
+	r.addIfNotEmpty(mappingConfig, "mocks", mapping.Mocks)
+	r.addIfNotEmpty(mappingConfig, "statics", mapping.Statics)
+	r.addIfNotEmpty(mappingConfig, "cache", mapping.Cache)
+	r.addIfNotEmpty(mappingConfig, "rewrites", mapping.Rewrites)
 
-	return m
+	return mappingConfig
 }
 
 // addIfNotEmpty adds a value to the map if the slice is not empty.
-func (r *TestRunner) addIfNotEmpty(m map[string]any, key string, value any) {
-	// Use reflection to check if value is a slice and not empty
-	switch v := value.(type) {
+//
+//nolint:funcorder // Helper methods grouped logically with usage
+func (r *TestRunner) addIfNotEmpty(mappingConfig map[string]any, key string, value any) {
+	// Use type switching to check if value is a slice and not empty
+	switch val := value.(type) {
 	case []MockConfig:
-		if len(v) > 0 {
-			m[key] = v
+		if len(val) > 0 {
+			mappingConfig[key] = val
 		}
 	case []StaticConfig:
-		if len(v) > 0 {
-			m[key] = v
+		if len(val) > 0 {
+			mappingConfig[key] = val
 		}
 	case []string:
-		if len(v) > 0 {
-			m[key] = v
+		if len(val) > 0 {
+			mappingConfig[key] = val
 		}
 	case []RewriteConfig:
-		if len(v) > 0 {
-			m[key] = v
+		if len(val) > 0 {
+			mappingConfig[key] = val
 		}
 	}
 }
 
 // startUncors starts the uncors proxy server.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) startUncors() error {
 	// Find uncors binary
 	uncorsBinary, err := r.findUncorsBinary()
@@ -224,6 +250,8 @@ func (r *TestRunner) startUncors() error {
 }
 
 // findUncorsBinary locates the uncors binary.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) findUncorsBinary() (string, error) {
 	// Find project root
 	projectRoot, err := findProjectRoot()
@@ -260,19 +288,31 @@ func (r *TestRunner) findUncorsBinary() (string, error) {
 }
 
 // waitForUncors waits for uncors to be ready to accept connections.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) waitForUncors() error {
 	port := r.getHTTPPort()
-	timeout := time.After(10 * time.Second)
-	ticker := time.NewTicker(100 * time.Millisecond)
+	timeout := time.After(uncorsStartupTimeout)
+	ticker := time.NewTicker(startupCheckInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("timeout waiting for uncors to start")
+			return ErrUncorsStartTimeout
 		case <-ticker.C:
 			// Try to connect
-			resp, err := http.Get(fmt.Sprintf("http://localhost:%d", port))
+			req, err := http.NewRequestWithContext(
+				context.Background(),
+				http.MethodGet,
+				fmt.Sprintf("http://localhost:%d", port),
+				http.NoBody,
+			)
+			if err != nil {
+				continue
+			}
+
+			resp, err := http.DefaultClient.Do(req)
 			if err == nil {
 				resp.Body.Close()
 				r.t.Logf("Uncors is ready on port %d", port)
@@ -284,15 +324,19 @@ func (r *TestRunner) waitForUncors() error {
 }
 
 // getHTTPPort returns the HTTP port for uncors, using default if not specified.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) getHTTPPort() int {
 	if r.testCase.Uncors.HTTPPort != 0 {
 		return r.testCase.Uncors.HTTPPort
 	}
 
-	return 3000 // default port
+	return defaultHTTPPort
 }
 
 // buildRequestURL constructs the request URL from test definition.
+//
+//nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) buildRequestURL(test TestDefinition) string {
 	// Use explicit URL if provided
 	if test.Request.URL != "" {
@@ -321,20 +365,34 @@ func (r *TestRunner) Run() {
 // runTest executes a single test.
 func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	// Update DNS resolver with test-specific mappings
+	r.configureDNS(test)
+
+	// Create and execute request
+	req := r.createRequest(t, test)
+	resp, bodyBytes := r.executeRequest(t, req)
+	defer resp.Body.Close()
+
+	// Verify response
+	r.verifyResponse(t, test, resp, bodyBytes)
+}
+
+// configureDNS updates DNS resolver with test-specific mappings.
+func (r *TestRunner) configureDNS(test TestDefinition) {
 	for host, ip := range test.DNS {
 		r.resolver.AddMapping(host, ip)
 	}
+}
 
-	// Build request URL
+// createRequest builds an HTTP request from test definition.
+func (r *TestRunner) createRequest(t *testing.T, test TestDefinition) *http.Request {
 	url := r.buildRequestURL(test)
 
-	// Create request
 	var bodyReader io.Reader
 	if test.Request.Body != "" {
 		bodyReader = strings.NewReader(test.Request.Body)
 	}
 
-	req, err := http.NewRequest(test.Request.Method, url, bodyReader)
+	req, err := http.NewRequestWithContext(t.Context(), test.Request.Method, url, bodyReader)
 	require.NoError(t, err, "failed to create request")
 
 	// Set headers
@@ -342,19 +400,26 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 		req.Header.Set(key, value)
 	}
 
-	// Execute request
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	return req
+}
+
+// executeRequest executes the HTTP request and returns response with body.
+func (r *TestRunner) executeRequest(t *testing.T, req *http.Request) (*http.Response, []byte) {
+	ctx, cancel := context.WithTimeout(t.Context(), requestTimeout)
 	defer cancel()
 	req = req.WithContext(ctx)
 
 	resp, err := r.httpClient.Do(req)
 	require.NoError(t, err, "request failed")
-	defer resp.Body.Close()
 
-	// Read response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	require.NoError(t, err, "failed to read response body")
 
+	return resp, bodyBytes
+}
+
+// verifyResponse checks all response expectations.
+func (r *TestRunner) verifyResponse(t *testing.T, test TestDefinition, resp *http.Response, bodyBytes []byte) {
 	// Verify status code
 	if test.Expected.Status != 0 {
 		assert.Equal(t, test.Expected.Status, resp.StatusCode, "status code mismatch")
@@ -371,15 +436,7 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	}
 
 	// Verify body JSON
-	if len(test.Expected.BodyJSON) > 0 {
-		var actualJSON map[string]interface{}
-		err := json.Unmarshal(bodyBytes, &actualJSON)
-		require.NoError(t, err, "failed to parse response as JSON")
-
-		for key, expectedValue := range test.Expected.BodyJSON {
-			assert.Equal(t, expectedValue, actualJSON[key], "JSON field %s mismatch", key)
-		}
-	}
+	r.verifyBodyJSON(t, test.Expected.BodyJSON, bodyBytes)
 
 	// Verify headers
 	for key, expectedValue := range test.Expected.Headers {
@@ -389,6 +446,21 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	// Verify headers exist
 	for _, header := range test.Expected.HeadersExist {
 		assert.NotEmpty(t, resp.Header.Get(header), "header %s should exist", header)
+	}
+}
+
+// verifyBodyJSON verifies JSON response body against expected values.
+func (r *TestRunner) verifyBodyJSON(t *testing.T, expected map[string]interface{}, bodyBytes []byte) {
+	if len(expected) == 0 {
+		return
+	}
+
+	var actualJSON map[string]interface{}
+	err := json.Unmarshal(bodyBytes, &actualJSON)
+	require.NoError(t, err, "failed to parse response as JSON")
+
+	for key, expectedValue := range expected {
+		assert.Equal(t, expectedValue, actualJSON[key], "JSON field %s mismatch", key)
 	}
 }
 
@@ -411,7 +483,7 @@ func findProjectRoot() (string, error) {
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("project root not found")
+			return "", ErrProjectRootNotFound
 		}
 		dir = parent
 	}
