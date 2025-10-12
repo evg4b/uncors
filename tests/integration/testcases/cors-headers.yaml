@@ -28,7 +28,7 @@ tests:
           Origin: http://localhost:3001
     expected:
       status: 200
-      headers-exist:
-        - Access-Control-Allow-Origin
-        - Access-Control-Allow-Methods
-        - Access-Control-Allow-Credentials
+      headers:
+        Access-Control-Allow-Origin: http://localhost:3001
+        Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+        Access-Control-Allow-Credentials: "true"

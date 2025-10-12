@@ -42,7 +42,6 @@ type TestRunner struct {
 	uncorsCmd        *exec.Cmd
 	uncorsConfigPath string
 	httpClient       *http.Client
-	resolver         *DNSResolver
 }
 
 // NewTestRunner creates a new test runner for the given test case.
@@ -65,13 +64,13 @@ func (r *TestRunner) Setup() error {
 		r.t.Logf("Started backend server at: %s", r.backendServer.URL())
 	}
 
-	// Create DNS resolver with default localhost mapping
-	r.resolver = NewDNSResolver(map[string]string{
-		"localhost": "127.0.0.1",
-	})
-
-	// Create HTTP client with custom DNS resolver
-	r.httpClient = CreateHTTPClient(r.resolver)
+	// Create HTTP client
+	r.httpClient = &http.Client{
+		Timeout: requestTimeout,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	// Generate uncors configuration
 	if err := r.generateUncorsConfig(); err != nil {
@@ -371,9 +370,6 @@ func (r *TestRunner) Run() {
 
 // runTest executes a single test.
 func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
-	// Update DNS resolver with test-specific mappings
-	r.configureDNS(test)
-
 	// Clear backend request history before test
 	if r.backendServer != nil {
 		r.backendServer.ClearRequests()
@@ -390,7 +386,7 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	r.verifyBackendCalls(t, test)
 }
 
-// executeRequestSequence executes all requests for a test with repetitions.
+// executeRequestSequence executes all requests for a test.
 //
 //nolint:funcorder // Helper methods grouped logically with usage
 func (r *TestRunner) executeRequestSequence(
@@ -399,21 +395,14 @@ func (r *TestRunner) executeRequestSequence(
 ) (*http.Response, []byte) {
 	requests := r.collectRequests(test)
 
-	repeatCount := test.Repeat
-	if repeatCount == 0 {
-		repeatCount = 1
-	}
-
 	var resp *http.Response
 	var bodyBytes []byte
-	for iteration := range repeatCount {
-		for reqIndex, reqConfig := range requests {
-			req := r.createRequestFromConfig(t, reqConfig)
-			resp, bodyBytes = r.executeRequest(t, req)
-			// Close response for all but the last request
-			if iteration < repeatCount-1 || reqIndex < len(requests)-1 {
-				resp.Body.Close()
-			}
+	for reqIndex, reqConfig := range requests {
+		req := r.createRequestFromConfig(t, reqConfig)
+		resp, bodyBytes = r.executeRequest(t, req)
+		// Close response for all but the last request
+		if reqIndex < len(requests)-1 {
+			resp.Body.Close()
 		}
 	}
 
@@ -426,13 +415,6 @@ func (r *TestRunner) executeRequestSequence(
 func (r *TestRunner) verifyBackendCalls(t *testing.T, test TestDefinition) {
 	if r.backendServer == nil {
 		return
-	}
-
-	// Verify total backend call count
-	if test.BackendCallsCount > 0 {
-		actualCalls := len(r.backendServer.GetRequests())
-		assert.Equal(t, test.BackendCallsCount, actualCalls,
-			"expected %d backend call(s) but got %d", test.BackendCallsCount, actualCalls)
 	}
 
 	// Verify endpoint-specific call counts
@@ -454,13 +436,6 @@ func (r *TestRunner) verifyEndpointCallCounts(t *testing.T, test TestDefinition)
 		actualCount := endpointCounts[endpoint]
 		assert.Equal(t, expectedCount, actualCount,
 			"expected %d call(s) to %s but got %d", expectedCount, endpoint, actualCount)
-	}
-}
-
-// configureDNS updates DNS resolver with test-specific mappings.
-func (r *TestRunner) configureDNS(test TestDefinition) {
-	for host, ip := range test.DNS {
-		r.resolver.AddMapping(host, ip)
 	}
 }
 

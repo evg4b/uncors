@@ -49,8 +49,16 @@ tests:
     requests:
       - method: GET
         path: /api/cached2
-    repeat: 5
-    backend-calls-count: 1
+      - method: GET
+        path: /api/cached2
+      - method: GET
+        path: /api/cached2
+      - method: GET
+        path: /api/cached2
+      - method: GET
+        path: /api/cached2
+    endpoint-calls-count:
+      /api/cached2: 1
     expected:
       status: 200
       body-json:
@@ -61,8 +69,12 @@ tests:
     requests:
       - method: GET
         path: /images/logo.png
-    repeat: 3
-    backend-calls-count: 1
+      - method: GET
+        path: /images/logo.png
+      - method: GET
+        path: /images/logo.png
+    endpoint-calls-count:
+      /images/logo.png: 1
     expected:
       status: 200
 
@@ -70,8 +82,12 @@ tests:
     requests:
       - method: GET
         path: /api/uncached
-    repeat: 3
-    backend-calls-count: 3
+      - method: GET
+        path: /api/uncached
+      - method: GET
+        path: /api/uncached
+    endpoint-calls-count:
+      /api/uncached: 3
     expected:
       status: 200
       body-json:
@@ -84,8 +100,13 @@ tests:
         headers:
           Content-Type: application/json
         body: '{"test":"data"}'
-    repeat: 2
-    backend-calls-count: 2
+      - method: POST
+        path: /api/cached3
+        headers:
+          Content-Type: application/json
+        body: '{"test":"data"}'
+    endpoint-calls-count:
+      /api/cached3: 2
     expected:
       status: 201
       body-json:
