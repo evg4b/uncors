@@ -49,14 +49,32 @@ tests:
     requests:
       - method: GET
         path: /api/cached2
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Cache-Control: no-cache
       - method: GET
         path: /api/cached2
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Accept: application/json
       - method: GET
         path: /api/cached2
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Accept: application/json
       - method: GET
         path: /api/cached2
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Accept: application/json
       - method: GET
         path: /api/cached2
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Accept: application/json
     endpoint-calls-count:
       /api/cached2: 1
     expected:
