@@ -32,9 +32,18 @@ tests:
       - method: OPTIONS
         path: /api/data
         headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: "*/*"
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
           Origin: http://test.local:3010
           Access-Control-Request-Method: POST
           Access-Control-Request-Headers: Content-Type
+          Referer: http://test.local:3010/
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
     expected:
       status: 200
       headers:
@@ -48,8 +57,17 @@ tests:
       - method: POST
         path: /api/data
         headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
           Origin: http://test.local:3010
           Content-Type: application/json
+          Referer: http://test.local:3010/
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
         body: '{"test":"data"}'
     expected:
       status: 201

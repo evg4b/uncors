@@ -56,10 +56,22 @@ tests:
   - name: "Set-Cookie header is forwarded from backend"
     requests:
       - method: GET
-        path: /api/set-cookie
+        url: http://test.local:3015/api/set-cookie
         headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
-          Accept: application/json
+          Host: test.local:3015
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3015/
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
     expected:
       status: 200
       headers-exist:
@@ -70,11 +82,24 @@ tests:
   - name: "Multiple Set-Cookie headers are forwarded"
     requests:
       - method: GET
-        path: /api/set-multiple-cookies
+        url: http://test.local:3015/api/set-multiple-cookies
         headers:
-          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+          Host: test.local:3015
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
           Accept: application/json
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3015/settings
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Windows"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          Cache-Control: no-cache
+          Pragma: no-cache
+          X-Requested-With: XMLHttpRequest
     expected:
       status: 200
       body-json:
@@ -83,12 +108,21 @@ tests:
   - name: "Cookie header is forwarded to backend"
     requests:
       - method: GET
-        path: /api/read-cookie
+        url: http://test.local:3015/api/read-cookie
         headers:
-          Cookie: session_id=test123; user_pref=light
-          User-Agent: Mozilla/5.0 (X11; Linux x86_64)
+          Host: test.local:3015
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0
           Accept: application/json
-          Accept-Encoding: gzip, deflate, br
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Cookie: session_id=test123; user_pref=light
+          Referer: http://test.local:3015/dashboard
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
+          DNT: "1"
     expected:
       status: 200
       body-json:
@@ -97,12 +131,18 @@ tests:
   - name: "Authentication flow with secure cookie"
     requests:
       - method: POST
-        path: /api/auth
+        url: http://test.local:3015/api/auth
         headers:
-          Content-Type: application/json
-          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)
-          Accept: application/json
+          Host: test.local:3015
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate
           Accept-Language: en-US
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "46"
+          Origin: http://test.local:3015
+          Referer: http://test.local:3015/login
+          Connection: keep-alive
         body: '{"username":"testuser","password":"testpass"}'
     expected:
       status: 201
@@ -114,13 +154,19 @@ tests:
   - name: "Request with cookie after authentication"
     requests:
       - method: GET
-        path: /api/profile
+        url: http://test.local:3015/api/profile
         headers:
-          Cookie: auth_token=secure123
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
-          Accept: application/json
+          Host: test.local:3015
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15
+          Accept: application/json, text/plain, */*
           Accept-Encoding: gzip, deflate
           Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Cookie: auth_token=secure123
+          Referer: http://test.local:3015/profile
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
     expected:
       status: 200
       body-json:

@@ -25,7 +25,16 @@ tests:
       - method: GET
         path: /api/data
         headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
           Origin: http://test.local:3001
+          Referer: http://test.local:3001/
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
     expected:
       status: 200
       headers:

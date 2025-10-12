@@ -45,13 +45,26 @@ tests:
   - name: "JSON content type"
     requests:
       - method: POST
-        path: /api/json
+        url: http://test.local:3009/api/json
         headers:
-          Content-Type: application/json
-          Accept: application/json
-          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-          Accept-Encoding: gzip, deflate, br
+          Host: test.local:3009
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.9
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "15"
+          Origin: http://test.local:3009
+          Referer: http://test.local:3009/
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Windows"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
+          Priority: u=1, i
         body: '{"test":"data"}'
     expected:
       status: 200
@@ -61,13 +74,26 @@ tests:
   - name: "XML content type"
     requests:
       - method: POST
-        path: /api/xml
+        url: http://test.local:3009/api/xml
         headers:
-          Content-Type: application/xml
-          Accept: application/xml, text/xml
-          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
-          Accept-Encoding: gzip, deflate
+          Host: test.local:3009
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/xml, text/xml, */*
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.9
+          Content-Type: application/xml; charset=utf-8
+          Content-Length: "34"
+          Origin: http://test.local:3009
+          Referer: http://test.local:3009/xml-form
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Linux"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          DNT: "1"
+          sec-gpc: "1"
         body: '<request><test>data</test></request>'
     expected:
       status: 200
@@ -77,13 +103,20 @@ tests:
   - name: "Form URL encoded"
     requests:
       - method: POST
-        path: /api/form
+        url: http://test.local:3009/api/form
         headers:
-          Content-Type: application/x-www-form-urlencoded
+          Host: test.local:3009
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15
           Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15
           Accept-Encoding: gzip, deflate
           Accept-Language: en-US,en;q=0.9
+          Content-Type: application/x-www-form-urlencoded
+          Content-Length: "23"
+          Origin: http://test.local:3009
+          Referer: http://test.local:3009/contact
+          Connection: keep-alive
+          Cache-Control: max-age=0
+          Upgrade-Insecure-Requests: "1"
         body: 'key1=value1&key2=value2'
     expected:
       status: 200
