@@ -1,0 +1,43 @@
+name: "Response Mocking"
+description: "Test uncors mock response functionality"
+
+backend:
+  endpoints:
+    - path: /api/real
+      method: GET
+      response:
+        status: 200
+        body: '{"source":"backend"}'
+
+uncors:
+  http-port: 3006
+  mappings:
+    - from: http://localhost:3006
+      to: "{{backend}}"
+      mocks:
+        - path: /api/mocked
+          response:
+            code: 200
+            headers:
+              Content-Type: application/json
+            raw: '{"source":"mock","mocked":true}'
+
+tests:
+  - name: "Mocked endpoint returns mock response"
+    request:
+      method: GET
+      path: /api/mocked
+    expected:
+      status: 200
+      body-json:
+        source: mock
+        mocked: true
+
+  - name: "Non-mocked endpoint goes to backend"
+    request:
+      method: GET
+      path: /api/real
+    expected:
+      status: 200
+      body-json:
+        source: backend
