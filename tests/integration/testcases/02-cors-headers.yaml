@@ -1,0 +1,34 @@
+name: "CORS Headers Replacement"
+description: "Test that CORS headers are properly added/replaced"
+
+backend:
+  endpoints:
+    - path: /api/data
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+          Access-Control-Allow-Origin: https://example.com
+          Access-Control-Allow-Methods: GET
+        body: '{"data":"test"}'
+
+uncors:
+  http-port: 3001
+  mappings:
+    - from: http://localhost:3001
+      to: "{{backend}}"
+
+tests:
+  - name: "CORS headers are replaced"
+    request:
+      method: GET
+      path: /api/data
+      headers:
+        Origin: http://localhost:3001
+    expected:
+      status: 200
+      headers-exist:
+        - Access-Control-Allow-Origin
+        - Access-Control-Allow-Methods
+        - Access-Control-Allow-Credentials
