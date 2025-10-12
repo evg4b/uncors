@@ -36,6 +36,13 @@ tests:
     requests:
       - method: GET
         url: http://api.test.local:3000/api/data
+        headers:
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Host: api.test.local:3000
     expected:
       status: 200
       body: '{"source":"backend","domain":"test"}'
@@ -46,6 +53,13 @@ tests:
     requests:
       - method: GET
         url: http://app.test.local:3000/api/users
+        headers:
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Host: app.test.local:3000
     expected:
       status: 200
       body: '{"users":["alice","bob"]}'
@@ -56,8 +70,22 @@ tests:
     requests:
       - method: GET
         url: http://api.test.local:3000/api/data
+        headers:
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Connection: keep-alive
+          Host: api.test.local:3000
       - method: GET
         url: http://app.test.local:3000/api/users
+        headers:
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Connection: keep-alive
+          Host: app.test.local:3000
     expected:
       status: 200
       body: '{"users":["alice","bob"]}'

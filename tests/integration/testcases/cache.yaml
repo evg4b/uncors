@@ -48,33 +48,81 @@ tests:
   - name: "Cached endpoint - backend called only once for multiple requests"
     requests:
       - method: GET
-        path: /api/cached2
+        url: http://test.local:3014/api/cached2
         headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Cache-Control: no-cache
+          Pragma: no-cache
+          Referer: http://test.local:3014/
+          Origin: http://test.local:3014
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
+          Priority: u=1, i
+      - method: GET
+        url: http://test.local:3014/api/cached2
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9,es;q=0.8
+          Connection: keep-alive
+          Referer: http://test.local:3014/
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Windows"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          DNT: "1"
+          sec-gpc: "1"
+          X-Requested-With: XMLHttpRequest
+      - method: GET
+        url: http://test.local:3014/api/cached2
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.5
+          Connection: keep-alive
+          Referer: http://test.local:3014/dashboard
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
+      - method: GET
+        url: http://test.local:3014/api/cached2
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3014/app
+          X-Requested-With: fetch
+      - method: GET
+        url: http://test.local:3014/api/cached2
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
           Accept: application/json
           Accept-Encoding: gzip, deflate, br
-          Accept-Language: en-US,en;q=0.9
-          Cache-Control: no-cache
-      - method: GET
-        path: /api/cached2
-        headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-          Accept: application/json
-      - method: GET
-        path: /api/cached2
-        headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-          Accept: application/json
-      - method: GET
-        path: /api/cached2
-        headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-          Accept: application/json
-      - method: GET
-        path: /api/cached2
-        headers:
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-          Accept: application/json
+          Accept-Language: en-US,en;q=0.9,fr;q=0.8
+          Connection: keep-alive
+          Referer: http://test.local:3014/
+          Cache-Control: max-age=0
     endpoint-calls-count:
       /api/cached2: 1
     expected:
@@ -86,11 +134,46 @@ tests:
   - name: "Wildcard cache pattern - backend called only once"
     requests:
       - method: GET
-        path: /images/logo.png
+        url: http://test.local:3014/images/logo.png
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3014/
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: image
+          Sec-Fetch-Mode: no-cors
+          Sec-Fetch-Site: same-origin
+          Priority: i
       - method: GET
-        path: /images/logo.png
+        url: http://test.local:3014/images/logo.png
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: image/avif,image/webp,*/*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3014/index.html
+          Cache-Control: max-age=0
+          If-Modified-Since: Mon, 01 Jan 2024 00:00:00 GMT
+          TE: trailers
       - method: GET
-        path: /images/logo.png
+        url: http://test.local:3014/images/logo.png
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1
+          Accept: image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3014/app
+          Cache-Control: max-age=3600
     endpoint-calls-count:
       /images/logo.png: 1
     expected:
@@ -99,11 +182,54 @@ tests:
   - name: "Uncached endpoint - backend called every time"
     requests:
       - method: GET
-        path: /api/uncached
+        url: http://test.local:3014/api/uncached
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Cache-Control: no-store
+          Pragma: no-cache
+          Referer: http://test.local:3014/live-data
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Linux"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
       - method: GET
-        path: /api/uncached
+        url: http://test.local:3014/api/uncached
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9,de;q=0.8
+          Connection: keep-alive
+          Referer: http://test.local:3014/realtime
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Windows"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          DNT: "1"
+          sec-gpc: "1"
+          X-Requested-With: XMLHttpRequest
       - method: GET
-        path: /api/uncached
+        url: http://test.local:3014/api/uncached
+        headers:
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate
+          Accept-Language: en-US,en;q=0.9
+          Connection: keep-alive
+          Referer: http://test.local:3014/settings
+          Cache-Control: no-cache
     endpoint-calls-count:
       /api/uncached: 3
     expected:
@@ -114,14 +240,45 @@ tests:
   - name: "POST requests bypass cache - backend called every time"
     requests:
       - method: POST
-        path: /api/cached3
+        url: http://test.local:3014/api/cached3
         headers:
-          Content-Type: application/json
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "15"
+          Origin: http://test.local:3014
+          Referer: http://test.local:3014/
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
+          Priority: u=1, i
         body: '{"test":"data"}'
       - method: POST
-        path: /api/cached3
+        url: http://test.local:3014/api/cached3
         headers:
-          Content-Type: application/json
+          Host: test.local:3014
+          User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
+          Accept-Language: en-US,en;q=0.9
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "15"
+          Origin: http://test.local:3014
+          Referer: http://test.local:3014/dashboard
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
+          DNT: "1"
         body: '{"test":"data"}'
     endpoint-calls-count:
       /api/cached3: 2

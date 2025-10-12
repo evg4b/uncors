@@ -29,14 +29,26 @@ tests:
   - name: "JSON request body"
     requests:
       - method: POST
-        path: /api/data
+        url: http://test.local:3008/api/data
         headers:
-          Content-Type: application/json; charset=utf-8
-          Accept: application/json
+          Host: test.local:3008
           User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
-          Accept-Encoding: gzip, deflate, br
+          Accept: application/json, text/plain, */*
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.9
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "27"
+          Origin: http://test.local:3008
           Referer: http://test.local:3008/
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"Windows"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          X-Requested-With: XMLHttpRequest
+          Priority: u=1, i
         body: '{"name":"test","value":123}'
     expected:
       status: 201
@@ -46,26 +58,48 @@ tests:
   - name: "Empty request body"
     requests:
       - method: POST
-        path: /api/data
+        url: http://test.local:3008/api/data
         headers:
-          Content-Type: application/json
+          Host: test.local:3008
+          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
           Accept: application/json, */*
-          User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
-          Accept-Encoding: gzip, deflate
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.9,es;q=0.8
+          Content-Type: application/json
+          Content-Length: "0"
+          Origin: http://test.local:3008
+          Referer: http://test.local:3008/empty
+          Connection: keep-alive
+          sec-ch-ua: '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+          sec-ch-ua-mobile: "?0"
+          sec-ch-ua-platform: '"macOS"'
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          DNT: "1"
+          sec-gpc: "1"
     expected:
       status: 201
 
   - name: "Large JSON body"
     requests:
       - method: POST
-        path: /api/data
+        url: http://test.local:3008/api/data
         headers:
-          Content-Type: application/json
-          Accept: application/json
+          Host: test.local:3008
           User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0
-          Accept-Encoding: gzip, deflate, br
+          Accept: application/json
+          Accept-Encoding: gzip, deflate, br, zstd
           Accept-Language: en-US,en;q=0.5
+          Content-Type: application/json; charset=utf-8
+          Content-Length: "207"
+          Origin: http://test.local:3008
+          Referer: http://test.local:3008/bulk
+          Connection: keep-alive
+          Sec-Fetch-Dest: empty
+          Sec-Fetch-Mode: cors
+          Sec-Fetch-Site: same-origin
+          TE: trailers
         body: '{"data":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."}'
     expected:
       status: 201
