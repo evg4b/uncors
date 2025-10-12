@@ -339,7 +339,7 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	}
 }
 
-// findProjectRoot finds the project root directory.
+// findProjectRoot finds the project root directory (where the main module go.mod is).
 func findProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -347,8 +347,13 @@ func findProjectRoot() (string, error) {
 	}
 
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
+		goModPath := filepath.Join(dir, "go.mod")
+		if data, err := os.ReadFile(goModPath); err == nil {
+			// Check if this is the main module (github.com/evg4b/uncors)
+			if strings.Contains(string(data), "module github.com/evg4b/uncors") &&
+				!strings.Contains(string(data), "module github.com/evg4b/uncors/") {
+				return dir, nil
+			}
 		}
 
 		parent := filepath.Dir(dir)
