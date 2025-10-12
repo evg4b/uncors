@@ -367,13 +367,39 @@ func (r *TestRunner) runTest(t *testing.T, test TestDefinition) {
 	// Update DNS resolver with test-specific mappings
 	r.configureDNS(test)
 
-	// Create and execute request
-	req := r.createRequest(t, test)
-	resp, bodyBytes := r.executeRequest(t, req)
+	// Clear backend request history before test
+	if r.backendServer != nil {
+		r.backendServer.ClearRequests()
+	}
+
+	// Determine how many times to execute the request
+	repeatCount := test.Repeat
+	if repeatCount == 0 {
+		repeatCount = 1
+	}
+
+	// Execute request(s)
+	var resp *http.Response
+	var bodyBytes []byte
+	for i := range repeatCount {
+		req := r.createRequest(t, test)
+		resp, bodyBytes = r.executeRequest(t, req)
+		if i < repeatCount-1 {
+			// Close response for all but the last iteration
+			resp.Body.Close()
+		}
+	}
 	defer resp.Body.Close()
 
-	// Verify response
+	// Verify response from last request
 	r.verifyResponse(t, test, resp, bodyBytes)
+
+	// Verify backend call count if specified
+	if test.BackendCallsCount > 0 && r.backendServer != nil {
+		actualCalls := len(r.backendServer.GetRequests())
+		assert.Equal(t, test.BackendCallsCount, actualCalls,
+			"expected %d backend call(s) but got %d", test.BackendCallsCount, actualCalls)
+	}
 }
 
 // configureDNS updates DNS resolver with test-specific mappings.
