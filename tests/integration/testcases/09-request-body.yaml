@@ -1,0 +1,58 @@
+name: "Request Body Handling"
+description: "Test forwarding of different request body types"
+
+backend:
+  endpoints:
+    - path: /api/data
+      method: POST
+      response:
+        status: 201
+        headers:
+          Content-Type: application/json
+        body: '{"received":true}'
+
+    - path: /api/form
+      method: POST
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"form":"processed"}'
+
+uncors:
+  http-port: 3008
+  mappings:
+    - from: http://localhost:3008
+      to: "{{backend}}"
+
+tests:
+  - name: "JSON request body"
+    request:
+      method: POST
+      path: /api/data
+      headers:
+        Content-Type: application/json
+      body: '{"name":"test","value":123}'
+    expected:
+      status: 201
+      body-contains:
+        - "received"
+
+  - name: "Empty request body"
+    request:
+      method: POST
+      path: /api/data
+      headers:
+        Content-Type: application/json
+    expected:
+      status: 201
+
+  - name: "Large JSON body"
+    request:
+      method: POST
+      path: /api/data
+      headers:
+        Content-Type: application/json
+      body: '{"data":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."}'
+    expected:
+      status: 201

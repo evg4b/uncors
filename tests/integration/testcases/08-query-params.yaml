@@ -1,0 +1,52 @@
+name: "Query Parameters"
+description: "Test forwarding of query parameters"
+
+backend:
+  endpoints:
+    - path: /api/search
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"query":"received","results":[]}'
+
+    - path: /api/filter
+      method: GET
+      response:
+        status: 200
+        headers:
+          Content-Type: application/json
+        body: '{"filters":"applied"}'
+
+uncors:
+  http-port: 3007
+  mappings:
+    - from: http://localhost:3007
+      to: "{{backend}}"
+
+tests:
+  - name: "Single query parameter"
+    request:
+      method: GET
+      url: http://localhost:3007/api/search?q=test
+    expected:
+      status: 200
+      body-contains:
+        - "query"
+
+  - name: "Multiple query parameters"
+    request:
+      method: GET
+      url: http://localhost:3007/api/filter?category=books&sort=price&order=asc
+    expected:
+      status: 200
+      body-contains:
+        - "filters"
+
+  - name: "Query parameters with special characters"
+    request:
+      method: GET
+      url: http://localhost:3007/api/search?q=hello%20world&lang=en-US
+    expected:
+      status: 200
