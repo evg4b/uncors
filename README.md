@@ -17,6 +17,9 @@
   <a href="https://github.com/evg4b/uncors/blob/main/LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/evg4b/uncors?label=license&branch=main">
   </a>
+  <a href="https://github.com/evg4b/uncors/actions/workflows/go.yml">
+    <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/evg4b/uncors/go.yml">
+  </a>
   <br/>
   <a href="https://www.npmjs.com/package/uncors">
     <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/uncors?logo=npm">
