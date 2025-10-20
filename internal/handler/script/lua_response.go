@@ -73,6 +73,7 @@ func createResponseHeadersTable(luaState *lua.LState, writer contracts.ResponseW
 
 		if method := headersTable.RawGetString(key); method != lua.LNil {
 			state.Push(method)
+
 			return luaReturnOne
 		}
 
@@ -131,6 +132,7 @@ func addResponseMethods(
 ) {
 	headerMethod := luaState.NewFunction(func(state *lua.LState) int {
 		state.Push(headersTable)
+
 		return luaReturnOne
 	})
 	respTable.RawSetString("Header", headerMethod)
@@ -147,6 +149,7 @@ func addResponseMethods(
 		if err != nil {
 			state.Push(lua.LNumber(0))
 			state.Push(lua.LString(err.Error()))
+
 			return luaReturnTwo
 		}
 
@@ -169,6 +172,7 @@ func addResponseMethods(
 		if err != nil {
 			state.Push(lua.LNumber(0))
 			state.Push(lua.LString(err.Error()))
+
 			return luaReturnTwo
 		}
 
