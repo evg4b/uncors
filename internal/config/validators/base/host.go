@@ -3,7 +3,7 @@ package base
 import (
 	"fmt"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/gobuffalo/validate"
 )
 
@@ -19,7 +19,7 @@ func (h *HostValidator) IsValid(errors *validate.Errors) {
 		return
 	}
 
-	uri, err := urlx.Parse(h.Value)
+	uri, err := urlparser.Parse(h.Value)
 	if err != nil {
 		errors.Add(h.Field, fmt.Sprintf("%s is not valid host", h.Field))
 

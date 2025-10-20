@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 )
 
 const defaultTimeout = 5 * time.Minute
@@ -23,7 +23,7 @@ var defaultHTTPClient = http.Client{
 
 func MakeHTTPClient(proxy string) *http.Client {
 	if len(proxy) > 0 {
-		parsedURL, err := urlx.Parse(proxy)
+		parsedURL, err := urlparser.Parse(proxy)
 		if err != nil {
 			panic(fmt.Errorf("failed to create http client: %w", err))
 		}

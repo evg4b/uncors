@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 )
@@ -43,7 +43,7 @@ func (m *Mapping) Clone() Mapping {
 // This method performs lazy parsing to avoid redundant URL parsing operations.
 func (m *Mapping) GetFromURL() (*url.URL, error) {
 	if m.fromURL == nil {
-		parsedURL, err := urlx.Parse(m.From)
+		parsedURL, err := urlparser.Parse(m.From)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (m *Mapping) GetFromHostPort() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		m.fromHost, m.fromPort, err = urlx.SplitHostPort(uri)
+		m.fromHost, m.fromPort, err = urlparser.SplitHostPort(uri)
 		if err != nil {
 			return "", "", err
 		}
