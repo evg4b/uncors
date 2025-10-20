@@ -530,7 +530,7 @@ response:Header():Set("X-New-Style", "new")
 response.headers["X-Old-Style"] = "old"
 response:WriteHeader(200)
 response:WriteString("Mixed: ")
-response.body = response.body .. "old and new"
+response.body = "old and new"
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Mixed: old and new",
