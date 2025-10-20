@@ -291,6 +291,33 @@ response.body = "Body: " .. request.body
 		}
 	})
 
+	t.Run("path parameters", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.status = 200
+local id = request.path_params["id"] or "none"
+local action = request.path_params["action"] or "none"
+response.body = "id: " .. id .. ", action: " .. action
+`,
+			}),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/users/123/edit", nil)
+		req = testutils.SetMuxVars(req, map[string]string{
+			"id":     "123",
+			"action": "edit",
+		})
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "id: 123, action: edit", testutils.ReadBody(t, recorder))
+	})
+
 	t.Run("CORS headers", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithLogger(log.New(io.Discard)),

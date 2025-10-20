@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	lua "github.com/yuin/gopher-lua"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -128,6 +129,13 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 		}
 	}
 	reqTable.RawSetString("query_params", queryTable)
+
+	pathVarsTable := luaState.NewTable()
+	pathVars := mux.Vars(request)
+	for key, value := range pathVars {
+		pathVarsTable.RawSetString(key, lua.LString(value))
+	}
+	reqTable.RawSetString("path_params", pathVarsTable)
 
 	if request.Body != nil {
 		body, err := io.ReadAll(request.Body)
