@@ -1,169 +1,170 @@
-# Script Handler Examples - Direct ResponseWriter Usage
-# These examples demonstrate zero-buffering direct writes to HTTP connection
+# yaml-language-server: $schema=../schema.json
 
-# Example 1: Simple JSON Response (Correct Order)
-scripts:
-  - path: /api/simple
-    method: GET
-    script: |
-      -- 1. Set headers first
-      response.headers["Content-Type"] = "application/json"
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+        # Script Handler Examples - Direct ResponseWriter Usage
+    # These examples demonstrate zero-buffering direct writes to HTTP connection
 
-      -- 2. Set status code
-      response.status = 200
+    # Example 1: Simple JSON Response (Using Methods)
+    scripts:
+      - path: /api/simple
+        method: GET
+        script: |
+          -- 1. Set headers (table access)
+          response.headers["Content-Type"] = "application/json"
 
-      -- 3. Write body
-      response.body = '{"message": "Hello World", "status": "success"}'
+          -- 2. Set status code (method)
+          response:WriteHeader(200)
 
-# Example 2: Go-Style Streaming Response
-  - path: /api/stream
-    method: GET
-    script: |
-      -- Set headers before any writes
-      response:Header():Set("Content-Type", "text/plain")
-      response:Header():Set("X-Stream", "true")
+          -- 3. Write body (method)
+          response:WriteString('{"message": "Hello World", "status": "success"}')
 
-      -- Write status
-      response:WriteHeader(200)
+    # Example 2: Go-Style Streaming Response
+      - path: /api/stream
+        method: GET
+        script: |
+          -- Set headers before any writes
+          response:Header():Set("Content-Type", "text/plain")
+          response:Header():Set("X-Stream", "true")
 
-      -- Multiple writes - each goes directly to network!
-      response:WriteString("Chunk 1\n")
-      response:WriteString("Chunk 2\n")
-      response:WriteString("Chunk 3\n")
-      -- Client receives data as we write!
+          -- Write status
+          response:WriteHeader(200)
 
-# Example 3: Dynamic Content
-  - path: /api/user/:id
-    method: GET
-    script: |
-      local userId = request.path_params["id"]
+          -- Multiple writes - each goes directly to network!
+          response:WriteString("Chunk 1\n")
+          response:WriteString("Chunk 2\n")
+          response:WriteString("Chunk 3\n")
+          -- Client receives data as we write!
 
-      -- Headers first
-      response:Header():Set("Content-Type", "application/json")
+    # Example 3: Dynamic Content
+      - path: /api/user/{id}
+        method: GET
+        script: |
+          local userId = request.path_params["id"]
 
-      -- Status code
-      response:WriteHeader(200)
+          -- Headers first
+          response:Header():Set("Content-Type", "application/json")
 
-      -- Build JSON dynamically
-      response:Write('{"user_id": "')
-      response:Write(userId)
-      response:Write('", "name": "User ')
-      response:Write(userId)
-      response:Write('"}')
+          -- Status code
+          response:WriteHeader(200)
 
-# Example 4: Error Handling with Correct Order
-  - path: /api/validate
-    method: POST
-    script: |
-      local body = request.body
+          -- Build JSON dynamically
+          response:Write('{"user_id": "')
+          response:Write(userId)
+          response:Write('", "name": "User ')
+          response:Write(userId)
+          response:Write('"}')
 
-      if body == "" or body == nil then
-        -- Error response
-        response:Header():Set("Content-Type", "application/json")
-        response:WriteHeader(400)
-        response:WriteString('{"error": "Body is required"}')
-      else
-        -- Success response
-        response:Header():Set("Content-Type", "application/json")
-        response:WriteHeader(200)
-        response:WriteString('{"status": "valid", "length": ')
-        response:WriteString(tostring(#body))
-        response:WriteString('}')
-      end
+    # Example 4: Error Handling with Correct Order
+      - path: /api/validate
+        method: POST
+        script: |
+          local body = request.body
 
-# Example 5: Custom Headers with Go-Style API
-  - path: /api/headers
-    method: GET
-    script: |
-      -- Set multiple custom headers
-      response:Header():Set("Content-Type", "application/json")
-      response:Header():Set("X-API-Version", "1.0")
-      response:Header():Set("X-Response-Time", os.date("%Y-%m-%d %H:%M:%S"))
-      response:Header():Set("Cache-Control", "no-cache")
+          if body == "" or body == nil then
+            -- Error response
+            response:Header():Set("Content-Type", "application/json")
+            response:WriteHeader(400)
+            response:WriteString('{"error": "Body is required"}')
+          else
+            -- Success response
+            response:Header():Set("Content-Type", "application/json")
+            response:WriteHeader(200)
+            response:WriteString('{"status": "valid", "length": ')
+            response:WriteString(tostring(#body))
+            response:WriteString('}')
+          end
 
-      -- Status
-      response:WriteHeader(200)
+    # Example 5: Custom Headers with Go-Style API
+      - path: /api/headers
+        method: GET
+        script: |
+          -- Set multiple custom headers
+          response:Header():Set("Content-Type", "application/json")
+          response:Header():Set("X-API-Version", "1.0")
+          response:Header():Set("X-Response-Time", os.date("%Y-%m-%d %H:%M:%S"))
+          response:Header():Set("Cache-Control", "no-cache")
 
-      -- Body
-      response:WriteString('{"headers_set": true}')
+          -- Status
+          response:WriteHeader(200)
 
-# Example 6: Query Parameters Processing
-  - path: /api/search
-    method: GET
-    script: |
-      local query = request.query_params["q"] or ""
-      local limit = request.query_params["limit"] or "10"
+          -- Body
+          response:WriteString('{"headers_set": true}')
 
-      response:Header():Set("Content-Type", "application/json")
-      response:WriteHeader(200)
+    # Example 6: Query Parameters Processing
+      - path: /api/search
+        method: GET
+        script: |
+          local query = request.query_params["q"] or ""
+          local limit = request.query_params["limit"] or "10"
 
-      -- Stream JSON response
-      response:Write('{"query": "')
-      response:Write(query)
-      response:Write('", "limit": ')
-      response:Write(limit)
-      response:Write(', "results": []}')
+          response:Header():Set("Content-Type", "application/json")
+          response:WriteHeader(200)
 
-# Example 7: Large Response Streaming
-  - path: /api/large
-    method: GET
-    script: |
-      response:Header():Set("Content-Type", "text/plain")
-      response:WriteHeader(200)
+          -- Stream JSON response
+          response:Write('{"query": "')
+          response:Write(query)
+          response:Write('", "limit": ')
+          response:Write(limit)
+          response:Write(', "results": []}')
 
-      -- Write data in chunks - goes to network immediately
-      for i = 1, 10 do
-        response:WriteString("Line " .. tostring(i) .. "\n")
-        -- No buffering! Data sent to client right away
-      end
+    # Example 7: Large Response Streaming
+      - path: /api/large
+        method: GET
+        script: |
+          response:Header():Set("Content-Type", "text/plain")
+          response:WriteHeader(200)
 
-# Example 8: Conditional Response
-  - path: /api/check/:status
-    method: GET
-    script: |
-      local statusParam = request.path_params["status"]
+          -- Write data in chunks - goes to network immediately
+          for i = 1, 10 do
+            response:WriteString("Line " .. tostring(i) .. "\n")
+            -- No buffering! Data sent to client right away
+          end
 
-      response:Header():Set("Content-Type", "application/json")
+    # Example 8: Conditional Response
+      - path: /api/check/:status
+        method: GET
+        script: |
+          local statusParam = request.path_params["status"]
 
-      if statusParam == "ok" then
-        response:WriteHeader(200)
-        response:WriteString('{"status": "healthy"}')
-      elseif statusParam == "error" then
-        response:WriteHeader(500)
-        response:WriteString('{"status": "error", "message": "Service unavailable"}')
-      else
-        response:WriteHeader(404)
-        response:WriteString('{"status": "not_found"}')
-      end
+          response:Header():Set("Content-Type", "application/json")
 
-# Example 9: WRONG ORDER - Will Not Work as Expected!
-  - path: /api/wrong-order
-    method: GET
-    script: |
-      -- BAD: Writing body first
-      response.body = "Some data"
-      -- ^ This automatically sends WriteHeader(200)
+          if statusParam == "ok" then
+            response:WriteHeader(200)
+            response:WriteString('{"status": "healthy"}')
+          elseif statusParam == "error" then
+            response:WriteHeader(500)
+            response:WriteString('{"status": "error", "message": "Service unavailable"}')
+          else
+            response:WriteHeader(404)
+            response:WriteString('{"status": "not_found"}')
+          end
 
-      -- BAD: Too late to set headers!
-      response.headers["Content-Type"] = "application/json"
-      -- ^ Headers already sent to client!
+    # Example 9: WRONG ORDER - Will Not Work as Expected!
+      - path: /api/wrong-order
+        method: GET
+        script: |
+          -- BAD: Writing body first
+          response:WriteString("Some data")
+          -- ^ This automatically sends WriteHeader(200)
 
-      -- BAD: Too late to change status
-      response.status = 404
-      -- ^ Status already sent (200 was sent with body write)
+          -- BAD: Too late to set headers!
+          response.headers["Content-Type"] = "application/json"
+          -- ^ Headers already sent to client!
 
-# Example 10: CORRECT - Mixed API Usage
-  - path: /api/mixed
-    method: GET
-    script: |
-      -- Use whatever style you prefer
+          -- BAD: Too late to change status
+          response:WriteHeader(404)
+          -- ^ Status already sent (200 was sent with body write)
 
-      -- Table-style for headers
-      response.headers["Content-Type"] = "application/json"
-      response.headers["X-Custom"] = "value"
+    # Example 10: CORRECT - Headers Table with Write Methods
+      - path: /api/mixed
+        method: GET
+        script: |
+          -- headers is a table - direct access
+          response.headers["Content-Type"] = "application/json"
+          response.headers["X-Custom"] = "value"
 
-      -- Method-style for status
-      response:WriteHeader(200)
-
-      -- Table-style for body
-      response.body = '{"mixed": "styles work together"}'
+          -- status/body - use methods only
+          response:WriteHeader(200)
+          response:WriteString('{"note": "headers is table, status/body are methods"}')

@@ -31,8 +31,8 @@ func TestScriptHandler(t *testing.T) {
 			{
 				name: "simple response",
 				script: `
-response.status = 200
-response.body = "Hello from Lua"
+response:WriteHeader(200)
+response:WriteString("Hello from Lua")
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Hello from Lua",
@@ -40,9 +40,9 @@ response.body = "Hello from Lua"
 			{
 				name: "json response",
 				script: `
-response.status = 200
-response.body = '{"message": "success"}'
 response.headers["Content-Type"] = "application/json"
+response:WriteHeader(200)
+response:WriteString('{"message": "success"}')
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   `{"message": "success"}`,
@@ -53,8 +53,8 @@ response.headers["Content-Type"] = "application/json"
 			{
 				name: "custom status code",
 				script: `
-response.status = 201
-response.body = "Created"
+response:WriteHeader(201)
+response:WriteString("Created")
 `,
 				expectedStatus: http.StatusCreated,
 				expectedBody:   "Created",
@@ -62,8 +62,8 @@ response.body = "Created"
 			{
 				name: "access request method",
 				script: `
-response.status = 200
-response.body = "Method: " .. request.method
+response:WriteHeader(200)
+response:WriteString("Method: " .. request.method)
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Method: GET",
@@ -71,8 +71,8 @@ response.body = "Method: " .. request.method
 			{
 				name: "access request path",
 				script: `
-response.status = 200
-response.body = "Path: " .. request.path
+response:WriteHeader(200)
+response:WriteString("Path: " .. request.path)
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Path: /test/path",
@@ -80,8 +80,8 @@ response.body = "Path: " .. request.path
 			{
 				name: "access request headers",
 				script: `
-response.status = 200
-response.body = "User-Agent: " .. request.headers["User-Agent"]
+response:WriteHeader(200)
+response:WriteString("User-Agent: " .. request.headers["User-Agent"])
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "User-Agent: TestAgent/1.0",
@@ -90,8 +90,8 @@ response.body = "User-Agent: " .. request.headers["User-Agent"]
 				name: "use math library",
 				script: `
 local math = require("math")
-response.status = 200
-response.body = tostring(math.floor(3.7))
+response:WriteHeader(200)
+response:WriteString(tostring(math.floor(3.7)))
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "3",
@@ -100,8 +100,8 @@ response.body = tostring(math.floor(3.7))
 				name: "use string library",
 				script: `
 local string = require("string")
-response.status = 200
-response.body = string.upper("hello")
+response:WriteHeader(200)
+response:WriteString(string.upper("hello"))
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "HELLO",
@@ -109,10 +109,10 @@ response.body = string.upper("hello")
 			{
 				name: "multiple custom headers",
 				script: `
-response.status = 200
-response.body = "Test"
 response.headers["X-Custom-1"] = "Value1"
 response.headers["X-Custom-2"] = "Value2"
+response:WriteHeader(200)
+response:WriteString("Test")
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Test",
@@ -154,12 +154,12 @@ response.headers["X-Custom-2"] = "Value2"
 	t.Run("file-based script execution", func(t *testing.T) {
 		fileSystem := testutils.FsFromMap(t, map[string]string{
 			"test.lua": `
-response.status = 200
-response.body = "Hello from file"
+response:WriteHeader(200)
+response:WriteString("Hello from file")
 `,
 			"error.lua": `
-response.status = 500
-response.body = "Error response"
+response:WriteHeader(500)
+response:WriteString("Error response")
 `,
 		})
 
@@ -220,8 +220,8 @@ response.body = "Error response"
 					r.URL.RawQuery = q.Encode()
 				},
 				script: `
-response.status = 200
-response.body = "param1: " .. request.query_params["param1"]
+response:WriteHeader(200)
+response:WriteString("param1: " .. request.query_params["param1"])
 `,
 				expectedBody: "param1: value1",
 			},
@@ -231,8 +231,8 @@ response.body = "param1: " .. request.query_params["param1"]
 					r.Host = "example.com"
 				},
 				script: `
-response.status = 200
-response.body = "Host: " .. request.host
+response:WriteHeader(200)
+response:WriteString("Host: " .. request.host)
 `,
 				expectedBody: "Host: example.com",
 			},
@@ -242,12 +242,12 @@ response.body = "Host: " .. request.host
 					// URL is set by NewRequest
 				},
 				script: `
-response.status = 200
+response:WriteHeader(200)
 local url = request.url
 if url ~= nil then
-    response.body = "URL exists"
+    response:WriteString("URL exists")
 else
-    response.body = "URL missing"
+    response:WriteString("URL missing")
 end
 `,
 				expectedBody: "URL exists",
@@ -258,8 +258,8 @@ end
 					// Body will be set in the test
 				},
 				script: `
-response.status = 200
-response.body = "Body: " .. request.body
+response:WriteHeader(200)
+response:WriteString("Body: " .. request.body)
 `,
 				expectedBody: "Body: test request body",
 			},
@@ -296,10 +296,10 @@ response.body = "Body: " .. request.body
 			script.WithLogger(log.New(io.Discard)),
 			script.WithScript(config.Script{
 				Script: `
-response.status = 200
+response:WriteHeader(200)
 local id = request.path_params["id"] or "none"
 local action = request.path_params["action"] or "none"
-response.body = "id: " .. id .. ", action: " .. action
+response:WriteString("id: " .. id .. ", action: " .. action)
 `,
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -323,8 +323,8 @@ response.body = "id: " .. id .. ", action: " .. action
 			script.WithLogger(log.New(io.Discard)),
 			script.WithScript(config.Script{
 				Script: `
-response.status = 200
-response.body = "OK"
+response:WriteHeader(200)
+response:WriteString("OK")
 `,
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -368,7 +368,7 @@ response.body = "OK"
 				script: config.Script{
 					Script: `
 local x = nil
-response.body = x.field  -- This will cause an error
+response:WriteString(x.field)  -- This will cause an error
 `,
 				},
 				expectedCode: http.StatusInternalServerError,
@@ -399,7 +399,7 @@ response.body = x.field  -- This will cause an error
 			script.WithScript(config.Script{
 				Script: `
 -- Don't set status, should default to 200
-response.body = "Default status"
+response:WriteString("Default status")
 `,
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -419,7 +419,7 @@ response.body = "Default status"
 			script.WithLogger(log.New(io.Discard)),
 			script.WithScript(config.Script{
 				Script: `
-response.status = 204
+response:WriteHeader(204)
 -- Don't set body
 `,
 			}),
@@ -443,8 +443,8 @@ response.status = 204
 local table = require("table")
 local items = {"apple", "banana", "cherry"}
 local result = table.concat(items, ", ")
-response.status = 200
-response.body = result
+response:WriteHeader(200)
+response:WriteString(result)
 `,
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -530,7 +530,7 @@ response:Header():Set("X-New-Style", "new")
 response.headers["X-Old-Style"] = "old"
 response:WriteHeader(200)
 response:WriteString("Mixed: ")
-response.body = "old and new"
+response:WriteString("old and new")
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   "Mixed: old and new",
@@ -577,7 +577,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 	})
 
 	t.Run("WithScript", func(t *testing.T) {
-		scriptConfig := config.Script{Script: "response.status = 200"}
+		scriptConfig := config.Script{Script: "response:WriteHeader(200)"}
 		handler := script.NewHandler(script.WithScript(scriptConfig))
 		require.NotNil(t, handler)
 	})
@@ -590,7 +590,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 
 	t.Run("all options together", func(t *testing.T) {
 		logger := log.New(io.Discard)
-		scriptConfig := config.Script{Script: "response.status = 200"}
+		scriptConfig := config.Script{Script: "response:WriteHeader(200)"}
 		fs := testutils.FsFromMap(t, map[string]string{})
 
 		handler := script.NewHandler(

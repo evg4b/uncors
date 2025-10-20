@@ -23,9 +23,7 @@ type Handler struct {
 	fs     afero.Fs
 }
 
-var (
-	ErrScriptFileNotFound = errors.New("script file not found")
-)
+var ErrScriptFileNotFound = errors.New("script file not found")
 
 func NewHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
@@ -156,10 +154,8 @@ func (h *Handler) createResponseTable(
 
 		switch key {
 		case "status", "body":
-			// These are write-only now, return default values
+			// These properties don't exist - use methods instead
 			L.Push(lua.LNil)
-		case "headers":
-			L.Push(respTable.RawGetString("headers"))
 		default:
 			L.Push(respTable.RawGetString(key))
 		}
@@ -174,19 +170,9 @@ func (h *Handler) createResponseTable(
 		value := L.Get(3)
 
 		switch key {
-		case "status":
-			if value.Type() == lua.LTNumber && !headerWritten {
-				writer.WriteHeader(int(lua.LVAsNumber(value)))
-				headerWritten = true
-			}
-		case "body":
-			if value.Type() == lua.LTString {
-				if !headerWritten {
-					writer.WriteHeader(http.StatusOK)
-					headerWritten = true
-				}
-				writer.Write([]byte(value.String()))
-			}
+		case "status", "body":
+			// Prevent direct assignment - use methods instead
+			return 0
 		default:
 			respTable.RawSetString(key, value)
 		}
@@ -210,12 +196,14 @@ func (h *Handler) createResponseTable(
 		method := headersTable.RawGetString(key)
 		if method != lua.LNil {
 			L.Push(method)
+
 			return 1
 		}
 
 		// Otherwise, read from writer headers
 		value := writer.Header().Get(key)
 		L.Push(lua.LString(value))
+
 		return 1
 	})
 	headersMetatable.RawSetString("__index", headersIndexFunc)
@@ -242,6 +230,7 @@ func (h *Handler) createResponseTable(
 		key := L.CheckString(2)
 		value := L.CheckString(3)
 		writer.Header().Set(key, value)
+
 		return 0
 	})
 	headersTable.RawSetString("Set", setHeaderMethod)
@@ -251,6 +240,7 @@ func (h *Handler) createResponseTable(
 		key := L.CheckString(2)
 		value := writer.Header().Get(key)
 		L.Push(lua.LString(value))
+
 		return 1
 	})
 	headersTable.RawSetString("Get", getHeaderMethod)
@@ -258,6 +248,7 @@ func (h *Handler) createResponseTable(
 	// Add Header() method that returns headers table
 	headerMethod := luaState.NewFunction(func(L *lua.LState) int {
 		L.Push(headersTable)
+
 		return 1
 	})
 	respTable.RawSetString("Header", headerMethod)
@@ -273,10 +264,12 @@ func (h *Handler) createResponseTable(
 		if err != nil {
 			L.Push(lua.LNumber(0))
 			L.Push(lua.LString(err.Error()))
+
 			return 2
 		}
 		L.Push(lua.LNumber(n))
 		L.Push(lua.LNil)
+
 		return 2
 	})
 	respTable.RawSetString("Write", writeMethod)
@@ -292,10 +285,12 @@ func (h *Handler) createResponseTable(
 		if err != nil {
 			L.Push(lua.LNumber(0))
 			L.Push(lua.LString(err.Error()))
+
 			return 2
 		}
 		L.Push(lua.LNumber(n))
 		L.Push(lua.LNil)
+
 		return 2
 	})
 	respTable.RawSetString("WriteString", writeStringMethod)
@@ -307,6 +302,7 @@ func (h *Handler) createResponseTable(
 			writer.WriteHeader(code)
 			headerWritten = true
 		}
+
 		return 0
 	})
 	respTable.RawSetString("WriteHeader", writeHeaderMethod)
