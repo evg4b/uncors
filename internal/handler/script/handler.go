@@ -24,10 +24,7 @@ type Handler struct {
 }
 
 var (
-	ErrScriptFileNotFound   = errors.New("script file not found")
-	ErrResponseNotTable     = errors.New("response must be a table")
-	ErrInvalidResponseTable = errors.New("invalid response table type")
-	ErrInvalidHeadersTable  = errors.New("invalid headers table type")
+	ErrScriptFileNotFound = errors.New("script file not found")
 )
 
 func NewHandler(options ...HandlerOption) *Handler {
@@ -45,12 +42,9 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 }
 
 type responseState struct {
-	statusCode      int
-	headers         http.Header
-	body            []byte
-	headerWritten   bool
-	writer          contracts.ResponseWriter
-	request         *contracts.Request
+	statusCode int
+	headers    http.Header
+	body       []byte
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -60,12 +54,9 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	h.loadStandardLibraries(luaState)
 
 	respState := &responseState{
-		statusCode:    http.StatusOK,
-		headers:       make(http.Header),
-		body:          []byte{},
-		headerWritten: false,
-		writer:        writer,
-		request:       request,
+		statusCode: http.StatusOK,
+		headers:    make(http.Header),
+		body:       []byte{},
 	}
 
 	reqTable := h.createRequestTable(luaState, request)
@@ -89,7 +80,29 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 		return fmt.Errorf("script error: %w", err)
 	}
 
-	return h.writeResponse(writer, request, respState)
+	// Write response to HTTP writer
+	origin := request.Header.Get("Origin")
+	infra.WriteCorsHeaders(writer.Header(), origin)
+
+	// Copy headers from state to writer
+	for key, values := range respState.headers {
+		for _, value := range values {
+			writer.Header().Add(key, value)
+		}
+	}
+
+	// Write status code
+	writer.WriteHeader(respState.statusCode)
+
+	// Write body from state
+	if len(respState.body) > 0 {
+		_, err := writer.Write(respState.body)
+		if err != nil {
+			return fmt.Errorf("failed to write response body: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (h *Handler) loadStandardLibraries(luaState *lua.LState) {
@@ -299,33 +312,4 @@ func (h *Handler) createResponseTable(luaState *lua.LState, state *responseState
 	respTable.RawSetString("WriteHeader", writeHeaderMethod)
 
 	return respTable
-}
-
-func (h *Handler) writeResponse(
-	writer contracts.ResponseWriter,
-	request *contracts.Request,
-	state *responseState,
-) error {
-	origin := request.Header.Get("Origin")
-	infra.WriteCorsHeaders(writer.Header(), origin)
-
-	// Copy headers from state to writer
-	for key, values := range state.headers {
-		for _, value := range values {
-			writer.Header().Add(key, value)
-		}
-	}
-
-	// Write status code
-	writer.WriteHeader(state.statusCode)
-
-	// Write body from state
-	if len(state.body) > 0 {
-		_, err := writer.Write(state.body)
-		if err != nil {
-			return fmt.Errorf("failed to write response body: %w", err)
-		}
-	}
-
-	return nil
 }
