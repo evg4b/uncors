@@ -51,4 +51,12 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 			Value: rewrite,
 		}))
 	}
+
+	for i, luaScript := range m.Value.LuaScripts {
+		errors.Append(validate.Validate(&LuaScriptValidator{
+			Field: joinPath(m.Field, "lua-scripts", index(i)),
+			Value: luaScript,
+			Fs:    m.Fs,
+		}))
+	}
 }
