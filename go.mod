@@ -4,7 +4,6 @@ go 1.24.1
 
 require (
 	github.com/Jeffail/gabs v1.4.0
-	github.com/PuerkitoBio/purell v1.2.1
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/brianvoe/gofakeit/v7 v7.7.3
 	github.com/charmbracelet/lipgloss v1.1.0
