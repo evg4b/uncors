@@ -9,9 +9,9 @@ This directory contains examples demonstrating the Script Handler's **zero-buffe
 All Lua operations write **immediately** to the HTTP connection:
 
 ```
-Lua Script → ResponseWriter → HTTP Connection
-    ↓              ↓                 ↓
- response.body  writer.Write()   Network Socket
+Lua Script                  → ResponseWriter → HTTP Connection
+    ↓                              ↓                 ↓
+response:WriteString("x")    writer.Write()   Network Socket
 ```
 
 **NO BUFFERING** - Data flows directly from Lua to the network!
@@ -46,10 +46,10 @@ curl -X POST http://localhost:3000/api/validate -d "test data"
 response.headers["Content-Type"] = "application/json"
 
 -- 2. Status code
-response.status = 200
+response:WriteHeader(200)
 
 -- 3. Body
-response.body = '{"message": "Hello"}'
+response:WriteString('{"message": "Hello"}')
 ```
 
 **Flow**: Headers set → Status sent → Body sent → Complete
@@ -72,34 +72,37 @@ response:WriteString("Chunk 3\n")
 
 ```lua
 -- BAD: Body first
-response.body = "data"  -- This auto-sends WriteHeader(200)
+response:WriteString("data")  -- This auto-sends WriteHeader(200)
 
 -- BAD: Too late!
 response.headers["Content-Type"] = "application/json"  -- IGNORED!
-response.status = 404  -- IGNORED!
+response:WriteHeader(404)  -- IGNORED!
 ```
 
 **Problem**: Headers already sent with auto WriteHeader(200)
 
-## API Comparison
+## API Reference
 
-### Table-Based API
-
-```lua
-response.headers["X-Key"] = "value"  -- Sets header
-response.status = 200                -- Sends status (once!)
-response.body = "text"               -- Sends body
-```
-
-### Method-Based API (Go-style)
+### Headers (Table Access)
 
 ```lua
-response:Header():Set("X-Key", "value")  -- Sets header
-response:WriteHeader(200)                -- Sends status (once!)
-response:WriteString("text")             -- Sends body
+-- Headers can be accessed as a table
+response.headers["X-Key"] = "value"      -- Sets header
+response:Header():Set("X-Key", "value")  -- Alternative method style
 ```
 
-**Both APIs write directly to ResponseWriter - choose your preference!**
+### Status & Body (Methods Only)
+
+```lua
+-- Status - method call only
+response:WriteHeader(200)  -- Sends status (once!)
+
+-- Body - method calls only
+response:WriteString("text")  -- Sends body
+response:Write("data")        -- Alternative
+```
+
+**Key difference**: Headers support both styles, but status/body require methods!
 
 ## Common Patterns
 
@@ -157,16 +160,20 @@ response:Write(']}')
 
 ## Important Limitations
 
-### Write-Only Properties
+### No Direct Assignment to Status/Body
 
 ```lua
 -- ❌ CANNOT READ
 local status = response.status  -- Returns nil
 local body = response.body      -- Returns nil
 
--- ✅ CAN WRITE
-response.status = 200           -- Works!
-response.body = "text"          -- Works!
+-- ❌ CANNOT WRITE DIRECTLY
+response.status = 200   -- Silently ignored!
+response.body = "text"  -- Silently ignored!
+
+-- ✅ USE METHODS INSTEAD
+response:WriteHeader(200)     -- Works!
+response:WriteString("text")  -- Works!
 ```
 
 ### One-Time Operations
