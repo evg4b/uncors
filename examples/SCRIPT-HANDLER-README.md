@@ -208,6 +208,14 @@ curl -I http://localhost:3000/api/headers
 
 # Test error handling
 curl -v -X POST http://localhost:3000/api/validate
+
+# Test JSON encoding
+curl http://localhost:3000/api/json-encode
+
+# Test JSON decoding
+curl -X POST http://localhost:3000/api/json-decode \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","age":30}'
 ```
 
 ## Further Reading

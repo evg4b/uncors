@@ -107,6 +107,33 @@ response:WriteString(string.upper("hello"))
 				expectedBody:   "HELLO",
 			},
 			{
+				name: "use json library",
+				script: `
+local json = require("json")
+local data = {message = "hello", count = 42}
+local encoded = json.encode(data)
+response.headers["Content-Type"] = "application/json"
+response:WriteHeader(200)
+response:WriteString(encoded)
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   `{"count":42,"message":"hello"}`,
+				expectedHeader: map[string]string{
+					headers.ContentType: "application/json",
+				},
+			},
+			{
+				name: "use json decode",
+				script: `
+local json = require("json")
+local decoded = json.decode('{"name":"test","value":123}')
+response:WriteHeader(200)
+response:WriteString("Name: " .. decoded.name .. ", Value: " .. tostring(decoded.value))
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   "Name: test, Value: 123",
+			},
+			{
 				name: "multiple custom headers",
 				script: `
 response.headers["X-Custom-1"] = "Value1"

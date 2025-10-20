@@ -1,10 +1,14 @@
 package script
 
-import lua "github.com/yuin/gopher-lua"
+import (
+	lua "github.com/yuin/gopher-lua"
+	luajson "layeh.com/gopher-json"
+)
 
 func newLuaState() *lua.LState {
 	luaState := lua.NewState()
 	loadStandardLibraries(luaState)
+
 	return luaState
 }
 
@@ -14,4 +18,5 @@ func loadStandardLibraries(luaState *lua.LState) {
 	luaState.PreloadModule("string", lua.OpenString)
 	luaState.PreloadModule("table", lua.OpenTable)
 	luaState.PreloadModule("os", lua.OpenOs)
+	luajson.Preload(luaState)
 }

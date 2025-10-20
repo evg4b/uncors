@@ -168,3 +168,44 @@ mappings:
           -- status/body - use methods only
           response:WriteHeader(200)
           response:WriteString('{"note": "headers is table, status/body are methods"}')
+
+    # Example 11: JSON Encoding
+      - path: /api/json-encode
+        method: GET
+        script: |
+          local json = require("json")
+
+          local data = {
+            message = "Hello from JSON",
+            count = 42,
+            items = {"apple", "banana", "cherry"}
+          }
+
+          response.headers["Content-Type"] = "application/json"
+          response:WriteHeader(200)
+          response:WriteString(json.encode(data))
+
+    # Example 12: JSON Decoding with Request Body
+      - path: /api/json-decode
+        method: POST
+        script: |
+          local json = require("json")
+
+          -- Parse request body
+          local success, requestData = pcall(json.decode, request.body)
+          if not success then
+            response:WriteHeader(400)
+            response:WriteString(json.encode({error = "Invalid JSON"}))
+            return
+          end
+
+          -- Echo back with modification
+          local responseData = {
+            received = requestData,
+            timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+            status = "processed"
+          }
+
+          response.headers["Content-Type"] = "application/json"
+          response:WriteHeader(200)
+          response:WriteString(json.encode(responseData))
