@@ -11,8 +11,8 @@ import (
 
 // createRequestTable builds a Lua table representing the HTTP request.
 // It includes method, URL, headers, query parameters, path parameters, and body.
-func createRequestTable(L *lua.LState, request *contracts.Request) *lua.LTable {
-	reqTable := L.NewTable()
+func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+	reqTable := luaState.NewTable()
 
 	// Basic request properties
 	reqTable.RawSetString("method", lua.LString(request.Method))
@@ -23,13 +23,13 @@ func createRequestTable(L *lua.LState, request *contracts.Request) *lua.LTable {
 	reqTable.RawSetString("remote_addr", lua.LString(request.RemoteAddr))
 
 	// Headers
-	reqTable.RawSetString("headers", createHeadersTable(L, request.Header))
+	reqTable.RawSetString("headers", createHeadersTable(luaState, request.Header))
 
 	// Query parameters
-	reqTable.RawSetString("query_params", createQueryParamsTable(L, request.URL.Query()))
+	reqTable.RawSetString("query_params", createQueryParamsTable(luaState, request.URL.Query()))
 
 	// Path parameters (from gorilla/mux)
-	reqTable.RawSetString("path_params", createPathParamsTable(L, request))
+	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
 	// Request body
 	if request.Body != nil {
@@ -43,16 +43,16 @@ func createRequestTable(L *lua.LState, request *contracts.Request) *lua.LTable {
 
 // createHeadersTable converts HTTP headers to a Lua table.
 // Single-value headers are stored as strings, multi-value headers as tables.
-func createHeadersTable(L *lua.LState, headers map[string][]string) *lua.LTable {
-	headersTable := L.NewTable()
+func createHeadersTable(luaState *lua.LState, headers map[string][]string) *lua.LTable {
+	headersTable := luaState.NewTable()
 
 	for key, values := range headers {
 		if len(values) == 1 {
 			headersTable.RawSetString(key, lua.LString(values[0]))
 		} else {
-			valuesList := L.NewTable()
-			for _, v := range values {
-				valuesList.Append(lua.LString(v))
+			valuesList := luaState.NewTable()
+			for _, value := range values {
+				valuesList.Append(lua.LString(value))
 			}
 			headersTable.RawSetString(key, valuesList)
 		}
@@ -63,16 +63,16 @@ func createHeadersTable(L *lua.LState, headers map[string][]string) *lua.LTable 
 
 // createQueryParamsTable converts URL query parameters to a Lua table.
 // Single-value params are stored as strings, multi-value params as tables.
-func createQueryParamsTable(L *lua.LState, queryParams map[string][]string) *lua.LTable {
-	queryTable := L.NewTable()
+func createQueryParamsTable(luaState *lua.LState, queryParams map[string][]string) *lua.LTable {
+	queryTable := luaState.NewTable()
 
 	for key, values := range queryParams {
 		if len(values) == 1 {
 			queryTable.RawSetString(key, lua.LString(values[0]))
 		} else {
-			valuesList := L.NewTable()
-			for _, v := range values {
-				valuesList.Append(lua.LString(v))
+			valuesList := luaState.NewTable()
+			for _, value := range values {
+				valuesList.Append(lua.LString(value))
 			}
 			queryTable.RawSetString(key, valuesList)
 		}
@@ -82,8 +82,8 @@ func createQueryParamsTable(L *lua.LState, queryParams map[string][]string) *lua
 }
 
 // createPathParamsTable extracts path parameters from gorilla/mux and converts them to a Lua table.
-func createPathParamsTable(L *lua.LState, request *contracts.Request) *lua.LTable {
-	pathVarsTable := L.NewTable()
+func createPathParamsTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+	pathVarsTable := luaState.NewTable()
 
 	pathVars := mux.Vars(request)
 	for key, value := range pathVars {

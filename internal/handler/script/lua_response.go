@@ -8,49 +8,59 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
+const (
+	// Lua stack positions for metamethod arguments.
+	luaArgKey   = 2 // Position of the key argument in metamethods
+	luaArgValue = 3 // Position of the value argument in metamethods
+
+	// Lua return values.
+	luaReturnOne = 1 // Return one value from Lua function
+	luaReturnTwo = 2 // Return two values from Lua function
+)
+
 // createResponseTable builds a Lua table representing the HTTP response.
 // It provides methods for writing headers, status, and body directly to the ResponseWriter.
-func createResponseTable(L *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
-	respTable := L.NewTable()
+func createResponseTable(luaState *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
+	respTable := luaState.NewTable()
 	headerWritten := false
 
 	// Set up metatable to intercept property access
-	setupResponseMetatable(L, respTable)
+	setupResponseMetatable(luaState, respTable)
 
 	// Create and configure headers table
-	headersTable := createResponseHeadersTable(L, writer)
+	headersTable := createResponseHeadersTable(luaState, writer)
 	respTable.RawSetString("headers", headersTable)
 
 	// Add response methods
-	addResponseMethods(L, respTable, writer, &headerWritten, headersTable)
+	addResponseMethods(luaState, respTable, writer, &headerWritten, headersTable)
 
 	return respTable
 }
 
 // setupResponseMetatable configures the metatable to prevent direct access to status and body properties.
-func setupResponseMetatable(L *lua.LState, respTable *lua.LTable) {
-	metatable := L.NewTable()
+func setupResponseMetatable(luaState *lua.LState, respTable *lua.LTable) {
+	metatable := luaState.NewTable()
 
 	// __index: prevent reading status and body
-	indexFunc := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
+	indexFunc := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
 
 		switch key {
 		case "status", "body":
 			// These properties don't exist - use methods instead
-			L.Push(lua.LNil)
+			state.Push(lua.LNil)
 		default:
-			L.Push(respTable.RawGetString(key))
+			state.Push(respTable.RawGetString(key))
 		}
 
-		return 1
+		return luaReturnOne
 	})
 	metatable.RawSetString("__index", indexFunc)
 
 	// __newindex: prevent writing to status and body
-	newindexFunc := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
-		value := L.Get(3)
+	newindexFunc := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
+		value := state.Get(luaArgValue)
 
 		switch key {
 		case "status", "body":
@@ -64,38 +74,39 @@ func setupResponseMetatable(L *lua.LState, respTable *lua.LTable) {
 	})
 	metatable.RawSetString("__newindex", newindexFunc)
 
-	L.SetMetatable(respTable, metatable)
+	luaState.SetMetatable(respTable, metatable)
 }
 
 // createResponseHeadersTable creates a Lua table for response headers with direct write access.
-func createResponseHeadersTable(L *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
-	headersTable := L.NewTable()
+func createResponseHeadersTable(luaState *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
+	headersTable := luaState.NewTable()
 
 	// Create metatable for headers
-	headersMetatable := L.NewTable()
+	headersMetatable := luaState.NewTable()
 
 	// __index: read headers from writer or return methods
-	headersIndexFunc := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
+	headersIndexFunc := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
 
 		// Check if it's a method first
 		if method := headersTable.RawGetString(key); method != lua.LNil {
-			L.Push(method)
-			return 1
+			state.Push(method)
+
+			return luaReturnOne
 		}
 
 		// Otherwise, read from writer headers
 		value := writer.Header().Get(key)
-		L.Push(lua.LString(value))
+		state.Push(lua.LString(value))
 
-		return 1
+		return luaReturnOne
 	})
 	headersMetatable.RawSetString("__index", headersIndexFunc)
 
 	// __newindex: write headers to writer
-	headersNewindexFunc := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
-		value := L.Get(3)
+	headersNewindexFunc := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
+		value := state.Get(luaArgValue)
 
 		if value.Type() == lua.LTString {
 			writer.Header().Set(key, value.String())
@@ -105,20 +116,20 @@ func createResponseHeadersTable(L *lua.LState, writer contracts.ResponseWriter) 
 	})
 	headersMetatable.RawSetString("__newindex", headersNewindexFunc)
 
-	L.SetMetatable(headersTable, headersMetatable)
+	luaState.SetMetatable(headersTable, headersMetatable)
 
 	// Add header methods
-	addHeaderMethods(L, headersTable, writer)
+	addHeaderMethods(luaState, headersTable, writer)
 
 	return headersTable
 }
 
 // addHeaderMethods adds Get and Set methods to the headers table.
-func addHeaderMethods(L *lua.LState, headersTable *lua.LTable, writer contracts.ResponseWriter) {
+func addHeaderMethods(luaState *lua.LState, headersTable *lua.LTable, writer contracts.ResponseWriter) {
 	// Set(key, value) method
-	setHeaderMethod := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
-		value := L.CheckString(3)
+	setHeaderMethod := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
+		value := state.CheckString(luaArgValue)
 		writer.Header().Set(key, value)
 
 		return 0
@@ -126,80 +137,83 @@ func addHeaderMethods(L *lua.LState, headersTable *lua.LTable, writer contracts.
 	headersTable.RawSetString("Set", setHeaderMethod)
 
 	// Get(key) method
-	getHeaderMethod := L.NewFunction(func(L *lua.LState) int {
-		key := L.CheckString(2)
+	getHeaderMethod := luaState.NewFunction(func(state *lua.LState) int {
+		key := state.CheckString(luaArgKey)
 		value := writer.Header().Get(key)
-		L.Push(lua.LString(value))
+		state.Push(lua.LString(value))
 
-		return 1
+		return luaReturnOne
 	})
 	headersTable.RawSetString("Get", getHeaderMethod)
 }
 
 // addResponseMethods adds Write, WriteString, WriteHeader, and Header methods to the response table.
 func addResponseMethods(
-	L *lua.LState,
+	luaState *lua.LState,
 	respTable *lua.LTable,
 	writer contracts.ResponseWriter,
 	headerWritten *bool,
 	headersTable *lua.LTable,
 ) {
 	// Header() method - returns headers table
-	headerMethod := L.NewFunction(func(L *lua.LState) int {
-		L.Push(headersTable)
-		return 1
+	headerMethod := luaState.NewFunction(func(state *lua.LState) int {
+		state.Push(headersTable)
+
+		return luaReturnOne
 	})
 	respTable.RawSetString("Header", headerMethod)
 
 	// Write(data) method
-	writeMethod := L.NewFunction(func(L *lua.LState) int {
-		data := L.CheckString(2)
+	writeMethod := luaState.NewFunction(func(state *lua.LState) int {
+		data := state.CheckString(luaArgKey)
 
 		if !*headerWritten {
 			writer.WriteHeader(http.StatusOK)
 			*headerWritten = true
 		}
 
-		n, err := writer.Write([]byte(data))
+		bytesWritten, err := writer.Write([]byte(data))
 		if err != nil {
-			L.Push(lua.LNumber(0))
-			L.Push(lua.LString(err.Error()))
-			return 2
+			state.Push(lua.LNumber(0))
+			state.Push(lua.LString(err.Error()))
+
+			return luaReturnTwo
 		}
 
-		L.Push(lua.LNumber(n))
-		L.Push(lua.LNil)
+		state.Push(lua.LNumber(bytesWritten))
+		state.Push(lua.LNil)
 
-		return 2
+		return luaReturnTwo
 	})
 	respTable.RawSetString("Write", writeMethod)
 
 	// WriteString(str) method
-	writeStringMethod := L.NewFunction(func(L *lua.LState) int {
-		str := L.CheckString(2)
+	writeStringMethod := luaState.NewFunction(func(state *lua.LState) int {
+		str := state.CheckString(luaArgKey)
 
 		if !*headerWritten {
 			writer.WriteHeader(http.StatusOK)
 			*headerWritten = true
 		}
 
-		n, err := writer.Write([]byte(str))
+		bytesWritten, err := writer.Write([]byte(str))
 		if err != nil {
-			L.Push(lua.LNumber(0))
-			L.Push(lua.LString(err.Error()))
-			return 2
+			state.Push(lua.LNumber(0))
+			state.Push(lua.LString(err.Error()))
+
+			return luaReturnTwo
 		}
 
-		L.Push(lua.LNumber(n))
-		L.Push(lua.LNil)
+		state.Push(lua.LNumber(bytesWritten))
+		state.Push(lua.LNil)
 
-		return 2
+		return luaReturnTwo
 	})
 	respTable.RawSetString("WriteString", writeStringMethod)
 
 	// WriteHeader(statusCode) method
-	writeHeaderMethod := L.NewFunction(func(L *lua.LState) int {
-		code := L.CheckInt(2)
+	writeHeaderMethod := luaState.NewFunction(func(state *lua.LState) int {
+		code := state.CheckInt(luaArgKey)
 
 		if !*headerWritten {
 			writer.WriteHeader(code)

@@ -3,8 +3,8 @@ package script
 import (
 	"fmt"
 
-	lua "github.com/yuin/gopher-lua"
 	"github.com/spf13/afero"
+	lua "github.com/yuin/gopher-lua"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -29,6 +29,7 @@ func NewHandler(options ...HandlerOption) *Handler {
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	if err := h.executeScript(writer, request); err != nil {
 		infra.HTTPError(writer, err)
+
 		return
 	}
 
@@ -38,23 +39,23 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 // executeScript loads and executes the Lua script, providing request and response objects.
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
 	// Create Lua state
-	L := newLuaState()
-	defer L.Close()
+	luaState := newLuaState()
+	defer luaState.Close()
 
 	// Set CORS headers before script execution
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(writer.Header(), origin)
 
 	// Create request and response tables
-	reqTable := createRequestTable(L, request)
-	respTable := createResponseTable(L, writer)
+	reqTable := createRequestTable(luaState, request)
+	respTable := createResponseTable(luaState, writer)
 
 	// Set global variables
-	L.SetGlobal("request", reqTable)
-	L.SetGlobal("response", respTable)
+	luaState.SetGlobal("request", reqTable)
+	luaState.SetGlobal("response", respTable)
 
 	// Execute script
-	if err := h.runScript(L); err != nil {
+	if err := h.runScript(luaState); err != nil {
 		return fmt.Errorf("script error: %w", err)
 	}
 
@@ -62,9 +63,9 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 }
 
 // runScript executes either inline script or loads from file.
-func (h *Handler) runScript(L *lua.LState) error {
+func (h *Handler) runScript(luaState *lua.LState) error {
 	if h.script.Script != "" {
-		return L.DoString(h.script.Script)
+		return luaState.DoString(h.script.Script)
 	}
 
 	scriptContent, err := afero.ReadFile(h.fs, h.script.File)
@@ -72,5 +73,5 @@ func (h *Handler) runScript(L *lua.LState) error {
 		return fmt.Errorf("%w: %s", ErrScriptFileNotFound, err.Error())
 	}
 
-	return L.DoString(string(scriptContent))
+	return luaState.DoString(string(scriptContent))
 }

@@ -4,16 +4,17 @@ import lua "github.com/yuin/gopher-lua"
 
 // newLuaState creates and initializes a new Lua state with standard libraries.
 func newLuaState() *lua.LState {
-	L := lua.NewState()
-	loadStandardLibraries(L)
-	return L
+	luaState := lua.NewState()
+	loadStandardLibraries(luaState)
+
+	return luaState
 }
 
 // loadStandardLibraries loads the standard Lua libraries into the given state.
-func loadStandardLibraries(L *lua.LState) {
-	L.SetGlobal("_G", L.Get(lua.GlobalsIndex))
-	L.PreloadModule("math", lua.OpenMath)
-	L.PreloadModule("string", lua.OpenString)
-	L.PreloadModule("table", lua.OpenTable)
-	L.PreloadModule("os", lua.OpenOs)
+func loadStandardLibraries(luaState *lua.LState) {
+	luaState.SetGlobal("_G", luaState.Get(lua.GlobalsIndex))
+	luaState.PreloadModule("math", lua.OpenMath)
+	luaState.PreloadModule("string", lua.OpenString)
+	luaState.PreloadModule("table", lua.OpenTable)
+	luaState.PreloadModule("os", lua.OpenOs)
 }
