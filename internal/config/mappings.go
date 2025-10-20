@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/samber/lo"
 )
 
@@ -44,12 +43,7 @@ func (m Mappings) String() string {
 }
 
 func extractHost(item Mapping) string {
-	uri, err := urlx.Parse(item.From)
-	if err != nil {
-		panic(err)
-	}
-
-	host, _, err := urlx.SplitHostPort(uri)
+	host, _, err := item.GetFromHostPort()
 	if err != nil {
 		panic(err)
 	}
@@ -66,14 +60,14 @@ func (m Mappings) GroupByPort() PortGroups {
 	grouped := make(map[portKey]Mappings)
 
 	for _, mapping := range m {
-		uri, err := urlx.Parse(mapping.From)
+		_, portStr, err := mapping.GetFromHostPort()
 		if err != nil {
-			panic(fmt.Errorf("failed to parse mapping from URL: %w", err))
+			panic(fmt.Errorf("failed to get host and port: %w", err))
 		}
 
-		_, portStr, err := urlx.SplitHostPort(uri)
+		uri, err := mapping.GetFromURL()
 		if err != nil {
-			panic(fmt.Errorf("failed to split host and port: %w", err))
+			panic(fmt.Errorf("failed to parse mapping from URL: %w", err))
 		}
 
 		port := 80 // default HTTP port
