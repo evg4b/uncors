@@ -44,14 +44,32 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	tui.PrintResponse(h.logger, request, writer.StatusCode())
 }
 
+type responseState struct {
+	statusCode      int
+	headers         http.Header
+	body            []byte
+	headerWritten   bool
+	writer          contracts.ResponseWriter
+	request         *contracts.Request
+}
+
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
 	luaState := lua.NewState()
 	defer luaState.Close()
 
 	h.loadStandardLibraries(luaState)
 
+	respState := &responseState{
+		statusCode:    http.StatusOK,
+		headers:       make(http.Header),
+		body:          []byte{},
+		headerWritten: false,
+		writer:        writer,
+		request:       request,
+	}
+
 	reqTable := h.createRequestTable(luaState, request)
-	respTable := h.createResponseTable(luaState)
+	respTable := h.createResponseTable(luaState, respState)
 
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
@@ -71,7 +89,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 		return fmt.Errorf("script error: %w", err)
 	}
 
-	return h.writeResponse(writer, request, luaState)
+	return h.writeResponse(writer, request, respState)
 }
 
 func (h *Handler) loadStandardLibraries(luaState *lua.LState) {
@@ -137,29 +155,109 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 	return reqTable
 }
 
-func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
+func (h *Handler) createResponseTable(luaState *lua.LState, state *responseState) *lua.LTable {
 	respTable := luaState.NewTable()
 
-	respTable.RawSetString("status", lua.LNumber(http.StatusOK))
-	respTable.RawSetString("body", lua.LString(""))
+	// Create metatable to intercept property access
+	metatable := luaState.NewTable()
+
+	// __index metamethod for reading properties
+	indexFunc := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+
+		switch key {
+		case "status":
+			L.Push(lua.LNumber(state.statusCode))
+		case "body":
+			L.Push(lua.LString(string(state.body)))
+		case "headers":
+			L.Push(respTable.RawGetString("headers"))
+		default:
+			L.Push(respTable.RawGetString(key))
+		}
+
+		return 1
+	})
+	metatable.RawSetString("__index", indexFunc)
+
+	// __newindex metamethod for writing properties
+	newindexFunc := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+		value := L.Get(3)
+
+		switch key {
+		case "status":
+			if value.Type() == lua.LTNumber {
+				state.statusCode = int(lua.LVAsNumber(value))
+			}
+		case "body":
+			if value.Type() == lua.LTString {
+				state.body = []byte(value.String())
+			}
+		default:
+			respTable.RawSetString(key, value)
+		}
+
+		return 0
+	})
+	metatable.RawSetString("__newindex", newindexFunc)
+
+	luaState.SetMetatable(respTable, metatable)
 
 	headersTable := luaState.NewTable()
+
+	// Create metatable for headers table to intercept property access
+	headersMetatable := luaState.NewTable()
+
+	// __index for reading headers
+	headersIndexFunc := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+
+		// Check if it's a method first
+		method := headersTable.RawGetString(key)
+		if method != lua.LNil {
+			L.Push(method)
+			return 1
+		}
+
+		// Otherwise, read from Go headers
+		value := state.headers.Get(key)
+		L.Push(lua.LString(value))
+		return 1
+	})
+	headersMetatable.RawSetString("__index", headersIndexFunc)
+
+	// __newindex for writing headers
+	headersNewindexFunc := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+		value := L.Get(3)
+
+		if value.Type() == lua.LTString {
+			state.headers.Set(key, value.String())
+		}
+
+		return 0
+	})
+	headersMetatable.RawSetString("__newindex", headersNewindexFunc)
+
+	luaState.SetMetatable(headersTable, headersMetatable)
+
 	respTable.RawSetString("headers", headersTable)
 
-	// Add Set(key, value) method to headers table
+	// Add Set(key, value) method to headers table - writes directly to Go headers
 	setHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
 		key := L.CheckString(2)
 		value := L.CheckString(3)
-		headersTable.RawSetString(key, lua.LString(value))
+		state.headers.Set(key, value)
 		return 0
 	})
 	headersTable.RawSetString("Set", setHeaderMethod)
 
-	// Add Get(key) method to headers table
+	// Add Get(key) method to headers table - reads from Go headers
 	getHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
 		key := L.CheckString(2)
-		value := headersTable.RawGetString(key)
-		L.Push(value)
+		value := state.headers.Get(key)
+		L.Push(lua.LString(value))
 		return 1
 	})
 	headersTable.RawSetString("Get", getHeaderMethod)
@@ -171,39 +269,30 @@ func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
 	})
 	respTable.RawSetString("Header", headerMethod)
 
-	// Add Write(data) method
+	// Add Write(data) method - writes directly to Go response state
 	writeMethod := luaState.NewFunction(func(L *lua.LState) int {
 		data := L.CheckString(2)
-		bodyValue := respTable.RawGetString("body")
-		currentBody := ""
-		if bodyValue.Type() == lua.LTString {
-			currentBody = bodyValue.String()
-		}
-		respTable.RawSetString("body", lua.LString(currentBody+data))
+		state.body = append(state.body, []byte(data)...)
 		L.Push(lua.LNumber(len(data)))
 		L.Push(lua.LNil)
 		return 2
 	})
 	respTable.RawSetString("Write", writeMethod)
 
-	// Add WriteString(str) method
+	// Add WriteString(str) method - writes directly to Go response state
 	writeStringMethod := luaState.NewFunction(func(L *lua.LState) int {
 		str := L.CheckString(2)
-		bodyValue := respTable.RawGetString("body")
-		currentBody := ""
-		if bodyValue.Type() == lua.LTString {
-			currentBody = bodyValue.String()
-		}
-		respTable.RawSetString("body", lua.LString(currentBody+str))
+		state.body = append(state.body, []byte(str)...)
 		L.Push(lua.LNumber(len(str)))
 		L.Push(lua.LNil)
 		return 2
 	})
 	respTable.RawSetString("WriteString", writeStringMethod)
 
-	// Add WriteHeader(statusCode) method
+	// Add WriteHeader(statusCode) method - writes directly to Go response state
 	writeHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
 		statusCode := L.CheckInt(2)
+		state.statusCode = statusCode
 		respTable.RawSetString("status", lua.LNumber(statusCode))
 		return 0
 	})
@@ -215,45 +304,24 @@ func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
 func (h *Handler) writeResponse(
 	writer contracts.ResponseWriter,
 	request *contracts.Request,
-	luaState *lua.LState,
+	state *responseState,
 ) error {
-	respTable := luaState.GetGlobal("response")
-	if respTable.Type() != lua.LTTable {
-		return ErrResponseNotTable
-	}
-
-	respTbl, ok := respTable.(*lua.LTable)
-	if !ok {
-		return ErrInvalidResponseTable
-	}
-
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(writer.Header(), origin)
 
-	headersValue := respTbl.RawGetString("headers")
-	if headersValue.Type() == lua.LTTable {
-		headersTbl, ok := headersValue.(*lua.LTable)
-		if !ok {
-			return ErrInvalidHeadersTable
+	// Copy headers from state to writer
+	for key, values := range state.headers {
+		for _, value := range values {
+			writer.Header().Add(key, value)
 		}
-		headersTbl.ForEach(func(key, value lua.LValue) {
-			if key.Type() == lua.LTString && value.Type() == lua.LTString {
-				writer.Header().Set(key.String(), value.String())
-			}
-		})
 	}
 
-	statusValue := respTbl.RawGetString("status")
-	status := http.StatusOK
-	if statusValue.Type() == lua.LTNumber {
-		status = int(lua.LVAsNumber(statusValue))
-	}
+	// Write status code
+	writer.WriteHeader(state.statusCode)
 
-	writer.WriteHeader(status)
-
-	bodyValue := respTbl.RawGetString("body")
-	if bodyValue.Type() == lua.LTString {
-		_, err := writer.Write([]byte(bodyValue.String()))
+	// Write body from state
+	if len(state.body) > 0 {
+		_, err := writer.Write(state.body)
 		if err != nil {
 			return fmt.Errorf("failed to write response body: %w", err)
 		}
