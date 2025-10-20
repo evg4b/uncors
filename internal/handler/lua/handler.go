@@ -88,7 +88,16 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 
 func (h *Handler) loadStandardLibraries(L *lua.LState) {
 	// Load basic Lua libraries
-	lua.OpenLibraries(L)
+	// Base library (print, type, etc.)
+	L.SetGlobal("_G", L.Get(lua.GlobalsIndex))
+	// Math library
+	L.PreloadModule("math", lua.OpenMath)
+	// String library
+	L.PreloadModule("string", lua.OpenString)
+	// Table library
+	L.PreloadModule("table", lua.OpenTable)
+	// OS library (limited functionality)
+	L.PreloadModule("os", lua.OpenOs)
 }
 
 func (h *Handler) createRequestTable(L *lua.LState, request *contracts.Request) *lua.LTable {

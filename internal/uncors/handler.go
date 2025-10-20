@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	cache2 "github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/lua"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -23,6 +24,7 @@ import (
 type appCache struct {
 	staticHandlerFactory handler.RequestHandlerOption
 	mockHandlerFactory   handler.RequestHandlerOption
+	luaHandlerFactory    handler.RequestHandlerOption
 }
 
 func (app *App) buildHandlerForMappings(
@@ -67,6 +69,7 @@ func (app *App) buildHandlerForMappings(
 		}),
 		app.getWithStaticHandlerFactory(),
 		app.getMockHandlerFactory(),
+		app.getLuaHandlerFactory(),
 	)
 
 	return portHandler
@@ -104,4 +107,19 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 	}
 
 	return app.cache.staticHandlerFactory
+}
+
+func (app *App) getLuaHandlerFactory() handler.RequestHandlerOption {
+	if app.cache.luaHandlerFactory == nil {
+		factoryFunc := func(script config.LuaScript) contracts.Handler {
+			return lua.NewLuaHandler(
+				lua.WithLogger(NewLuaLogger(app.logger)),
+				lua.WithScript(script),
+				lua.WithFileSystem(app.fs),
+			)
+		}
+		app.cache.luaHandlerFactory = handler.WithLuaHandlerFactory(factoryFunc)
+	}
+
+	return app.cache.luaHandlerFactory
 }

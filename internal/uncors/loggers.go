@@ -30,3 +30,7 @@ func NewCacheLogger(logger *log.Logger) *log.Logger {
 func NewRewriteLogger(logger *log.Logger) *log.Logger {
 	return tui.CreateLogger(logger, styles.RewriteStyle.Render("REWRT"))
 }
+
+func NewLuaLogger(logger *log.Logger) *log.Logger {
+	return tui.CreateLogger(logger, styles.MockStyle.Render("LUA"))
+}

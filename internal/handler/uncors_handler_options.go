@@ -43,6 +43,12 @@ func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
 	}
 }
 
+func WithLuaHandlerFactory(factory LuaHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.luaHandlerFactory = factory
+	}
+}
+
 func WithRewriteHandlerFactory(factory RewriteMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.rewriteMiddlewareFactory = factory
