@@ -38,6 +38,14 @@
           },
           "minItems": 1
         },
+        "lua-scripts": {
+          "type": "array",
+          "description": "List of Lua script handlers",
+          "items": {
+            "$ref": "#/definitions/LuaScript"
+          },
+          "minItems": 1
+        },
         "statics": {
           "type": "array",
           "description": "List of paths that will be served from the directory.",
