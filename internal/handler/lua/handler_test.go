@@ -123,12 +123,12 @@ response.headers["X-Custom-2"] = "Value2"
 			},
 		}
 
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
 				handler := lua.NewLuaHandler(
 					lua.WithLogger(log.New(io.Discard)),
 					lua.WithScript(config.LuaScript{
-						Script: tc.script,
+						Script: testCase.script,
 					}),
 					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
@@ -139,11 +139,11 @@ response.headers["X-Custom-2"] = "Value2"
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
-				assert.Equal(t, tc.expectedStatus, recorder.Code)
-				assert.Equal(t, tc.expectedBody, testutils.ReadBody(t, recorder))
+				assert.Equal(t, testCase.expectedStatus, recorder.Code)
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
 
-				if tc.expectedHeader != nil {
-					for key, value := range tc.expectedHeader {
+				if testCase.expectedHeader != nil {
+					for key, value := range testCase.expectedHeader {
 						assert.Equal(t, value, recorder.Header().Get(key))
 					}
 				}
@@ -183,12 +183,12 @@ response.body = "Error response"
 			},
 		}
 
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
 				handler := lua.NewLuaHandler(
 					lua.WithLogger(log.New(io.Discard)),
 					lua.WithScript(config.LuaScript{
-						File: tc.file,
+						File: testCase.file,
 					}),
 					lua.WithFileSystem(fileSystem),
 				)
@@ -198,18 +198,18 @@ response.body = "Error response"
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
-				assert.Equal(t, tc.expectedStatus, recorder.Code)
-				assert.Equal(t, tc.expectedBody, testutils.ReadBody(t, recorder))
+				assert.Equal(t, testCase.expectedStatus, recorder.Code)
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
 			})
 		}
 	})
 
 	t.Run("request object properties", func(t *testing.T) {
 		tests := []struct {
-			name           string
-			setupRequest   func(*http.Request)
-			script         string
-			expectedBody   string
+			name         string
+			setupRequest func(*http.Request)
+			script       string
+			expectedBody string
 		}{
 			{
 				name: "access query parameters",
@@ -238,7 +238,7 @@ response.body = "Host: " .. request.host
 			},
 			{
 				name: "access URL",
-				setupRequest: func(r *http.Request) {
+				setupRequest: func(_ *http.Request) {
 					// URL is set by NewRequest
 				},
 				script: `
@@ -254,7 +254,7 @@ end
 			},
 			{
 				name: "access request body",
-				setupRequest: func(r *http.Request) {
+				setupRequest: func(_ *http.Request) {
 					// Body will be set in the test
 				},
 				script: `
@@ -265,20 +265,20 @@ response.body = "Body: " .. request.body
 			},
 		}
 
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
 				var req *http.Request
-				if tc.name == "access request body" {
+				if testCase.name == "access request body" {
 					req = httptest.NewRequest(http.MethodPost, "/", strings.NewReader("test request body"))
 				} else {
 					req = httptest.NewRequest(http.MethodGet, "/", nil)
 				}
-				tc.setupRequest(req)
+				testCase.setupRequest(req)
 
 				handler := lua.NewLuaHandler(
 					lua.WithLogger(log.New(io.Discard)),
 					lua.WithScript(config.LuaScript{
-						Script: tc.script,
+						Script: testCase.script,
 					}),
 					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
@@ -286,7 +286,7 @@ response.body = "Body: " .. request.body
 				recorder := httptest.NewRecorder()
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
-				assert.Equal(t, tc.expectedBody, testutils.ReadBody(t, recorder))
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
 			})
 		}
 	})
@@ -323,7 +323,7 @@ response.body = "OK"
 			expectedCode int
 		}{
 			{
-				name: "script not defined",
+				name:   "script not defined",
 				script: config.LuaScript{
 					// Empty script
 				},
@@ -363,11 +363,11 @@ response.body = x.field  -- This will cause an error
 			},
 		}
 
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
 				handler := lua.NewLuaHandler(
 					lua.WithLogger(log.New(io.Discard)),
-					lua.WithScript(tc.script),
+					lua.WithScript(testCase.script),
 					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
@@ -376,7 +376,7 @@ response.body = x.field  -- This will cause an error
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
-				assert.Equal(t, tc.expectedCode, recorder.Code)
+				assert.Equal(t, testCase.expectedCode, recorder.Code)
 			})
 		}
 	})

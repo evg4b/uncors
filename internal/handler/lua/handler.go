@@ -26,6 +26,9 @@ var (
 	ErrScriptNotDefined     = errors.New("lua script is not defined")
 	ErrScriptFileNotFound   = errors.New("lua script file not found")
 	ErrBothScriptAndFile    = errors.New("both script and file are defined, only one is allowed")
+	ErrResponseNotTable     = errors.New("response must be a table")
+	ErrInvalidResponseTable = errors.New("invalid response table type")
+	ErrInvalidHeadersTable  = errors.New("invalid headers table type")
 )
 
 func NewLuaHandler(options ...HandlerOption) *Handler {
@@ -35,6 +38,7 @@ func NewLuaHandler(options ...HandlerOption) *Handler {
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	if err := h.executeScript(writer, request); err != nil {
 		infra.HTTPError(writer, err)
+
 		return
 	}
 
@@ -52,30 +56,30 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	}
 
 	// Create Lua state
-	L := lua.NewState()
-	defer L.Close()
+	luaState := lua.NewState()
+	defer luaState.Close()
 
 	// Load basic Lua modules
-	h.loadStandardLibraries(L)
+	h.loadStandardLibraries(luaState)
 
 	// Create request and response tables
-	reqTable := h.createRequestTable(L, request)
-	respTable := h.createResponseTable(L)
+	reqTable := h.createRequestTable(luaState, request)
+	respTable := h.createResponseTable(luaState)
 
 	// Set global variables
-	L.SetGlobal("request", reqTable)
-	L.SetGlobal("response", respTable)
+	luaState.SetGlobal("request", reqTable)
+	luaState.SetGlobal("response", respTable)
 
 	// Load and execute script
 	var err error
 	if h.script.Script != "" {
-		err = L.DoString(h.script.Script)
+		err = luaState.DoString(h.script.Script)
 	} else {
 		scriptContent, readErr := afero.ReadFile(h.fs, h.script.File)
 		if readErr != nil {
 			return fmt.Errorf("%w: %s", ErrScriptFileNotFound, readErr.Error())
 		}
-		err = L.DoString(string(scriptContent))
+		err = luaState.DoString(string(scriptContent))
 	}
 
 	if err != nil {
@@ -83,25 +87,25 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	}
 
 	// Extract response from Lua
-	return h.writeResponse(writer, request, L)
+	return h.writeResponse(writer, request, luaState)
 }
 
-func (h *Handler) loadStandardLibraries(L *lua.LState) {
+func (h *Handler) loadStandardLibraries(luaState *lua.LState) {
 	// Load basic Lua libraries
 	// Base library (print, type, etc.)
-	L.SetGlobal("_G", L.Get(lua.GlobalsIndex))
+	luaState.SetGlobal("_G", luaState.Get(lua.GlobalsIndex))
 	// Math library
-	L.PreloadModule("math", lua.OpenMath)
+	luaState.PreloadModule("math", lua.OpenMath)
 	// String library
-	L.PreloadModule("string", lua.OpenString)
+	luaState.PreloadModule("string", lua.OpenString)
 	// Table library
-	L.PreloadModule("table", lua.OpenTable)
+	luaState.PreloadModule("table", lua.OpenTable)
 	// OS library (limited functionality)
-	L.PreloadModule("os", lua.OpenOs)
+	luaState.PreloadModule("os", lua.OpenOs)
 }
 
-func (h *Handler) createRequestTable(L *lua.LState, request *contracts.Request) *lua.LTable {
-	reqTable := L.NewTable()
+func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+	reqTable := luaState.NewTable()
 
 	// Set request properties
 	reqTable.RawSetString("method", lua.LString(request.Method))
@@ -112,12 +116,12 @@ func (h *Handler) createRequestTable(L *lua.LState, request *contracts.Request) 
 	reqTable.RawSetString("remote_addr", lua.LString(request.RemoteAddr))
 
 	// Set headers
-	headersTable := L.NewTable()
+	headersTable := luaState.NewTable()
 	for key, values := range request.Header {
 		if len(values) == 1 {
 			headersTable.RawSetString(key, lua.LString(values[0]))
 		} else {
-			valuesList := L.NewTable()
+			valuesList := luaState.NewTable()
 			for _, v := range values {
 				valuesList.Append(lua.LString(v))
 			}
@@ -127,12 +131,12 @@ func (h *Handler) createRequestTable(L *lua.LState, request *contracts.Request) 
 	reqTable.RawSetString("headers", headersTable)
 
 	// Set query parameters
-	queryTable := L.NewTable()
+	queryTable := luaState.NewTable()
 	for key, values := range request.URL.Query() {
 		if len(values) == 1 {
 			queryTable.RawSetString(key, lua.LString(values[0]))
 		} else {
-			valuesList := L.NewTable()
+			valuesList := luaState.NewTable()
 			for _, v := range values {
 				valuesList.Append(lua.LString(v))
 			}
@@ -152,15 +156,15 @@ func (h *Handler) createRequestTable(L *lua.LState, request *contracts.Request) 
 	return reqTable
 }
 
-func (h *Handler) createResponseTable(L *lua.LState) *lua.LTable {
-	respTable := L.NewTable()
+func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
+	respTable := luaState.NewTable()
 
 	// Set default values
 	respTable.RawSetString("status", lua.LNumber(http.StatusOK))
 	respTable.RawSetString("body", lua.LString(""))
 
 	// Create headers table
-	headersTable := L.NewTable()
+	headersTable := luaState.NewTable()
 	respTable.RawSetString("headers", headersTable)
 
 	return respTable
@@ -169,14 +173,17 @@ func (h *Handler) createResponseTable(L *lua.LState) *lua.LTable {
 func (h *Handler) writeResponse(
 	writer contracts.ResponseWriter,
 	request *contracts.Request,
-	L *lua.LState,
+	luaState *lua.LState,
 ) error {
-	respTable := L.GetGlobal("response")
+	respTable := luaState.GetGlobal("response")
 	if respTable.Type() != lua.LTTable {
-		return errors.New("response must be a table")
+		return ErrResponseNotTable
 	}
 
-	respTbl := respTable.(*lua.LTable)
+	respTbl, ok := respTable.(*lua.LTable)
+	if !ok {
+		return ErrInvalidResponseTable
+	}
 
 	// Write CORS headers
 	origin := request.Header.Get("Origin")
@@ -185,7 +192,10 @@ func (h *Handler) writeResponse(
 	// Write custom headers from Lua
 	headersValue := respTbl.RawGetString("headers")
 	if headersValue.Type() == lua.LTTable {
-		headersTbl := headersValue.(*lua.LTable)
+		headersTbl, ok := headersValue.(*lua.LTable)
+		if !ok {
+			return ErrInvalidHeadersTable
+		}
 		headersTbl.ForEach(func(key, value lua.LValue) {
 			if key.Type() == lua.LTString && value.Type() == lua.LTString {
 				writer.Header().Set(key.String(), value.String())
