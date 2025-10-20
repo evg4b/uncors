@@ -43,9 +43,9 @@ func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
 	}
 }
 
-func WithLuaHandlerFactory(factory LuaHandlerFactory) RequestHandlerOption {
+func WithScriptHandlerFactory(factory ScriptHandlerFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
-		h.luaHandlerFactory = factory
+		h.scriptHandlerFactory = factory
 	}
 }
 

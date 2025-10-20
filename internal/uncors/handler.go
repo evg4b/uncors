@@ -9,11 +9,11 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	cache2 "github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/handler/lua"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
+	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -24,7 +24,7 @@ import (
 type appCache struct {
 	staticHandlerFactory handler.RequestHandlerOption
 	mockHandlerFactory   handler.RequestHandlerOption
-	luaHandlerFactory    handler.RequestHandlerOption
+	scriptHandlerFactory handler.RequestHandlerOption
 }
 
 func (app *App) buildHandlerForMappings(
@@ -69,7 +69,7 @@ func (app *App) buildHandlerForMappings(
 		}),
 		app.getWithStaticHandlerFactory(),
 		app.getMockHandlerFactory(),
-		app.getLuaHandlerFactory(),
+		app.getScriptHandlerFactory(),
 	)
 
 	return portHandler
@@ -109,17 +109,17 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 	return app.cache.staticHandlerFactory
 }
 
-func (app *App) getLuaHandlerFactory() handler.RequestHandlerOption {
-	if app.cache.luaHandlerFactory == nil {
-		factoryFunc := func(script config.LuaScript) contracts.Handler {
-			return lua.NewLuaHandler(
-				lua.WithLogger(NewLuaLogger(app.logger)),
-				lua.WithScript(script),
-				lua.WithFileSystem(app.fs),
+func (app *App) getScriptHandlerFactory() handler.RequestHandlerOption {
+	if app.cache.scriptHandlerFactory == nil {
+		factoryFunc := func(s config.Script) contracts.Handler {
+			return script.NewHandler(
+				script.WithLogger(NewScriptLogger(app.logger)),
+				script.WithScript(s),
+				script.WithFileSystem(app.fs),
 			)
 		}
-		app.cache.luaHandlerFactory = handler.WithLuaHandlerFactory(factoryFunc)
+		app.cache.scriptHandlerFactory = handler.WithScriptHandlerFactory(factoryFunc)
 	}
 
-	return app.cache.luaHandlerFactory
+	return app.cache.scriptHandlerFactory
 }

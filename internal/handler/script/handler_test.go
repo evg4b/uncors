@@ -1,4 +1,4 @@
-package lua_test
+package script_test
 
 import (
 	"io"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler/lua"
+	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLuaHandler(t *testing.T) {
+func TestScriptHandler(t *testing.T) {
 	t.Run("inline script execution", func(t *testing.T) {
 		tests := []struct {
 			name           string
@@ -125,12 +125,12 @@ response.headers["X-Custom-2"] = "Value2"
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := lua.NewLuaHandler(
-					lua.WithLogger(log.New(io.Discard)),
-					lua.WithScript(config.LuaScript{
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{
 						Script: testCase.script,
 					}),
-					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
 				req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
@@ -185,12 +185,12 @@ response.body = "Error response"
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := lua.NewLuaHandler(
-					lua.WithLogger(log.New(io.Discard)),
-					lua.WithScript(config.LuaScript{
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{
 						File: testCase.file,
 					}),
-					lua.WithFileSystem(fileSystem),
+					script.WithFileSystem(fileSystem),
 				)
 
 				req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -275,12 +275,12 @@ response.body = "Body: " .. request.body
 				}
 				testCase.setupRequest(req)
 
-				handler := lua.NewLuaHandler(
-					lua.WithLogger(log.New(io.Discard)),
-					lua.WithScript(config.LuaScript{
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{
 						Script: testCase.script,
 					}),
-					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
 				recorder := httptest.NewRecorder()
@@ -292,15 +292,15 @@ response.body = "Body: " .. request.body
 	})
 
 	t.Run("CORS headers", func(t *testing.T) {
-		handler := lua.NewLuaHandler(
-			lua.WithLogger(log.New(io.Discard)),
-			lua.WithScript(config.LuaScript{
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
 				Script: `
 response.status = 200
 response.body = "OK"
 `,
 			}),
-			lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -319,19 +319,19 @@ response.body = "OK"
 	t.Run("error handling", func(t *testing.T) {
 		tests := []struct {
 			name         string
-			script       config.LuaScript
+			script       config.Script
 			expectedCode int
 		}{
 			{
 				name:   "script not defined",
-				script: config.LuaScript{
+				script: config.Script{
 					// Empty script
 				},
 				expectedCode: http.StatusInternalServerError,
 			},
 			{
 				name: "both script and file defined",
-				script: config.LuaScript{
+				script: config.Script{
 					Script: "response.status = 200",
 					File:   "test.lua",
 				},
@@ -339,21 +339,21 @@ response.body = "OK"
 			},
 			{
 				name: "script file not found",
-				script: config.LuaScript{
+				script: config.Script{
 					File: "nonexistent.lua",
 				},
 				expectedCode: http.StatusInternalServerError,
 			},
 			{
 				name: "lua syntax error",
-				script: config.LuaScript{
+				script: config.Script{
 					Script: "this is not valid lua code ###",
 				},
 				expectedCode: http.StatusInternalServerError,
 			},
 			{
 				name: "lua runtime error",
-				script: config.LuaScript{
+				script: config.Script{
 					Script: `
 local x = nil
 response.body = x.field  -- This will cause an error
@@ -365,10 +365,10 @@ response.body = x.field  -- This will cause an error
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := lua.NewLuaHandler(
-					lua.WithLogger(log.New(io.Discard)),
-					lua.WithScript(testCase.script),
-					lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(testCase.script),
+					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
 				req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -382,15 +382,15 @@ response.body = x.field  -- This will cause an error
 	})
 
 	t.Run("default response status", func(t *testing.T) {
-		handler := lua.NewLuaHandler(
-			lua.WithLogger(log.New(io.Discard)),
-			lua.WithScript(config.LuaScript{
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
 				Script: `
 -- Don't set status, should default to 200
 response.body = "Default status"
 `,
 			}),
-			lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -403,15 +403,15 @@ response.body = "Default status"
 	})
 
 	t.Run("empty response body", func(t *testing.T) {
-		handler := lua.NewLuaHandler(
-			lua.WithLogger(log.New(io.Discard)),
-			lua.WithScript(config.LuaScript{
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
 				Script: `
 response.status = 204
 -- Don't set body
 `,
 			}),
-			lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -424,9 +424,9 @@ response.status = 204
 	})
 
 	t.Run("complex script with table library", func(t *testing.T) {
-		handler := lua.NewLuaHandler(
-			lua.WithLogger(log.New(io.Discard)),
-			lua.WithScript(config.LuaScript{
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
 				Script: `
 local table = require("table")
 local items = {"apple", "banana", "cherry"}
@@ -435,7 +435,7 @@ response.status = 200
 response.body = result
 `,
 			}),
-			lua.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -448,34 +448,34 @@ response.body = result
 	})
 }
 
-func TestLuaHandlerOptions(t *testing.T) {
+func TestScriptHandlerOptions(t *testing.T) {
 	t.Run("WithLogger", func(t *testing.T) {
 		logger := log.New(io.Discard)
-		handler := lua.NewLuaHandler(lua.WithLogger(logger))
+		handler := script.NewHandler(script.WithLogger(logger))
 		require.NotNil(t, handler)
 	})
 
 	t.Run("WithScript", func(t *testing.T) {
-		script := config.LuaScript{Script: "response.status = 200"}
-		handler := lua.NewLuaHandler(lua.WithScript(script))
+		scriptConfig := config.Script{Script: "response.status = 200"}
+		handler := script.NewHandler(script.WithScript(scriptConfig))
 		require.NotNil(t, handler)
 	})
 
 	t.Run("WithFileSystem", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{})
-		handler := lua.NewLuaHandler(lua.WithFileSystem(fs))
+		handler := script.NewHandler(script.WithFileSystem(fs))
 		require.NotNil(t, handler)
 	})
 
 	t.Run("all options together", func(t *testing.T) {
 		logger := log.New(io.Discard)
-		script := config.LuaScript{Script: "response.status = 200"}
+		scriptConfig := config.Script{Script: "response.status = 200"}
 		fs := testutils.FsFromMap(t, map[string]string{})
 
-		handler := lua.NewLuaHandler(
-			lua.WithLogger(logger),
-			lua.WithScript(script),
-			lua.WithFileSystem(fs),
+		handler := script.NewHandler(
+			script.WithLogger(logger),
+			script.WithScript(scriptConfig),
+			script.WithFileSystem(fs),
 		)
 
 		require.NotNil(t, handler)

@@ -1,12 +1,12 @@
-# Lua Script Handler Example
+# Script Handler Example
 
-This example demonstrates how to use the Lua script handler in UNCORS.
+This example demonstrates how to use the script handler in UNCORS.
 
 ## Setup
 
 1. Start the UNCORS server:
 ```bash
-cd examples/lua-scripts
+cd examples/scripts
 uncors
 ```
 
@@ -21,7 +21,7 @@ curl http://localhost:3000/api/hello
 
 Returns:
 ```json
-{"message": "Hello from Lua!", "timestamp": "2025-10-20 01:30:45"}
+{"message": "Hello from script!", "timestamp": "2025-10-20 01:30:45"}
 ```
 
 ### 2. Echo Service
@@ -75,15 +75,15 @@ curl http://localhost:3000/api/protected \
 curl http://localhost:3000/api/complex
 ```
 
-This endpoint uses a Lua script loaded from `scripts/complex.lua`.
+This endpoint uses a script loaded from `scripts/complex.lua`.
 
 ## Files Structure
 
 ```
-examples/lua-scripts/
+examples/scripts/
 ├── .uncors.yaml          # Configuration file
 ├── scripts/
-│   └── complex.lua       # External Lua script
+│   └── complex.lua       # External script
 └── README.md             # This file
 ```
 

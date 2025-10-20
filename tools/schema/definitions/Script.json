@@ -1,11 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "description": "Lua script request handler definition",
+  "description": "Script request handler definition",
   "properties": {
     "path": {
       "type": "string",
-      "description": "Request path to handle with Lua script"
+      "description": "Request path to handle with script"
     },
     "method": {
       "$ref": "#/definitions/Method",
@@ -21,11 +21,11 @@
     },
     "script": {
       "type": "string",
-      "description": "Inline Lua script code"
+      "description": "Inline script code"
     },
     "file": {
       "type": "string",
-      "description": "Path to Lua script file"
+      "description": "Path to script file"
     }
   },
   "additionalProperties": false,

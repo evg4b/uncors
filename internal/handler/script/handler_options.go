@@ -1,4 +1,4 @@
-package lua
+package script
 
 import (
 	"github.com/evg4b/uncors/internal/config"
@@ -14,7 +14,7 @@ func WithLogger(logger contracts.Logger) HandlerOption {
 	}
 }
 
-func WithScript(script config.LuaScript) HandlerOption {
+func WithScript(script config.Script) HandlerOption {
 	return func(h *Handler) {
 		h.script = script
 	}

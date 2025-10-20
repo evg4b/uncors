@@ -14,7 +14,7 @@ type Mapping struct {
 	To              string            `mapstructure:"to"`
 	Statics         StaticDirectories `mapstructure:"statics"`
 	Mocks           Mocks             `mapstructure:"mocks"`
-	LuaScripts      LuaScripts        `mapstructure:"lua-scripts"`
+	Scripts         Scripts           `mapstructure:"scripts"`
 	Cache           CacheGlobs        `mapstructure:"cache"`
 	Rewrites        RewriteOptions    `mapstructure:"rewrites"`
 	OptionsHandling OptionsHandling   `mapstructure:"options-handling"`
@@ -31,7 +31,7 @@ func (m *Mapping) Clone() Mapping {
 		To:              m.To,
 		Statics:         m.Statics.Clone(),
 		Mocks:           m.Mocks.Clone(),
-		LuaScripts:      m.LuaScripts.Clone(),
+		Scripts:         m.Scripts.Clone(),
 		Cache:           m.Cache.Clone(),
 		Rewrites:        m.Rewrites.Clone(),
 		OptionsHandling: m.OptionsHandling.Clone(),

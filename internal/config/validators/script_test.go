@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLuaScriptValidator(t *testing.T) {
+func TestScriptValidator(t *testing.T) {
 	t.Run("should not register errors for valid inline script", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Method: "GET",
 				Script: "response.status = 200",
@@ -29,9 +29,9 @@ func TestLuaScriptValidator(t *testing.T) {
 			"/scripts/test.lua": "response.status = 200",
 		})
 
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Method: "POST",
 				File:   "/scripts/test.lua",
@@ -43,9 +43,9 @@ func TestLuaScriptValidator(t *testing.T) {
 	})
 
 	t.Run("should not register errors when method is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Method: "",
 				Script: "response.status = 200",
@@ -56,9 +56,9 @@ func TestLuaScriptValidator(t *testing.T) {
 	})
 
 	t.Run("should not register errors for valid queries and headers", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Script: "response.status = 200",
 				Queries: map[string]string{
@@ -76,35 +76,35 @@ func TestLuaScriptValidator(t *testing.T) {
 	})
 
 	t.Run("should register error when path is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "",
 				Script: "response.status = 200",
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.path")
+		assert.Contains(t, errors.Error(), "script.path")
 	})
 
 	t.Run("should register error when path is invalid", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "invalid-path",
 				Script: "response.status = 200",
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.path")
+		assert.Contains(t, errors.Error(), "script.path")
 	})
 
 	t.Run("should register error when method is invalid", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Method: "INVALID",
 				Script: "response.status = 200",
@@ -112,21 +112,21 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.method")
+		assert.Contains(t, errors.Error(), "script.method")
 	})
 
 	t.Run("should register error when neither script nor file is provided", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Method: "GET",
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.script")
-		assert.Contains(t, errors.Error(), "lua-script.file")
+		assert.Contains(t, errors.Error(), "script.script")
+		assert.Contains(t, errors.Error(), "script.file")
 		assert.Contains(t, errors.Error(), "either 'script' or 'file' must be provided")
 	})
 
@@ -135,9 +135,9 @@ func TestLuaScriptValidator(t *testing.T) {
 			"/scripts/test.lua": "response.status = 200",
 		})
 
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Script: "response.status = 200",
 				File:   "/scripts/test.lua",
@@ -146,17 +146,17 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.script")
-		assert.Contains(t, errors.Error(), "lua-script.file")
+		assert.Contains(t, errors.Error(), "script.script")
+		assert.Contains(t, errors.Error(), "script.file")
 		assert.Contains(t, errors.Error(), "only one of 'script' or 'file' can be provided")
 	})
 
 	t.Run("should register error when file does not exist", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{})
 
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path: "/api/test",
 				File: "/scripts/nonexistent.lua",
 			},
@@ -164,7 +164,7 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.file")
+		assert.Contains(t, errors.Error(), "script.file")
 	})
 
 	t.Run("should register error when file is a directory", func(t *testing.T) {
@@ -172,9 +172,9 @@ func TestLuaScriptValidator(t *testing.T) {
 			"/scripts/test.lua": "response.status = 200",
 		})
 
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path: "/api/test",
 				File: "/scripts",
 			},
@@ -182,13 +182,13 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.file")
+		assert.Contains(t, errors.Error(), "script.file")
 	})
 
 	t.Run("should register error when query key is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Script: "response.status = 200",
 				Queries: map[string]string{
@@ -199,14 +199,14 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.queries")
+		assert.Contains(t, errors.Error(), "script.queries")
 		assert.Contains(t, errors.Error(), "query parameter keys must not be empty")
 	})
 
 	t.Run("should register error when header key is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "/api/test",
 				Script: "response.status = 200",
 				Headers: map[string]string{
@@ -217,14 +217,14 @@ func TestLuaScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "lua-script.headers")
+		assert.Contains(t, errors.Error(), "script.headers")
 		assert.Contains(t, errors.Error(), "header keys must not be empty")
 	})
 
 	t.Run("should register multiple errors for complex invalid config", func(t *testing.T) {
-		errors := validate.Validate(&validators.LuaScriptValidator{
-			Field: "lua-script",
-			Value: config.LuaScript{
+		errors := validate.Validate(&validators.ScriptValidator{
+			Field: "script",
+			Value: config.Script{
 				Path:   "",
 				Method: "INVALID",
 				Queries: map[string]string{
@@ -238,11 +238,11 @@ func TestLuaScriptValidator(t *testing.T) {
 
 		assert.True(t, errors.HasAny())
 		errString := errors.Error()
-		assert.Contains(t, errString, "lua-script.path")
-		assert.Contains(t, errString, "lua-script.method")
-		assert.Contains(t, errString, "lua-script.script")
-		assert.Contains(t, errString, "lua-script.file")
-		assert.Contains(t, errString, "lua-script.queries")
-		assert.Contains(t, errString, "lua-script.headers")
+		assert.Contains(t, errString, "script.path")
+		assert.Contains(t, errString, "script.method")
+		assert.Contains(t, errString, "script.script")
+		assert.Contains(t, errString, "script.file")
+		assert.Contains(t, errString, "script.queries")
+		assert.Contains(t, errString, "script.headers")
 	})
 }

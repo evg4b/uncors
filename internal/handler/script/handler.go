@@ -1,4 +1,4 @@
-package lua
+package script
 
 import (
 	"errors"
@@ -17,21 +17,21 @@ import (
 )
 
 type Handler struct {
-	script config.LuaScript
+	script config.Script
 	logger contracts.Logger
 	fs     afero.Fs
 }
 
 var (
-	ErrScriptNotDefined     = errors.New("lua script is not defined")
-	ErrScriptFileNotFound   = errors.New("lua script file not found")
+	ErrScriptNotDefined     = errors.New("script is not defined")
+	ErrScriptFileNotFound   = errors.New("script file not found")
 	ErrBothScriptAndFile    = errors.New("both script and file are defined, only one is allowed")
 	ErrResponseNotTable     = errors.New("response must be a table")
 	ErrInvalidResponseTable = errors.New("invalid response table type")
 	ErrInvalidHeadersTable  = errors.New("invalid headers table type")
 )
 
-func NewLuaHandler(options ...HandlerOption) *Handler {
+func NewHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
@@ -77,7 +77,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	}
 
 	if err != nil {
-		return fmt.Errorf("lua script error: %w", err)
+		return fmt.Errorf("script error: %w", err)
 	}
 
 	return h.writeResponse(writer, request, luaState)

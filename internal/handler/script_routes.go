@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (h *RequestHandler) makeLuaScriptRoutes(router *mux.Router, scripts config.LuaScripts) {
-	var defaultScripts config.LuaScripts
+func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scripts) {
+	var defaultScripts config.Scripts
 
 	for _, scriptDef := range scripts {
 		if len(scriptDef.Queries) > 0 || len(scriptDef.Headers) > 0 || len(scriptDef.Method) > 0 {
@@ -16,7 +16,7 @@ func (h *RequestHandler) makeLuaScriptRoutes(router *mux.Router, scripts config.
 			setMethod(route, scriptDef.Method)
 			setQueries(route, scriptDef.Queries)
 			setHeaders(route, scriptDef.Headers)
-			route.Handler(contracts.CastToHTTPHandler(h.luaHandlerFactory(scriptDef)))
+			route.Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
 		} else {
 			defaultScripts = append(defaultScripts, scriptDef)
 		}
@@ -25,6 +25,6 @@ func (h *RequestHandler) makeLuaScriptRoutes(router *mux.Router, scripts config.
 	for _, scriptDef := range defaultScripts {
 		route := router.NewRoute()
 		setPath(route, scriptDef.Path)
-		route.Handler(contracts.CastToHTTPHandler(h.luaHandlerFactory(scriptDef)))
+		route.Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
 	}
 }

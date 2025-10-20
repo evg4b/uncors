@@ -38,11 +38,11 @@
           },
           "minItems": 1
         },
-        "lua-scripts": {
+        "scripts": {
           "type": "array",
-          "description": "List of Lua script handlers",
+          "description": "List of script handlers",
           "items": {
-            "$ref": "#/definitions/LuaScript"
+            "$ref": "#/definitions/Script"
           },
           "minItems": 1
         },

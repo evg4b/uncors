@@ -3614,62 +3614,6 @@
       "minProperties": 1,
       "type": "object"
     },
-    "LuaScript": {
-      "additionalProperties": false,
-      "description": "Lua script request handler definition",
-      "oneOf": [
-        {
-          "not": {
-            "required": [
-              "file"
-            ]
-          },
-          "required": [
-            "script"
-          ]
-        },
-        {
-          "not": {
-            "required": [
-              "script"
-            ]
-          },
-          "required": [
-            "file"
-          ]
-        }
-      ],
-      "properties": {
-        "file": {
-          "description": "Path to Lua script file",
-          "type": "string"
-        },
-        "headers": {
-          "$ref": "#/definitions/Headers",
-          "description": "Request headers to match"
-        },
-        "method": {
-          "$ref": "#/definitions/Method",
-          "description": "Request method to match"
-        },
-        "path": {
-          "description": "Request path to handle with Lua script",
-          "type": "string"
-        },
-        "queries": {
-          "$ref": "#/definitions/Queries",
-          "description": "Request query parameters to match"
-        },
-        "script": {
-          "description": "Inline Lua script code",
-          "type": "string"
-        }
-      },
-      "required": [
-        "path"
-      ],
-      "type": "object"
-    },
     "Mapping": {
       "oneOf": [
         {
@@ -3697,14 +3641,6 @@
               "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified.",
               "type": "string"
             },
-            "lua-scripts": {
-              "description": "List of Lua script handlers",
-              "items": {
-                "$ref": "#/definitions/LuaScript"
-              },
-              "minItems": 1,
-              "type": "array"
-            },
             "mocks": {
               "description": "List the mocked requests",
               "items": {
@@ -3720,6 +3656,14 @@
               "description": "List of paths that will be rewritten.",
               "items": {
                 "$ref": "#/definitions/Rewrite"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "scripts": {
+              "description": "List of script handlers",
+              "items": {
+                "$ref": "#/definitions/Script"
               },
               "minItems": 1,
               "type": "array"
@@ -3869,6 +3813,62 @@
       "required": [
         "from",
         "to"
+      ],
+      "type": "object"
+    },
+    "Script": {
+      "additionalProperties": false,
+      "description": "Script request handler definition",
+      "oneOf": [
+        {
+          "not": {
+            "required": [
+              "file"
+            ]
+          },
+          "required": [
+            "script"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "script"
+            ]
+          },
+          "required": [
+            "file"
+          ]
+        }
+      ],
+      "properties": {
+        "file": {
+          "description": "Path to script file",
+          "type": "string"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "Request headers to match"
+        },
+        "method": {
+          "$ref": "#/definitions/Method",
+          "description": "Request method to match"
+        },
+        "path": {
+          "description": "Request path to handle with script",
+          "type": "string"
+        },
+        "queries": {
+          "$ref": "#/definitions/Queries",
+          "description": "Request query parameters to match"
+        },
+        "script": {
+          "description": "Inline script code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
       ],
       "type": "object"
     },
