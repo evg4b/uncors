@@ -54,6 +54,7 @@
 - [Wildcard host mapping](https://github.com/evg4b/uncors/wiki/2.-Configuration#wildcard-mapping)
 - [HTTPS support](https://github.com/evg4b/uncors/wiki/2.-Configuration#https-configuration)
 - [Response mocking](https://github.com/evg4b/uncors/wiki/3.-Response-mocking)
+- [Script handler](https://github.com/evg4b/uncors/wiki/9.-Script-Handler) (Lua scripting with JSON support)
 - [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/2.-Configuration#proxy-configuration)
 - [Static file serving](https://github.com/evg4b/uncors/wiki/4.-Static-file-serving)
 - [Response caching](https://github.com/evg4b/uncors/wiki/5.-Response-caching)

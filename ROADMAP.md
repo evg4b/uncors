@@ -78,7 +78,8 @@
 
 
 ## Next Release
-- [ ] Intrnal opmization and refactoring
+- [ ] Script handler (Lua scripting with JSON support)
+- [ ] Internal optimization and refactoring
 
 ## Future features
 - [ ] Informative error messages

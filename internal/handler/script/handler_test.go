@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestScriptHandler(t *testing.T) {
+func TestScriptHandler(t *testing.T) { // nolint:cyclop, gocognit
 	t.Run("inline script execution", func(t *testing.T) {
 		tests := []struct {
 			name           string
