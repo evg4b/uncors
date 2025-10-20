@@ -13,8 +13,8 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -50,7 +50,7 @@ func TestProxyHandler(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				targetURL, err := urlx.Parse(testCase.URL)
+				targetURL, err := urlparser.Parse(testCase.URL)
 				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
@@ -104,7 +104,7 @@ func TestProxyHandler(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				expectedURL, err := urlx.Parse(testCase.expectedURL)
+				expectedURL, err := urlparser.Parse(testCase.expectedURL)
 				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
