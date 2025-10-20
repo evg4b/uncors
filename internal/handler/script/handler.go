@@ -24,9 +24,7 @@ type Handler struct {
 }
 
 var (
-	ErrScriptNotDefined     = errors.New("script is not defined")
 	ErrScriptFileNotFound   = errors.New("script file not found")
-	ErrBothScriptAndFile    = errors.New("both script and file are defined, only one is allowed")
 	ErrResponseNotTable     = errors.New("response must be a table")
 	ErrInvalidResponseTable = errors.New("invalid response table type")
 	ErrInvalidHeadersTable  = errors.New("invalid headers table type")
@@ -47,14 +45,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
-	if h.script.Script == "" && h.script.File == "" {
-		return ErrScriptNotDefined
-	}
-
-	if h.script.Script != "" && h.script.File != "" {
-		return ErrBothScriptAndFile
-	}
-
 	luaState := lua.NewState()
 	defer luaState.Close()
 
@@ -155,6 +145,69 @@ func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
 
 	headersTable := luaState.NewTable()
 	respTable.RawSetString("headers", headersTable)
+
+	// Add Set(key, value) method to headers table
+	setHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+		value := L.CheckString(3)
+		headersTable.RawSetString(key, lua.LString(value))
+		return 0
+	})
+	headersTable.RawSetString("Set", setHeaderMethod)
+
+	// Add Get(key) method to headers table
+	getHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
+		key := L.CheckString(2)
+		value := headersTable.RawGetString(key)
+		L.Push(value)
+		return 1
+	})
+	headersTable.RawSetString("Get", getHeaderMethod)
+
+	// Add Header() method that returns headers table
+	headerMethod := luaState.NewFunction(func(L *lua.LState) int {
+		L.Push(headersTable)
+		return 1
+	})
+	respTable.RawSetString("Header", headerMethod)
+
+	// Add Write(data) method
+	writeMethod := luaState.NewFunction(func(L *lua.LState) int {
+		data := L.CheckString(2)
+		bodyValue := respTable.RawGetString("body")
+		currentBody := ""
+		if bodyValue.Type() == lua.LTString {
+			currentBody = bodyValue.String()
+		}
+		respTable.RawSetString("body", lua.LString(currentBody+data))
+		L.Push(lua.LNumber(len(data)))
+		L.Push(lua.LNil)
+		return 2
+	})
+	respTable.RawSetString("Write", writeMethod)
+
+	// Add WriteString(str) method
+	writeStringMethod := luaState.NewFunction(func(L *lua.LState) int {
+		str := L.CheckString(2)
+		bodyValue := respTable.RawGetString("body")
+		currentBody := ""
+		if bodyValue.Type() == lua.LTString {
+			currentBody = bodyValue.String()
+		}
+		respTable.RawSetString("body", lua.LString(currentBody+str))
+		L.Push(lua.LNumber(len(str)))
+		L.Push(lua.LNil)
+		return 2
+	})
+	respTable.RawSetString("WriteString", writeStringMethod)
+
+	// Add WriteHeader(statusCode) method
+	writeHeaderMethod := luaState.NewFunction(func(L *lua.LState) int {
+		statusCode := L.CheckInt(2)
+		respTable.RawSetString("status", lua.LNumber(statusCode))
+		return 0
+	})
+	respTable.RawSetString("WriteHeader", writeHeaderMethod)
 
 	return respTable
 }

@@ -350,21 +350,6 @@ response.body = "OK"
 			expectedCode int
 		}{
 			{
-				name:   "script not defined",
-				script: config.Script{
-					// Empty script
-				},
-				expectedCode: http.StatusInternalServerError,
-			},
-			{
-				name: "both script and file defined",
-				script: config.Script{
-					Script: "response.status = 200",
-					File:   "test.lua",
-				},
-				expectedCode: http.StatusInternalServerError,
-			},
-			{
 				name: "script file not found",
 				script: config.Script{
 					File: "nonexistent.lua",
@@ -472,6 +457,115 @@ response.body = result
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "apple, banana, cherry", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("Go-style API methods", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			script         string
+			expectedStatus int
+			expectedBody   string
+			expectedHeader map[string]string
+		}{
+			{
+				name: "WriteString method",
+				script: `
+response:WriteHeader(200)
+response:WriteString("Hello, ")
+response:WriteString("World!")
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   "Hello, World!",
+			},
+			{
+				name: "Write method",
+				script: `
+response:WriteHeader(201)
+response:Write("Created resource")
+`,
+				expectedStatus: http.StatusCreated,
+				expectedBody:   "Created resource",
+			},
+			{
+				name: "Header().Set() method",
+				script: `
+response:Header():Set("Content-Type", "application/json")
+response:Header():Set("X-Custom-Header", "CustomValue")
+response:WriteHeader(200)
+response:WriteString('{"status":"ok"}')
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   `{"status":"ok"}`,
+				expectedHeader: map[string]string{
+					headers.ContentType: "application/json",
+					"X-Custom-Header":   "CustomValue",
+				},
+			},
+			{
+				name: "multiple Write calls",
+				script: `
+response:WriteHeader(200)
+response:Write("Line 1\n")
+response:Write("Line 2\n")
+response:Write("Line 3")
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   "Line 1\nLine 2\nLine 3",
+			},
+			{
+				name: "Header().Get() method",
+				script: `
+response:Header():Set("X-Test", "TestValue")
+local value = response:Header():Get("X-Test")
+response:WriteHeader(200)
+response:WriteString("Header value: " .. value)
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   "Header value: TestValue",
+			},
+			{
+				name: "mixed old and new API",
+				script: `
+response:Header():Set("X-New-Style", "new")
+response.headers["X-Old-Style"] = "old"
+response:WriteHeader(200)
+response:WriteString("Mixed: ")
+response.body = response.body .. "old and new"
+`,
+				expectedStatus: http.StatusOK,
+				expectedBody:   "Mixed: old and new",
+				expectedHeader: map[string]string{
+					"X-New-Style": "new",
+					"X-Old-Style": "old",
+				},
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{
+						Script: testCase.script,
+					}),
+					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+				)
+
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				recorder := httptest.NewRecorder()
+
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+				assert.Equal(t, testCase.expectedStatus, recorder.Code)
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
+
+				if testCase.expectedHeader != nil {
+					for key, value := range testCase.expectedHeader {
+						assert.Equal(t, value, recorder.Header().Get(key))
+					}
+				}
+			})
+		}
 	})
 }
 
