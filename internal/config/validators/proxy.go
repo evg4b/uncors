@@ -3,7 +3,7 @@ package validators
 import (
 	"fmt"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/gobuffalo/validate"
 )
 
@@ -17,7 +17,7 @@ func (p *ProxyValidator) IsValid(errors *validate.Errors) {
 		return
 	}
 
-	if _, err := urlx.Parse(p.Value); err != nil {
+	if _, err := urlparser.Parse(p.Value); err != nil {
 		errors.Add(p.Field, fmt.Sprintf("%s is not valid url", p.Field))
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 )
 
 var (
@@ -46,11 +46,11 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		hooks: map[string]func(string) string{},
 	}
 
-	if replacer.source, err = urlx.Parse(source); err != nil {
+	if replacer.source, err = urlparser.Parse(source); err != nil {
 		return nil, ErrInvalidSourceURL
 	}
 
-	if replacer.target, err = urlx.Parse(target); err != nil {
+	if replacer.target, err = urlparser.Parse(target); err != nil {
 		return nil, ErrInvalidTargetURL
 	}
 

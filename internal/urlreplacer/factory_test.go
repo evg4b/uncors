@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -80,7 +80,7 @@ func TestFactoryMake(t *testing.T) {
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			parseURL, err := urlx.Parse(testCase.url)
+			parseURL, err := urlparser.Parse(testCase.url)
 			testutils.CheckNoError(t, err)
 
 			got, got1, err := factory.Make(parseURL)

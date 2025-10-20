@@ -10,7 +10,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/gorilla/mux"
 )
 
@@ -47,12 +46,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 	proxyHandler := handler.proxyHandlerFactory()
 
 	for _, mapping := range handler.mappings {
-		uri, err := urlx.Parse(mapping.From)
-		if err != nil {
-			panic(err)
-		}
-
-		host, _, err := urlx.SplitHostPort(uri)
+		host, _, err := mapping.GetFromHostPort()
 		if err != nil {
 			panic(err)
 		}

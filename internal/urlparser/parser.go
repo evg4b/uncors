@@ -1,15 +1,14 @@
-// Package urlx parses and normalizes URLs. It can also resolve hostname to an IP address.
-package urlx
+// Package urlparser parses and validates URLs with support for wildcards.
+// This is an internal package that provides custom URL parsing for the uncors project.
+package urlparser
 
 import (
 	"errors"
-	"net"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/PuerkitoBio/purell"
 	"golang.org/x/net/idna"
 )
 
@@ -31,6 +30,9 @@ func Parse(rawURL string) (*url.URL, error) {
 	return ParseWithDefaultScheme(rawURL, "")
 }
 
+// ParseWithDefaultScheme parses raw URL string with a custom default scheme.
+// If the URL doesn't have a scheme, the provided scheme will be used.
+// If scheme is empty, the URL will be parsed without a default scheme.
 func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 	rawURL = defaultScheme(rawURL, scheme)
 
@@ -141,86 +143,4 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	}
 
 	return host, port, nil
-}
-
-const normalizeFlags = purell.FlagRemoveDefaultPort |
-	purell.FlagDecodeDWORDHost | purell.FlagDecodeOctalHost | purell.FlagDecodeHexHost |
-	purell.FlagRemoveUnnecessaryHostDots | purell.FlagRemoveDotSegments | purell.FlagRemoveDuplicateSlashes |
-	purell.FlagUppercaseEscapes | purell.FlagDecodeUnnecessaryEscapes | purell.FlagEncodeNecessaryEscapes |
-	purell.FlagSortQuery
-
-// Normalize normalizes URL with the following behavior:
-// 1. Remove unnecessary host dots.
-// 2. Remove default port (http://localhost:80 becomes http://localhost).
-// 3. Remove duplicate slashes.
-// 4. Remove unnecessary dots from path.
-// 5. Sort query parameters.
-// 6. Decode host IP into decimal numbers.
-// 7. Handle escape values.
-// 8. Decode Punycode domains into UTF8 representation.
-func Normalize(parsedURL *url.URL) (string, error) {
-	host, port, err := SplitHostPort(parsedURL)
-	if err != nil {
-		return "", err
-	}
-	if err := checkHost(host); err != nil {
-		return "", err
-	}
-
-	// Decode Punycode.
-	host, err = idna.ToUnicode(host)
-	if err != nil {
-		return "", err
-	}
-
-	parsedURL.Host = strings.ToLower(host)
-	if port != "" {
-		parsedURL.Host += ":" + port
-	}
-	parsedURL.Scheme = strings.ToLower(parsedURL.Scheme)
-
-	return purell.NormalizeURL(parsedURL, normalizeFlags), nil
-}
-
-// NormalizeString is a shortcut for Parse() and Normalize() functions.
-func NormalizeString(rawURL string) (string, error) {
-	u, err := Parse(rawURL)
-	if err != nil {
-		return "", err
-	}
-
-	return Normalize(u)
-}
-
-func Resolve(parsedURL *url.URL) (*net.IPAddr, error) {
-	host, _, err := SplitHostPort(parsedURL)
-	if err != nil {
-		return nil, err
-	}
-
-	addr, err := net.ResolveIPAddr("ip", host)
-	if err != nil {
-		return nil, err
-	}
-
-	return addr, nil
-}
-
-// ResolveString is a shortcut for Parse() and Resolve() functions.
-func ResolveString(rawURL string) (*net.IPAddr, error) {
-	u, err := Parse(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return Resolve(u)
-}
-
-func URIEncode(uri string) (string, error) {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return "", err
-	}
-
-	return u.String(), nil
 }

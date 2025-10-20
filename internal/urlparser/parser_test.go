@@ -1,11 +1,11 @@
 // nolint: lll, gosmopolitan
-package urlx_test
+package urlparser_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,7 +102,7 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		url, err := urlx.Parse(testCase.in)
+		url, err := urlparser.Parse(testCase.in)
 
 		if !testCase.err {
 			require.NoError(t, err)
@@ -116,129 +116,13 @@ func TestParse(t *testing.T) {
 
 			// If the above defaulted to HTTP, let's test HTTPS too.
 			if !strings.HasPrefix(strings.ToLower(testCase.in), "http://") && strings.HasPrefix(testCase.out, "http://") {
-				url, err := urlx.ParseWithDefaultScheme(testCase.in, "https")
+				url, err := urlparser.ParseWithDefaultScheme(testCase.in, "https")
 				require.NoError(t, err)
 
 				if !strings.HasPrefix(url.String(), "https://") {
 					t.Errorf("%q: expected %q with https:// prefix, got %q", testCase.in, testCase.out, url.String())
 				}
 			}
-		}
-	}
-}
-
-func TestURLNormalize(t *testing.T) {
-	tests := []struct {
-		in  string
-		out string
-		err bool
-	}{
-		// Remove default port:
-		{in: "http://example.com:80/index.html", out: "http://example.com/index.html"},
-		{in: "https://example.com:443/index.html", out: "https://example.com/index.html"},
-		{in: "http://localhost:80", out: "http://localhost"},
-		{in: "https://localhost:443", out: "https://localhost"},
-		{in: "http://127.0.0.1:80", out: "http://127.0.0.1"},
-
-		// Save port where scheme not setted
-		{in: "localhost:80", out: "//localhost:80"},
-		{in: "127.0.0.1:80", out: "//127.0.0.1:80"},
-		{in: "[2001:db8:a0b:12f0::1]:80", out: "//[2001:db8:a0b:12f0::1]:80"},
-		{in: "localhost:443", out: "//localhost:443"},
-		{in: "127.0.0.1:443", out: "//127.0.0.1:443"},
-		{in: "[2001:db8:a0b:12f0::1]:443", out: "//[2001:db8:a0b:12f0::1]:443"},
-
-		// // Remove duplicate slashes.
-		{in: "http://example.com///x//////y///index.html", out: "http://example.com/x/y/index.html"},
-
-		// // Remove unnecessary dots from path:
-		{in: "http://example.com/./x/y/z/../index.html", out: "http://example.com/x/y/index.html"},
-
-		// // Sort query:
-		{in: "http://example.com/index.html?c=z&a=x&b=y", out: "http://example.com/index.html?a=x&b=y&c=z"},
-
-		// // Leave fragment as is:
-		{in: "http://example.com/index.html#t=20", out: "http://example.com/index.html#t=20"},
-
-		// // README example:
-		{in: "localhost:80///x///y/z/../././index.html?b=y&a=x#t=20", out: "//localhost:80/x/y/index.html?a=x&b=y#t=20"},
-
-		// // Decode Punycode into UTF8.
-		{
-			in:  "http://www.xn--luouk-k-z2a6lsyxjlexh.cz/úpěl-ďábelské-ódy",
-			out: "http://www.žluťoučký-kůň.cz/%C3%BAp%C4%9Bl-%C4%8F%C3%A1belsk%C3%A9-%C3%B3dy",
-		},
-		{in: "http://xn--kda4b0koi.pl/żółć.html", out: "http://żółć.pl/%C5%BC%C3%B3%C5%82%C4%87.html"},
-
-		{in: "http://www.google.com", out: "http://www.google.com"},
-		{in: "https://www.google.com", out: "https://www.google.com"},
-		{in: "HTTP://WWW.GOOGLE.COM", out: "http://www.google.com"},
-		{in: "HTTPS://WWW.google.COM", out: "https://www.google.com"},
-		{in: "http:/www.google.com", err: true},
-		{in: "http:///www.google.com", err: true},
-		{in: "javascript:void(0)", err: true},
-		{in: "<script>", err: true},
-	}
-
-	for _, testCase := range tests {
-		url, err := urlx.NormalizeString(testCase.in)
-
-		if !testCase.err {
-			require.NoError(t, err)
-		}
-		if testCase.err {
-			require.Error(t, err)
-		}
-		assert.Equal(t, testCase.out, url)
-	}
-}
-
-func TestURLResolve(t *testing.T) {
-	tests := []struct {
-		in  string
-		out string
-		err bool
-	}{
-		{in: "localhost", out: "127.0.0.1"},
-		{in: "google.com"},
-		{in: "some.weird.hostname.example.com", err: true},
-	}
-
-	for _, testCase := range tests {
-		ipAdders, err := urlx.ResolveString(testCase.in)
-
-		if !testCase.err {
-			require.NoError(t, err)
-		}
-		if testCase.err {
-			require.Error(t, err)
-		}
-		if testCase.out != "" {
-			assert.Equal(t, testCase.out, ipAdders.String())
-		}
-	}
-}
-
-func TestURIEncode(t *testing.T) {
-	tests := []struct {
-		in  string
-		out string
-		err bool
-	}{
-		{in: "http://site.com/image/Look At Me.jpg", out: "http://site.com/image/Look%20At%20Me.jpg"},
-	}
-
-	for _, testCase := range tests {
-		actual, err := urlx.URIEncode(testCase.in)
-
-		if !testCase.err {
-			require.NoError(t, err)
-		}
-		if testCase.err {
-			require.Error(t, err)
-		}
-		if testCase.out != "" {
-			assert.Equal(t, testCase.out, actual)
 		}
 	}
 }

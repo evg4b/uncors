@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +83,7 @@ func TestWildCardToRegexp(t *testing.T) {
 	t.Run("regexp", func(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlx.Parse(testCase.url)
+				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
 				regexp, _, err := wildCardToRegexp(parsedPattern)
@@ -123,7 +123,7 @@ func TestWildCardToRegexp(t *testing.T) {
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlx.Parse(testCase.url)
+				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
 				_, count, err := wildCardToRegexp(parsedPattern)
@@ -161,7 +161,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 	t.Run("pattern", func(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlx.Parse(testCase.url)
+				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
 				pattern, _ := wildCardToReplacePattern(parsedPattern)
@@ -200,7 +200,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlx.Parse(testCase.url)
+				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
 				_, count := wildCardToReplacePattern(parsedPattern)

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlx"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
@@ -80,26 +79,26 @@ const (
 func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := Mappings{}
 	for _, mapping := range mappings {
-		sourceURL, err := urlx.Parse(mapping.From)
+		host, portStr, err := mapping.GetFromHostPort()
+		if err != nil {
+			panic(fmt.Errorf("failed to get host and port: %w", err))
+		}
+
+		sourceURL, err := mapping.GetFromURL()
 		if err != nil {
 			panic(fmt.Errorf("failed to parse source url: %w", err))
 		}
 
 		// Normalize the mapping with port from URL
 		normalizedMapping := mapping.Clone()
-		normalizedMapping.From = normalizeURL(*sourceURL)
+		normalizedMapping.From = normalizeURL(*sourceURL, host, portStr)
 		processedMappings = append(processedMappings, normalizedMapping)
 	}
 
 	return processedMappings
 }
 
-func normalizeURL(parsedURL url.URL) string {
-	host, portStr, err := urlx.SplitHostPort(&parsedURL)
-	if err != nil {
-		panic(fmt.Errorf("failed to split host and port: %w", err))
-	}
-
+func normalizeURL(parsedURL url.URL, host, portStr string) string {
 	// Determine the scheme (default to http if not specified)
 	scheme := parsedURL.Scheme
 	if scheme == "" {
@@ -109,6 +108,7 @@ func normalizeURL(parsedURL url.URL) string {
 	// Parse port or use default based on scheme
 	var port int
 	if portStr != "" {
+		var err error
 		port, err = strconv.Atoi(portStr)
 		if err != nil {
 			panic(fmt.Errorf("invalid port number: %w", err))

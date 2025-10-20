@@ -1,8 +1,10 @@
 package config
 
 import (
+	"net/url"
 	"reflect"
 
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 )
@@ -15,6 +17,11 @@ type Mapping struct {
 	Cache           CacheGlobs        `mapstructure:"cache"`
 	Rewrites        RewriteOptions    `mapstructure:"rewrites"`
 	OptionsHandling OptionsHandling   `mapstructure:"options-handling"`
+
+	// Cached parsed URL and its components (not serialized)
+	fromURL  *url.URL `json:"-" mapstructure:"-" yaml:"-"`
+	fromHost string   `json:"-" mapstructure:"-" yaml:"-"`
+	fromPort string   `json:"-" mapstructure:"-" yaml:"-"`
 }
 
 func (m *Mapping) Clone() Mapping {
@@ -26,7 +33,48 @@ func (m *Mapping) Clone() Mapping {
 		Cache:           m.Cache.Clone(),
 		Rewrites:        m.Rewrites.Clone(),
 		OptionsHandling: m.OptionsHandling.Clone(),
+		fromURL:         m.fromURL, // Share cached URL
+		fromHost:        m.fromHost,
+		fromPort:        m.fromPort,
 	}
+}
+
+// GetFromURL returns the parsed URL, caching it on first access.
+// This method performs lazy parsing to avoid redundant URL parsing operations.
+func (m *Mapping) GetFromURL() (*url.URL, error) {
+	if m.fromURL == nil {
+		parsedURL, err := urlparser.Parse(m.From)
+		if err != nil {
+			return nil, err
+		}
+		m.fromURL = parsedURL
+	}
+
+	return m.fromURL, nil
+}
+
+// GetFromHostPort returns the host and port from the From URL, caching them on first access.
+// This method combines URL parsing and host/port splitting to avoid redundant operations.
+func (m *Mapping) GetFromHostPort() (string, string, error) {
+	if m.fromHost == "" && m.fromPort == "" {
+		uri, err := m.GetFromURL()
+		if err != nil {
+			return "", "", err
+		}
+		m.fromHost, m.fromPort, err = urlparser.SplitHostPort(uri)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return m.fromHost, m.fromPort, nil
+}
+
+// ClearCache clears the cached URL and its components. This is primarily used for testing.
+func (m *Mapping) ClearCache() {
+	m.fromURL = nil
+	m.fromHost = ""
+	m.fromPort = ""
 }
 
 var (

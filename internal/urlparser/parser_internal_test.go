@@ -1,4 +1,4 @@
-package urlx
+package urlparser
 
 import (
 	"testing"

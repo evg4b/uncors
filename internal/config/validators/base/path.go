@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/gobuffalo/validate"
 )
 
@@ -27,7 +27,7 @@ func (p *PathValidator) IsValid(errors *validate.Errors) {
 		return
 	}
 
-	uri, err := urlx.Parse("//localhost/" + strings.TrimPrefix(p.Value, "/"))
+	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(p.Value, "/"))
 	if err != nil {
 		errors.Add(p.Field, fmt.Sprintf("%s is not valid path", p.Field))
 	}

@@ -15,6 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// clearMappingsCache clears the URL cache in all mappings for testing purposes.
+func clearMappingsCache(cfg *config.UncorsConfig) {
+	for i := range cfg.Mappings {
+		cfg.Mappings[i].ClearCache()
+	}
+}
+
 const acceptEncoding = "accept-encoding"
 
 const (
@@ -192,6 +199,8 @@ func TestLoadConfiguration(t *testing.T) {
 				viperInstance.SetFs(fs)
 
 				uncorsConfig := config.LoadConfiguration(viperInstance, testCase.args)
+				clearMappingsCache(uncorsConfig)
+				clearMappingsCache(testCase.expected)
 
 				assert.Equal(t, testCase.expected, uncorsConfig)
 			})

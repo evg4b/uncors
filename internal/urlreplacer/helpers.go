@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/pkg/urlx"
+	"github.com/evg4b/uncors/internal/urlparser"
 )
 
 func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
@@ -16,7 +16,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
 
-	host, _, err := urlx.SplitHostPort(parsedPattern)
+	host, _, err := urlparser.SplitHostPort(parsedPattern)
 	if err != nil {
 		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
 	}
