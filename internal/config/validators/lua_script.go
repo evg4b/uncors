@@ -20,7 +20,6 @@ type LuaScriptValidator struct {
 func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 	helpers.PassedOrOsFs(&l.Fs)
 
-	// Validate path (required)
 	errors.Append(validate.Validate(
 		&base.PathValidator{
 			Field: joinPath(l.Field, "path"),
@@ -28,7 +27,6 @@ func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 		},
 	))
 
-	// Validate method (optional, but must be valid if provided)
 	errors.Append(validate.Validate(
 		&base.MethodValidator{
 			Field:      joinPath(l.Field, "method"),
@@ -37,7 +35,6 @@ func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 		},
 	))
 
-	// Validate script/file mutual exclusivity
 	if l.Value.Script == "" && l.Value.File == "" {
 		errors.Add(
 			joinPath(l.Field, "script"),
@@ -60,7 +57,6 @@ func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 		)
 	}
 
-	// Validate file existence if file is specified
 	if l.Value.File != "" {
 		errors.Append(validate.Validate(&base.FileValidator{
 			Field: joinPath(l.Field, "file"),
@@ -69,7 +65,6 @@ func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 		}))
 	}
 
-	// Validate queries - keys should not be empty
 	for key := range l.Value.Queries {
 		if key == "" {
 			errors.Add(
@@ -79,7 +74,6 @@ func (l *LuaScriptValidator) IsValid(errors *validate.Errors) {
 		}
 	}
 
-	// Validate headers - keys should not be empty
 	for key := range l.Value.Headers {
 		if key == "" {
 			errors.Add(

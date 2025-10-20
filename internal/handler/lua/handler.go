@@ -46,7 +46,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
-	// Validate script configuration
 	if h.script.Script == "" && h.script.File == "" {
 		return ErrScriptNotDefined
 	}
@@ -55,22 +54,17 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 		return ErrBothScriptAndFile
 	}
 
-	// Create Lua state
 	luaState := lua.NewState()
 	defer luaState.Close()
 
-	// Load basic Lua modules
 	h.loadStandardLibraries(luaState)
 
-	// Create request and response tables
 	reqTable := h.createRequestTable(luaState, request)
 	respTable := h.createResponseTable(luaState)
 
-	// Set global variables
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	// Load and execute script
 	var err error
 	if h.script.Script != "" {
 		err = luaState.DoString(h.script.Script)
@@ -86,28 +80,20 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 		return fmt.Errorf("lua script error: %w", err)
 	}
 
-	// Extract response from Lua
 	return h.writeResponse(writer, request, luaState)
 }
 
 func (h *Handler) loadStandardLibraries(luaState *lua.LState) {
-	// Load basic Lua libraries
-	// Base library (print, type, etc.)
 	luaState.SetGlobal("_G", luaState.Get(lua.GlobalsIndex))
-	// Math library
 	luaState.PreloadModule("math", lua.OpenMath)
-	// String library
 	luaState.PreloadModule("string", lua.OpenString)
-	// Table library
 	luaState.PreloadModule("table", lua.OpenTable)
-	// OS library (limited functionality)
 	luaState.PreloadModule("os", lua.OpenOs)
 }
 
 func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
 	reqTable := luaState.NewTable()
 
-	// Set request properties
 	reqTable.RawSetString("method", lua.LString(request.Method))
 	reqTable.RawSetString("url", lua.LString(request.URL.String()))
 	reqTable.RawSetString("path", lua.LString(request.URL.Path))
@@ -115,7 +101,6 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 	reqTable.RawSetString("host", lua.LString(request.Host))
 	reqTable.RawSetString("remote_addr", lua.LString(request.RemoteAddr))
 
-	// Set headers
 	headersTable := luaState.NewTable()
 	for key, values := range request.Header {
 		if len(values) == 1 {
@@ -130,7 +115,6 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 	}
 	reqTable.RawSetString("headers", headersTable)
 
-	// Set query parameters
 	queryTable := luaState.NewTable()
 	for key, values := range request.URL.Query() {
 		if len(values) == 1 {
@@ -145,7 +129,6 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 	}
 	reqTable.RawSetString("query_params", queryTable)
 
-	// Read and set body
 	if request.Body != nil {
 		body, err := io.ReadAll(request.Body)
 		if err == nil {
@@ -159,11 +142,9 @@ func (h *Handler) createRequestTable(luaState *lua.LState, request *contracts.Re
 func (h *Handler) createResponseTable(luaState *lua.LState) *lua.LTable {
 	respTable := luaState.NewTable()
 
-	// Set default values
 	respTable.RawSetString("status", lua.LNumber(http.StatusOK))
 	respTable.RawSetString("body", lua.LString(""))
 
-	// Create headers table
 	headersTable := luaState.NewTable()
 	respTable.RawSetString("headers", headersTable)
 
@@ -185,11 +166,9 @@ func (h *Handler) writeResponse(
 		return ErrInvalidResponseTable
 	}
 
-	// Write CORS headers
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(writer.Header(), origin)
 
-	// Write custom headers from Lua
 	headersValue := respTbl.RawGetString("headers")
 	if headersValue.Type() == lua.LTTable {
 		headersTbl, ok := headersValue.(*lua.LTable)
@@ -203,17 +182,14 @@ func (h *Handler) writeResponse(
 		})
 	}
 
-	// Get status code
 	statusValue := respTbl.RawGetString("status")
 	status := http.StatusOK
 	if statusValue.Type() == lua.LTNumber {
 		status = int(lua.LVAsNumber(statusValue))
 	}
 
-	// Write status code
 	writer.WriteHeader(status)
 
-	// Get and write body
 	bodyValue := respTbl.RawGetString("body")
 	if bodyValue.Type() == lua.LTString {
 		_, err := writer.Write([]byte(bodyValue.String()))
