@@ -575,10 +575,6 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 				},
 			},
 		})
-		defer func() {
-			err := uncorsApp.Close()
-			testutils.CheckNoServerError(t, err)
-		}()
 
 		time.Sleep(delay)
 
@@ -589,6 +585,10 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 		// HTTPS server should not start without certs
 		httpsAddr := uncorsApp.HTTPSAddr()
 		assert.Nil(t, httpsAddr)
+
+		// Close the app to ensure all goroutines complete before checking logs
+		err := uncorsApp.Close()
+		testutils.CheckNoServerError(t, err)
 
 		// Check that warning was logged
 		assert.Contains(t, logBuffer.String(), "HTTPS mapping")
