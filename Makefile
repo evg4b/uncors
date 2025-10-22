@@ -40,6 +40,11 @@ format:
 	@gofumpt -l -w .
 	@golangci-lint run --fix
 
+## format-docs: Format documentation files using Prettier
+format-docs:
+	@gum style --foreground 11 "Formatting documentation for fakedata tool..."
+	@npx -y prettier ./docs --write
+
 ## upgrade: Upgrade dependencies and tidy go.mod
 upgrade:
 	@gum style --foreground 11 "Upgrading dependencies..."
@@ -82,10 +87,3 @@ clean:
 ## check: Run format, test, and build (quality checks)
 check: format test build
 	@gum style --bold --foreground 10 "✓ All checks passed!"
-
-## colors: Display all available gum color codes
-colors:
-	@echo "Gum color palette (256 colors):"
-	@for i in $$(seq 0 255); do \
-		gum style --foreground $$i "Color $$i: Sample text"; \
-	done
