@@ -1,33 +1,31 @@
 package handler
 
 import (
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/gorilla/mux"
 )
 
-func setPath(route *mux.Route, path string) {
-	if len(path) > 0 {
-		route.Path(path)
+func (h *RequestHandler) createRoute(router *mux.Router, matcher config.RequestMatcher) *mux.Route {
+	route := router.NewRoute()
+	if len(matcher.Path) > 0 {
+		route.Path(matcher.Path)
 	}
-}
 
-func setMethod(route *mux.Route, methods string) {
-	if len(methods) > 0 {
-		route.Methods(methods)
+	if len(matcher.Method) > 0 {
+		route.Methods(matcher.Method)
 	}
-}
 
-func setQueries(route *mux.Route, queries map[string]string) {
-	if len(queries) > 0 {
-		for key, value := range queries {
+	if len(matcher.Queries) > 0 {
+		for key, value := range matcher.Queries {
 			route.Queries(key, value)
 		}
 	}
-}
 
-func setHeaders(route *mux.Route, headers map[string]string) {
-	if len(headers) > 0 {
-		for key, value := range headers {
+	if len(matcher.Headers) > 0 {
+		for key, value := range matcher.Headers {
 			route.Headers(key, value)
 		}
 	}
+
+	return route
 }

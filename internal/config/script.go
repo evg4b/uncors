@@ -1,44 +1,29 @@
 package config
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
+	"fmt"
+
 	"github.com/samber/lo"
 )
 
-type RequestMatcher struct {
-	Path    string            `mapstructure:"path"`
-	Method  string            `mapstructure:"method"`
-	Queries map[string]string `mapstructure:"queries"`
-	Headers map[string]string `mapstructure:"headers"`
-}
-
-func (r *RequestMatcher) Clone() RequestMatcher {
-	return RequestMatcher{
-		Path:    r.Path,
-		Method:  r.Method,
-		Queries: helpers.CloneMap(r.Queries),
-		Headers: helpers.CloneMap(r.Headers),
-	}
-}
-
 type Script struct {
-	RequestMatcher `mapstructure:",squash"`
-	Script         string `mapstructure:"script"`
-	File           string `mapstructure:"file"`
+	Matcher RequestMatcher `mapstructure:",squash"`
+	Script  string         `mapstructure:"script"`
+	File    string         `mapstructure:"file"`
 }
 
 func (s *Script) Clone() Script {
 	return Script{
-		RequestMatcher: s.RequestMatcher.Clone(),
-		Script:         s.Script,
-		File:           s.File,
+		Matcher: s.Matcher.Clone(),
+		Script:  s.Script,
+		File:    s.File,
 	}
 }
 
 func (s *Script) String() string {
 	method := "*"
-	if s.Method != "" {
-		method = s.Method
+	if s.Matcher.Method != "" {
+		method = s.Matcher.Method
 	}
 
 	scriptType := "inline"
@@ -46,7 +31,7 @@ func (s *Script) String() string {
 		scriptType = "file: " + s.File
 	}
 
-	return helpers.Sprintf("[%s script:%s] %s", method, scriptType, s.Path)
+	return fmt.Sprintf("[%s script:%s] %s", method, scriptType, s.Matcher.Path)
 }
 
 type Scripts []Script

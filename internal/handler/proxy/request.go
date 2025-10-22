@@ -12,7 +12,11 @@ func (h *Handler) makeOriginalRequest(
 	req *http.Request,
 	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {
-	url, _ := replacer.Replace(req.URL.String())
+	url, err := replacer.Replace(req.URL.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to replace URL: %w", err)
+	}
+
 	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make requst to original server: %w", err)

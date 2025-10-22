@@ -1,8 +1,6 @@
 package validators
 
 import (
-	"fmt"
-
 	"github.com/gobuffalo/validate"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -29,22 +27,4 @@ func (r *RequestMatcherValidator) IsValid(errors *validate.Errors) {
 			AllowEmpty: true,
 		},
 	))
-
-	for key := range r.Value.Queries {
-		if key == "" {
-			errors.Add(
-				joinPath(r.Field, "queries"),
-				fmt.Sprintf("%s: query parameter keys must not be empty", joinPath(r.Field, "queries")),
-			)
-		}
-	}
-
-	for key := range r.Value.Headers {
-		if key == "" {
-			errors.Add(
-				joinPath(r.Field, "headers"),
-				fmt.Sprintf("%s: header keys must not be empty", joinPath(r.Field, "headers")),
-			)
-		}
-	}
 }

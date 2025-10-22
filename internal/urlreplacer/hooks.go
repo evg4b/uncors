@@ -1,9 +1,9 @@
 package urlreplacer
 
-import "github.com/evg4b/uncors/internal/helpers"
+import "fmt"
 
 func schemeHookFactory(targetScheme string) hook {
-	forceScheme := helpers.Sprintf("%s://", targetScheme)
+	forceScheme := fmt.Sprintf("%s://", targetScheme)
 
 	return func(scheme string) string {
 		if len(scheme) > 0 {

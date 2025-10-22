@@ -136,7 +136,7 @@ func TestLoadConfiguration(t *testing.T) {
 							To:   hosts.Stackoverflow.HTTPS(),
 							Mocks: config.Mocks{
 								{
-									RequestMatcher: config.RequestMatcher{
+									Matcher: config.RequestMatcher{
 										Path:   "/demo",
 										Method: "POST",
 										Queries: map[string]string{
@@ -221,7 +221,7 @@ func TestLoadConfiguration(t *testing.T) {
 					"--incorrect-flag",
 				},
 				expected: []string{
-					"filed parsing flags: unknown flag: --incorrect-flag",
+					"failed parsing flags: unknown flag: --incorrect-flag",
 				},
 			},
 			{
@@ -259,7 +259,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, "/not-exist-config.yaml",
 				},
 				expected: []string{
-					"filed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
+					"failed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
 				},
 			},
 			{
@@ -268,7 +268,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, corruptedConfigPath,
 				},
 				expected: []string{
-					"filed to read config file '/corrupted-config.yaml': " +
+					"failed to read config file '/corrupted-config.yaml': " +
 						"While parsing config: yaml: line 2: could not find expected ':'",
 				},
 			},
@@ -278,7 +278,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.HTTPPort, "xxx",
 				},
 				expected: []string{
-					"filed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
+					"failed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
 						"strconv.ParseUint: parsing \"xxx\": invalid syntax",
 				},
 			},
@@ -288,7 +288,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, incorrectConfigPath,
 				},
 				expected: []string{
-					"filed parsing config: decoding failed due to the following error(s):\n\n" +
+					"failed parsing config: decoding failed due to the following error(s):\n\n" +
 						"'http-port' cannot parse value as 'int': strconv.ParseInt: invalid syntax",
 				},
 			},

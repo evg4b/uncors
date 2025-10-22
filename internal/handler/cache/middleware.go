@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"net/url"
 	"sort"
 	"strings"
@@ -102,7 +103,7 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 
 	sort.Strings(items)
 
-	return helpers.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
+	return fmt.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {

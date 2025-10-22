@@ -1,12 +1,12 @@
 package infra
 
 import (
+	"fmt"
 	"net/http"
 	"runtime"
 	"runtime/debug"
 
 	"github.com/dustin/go-humanize"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/go-http-utils/headers"
 )
 
@@ -29,21 +29,21 @@ func HTTPError(writer http.ResponseWriter, err error) {
 
 	writer.WriteHeader(http.StatusInternalServerError)
 
-	helpers.FPrintln(writer)
-	helpers.FPrintln(writer, errorHeader)
-	helpers.FPrintln(writer)
-	helpers.FPrintln(writer)
-	helpers.FPrintln(writer, helpers.Sprintf("Occurred error: %s", err))
-	helpers.FPrintln(writer)
+	fmt.Fprintln(writer)
+	fmt.Fprintln(writer, errorHeader)
+	fmt.Fprintln(writer)
+	fmt.Fprintln(writer)
+	fmt.Fprintf(writer, "Occurred error: %s\n", err)
+	fmt.Fprintln(writer)
 
-	helpers.FPrint(writer, "Stack trace: ")
-	helpers.FPrintln(writer, string(debug.Stack()))
+	fmt.Fprint(writer, "Stack trace: ")
+	fmt.Fprintln(writer, string(debug.Stack()))
 
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	helpers.FPrintln(writer, "Memory usage:")
-	helpers.FPrintf(writer, "Alloc = %v\n", humanize.Bytes(memStats.Alloc))
-	helpers.FPrintf(writer, "TotalAlloc = %v\n", humanize.Bytes(memStats.TotalAlloc))
-	helpers.FPrintf(writer, "Sys = %v\n", humanize.Bytes(memStats.Sys))
-	helpers.FPrintf(writer, "NumGC = %v\n", memStats.NumGC)
+	fmt.Fprintln(writer, "Memory usage:")
+	fmt.Fprintf(writer, "Alloc = %v\n", humanize.Bytes(memStats.Alloc))
+	fmt.Fprintf(writer, "TotalAlloc = %v\n", humanize.Bytes(memStats.TotalAlloc))
+	fmt.Fprintf(writer, "Sys = %v\n", humanize.Bytes(memStats.Sys))
+	fmt.Fprintf(writer, "NumGC = %v\n", memStats.NumGC)
 }

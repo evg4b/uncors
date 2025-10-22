@@ -15,7 +15,7 @@ func TestMockValidator(t *testing.T) {
 		errors := validate.Validate(&validators.MockValidator{
 			Field: "mock",
 			Value: config.Mock{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/info",
 					Method: "",
 				},

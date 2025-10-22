@@ -1,6 +1,7 @@
 package static_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,10 +10,8 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
-
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -110,7 +109,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 			writer.WriteHeader(testHTTPStatusCode)
-			helpers.FPrint(writer, testHTTPBody)
+			fmt.Fprint(writer, testHTTPBody)
 		}))
 
 		t.Run("return static content", func(t *testing.T) {

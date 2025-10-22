@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 )
@@ -23,7 +23,7 @@ func (s *StaticDirectory) Clone() StaticDirectory {
 }
 
 func (s *StaticDirectory) String() string {
-	return helpers.Sprintf("%s => %s", s.Path, s.Dir)
+	return fmt.Sprintf("%s => %s", s.Path, s.Dir)
 }
 
 type StaticDirectories []StaticDirectory

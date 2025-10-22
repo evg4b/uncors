@@ -68,48 +68,12 @@ func TestRequestMatcherValidator(t *testing.T) {
 		assert.Contains(t, errors.Error(), "method must be one of")
 	})
 
-	t.Run("should register error for empty query key", func(t *testing.T) {
-		errors := validate.Validate(&validators.RequestMatcherValidator{
-			Field: "test",
-			Value: config.RequestMatcher{
-				Path: "/api/test",
-				Queries: map[string]string{
-					"": "value",
-				},
-			},
-		})
-
-		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "query parameter keys must not be empty")
-	})
-
-	t.Run("should register error for empty header key", func(t *testing.T) {
-		errors := validate.Validate(&validators.RequestMatcherValidator{
-			Field: "test",
-			Value: config.RequestMatcher{
-				Path: "/api/test",
-				Headers: map[string]string{
-					"": "value",
-				},
-			},
-		})
-
-		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "header keys must not be empty")
-	})
-
 	t.Run("should register multiple validation errors", func(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
 				Path:   "",
 				Method: "INVALID",
-				Queries: map[string]string{
-					"": "value",
-				},
-				Headers: map[string]string{
-					"": "value",
-				},
 			},
 		})
 
@@ -117,7 +81,5 @@ func TestRequestMatcherValidator(t *testing.T) {
 		errMsg := errors.Error()
 		assert.Contains(t, errMsg, "path must not be empty")
 		assert.Contains(t, errMsg, "method must be one of")
-		assert.Contains(t, errMsg, "query parameter keys must not be empty")
-		assert.Contains(t, errMsg, "header keys must not be empty")
 	})
 }

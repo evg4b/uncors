@@ -164,9 +164,9 @@ func TestIs5xxCode(t *testing.T) {
 	}
 }
 
-func TestNormaliseStatucCode(t *testing.T) {
+func TestNormaliseStatusCode(t *testing.T) {
 	t.Run("return 200 for 0", func(t *testing.T) {
-		actual := helpers.NormaliseStatucCode(0)
+		actual := helpers.NormaliseStatusCode(0)
 
 		assert.Equal(t, http.StatusOK, actual)
 	})
@@ -185,7 +185,7 @@ func TestNormaliseStatucCode(t *testing.T) {
 
 		for _, code := range codes {
 			t.Run(fmt.Sprintf("return %d for %d", code, code), func(t *testing.T) {
-				actual := helpers.NormaliseStatucCode(code)
+				actual := helpers.NormaliseStatusCode(code)
 
 				assert.Equal(t, code, actual)
 			})

@@ -129,31 +129,21 @@ func (app *App) GetListenerAddr(port int) net.Addr {
 
 // HTTPAddr returns the first HTTP listener address for backward compatibility.
 func (app *App) HTTPAddr() net.Addr {
-	app.serversMutex.RLock()
-	defer app.serversMutex.RUnlock()
-
-	for _, portSrv := range app.servers {
-		if portSrv.scheme == "http" {
-			portSrv.mutex.Lock()
-			listener := portSrv.listener
-			portSrv.mutex.Unlock()
-
-			if listener != nil {
-				return listener.Addr()
-			}
-		}
-	}
-
-	return nil
+	return app.getListenerAddrByScheme("http")
 }
 
 // HTTPSAddr returns the first HTTPS listener address for backward compatibility.
 func (app *App) HTTPSAddr() net.Addr {
+	return app.getListenerAddrByScheme("https")
+}
+
+// getListenerAddrByScheme returns the first listener address for the given scheme.
+func (app *App) getListenerAddrByScheme(scheme string) net.Addr {
 	app.serversMutex.RLock()
 	defer app.serversMutex.RUnlock()
 
 	for _, portSrv := range app.servers {
-		if portSrv.scheme == "https" {
+		if portSrv.scheme == scheme {
 			portSrv.mutex.Lock()
 			listener := portSrv.listener
 			portSrv.mutex.Unlock()

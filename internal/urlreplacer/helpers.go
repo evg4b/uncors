@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlparser"
 )
 
@@ -18,19 +17,17 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	host, _, err := urlparser.SplitHostPort(parsedPattern)
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, fmt.Errorf("failed to build url glob: %w", err)
 	}
 
 	parts := strings.Split(host, "*")
 	for index, literal := range parts {
 		if index > 0 {
 			count++
-			helpers.FPrintf(&result, "(?P<part%d>.+)", count)
+			fmt.Fprintf(&result, "(?P<part%d>.+)", count)
 		}
 
-		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
-			return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
-		}
+		result.WriteString(regexp.QuoteMeta(literal))
 	}
 
 	result.WriteString(`(:\d+)?`)
@@ -38,7 +35,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	compiledRegexp, err := regexp.Compile(result.String())
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, fmt.Errorf("failed to build url glob: %w", err)
 	}
 
 	return compiledRegexp, count, nil
@@ -48,18 +45,18 @@ func wildCardToReplacePattern(parsedPattern *url.URL) (string, int) {
 	result := &strings.Builder{}
 	var count int
 
-	helpers.FPrint(result, "${scheme}")
+	result.WriteString("${scheme}")
 
 	for i, literal := range strings.Split(parsedPattern.Host, "*") {
 		if i > 0 {
 			count++
-			helpers.FPrintf(result, "${part%d}", count)
+			fmt.Fprintf(result, "${part%d}", count)
 		}
 
-		helpers.FPrint(result, literal)
+		result.WriteString(literal)
 	}
 
-	helpers.FPrint(result, "${path}")
+	result.WriteString("${path}")
 
 	return result.String(), count
 }

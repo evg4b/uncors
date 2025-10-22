@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -94,7 +95,7 @@ const wildcard = "*"
 func replaceWildcards(host string) string {
 	count := strings.Count(host, wildcard)
 	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, helpers.Sprintf("{p%d}", i), 1)
+		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
 	}
 
 	return host
