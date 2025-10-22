@@ -136,7 +136,7 @@ func TestLoadConfiguration(t *testing.T) {
 							To:   hosts.Stackoverflow.HTTPS(),
 							Mocks: config.Mocks{
 								{
-									RequestMatcher: config.RequestMatcher{
+									Matcher: config.RequestMatcher{
 										Path:   "/demo",
 										Method: "POST",
 										Queries: map[string]string{

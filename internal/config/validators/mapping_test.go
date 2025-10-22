@@ -39,7 +39,7 @@ func TestMappingValidator(t *testing.T) {
 					},
 					Mocks: []config.Mock{
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/api/info",
 								Method: http.MethodGet,
 							},
@@ -49,7 +49,7 @@ func TestMappingValidator(t *testing.T) {
 							},
 						},
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/api/info/demo",
 								Method: http.MethodGet,
 							},
@@ -143,7 +143,7 @@ func TestMappingValidator(t *testing.T) {
 					Statics: []config.StaticDirectory{},
 					Mocks: []config.Mock{
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/api/user",
 								Method: "invalid",
 							},

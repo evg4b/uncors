@@ -88,7 +88,7 @@ func TestMappings(t *testing.T) {
 					To:   hosts.Github.HTTPS(),
 					Mocks: config.Mocks{
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/endpoint-1",
 								Method: http.MethodPost,
 							},
@@ -98,7 +98,7 @@ func TestMappings(t *testing.T) {
 							},
 						},
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/demo",
 								Method: http.MethodGet,
 								Queries: map[string]string{
@@ -111,7 +111,7 @@ func TestMappings(t *testing.T) {
 							},
 						},
 						{
-							RequestMatcher: config.RequestMatcher{
+							Matcher: config.RequestMatcher{
 								Path:   "/healthcheck",
 								Method: http.MethodGet,
 								Headers: map[string]string{

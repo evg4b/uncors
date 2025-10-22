@@ -195,7 +195,7 @@ func makeRequest(t *testing.T, httpClient *http.Client, uri *url.URL) string {
 func mocks(response string) config.Mocks {
 	return config.Mocks{
 		config.Mock{
-			RequestMatcher: config.RequestMatcher{
+			Matcher: config.RequestMatcher{
 				Path: "/",
 			},
 			Response: config.Response{

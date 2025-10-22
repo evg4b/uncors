@@ -23,7 +23,7 @@ func (s *ScriptValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
 		&RequestMatcherValidator{
 			Field: s.Field,
-			Value: s.Value.RequestMatcher,
+			Value: s.Value.Matcher,
 		},
 	))
 

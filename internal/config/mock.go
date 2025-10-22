@@ -6,24 +6,24 @@ import (
 )
 
 type Mock struct {
-	RequestMatcher `mapstructure:",squash"`
-	Response       Response `mapstructure:"response"`
+	Matcher  RequestMatcher `mapstructure:",squash"`
+	Response Response       `mapstructure:"response"`
 }
 
 func (m *Mock) Clone() Mock {
 	return Mock{
-		RequestMatcher: m.RequestMatcher.Clone(),
-		Response:       m.Response.Clone(),
+		Matcher:  m.Matcher.Clone(),
+		Response: m.Response.Clone(),
 	}
 }
 
 func (m *Mock) String() string {
 	method := "*"
-	if m.Method != "" {
-		method = m.Method
+	if m.Matcher.Method != "" {
+		method = m.Matcher.Method
 	}
 
-	return helpers.Sprintf("[%s %d] %s", method, m.Response.Code, m.Path)
+	return helpers.Sprintf("[%s %d] %s", method, m.Response.Code, m.Matcher.Path)
 }
 
 type Mocks []Mock

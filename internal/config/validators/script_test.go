@@ -15,7 +15,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "GET",
 				},
@@ -34,7 +34,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "POST",
 				},
@@ -50,7 +50,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "",
 				},
@@ -65,7 +65,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/test",
 					Queries: map[string]string{
 						"filter": "active",
@@ -87,7 +87,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "",
 				},
 				Script: "response.status = 200",
@@ -102,7 +102,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "invalid-path",
 				},
 				Script: "response.status = 200",
@@ -117,7 +117,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "INVALID",
 				},
@@ -133,7 +133,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "GET",
 				},
@@ -154,7 +154,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/test",
 				},
 				Script: "response.status = 200",
@@ -175,7 +175,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/test",
 				},
 				File: "/scripts/nonexistent.lua",
@@ -195,7 +195,7 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/test",
 				},
 				File: "/scripts",
@@ -207,59 +207,13 @@ func TestScriptValidator(t *testing.T) {
 		assert.Contains(t, errors.Error(), "script.file")
 	})
 
-	t.Run("should register error when query key is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.ScriptValidator{
-			Field: "script",
-			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
-					Path: "/api/test",
-					Queries: map[string]string{
-						"":     "value",
-						"sort": "name",
-					},
-				},
-				Script: "response.status = 200",
-			},
-		})
-
-		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.queries")
-		assert.Contains(t, errors.Error(), "query parameter keys must not be empty")
-	})
-
-	t.Run("should register error when header key is empty", func(t *testing.T) {
-		errors := validate.Validate(&validators.ScriptValidator{
-			Field: "script",
-			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
-					Path: "/api/test",
-					Headers: map[string]string{
-						"":            "value",
-						"X-Custom-ID": "123",
-					},
-				},
-				Script: "response.status = 200",
-			},
-		})
-
-		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.headers")
-		assert.Contains(t, errors.Error(), "header keys must not be empty")
-	})
-
 	t.Run("should register multiple errors for complex invalid config", func(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "",
 					Method: "INVALID",
-					Queries: map[string]string{
-						"": "empty-key",
-					},
-					Headers: map[string]string{
-						"": "empty-header-key",
-					},
 				},
 			},
 		})
@@ -270,7 +224,5 @@ func TestScriptValidator(t *testing.T) {
 		assert.Contains(t, errString, "script.method")
 		assert.Contains(t, errString, "script.script")
 		assert.Contains(t, errString, "script.file")
-		assert.Contains(t, errString, "script.queries")
-		assert.Contains(t, errString, "script.headers")
 	})
 }

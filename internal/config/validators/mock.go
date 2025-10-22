@@ -16,7 +16,7 @@ func (m *MockValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
 		&RequestMatcherValidator{
 			Field: m.Field,
-			Value: m.Value.RequestMatcher,
+			Value: m.Value.Matcher,
 		},
 		&ResponseValidator{
 			Field: joinPath(m.Field, "response"),

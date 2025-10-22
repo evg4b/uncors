@@ -38,7 +38,7 @@ func TestRequestMatcher_Clone(t *testing.T) {
 
 func TestScript_Clone(t *testing.T) {
 	original := config.Script{
-		RequestMatcher: config.RequestMatcher{
+		Matcher: config.RequestMatcher{
 			Path:   "/api/script",
 			Method: "GET",
 			Queries: map[string]string{
@@ -54,16 +54,16 @@ func TestScript_Clone(t *testing.T) {
 
 	cloned := original.Clone()
 
-	assert.Equal(t, original.Path, cloned.Path)
-	assert.Equal(t, original.Method, cloned.Method)
+	assert.Equal(t, original.Matcher.Path, cloned.Matcher.Path)
+	assert.Equal(t, original.Matcher.Method, cloned.Matcher.Method)
 	assert.Equal(t, original.Script, cloned.Script)
 	assert.Equal(t, original.File, cloned.File)
-	assert.Equal(t, original.Queries, cloned.Queries)
-	assert.Equal(t, original.Headers, cloned.Headers)
+	assert.Equal(t, original.Matcher.Queries, cloned.Matcher.Queries)
+	assert.Equal(t, original.Matcher.Headers, cloned.Matcher.Headers)
 
 	// Verify deep copy
-	cloned.Queries["param"] = "modified"
-	assert.NotEqual(t, original.Queries["param"], cloned.Queries["param"])
+	cloned.Matcher.Queries["param"] = "modified"
+	assert.NotEqual(t, original.Matcher.Queries["param"], cloned.Matcher.Queries["param"])
 }
 
 func TestScript_String(t *testing.T) {
@@ -75,7 +75,7 @@ func TestScript_String(t *testing.T) {
 		{
 			name: "inline script with method",
 			script: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/test",
 					Method: "POST",
 				},
@@ -86,7 +86,7 @@ func TestScript_String(t *testing.T) {
 		{
 			name: "file script with method",
 			script: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/handler",
 					Method: "GET",
 				},
@@ -97,7 +97,7 @@ func TestScript_String(t *testing.T) {
 		{
 			name: "inline script without method",
 			script: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/wildcard",
 				},
 				Script: "response:WriteString('any method')",
@@ -107,7 +107,7 @@ func TestScript_String(t *testing.T) {
 		{
 			name: "file script without method",
 			script: config.Script{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path: "/api/any",
 				},
 				File: "/scripts/any.lua",
@@ -128,14 +128,14 @@ func TestScripts_Clone(t *testing.T) {
 	t.Run("non-nil scripts", func(t *testing.T) {
 		original := config.Scripts{
 			{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/one",
 					Method: "GET",
 				},
 				Script: "script1",
 			},
 			{
-				RequestMatcher: config.RequestMatcher{
+				Matcher: config.RequestMatcher{
 					Path:   "/api/two",
 					Method: "POST",
 				},
@@ -146,12 +146,12 @@ func TestScripts_Clone(t *testing.T) {
 		cloned := original.Clone()
 
 		assert.Len(t, cloned, len(original))
-		assert.Equal(t, original[0].Path, cloned[0].Path)
-		assert.Equal(t, original[1].Path, cloned[1].Path)
+		assert.Equal(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
+		assert.Equal(t, original[1].Matcher.Path, cloned[1].Matcher.Path)
 
 		// Verify deep copy
-		cloned[0].Path = "/modified"
-		assert.NotEqual(t, original[0].Path, cloned[0].Path)
+		cloned[0].Matcher.Path = "/modified"
+		assert.NotEqual(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
 	})
 
 	t.Run("nil scripts", func(t *testing.T) {

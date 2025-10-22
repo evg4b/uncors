@@ -140,7 +140,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			},
 			Mocks: config.Mocks{
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/mocks/1",
 					},
 					Response: config.Response{
@@ -149,7 +149,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/mocks/2",
 					},
 					Response: config.Response{
@@ -158,7 +158,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/mocks/3",
 					},
 					Response: config.Response{
@@ -167,7 +167,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/mocks/4",
 					},
 					Response: config.Response{
@@ -386,7 +386,7 @@ func TestMockMiddleware(t *testing.T) {
 						To:   "*",
 						Mocks: config.Mocks{
 							{
-								RequestMatcher: config.RequestMatcher{
+								Matcher: config.RequestMatcher{
 									Path: "/api",
 								},
 								Response: config.Response{
@@ -431,7 +431,7 @@ func TestMockMiddleware(t *testing.T) {
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path:   "/api",
 						Method: http.MethodPut,
 					},
@@ -511,7 +511,7 @@ func TestMockMiddleware(t *testing.T) {
 		mappings := config.Mappings{
 			{From: "*", To: "*", Mocks: config.Mocks{
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: userPath,
 					},
 					Response: config.Response{
@@ -520,7 +520,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/user/{id:[0-9]+}",
 					},
 					Response: config.Response{
@@ -529,7 +529,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: "/api/{single-path/demo",
 					},
 					Response: config.Response{
@@ -538,7 +538,7 @@ func TestMockMiddleware(t *testing.T) {
 					},
 				},
 				{
-					RequestMatcher: config.RequestMatcher{
+					Matcher: config.RequestMatcher{
 						Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
 					},
 					Response: config.Response{
@@ -629,7 +629,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 						},
 						Response: config.Response{
@@ -638,7 +638,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 							Queries: map[string]string{
 								"id": "17",
@@ -650,7 +650,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 							Queries: map[string]string{
 								"id":    "99",
@@ -733,7 +733,7 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 						},
 						Response: config.Response{
@@ -742,7 +742,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 							Headers: map[string]string{
 								headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
@@ -754,7 +754,7 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						RequestMatcher: config.RequestMatcher{
+						Matcher: config.RequestMatcher{
 							Path: userPath,
 							Headers: map[string]string{
 								userIDHeader:       "99",

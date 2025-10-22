@@ -10,21 +10,16 @@ func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scr
 	var defaultScripts config.Scripts
 
 	for _, scriptDef := range scripts {
-		if len(scriptDef.Queries) > 0 || len(scriptDef.Headers) > 0 || len(scriptDef.Method) > 0 {
-			route := router.NewRoute()
-			setPath(route, scriptDef.Path)
-			setMethod(route, scriptDef.Method)
-			setQueries(route, scriptDef.Queries)
-			setHeaders(route, scriptDef.Headers)
-			route.Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
+		if !scriptDef.Matcher.IsPathOnly() {
+			h.createRoute(router, scriptDef.Matcher).
+				Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
 		} else {
 			defaultScripts = append(defaultScripts, scriptDef)
 		}
 	}
 
 	for _, scriptDef := range defaultScripts {
-		route := router.NewRoute()
-		setPath(route, scriptDef.Path)
-		route.Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
+		h.createRoute(router, scriptDef.Matcher).
+			Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
 	}
 }

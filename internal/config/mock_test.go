@@ -11,7 +11,7 @@ import (
 
 func TestMockClone(t *testing.T) {
 	mock := config.Mock{
-		RequestMatcher: config.RequestMatcher{
+		Matcher: config.RequestMatcher{
 			Path:   "/constants",
 			Method: http.MethodGet,
 			Queries: map[string]string{
@@ -40,19 +40,19 @@ func TestMockClone(t *testing.T) {
 	})
 
 	t.Run("not same headers map", func(t *testing.T) {
-		assert.NotSame(t, &mock.Headers, &clonedMock.Headers)
+		assert.NotSame(t, &mock.Matcher.Headers, &clonedMock.Matcher.Headers)
 	})
 
 	t.Run("equals headers map", func(t *testing.T) {
-		assert.Equal(t, mock.Headers, clonedMock.Headers)
+		assert.Equal(t, mock.Matcher.Headers, clonedMock.Matcher.Headers)
 	})
 
 	t.Run("not same queries map", func(t *testing.T) {
-		assert.NotSame(t, &mock.Queries, &clonedMock.Queries)
+		assert.NotSame(t, &mock.Matcher.Queries, &clonedMock.Matcher.Queries)
 	})
 
 	t.Run("equals queries map values", func(t *testing.T) {
-		assert.Equal(t, mock.Queries, clonedMock.Queries)
+		assert.Equal(t, mock.Matcher.Queries, clonedMock.Matcher.Queries)
 	})
 
 	t.Run("not same Response", func(t *testing.T) {
