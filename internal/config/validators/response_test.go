@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/pkg/fakedata"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -16,7 +14,6 @@ import (
 
 func TestResponseValidator(t *testing.T) {
 	const file = "testdata/file.txt"
-	fake := &fakedata.Node{Type: "sentence"}
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		file: "test",
@@ -48,13 +45,6 @@ func TestResponseValidator(t *testing.T) {
 				value: config.Response{
 					Code: 200,
 					Raw:  `{ "test": "test" }`,
-				},
-			},
-			{
-				name: "valid response without delay",
-				value: config.Response{
-					Code: 200,
-					Fake: fake,
 				},
 			},
 		}
@@ -111,18 +101,7 @@ func TestResponseValidator(t *testing.T) {
 					Code:  200,
 					Delay: 3 * time.Second,
 				},
-				error: "test.raw, test.file or test.fake must be set",
-			},
-			{
-				name: "file and raw are empty",
-				value: config.Response{
-					Code:  200,
-					File:  file,
-					Fake:  fake,
-					Raw:   "test",
-					Delay: 3 * time.Second,
-				},
-				error: "only one of test.raw, test.file or test.fake must be set",
+				error: "test.raw or test.file must be set",
 			},
 			{
 				name: "file with raw are set",
@@ -133,26 +112,6 @@ func TestResponseValidator(t *testing.T) {
 					Delay: 3 * time.Second,
 				},
 				error: "only one of test.raw or test.file must be set",
-			},
-			{
-				name: "file with raw and fake are set",
-				value: config.Response{
-					Code:  200,
-					Fake:  fake,
-					Raw:   "test",
-					Delay: 3 * time.Second,
-				},
-				error: "only one of test.raw or test.fake must be set",
-			},
-			{
-				name: "file with file and fake are set",
-				value: config.Response{
-					Code:  200,
-					Fake:  fake,
-					File:  file,
-					Delay: 3 * time.Second,
-				},
-				error: "only one of test.file or test.fake must be set",
 			},
 		}
 		for _, test := range tests {
