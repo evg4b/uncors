@@ -39,9 +39,3 @@ func NormaliseStatusCode(code int) int {
 
 	return code
 }
-
-// NormaliseStatucCode is deprecated. Use NormaliseStatusCode instead.
-// Kept for backward compatibility.
-func NormaliseStatucCode(code int) int {
-	return NormaliseStatusCode(code)
-}

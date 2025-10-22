@@ -37,7 +37,7 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Set(key, value)
 	}
 
-	statucCode := helpers.NormaliseStatucCode(m.code)
+	statucCode := helpers.NormaliseStatusCode(m.code)
 	resp.WriteHeader(statucCode)
 
 	tui.PrintResponse(m.logger, req, statucCode)
