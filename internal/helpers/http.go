@@ -32,10 +32,16 @@ func Is5xxCode(code int) bool {
 	return 500 <= code && code < 600
 }
 
-func NormaliseStatucCode(code int) int {
+func NormaliseStatusCode(code int) int {
 	if code == 0 {
 		return http.StatusOK
 	}
 
 	return code
+}
+
+// NormaliseStatucCode is deprecated. Use NormaliseStatusCode instead.
+// Kept for backward compatibility.
+func NormaliseStatucCode(code int) int {
+	return NormaliseStatusCode(code)
 }

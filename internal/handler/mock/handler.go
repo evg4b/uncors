@@ -91,11 +91,3 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 
 	return false
 }
-
-func normaliseCode(code int) int {
-	if code == 0 {
-		return http.StatusOK
-	}
-
-	return code
-}
