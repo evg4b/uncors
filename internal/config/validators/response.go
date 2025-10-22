@@ -39,18 +39,10 @@ func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 			Fs:    r.Fs,
 		}))
 	}
-
-	if r.Value.Fake != nil {
-		errors.Append(validate.Validate(&FakedataNodeValidator{
-			Field: joinPath(r.Field, "fake"),
-			Value: r.Value.Fake,
-			Root:  true,
-		}))
-	}
 }
 
 func (r *ResponseValidator) validateFiles(errors *validate.Errors) bool {
-	nodes := make([]string, 0, 3) //nolint:mnd
+	nodes := make([]string, 0, 2) //nolint:mnd
 
 	if r.Value.Raw != "" {
 		nodes = append(nodes, joinPath(r.Field, "raw"))
@@ -58,24 +50,18 @@ func (r *ResponseValidator) validateFiles(errors *validate.Errors) bool {
 	if r.Value.File != "" {
 		nodes = append(nodes, joinPath(r.Field, "file"))
 	}
-	if r.Value.Fake != nil {
-		nodes = append(nodes, joinPath(r.Field, "fake"))
-	}
 
 	switch len(nodes) {
 	case 0:
 		errors.Add(r.Field, fmt.Sprintf(
-			"%s, %s or %s must be set",
+			"%s or %s must be set",
 			joinPath(r.Field, "raw"),
 			joinPath(r.Field, "file"),
-			joinPath(r.Field, "fake"),
 		))
 	case 1:
 		return false
 	case 2: //nolint:mnd
 		errors.Add(r.Field, fmt.Sprintf("only one of %s or %s must be set", nodes[0], nodes[1]))
-	case 3: //nolint:mnd
-		errors.Add(r.Field, fmt.Sprintf("only one of %s, %s or %s must be set", nodes[0], nodes[1], nodes[2]))
 	}
 
 	return true

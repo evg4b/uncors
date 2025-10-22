@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/pkg/fakedata"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +20,6 @@ func TestResponseClone(t *testing.T) {
 		Raw:   "this is plain text",
 		File:  "~/projects/uncors/response/demo.json",
 		Delay: time.Hour,
-		Seed:  8123,
 	}
 
 	clonedResponse := response.Clone()
@@ -52,10 +50,6 @@ func TestResponseClone(t *testing.T) {
 			t.Run("IsFile", func(t *testing.T) {
 				assert.False(t, response.IsFile())
 			})
-
-			t.Run("IsFake", func(t *testing.T) {
-				assert.False(t, response.IsFake())
-			})
 		})
 
 		t.Run("file response", func(t *testing.T) {
@@ -70,29 +64,6 @@ func TestResponseClone(t *testing.T) {
 
 			t.Run("IsFile", func(t *testing.T) {
 				assert.True(t, response.IsFile())
-			})
-
-			t.Run("IsFake", func(t *testing.T) {
-				assert.False(t, response.IsFake())
-			})
-		})
-
-		t.Run("file response", func(t *testing.T) {
-			response := config.Response{
-				Code: http.StatusOK,
-				Fake: &fakedata.Node{Type: "sentence"},
-			}
-
-			t.Run("IsRaw", func(t *testing.T) {
-				assert.False(t, response.IsRaw())
-			})
-
-			t.Run("IsFile", func(t *testing.T) {
-				assert.False(t, response.IsFile())
-			})
-
-			t.Run("IsFake", func(t *testing.T) {
-				assert.True(t, response.IsFake())
 			})
 		})
 	})

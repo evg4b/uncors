@@ -14,9 +14,5 @@ func main() {
 		p(uncorsJSONSchema, refToPath(s), container.Data())
 	}
 
-	for _, container := range generateFakeDataNodes() {
-		apnd(uncorsJSONSchema, "definitions.FakeDataNode.oneOf", container.Data())
-	}
-
 	write("../../schema.json", uncorsJSONSchema)
 }

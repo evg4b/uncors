@@ -1,0 +1,79 @@
+[
+  {
+    "description": "Valid raw response",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200,
+        "raw": "Hello World"
+      }
+    },
+    "valid": true
+  },
+  {
+    "description": "Valid file response",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200,
+        "file": "./test.json"
+      }
+    },
+    "valid": true
+  },
+  {
+    "description": "Invalid response with both raw and file",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200,
+        "raw": "test",
+        "file": "./test.json"
+      }
+    },
+    "valid": false
+  },
+  {
+    "description": "Invalid response with fake field (removed feature)",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200,
+        "fake": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "name"
+            }
+          }
+        }
+      }
+    },
+    "valid": false
+  },
+  {
+    "description": "Invalid response without raw or file",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200
+      }
+    },
+    "valid": false
+  },
+  {
+    "description": "Valid response with headers and delay",
+    "data": {
+      "path": "/api/test",
+      "response": {
+        "code": 200,
+        "raw": "test",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "delay": "1s"
+      }
+    },
+    "valid": true
+  }
+]

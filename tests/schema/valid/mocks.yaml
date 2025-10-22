@@ -12,20 +12,3 @@ mappings:
         response:
           code: 200
           file: /tmp/demo.json
-      - path: /demo3
-        response:
-          code: 200
-          fake:
-            type: object
-            properties:
-              first-name:
-                type: firstname
-              last-name:
-                type: lastname
-              email:
-                type: email
-              phones:
-                type: array
-                item:
-                  type: phoneformatted
-                count: 3

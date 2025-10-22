@@ -3,8 +3,6 @@ package uncors
 import (
 	"time"
 
-	"github.com/evg4b/uncors/pkg/fakedata"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
@@ -83,7 +81,6 @@ func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),
-				mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
 			)
 		}
 		app.cache.mockHandlerFactory = handler.WithMockHandlerFactory(factoryFunc)

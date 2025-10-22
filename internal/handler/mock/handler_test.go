@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/pkg/fakedata"
-
 	"github.com/charmbracelet/log"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -29,11 +27,10 @@ const (
 )
 
 const (
-	textContent     = "status: ok"
-	jsonContent     = `{ "test": "ok" }`
-	htmlContent     = "<html></html>"
-	pngContent      = "\x89PNG\x0D\x0A\x1A\x0A"
-	fakeJSONContent = "{\"foo\":\"Yourselves that school smoothly next.\"}\n"
+	textContent = "status: ok"
+	jsonContent = `{ "test": "ok" }`
+	htmlContent = "<html></html>"
+	pngContent  = "\x89PNG\x0D\x0A\x1A\x0A"
 )
 
 const (
@@ -67,19 +64,6 @@ func TestHandler(t *testing.T) {
 				response: config.Response{File: jsonFile},
 				expected: jsonContent,
 			},
-			{
-				name: "fake content",
-				response: config.Response{
-					Seed: 123,
-					Fake: &fakedata.Node{
-						Type: "object",
-						Properties: map[string]fakedata.Node{
-							"foo": {Type: "sentence"},
-						},
-					},
-				},
-				expected: fakeJSONContent,
-			},
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
@@ -87,7 +71,6 @@ func TestHandler(t *testing.T) {
 					mock.WithLogger(log.New(io.Discard)),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
-					mock.WithGenerator(fakedata.NewGoFakeItGenerator()),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
 					}),
