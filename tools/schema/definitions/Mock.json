@@ -27,9 +27,6 @@
         },
         {
           "$ref": "#/definitions/FileMockResponse"
-        },
-        {
-          "$ref": "#/definitions/FakeDataMockResponse"
         }
       ]
     }
