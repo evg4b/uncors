@@ -12,7 +12,7 @@ import (
 const prefixWidth = 13
 
 func printResponse(request *contracts.Request, statusCode int) string {
-	prefix := helpers.Sprintf("%d %s", statusCode, request.Method)
+	prefix := fmt.Sprintf("%d %s", statusCode, request.Method)
 	prefixStyle, textStyle := getStyles(statusCode)
 	prefixStyle = prefixStyle.Width(prefixWidth)
 
@@ -40,5 +40,5 @@ func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
 		return styles.HTTPStatus5xxBlockStyle, styles.HTTPStatus5xxTextStyle
 	}
 
-	panic(helpers.Sprintf("status code %d is not supported", statusCode))
+	panic(fmt.Sprintf("status code %d is not supported", statusCode))
 }

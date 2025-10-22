@@ -1,7 +1,8 @@
 package config
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
+	"fmt"
+
 	"github.com/samber/lo"
 )
 
@@ -30,7 +31,7 @@ func (s *Script) String() string {
 		scriptType = "file: " + s.File
 	}
 
-	return helpers.Sprintf("[%s script:%s] %s", method, scriptType, s.Matcher.Path)
+	return fmt.Sprintf("[%s script:%s] %s", method, scriptType, s.Matcher.Path)
 }
 
 type Scripts []Script

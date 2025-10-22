@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	goCache "github.com/patrickmn/go-cache"
@@ -43,7 +41,7 @@ func TestCacheMiddleware(t *testing.T) {
 	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
-		helpers.FPrintf(writer, expectedBody)
+		fmt.Fprint(writer, expectedBody)
 	})
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
@@ -160,7 +158,7 @@ func TestCacheMiddleware(t *testing.T) {
 				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
-					helpers.FPrintf(writer, expectedBody)
+					fmt.Fprint(writer, expectedBody)
 				})
 
 				wrappedHandler := middleware.Wrap(handler)
@@ -222,7 +220,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
-			helpers.FPrint(writer, request.Method)
+			fmt.Fprint(writer, request.Method)
 		})
 
 		wrappedHandler := middleware.Wrap(handler)

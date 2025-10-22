@@ -1,7 +1,8 @@
 package config
 
 import (
-	"github.com/evg4b/uncors/internal/helpers"
+	"fmt"
+
 	"github.com/samber/lo"
 )
 
@@ -23,7 +24,7 @@ func (m *Mock) String() string {
 		method = m.Matcher.Method
 	}
 
-	return helpers.Sprintf("[%s %d] %s", method, m.Response.Code, m.Matcher.Path)
+	return fmt.Sprintf("[%s %d] %s", method, m.Response.Code, m.Matcher.Path)
 }
 
 type Mocks []Mock

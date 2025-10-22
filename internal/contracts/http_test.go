@@ -1,12 +1,12 @@
 package contracts_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 	handlerStub := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
-		helpers.FPrint(w, expectedBody)
+		fmt.Fprint(w, expectedBody)
 	})
 
 	request := httptest.NewRequest(http.MethodGet, "/data", nil)
@@ -44,7 +44,7 @@ func TestHandlerFunc(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
-		helpers.FPrint(w, expectedBody)
+		fmt.Fprint(w, expectedBody)
 	})
 
 	recorder := httptest.NewRecorder()

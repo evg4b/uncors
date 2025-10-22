@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlparser"
 )
 
@@ -89,7 +88,7 @@ func (r *Replacer) Replace(source string) (string, error) {
 
 	for _, subExpName := range r.regexp.SubexpNames() {
 		if len(subExpName) > 0 {
-			partPattern := helpers.Sprintf("${%s}", subExpName)
+			partPattern := fmt.Sprintf("${%s}", subExpName)
 			partIndex := r.regexp.SubexpIndex(subExpName)
 			partValue := matches[partIndex]
 			if hook, ok := r.hooks[subExpName]; ok {

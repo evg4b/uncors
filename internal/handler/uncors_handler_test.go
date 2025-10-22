@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -196,7 +197,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			}, nil
 		}
 
-		panic(helpers.Sprintf("incorrect request: %s", request.URL.Path))
+		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
 	uncorsHandler := handler.NewUncorsRequestHandler(
