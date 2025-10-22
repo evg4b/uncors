@@ -636,3 +636,344 @@ func TestScriptHandlerOptions(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
 }
+
+func TestScriptHandler_MultiValueHeadersAndQueryParams(t *testing.T) {
+	t.Run("multi-value query parameters", func(t *testing.T) {
+		tests := []struct {
+			name         string
+			queryParams  map[string][]string
+			script       string
+			expectedBody string
+		}{
+			{
+				name: "single value query param",
+				queryParams: map[string][]string{
+					"name": {"John"},
+				},
+				script: `
+response:WriteHeader(200)
+response:WriteString("Name: " .. request.query_params["name"])
+`,
+				expectedBody: "Name: John",
+			},
+			{
+				name: "multi-value query param as table",
+				queryParams: map[string][]string{
+					"tags": {"go", "lua", "testing"},
+				},
+				script: `
+response:WriteHeader(200)
+local tags = request.query_params["tags"]
+local result = ""
+for i = 1, #tags do
+    if i > 1 then result = result .. "," end
+    result = result .. tags[i]
+end
+response:WriteString("Tags: " .. result)
+`,
+				expectedBody: "Tags: go,lua,testing",
+			},
+			{
+				name:        "empty query params",
+				queryParams: map[string][]string{},
+				script: `
+response:WriteHeader(200)
+local name = request.query_params["missing"]
+if name == nil then
+    response:WriteString("No param")
+else
+    response:WriteString("Has param")
+end
+`,
+				expectedBody: "No param",
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{Script: testCase.script}),
+				)
+
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				parsedQuery := req.URL.Query()
+				for key, values := range testCase.queryParams {
+					for _, value := range values {
+						parsedQuery.Add(key, value)
+					}
+				}
+				req.URL.RawQuery = parsedQuery.Encode()
+
+				recorder := httptest.NewRecorder()
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
+			})
+		}
+	})
+
+	t.Run("multi-value request headers", func(t *testing.T) {
+		tests := []struct {
+			name         string
+			headers      map[string][]string
+			script       string
+			expectedBody string
+		}{
+			{
+				name: "single value header",
+				headers: map[string][]string{
+					"X-Custom": {"Value1"},
+				},
+				script: `
+response:WriteHeader(200)
+response:WriteString("Header: " .. request.headers["X-Custom"])
+`,
+				expectedBody: "Header: Value1",
+			},
+			{
+				name: "multi-value header as table",
+				headers: map[string][]string{
+					"Accept": {"text/html", "application/json", "text/plain"},
+				},
+				script: `
+response:WriteHeader(200)
+local accepts = request.headers["Accept"]
+local result = ""
+for i = 1, #accepts do
+    if i > 1 then result = result .. ";" end
+    result = result .. accepts[i]
+end
+response:WriteString("Accept: " .. result)
+`,
+				expectedBody: "Accept: text/html;application/json;text/plain",
+			},
+			{
+				name:    "missing header",
+				headers: map[string][]string{},
+				script: `
+response:WriteHeader(200)
+local header = request.headers["X-Missing"]
+if header == nil then
+    response:WriteString("No header")
+else
+    response:WriteString("Has header")
+end
+`,
+				expectedBody: "No header",
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := script.NewHandler(
+					script.WithLogger(log.New(io.Discard)),
+					script.WithScript(config.Script{Script: testCase.script}),
+				)
+
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				for key, values := range testCase.headers {
+					for _, value := range values {
+						req.Header.Add(key, value)
+					}
+				}
+
+				recorder := httptest.NewRecorder()
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+				assert.Equal(t, http.StatusOK, recorder.Code)
+				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
+			})
+		}
+	})
+}
+
+func TestScriptHandler_ResponseMetatableEdgeCases(t *testing.T) {
+	t.Run("response metatable prevents status field writes", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.status = 500
+response:WriteHeader(200)
+response:WriteString("Status not writable")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Status not writable", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response metatable prevents body field writes", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.body = "This should be ignored"
+response:WriteHeader(200)
+response:WriteString("Actual body")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Actual body", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response metatable allows custom fields", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.custom_field = "custom_value"
+response:WriteHeader(200)
+response:WriteString("Custom: " .. response.custom_field)
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Custom: custom_value", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response WriteHeader idempotency", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response:WriteHeader(200)
+response:WriteHeader(500)
+response:WriteString("First status wins")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "First status wins", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response Write without explicit WriteHeader", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response:Write("Auto status")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Auto status", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response WriteString without explicit WriteHeader", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response:WriteString("Auto status with string")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Auto status with string", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response headers metatable Get method", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.headers["X-Test"] = "TestValue"
+local value = response.headers:Get("X-Test")
+response:WriteHeader(200)
+response:WriteString("Value: " .. value)
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "Value: TestValue", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("response headers metatable Set method", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.headers:Set("X-Custom", "CustomValue")
+response:WriteHeader(200)
+response:WriteString("Header set")
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "CustomValue", recorder.Header().Get("X-Custom"))
+	})
+
+	t.Run("response headers access via index", func(t *testing.T) {
+		handler := script.NewHandler(
+			script.WithLogger(log.New(io.Discard)),
+			script.WithScript(config.Script{
+				Script: `
+response.headers["Content-Type"] = "text/plain"
+local ct = response.headers["Content-Type"]
+response:WriteHeader(200)
+response:WriteString("CT: " .. ct)
+`,
+			}),
+		)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "CT: text/plain", testutils.ReadBody(t, recorder))
+	})
+}
