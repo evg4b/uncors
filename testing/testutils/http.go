@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/gorilla/mux"
 )
 
 type handlerFunc = func(writer contracts.ResponseWriter, request *contracts.Request)
@@ -36,4 +37,9 @@ func CopyHeaders(from http.Header, to http.Header) {
 			to.Add(key, value)
 		}
 	}
+}
+
+// SetMuxVars sets gorilla/mux route variables for testing.
+func SetMuxVars(req *http.Request, vars map[string]string) *http.Request {
+	return mux.SetURLVars(req, vars)
 }

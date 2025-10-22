@@ -51,4 +51,12 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 			Value: rewrite,
 		}))
 	}
+
+	for i, script := range m.Value.Scripts {
+		errors.Append(validate.Validate(&ScriptValidator{
+			Field: joinPath(m.Field, "scripts", index(i)),
+			Value: script,
+			Fs:    m.Fs,
+		}))
+	}
 }

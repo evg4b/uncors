@@ -21,6 +21,7 @@ UNCORS is a powerful development tool designed to simplify HTTP/HTTPS proxying a
 - [Request rewriting](./6.-Request-rewriting)
 - [Request flow](./7.-Request-flow)
 - [Migration guide](./8.-Migration-Guide)
+- [Script handler](./9.-Script-Handler)
 
 ## List of core features
 
@@ -29,6 +30,7 @@ UNCORS is a powerful development tool designed to simplify HTTP/HTTPS proxying a
 - [Wildcard host mapping](./2.-Configuration#wildcard-mapping)
 - [HTTP/HTTPS proxy support](./2.-Configuration#proxy-configuration)
 - [Response mocking](./3.-Response-mocking)
+- [Script handler](./9.-Script-Handler) (Lua scripting with JSON support)
 - [Static file serving](./4.-Static-file-serving)
 - [Response caching](./5.-Response-caching)
 - [Request rewriting](./6.-Request-rewriting)

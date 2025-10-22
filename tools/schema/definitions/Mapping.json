@@ -38,6 +38,14 @@
           },
           "minItems": 1
         },
+        "scripts": {
+          "type": "array",
+          "description": "List of script handlers",
+          "items": {
+            "$ref": "#/definitions/Script"
+          },
+          "minItems": 1
+        },
         "statics": {
           "type": "array",
           "description": "List of paths that will be served from the directory.",

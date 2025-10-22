@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Script request handler definition",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Request path to handle with script"
+    },
+    "method": {
+      "$ref": "#/definitions/Method",
+      "description": "Request method to match"
+    },
+    "queries": {
+      "$ref": "#/definitions/Queries",
+      "description": "Request query parameters to match"
+    },
+    "headers": {
+      "$ref": "#/definitions/Headers",
+      "description": "Request headers to match"
+    },
+    "script": {
+      "type": "string",
+      "description": "Inline script code"
+    },
+    "file": {
+      "type": "string",
+      "description": "Path to script file"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "path"
+  ],
+  "oneOf": [
+    {
+      "required": ["script"],
+      "not": {
+        "required": ["file"]
+      }
+    },
+    {
+      "required": ["file"],
+      "not": {
+        "required": ["script"]
+      }
+    }
+  ]
+}

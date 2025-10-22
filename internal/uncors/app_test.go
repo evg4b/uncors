@@ -195,7 +195,9 @@ func makeRequest(t *testing.T, httpClient *http.Client, uri *url.URL) string {
 func mocks(response string) config.Mocks {
 	return config.Mocks{
 		config.Mock{
-			Path: "/",
+			RequestMatcher: config.RequestMatcher{
+				Path: "/",
+			},
 			Response: config.Response{
 				Code: http.StatusOK,
 				Raw:  response,
@@ -575,10 +577,6 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 				},
 			},
 		})
-		defer func() {
-			err := uncorsApp.Close()
-			testutils.CheckNoServerError(t, err)
-		}()
 
 		time.Sleep(delay)
 
@@ -589,6 +587,10 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 		// HTTPS server should not start without certs
 		httpsAddr := uncorsApp.HTTPSAddr()
 		assert.Nil(t, httpsAddr)
+
+		// Close the app to ensure all goroutines complete before checking logs
+		err := uncorsApp.Close()
+		testutils.CheckNoServerError(t, err)
 
 		// Check that warning was logged
 		assert.Contains(t, logBuffer.String(), "HTTPS mapping")

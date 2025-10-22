@@ -11,15 +11,17 @@ import (
 
 func TestMockClone(t *testing.T) {
 	mock := config.Mock{
-		Path:   "/constants",
-		Method: http.MethodGet,
-		Queries: map[string]string{
-			"page": "10",
-			"size": "50",
-		},
-		Headers: map[string]string{
-			headers.ContentType:  "plain/text",
-			headers.CacheControl: "none",
+		RequestMatcher: config.RequestMatcher{
+			Path:   "/constants",
+			Method: http.MethodGet,
+			Queries: map[string]string{
+				"page": "10",
+				"size": "50",
+			},
+			Headers: map[string]string{
+				headers.ContentType:  "plain/text",
+				headers.CacheControl: "none",
+			},
 		},
 		Response: config.Response{
 			Code: http.StatusOK,

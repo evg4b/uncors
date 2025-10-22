@@ -2,7 +2,6 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -15,14 +14,9 @@ type MockValidator struct {
 
 func (m *MockValidator) IsValid(errors *validate.Errors) {
 	errors.Append(validate.Validate(
-		&base.PathValidator{
-			Field: joinPath(m.Field, "path"),
-			Value: m.Value.Path,
-		},
-		&base.MethodValidator{
-			Field:      joinPath(m.Field, "method"),
-			Value:      m.Value.Method,
-			AllowEmpty: true,
+		&RequestMatcherValidator{
+			Field: m.Field,
+			Value: m.Value.RequestMatcher,
 		},
 		&ResponseValidator{
 			Field: joinPath(m.Field, "response"),

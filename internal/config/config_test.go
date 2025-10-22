@@ -136,13 +136,15 @@ func TestLoadConfiguration(t *testing.T) {
 							To:   hosts.Stackoverflow.HTTPS(),
 							Mocks: config.Mocks{
 								{
-									Path:   "/demo",
-									Method: "POST",
-									Queries: map[string]string{
-										"foo": "bar",
-									},
-									Headers: map[string]string{
-										acceptEncoding: "deflate",
+									RequestMatcher: config.RequestMatcher{
+										Path:   "/demo",
+										Method: "POST",
+										Queries: map[string]string{
+											"foo": "bar",
+										},
+										Headers: map[string]string{
+											acceptEncoding: "deflate",
+										},
 									},
 									Response: config.Response{
 										Code: 201,

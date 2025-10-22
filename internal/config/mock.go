@@ -6,20 +6,14 @@ import (
 )
 
 type Mock struct {
-	Path     string            `mapstructure:"path"`
-	Method   string            `mapstructure:"method"`
-	Queries  map[string]string `mapstructure:"queries"`
-	Headers  map[string]string `mapstructure:"headers"`
-	Response Response          `mapstructure:"response"`
+	RequestMatcher `mapstructure:",squash"`
+	Response       Response `mapstructure:"response"`
 }
 
 func (m *Mock) Clone() Mock {
 	return Mock{
-		Path:     m.Path,
-		Method:   m.Method,
-		Queries:  helpers.CloneMap(m.Queries),
-		Headers:  helpers.CloneMap(m.Headers),
-		Response: m.Response.Clone(),
+		RequestMatcher: m.RequestMatcher.Clone(),
+		Response:       m.Response.Clone(),
 	}
 }
 

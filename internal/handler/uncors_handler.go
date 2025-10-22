@@ -18,6 +18,7 @@ type (
 	ProxyHandlerFactory      = func() contracts.Handler
 	StaticMiddlewareFactory  = func(path string, dir config.StaticDirectory) contracts.Middleware
 	MockHandlerFactory       = func(response config.Response) contracts.Handler
+	ScriptHandlerFactory     = func(script config.Script) contracts.Handler
 	RewriteMiddlewareFactory = func(rewrite config.RewritingOption) contracts.Middleware
 	OptionsMiddlewareFactory = func(options config.OptionsHandling) contracts.Middleware
 )
@@ -32,6 +33,7 @@ type RequestHandler struct {
 	staticMiddlewareFactory  StaticMiddlewareFactory
 	proxyHandlerFactory      ProxyHandlerFactory
 	mockHandlerFactory       MockHandlerFactory
+	scriptHandlerFactory     ScriptHandlerFactory
 	rewriteMiddlewareFactory RewriteMiddlewareFactory
 	optionsMiddlewareFactory OptionsMiddlewareFactory
 }
@@ -58,6 +60,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
+		handler.makeScriptRoutes(router, mapping.Scripts)
 		handler.makeRewritedRoutes(router, mapping.Rewrites, defaultHandler)
 
 		setDefaultHandler(router, defaultHandler)
