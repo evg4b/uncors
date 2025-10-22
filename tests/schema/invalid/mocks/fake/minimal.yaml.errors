@@ -1,4 +1,0 @@
-mappings.0: Must validate one and only one schema (oneOf)
-mappings.0.mocks.0.response: Must validate one and only one schema (oneOf)
-mappings.0.mocks.0.response.fake: Must validate one and only one schema (oneOf)
-mappings.0.mocks.0.response.fake: Additional property property is not allowed
