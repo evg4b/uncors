@@ -20,11 +20,6 @@ func p(object *gabs.Container, path string, value any) {
 	requireNoError(err)
 }
 
-func apnd(object *gabs.Container, path string, value any) {
-	err := object.ArrayAppendP(value, path)
-	requireNoError(err)
-}
-
 func f(path string) *gabs.Container {
 	return open(path, true)
 }
@@ -43,12 +38,4 @@ func open(path string, clean bool) *gabs.Container {
 func write(path string, object *gabs.Container) {
 	err := os.WriteFile(path, object.BytesIndent("", "  "), os.ModePerm) //nolint:gosec
 	requireNoError(err)
-}
-
-func o() *gabs.Container {
-	item := gabs.New()
-	p(item, "type", "object")
-	p(item, "additionalProperties", false)
-
-	return item
 }
