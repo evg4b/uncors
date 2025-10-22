@@ -18,7 +18,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	host, _, err := urlparser.SplitHostPort(parsedPattern)
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, fmt.Errorf("failed to build url glob: %w", err)
 	}
 
 	parts := strings.Split(host, "*")
@@ -29,7 +29,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 		}
 
 		if _, err := result.WriteString(regexp.QuoteMeta(literal)); err != nil {
-			return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+			return nil, 0, fmt.Errorf("failed to build url glob: %w", err)
 		}
 	}
 
@@ -38,7 +38,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 	compiledRegexp, err := regexp.Compile(result.String())
 	if err != nil {
-		return nil, 0, fmt.Errorf("filed to build url glob: %w", err)
+		return nil, 0, fmt.Errorf("failed to build url glob: %w", err)
 	}
 
 	return compiledRegexp, count, nil

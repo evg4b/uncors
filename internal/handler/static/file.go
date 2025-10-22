@@ -15,7 +15,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 	file, err := h.fs.Open(filePath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, nil, fmt.Errorf("filed to open file: %w", err)
+			return nil, nil, fmt.Errorf("failed to open file: %w", err)
 		}
 
 		indexFile, err := h.openIndexFile()
@@ -28,7 +28,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 
 	stat, err := file.Stat()
 	if err != nil {
-		return file, nil, fmt.Errorf("filed to get information about file: %w", err)
+		return file, nil, fmt.Errorf("failed to get information about file: %w", err)
 	}
 
 	if stat.IsDir() {
@@ -39,7 +39,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 
 		indexFileStat, err := indexFile.Stat()
 		if err != nil {
-			return file, stat, fmt.Errorf("filed to get information about index file: %w", err)
+			return file, stat, fmt.Errorf("failed to get information about index file: %w", err)
 		}
 
 		file = indexFile
@@ -56,7 +56,7 @@ func (h *Middleware) openIndexFile() (afero.File, error) {
 
 	file, err := h.fs.Open(h.index)
 	if err != nil {
-		return nil, fmt.Errorf("filed to open index file: %w", err)
+		return nil, fmt.Errorf("failed to open index file: %w", err)
 	}
 
 	return file, nil

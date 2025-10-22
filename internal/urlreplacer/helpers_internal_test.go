@@ -143,7 +143,7 @@ func TestWildCardToRegexp(t *testing.T) {
 			{
 				name:          "incorrect port",
 				parsedPattern: url.URL{Host: "localhost:"},
-				expected:      `filed to build url glob: port "//localhost:": empty port`,
+				expected:      `failed to build url glob: port "//localhost:": empty port`,
 			},
 		}
 		for _, testCase := range testCases {
