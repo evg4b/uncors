@@ -21,17 +21,9 @@ func (s *ScriptValidator) IsValid(errors *validate.Errors) {
 	helpers.PassedOrOsFs(&s.Fs)
 
 	errors.Append(validate.Validate(
-		&base.PathValidator{
-			Field: joinPath(s.Field, "path"),
-			Value: s.Value.Path,
-		},
-	))
-
-	errors.Append(validate.Validate(
-		&base.MethodValidator{
-			Field:      joinPath(s.Field, "method"),
-			Value:      s.Value.Method,
-			AllowEmpty: true,
+		&RequestMatcherValidator{
+			Field: s.Field,
+			Value: s.Value.RequestMatcher,
 		},
 	))
 
@@ -63,23 +55,5 @@ func (s *ScriptValidator) IsValid(errors *validate.Errors) {
 			Value: s.Value.File,
 			Fs:    s.Fs,
 		}))
-	}
-
-	for key := range s.Value.Queries {
-		if key == "" {
-			errors.Add(
-				joinPath(s.Field, "queries"),
-				fmt.Sprintf("%s: query parameter keys must not be empty", joinPath(s.Field, "queries")),
-			)
-		}
-	}
-
-	for key := range s.Value.Headers {
-		if key == "" {
-			errors.Add(
-				joinPath(s.Field, "headers"),
-				fmt.Sprintf("%s: header keys must not be empty", joinPath(s.Field, "headers")),
-			)
-		}
 	}
 }

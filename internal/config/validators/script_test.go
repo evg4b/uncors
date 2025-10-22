@@ -15,8 +15,10 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Method: "GET",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "/api/test",
+					Method: "GET",
+				},
 				Script: "response.status = 200",
 			},
 		})
@@ -32,9 +34,11 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Method: "POST",
-				File:   "/scripts/test.lua",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "/api/test",
+					Method: "POST",
+				},
+				File: "/scripts/test.lua",
 			},
 			Fs: fs,
 		})
@@ -46,8 +50,10 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Method: "",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "/api/test",
+					Method: "",
+				},
 				Script: "response.status = 200",
 			},
 		})
@@ -59,16 +65,18 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+					Queries: map[string]string{
+						"filter": "active",
+						"sort":   "name",
+					},
+					Headers: map[string]string{
+						"X-Custom-Header": "value",
+						"Authorization":   "Bearer token",
+					},
+				},
 				Script: "response.status = 200",
-				Queries: map[string]string{
-					"filter": "active",
-					"sort":   "name",
-				},
-				Headers: map[string]string{
-					"X-Custom-Header": "value",
-					"Authorization":   "Bearer token",
-				},
 			},
 		})
 
@@ -79,7 +87,9 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "",
+				RequestMatcher: config.RequestMatcher{
+					Path: "",
+				},
 				Script: "response.status = 200",
 			},
 		})
@@ -92,7 +102,9 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "invalid-path",
+				RequestMatcher: config.RequestMatcher{
+					Path: "invalid-path",
+				},
 				Script: "response.status = 200",
 			},
 		})
@@ -105,8 +117,10 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Method: "INVALID",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "/api/test",
+					Method: "INVALID",
+				},
 				Script: "response.status = 200",
 			},
 		})
@@ -119,8 +133,10 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Method: "GET",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "/api/test",
+					Method: "GET",
+				},
 			},
 		})
 
@@ -138,7 +154,9 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+				},
 				Script: "response.status = 200",
 				File:   "/scripts/test.lua",
 			},
@@ -157,7 +175,9 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path: "/api/test",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+				},
 				File: "/scripts/nonexistent.lua",
 			},
 			Fs: fs,
@@ -175,7 +195,9 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path: "/api/test",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+				},
 				File: "/scripts",
 			},
 			Fs: fs,
@@ -189,12 +211,14 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Script: "response.status = 200",
-				Queries: map[string]string{
-					"":     "value",
-					"sort": "name",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+					Queries: map[string]string{
+						"":     "value",
+						"sort": "name",
+					},
 				},
+				Script: "response.status = 200",
 			},
 		})
 
@@ -207,12 +231,14 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "/api/test",
-				Script: "response.status = 200",
-				Headers: map[string]string{
-					"":            "value",
-					"X-Custom-ID": "123",
+				RequestMatcher: config.RequestMatcher{
+					Path: "/api/test",
+					Headers: map[string]string{
+						"":            "value",
+						"X-Custom-ID": "123",
+					},
 				},
+				Script: "response.status = 200",
 			},
 		})
 
@@ -225,13 +251,15 @@ func TestScriptValidator(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
-				Path:   "",
-				Method: "INVALID",
-				Queries: map[string]string{
-					"": "empty-key",
-				},
-				Headers: map[string]string{
-					"": "empty-header-key",
+				RequestMatcher: config.RequestMatcher{
+					Path:   "",
+					Method: "INVALID",
+					Queries: map[string]string{
+						"": "empty-key",
+					},
+					Headers: map[string]string{
+						"": "empty-header-key",
+					},
 				},
 			},
 		})

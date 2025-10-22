@@ -143,28 +143,36 @@ func TestUncorsRequestHandler(t *testing.T) {
 			},
 			Mocks: config.Mocks{
 				{
-					Path: "/api/mocks/1",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/mocks/1",
+					},
 					Response: config.Response{
 						Code: http.StatusOK,
 						Raw:  "mock-1",
 					},
 				},
 				{
-					Path: "/api/mocks/2",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/mocks/2",
+					},
 					Response: config.Response{
 						Code: http.StatusOK,
 						File: "/mock.json",
 					},
 				},
 				{
-					Path: "/api/mocks/3",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/mocks/3",
+					},
 					Response: config.Response{
 						Code: http.StatusMultiStatus,
 						Raw:  "mock-3",
 					},
 				},
 				{
-					Path: "/api/mocks/4",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/mocks/4",
+					},
 					Response: config.Response{
 						Code: http.StatusOK,
 						File: "/unknown.json",
@@ -381,7 +389,9 @@ func TestMockMiddleware(t *testing.T) {
 						To:   "*",
 						Mocks: config.Mocks{
 							{
-								Path: "/api",
+								RequestMatcher: config.RequestMatcher{
+									Path: "/api",
+								},
 								Response: config.Response{
 									Code: http.StatusOK,
 									Raw:  mock1Body,
@@ -424,8 +434,10 @@ func TestMockMiddleware(t *testing.T) {
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{{
-					Path:   "/api",
-					Method: http.MethodPut,
+					RequestMatcher: config.RequestMatcher{
+						Path:   "/api",
+						Method: http.MethodPut,
+					},
 					Response: config.Response{
 						Code: http.StatusOK,
 						Raw:  mock1Body,
@@ -502,28 +514,36 @@ func TestMockMiddleware(t *testing.T) {
 		mappings := config.Mappings{
 			{From: "*", To: "*", Mocks: config.Mocks{
 				{
-					Path: userPath,
+					RequestMatcher: config.RequestMatcher{
+						Path: userPath,
+					},
 					Response: config.Response{
 						Code: http.StatusOK,
 						Raw:  mock1Body,
 					},
 				},
 				{
-					Path: "/api/user/{id:[0-9]+}",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/user/{id:[0-9]+}",
+					},
 					Response: config.Response{
 						Code: http.StatusAccepted,
 						Raw:  mock2Body,
 					},
 				},
 				{
-					Path: "/api/{single-path/demo",
+					RequestMatcher: config.RequestMatcher{
+						Path: "/api/{single-path/demo",
+					},
 					Response: config.Response{
 						Code: http.StatusBadRequest,
 						Raw:  mock3Body,
 					},
 				},
 				{
-					Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
+					RequestMatcher: config.RequestMatcher{
+						Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
+					},
 					Response: config.Response{
 						Code: http.StatusCreated,
 						Raw:  mock4Body,
@@ -612,16 +632,20 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
-						Path: userPath,
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+						},
 						Response: config.Response{
 							Code: http.StatusOK,
 							Raw:  mock1Body,
 						},
 					},
 					{
-						Path: userPath,
-						Queries: map[string]string{
-							"id": "17",
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+							Queries: map[string]string{
+								"id": "17",
+							},
 						},
 						Response: config.Response{
 							Code: http.StatusCreated,
@@ -629,10 +653,12 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						Path: userPath,
-						Queries: map[string]string{
-							"id":    "99",
-							"token": "000000000000000000000000000000",
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+							Queries: map[string]string{
+								"id":    "99",
+								"token": "000000000000000000000000000000",
+							},
 						},
 						Response: config.Response{
 							Code: http.StatusAccepted,
@@ -710,16 +736,20 @@ func TestMockMiddleware(t *testing.T) {
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
-						Path: userPath,
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+						},
 						Response: config.Response{
 							Code: http.StatusOK,
 							Raw:  mock1Body,
 						},
 					},
 					{
-						Path: userPath,
-						Headers: map[string]string{
-							headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+							Headers: map[string]string{
+								headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
+							},
 						},
 						Response: config.Response{
 							Code: http.StatusCreated,
@@ -727,10 +757,12 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 					{
-						Path: userPath,
-						Headers: map[string]string{
-							userIDHeader:       "99",
-							headers.XCSRFToken: "000000000000000000000000000000",
+						RequestMatcher: config.RequestMatcher{
+							Path: userPath,
+							Headers: map[string]string{
+								userIDHeader:       "99",
+								headers.XCSRFToken: "000000000000000000000000000000",
+							},
 						},
 						Response: config.Response{
 							Code: http.StatusAccepted,
