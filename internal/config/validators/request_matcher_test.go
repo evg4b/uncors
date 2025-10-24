@@ -10,12 +10,14 @@ import (
 	"github.com/evg4b/uncors/internal/config/validators"
 )
 
+const requestMatcherTestPath = "/api/test"
+
 func TestRequestMatcherValidator(t *testing.T) {
 	t.Run("should not register errors for valid filter with all fields", func(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path:   "/api/test",
+				Path:   requestMatcherTestPath,
 				Method: "GET",
 				Queries: map[string]string{
 					"param1": "value1",
@@ -35,7 +37,7 @@ func TestRequestMatcherValidator(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path: "/api/test",
+				Path: requestMatcherTestPath,
 			},
 		})
 
@@ -59,7 +61,7 @@ func TestRequestMatcherValidator(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path:   "/api/test",
+				Path:   requestMatcherTestPath,
 				Method: "INVALID",
 			},
 		})

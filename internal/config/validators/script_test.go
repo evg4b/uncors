@@ -10,16 +10,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testAPIPath        = "/api/test"
+	testScriptContent  = "response.status = 200"
+	testScriptFilePath = "/scripts/test.lua"
+	scriptPathField    = "script.path"
+	scriptScriptField  = "script.script"
+	scriptFileField    = "script.file"
+)
+
 func TestScriptValidator(t *testing.T) {
 	t.Run("should not register errors for valid inline script", func(t *testing.T) {
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
 				Matcher: config.RequestMatcher{
-					Path:   "/api/test",
+					Path:   testAPIPath,
 					Method: "GET",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
@@ -28,17 +37,17 @@ func TestScriptValidator(t *testing.T) {
 
 	t.Run("should not register errors for valid file script", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{
-			"/scripts/test.lua": "response.status = 200",
+			testScriptFilePath: testScriptContent,
 		})
 
 		errors := validate.Validate(&validators.ScriptValidator{
 			Field: "script",
 			Value: config.Script{
 				Matcher: config.RequestMatcher{
-					Path:   "/api/test",
+					Path:   testAPIPath,
 					Method: "POST",
 				},
-				File: "/scripts/test.lua",
+				File: testScriptFilePath,
 			},
 			Fs: fs,
 		})
@@ -51,10 +60,10 @@ func TestScriptValidator(t *testing.T) {
 			Field: "script",
 			Value: config.Script{
 				Matcher: config.RequestMatcher{
-					Path:   "/api/test",
+					Path:   testAPIPath,
 					Method: "",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
@@ -76,7 +85,7 @@ func TestScriptValidator(t *testing.T) {
 						"Authorization":   "Bearer token",
 					},
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
@@ -90,12 +99,12 @@ func TestScriptValidator(t *testing.T) {
 				Matcher: config.RequestMatcher{
 					Path: "",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.path")
+		assert.Contains(t, errors.Error(), scriptPathField)
 	})
 
 	t.Run("should register error when path is invalid", func(t *testing.T) {
@@ -105,12 +114,12 @@ func TestScriptValidator(t *testing.T) {
 				Matcher: config.RequestMatcher{
 					Path: "invalid-path",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.path")
+		assert.Contains(t, errors.Error(), scriptPathField)
 	})
 
 	t.Run("should register error when method is invalid", func(t *testing.T) {
@@ -118,10 +127,10 @@ func TestScriptValidator(t *testing.T) {
 			Field: "script",
 			Value: config.Script{
 				Matcher: config.RequestMatcher{
-					Path:   "/api/test",
+					Path:   testAPIPath,
 					Method: "INVALID",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 			},
 		})
 
@@ -134,21 +143,21 @@ func TestScriptValidator(t *testing.T) {
 			Field: "script",
 			Value: config.Script{
 				Matcher: config.RequestMatcher{
-					Path:   "/api/test",
+					Path:   testAPIPath,
 					Method: "GET",
 				},
 			},
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.script")
-		assert.Contains(t, errors.Error(), "script.file")
+		assert.Contains(t, errors.Error(), scriptScriptField)
+		assert.Contains(t, errors.Error(), scriptFileField)
 		assert.Contains(t, errors.Error(), "either 'script' or 'file' must be provided")
 	})
 
 	t.Run("should register error when both script and file are provided", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{
-			"/scripts/test.lua": "response.status = 200",
+			testScriptFilePath: testScriptContent,
 		})
 
 		errors := validate.Validate(&validators.ScriptValidator{
@@ -157,15 +166,15 @@ func TestScriptValidator(t *testing.T) {
 				Matcher: config.RequestMatcher{
 					Path: "/api/test",
 				},
-				Script: "response.status = 200",
+				Script: testScriptContent,
 				File:   "/scripts/test.lua",
 			},
 			Fs: fs,
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.script")
-		assert.Contains(t, errors.Error(), "script.file")
+		assert.Contains(t, errors.Error(), scriptScriptField)
+		assert.Contains(t, errors.Error(), scriptFileField)
 		assert.Contains(t, errors.Error(), "only one of 'script' or 'file' can be provided")
 	})
 
@@ -184,12 +193,12 @@ func TestScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.file")
+		assert.Contains(t, errors.Error(), scriptFileField)
 	})
 
 	t.Run("should register error when file is a directory", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{
-			"/scripts/test.lua": "response.status = 200",
+			testScriptFilePath: testScriptContent,
 		})
 
 		errors := validate.Validate(&validators.ScriptValidator{
@@ -204,7 +213,7 @@ func TestScriptValidator(t *testing.T) {
 		})
 
 		assert.True(t, errors.HasAny())
-		assert.Contains(t, errors.Error(), "script.file")
+		assert.Contains(t, errors.Error(), scriptFileField)
 	})
 
 	t.Run("should register multiple errors for complex invalid config", func(t *testing.T) {

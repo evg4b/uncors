@@ -19,15 +19,49 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const applicationJSON = "application/json"
+
+type scriptTestCase struct {
+	name           string
+	script         string
+	expectedStatus int
+	expectedBody   string
+	expectedHeader map[string]string
+}
+
+func runScriptTests(t *testing.T, tests []scriptTestCase) {
+	t.Helper()
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			handler := script.NewHandler(
+				script.WithLogger(log.New(io.Discard)),
+				script.WithScript(config.Script{
+					Script: testCase.script,
+				}),
+				script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+			)
+
+			req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+			req.Header.Set("User-Agent", "TestAgent/1.0")
+			recorder := httptest.NewRecorder()
+
+			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+			assert.Equal(t, testCase.expectedStatus, recorder.Code)
+			assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
+
+			if testCase.expectedHeader != nil {
+				for key, value := range testCase.expectedHeader {
+					assert.Equal(t, value, recorder.Header().Get(key))
+				}
+			}
+		})
+	}
+}
+
 func TestScriptHandler(t *testing.T) { // nolint:cyclop, gocognit
 	t.Run("inline script execution", func(t *testing.T) {
-		tests := []struct {
-			name           string
-			script         string
-			expectedStatus int
-			expectedBody   string
-			expectedHeader map[string]string
-		}{
+		tests := []scriptTestCase{
 			{
 				name: "simple response",
 				script: `
@@ -40,14 +74,14 @@ response:WriteString("Hello from Lua")
 			{
 				name: "json response",
 				script: `
-response.headers["Content-Type"] = "application/json"
+response.headers["Content-Type"] = "` + applicationJSON + `"
 response:WriteHeader(200)
 response:WriteString('{"message": "success"}')
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   `{"message": "success"}`,
 				expectedHeader: map[string]string{
-					headers.ContentType: "application/json",
+					headers.ContentType: applicationJSON,
 				},
 			},
 			{
@@ -112,14 +146,14 @@ response:WriteString(string.upper("hello"))
 local json = require("json")
 local data = {message = "hello", count = 42}
 local encoded = json.encode(data)
-response.headers["Content-Type"] = "application/json"
+response.headers["Content-Type"] = "` + applicationJSON + `"
 response:WriteHeader(200)
 response:WriteString(encoded)
 `,
 				expectedStatus: http.StatusOK,
 				expectedBody:   `{"count":42,"message":"hello"}`,
 				expectedHeader: map[string]string{
-					headers.ContentType: "application/json",
+					headers.ContentType: applicationJSON,
 				},
 			},
 			{
@@ -150,32 +184,7 @@ response:WriteString("Test")
 			},
 		}
 
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
-					script.WithLogger(log.New(io.Discard)),
-					script.WithScript(config.Script{
-						Script: testCase.script,
-					}),
-					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
-				)
-
-				req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
-				req.Header.Set("User-Agent", "TestAgent/1.0")
-				recorder := httptest.NewRecorder()
-
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
-
-				assert.Equal(t, testCase.expectedStatus, recorder.Code)
-				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
-
-				if testCase.expectedHeader != nil {
-					for key, value := range testCase.expectedHeader {
-						assert.Equal(t, value, recorder.Header().Get(key))
-					}
-				}
-			})
-		}
+		runScriptTests(t, tests)
 	})
 
 	t.Run("file-based script execution", func(t *testing.T) {
@@ -524,7 +533,7 @@ response:WriteString('{"status":"ok"}')
 				expectedStatus: http.StatusOK,
 				expectedBody:   `{"status":"ok"}`,
 				expectedHeader: map[string]string{
-					headers.ContentType: "application/json",
+					headers.ContentType: applicationJSON,
 					"X-Custom-Header":   "CustomValue",
 				},
 			},

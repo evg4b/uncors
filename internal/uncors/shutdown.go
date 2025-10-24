@@ -9,22 +9,26 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func (app *App) internalShutdown(rootCtx context.Context) error {
+func (app *App) hasServers() bool {
 	app.serversMutex.RLock()
-	if len(app.servers) == 0 {
-		app.serversMutex.RUnlock()
+	defer app.serversMutex.RUnlock()
 
-		return nil
+	return len(app.servers) > 0
+}
+
+func (app *App) shutdownServer(ctx context.Context, port int, server *http.Server, errChan chan<- error) {
+	log.Debugf("Shutting down server on port %d", port)
+	if err := server.Shutdown(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Errorf("shutdown timeout for server on port %d", port)
+		} else {
+			log.Errorf("error while shutting down server on port %d: %s", port, err)
+		}
+		errChan <- err
 	}
-	app.serversMutex.RUnlock()
+}
 
-	app.shuttingDown.Store(true)
-	ctx, cancel := context.WithTimeout(rootCtx, shutdownTimeout)
-	defer cancel()
-
-	log.Debug("uncors: shutting down all servers ...")
-
-	// Shutdown all servers in parallel
+func (app *App) shutdownAllServers(ctx context.Context) error {
 	var waitGroup sync.WaitGroup
 	errChan := make(chan error, len(app.servers))
 
@@ -37,16 +41,7 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 		waitGroup.Add(1)
 		go func(port int, server *http.Server) {
 			defer waitGroup.Done()
-
-			log.Debugf("Shutting down server on port %d", port)
-			if err := server.Shutdown(ctx); err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					log.Errorf("shutdown timeout for server on port %d", port)
-				} else {
-					log.Errorf("error while shutting down server on port %d: %s", port, err)
-				}
-				errChan <- err
-			}
+			app.shutdownServer(ctx, port, server, errChan)
 		}(port, portSrv.server)
 	}
 	app.serversMutex.RUnlock()
@@ -59,6 +54,24 @@ func (app *App) internalShutdown(rootCtx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (app *App) internalShutdown(rootCtx context.Context) error {
+	if !app.hasServers() {
+		return nil
+	}
+
+	app.shuttingDown.Store(true)
+	ctx, cancel := context.WithTimeout(rootCtx, shutdownTimeout)
+	defer cancel()
+
+	log.Debug("uncors: shutting down all servers ...")
+
+	if err := app.shutdownAllServers(ctx); err != nil {
+		return err
 	}
 
 	log.Debug("All UNCORS servers closed")

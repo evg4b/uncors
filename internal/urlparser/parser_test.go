@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,12 +28,12 @@ func TestParse(t *testing.T) {
 		{in: "http://localhost", out: "http://localhost"},
 		{in: "http://user.local", out: "http://user.local"},
 		{in: "http://kubernetes-service", out: "http://kubernetes-service"},
-		{in: "https://example.com", out: "https://example.com"},
+		{in: hosts.Example.HTTPS(), out: hosts.Example.HTTPS()},
 		{in: "HTTPS://example.com", out: "https://example.com"},
 		{in: "ssh://example.com:22", out: "ssh://example.com:22"},
 		{in: "jabber://example.com:5222", out: "jabber://example.com:5222"},
 		{in: "//example.com:22", out: "//example.com:22"},
-		{in: "//example.com", out: "//example.com"},
+		{in: hosts.Example.NoScheme(), out: hosts.Example.NoScheme()},
 
 		// // Empty scheme
 		{in: "localhost", out: "//localhost"},

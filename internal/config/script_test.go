@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const contentTypeHeader = "Content-Type"
+
 func TestRequestMatcher_Clone(t *testing.T) {
 	original := config.RequestMatcher{
 		Path:   "/api/test",
@@ -16,8 +18,8 @@ func TestRequestMatcher_Clone(t *testing.T) {
 			"key2": "value2",
 		},
 		Headers: map[string]string{
-			"Content-Type":  "application/json",
-			"Authorization": "Bearer token",
+			contentTypeHeader: "application/json",
+			"Authorization":   "Bearer token",
 		},
 	}
 
@@ -32,8 +34,8 @@ func TestRequestMatcher_Clone(t *testing.T) {
 	cloned.Queries["key1"] = "modified"
 	assert.NotEqual(t, original.Queries["key1"], cloned.Queries["key1"])
 
-	cloned.Headers["Content-Type"] = "text/html"
-	assert.NotEqual(t, original.Headers["Content-Type"], cloned.Headers["Content-Type"])
+	cloned.Headers[contentTypeHeader] = "text/html"
+	assert.NotEqual(t, original.Headers[contentTypeHeader], cloned.Headers[contentTypeHeader])
 }
 
 func TestScript_Clone(t *testing.T) {
