@@ -8,6 +8,7 @@ var (
 	Stackoverflow = host("stackoverflow.com")
 	APIGithub     = host("api.github.com")
 	Example       = host("example.com")
+	Google        = host("www.google.com")
 
 	Localhost1 = host("localhost1")
 	Localhost2 = host("localhost2")

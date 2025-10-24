@@ -11,7 +11,7 @@ func NewProxyLogger(logger *log.Logger) *log.Logger {
 }
 
 func NewOptionsLogger(logger *log.Logger) *log.Logger {
-	// TODO: Provide a logger with a specific style
+	// TODO(design): Create dedicated OptionsStyle in styles package for visual distinction from proxy logs
 	return tui.CreateLogger(logger, styles.ProxyStyle.Render("OPTNS"))
 }
 
