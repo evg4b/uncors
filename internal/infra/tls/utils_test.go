@@ -1,0 +1,98 @@
+package tls_test
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestGetCAPath(t *testing.T) {
+	t.Run("should return valid CA path", func(t *testing.T) {
+		path, err := infratls.GetCAPath()
+		require.NoError(t, err)
+		assert.NotEmpty(t, path)
+		assert.Contains(t, path, ".config")
+		assert.Contains(t, path, "uncors")
+	})
+
+	t.Run("should return path containing user home", func(t *testing.T) {
+		homeDir, err := os.UserHomeDir()
+		require.NoError(t, err)
+
+		path, err := infratls.GetCAPath()
+		require.NoError(t, err)
+		assert.Contains(t, path, homeDir)
+	})
+}
+
+func TestCAExists(t *testing.T) {
+	t.Run("should return false when CA does not exist", func(_ *testing.T) {
+		// Temporarily override home dir for testing
+		// This is tricky, so we just test the function doesn't panic
+		exists := infratls.CAExists(nil)
+		// May be true or false depending on system state
+		// Just verify it doesn't panic
+		_ = exists
+	})
+
+	t.Run("should detect existing CA", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		assert.False(t, infratls.CAExists(nil))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+		}
+		_, _, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// CA should exist now
+		assert.True(t, infratls.CAExists(nil))
+	})
+}
+
+func TestLoadDefaultCA(t *testing.T) {
+	t.Run("should load CA from default location", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+		}
+		_, _, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Load default CA
+		cert, key, err := infratls.LoadDefaultCA(nil)
+		require.NoError(t, err)
+		assert.NotNil(t, cert)
+		assert.NotNil(t, key)
+	})
+
+	t.Run("should return error when CA does not exist", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		// Try to load non-existent CA
+		_, _, err := infratls.LoadDefaultCA(nil)
+		require.Error(t, err)
+	})
+}

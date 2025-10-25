@@ -58,13 +58,13 @@ func TestUncorsApp(t *testing.T) {
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(expectedResponse),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(expectedResponse),
 					},
 				},
 			})
@@ -134,13 +134,13 @@ func TestUncorsApp(t *testing.T) {
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(expectedResponse),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(expectedResponse),
 					},
 				},
 			})
@@ -160,13 +160,13 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, expectedResponse, response)
 
 			uncorsApp.Restart(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(otherExpectedRepose),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(otherExpectedRepose),
 					},
 				},
 			})
@@ -423,8 +423,6 @@ func TestApp_MultiPort(t *testing.T) {
 			WithHTTPS()
 
 		uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-			CertFile: certs.CertPath,
-			KeyFile:  certs.KeyPath,
 			Mappings: config.Mappings{
 				config.Mapping{
 					From:  hosts.Loopback.HTTPPort(httpPort),
@@ -432,9 +430,11 @@ func TestApp_MultiPort(t *testing.T) {
 					Mocks: mocks("http-response"),
 				},
 				config.Mapping{
-					From:  hosts.Loopback.HTTPSPort(httpsPort),
-					To:    hosts.Example.HTTPS(),
-					Mocks: mocks("https-response"),
+					From:     hosts.Loopback.HTTPSPort(httpsPort),
+					To:       hosts.Example.HTTPS(),
+					CertFile: certs.CertPath,
+					KeyFile:  certs.KeyPath,
+					Mocks:    mocks("https-response"),
 				},
 			},
 		})
@@ -485,7 +485,6 @@ func TestApp_StaticAndCacheHandler(t *testing.T) {
 	ctx := t.Context()
 	fs := afero.NewMemMapFs()
 
-	// Create a static file
 	err := afero.WriteFile(fs, "/static/test.txt", []byte("static content"), 0o644)
 	testutils.CheckNoError(t, err)
 

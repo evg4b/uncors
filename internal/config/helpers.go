@@ -99,13 +99,11 @@ func NormaliseMappings(mappings Mappings) Mappings {
 }
 
 func normalizeURL(parsedURL url.URL, host, portStr string) string {
-	// Determine the scheme (default to http if not specified)
 	scheme := parsedURL.Scheme
 	if scheme == "" {
 		scheme = httpScheme
 	}
 
-	// Parse port or use default based on scheme
 	var port int
 	if portStr != "" {
 		var err error

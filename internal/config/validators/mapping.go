@@ -21,6 +21,11 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 			Field: joinPath(m.Field, "options-handling"),
 			Value: m.Value.OptionsHandling,
 		},
+		&TLSValidator{
+			Field:   m.Field,
+			Mapping: m.Value,
+			Fs:      m.Fs,
+		},
 	))
 
 	for i, static := range m.Value.Statics {

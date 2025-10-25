@@ -227,7 +227,7 @@ The Lua script handler provides a more flexible and powerful way to generate dyn
 
 #### Migration Steps
 
-**Old Configuration (v0.7.x and earlier):**
+**Old Configuration (v0.5.x and earlier):**
 
 ```yaml
 mappings:
@@ -247,7 +247,7 @@ mappings:
           seed: 12345
 ```
 
-**New Configuration (v0.8.x) - Using Script Handler:**
+**New Configuration (v0.6.x) - Using Script Handler:**
 
 ```yaml
 mappings:

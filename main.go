@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -22,10 +23,35 @@ import (
 var Version = "X.X.X"
 
 func main() {
+	exitCode := run()
+	os.Exit(exitCode)
+}
+
+func run() int {
 	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
-		os.Exit(1)
 	})
+
+	fs := afero.NewOsFs()
+	infra.ConfigureLogger()
+
+	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
+		cmd := commands.NewGenerateCertsCommand()
+		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
+		cmd.DefineFlags(flags)
+		if err := flags.Parse(os.Args[2:]); err != nil {
+			log.Error(err)
+
+			return 1
+		}
+		if err := cmd.Execute(); err != nil {
+			log.Error(err)
+
+			return 1
+		}
+
+		return 0
+	}
 
 	pflag.Usage = func() {
 		println(tui.Logo(Version)) //nolint:forbidigo
@@ -33,11 +59,7 @@ func main() {
 		pflag.PrintDefaults()
 	}
 
-	fs := afero.NewOsFs()
-
 	viperInstance := viper.GetViper()
-
-	infra.ConfigureLogger()
 
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
@@ -60,6 +82,8 @@ func main() {
 	})
 	app.Wait()
 	log.Info("Server was stopped")
+
+	return 0
 }
 
 func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
