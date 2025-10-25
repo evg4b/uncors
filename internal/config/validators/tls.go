@@ -17,7 +17,6 @@ type TLSValidator struct {
 }
 
 func (v *TLSValidator) IsValid(errors *validate.Errors) {
-	// Check if the mapping is HTTPS
 	fromURL, err := v.Mapping.GetFromURL()
 	if err != nil {
 		return // URL validation is handled elsewhere
@@ -27,7 +26,6 @@ func (v *TLSValidator) IsValid(errors *validate.Errors) {
 		return // Not HTTPS, no TLS validation needed
 	}
 
-	// Check if both cert-file and key-file are provided or both are empty
 	hasCert := v.Mapping.CertFile != ""
 	hasKey := v.Mapping.KeyFile != ""
 

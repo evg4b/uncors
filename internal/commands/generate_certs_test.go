@@ -45,14 +45,12 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 
 func TestGenerateCertsCommand_Execute(t *testing.T) {
 	t.Run("should generate CA certificate successfully", func(t *testing.T) {
-		// Setup temporary home
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		// Create and execute command
 		cmd := commands.NewGenerateCertsCommand()
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
@@ -60,12 +58,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		// Verify files were created
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		assert.FileExists(t, filepath.Join(caDir, "ca.crt"))
 		assert.FileExists(t, filepath.Join(caDir, "ca.key"))
 
-		// Verify files are valid
 		cert, key, err := infratls.LoadCA(
 			filepath.Join(caDir, "ca.crt"),
 			filepath.Join(caDir, "ca.key"),
@@ -86,14 +82,12 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
-		// Set custom validity
 		err := flags.Set("validity-days", "730")
 		require.NoError(t, err)
 
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		// Load and verify certificate
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		cert, _, err := infratls.LoadCA(
 			filepath.Join(caDir, "ca.crt"),
@@ -101,7 +95,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Verify validity period is approximately 730 days
 		duration := cert.NotAfter.Sub(cert.NotBefore)
 		expectedDays := 730
 		actualDays := int(duration.Hours() / 24)
@@ -115,14 +108,12 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		// Generate CA first time
 		cmd1 := commands.NewGenerateCertsCommand()
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
-		// Try to generate again without force
 		cmd2 := commands.NewGenerateCertsCommand()
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
@@ -137,7 +128,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		// Generate CA first time
 		cmd1 := commands.NewGenerateCertsCommand()
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
@@ -151,7 +141,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Generate again with force
 		cmd2 := commands.NewGenerateCertsCommand()
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
@@ -161,7 +150,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err = cmd2.Execute()
 		require.NoError(t, err)
 
-		// Verify new certificate is different
 		cert2, _, err := infratls.LoadCA(
 			filepath.Join(caDir, "ca.crt"),
 			filepath.Join(caDir, "ca.key"),
@@ -174,7 +162,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		// Don't create the directory - let command create it
 		t.Setenv("HOME", fakeHome)
 
 		cmd := commands.NewGenerateCertsCommand()
@@ -184,7 +171,6 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		// Verify directory was created
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		assert.DirExists(t, caDir)
 	})

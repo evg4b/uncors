@@ -40,7 +40,6 @@ func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertManage
 // GetCertificate returns a certificate for the given host.
 // If auto-generation is enabled and no certificate exists, it generates a new one.
 func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
-	// Check cache first
 	m.mutex.RLock()
 	if cert, exists := m.cache[host]; exists {
 		m.mutex.RUnlock()
@@ -49,7 +48,6 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	}
 	m.mutex.RUnlock()
 
-	// Generate new certificate if generator is available
 	if m.generator == nil {
 		return nil, ErrNoCertificateAvailable
 	}
@@ -57,12 +55,10 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	// Double-check after acquiring write lock
 	if cert, exists := m.cache[host]; exists {
 		return cert, nil
 	}
 
-	// Generate and cache the certificate
 	cert, err := m.generator.GenerateCertificate(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate certificate for %s: %w", host, err)

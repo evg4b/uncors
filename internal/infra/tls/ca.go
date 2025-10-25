@@ -32,13 +32,11 @@ type CAConfig struct {
 // GenerateCA generates a new CA certificate and private key.
 // Returns the paths to the generated certificate and key files.
 func GenerateCA(config CAConfig) (string, string, error) {
-	// Generate private key
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate private key: %w", err)
 	}
 
-	// Create certificate template
 	notBefore := time.Now()
 	notAfter := notBefore.AddDate(0, 0, config.ValidityDays)
 
@@ -62,7 +60,6 @@ func GenerateCA(config CAConfig) (string, string, error) {
 		IsCA:                  true,
 	}
 
-	// Create self-signed certificate
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create certificate: %w", err)
@@ -113,7 +110,6 @@ func GenerateCA(config CAConfig) (string, string, error) {
 
 // LoadCA loads CA certificate and private key from files.
 func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
-	// Load certificate
 	certPEM, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read certificate file: %w", err)
@@ -129,7 +125,6 @@ func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error
 		return nil, nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	// Load private key
 	keyPEM, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read key file: %w", err)

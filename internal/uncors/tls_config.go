@@ -61,7 +61,6 @@ func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) 
 		return nil, fmt.Errorf("failed to parse mapping host: %w", err)
 	}
 
-	// Generate certificate for the host
 	cert, err := certManager.GetCertificate(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate certificate: %w", err)

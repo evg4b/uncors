@@ -94,7 +94,6 @@ func TestLoadCA(t *testing.T) {
 	t.Run("should load valid CA certificate and key", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		// Generate CA first
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			OutputDir:    tmpDir,
@@ -122,7 +121,6 @@ func TestLoadCA(t *testing.T) {
 	t.Run("should return error for non-existent key file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		// Generate CA to get cert file
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			OutputDir:    tmpDir,
@@ -153,7 +151,6 @@ func TestCheckExpiration(t *testing.T) {
 	t.Run("should detect expiring certificate", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		// Generate CA with short validity
 		config := infratls.CAConfig{
 			ValidityDays: 5, // 5 days
 			OutputDir:    tmpDir,
@@ -174,7 +171,6 @@ func TestCheckExpiration(t *testing.T) {
 	t.Run("should not detect non-expiring certificate", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		// Generate CA with long validity
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			OutputDir:    tmpDir,
@@ -194,7 +190,6 @@ func TestCheckExpiration(t *testing.T) {
 	t.Run("should handle already expired certificate", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		// Generate CA with minimal validity
 		config := infratls.CAConfig{
 			ValidityDays: 1,
 			OutputDir:    tmpDir,

@@ -35,14 +35,12 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet) {
 
 // Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
-	// Determine output directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
 	}
 	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
 
-	// Check if certificates already exist
 	certPath := filepath.Join(c.outputDir, "ca.crt")
 	keyPath := filepath.Join(c.outputDir, "ca.key")
 
@@ -61,7 +59,6 @@ func (c *GenerateCertsCommand) Execute() error {
 		}
 	}
 
-	// Generate CA certificate
 	log.Info("Generating CA certificate...")
 	certPath, keyPath, err = infratls.GenerateCA(infratls.CAConfig{
 		ValidityDays: c.validityDays,

@@ -177,7 +177,6 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 	app.servers = make(map[int]*portServer)
 	app.serversMutex.Unlock()
 
-	// Create a server for each port group
 	for _, group := range portGroups {
 		portSrv := &portServer{
 			port:     group.Port,
@@ -186,7 +185,6 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 			mutex:    &sync.Mutex{},
 		}
 
-		// Create server with handler for this port's mappings
 		portSrv.server = app.createServerForPort(ctx, uncorsConfig, group.Mappings)
 
 		app.serversMutex.Lock()

@@ -31,7 +31,6 @@ func TestNewCertGenerator(t *testing.T) {
 }
 
 func TestCertGenerator_GenerateCertificate(t *testing.T) {
-	// Setup: Create CA for all tests
 	tmpDir := t.TempDir()
 	config := infratls.CAConfig{
 		ValidityDays: 365,
@@ -66,7 +65,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		cert, err := generator.GenerateCertificate(host)
 		require.NoError(t, err)
 
-		// Parse the certificate
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 
@@ -94,7 +92,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		cert, err := generator.GenerateCertificate("verify.local")
 		require.NoError(t, err)
 
-		// Parse the generated certificate
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 
@@ -119,7 +116,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		cert2, err := generator.GenerateCertificate("host2.local")
 		require.NoError(t, err)
 
-		// Parse certificates
 		x509Cert1, err := x509.ParseCertificate(cert1.Certificate[0])
 		require.NoError(t, err)
 		x509Cert2, err := x509.ParseCertificate(cert2.Certificate[0])

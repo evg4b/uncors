@@ -33,13 +33,11 @@ func NewCertGenerator(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertGene
 // GenerateCertificate generates a new TLS certificate for the given host signed by CA.
 // Returns a tls.Certificate that can be used directly with TLS servers.
 func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, error) {
-	// Generate private key for the certificate
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 
-	// Create certificate template
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), serialNumberBits))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate serial number: %w", err)
@@ -62,7 +60,6 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 		DNSNames:              []string{host},
 	}
 
-	// Create certificate signed by CA
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, g.caCert, &privateKey.PublicKey, g.caKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create certificate: %w", err)
@@ -80,7 +77,6 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 
-	// Create tls.Certificate
 	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TLS certificate: %w", err)

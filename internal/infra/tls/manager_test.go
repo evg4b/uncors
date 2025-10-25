@@ -124,7 +124,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}
 
-		// First pass: generate and cache
 		certs := make(map[string]interface{})
 		for _, host := range hosts {
 			cert, err := manager.GetCertificate(host)
@@ -132,7 +131,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 			certs[host] = cert
 		}
 
-		// Second pass: should return cached certificates
 		for _, host := range hosts {
 			cert, err := manager.GetCertificate(host)
 			require.NoError(t, err)

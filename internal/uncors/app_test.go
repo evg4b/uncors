@@ -485,7 +485,6 @@ func TestApp_StaticAndCacheHandler(t *testing.T) {
 	ctx := t.Context()
 	fs := afero.NewMemMapFs()
 
-	// Create a static file
 	err := afero.WriteFile(fs, "/static/test.txt", []byte("static content"), 0o644)
 	testutils.CheckNoError(t, err)
 

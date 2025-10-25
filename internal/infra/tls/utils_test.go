@@ -40,18 +40,14 @@ func TestCAExists(t *testing.T) {
 	})
 
 	t.Run("should detect existing CA", func(t *testing.T) {
-		// Create temporary CA
 		tmpDir := t.TempDir()
 
-		// Create fake home directory
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		// CA should not exist initially
 		assert.False(t, infratls.CAExists())
 
-		// Generate CA
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		config := infratls.CAConfig{
 			ValidityDays: 365,
@@ -67,14 +63,12 @@ func TestCAExists(t *testing.T) {
 
 func TestLoadDefaultCA(t *testing.T) {
 	t.Run("should load CA from default location", func(t *testing.T) {
-		// Setup temporary home
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		// Generate CA in default location
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		config := infratls.CAConfig{
 			ValidityDays: 365,
@@ -91,7 +85,6 @@ func TestLoadDefaultCA(t *testing.T) {
 	})
 
 	t.Run("should return error when CA does not exist", func(t *testing.T) {
-		// Setup temporary home without CA
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")

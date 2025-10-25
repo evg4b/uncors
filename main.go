@@ -32,9 +32,10 @@ func run() int {
 		log.Error(value)
 	})
 
-	// Check if a command is specified
+	fs := afero.NewOsFs()
+	infra.ConfigureLogger()
+
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
-		infra.ConfigureLogger()
 		cmd := commands.NewGenerateCertsCommand()
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
@@ -58,11 +59,7 @@ func run() int {
 		pflag.PrintDefaults()
 	}
 
-	fs := afero.NewOsFs()
-
 	viperInstance := viper.GetViper()
-
-	infra.ConfigureLogger()
 
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
