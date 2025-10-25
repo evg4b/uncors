@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -26,6 +27,21 @@ func main() {
 		log.Error(value)
 		os.Exit(1)
 	})
+
+	// Check if a command is specified
+	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
+		infra.ConfigureLogger()
+		cmd := commands.NewGenerateCertsCommand()
+		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
+		cmd.DefineFlags(flags)
+		if err := flags.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
+		if err := cmd.Execute(); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 
 	pflag.Usage = func() {
 		println(tui.Logo(Version)) //nolint:forbidigo
