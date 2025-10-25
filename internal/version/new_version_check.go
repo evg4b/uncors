@@ -39,7 +39,7 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 
 	response, err := client.Do(request)
 	if err != nil {
-		log.Debugf("http error occupied: %v", err)
+		log.Debugf("http error occurred: %v", err)
 
 		return
 	}

@@ -111,7 +111,7 @@ func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 				To:   toPath,
 				Host: "&&&",
 			},
-			expectedError: "testField.host is not valid host",
+			expectedError: "testField.host is not a valid host",
 		},
 	}
 

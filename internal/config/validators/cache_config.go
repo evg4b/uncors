@@ -24,7 +24,7 @@ func (c *CacheConfigValidator) IsValid(errors *validate.Errors) {
 	))
 
 	if len(c.Value.Methods) == 0 {
-		errors.Add(c.Field, "methods must be not empty")
+		errors.Add(c.Field, "methods must not be empty")
 	}
 
 	for i, method := range c.Value.Methods {

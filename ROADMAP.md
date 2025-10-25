@@ -3,7 +3,7 @@
 ## [MVP (Pre-release)](https://github.com/evg4b/uncors/releases/tag/v0.0.0)
 
 - [X] Base reverse proxy server functionality
-- [X] Url mapping
+- [X] URL mapping
 
 ## [0.0.1 Release](https://github.com/evg4b/uncors/releases/tag/v0.0.1)
 
@@ -83,6 +83,6 @@
 
 ## Future features
 - [ ] Informative error messages
-- [ ] Content URl replacing (HTML, JSON, TEXT and other)
+- [ ] Content URL replacing (HTML, JSON, TEXT and other)
 - [ ] Occupied port handling
-- [ ] Collecting all request/response to har file
+- [ ] Collecting all request/response to HAR file

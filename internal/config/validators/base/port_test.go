@@ -34,7 +34,7 @@ func TestIsValid(t *testing.T) {
 					Value: port,
 				})
 
-				require.EqualError(t, errors, "port-field must be between 0 and 65535")
+				require.EqualError(t, errors, "port-field must be between 1 and 65535")
 			})
 		}
 	})

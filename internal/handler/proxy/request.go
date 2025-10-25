@@ -19,7 +19,7 @@ func (h *Handler) makeOriginalRequest(
 
 	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make requst to original server: %w", err)
+		return nil, fmt.Errorf("failed to make request to original server: %w", err)
 	}
 
 	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{

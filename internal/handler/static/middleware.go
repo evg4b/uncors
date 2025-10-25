@@ -33,7 +33,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		defer helpers.CloseSafe(file)
 
 		if err != nil {
-			if errors.Is(err, errNorHandled) {
+			if errors.Is(err, errNotHandled) {
 				next.ServeHTTP(response, request)
 			} else {
 				infra.HTTPError(response, err)

@@ -33,7 +33,7 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	fmt.Fprintln(writer, errorHeader)
 	fmt.Fprintln(writer)
 	fmt.Fprintln(writer)
-	fmt.Fprintf(writer, "Occurred error: %s\n", err)
+	fmt.Fprintf(writer, "An error occurred: %s\n", err)
 	fmt.Fprintln(writer)
 
 	fmt.Fprint(writer, "Stack trace: ")

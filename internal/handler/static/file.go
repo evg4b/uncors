@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var errNorHandled = errors.New("request is not handled")
+var errNotHandled = errors.New("request is not handled")
 
 func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
 	file, err := h.fs.Open(filePath)
@@ -51,7 +51,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 
 func (h *Middleware) openIndexFile() (afero.File, error) {
 	if len(h.index) == 0 {
-		return nil, errNorHandled
+		return nil, errNotHandled
 	}
 
 	file, err := h.fs.Open(h.index)

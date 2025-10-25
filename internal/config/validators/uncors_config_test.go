@@ -69,7 +69,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 						Methods:        []string{http.MethodGet},
 					},
 				},
-				error: "http-port must be between 0 and 65535",
+				error: "http-port must be between 1 and 65535",
 			},
 			{
 				name: "invalid https port",
@@ -87,7 +87,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 					CertFile: certPath,
 					KeyFile:  keyPath,
 				},
-				error: "https-port must be between 0 and 65535",
+				error: "https-port must be between 1 and 65535",
 			},
 			{
 				name: "invalid mapping",
