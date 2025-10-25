@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +63,7 @@ func TestPrintResponse(t *testing.T) {
 				t.Run("should print correctly", testutils.UniqOutput(output, func(t *testing.T, _ *bytes.Buffer) {
 					tui.PrintResponse(logger, testCase.request, testCase.statusCode)
 
-					snaps.MatchSnapshot(t, output.String())
+					testutils.MatchSnapshot(t, output.String())
 				}))
 			})
 		}
