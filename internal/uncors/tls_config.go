@@ -12,65 +12,65 @@ import (
 // buildTLSConfig creates a TLS configuration for the given HTTPS mappings.
 // It supports both custom certificates per mapping and auto-generated certificates.
 func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) {
-	// Map host -> certificate configuration
-	certMap := make(map[string]certConfig)
-	hasAutoGen := false
+	// Since all mappings in a port group share the same port, we can use the first mapping's certificate
+	// For SNI to work properly with custom certificates, all mappings should use the same certificate
+	// or we need to match by host. For now, we'll use the first mapping's certificate configuration.
 
-	for _, mapping := range mappings {
-		host, _, err := mapping.GetFromHostPort()
+	if len(mappings) == 0 {
+		return nil, fmt.Errorf("no mappings provided for TLS config")
+	}
+
+	firstMapping := mappings[0]
+	hasCustomCert := firstMapping.CertFile != "" && firstMapping.KeyFile != ""
+
+	// If custom certificate is provided, load it once and reuse
+	if hasCustomCert {
+		certData, err := afero.ReadFile(fs, firstMapping.CertFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse mapping host: %w", err)
+			return nil, fmt.Errorf("failed to read certificate file: %w", err)
 		}
-
-		if mapping.CertFile != "" && mapping.KeyFile != "" {
-			// Custom certificate specified
-			certMap[host] = certConfig{
-				certFile: mapping.CertFile,
-				keyFile:  mapping.KeyFile,
-			}
-		} else {
-			// Will use auto-generated certificate
-			hasAutoGen = true
-		}
-	}
-
-	// Load CA for auto-generation if needed
-	var certManager *infratls.CertManager
-	if hasAutoGen {
-		caCert, caKey, err := infratls.LoadDefaultCA()
+		keyData, err := afero.ReadFile(fs, firstMapping.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
+			return nil, fmt.Errorf("failed to read key file: %w", err)
+		}
+		cert, err := tls.X509KeyPair(certData, keyData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load certificate: %w", err)
 		}
 
-		// Check CA expiration
-		infratls.CheckCAExpiration(caCert)
-
-		certManager = infratls.NewCertManager(caCert, caKey)
+		return &tls.Config{
+			MinVersion:   tls.VersionTLS12,
+			Certificates: []tls.Certificate{cert},
+		}, nil
 	}
 
-	// Create TLS config with GetCertificate callback
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-		GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			// Check if custom certificate is specified for this host
-			if cfg, exists := certMap[hello.ServerName]; exists {
-				cert, err := tls.LoadX509KeyPair(cfg.certFile, cfg.keyFile)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load custom certificate for %s: %w", hello.ServerName, err)
-				}
-				return &cert, nil
-			}
-
-			// Use auto-generated certificate
-			if certManager != nil {
-				return certManager.GetCertificate(hello.ServerName)
-			}
-
-			return nil, fmt.Errorf("no certificate available for %s", hello.ServerName)
-		},
+	// Load CA for auto-generation
+	caCert, caKey, err := infratls.LoadDefaultCA()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}
 
-	return tlsConfig, nil
+	// Check CA expiration
+	infratls.CheckCAExpiration(caCert)
+
+	certManager := infratls.NewCertManager(caCert, caKey)
+
+	// Extract host from first mapping for certificate generation
+	host, _, err := firstMapping.GetFromHostPort()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse mapping host: %w", err)
+	}
+
+	// Generate certificate for the host
+	cert, err := certManager.GetCertificate(host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate certificate: %w", err)
+	}
+
+	return &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{*cert},
+	}, nil
 }
 
 type certConfig struct {

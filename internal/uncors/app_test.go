@@ -58,13 +58,13 @@ func TestUncorsApp(t *testing.T) {
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(expectedResponse),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(expectedResponse),
 					},
 				},
 			})
@@ -134,13 +134,13 @@ func TestUncorsApp(t *testing.T) {
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(expectedResponse),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(expectedResponse),
 					},
 				},
 			})
@@ -160,13 +160,13 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, expectedResponse, response)
 
 			uncorsApp.Restart(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:  hosts.Loopback.HTTPSPort(port),
-						To:    hosts.Github.HTTPS(),
-						Mocks: mocks(otherExpectedRepose),
+						From:     hosts.Loopback.HTTPSPort(port),
+						To:       hosts.Github.HTTPS(),
+						CertFile: certs.CertPath,
+						KeyFile:  certs.KeyPath,
+						Mocks:    mocks(otherExpectedRepose),
 					},
 				},
 			})
