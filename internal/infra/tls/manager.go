@@ -11,7 +11,10 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-const expirationWarningThreshold = 7 * 24 * time.Hour // 7 days
+const (
+	expirationWarningThreshold = 7 * 24 * time.Hour // 7 days
+	hoursInDay                 = 24
+)
 
 // CertManager manages TLS certificates for HTTPS mappings.
 type CertManager struct {
@@ -41,13 +44,14 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	m.mutex.RLock()
 	if cert, exists := m.cache[host]; exists {
 		m.mutex.RUnlock()
+
 		return cert, nil
 	}
 	m.mutex.RUnlock()
 
 	// Generate new certificate if generator is available
 	if m.generator == nil {
-		return nil, fmt.Errorf("no certificate available for host %s and auto-generation is disabled", host)
+		return nil, ErrNoCertificateAvailable
 	}
 
 	m.mutex.Lock()
@@ -74,7 +78,7 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 func CheckCAExpiration(cert *x509.Certificate) {
 	expiresSoon, timeLeft := CheckExpiration(cert, expirationWarningThreshold)
 	if expiresSoon {
-		days := int(timeLeft.Hours() / 24)
+		days := int(timeLeft.Hours() / hoursInDay)
 		log.Warnf("CA certificate expires in %d days! Consider regenerating it with: uncors generate-certs --force", days)
 	}
 }

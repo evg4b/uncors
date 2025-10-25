@@ -33,36 +33,47 @@ func (v *TLSValidator) IsValid(errors *validate.Errors) {
 
 	if hasCert != hasKey {
 		errors.Add(v.Field, "both cert-file and key-file must be provided together")
+
 		return
 	}
 
 	// If custom certificates are provided, validate they exist
 	if hasCert && hasKey {
-		if exists, err := afero.Exists(v.Fs, v.Mapping.CertFile); err != nil || !exists {
-			errors.Add(joinPath(v.Field, "cert-file"), fmt.Sprintf("certificate file not found: %s", v.Mapping.CertFile))
-		}
-		if exists, err := afero.Exists(v.Fs, v.Mapping.KeyFile); err != nil || !exists {
-			errors.Add(joinPath(v.Field, "key-file"), fmt.Sprintf("key file not found: %s", v.Mapping.KeyFile))
-		}
+		v.validateCustomCertificates(errors)
+
 		return
 	}
 
 	// If no custom certificates provided, check if CA exists for auto-generation
+	v.validateCAAvailability(errors, fromURL.Host)
+}
+
+func (v *TLSValidator) validateCustomCertificates(errors *validate.Errors) {
+	if exists, err := afero.Exists(v.Fs, v.Mapping.CertFile); err != nil || !exists {
+		errors.Add(joinPath(v.Field, "cert-file"), fmt.Sprintf("certificate file not found: %s", v.Mapping.CertFile))
+	}
+	if exists, err := afero.Exists(v.Fs, v.Mapping.KeyFile); err != nil || !exists {
+		errors.Add(joinPath(v.Field, "key-file"), fmt.Sprintf("key file not found: %s", v.Mapping.KeyFile))
+	}
+}
+
+func (v *TLSValidator) validateCAAvailability(errors *validate.Errors, host string) {
 	if !infratls.CAExists() {
-		errorMessage := formatTLSError(fromURL.Host)
+		errorMessage := formatTLSError(host)
 		errors.Add(v.Field, errorMessage)
 	}
 }
 
 func formatTLSError(host string) string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("HTTPS mapping '%s' requires TLS certificates.\n\n", host))
-	sb.WriteString("Please choose one of the following options:\n")
-	sb.WriteString("  1. Provide custom certificates for this mapping:\n")
-	sb.WriteString("     cert-file: /path/to/your/certificate.crt\n")
-	sb.WriteString("     key-file: /path/to/your/private-key.key\n\n")
-	sb.WriteString("  2. Generate a local CA certificate for automatic TLS:\n")
-	sb.WriteString("     uncors generate-certs\n\n")
-	sb.WriteString("After generating CA, you can add it to your system's trusted certificates.")
-	return sb.String()
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("HTTPS mapping '%s' requires TLS certificates.\n\n", host))
+	builder.WriteString("Please choose one of the following options:\n")
+	builder.WriteString("  1. Provide custom certificates for this mapping:\n")
+	builder.WriteString("     cert-file: /path/to/your/certificate.crt\n")
+	builder.WriteString("     key-file: /path/to/your/private-key.key\n\n")
+	builder.WriteString("  2. Generate a local CA certificate for automatic TLS:\n")
+	builder.WriteString("     uncors generate-certs\n\n")
+	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
+
+	return builder.String()
 }

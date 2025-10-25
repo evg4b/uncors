@@ -14,6 +14,7 @@ func GetCAPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
+
 	return filepath.Join(homeDir, ".config", "uncors"), nil
 }
 

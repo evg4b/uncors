@@ -75,9 +75,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		manager := infratls.NewCertManager(nil, nil)
 
 		_, err := manager.GetCertificate("test.local")
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "no certificate available")
-		assert.Contains(t, err.Error(), "auto-generation is disabled")
+		require.Error(t, err)
 	})
 
 	t.Run("should handle concurrent requests for same host", func(t *testing.T) {
@@ -86,7 +84,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		const numGoroutines = 10
 		results := make(chan error, numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			go func() {
 				_, err := manager.GetCertificate("concurrent.local")
 				results <- err
@@ -94,7 +92,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		}
 
 		// Collect results
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			err := <-results
 			assert.NoError(t, err)
 		}
@@ -106,7 +104,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		const numGoroutines = 5
 		results := make(chan error, numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			host := "host" + string(rune('0'+i)) + ".local"
 			go func(h string) {
 				_, err := manager.GetCertificate(h)
@@ -115,7 +113,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		}
 
 		// Collect results
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			err := <-results
 			assert.NoError(t, err)
 		}

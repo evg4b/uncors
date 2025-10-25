@@ -23,9 +23,13 @@ import (
 var Version = "X.X.X"
 
 func main() {
+	exitCode := run()
+	os.Exit(exitCode)
+}
+
+func run() int {
 	defer helpers.PanicInterceptor(func(value any) {
 		log.Error(value)
-		os.Exit(1)
 	})
 
 	// Check if a command is specified
@@ -35,12 +39,17 @@ func main() {
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
 		if err := flags.Parse(os.Args[2:]); err != nil {
-			log.Fatal(err)
+			log.Error(err)
+
+			return 1
 		}
 		if err := cmd.Execute(); err != nil {
-			log.Fatal(err)
+			log.Error(err)
+
+			return 1
 		}
-		return
+
+		return 0
 	}
 
 	pflag.Usage = func() {
@@ -76,6 +85,8 @@ func main() {
 	})
 	app.Wait()
 	log.Info("Server was stopped")
+
+	return 0
 }
 
 func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {

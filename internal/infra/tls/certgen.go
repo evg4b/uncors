@@ -40,7 +40,7 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 	}
 
 	// Create certificate template
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), serialNumberBits))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}

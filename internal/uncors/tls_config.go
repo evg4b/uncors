@@ -17,7 +17,7 @@ func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) 
 	// or we need to match by host. For now, we'll use the first mapping's certificate configuration.
 
 	if len(mappings) == 0 {
-		return nil, fmt.Errorf("no mappings provided for TLS config")
+		return nil, infratls.ErrNoMappingsProvided
 	}
 
 	firstMapping := mappings[0]
@@ -71,9 +71,4 @@ func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) 
 		MinVersion:   tls.VersionTLS12,
 		Certificates: []tls.Certificate{*cert},
 	}, nil
-}
-
-type certConfig struct {
-	certFile string
-	keyFile  string
 }

@@ -31,6 +31,7 @@ func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, tlsCo
 		addr: addr,
 		serve: func(l net.Listener) error {
 			tlsListener := tls.NewListener(l, tlsConfig)
+
 			return portSrv.server.Serve(tlsListener)
 		},
 		setListener: func(l net.Listener) {

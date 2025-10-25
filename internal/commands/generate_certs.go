@@ -48,10 +48,16 @@ func (c *GenerateCertsCommand) Execute() error {
 
 	if !c.force {
 		if _, err := os.Stat(certPath); err == nil {
-			return fmt.Errorf("CA certificate already exists at %s\nUse --force to overwrite", certPath)
+			log.Errorf("CA certificate already exists at %s", certPath)
+			log.Info("Use --force to overwrite")
+
+			return ErrCAAlreadyExists
 		}
 		if _, err := os.Stat(keyPath); err == nil {
-			return fmt.Errorf("CA private key already exists at %s\nUse --force to overwrite", keyPath)
+			log.Errorf("CA private key already exists at %s", keyPath)
+			log.Info("Use --force to overwrite")
+
+			return ErrCAKeyAlreadyExists
 		}
 	}
 

@@ -14,7 +14,10 @@ import (
 )
 
 const (
-	keySize            = 2048
+	keySize             = 2048
+	serialNumberBits    = 128
+	dirPermissions      = 0o755
+	keyFilePermissions  = 0o600
 	defaultOrganization = "UNCORS Development CA"
 	defaultCommonName   = "UNCORS Local Development Root CA"
 	defaultCountry      = "US"
@@ -28,7 +31,7 @@ type CAConfig struct {
 
 // GenerateCA generates a new CA certificate and private key.
 // Returns the paths to the generated certificate and key files.
-func GenerateCA(config CAConfig) (certPath, keyPath string, err error) {
+func GenerateCA(config CAConfig) (string, string, error) {
 	// Generate private key
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
@@ -39,7 +42,7 @@ func GenerateCA(config CAConfig) (certPath, keyPath string, err error) {
 	notBefore := time.Now()
 	notAfter := notBefore.AddDate(0, 0, config.ValidityDays)
 
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), serialNumberBits))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate serial number: %w", err)
 	}
@@ -66,12 +69,12 @@ func GenerateCA(config CAConfig) (certPath, keyPath string, err error) {
 	}
 
 	// Ensure output directory exists
-	if err := os.MkdirAll(config.OutputDir, 0o755); err != nil {
+	if err := os.MkdirAll(config.OutputDir, dirPermissions); err != nil {
 		return "", "", fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	// Write certificate file
-	certPath = filepath.Join(config.OutputDir, "ca.crt")
+	certPath := filepath.Join(config.OutputDir, "ca.crt")
 	certFile, err := os.Create(certPath)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create certificate file: %w", err)
@@ -86,14 +89,14 @@ func GenerateCA(config CAConfig) (certPath, keyPath string, err error) {
 	}
 
 	// Write private key file
-	keyPath = filepath.Join(config.OutputDir, "ca.key")
+	keyPath := filepath.Join(config.OutputDir, "ca.key")
 	keyFile, err := os.Create(keyPath)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create key file: %w", err)
 	}
 	defer keyFile.Close()
 
-	if err := os.Chmod(keyPath, 0o600); err != nil {
+	if err := os.Chmod(keyPath, keyFilePermissions); err != nil {
 		return "", "", fmt.Errorf("failed to set key file permissions: %w", err)
 	}
 
@@ -118,7 +121,7 @@ func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error
 
 	certBlock, _ := pem.Decode(certPEM)
 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
-		return nil, nil, fmt.Errorf("failed to decode certificate PEM")
+		return nil, nil, ErrInvalidCertificatePEM
 	}
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
@@ -134,7 +137,7 @@ func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error
 
 	keyBlock, _ := pem.Decode(keyPEM)
 	if keyBlock == nil || keyBlock.Type != "RSA PRIVATE KEY" {
-		return nil, nil, fmt.Errorf("failed to decode private key PEM")
+		return nil, nil, ErrInvalidPrivateKeyPEM
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
@@ -147,8 +150,9 @@ func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error
 
 // CheckExpiration checks if certificate expires within the given duration.
 // Returns true if certificate expires soon, along with the time until expiration.
-func CheckExpiration(cert *x509.Certificate, threshold time.Duration) (expiresSoon bool, timeLeft time.Duration) {
-	timeLeft = time.Until(cert.NotAfter)
-	expiresSoon = timeLeft < threshold
+func CheckExpiration(cert *x509.Certificate, threshold time.Duration) (bool, time.Duration) {
+	timeLeft := time.Until(cert.NotAfter)
+	expiresSoon := timeLeft < threshold
+
 	return expiresSoon, timeLeft
 }

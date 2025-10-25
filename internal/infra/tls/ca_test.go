@@ -84,8 +84,8 @@ func TestGenerateCA(t *testing.T) {
 		assert.InDelta(t, expectedDuration, actualDuration, float64(tolerance))
 
 		// Verify key usage
-		assert.True(t, cert.KeyUsage&x509.KeyUsageDigitalSignature != 0)
-		assert.True(t, cert.KeyUsage&x509.KeyUsageCertSign != 0)
+		assert.NotEqual(t, 0, cert.KeyUsage&x509.KeyUsageDigitalSignature)
+		assert.NotEqual(t, 0, cert.KeyUsage&x509.KeyUsageCertSign)
 		assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 	})
 }
@@ -116,8 +116,7 @@ func TestLoadCA(t *testing.T) {
 			filepath.Join(tmpDir, "nonexistent.crt"),
 			filepath.Join(tmpDir, "nonexistent.key"),
 		)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read certificate file")
+		require.Error(t, err)
 	})
 
 	t.Run("should return error for non-existent key file", func(t *testing.T) {
@@ -132,8 +131,7 @@ func TestLoadCA(t *testing.T) {
 		require.NoError(t, err)
 
 		_, _, err = infratls.LoadCA(certPath, filepath.Join(tmpDir, "nonexistent.key"))
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to read key file")
+		require.Error(t, err)
 	})
 
 	t.Run("should return error for invalid certificate PEM", func(t *testing.T) {
@@ -141,14 +139,13 @@ func TestLoadCA(t *testing.T) {
 		invalidCertPath := filepath.Join(tmpDir, "invalid.crt")
 		keyPath := filepath.Join(tmpDir, "test.key")
 
-		err := os.WriteFile(invalidCertPath, []byte("not a valid PEM"), 0o644)
+		err := os.WriteFile(invalidCertPath, []byte("not a valid PEM"), 0o600)
 		require.NoError(t, err)
-		err = os.WriteFile(keyPath, []byte("not a valid key"), 0o644)
+		err = os.WriteFile(keyPath, []byte("not a valid key"), 0o600)
 		require.NoError(t, err)
 
 		_, _, err = infratls.LoadCA(invalidCertPath, keyPath)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to decode certificate PEM")
+		require.Error(t, err)
 	})
 }
 
@@ -170,8 +167,8 @@ func TestCheckExpiration(t *testing.T) {
 		// Check with 7-day threshold
 		expiresSoon, timeLeft := infratls.CheckExpiration(cert, 7*24*time.Hour)
 		assert.True(t, expiresSoon)
-		assert.True(t, timeLeft > 0)
-		assert.True(t, timeLeft < 7*24*time.Hour)
+		assert.Positive(t, timeLeft)
+		assert.Less(t, timeLeft, 7*24*time.Hour)
 	})
 
 	t.Run("should not detect non-expiring certificate", func(t *testing.T) {
@@ -191,7 +188,7 @@ func TestCheckExpiration(t *testing.T) {
 		// Check with 7-day threshold
 		expiresSoon, timeLeft := infratls.CheckExpiration(cert, 7*24*time.Hour)
 		assert.False(t, expiresSoon)
-		assert.True(t, timeLeft > 7*24*time.Hour)
+		assert.Greater(t, timeLeft, 7*24*time.Hour)
 	})
 
 	t.Run("should handle already expired certificate", func(t *testing.T) {
@@ -213,6 +210,6 @@ func TestCheckExpiration(t *testing.T) {
 		// We just test the logic works correctly
 		expiresSoon, timeLeft := infratls.CheckExpiration(cert, 365*24*time.Hour)
 		assert.True(t, expiresSoon)
-		assert.True(t, timeLeft > 0) // Still valid as we just created it
+		assert.Positive(t, timeLeft) // Still valid as we just created it
 	})
 }

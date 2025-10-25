@@ -76,8 +76,8 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		assert.Contains(t, x509Cert.Subject.Organization, "UNCORS Development CA")
 
 		// Verify key usage
-		assert.True(t, x509Cert.KeyUsage&x509.KeyUsageDigitalSignature != 0)
-		assert.True(t, x509Cert.KeyUsage&x509.KeyUsageKeyEncipherment != 0)
+		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageDigitalSignature)
+		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageKeyEncipherment)
 		assert.Contains(t, x509Cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 
 		// Verify it's not a CA
@@ -138,6 +138,7 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 
 		// Verify the certificate can be used in TLS config
 		tlsConfig := &tls.Config{
+			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{*cert},
 		}
 

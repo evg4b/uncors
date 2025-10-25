@@ -213,6 +213,7 @@ func (app *App) startListener(_ context.Context, portSrv *portServer, _ *config.
 		tlsConfig, tlsErr := buildTLSConfig(app.fs, portSrv.mappings)
 		if tlsErr != nil {
 			log.Errorf("Failed to build TLS config for port %d: %v", portSrv.port, tlsErr)
+
 			return
 		}
 		err = app.listenAndServeTLSForPort(portSrv, addr, tlsConfig)

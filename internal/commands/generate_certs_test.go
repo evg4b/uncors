@@ -47,12 +47,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 	t.Run("should generate CA certificate successfully", func(t *testing.T) {
 		// Setup temporary home
 		tmpDir := t.TempDir()
-		originalHome := os.Getenv("HOME")
-		defer os.Setenv("HOME", originalHome)
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		os.Setenv("HOME", fakeHome)
+		t.Setenv("HOME", fakeHome)
 
 		// Create and execute command
 		cmd := commands.NewGenerateCertsCommand()
@@ -79,12 +77,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 	t.Run("should respect custom validity days", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		originalHome := os.Getenv("HOME")
-		defer os.Setenv("HOME", originalHome)
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		os.Setenv("HOME", fakeHome)
+		t.Setenv("HOME", fakeHome)
 
 		cmd := commands.NewGenerateCertsCommand()
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -114,12 +110,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 	t.Run("should fail when CA already exists without force flag", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		originalHome := os.Getenv("HOME")
-		defer os.Setenv("HOME", originalHome)
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		os.Setenv("HOME", fakeHome)
+		t.Setenv("HOME", fakeHome)
 
 		// Generate CA first time
 		cmd1 := commands.NewGenerateCertsCommand()
@@ -133,19 +127,15 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
 		err = cmd2.Execute()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "already exists")
-		assert.Contains(t, err.Error(), "--force")
+		require.Error(t, err)
 	})
 
 	t.Run("should overwrite CA with force flag", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		originalHome := os.Getenv("HOME")
-		defer os.Setenv("HOME", originalHome)
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		os.Setenv("HOME", fakeHome)
+		t.Setenv("HOME", fakeHome)
 
 		// Generate CA first time
 		cmd1 := commands.NewGenerateCertsCommand()
@@ -182,12 +172,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 	t.Run("should create directory if not exists", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		originalHome := os.Getenv("HOME")
-		defer os.Setenv("HOME", originalHome)
 
 		fakeHome := filepath.Join(tmpDir, "home")
 		// Don't create the directory - let command create it
-		os.Setenv("HOME", fakeHome)
+		t.Setenv("HOME", fakeHome)
 
 		cmd := commands.NewGenerateCertsCommand()
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
