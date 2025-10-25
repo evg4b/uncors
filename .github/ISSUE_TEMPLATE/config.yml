@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/evg4b/uncors/wiki
+    about: Check the wiki for documentation and guides
+  - name: Discussions
+    url: https://github.com/evg4b/uncors/discussions
+    about: Ask questions and discuss ideas with the community
