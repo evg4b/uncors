@@ -105,6 +105,7 @@ Understanding these terms will help you navigate the documentation more effectiv
 - [Migration guide](./8.-Migration-Guide)
 - [Script handler](./9.-Script-Handler)
 - [Troubleshooting](./10.-Troubleshooting)
+- [Real-world examples](./11.-Real-World-Examples)
 
 ## List of core features
 
