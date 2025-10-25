@@ -42,7 +42,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 			)
 
 			req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
-			req.Header.Set("User-Agent", "TestAgent/1.0")
+			req.Header.Set(headers.UserAgent, "TestAgent/1.0")
 			recorder := httptest.NewRecorder()
 
 			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)

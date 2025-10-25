@@ -187,7 +187,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 			reqHeader: http.Header{
 				headers.Origin:      []string{"http://localhost:3000"},
 				xCustomHeader:       []string{"custom-value"},
-				"User-Agent":        []string{"Mozilla/5.0"},
+				headers.UserAgent:   []string{"Mozilla/5.0"},
 				headers.ContentType: []string{"application/json"},
 			},
 			expectedHeaders: http.Header{

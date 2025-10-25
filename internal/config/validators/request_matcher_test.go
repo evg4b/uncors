@@ -3,6 +3,7 @@ package validators_test
 import (
 	"testing"
 
+	"github.com/go-http-utils/headers"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 
@@ -24,8 +25,8 @@ func TestRequestMatcherValidator(t *testing.T) {
 					"param2": "value2",
 				},
 				Headers: map[string]string{
-					"Content-Type": "application/json",
-					"Accept":       "application/json",
+					headers.ContentType: "application/json",
+					headers.Accept:      "application/json",
 				},
 			},
 		})

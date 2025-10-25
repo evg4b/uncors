@@ -6,6 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/go-http-utils/headers"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 )
@@ -81,8 +82,8 @@ func TestScriptValidator(t *testing.T) {
 						"sort":   "name",
 					},
 					Headers: map[string]string{
-						"X-Custom-Header": "value",
-						"Authorization":   "Bearer token",
+						"X-Custom-Header":     "value",
+						headers.Authorization: "Bearer token",
 					},
 				},
 				Script: testScriptContent,

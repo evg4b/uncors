@@ -5,6 +5,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/go-http-utils/headers"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +26,7 @@ func TestOptionsValidator(t *testing.T) {
 				Field: "options",
 				Value: config.OptionsHandling{
 					Headers: map[string]string{
-						"Content-Type": "application/json",
+						headers.ContentType: "application/json",
 					},
 					Code: 200,
 				},
@@ -40,7 +41,7 @@ func TestOptionsValidator(t *testing.T) {
 			Field: "options",
 			Value: config.OptionsHandling{
 				Headers: map[string]string{
-					"Content-Type": "application/json",
+					headers.ContentType: "application/json",
 				},
 				Code: -10,
 			},
