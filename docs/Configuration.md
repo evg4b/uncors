@@ -306,27 +306,78 @@ mappings:
 
 # HTTPS Configuration
 
-UNCORS supports HTTPS for both incoming requests and upstream connections. HTTPS functionality requires valid SSL/TLS certificates—both production certificates and self-signed certificates are supported.
+UNCORS supports HTTPS for both incoming requests and upstream connections with two certificate management options:
 
-**Certificate requirements:**
+1. **Auto-generated certificates** (recommended for development)
+2. **Custom certificates** (per-mapping or global)
 
-- Certificate file (`.crt` or `.pem`)
-- Private key file (`.key`)
+## Auto-Generated Certificates
 
-**Configuration example:**
+UNCORS can automatically generate and sign TLS certificates on-the-fly using a local Certificate Authority (CA).
+
+**Setup:**
+
+```bash
+# Generate CA certificate (one-time setup)
+uncors generate-certs
+
+# Optional: specify validity period
+uncors generate-certs --validity-days 730
+
+# Force regenerate existing CA
+uncors generate-certs --force
+```
+
+This creates a CA certificate in `~/.config/uncors/`:
+- `ca.crt` - CA certificate (add to system trust store)
+- `ca.key` - CA private key
+
+**Trust the CA certificate:**
+
+After generating, add `ca.crt` to your system's trusted certificates:
+
+- **macOS**: Double-click `ca.crt` and add to Keychain Access
+- **Linux**: Copy to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`
+- **Windows**: Import via Certificate Manager (certmgr.msc)
+
+**HTTPS mapping with auto-generation:**
+
+```yaml
+mappings:
+  - from: https://localhost:8443
+    to: https://github.com
+  # Certificates are generated automatically for each host
+```
+
+> [!TIP]
+> Auto-generated certificates are cached in memory and regenerated only when needed.
+
+## Custom Certificates
+
+You can provide custom certificates per-mapping or globally.
+
+**Per-mapping certificates:**
+
+```yaml
+mappings:
+  - from: https://localhost:8443
+    to: https://github.com
+    cert-file: ~/path/to/localhost.crt
+    key-file: ~/path/to/localhost.key
+
+  - from: https://api.local:9443
+    to: https://api.example.com
+    # This mapping uses auto-generated certificates
+```
+
+**Global certificates (legacy):**
 
 ```yaml
 cert-file: ~/path/to/cert.crt
 key-file: ~/path/to/cert.key
-```
 
-**Mapping configuration for HTTPS:**
-
-```yaml
 mappings:
   - https://localhost:8443: https://github.com
-  # OR
-  - //localhost:8443: //github.com
 ```
 
 > [!NOTE]
