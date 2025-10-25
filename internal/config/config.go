@@ -71,13 +71,13 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 func defineFlags() {
 	flags = pflag.NewFlagSet("uncors", pflag.ContinueOnError)
 	flags.Usage = pflag.Usage
-	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for to the resource to be proxy")
-	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for to the resource from which proxying will take place") //nolint: lll
+	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
+	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
 	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
 	flags.UintP("https-port", "s", 0, "Local HTTPS listening port")
 	flags.String("cert-file", "", "Path to HTTPS certificate file")
-	flags.String("key-file", "", "Path to matching for certificate private key")
-	flags.String("proxy", "", "HTTP/HTTPS proxy to provide requests to real server (used system by default)")
+	flags.String("key-file", "", "Path to private key file matching the certificate")
+	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.StringP("config", "c", "", "Path to the configuration file")
 }
