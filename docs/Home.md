@@ -73,6 +73,26 @@ That's it! UNCORS is now proxying requests from `api.local` to GitHub's API.
 - Explore [Response Mocking](./3.-Response-mocking) to add fake endpoints
 - Learn about [Static File Serving](./4.-Static-file-serving) for local development
 
+## Key Terminology
+
+Understanding these terms will help you navigate the documentation more effectively:
+
+| Term | Definition |
+| ---- | ---------- |
+| **Host Mapping** | A configuration that defines how requests from a source domain are routed to a target domain (defined by `from` and `to` URLs) |
+| **Source Domain** | The local domain where UNCORS listens for requests (specified in the `from` URL, e.g., `http://api.local:3000`) |
+| **Target Domain** (Upstream Server) | The remote server where requests are proxied (specified in the `to` URL, e.g., `https://api.example.com`) |
+| **Mapping Configuration** | Settings specific to individual host mappings, including mocks, statics, scripts, cache, and rewrites |
+| **Global Configuration** | Settings that apply to all mappings, such as debug mode, proxy settings, and SSL certificates |
+| **Scheme** | The protocol prefix of a URL (`http://`, `https://`, or `//` for scheme-agnostic) |
+| **Port** | The network port number specified in the `from` URL (defaults: 80 for HTTP, 443 for HTTPS) |
+| **Mock** | A configuration that intercepts specific requests and returns pre-defined responses without contacting the upstream server |
+| **Static File** | Local files served directly by UNCORS instead of proxying to the upstream server |
+| **Cache** | A mechanism that stores responses from the upstream server to reduce latency on subsequent identical requests |
+| **Rewrite** | A transformation applied to the request path or host before forwarding to the upstream server |
+| **Script Handler** | Custom Lua code that generates dynamic responses based on request properties |
+| **OPTIONS Handling** | Built-in processing of HTTP OPTIONS requests for CORS preflight checks |
+
 ## Documentation
 
 - [Installation](./1.-Installation)
