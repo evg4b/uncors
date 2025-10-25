@@ -27,7 +27,7 @@ func TestProxyValidatorIsValid(t *testing.T) {
 		})
 
 		assert.NotEmpty(t, err)
-		require.EqualError(t, err, "testField is not valid url")
+		require.EqualError(t, err, "testField is not a valid URL")
 	})
 
 	t.Run("empty url", func(t *testing.T) {

@@ -18,6 +18,6 @@ func (p *ProxyValidator) IsValid(errors *validate.Errors) {
 	}
 
 	if _, err := urlparser.Parse(p.Value); err != nil {
-		errors.Add(p.Field, fmt.Sprintf("%s is not valid url", p.Field))
+		errors.Add(p.Field, fmt.Sprintf("%s is not a valid URL", p.Field))
 	}
 }

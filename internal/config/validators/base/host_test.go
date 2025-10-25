@@ -70,12 +70,12 @@ func TestHostValidator(t *testing.T) {
 			{
 				name:  "host with path",
 				value: "example.com/path",
-				error: "field must not contain path",
+				error: "field must not contain a path",
 			},
 			{
 				name:  "host with query",
 				value: "example.com?query=1",
-				error: "field must not contain query",
+				error: "field must not contain a query",
 			},
 			{
 				name:  "host with unsupported scheme",
@@ -85,7 +85,7 @@ func TestHostValidator(t *testing.T) {
 			{
 				name:  "host is not valid",
 				value: "loca:::lhost",
-				error: "field is not valid host",
+				error: "field is not a valid host",
 			},
 		}
 

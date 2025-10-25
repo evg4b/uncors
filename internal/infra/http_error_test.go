@@ -19,7 +19,7 @@ const expectedPage = `
 ███████  ██████   ██████      ███████ ██   ██ ██   ██  ██████  ██   ██ 
 
 
-Occurred error: net/http: abort Handler
+An error occurred: net/http: abort Handler
 `
 
 func TestHttpError(t *testing.T) {

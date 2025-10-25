@@ -21,17 +21,17 @@ func (h *HostValidator) IsValid(errors *validate.Errors) {
 
 	uri, err := urlparser.Parse(h.Value)
 	if err != nil {
-		errors.Add(h.Field, fmt.Sprintf("%s is not valid host", h.Field))
+		errors.Add(h.Field, fmt.Sprintf("%s is not a valid host", h.Field))
 
 		return
 	}
 
 	if uri.Path != "" {
-		errors.Add(h.Field, fmt.Sprintf("%s must not contain path", h.Field))
+		errors.Add(h.Field, fmt.Sprintf("%s must not contain a path", h.Field))
 	}
 
 	if uri.RawQuery != "" {
-		errors.Add(h.Field, fmt.Sprintf("%s must not contain query", h.Field))
+		errors.Add(h.Field, fmt.Sprintf("%s must not contain a query", h.Field))
 	}
 
 	if uri.Scheme != "http" && uri.Scheme != "https" && uri.Scheme != "" {

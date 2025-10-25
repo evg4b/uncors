@@ -79,7 +79,7 @@ func TestCacheConfigValidator(t *testing.T) {
 					ExpirationTime: 5 * time.Minute,
 					ClearTime:      30 * time.Second,
 				},
-				error: "methods must be not empty",
+				error: "methods must not be empty",
 			},
 			{
 				name: "config with invalid methods",

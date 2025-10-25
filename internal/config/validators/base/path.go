@@ -29,10 +29,10 @@ func (p *PathValidator) IsValid(errors *validate.Errors) {
 
 	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(p.Value, "/"))
 	if err != nil {
-		errors.Add(p.Field, fmt.Sprintf("%s is not valid path", p.Field))
+		errors.Add(p.Field, fmt.Sprintf("%s is not a valid path", p.Field))
 	}
 
 	if uri.RawQuery != "" {
-		errors.Add(p.Field, fmt.Sprintf("%s must not contain query", p.Field))
+		errors.Add(p.Field, fmt.Sprintf("%s must not contain a query", p.Field))
 	}
 }

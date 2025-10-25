@@ -61,7 +61,7 @@ func TestPathValidator(t *testing.T) {
 				{
 					name:  "path with query",
 					value: "/api/info?demo=1",
-					error: "field must not contain query",
+					error: "field must not contain a query",
 				},
 				{
 					name:  "path with host",
