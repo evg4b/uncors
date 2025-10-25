@@ -3,10 +3,8 @@ package tui_test
 import (
 	"testing"
 
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/gkampitakis/go-snaps/snaps"
-
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/testing/testutils"
 )
 
 func TestLogo(t *testing.T) {
@@ -14,6 +12,6 @@ func TestLogo(t *testing.T) {
 		version := "0.1.0"
 		logo := tui.Logo(version)
 
-		snaps.MatchSnapshot(t, logo)
+		testutils.MatchSnapshot(t, logo)
 	}))
 }

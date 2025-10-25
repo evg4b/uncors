@@ -15,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,7 +61,7 @@ func TestCheckNewVersion(t *testing.T) {
 					outputData, err := io.ReadAll(output)
 					testutils.CheckNoError(t, err)
 
-					snaps.MatchSnapshot(t, string(outputData))
+					testutils.MatchSnapshot(t, string(outputData))
 				})
 			}))
 		}
@@ -78,7 +77,7 @@ func TestCheckNewVersion(t *testing.T) {
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
 
-			snaps.MatchSnapshot(t, string(outputData))
+			testutils.MatchSnapshot(t, string(outputData))
 		}))
 
 		t.Run("prop2", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
@@ -90,7 +89,7 @@ func TestCheckNewVersion(t *testing.T) {
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
 
-			snaps.MatchSnapshot(t, string(outputData))
+			testutils.MatchSnapshot(t, string(outputData))
 		}))
 	})
 }

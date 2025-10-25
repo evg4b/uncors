@@ -4,10 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/gkampitakis/go-snaps/snaps"
-
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/testing/testutils"
 )
 
 func TestPrintWarningBox(t *testing.T) {
@@ -30,7 +28,7 @@ func TestPrintWarningBox(t *testing.T) {
 
 			tui.PrintWarningBox(&buffer, testCase.message)
 
-			snaps.MatchSnapshot(t, buffer.String())
+			testutils.MatchSnapshot(t, buffer.String())
 		}))
 	}
 }
@@ -55,7 +53,7 @@ func TestPrintInfoBox(t *testing.T) {
 
 			tui.PrintInfoBox(&buffer, testCase.message)
 
-			snaps.MatchSnapshot(t, buffer.String())
+			testutils.MatchSnapshot(t, buffer.String())
 		}))
 	}
 }
