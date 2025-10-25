@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,8 +20,8 @@ func TestOptionsClone(t *testing.T) {
 			config: config.OptionsHandling{
 				Disabled: true,
 				Headers: map[string]string{
-					"Content-Type":  "application/json",
-					"Cache-Control": "no-cache",
+					headers.ContentType:  "application/json",
+					headers.CacheControl: "no-cache",
 				},
 				Code: 200,
 			},

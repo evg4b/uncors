@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,8 +17,8 @@ func TestRequestMatcher_Clone(t *testing.T) {
 			"key2": "value2",
 		},
 		Headers: map[string]string{
-			"Content-Type":  "application/json",
-			"Authorization": "Bearer token",
+			headers.ContentType:   "application/json",
+			headers.Authorization: "Bearer token",
 		},
 	}
 
@@ -32,8 +33,8 @@ func TestRequestMatcher_Clone(t *testing.T) {
 	cloned.Queries["key1"] = "modified"
 	assert.NotEqual(t, original.Queries["key1"], cloned.Queries["key1"])
 
-	cloned.Headers["Content-Type"] = "text/html"
-	assert.NotEqual(t, original.Headers["Content-Type"], cloned.Headers["Content-Type"])
+	cloned.Headers[headers.ContentType] = "text/html"
+	assert.NotEqual(t, original.Headers[headers.ContentType], cloned.Headers[headers.ContentType])
 }
 
 func TestScript_Clone(t *testing.T) {

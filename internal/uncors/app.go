@@ -78,7 +78,8 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	log.Print("")
 	err := app.internalShutdown(ctx)
 	if err != nil {
-		panic(err) // TODO: refactor this error handling
+		// TODO(v2.0): Replace panic with graceful error handling and user notification
+		panic(err)
 	}
 
 	log.Info(uncorsConfig.Mappings.String())

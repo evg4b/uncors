@@ -3,6 +3,7 @@ package validators_test
 import (
 	"testing"
 
+	"github.com/go-http-utils/headers"
 	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 
@@ -10,20 +11,22 @@ import (
 	"github.com/evg4b/uncors/internal/config/validators"
 )
 
+const requestMatcherTestPath = "/api/test"
+
 func TestRequestMatcherValidator(t *testing.T) {
 	t.Run("should not register errors for valid filter with all fields", func(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path:   "/api/test",
+				Path:   requestMatcherTestPath,
 				Method: "GET",
 				Queries: map[string]string{
 					"param1": "value1",
 					"param2": "value2",
 				},
 				Headers: map[string]string{
-					"Content-Type": "application/json",
-					"Accept":       "application/json",
+					headers.ContentType: "application/json",
+					headers.Accept:      "application/json",
 				},
 			},
 		})
@@ -35,7 +38,7 @@ func TestRequestMatcherValidator(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path: "/api/test",
+				Path: requestMatcherTestPath,
 			},
 		})
 
@@ -59,7 +62,7 @@ func TestRequestMatcherValidator(t *testing.T) {
 		errors := validate.Validate(&validators.RequestMatcherValidator{
 			Field: "test",
 			Value: config.RequestMatcher{
-				Path:   "/api/test",
+				Path:   requestMatcherTestPath,
 				Method: "INVALID",
 			},
 		})
