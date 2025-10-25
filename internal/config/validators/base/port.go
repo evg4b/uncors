@@ -13,6 +13,6 @@ type PortValidator struct {
 
 func (p *PortValidator) IsValid(errors *validate.Errors) {
 	if p.Value < 1 || p.Value > 65535 {
-		errors.Add(p.Field, fmt.Sprintf("%s must be between 0 and 65535", p.Field))
+		errors.Add(p.Field, fmt.Sprintf("%s must be between 1 and 65535", p.Field))
 	}
 }
