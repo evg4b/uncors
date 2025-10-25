@@ -32,19 +32,19 @@
   </a>
   <br/>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-    <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage&branch=develop">
+    <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage">
   </a>
   <a href="https://goreportcard.com/report/github.com/evg4b/uncors">
     <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evg4b/uncors">
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-    <img alt="Reliability Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=reliability_rating&branch=develop">
+    <img alt="Reliability Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=reliability_rating">
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-    <img alt="Security Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=security_rating&branch=develop">
+    <img alt="Security Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=security_rating">
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
-    <img alt="Lines of Code" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=ncloc&branch=develop">
+    <img alt="Lines of Code" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=ncloc">
   </a>
 </p>
 

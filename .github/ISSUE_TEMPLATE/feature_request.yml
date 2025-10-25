@@ -1,0 +1,41 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: I want to do X but currently can't because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like?
+      placeholder: UNCORS should be able to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example usage (if applicable)
+      placeholder: |
+        ```yaml
+        # Example config
+        new-feature:
+          enabled: true
+        ```
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Can you help?
+      options:
+        - label: I can implement this feature
+        - label: I can help test this feature

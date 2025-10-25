@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      placeholder: |
+        1. Run: uncors ...
+        2. Make request to ...
+        3. See error: ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: UNCORS version
+      placeholder: "e.g., 0.5.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "e.g., macOS 14, Ubuntu 22.04, Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration (if relevant)
+      placeholder: |
+        ```yaml
+        mappings:
+          - from: http://localhost:3000
+            to: https://api.example.com
+        ```
+      render: yaml
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (if relevant)
+      description: Run with --debug for more details
+      render: text
+    validations:
+      required: false
