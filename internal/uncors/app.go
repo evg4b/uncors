@@ -27,6 +27,7 @@ type portServer struct {
 	listener net.Listener
 	port     int
 	scheme   string
+	mappings config.Mappings
 	mutex    *sync.Mutex
 }
 
@@ -179,9 +180,10 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 	// Create a server for each port group
 	for _, group := range portGroups {
 		portSrv := &portServer{
-			port:   group.Port,
-			scheme: group.Scheme,
-			mutex:  &sync.Mutex{},
+			port:     group.Port,
+			scheme:   group.Scheme,
+			mappings: group.Mappings,
+			mutex:    &sync.Mutex{},
 		}
 
 		// Create server with handler for this port's mappings
@@ -197,7 +199,7 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 	}
 }
 
-func (app *App) startListener(_ context.Context, portSrv *portServer, uncorsConfig *config.UncorsConfig) {
+func (app *App) startListener(_ context.Context, portSrv *portServer, _ *config.UncorsConfig) {
 	defer app.waitGroup.Done()
 
 	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
@@ -207,12 +209,13 @@ func (app *App) startListener(_ context.Context, portSrv *portServer, uncorsConf
 
 	var err error
 	if portSrv.scheme == "https" {
-		if !uncorsConfig.IsHTTPSEnabled() {
-			log.Warnf("HTTPS mapping on port %d found but no cert/key configured, skipping", portSrv.port)
-
+		// Build TLS config for this port's mappings
+		tlsConfig, tlsErr := buildTLSConfig(app.fs, portSrv.mappings)
+		if tlsErr != nil {
+			log.Errorf("Failed to build TLS config for port %d: %v", portSrv.port, tlsErr)
 			return
 		}
-		err = app.listenAndServeTLSForPort(portSrv, addr, uncorsConfig.CertFile, uncorsConfig.KeyFile)
+		err = app.listenAndServeTLSForPort(portSrv, addr, tlsConfig)
 	} else {
 		err = app.listenAndServeForPort(portSrv, addr)
 	}
