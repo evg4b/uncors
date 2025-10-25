@@ -52,16 +52,21 @@ mappings:
 
 ## Table of Contents
 
+- [Configuration](#configuration)
+  - [Quick Reference](#quick-reference)
+  - [Table of Contents](#table-of-contents)
 - [Command-Line Options](#command-line-options)
+  - [Mapping Configuration](#mapping-configuration)
+  - [Global Configuration](#global-configuration)
 - [Configuration File](#configuration-file)
-- [Global Configuration](#global-configuration-properties)
-- [Mapping Configuration](#mapping-configuration)
+- [Global Configuration Properties](#global-configuration-properties)
+- [Mapping Configuration](#mapping-configuration-1)
+  - [OPTIONS Request Handling](#options-request-handling)
   - [Protocol Scheme Mapping](#protocol-scheme-mapping)
   - [Wildcard Mapping](#wildcard-mapping)
-  - [OPTIONS Request Handling](#options-request-handling)
+  - [Simplified Syntax](#simplified-syntax)
 - [HTTPS Configuration](#https-configuration)
 - [Proxy Configuration](#proxy-configuration)
-- [Configuration Schema Validation](#configuration-schema-validation)
 
 ---
 
@@ -355,53 +360,3 @@ uncors --proxy http://proxy.example.com:8080 --from http://localhost --to https:
 ```yaml
 proxy: http://proxy.example.com:8080
 ```
-
-# Configuration Schema Validation
-
-UNCORS provides a JSON Schema for configuration file validation, offering autocomplete and error checking in supported editors.
-
-**Automatic validation:**
-
-Most modern editors with SchemaStore support will automatically validate UNCORS configuration files.
-
-**Manual schema configuration:**
-
-## JetBrains IDEs (IntelliJ, WebStorm, etc.)
-
-1. Navigate to: **Settings** → **Languages & Frameworks** → **Schemas and DTDs** → **JSON Schema Mappings**
-2. Click **+** to add a new mapping
-3. Configure with the following settings:
-   - **Name:** `Uncors Config Schema`
-   - **Schema file or URL:** `https://raw.githubusercontent.com/evg4b/uncors/main/schema.json`
-   - **Schema version:** JSON Schema version 4
-   - **File path patterns:** `*.uncors.yml`, `*.uncors.yaml`, `.uncors.yml`, `.uncors.yaml`
-
-![JetBrains IDEs Configuration](./Configuration/jet_brains_ide.png)
-
-## Visual Studio Code
-
-1. Open **Settings** → **Extensions** → **JSON** → **JSON: Schemas**
-2. Click **Edit in settings.json**
-
-![VS Code Settings](./Configuration/vs_code_settings.png)
-
-3. Add the following to the `json.schemas` array:
-
-```json
-{
-  "fileMatch": ["*.uncors.yml", "*.uncors.yaml", ".uncors.yml", ".uncors.yaml"],
-  "url": "https://raw.githubusercontent.com/evg4b/uncors/main/schema.json"
-}
-```
-
-![VS Code settings.json Configuration](./Configuration/vs_code_settings_json.png)
-
-## Other Editors
-
-For other editors with JSON Schema support, use these parameters:
-
-| Parameter          | Value                                                             |
-| ------------------ | ----------------------------------------------------------------- |
-| **Schema URL**     | `https://raw.githubusercontent.com/evg4b/uncors/main/schema.json` |
-| **Schema Version** | JSON Schema version 4                                             |
-| **File Patterns**  | `*.uncors.yml`, `*.uncors.yaml`, `.uncors.yml`, `.uncors.yaml`    |
