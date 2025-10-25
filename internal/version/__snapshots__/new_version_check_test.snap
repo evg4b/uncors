@@ -16,9 +16,9 @@
 ---
 
 [TestCheckNewVersion/should_print_/prop1 - 1]
-[1m INFO   [0m NEW VERSION IS Available!
-0.0.4 is not latest, you should upgrade to 0.0.7.
-See more information on https://github.com/evg4b/uncors/releases
+[1m INFO   [0m NEW VERSION IS AVAILABLE!
+0.0.4 is not the latest version, you should upgrade to 0.0.7.
+See more information at https://github.com/evg4b/uncors/releases
 
 [1m INFO   [0m
 

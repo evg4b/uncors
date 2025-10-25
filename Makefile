@@ -58,6 +58,10 @@ test:
 	@gum style --foreground 11 "Running tests..."
 	@$(GOTEST) ./...
 
+test-release:
+	@gum style --foreground 11 "Running release tests..."
+	@$(GOTEST) -tags release ./...
+
 ## test-cover: Run tests with race detection and generate coverage report
 test-cover:
 	@gum style --foreground 11 "Running tests with coverage..."
