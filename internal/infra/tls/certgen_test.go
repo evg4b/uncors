@@ -22,7 +22,7 @@ func TestNewCertGenerator(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		generator := infratls.NewCertGenerator(caCert, caKey)
@@ -39,7 +39,7 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
 	require.NoError(t, err)
 
 	generator := infratls.NewCertGenerator(caCert, caKey)

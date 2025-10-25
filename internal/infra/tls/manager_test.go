@@ -18,7 +18,7 @@ func TestNewCertManager(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		manager := infratls.NewCertManager(caCert, caKey)
@@ -40,7 +40,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
 	require.NoError(t, err)
 
 	t.Run("should generate and cache certificate", func(t *testing.T) {
@@ -149,7 +149,7 @@ func TestCheckCAExpiration(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic
@@ -167,7 +167,7 @@ func TestCheckCAExpiration(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic even with expiring cert

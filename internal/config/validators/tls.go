@@ -56,7 +56,7 @@ func (v *TLSValidator) validateCustomCertificates(errors *validate.Errors) {
 }
 
 func (v *TLSValidator) validateCAAvailability(errors *validate.Errors, host string) {
-	if !infratls.CAExists() {
+	if !infratls.CAExists(v.Fs) {
 		errorMessage := formatTLSError(host)
 		errors.Add(v.Field, errorMessage)
 	}

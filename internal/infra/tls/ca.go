@@ -8,9 +8,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 const (
@@ -27,22 +28,51 @@ const (
 type CAConfig struct {
 	ValidityDays int
 	OutputDir    string
+	Fs           afero.Fs
 }
 
 // GenerateCA generates a new CA certificate and private key.
 // Returns the paths to the generated certificate and key files.
 func GenerateCA(config CAConfig) (string, string, error) {
+	if config.Fs == nil {
+		config.Fs = afero.NewOsFs()
+	}
+
+	privateKey, certDER, err := generateCACertificate(config.ValidityDays)
+	if err != nil {
+		return "", "", err
+	}
+
+	if err := config.Fs.MkdirAll(config.OutputDir, dirPermissions); err != nil {
+		return "", "", fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	certPath, err := writeCertificateFile(config.Fs, config.OutputDir, certDER)
+	if err != nil {
+		return "", "", err
+	}
+
+	keyPath, err := writePrivateKeyFile(config.Fs, config.OutputDir, privateKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	return certPath, keyPath, nil
+}
+
+// generateCACertificate generates a CA certificate and returns the private key and certificate DER bytes.
+func generateCACertificate(validityDays int) (*rsa.PrivateKey, []byte, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate private key: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 
 	notBefore := time.Now()
-	notAfter := notBefore.AddDate(0, 0, config.ValidityDays)
+	notAfter := notBefore.AddDate(0, 0, validityDays)
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), serialNumberBits))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate serial number: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	template := x509.Certificate{
@@ -62,19 +92,18 @@ func GenerateCA(config CAConfig) (string, string, error) {
 
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create certificate: %w", err)
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	// Ensure output directory exists
-	if err := os.MkdirAll(config.OutputDir, dirPermissions); err != nil {
-		return "", "", fmt.Errorf("failed to create output directory: %w", err)
-	}
+	return privateKey, certDER, nil
+}
 
-	// Write certificate file
-	certPath := filepath.Join(config.OutputDir, "ca.crt")
-	certFile, err := os.Create(certPath)
+// writeCertificateFile writes the certificate to a file in PEM format.
+func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string, error) {
+	certPath := filepath.Join(outputDir, "ca.crt")
+	certFile, err := fs.Create(certPath)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create certificate file: %w", err)
+		return "", fmt.Errorf("failed to create certificate file: %w", err)
 	}
 	defer certFile.Close()
 
@@ -82,19 +111,23 @@ func GenerateCA(config CAConfig) (string, string, error) {
 		Type:  "CERTIFICATE",
 		Bytes: certDER,
 	}); err != nil {
-		return "", "", fmt.Errorf("failed to write certificate: %w", err)
+		return "", fmt.Errorf("failed to write certificate: %w", err)
 	}
 
-	// Write private key file
-	keyPath := filepath.Join(config.OutputDir, "ca.key")
-	keyFile, err := os.Create(keyPath)
+	return certPath, nil
+}
+
+// writePrivateKeyFile writes the private key to a file in PEM format.
+func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateKey) (string, error) {
+	keyPath := filepath.Join(outputDir, "ca.key")
+	keyFile, err := fs.Create(keyPath)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create key file: %w", err)
+		return "", fmt.Errorf("failed to create key file: %w", err)
 	}
 	defer keyFile.Close()
 
-	if err := os.Chmod(keyPath, keyFilePermissions); err != nil {
-		return "", "", fmt.Errorf("failed to set key file permissions: %w", err)
+	if err := fs.Chmod(keyPath, keyFilePermissions); err != nil {
+		return "", fmt.Errorf("failed to set key file permissions: %w", err)
 	}
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
@@ -102,15 +135,19 @@ func GenerateCA(config CAConfig) (string, string, error) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: privateKeyBytes,
 	}); err != nil {
-		return "", "", fmt.Errorf("failed to write private key: %w", err)
+		return "", fmt.Errorf("failed to write private key: %w", err)
 	}
 
-	return certPath, keyPath, nil
+	return keyPath, nil
 }
 
 // LoadCA loads CA certificate and private key from files.
-func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
-	certPEM, err := os.ReadFile(certPath)
+func LoadCA(fs afero.Fs, certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
+	if fs == nil {
+		fs = afero.NewOsFs()
+	}
+
+	certPEM, err := afero.ReadFile(fs, certPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read certificate file: %w", err)
 	}
@@ -125,7 +162,7 @@ func LoadCA(certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error
 		return nil, nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	keyPEM, err := os.ReadFile(keyPath)
+	keyPEM, err := afero.ReadFile(fs, keyPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read key file: %w", err)
 	}

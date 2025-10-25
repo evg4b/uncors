@@ -33,7 +33,7 @@ func TestCAExists(t *testing.T) {
 	t.Run("should return false when CA does not exist", func(_ *testing.T) {
 		// Temporarily override home dir for testing
 		// This is tricky, so we just test the function doesn't panic
-		exists := infratls.CAExists()
+		exists := infratls.CAExists(nil)
 		// May be true or false depending on system state
 		// Just verify it doesn't panic
 		_ = exists
@@ -46,7 +46,7 @@ func TestCAExists(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		assert.False(t, infratls.CAExists())
+		assert.False(t, infratls.CAExists(nil))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		config := infratls.CAConfig{
@@ -57,7 +57,7 @@ func TestCAExists(t *testing.T) {
 		require.NoError(t, err)
 
 		// CA should exist now
-		assert.True(t, infratls.CAExists())
+		assert.True(t, infratls.CAExists(nil))
 	})
 }
 
@@ -78,7 +78,7 @@ func TestLoadDefaultCA(t *testing.T) {
 		require.NoError(t, err)
 
 		// Load default CA
-		cert, key, err := infratls.LoadDefaultCA()
+		cert, key, err := infratls.LoadDefaultCA(nil)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -92,7 +92,7 @@ func TestLoadDefaultCA(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		// Try to load non-existent CA
-		_, _, err := infratls.LoadDefaultCA()
+		_, _, err := infratls.LoadDefaultCA(nil)
 		require.Error(t, err)
 	})
 }

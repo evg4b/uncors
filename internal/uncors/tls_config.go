@@ -45,7 +45,7 @@ func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) 
 	}
 
 	// Load CA for auto-generation
-	caCert, caKey, err := infratls.LoadDefaultCA()
+	caCert, caKey, err := infratls.LoadDefaultCA(fs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}

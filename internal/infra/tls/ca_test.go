@@ -66,7 +66,7 @@ func TestGenerateCA(t *testing.T) {
 		require.NoError(t, err)
 
 		// Load and verify certificate
-		cert, key, err := infratls.LoadCA(certPath, keyPath)
+		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -102,7 +102,7 @@ func TestLoadCA(t *testing.T) {
 		require.NoError(t, err)
 
 		// Load CA
-		cert, key, err := infratls.LoadCA(certPath, keyPath)
+		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -112,6 +112,7 @@ func TestLoadCA(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		_, _, err := infratls.LoadCA(
+			nil,
 			filepath.Join(tmpDir, "nonexistent.crt"),
 			filepath.Join(tmpDir, "nonexistent.key"),
 		)
@@ -128,7 +129,7 @@ func TestLoadCA(t *testing.T) {
 		certPath, _, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		_, _, err = infratls.LoadCA(certPath, filepath.Join(tmpDir, "nonexistent.key"))
+		_, _, err = infratls.LoadCA(nil, certPath, filepath.Join(tmpDir, "nonexistent.key"))
 		require.Error(t, err)
 	})
 
@@ -142,7 +143,7 @@ func TestLoadCA(t *testing.T) {
 		err = os.WriteFile(keyPath, []byte("not a valid key"), 0o600)
 		require.NoError(t, err)
 
-		_, _, err = infratls.LoadCA(invalidCertPath, keyPath)
+		_, _, err = infratls.LoadCA(nil, invalidCertPath, keyPath)
 		require.Error(t, err)
 	})
 }
@@ -158,7 +159,7 @@ func TestCheckExpiration(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(certPath, keyPath)
+		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Check with 7-day threshold
@@ -178,7 +179,7 @@ func TestCheckExpiration(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(certPath, keyPath)
+		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Check with 7-day threshold
@@ -197,7 +198,7 @@ func TestCheckExpiration(t *testing.T) {
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(certPath, keyPath)
+		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Manually modify cert to make it expired (for testing)

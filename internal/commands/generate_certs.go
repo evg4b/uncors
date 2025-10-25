@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
 
@@ -20,6 +21,7 @@ type GenerateCertsCommand struct {
 	validityDays int
 	force        bool
 	outputDir    string
+	fs           afero.Fs
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
@@ -35,6 +37,10 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet) {
 
 // Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
+	if c.fs == nil {
+		c.fs = afero.NewOsFs()
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
@@ -45,13 +51,13 @@ func (c *GenerateCertsCommand) Execute() error {
 	keyPath := filepath.Join(c.outputDir, "ca.key")
 
 	if !c.force {
-		if _, err := os.Stat(certPath); err == nil {
+		if _, err := c.fs.Stat(certPath); err == nil {
 			log.Errorf("CA certificate already exists at %s", certPath)
 			log.Info("Use --force to overwrite")
 
 			return ErrCAAlreadyExists
 		}
-		if _, err := os.Stat(keyPath); err == nil {
+		if _, err := c.fs.Stat(keyPath); err == nil {
 			log.Errorf("CA private key already exists at %s", keyPath)
 			log.Info("Use --force to overwrite")
 
@@ -63,6 +69,7 @@ func (c *GenerateCertsCommand) Execute() error {
 	certPath, keyPath, err = infratls.GenerateCA(infratls.CAConfig{
 		ValidityDays: c.validityDays,
 		OutputDir:    c.outputDir,
+		Fs:           c.fs,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to generate CA certificate: %w", err)
