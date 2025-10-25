@@ -62,7 +62,7 @@
 
 Other new features you can find in [roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md).
 
-Full documentation you can found on [wiki pages](https://github.com/evg4b/uncors/wiki).
+Full documentation can be found on the [wiki pages](https://github.com/evg4b/uncors/wiki).
 
 # Quick Install
 
@@ -84,7 +84,7 @@ scoop install evg4b/uncors
 #### [NPM](https://npmjs.com) (Cross-platform)
 
 ```bash
-# Run as a independent CLI tool
+# Run as an independent CLI tool
 npx -y uncors ...
 # Or add as dependency in your package
 npm install uncors --save-dev
