@@ -48,7 +48,7 @@ mappings:
 ```
 
 > [!TIP]
-> For complete working examples, see [Real-World Examples](./11.-Real-World-Examples)
+> For complete working examples, see [Real-World Examples](./Real-World-Examples)
 
 ## Table of Contents
 
@@ -156,7 +156,7 @@ mappings:
     scripts: [...]
 ```
 
-This configuration forwards all requests from `http://localhost:8080` to `https://github.com`. The port is specified in the `from` URL and defaults to 80 for HTTP and 443 for HTTPS if omitted. Additional features like mocking, static file serving, and scripting can be configured per mapping. See [Response Mocking](./3.-Response-mocking), [Static File Serving](./4.-Static-file-serving), and [Script Handler](./9.-Script-Handler) for details.
+This configuration forwards all requests from `http://localhost:8080` to `https://github.com`. The port is specified in the `from` URL and defaults to 80 for HTTP and 443 for HTTPS if omitted. Additional features like mocking, static file serving, and scripting can be configured per mapping. See [Response Mocking](./Response-Mocking), [Static File Serving](./Static-File-Serving), and [Script Handler](./Script-Handler) for details.
 
 ### OPTIONS Request Handling
 

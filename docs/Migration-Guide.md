@@ -342,12 +342,12 @@ scripts:
 - **External Tools**: Leverage existing CLI tools like `fakedata`, `faker-cli`, or custom scripts
 - **Full Programming Language**: Access to Lua's full capabilities for complex scenarios
 
-For more information about the Script Handler feature, see the [Script Handler documentation](./9.-Script-Handler).
+For more information about the Script Handler feature, see the [Script Handler documentation](./Script-Handler).
 
 ## Need Help?
 
 If you encounter issues during migration or have questions:
 
-1. Check the [Configuration](./2.-Configuration) documentation for detailed information about the new configuration format
+1. Check the [Configuration](./Configuration) documentation for detailed information about the new configuration format
 2. Review the [JSON Schema](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json) for configuration validation
 3. Report issues at [GitHub Issues](https://github.com/evg4b/uncors/issues)

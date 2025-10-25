@@ -164,4 +164,4 @@ response:
 
 ## Script Handler
 
-For dynamic responses including fake data generation, use the Script Handler feature (see [Script Handler documentation](./9.-Script-Handler) for details).
+For dynamic responses including fake data generation, use the Script Handler feature (see [Script Handler documentation](./Script-Handler) for details).

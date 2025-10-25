@@ -669,7 +669,7 @@ mappings:
 
 For more details on any of these features, see:
 
-- [Configuration](./2.-Configuration)
-- [Response Mocking](./3.-Response-mocking)
-- [Static File Serving](./4.-Static-file-serving)
-- [Script Handler](./9.-Script-Handler)
+- [Configuration](./Configuration)
+- [Response Mocking](./Response-Mocking)
+- [Static File Serving](./Static-File-Serving)
+- [Script Handler](./Script-Handler)

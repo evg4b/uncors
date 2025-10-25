@@ -72,9 +72,9 @@ That's it! UNCORS is now proxying requests from `api.local` to GitHub's API.
 
 **Next steps:**
 
-- Read [Configuration](./2.-Configuration) for more options
-- Explore [Response Mocking](./3.-Response-mocking) to add fake endpoints
-- Learn about [Static File Serving](./4.-Static-file-serving) for local development
+- Read [Configuration](./Configuration) for more options
+- Explore [Response Mocking](./Response-Mocking) to add fake endpoints
+- Learn about [Static File Serving](./Static-File-Serving) for local development
 
 ## Key Terminology
 
@@ -98,29 +98,29 @@ Understanding these terms will help you navigate the documentation more effectiv
 
 ## Documentation
 
-- [Installation](./1.-Installation)
-- [Configuration](./2.-Configuration)
-- [Response mocking](./3.-Response-mocking)
-- [Static file serving](./4.-Static-file-serving)
-- [Response caching](./5.-Response-caching)
-- [Request rewriting](./6.-Request-rewriting)
-- [Request flow](./7.-Request-flow)
-- [Migration guide](./8.-Migration-Guide)
-- [Script handler](./9.-Script-Handler)
-- [Troubleshooting](./10.-Troubleshooting)
-- [Real-world examples](./11.-Real-World-Examples)
+- [Installation](./Installation)
+- [Configuration](./Configuration)
+- [Response mocking](./Response-Mocking)
+- [Static file serving](./Static-File-Serving)
+- [Response caching](./Response-Caching)
+- [Request rewriting](./Request-Rewriting)
+- [Request flow](./Request-Flow)
+- [Migration guide](./Migration-Guide)
+- [Script handler](./Script-Handler)
+- [Troubleshooting](./Troubleshooting)
+- [Real-world examples](./Real-World-Examples)
 
 ## List of core features
 
 - CORS header replacement
-- [HTTPS support](./2.-Configuration#https-configuration)
-- [Wildcard host mapping](./2.-Configuration#wildcard-mapping)
-- [HTTP/HTTPS proxy support](./2.-Configuration#proxy-configuration)
-- [Response mocking](./3.-Response-mocking)
-- [Script handler](./9.-Script-Handler) (Lua scripting with JSON support)
-- [Static file serving](./4.-Static-file-serving)
-- [Response caching](./5.-Response-caching)
-- [Request rewriting](./6.-Request-rewriting)
+- [HTTPS support](./Configuration#https-configuration)
+- [Wildcard host mapping](./Configuration#wildcard-mapping)
+- [HTTP/HTTPS proxy support](./Configuration#proxy-configuration)
+- [Response mocking](./Response-Mocking)
+- [Script handler](./Script-Handler) (Lua scripting with JSON support)
+- [Static file serving](./Static-File-Serving)
+- [Response caching](./Response-Caching)
+- [Request rewriting](./Request-Rewriting)
 
 ## Overview
 

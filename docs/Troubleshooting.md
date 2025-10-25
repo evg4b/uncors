@@ -74,7 +74,7 @@ Should show:
 127.0.0.1 api.local
 ```
 
-If missing, add it (see [Installation](./1.-Installation#post-installation-hosts-file-setup)).
+If missing, add it (see [Installation](./Installation#post-installation-hosts-file-setup)).
 
 **4. DNS cache not flushed**
 

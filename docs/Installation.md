@@ -279,6 +279,6 @@ ipconfig /flushdns
 
 Once your hosts file is configured:
 
-1. Create an UNCORS configuration file (see [Configuration](./2.-Configuration))
+1. Create an UNCORS configuration file (see [Configuration](./Configuration))
 2. Start UNCORS: `uncors --config .uncors.yaml`
 3. Access your mapped domains through your browser or API client
