@@ -44,7 +44,7 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 
 	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
 	if err != nil {
-		return fmt.Errorf("failed to create reuest to original source: %w", err)
+		return fmt.Errorf("failed to create request to original source: %w", err)
 	}
 
 	originalResponse, err := h.executeQuery(originalRequest)
@@ -93,15 +93,15 @@ func (h *Handler) careteReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to do reuest: %w", err)
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	tui.PrintResponse(h.logger(request), originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil
 }
 
-func (h *Handler) logger(requst *http.Request) contracts.Logger {
-	if rewrite.IsRewriteRequest(requst) {
+func (h *Handler) logger(request *http.Request) contracts.Logger {
+	if rewrite.IsRewriteRequest(request) {
 		return h.rewriteLogger
 	}
 
