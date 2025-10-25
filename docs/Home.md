@@ -104,6 +104,7 @@ Understanding these terms will help you navigate the documentation more effectiv
 - [Request flow](./7.-Request-flow)
 - [Migration guide](./8.-Migration-Guide)
 - [Script handler](./9.-Script-Handler)
+- [Troubleshooting](./10.-Troubleshooting)
 
 ## List of core features
 
