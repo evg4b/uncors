@@ -423,8 +423,6 @@ func TestApp_MultiPort(t *testing.T) {
 			WithHTTPS()
 
 		uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-			CertFile: certs.CertPath,
-			KeyFile:  certs.KeyPath,
 			Mappings: config.Mappings{
 				config.Mapping{
 					From:  hosts.Loopback.HTTPPort(httpPort),
@@ -432,9 +430,11 @@ func TestApp_MultiPort(t *testing.T) {
 					Mocks: mocks("http-response"),
 				},
 				config.Mapping{
-					From:  hosts.Loopback.HTTPSPort(httpsPort),
-					To:    hosts.Example.HTTPS(),
-					Mocks: mocks("https-response"),
+					From:     hosts.Loopback.HTTPSPort(httpsPort),
+					To:       hosts.Example.HTTPS(),
+					CertFile: certs.CertPath,
+					KeyFile:  certs.KeyPath,
+					Mocks:    mocks("https-response"),
 				},
 			},
 		})
