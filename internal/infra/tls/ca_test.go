@@ -209,3 +209,108 @@ func TestCheckExpiration(t *testing.T) {
 		assert.Positive(t, timeLeft) // Still valid as we just created it
 	})
 }
+
+func TestLoadCA_ErrorCases(t *testing.T) {
+	t.Run("should return error for invalid key PEM", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    tmpDir,
+		}
+		certPath, keyPath, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Overwrite key with invalid data
+		err = os.WriteFile(keyPath, []byte("not a valid key PEM"), 0o600)
+		require.NoError(t, err)
+
+		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		require.Error(t, err)
+	})
+
+	t.Run("should return error for invalid certificate in PEM", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		certPath := filepath.Join(tmpDir, "invalid.crt")
+		keyPath := filepath.Join(tmpDir, "test.key")
+
+		// Create PEM with invalid certificate data
+		certFile, err := os.Create(certPath)
+		require.NoError(t, err)
+		certFile.Write([]byte("-----BEGIN CERTIFICATE-----\n"))
+		certFile.Write([]byte("aW52YWxpZCBjZXJ0aWZpY2F0ZSBkYXRh\n"))
+		certFile.Write([]byte("-----END CERTIFICATE-----\n"))
+		certFile.Close()
+
+		keyFile, err := os.Create(keyPath)
+		require.NoError(t, err)
+		keyFile.Write([]byte("key"))
+		keyFile.Close()
+
+		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse certificate")
+	})
+
+	t.Run("should return error for invalid private key in PEM", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    tmpDir,
+		}
+		certPath, keyPath, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Create PEM with invalid key data
+		keyFile, err := os.Create(keyPath)
+		require.NoError(t, err)
+		keyFile.Write([]byte("-----BEGIN RSA PRIVATE KEY-----\n"))
+		keyFile.Write([]byte("aW52YWxpZCBrZXkgZGF0YQ==\n"))
+		keyFile.Write([]byte("-----END RSA PRIVATE KEY-----\n"))
+		keyFile.Close()
+
+		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to parse private key")
+	})
+}
+
+func TestGenerateCA_ErrorCases(t *testing.T) {
+	t.Run("should use default filesystem when nil", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    tmpDir,
+			Fs:           nil,
+		}
+
+		certPath, keyPath, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		assert.FileExists(t, certPath)
+		assert.FileExists(t, keyPath)
+	})
+}
+
+func TestLoadCA_UseDefaultFilesystem(t *testing.T) {
+	t.Run("should use default filesystem when nil", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    tmpDir,
+			Fs:           nil,
+		}
+		certPath, keyPath, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Load with nil filesystem
+		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
+		require.NoError(t, err)
+		assert.NotNil(t, cert)
+		assert.NotNil(t, key)
+	})
+}

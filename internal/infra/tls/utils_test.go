@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,5 +100,91 @@ func TestLoadDefaultCA(t *testing.T) {
 		// Try to load non-existent CA
 		_, _, err := infratls.LoadDefaultCA(nil)
 		require.Error(t, err)
+	})
+
+	t.Run("should use provided filesystem", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+			Fs:           fs,
+		}
+		_, _, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Load with provided filesystem
+		cert, key, err := infratls.LoadDefaultCA(fs)
+		require.NoError(t, err)
+		assert.NotNil(t, cert)
+		assert.NotNil(t, key)
+	})
+}
+
+func TestCAExists_EdgeCases(t *testing.T) {
+	t.Run("should handle filesystem with only cert file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+
+		// Create only cert file, not key
+		certPath := filepath.Join(caDir, "ca.crt")
+		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o644))
+
+		exists := infratls.CAExists(nil)
+		assert.False(t, exists, "should return false when only cert exists")
+	})
+
+	t.Run("should handle filesystem with only key file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+
+		// Create only key file, not cert
+		keyPath := filepath.Join(caDir, "ca.key")
+		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
+
+		exists := infratls.CAExists(nil)
+		assert.False(t, exists, "should return false when only key exists")
+	})
+
+	t.Run("should use provided filesystem", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
+		config := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+			Fs:           fs,
+		}
+		_, _, err := infratls.GenerateCA(config)
+		require.NoError(t, err)
+
+		// Check with provided filesystem
+		exists := infratls.CAExists(fs)
+		assert.True(t, exists)
 	})
 }

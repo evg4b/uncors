@@ -180,4 +180,50 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		caDir := filepath.Join(fakeHome, configDir, "uncors")
 		assert.DirExists(t, caDir)
 	})
+
+	t.Run("should fail when only cert file exists without force flag", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+
+		// Create only cert file
+		certPath := filepath.Join(caDir, caCertFile)
+		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o644))
+
+		cmd := commands.NewGenerateCertsCommand()
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		cmd.DefineFlags(flags)
+
+		err := cmd.Execute()
+		require.Error(t, err)
+		assert.Equal(t, commands.ErrCAAlreadyExists, err)
+	})
+
+	t.Run("should fail when only key file exists without force flag", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+
+		// Create only key file
+		keyPath := filepath.Join(caDir, caKeyFile)
+		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
+
+		cmd := commands.NewGenerateCertsCommand()
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		cmd.DefineFlags(flags)
+
+		err := cmd.Execute()
+		require.Error(t, err)
+		assert.Equal(t, commands.ErrCAKeyAlreadyExists, err)
+	})
 }
