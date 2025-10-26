@@ -9,6 +9,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		mappings := config.Mappings{
 			{
 				From: "https://localhost:8443",
-				To:   "http://example.com",
+				To:   hosts.Example.HTTP(),
 			},
 		}
 
@@ -80,7 +81,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		mappings := config.Mappings{
 			{
 				From: "https://localhost:8443",
-				To:   "http://example.com",
+				To:   hosts.Example.HTTP(),
 			},
 		}
 
@@ -113,7 +114,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		mappings := config.Mappings{
 			{
 				From: "https://" + testHost + ":8443",
-				To:   "http://example.com",
+				To:   hosts.Example.HTTP(),
 			},
 		}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func TestTLSValidator_IsValid(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		mapping := config.Mapping{
 			From: "://invalid-url",
-			To:   "http://example.com",
+			To:   hosts.Example.HTTP(),
 		}
 
 		validator := &validators.TLSValidator{
@@ -38,7 +39,7 @@ func TestTLSValidator_IsValid(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		mapping := config.Mapping{
 			From: "http://localhost:8080",
-			To:   "http://example.com",
+			To:   hosts.Example.HTTP(),
 		}
 
 		validator := &validators.TLSValidator{
@@ -64,7 +65,7 @@ func TestTLSValidator_IsValid(t *testing.T) {
 
 		mapping := config.Mapping{
 			From: "https://localhost:8443",
-			To:   "http://example.com",
+			To:   hosts.Example.HTTP(),
 		}
 
 		validator := &validators.TLSValidator{
@@ -104,7 +105,7 @@ func TestTLSValidator_IsValid(t *testing.T) {
 
 		mapping := config.Mapping{
 			From: "https://localhost:8443",
-			To:   "http://example.com",
+			To:   hosts.Example.HTTP(),
 		}
 
 		validator := &validators.TLSValidator{

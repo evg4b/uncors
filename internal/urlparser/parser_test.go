@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 		{in: "//", err: true},
 
 		// // Test schemes:
-		{in: "http://example.com", out: "http://example.com"},
+		{in: hosts.Example.HTTP(), out: hosts.Example.HTTP()},
 		{in: "HTTP://x.example.com", out: "http://x.example.com"},
 		{in: "http://localhost", out: "http://localhost"},
 		{in: "http://user.local", out: "http://user.local"},
