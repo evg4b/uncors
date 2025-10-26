@@ -18,8 +18,6 @@ type Mapping struct {
 	Cache           CacheGlobs        `mapstructure:"cache"`
 	Rewrites        RewriteOptions    `mapstructure:"rewrites"`
 	OptionsHandling OptionsHandling   `mapstructure:"options-handling"`
-	CertFile        string            `mapstructure:"cert-file"`
-	KeyFile         string            `mapstructure:"key-file"`
 
 	// Cached parsed URL and its components (not serialized)
 	fromURL  *url.URL `json:"-" mapstructure:"-" yaml:"-"`
@@ -37,8 +35,6 @@ func (m *Mapping) Clone() Mapping {
 		Cache:           m.Cache.Clone(),
 		Rewrites:        m.Rewrites.Clone(),
 		OptionsHandling: m.OptionsHandling.Clone(),
-		CertFile:        m.CertFile,
-		KeyFile:         m.KeyFile,
 		fromURL:         m.fromURL, // Share cached URL
 		fromHost:        m.fromHost,
 		fromPort:        m.fromPort,

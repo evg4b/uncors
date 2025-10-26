@@ -11,9 +11,11 @@ import (
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/spf13/afero"
 )
 
@@ -30,14 +32,67 @@ func WithTmpCerts(fs afero.Fs, action func(t *testing.T, certs *Certs)) func(t *
 	}
 
 	return func(t *testing.T) {
-		certs := certSetup(t, fs)
+		certs := certSetupWithUncorsCA(t, fs)
 		action(t, certs)
 	}
 }
 
-var localIPAddress = net.IPv4(127, 0, 0, 1) //nolint:mnd
+// certSetupWithUncorsCA sets up CA using uncors CA generation for testing.
+func certSetupWithUncorsCA(t *testing.T, fs afero.Fs) *Certs {
+	t.Helper()
 
-func certSetup(t *testing.T, fs afero.Fs) *Certs {
+	tmpDir := t.TempDir()
+
+	fakeHome := filepath.Join(tmpDir, "home")
+	CheckNoError(t, os.MkdirAll(fakeHome, 0o755)) //nolint:mnd
+	t.Setenv("HOME", fakeHome)
+
+	// Generate CA using uncors
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
+	caConfig := infratls.CAConfig{
+		ValidityDays: 365, //nolint:mnd
+		OutputDir:    caDir,
+		Fs:           fs,
+	}
+	certPath, keyPath, err := infratls.GenerateCA(caConfig)
+	CheckNoError(t, err)
+
+	// Load CA certificate for client
+	caCertData, err := afero.ReadFile(fs, certPath)
+	CheckNoError(t, err)
+
+	caKeyData, err := afero.ReadFile(fs, keyPath)
+	CheckNoError(t, err)
+
+	// Setup client TLS config to trust the CA
+	certsPool := x509.NewCertPool()
+	certsPool.AppendCertsFromPEM(caCertData)
+	clientTLSConf := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    certsPool,
+	}
+
+	serverCert, err := tls.X509KeyPair(caCertData, caKeyData)
+	CheckNoError(t, err)
+
+	serverTLSConf := &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{serverCert},
+	}
+
+	// Use the CA cert/key paths (not used anymore but kept for compatibility)
+	return &Certs{
+		ServerTLSConf: serverTLSConf,
+		ClientTLSConf: clientTLSConf,
+		CertPath:      certPath,
+		KeyPath:       keyPath,
+	}
+}
+
+var localIPAddress = net.IPv4(127, 0, 0, 1) //nolint:mnd,unused
+
+// certSetup creates legacy test certificates (kept for potential future use).
+func certSetup(t *testing.T, fs afero.Fs) *Certs { //nolint:unused
 	t.Helper()
 
 	now := time.Now()

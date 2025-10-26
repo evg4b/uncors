@@ -60,11 +60,9 @@ func TestUncorsApp(t *testing.T) {
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:     hosts.Loopback.HTTPSPort(port),
-						To:       hosts.Github.HTTPS(),
-						CertFile: certs.CertPath,
-						KeyFile:  certs.KeyPath,
-						Mocks:    mocks(expectedResponse),
+						From:  hosts.Loopback.HTTPSPort(port),
+						To:    hosts.Github.HTTPS(),
+						Mocks: mocks(expectedResponse),
 					},
 				},
 			})
@@ -136,11 +134,9 @@ func TestUncorsApp(t *testing.T) {
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:     hosts.Loopback.HTTPSPort(port),
-						To:       hosts.Github.HTTPS(),
-						CertFile: certs.CertPath,
-						KeyFile:  certs.KeyPath,
-						Mocks:    mocks(expectedResponse),
+						From:  hosts.Loopback.HTTPSPort(port),
+						To:    hosts.Github.HTTPS(),
+						Mocks: mocks(expectedResponse),
 					},
 				},
 			})
@@ -162,11 +158,9 @@ func TestUncorsApp(t *testing.T) {
 			uncorsApp.Restart(ctx, &config.UncorsConfig{
 				Mappings: config.Mappings{
 					config.Mapping{
-						From:     hosts.Loopback.HTTPSPort(port),
-						To:       hosts.Github.HTTPS(),
-						CertFile: certs.CertPath,
-						KeyFile:  certs.KeyPath,
-						Mocks:    mocks(otherExpectedRepose),
+						From:  hosts.Loopback.HTTPSPort(port),
+						To:    hosts.Github.HTTPS(),
+						Mocks: mocks(otherExpectedRepose),
 					},
 				},
 			})
@@ -415,7 +409,7 @@ func TestApp_MultiPort(t *testing.T) {
 		assert.NotNil(t, httpAddr)
 	}))
 
-	t.Run("mixed HTTP and HTTPS ports", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+	t.Run("mixed HTTP and HTTPS ports", testutils.WithTmpCerts(fs, func(t *testing.T, _ *testutils.Certs) {
 		httpPort := freeport.GetPort()
 		httpsPort := freeport.GetPort()
 		appBuilder := appbuilder.NewAppBuilder(t).
@@ -430,11 +424,9 @@ func TestApp_MultiPort(t *testing.T) {
 					Mocks: mocks("http-response"),
 				},
 				config.Mapping{
-					From:     hosts.Loopback.HTTPSPort(httpsPort),
-					To:       hosts.Example.HTTPS(),
-					CertFile: certs.CertPath,
-					KeyFile:  certs.KeyPath,
-					Mocks:    mocks("https-response"),
+					From:  hosts.Loopback.HTTPSPort(httpsPort),
+					To:    hosts.Example.HTTPS(),
+					Mocks: mocks("https-response"),
 				},
 			},
 		})

@@ -104,27 +104,67 @@ ipconfig /flushdns
 
 **Causes and Solutions:**
 
-**1. Missing or incorrect certificate files**
+**1. CA certificate not generated**
 
-Verify certificate files exist:
+Generate the local CA certificate:
 
 ```bash
-ls -l ~/path/to/cert.crt
-ls -l ~/path/to/cert.key
+uncors generate-certs
 ```
 
-Check configuration:
+This creates CA files in `~/.config/uncors/`:
+- `ca.crt` - CA certificate
+- `ca.key` - CA private key
 
-```yaml
-cert-file: ~/path/to/cert.crt
-key-file: ~/path/to/cert.key
+**2. CA certificate not trusted**
+
+Add the CA certificate to your system's trusted certificates:
+
+**macOS:**
+```bash
+# Open Keychain Access
+open ~/.config/uncors/ca.crt
+# Set to "Always Trust" in Keychain Access
 ```
 
-**2. Self-signed certificate not trusted**
+**Linux:**
+```bash
+sudo cp ~/.config/uncors/ca.crt /usr/local/share/ca-certificates/uncors-ca.crt
+sudo update-ca-certificates
+```
 
-For development with self-signed certificates:
+**Windows:**
+```powershell
+# Import via Certificate Manager
+certutil -addstore -user "Root" %USERPROFILE%\.config\uncors\ca.crt
+```
 
-**Browser:** Accept the certificate warning or add to trusted certificates
+**3. Browser not using system certificates**
+
+Some browsers maintain their own certificate stores. For Firefox:
+
+1. Settings → Privacy & Security → Certificates → View Certificates
+2. Import `~/.config/uncors/ca.crt` under "Authorities" tab
+
+**4. CA certificate expired**
+
+Check CA certificate validity:
+
+```bash
+openssl x509 -in ~/.config/uncors/ca.crt -noout -dates
+```
+
+If expired, regenerate:
+
+```bash
+uncors generate-certs --force
+```
+
+Then re-trust the new CA certificate.
+
+**5. Development bypass (not recommended)**
+
+For quick testing only:
 
 **curl:** Use `-k` flag to ignore certificate errors:
 
@@ -132,20 +172,7 @@ For development with self-signed certificates:
 curl -k https://api.local:8443/
 ```
 
-**3. Certificate doesn't match domain**
-
-Ensure certificate Common Name (CN) or Subject Alternative Name (SAN) includes your domain:
-
-```bash
-openssl x509 -in ~/path/to/cert.crt -text -noout | grep -A1 "Subject:"
-```
-
-Generate a new certificate if needed:
-
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes \
-  -subj "/CN=api.local"
-```
+**Browser:** Accept the certificate warning (not recommended for regular development)
 
 ---
 

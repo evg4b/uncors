@@ -300,14 +300,11 @@ mappings:
 
 # HTTPS Configuration
 
-UNCORS supports HTTPS for both incoming requests and upstream connections with two certificate management options:
-
-1. **Auto-generated certificates** (recommended for development)
-2. **Custom certificates** (per-mapping or global)
+UNCORS supports HTTPS for both incoming requests and upstream connections using auto-generated certificates.
 
 ## Auto-Generated Certificates
 
-UNCORS can automatically generate and sign TLS certificates on-the-fly using a local Certificate Authority (CA).
+UNCORS automatically generates and signs TLS certificates on-the-fly using a local Certificate Authority (CA).
 
 **Setup:**
 
@@ -335,7 +332,7 @@ After generating, add `ca.crt` to your system's trusted certificates:
 - **Linux**: Copy to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`
 - **Windows**: Import via Certificate Manager (certmgr.msc)
 
-**HTTPS mapping with auto-generation:**
+**HTTPS mapping:**
 
 ```yaml
 mappings:
@@ -346,24 +343,6 @@ mappings:
 
 > [!TIP]
 > Auto-generated certificates are cached in memory and regenerated only when needed.
-
-## Custom Certificates
-
-You can provide custom certificates per-mapping or globally.
-
-**Per-mapping certificates:**
-
-```yaml
-mappings:
-  - from: https://localhost:8443
-    to: https://github.com
-    cert-file: ~/path/to/localhost.crt
-    key-file: ~/path/to/localhost.key
-
-  - from: https://api.local:9443
-    to: https://api.example.com
-    # This mapping uses auto-generated certificates
-```
 
 > [!NOTE]
 > HTTPS server functionality is only activated when at least one mapping uses the `https://` scheme. Each mapping specifies its own port in the `from` URL.

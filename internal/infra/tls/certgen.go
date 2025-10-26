@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net"
 	"time"
 )
 
@@ -57,7 +58,13 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		DNSNames:              []string{host},
+	}
+
+	// Check if host is an IP address or hostname
+	if ip := net.ParseIP(host); ip != nil {
+		template.IPAddresses = []net.IP{ip}
+	} else {
+		template.DNSNames = []string{host}
 	}
 
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, g.caCert, &privateKey.PublicKey, g.caKey)

@@ -73,16 +73,8 @@
               "minItems": 1,
               "type": "array"
             },
-            "cert-file": {
-              "description": "Path to HTTPS certificate file for this mapping. If not specified for HTTPS mappings, auto-generated certificates will be used (requires CA certificate generated with 'uncors generate-certs').",
-              "type": "string"
-            },
             "from": {
-              "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified.",
-              "type": "string"
-            },
-            "key-file": {
-              "description": "Path to private key file matching the certificate for this mapping. Required if cert-file is specified.",
+              "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified. HTTPS mappings use auto-generated certificates (requires CA certificate generated with 'uncors generate-certs').",
               "type": "string"
             },
             "mocks": {
