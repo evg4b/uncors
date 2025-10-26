@@ -1,6 +1,7 @@
 package uncors //nolint:testpackage // Testing unexported function
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"os"
 	"path/filepath"
@@ -66,7 +67,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
-		assert.NotEmpty(t, tlsConfig.Certificates)
+		assert.NotNil(t, tlsConfig.GetCertificate)
 		assert.Equal(t, uint16(0x0303), tlsConfig.MinVersion) // TLS 1.2
 	})
 
@@ -165,10 +166,14 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
-		assert.NotEmpty(t, tlsConfig.Certificates)
+		assert.NotNil(t, tlsConfig.GetCertificate)
 		assert.Equal(t, uint16(0x0303), tlsConfig.MinVersion) // TLS 1.2
 
-		cert := tlsConfig.Certificates[0]
+		// Test SNI by requesting certificate for localhost
+		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+		require.NoError(t, err)
+		require.NotNil(t, cert)
+
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 		assert.Contains(t, x509Cert.DNSNames, "localhost")
@@ -197,28 +202,15 @@ func TestBuildTLSConfig(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to load CA certificate")
 	})
 
-	t.Run("should return error when mapping has invalid host", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		fs := afero.NewOsFs()
-
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := infratls.CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := infratls.GenerateCA(caConfig)
-		require.NoError(t, err)
+	t.Run("should return error when mapping has invalid host with custom cert", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
 
 		mappings := config.Mappings{
 			{
-				From: "https://[invalid-host",
-				To:   "http://example.com",
+				From:     "https://[invalid-host",
+				To:       "http://example.com",
+				CertFile: "/cert.crt",
+				KeyFile:  "/key.key",
 			},
 		}
 
@@ -260,9 +252,137 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
 
-		cert := tlsConfig.Certificates[0]
+		// Test SNI by requesting certificate for the specific host
+		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: testHost})
+		require.NoError(t, err)
+		require.NotNil(t, cert)
+
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 		assert.Contains(t, x509Cert.DNSNames, testHost)
+	})
+
+	t.Run("should use SNI to serve different certificates for different hosts on same port", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+
+		// Generate CA for auto-generated certificates
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caConfig := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+			Fs:           fs,
+		}
+		_, _, err := infratls.GenerateCA(caConfig)
+		require.NoError(t, err)
+
+		// Create two mappings on the same port but different hosts
+		mappings := config.Mappings{
+			{
+				From: "https://api.local:8443",
+				To:   "http://api.example.com",
+			},
+			{
+				From: "https://app.local:8443",
+				To:   "http://app.example.com",
+			},
+		}
+
+		tlsConfig, err := buildTLSConfig(fs, mappings)
+
+		require.NoError(t, err)
+		require.NotNil(t, tlsConfig)
+		assert.NotNil(t, tlsConfig.GetCertificate)
+
+		// Test SNI for api.local - should auto-generate cert for this host
+		apiCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
+		require.NoError(t, err)
+		require.NotNil(t, apiCert)
+
+		apiX509Cert, err := x509.ParseCertificate(apiCert.Certificate[0])
+		require.NoError(t, err)
+		assert.Contains(t, apiX509Cert.DNSNames, "api.local")
+
+		// Test SNI for app.local - should auto-generate cert for this host
+		appCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
+		require.NoError(t, err)
+		require.NotNil(t, appCert)
+
+		appX509Cert, err := x509.ParseCertificate(appCert.Certificate[0])
+		require.NoError(t, err)
+		assert.Contains(t, appX509Cert.DNSNames, "app.local")
+
+		// Verify that each certificate is valid for its respective host
+		assert.NotContains(t, apiX509Cert.DNSNames, "app.local", "api cert should not contain app.local")
+		assert.NotContains(t, appX509Cert.DNSNames, "api.local", "app cert should not contain api.local")
+	})
+
+	t.Run("should mix custom and auto-generated certificates on same port", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		fakeHome := filepath.Join(tmpDir, "home")
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+
+		// Generate CA for auto-generated certificates
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caConfig := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    caDir,
+			Fs:           fs,
+		}
+		_, _, err := infratls.GenerateCA(caConfig)
+		require.NoError(t, err)
+
+		// Create custom certificate for one host
+		customCertDir := filepath.Join(tmpDir, "custom")
+		require.NoError(t, os.MkdirAll(customCertDir, 0o755))
+		customCertConfig := infratls.CAConfig{
+			ValidityDays: 365,
+			OutputDir:    customCertDir,
+		}
+		customCertPath, customKeyPath, err := infratls.GenerateCA(customCertConfig)
+		require.NoError(t, err)
+
+		mappings := config.Mappings{
+			{
+				From:     "https://api.local:8443",
+				To:       "http://api.example.com",
+				CertFile: customCertPath,
+				KeyFile:  customKeyPath,
+			},
+			{
+				From: "https://app.local:8443",
+				To:   "http://app.example.com",
+				// No cert/key - should use auto-generated
+			},
+		}
+
+		tlsConfig, err := buildTLSConfig(fs, mappings)
+
+		require.NoError(t, err)
+		require.NotNil(t, tlsConfig)
+
+		// Test custom certificate
+		apiCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
+		require.NoError(t, err)
+		require.NotNil(t, apiCert)
+
+		// Test auto-generated certificate
+		appCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
+		require.NoError(t, err)
+		require.NotNil(t, appCert)
+
+		// Verify app.local has correct DNS name
+		x509Cert, err := x509.ParseCertificate(appCert.Certificate[0])
+		require.NoError(t, err)
+		assert.Contains(t, x509Cert.DNSNames, "app.local")
 	})
 }
