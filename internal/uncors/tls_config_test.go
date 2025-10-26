@@ -1,4 +1,4 @@
-package uncors
+package uncors //nolint:testpackage // Testing unexported function
 
 import (
 	"crypto/x509"
@@ -13,6 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testCertPath = "/test/cert.crt"
+	testKeyPath  = "/test/key.key"
+)
+
 func TestBuildTLSConfig(t *testing.T) {
 	t.Run("should return error when no mappings provided", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -20,7 +25,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Equal(t, infratls.ErrNoMappingsProvided, err)
 	})
@@ -28,12 +33,10 @@ func TestBuildTLSConfig(t *testing.T) {
 	t.Run("should load custom certificate when cert and key files provided", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		certPath := "/test/cert.crt"
-		keyPath := "/test/key.key"
+		certPath := testCertPath
+		keyPath := testKeyPath
 
-		tmpDir, err := os.MkdirTemp("", "tls-test-*")
-		require.NoError(t, err)
-		defer os.RemoveAll(tmpDir)
+		tmpDir := t.TempDir()
 
 		caConfig := infratls.CAConfig{
 			ValidityDays: 365,
@@ -47,7 +50,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		keyData, err := os.ReadFile(generatedKeyPath)
 		require.NoError(t, err)
 
-		require.NoError(t, afero.WriteFile(fs, certPath, certData, 0o644))
+		require.NoError(t, afero.WriteFile(fs, certPath, certData, 0o600))
 		require.NoError(t, afero.WriteFile(fs, keyPath, keyData, 0o600))
 
 		mappings := config.Mappings{
@@ -81,7 +84,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Contains(t, err.Error(), "failed to read certificate file")
 	})
@@ -89,8 +92,8 @@ func TestBuildTLSConfig(t *testing.T) {
 	t.Run("should return error when key file does not exist", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		certPath := "/test/cert.crt"
-		require.NoError(t, afero.WriteFile(fs, certPath, []byte("cert data"), 0o644))
+		certPath := testCertPath
+		require.NoError(t, afero.WriteFile(fs, certPath, []byte("cert data"), 0o600))
 
 		mappings := config.Mappings{
 			{
@@ -103,7 +106,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Contains(t, err.Error(), "failed to read key file")
 	})
@@ -111,10 +114,10 @@ func TestBuildTLSConfig(t *testing.T) {
 	t.Run("should return error for invalid certificate data", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		certPath := "/test/cert.crt"
-		keyPath := "/test/key.key"
+		certPath := testCertPath
+		keyPath := testKeyPath
 
-		require.NoError(t, afero.WriteFile(fs, certPath, []byte("invalid cert"), 0o644))
+		require.NoError(t, afero.WriteFile(fs, certPath, []byte("invalid cert"), 0o600))
 		require.NoError(t, afero.WriteFile(fs, keyPath, []byte("invalid key"), 0o600))
 
 		mappings := config.Mappings{
@@ -128,7 +131,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Contains(t, err.Error(), "failed to load certificate")
 	})
@@ -189,7 +192,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Contains(t, err.Error(), "failed to load CA certificate")
 	})
@@ -221,7 +224,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		tlsConfig, err := buildTLSConfig(fs, mappings)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
 		assert.Contains(t, err.Error(), "failed to parse mapping host")
 	})

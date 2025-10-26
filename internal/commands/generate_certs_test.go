@@ -193,7 +193,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 		// Create only cert file
 		certPath := filepath.Join(caDir, caCertFile)
-		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o644))
+		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
 
 		cmd := commands.NewGenerateCertsCommand()
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)

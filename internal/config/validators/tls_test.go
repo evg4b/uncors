@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testCertPath = "/path/to/cert.crt"
+	testKeyPath  = "/path/to/key.key"
+)
+
 func TestTLSValidator_IsValid(t *testing.T) {
 	t.Run("should skip validation for invalid URL", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -73,13 +78,13 @@ func TestTLSValidator_IsValid(t *testing.T) {
 			},
 		}
 
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
+		for _, testCase := range testCases {
+			t.Run(testCase.name, func(t *testing.T) {
 				mapping := config.Mapping{
 					From:     "https://localhost:8443",
 					To:       "http://example.com",
-					CertFile: tc.certFile,
-					KeyFile:  tc.keyFile,
+					CertFile: testCase.certFile,
+					KeyFile:  testCase.keyFile,
 				}
 
 				validator := &validators.TLSValidator{
@@ -100,8 +105,8 @@ func TestTLSValidator_IsValid(t *testing.T) {
 	t.Run("should validate custom certificate files exist", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		certPath := "/path/to/cert.crt"
-		keyPath := "/path/to/key.key"
+		certPath := testCertPath
+		keyPath := testKeyPath
 
 		// Create only cert file, not key
 		require.NoError(t, afero.WriteFile(fs, certPath, []byte("cert"), 0o644))

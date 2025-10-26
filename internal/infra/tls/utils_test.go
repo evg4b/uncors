@@ -141,7 +141,7 @@ func TestCAExists_EdgeCases(t *testing.T) {
 
 		// Create only cert file, not key
 		certPath := filepath.Join(caDir, "ca.crt")
-		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o644))
+		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
 
 		exists := infratls.CAExists(nil)
 		assert.False(t, exists, "should return false when only cert exists")
