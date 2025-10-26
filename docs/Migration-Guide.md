@@ -2,7 +2,7 @@
 
 This guide helps you migrate your UNCORS configuration files to the latest version. Breaking changes are documented here with examples showing how to update your configuration.
 
-## Version 0.6.x to 0.7.x
+## Version 0.5.x to 0.6.x
 
 ### Custom Certificate Support Removal
 
@@ -74,14 +74,9 @@ This will create a CA certificate in `~/.config/uncors/ca.crt`. Add this certifi
 
 ---
 
-## Version 0.5.x to 0.6.x
-
 ### TLS Certificate Configuration Changes
 
 **Breaking Change:** Global `cert-file` and `key-file` configuration properties have been removed from the root level. TLS certificates must now use auto-generated certificates with a local CA.
-
-> [!NOTE]
-> This migration guide applies to v0.6.x. Starting from v0.7.x, per-mapping custom certificates have also been removed. See [Version 0.6.x to 0.7.x](#version-06x-to-07x) for the latest migration steps.
 
 #### Why This Change?
 

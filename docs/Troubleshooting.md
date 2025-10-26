@@ -113,6 +113,7 @@ uncors generate-certs
 ```
 
 This creates CA files in `~/.config/uncors/`:
+
 - `ca.crt` - CA certificate
 - `ca.key` - CA private key
 
@@ -121,6 +122,7 @@ This creates CA files in `~/.config/uncors/`:
 Add the CA certificate to your system's trusted certificates:
 
 **macOS:**
+
 ```bash
 # Open Keychain Access
 open ~/.config/uncors/ca.crt
@@ -128,12 +130,14 @@ open ~/.config/uncors/ca.crt
 ```
 
 **Linux:**
+
 ```bash
 sudo cp ~/.config/uncors/ca.crt /usr/local/share/ca-certificates/uncors-ca.crt
 sudo update-ca-certificates
 ```
 
 **Windows:**
+
 ```powershell
 # Import via Certificate Manager
 certutil -addstore -user "Root" %USERPROFILE%\.config\uncors\ca.crt
