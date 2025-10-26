@@ -4,6 +4,73 @@ This guide helps you migrate your UNCORS configuration files to the latest versi
 
 ## Version 0.5.x to 0.6.x
 
+### TLS Certificate Configuration Changes
+
+**Breaking Change:** Global `cert-file` and `key-file` configuration properties have been removed from the root level. TLS certificates are now specified per-mapping, allowing different certificates for different HTTPS mappings.
+
+#### Why This Change?
+
+The previous architecture required all HTTPS mappings to share the same certificate. The new per-mapping certificate configuration allows each HTTPS mapping to use its own certificate or auto-generate certificates using a local CA, providing greater flexibility and security.
+
+#### TLS Configuration Migration Steps
+
+**Old Configuration (v0.5.x and earlier):**
+
+```yaml
+cert-file: ~/certs/server.crt
+key-file: ~/certs/server.key
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+```
+
+**New Configuration (v0.6.x) - Option 1: Custom Certificates Per Mapping:**
+
+```yaml
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+    cert-file: ~/certs/app.crt
+    key-file: ~/certs/app.key
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+    cert-file: ~/certs/admin.crt
+    key-file: ~/certs/admin.key
+```
+
+**New Configuration (v0.6.x) - Option 2: Auto-Generated Certificates:**
+
+```yaml
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+```
+
+Before using auto-generated certificates, you need to create a local CA:
+
+```bash
+uncors generate-certs
+```
+
+This will create a CA certificate in `~/.config/uncors/ca.crt`. Add this certificate to your system's trusted certificates to avoid browser warnings.
+
+**Key Changes:**
+
+1. **Remove** the global `cert-file` and `key-file` properties from root level
+2. **Add** `cert-file` and `key-file` directly to each HTTPS mapping that needs custom certificates
+3. **Or** omit certificate fields entirely to use auto-generated certificates (requires CA setup)
+
+#### Benefits of Per-Mapping Certificates
+
+- Different certificates for different domains
+- Mix custom and auto-generated certificates in the same configuration
+- Better security through certificate isolation
+- Support for SNI (Server Name Indication) for multiple hosts on the same port
+
 ### Port Configuration Changes
 
 **Breaking Change:** Global `http-port` and `https-port` configuration properties have been removed. Ports are now specified directly in the mapping URLs.
@@ -158,8 +225,6 @@ mappings:
 ```yaml
 debug: true
 proxy: http://proxy.example.com:3128
-cert-file: ~/certs/server.crt
-key-file: ~/certs/server.key
 
 mappings:
   - from: http://api.local:8080
@@ -171,6 +236,8 @@ mappings:
           raw: "Test response"
   - from: https://secure.local:8443
     to: https://secure.example.com
+    cert-file: ~/certs/server.crt
+    key-file: ~/certs/server.key
     statics:
       - path: /static
         dir: ./public

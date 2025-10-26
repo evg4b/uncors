@@ -85,13 +85,11 @@ Multiple `--from`/`--to` pairs can be specified to define additional mappings. E
 
 ## Global Configuration
 
-| Parameter     | Short | Description                                |
-| ------------- | ----- | ------------------------------------------ |
-| `--cert-file` |       | Path to HTTPS certificate file             |
-| `--key-file`  |       | Path to certificate private key file       |
-| `--proxy`     |       | HTTP/HTTPS proxy URL for upstream requests |
-| `--config`    |       | Path to YAML configuration file            |
-| `--debug`     |       | Enable debug logging output                |
+| Parameter  | Short | Description                                |
+| ---------- | ----- | ------------------------------------------ |
+| `--proxy`  |       | HTTP/HTTPS proxy URL for upstream requests |
+| `--config` |       | Path to YAML configuration file            |
+| `--debug`  |       | Enable debug logging output                |
 
 > [!NOTE]
 > CLI parameters override configuration file settings.
@@ -104,8 +102,6 @@ UNCORS uses YAML format for configuration files. Below is a comprehensive exampl
 # global configuration
 debug: false
 proxy: localhost:8080
-cert-file: ~/server.crt
-key-file: ~/server.key
 
 # mappings configuration
 mappings:
@@ -140,13 +136,11 @@ mappings:
 
 # Global Configuration Properties
 
-| Property    | Type    | Default | Description                                     |
-| ----------- | ------- | ------- | ----------------------------------------------- |
-| `cert-file` | string  | -       | Path to HTTPS certificate file                  |
-| `key-file`  | string  | -       | Path to certificate private key file            |
-| `proxy`     | string  | -       | HTTP/HTTPS proxy URL for upstream requests      |
-| `debug`     | boolean | false   | Enable debug logging output                     |
-| `mappings`  | array   | []      | List of host mapping configurations (see below) |
+| Property   | Type    | Default | Description                                     |
+| ---------- | ------- | ------- | ----------------------------------------------- |
+| `proxy`    | string  | -       | HTTP/HTTPS proxy URL for upstream requests      |
+| `debug`    | boolean | false   | Enable debug logging output                     |
+| `mappings` | array   | []      | List of host mapping configurations (see below) |
 
 # Mapping Configuration
 
@@ -329,6 +323,7 @@ uncors generate-certs --force
 ```
 
 This creates a CA certificate in `~/.config/uncors/`:
+
 - `ca.crt` - CA certificate (add to system trust store)
 - `ca.key` - CA private key
 
@@ -368,16 +363,6 @@ mappings:
   - from: https://api.local:9443
     to: https://api.example.com
     # This mapping uses auto-generated certificates
-```
-
-**Global certificates (legacy):**
-
-```yaml
-cert-file: ~/path/to/cert.crt
-key-file: ~/path/to/cert.key
-
-mappings:
-  - https://localhost:8443: https://github.com
 ```
 
 > [!NOTE]

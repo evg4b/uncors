@@ -376,18 +376,10 @@
       },
       "type": "object"
     },
-    "cert-file": {
-      "description": "Path to HTTPS certificate file",
-      "type": "string"
-    },
     "debug": {
       "default": false,
       "description": "Show debug output",
       "type": "boolean"
-    },
-    "key-file": {
-      "description": "Path to matching for certificate private key",
-      "type": "string"
     },
     "mappings": {
       "description": "A list of mappings that describe how to forward requests. Ports are specified in the 'from' URL (e.g., http://localhost:8080).",

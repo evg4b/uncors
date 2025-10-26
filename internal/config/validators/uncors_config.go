@@ -31,29 +31,6 @@ func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
 		}))
 	}
 
-	if u.config.HTTPSPort != 0 {
-		errors.Append(validate.Validate(
-			&base.PortValidator{Field: "https-port", Value: u.config.HTTPSPort},
-		))
-
-		if u.config.CertFile == "" {
-			errors.Add("cert-file", "cert-file must be specified")
-
-			return
-		}
-
-		if u.config.KeyFile == "" {
-			errors.Add("key-file", "key-file must be specified")
-
-			return
-		}
-
-		errors.Append(validate.Validate(
-			&base.FileValidator{Field: "cert-file", Value: u.config.CertFile, Fs: u.fs},
-			&base.FileValidator{Field: "key-file", Value: u.config.KeyFile, Fs: u.fs},
-		))
-	}
-
 	errors.Append(validate.Validate(
 		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
 		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
