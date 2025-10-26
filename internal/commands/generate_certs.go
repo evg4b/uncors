@@ -14,6 +14,8 @@ import (
 const (
 	defaultValidityDays = 365
 	defaultConfigDir    = ".config/uncors"
+	caCertFileName      = "ca.crt"
+	caKeyFileName       = "ca.key"
 )
 
 // GenerateCertsCommand handles the 'generate-certs' command.
@@ -47,8 +49,8 @@ func (c *GenerateCertsCommand) Execute() error {
 	}
 	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
 
-	certPath := filepath.Join(c.outputDir, "ca.crt")
-	keyPath := filepath.Join(c.outputDir, "ca.key")
+	certPath := filepath.Join(c.outputDir, caCertFileName)
+	keyPath := filepath.Join(c.outputDir, caKeyFileName)
 
 	if !c.force {
 		if _, err := c.fs.Stat(certPath); err == nil {

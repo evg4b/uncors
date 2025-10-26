@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/afero"
 )
 
+const (
+	caCertFileName = "ca.crt"
+	caKeyFileName  = "ca.key"
+)
+
 // GetCAPath returns the default path to the CA certificate directory.
 func GetCAPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
@@ -31,8 +36,8 @@ func CAExists(fs afero.Fs) bool {
 		return false
 	}
 
-	certPath := filepath.Join(caDir, "ca.crt")
-	keyPath := filepath.Join(caDir, "ca.key")
+	certPath := filepath.Join(caDir, caCertFileName)
+	keyPath := filepath.Join(caDir, caKeyFileName)
 
 	_, certErr := fs.Stat(certPath)
 	_, keyErr := fs.Stat(keyPath)
@@ -51,8 +56,8 @@ func LoadDefaultCA(fs afero.Fs) (*x509.Certificate, *rsa.PrivateKey, error) {
 		return nil, nil, err
 	}
 
-	certPath := filepath.Join(caDir, "ca.crt")
-	keyPath := filepath.Join(caDir, "ca.key")
+	certPath := filepath.Join(caDir, caCertFileName)
+	keyPath := filepath.Join(caDir, caKeyFileName)
 
 	return LoadCA(fs, certPath, keyPath)
 }

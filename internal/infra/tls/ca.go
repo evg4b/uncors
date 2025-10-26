@@ -100,7 +100,7 @@ func generateCACertificate(validityDays int) (*rsa.PrivateKey, []byte, error) {
 
 // writeCertificateFile writes the certificate to a file in PEM format.
 func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string, error) {
-	certPath := filepath.Join(outputDir, "ca.crt")
+	certPath := filepath.Join(outputDir, caCertFileName)
 	certFile, err := fs.Create(certPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create certificate file: %w", err)
@@ -119,7 +119,7 @@ func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string
 
 // writePrivateKeyFile writes the private key to a file in PEM format.
 func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateKey) (string, error) {
-	keyPath := filepath.Join(outputDir, "ca.key")
+	keyPath := filepath.Join(outputDir, caKeyFileName)
 	keyFile, err := fs.Create(keyPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create key file: %w", err)

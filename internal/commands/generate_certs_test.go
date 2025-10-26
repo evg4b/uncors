@@ -12,6 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	configDir  = ".config"
+	caCertFile = "ca.crt"
+	caKeyFile  = "ca.key"
+)
+
 func TestNewGenerateCertsCommand(t *testing.T) {
 	t.Run("should create new command", func(t *testing.T) {
 		cmd := commands.NewGenerateCertsCommand()
@@ -58,13 +64,13 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		assert.FileExists(t, filepath.Join(caDir, "ca.crt"))
-		assert.FileExists(t, filepath.Join(caDir, "ca.key"))
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
+		assert.FileExists(t, filepath.Join(caDir, caCertFile))
+		assert.FileExists(t, filepath.Join(caDir, caKeyFile))
 
 		cert, key, err := infratls.LoadCA(nil,
-			filepath.Join(caDir, "ca.crt"),
-			filepath.Join(caDir, "ca.key"),
+			filepath.Join(caDir, caCertFile),
+			filepath.Join(caDir, caKeyFile),
 		)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
@@ -88,10 +94,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
 		cert, _, err := infratls.LoadCA(nil,
-			filepath.Join(caDir, "ca.crt"),
-			filepath.Join(caDir, "ca.key"),
+			filepath.Join(caDir, caCertFile),
+			filepath.Join(caDir, caKeyFile),
 		)
 		require.NoError(t, err)
 
@@ -134,10 +140,10 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
 		cert1, _, err := infratls.LoadCA(nil,
-			filepath.Join(caDir, "ca.crt"),
-			filepath.Join(caDir, "ca.key"),
+			filepath.Join(caDir, caCertFile),
+			filepath.Join(caDir, caKeyFile),
 		)
 		require.NoError(t, err)
 
@@ -151,8 +157,8 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		cert2, _, err := infratls.LoadCA(nil,
-			filepath.Join(caDir, "ca.crt"),
-			filepath.Join(caDir, "ca.key"),
+			filepath.Join(caDir, caCertFile),
+			filepath.Join(caDir, caKeyFile),
 		)
 		require.NoError(t, err)
 		assert.NotEqual(t, cert1.SerialNumber, cert2.SerialNumber)
@@ -171,7 +177,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
 		assert.DirExists(t, caDir)
 	})
 }

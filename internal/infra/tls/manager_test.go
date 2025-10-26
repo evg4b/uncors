@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,12 +47,12 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should generate and cache certificate", func(t *testing.T) {
 		manager := infratls.NewCertManager(caCert, caKey)
 
-		cert1, err := manager.GetCertificate("test.local")
+		cert1, err := manager.GetCertificate(hosts.Example.Host())
 		require.NoError(t, err)
 		assert.NotNil(t, cert1)
 
 		// Get the same certificate again (should use cache)
-		cert2, err := manager.GetCertificate("test.local")
+		cert2, err := manager.GetCertificate(hosts.Example.Host())
 		require.NoError(t, err)
 		assert.NotNil(t, cert2)
 
@@ -74,7 +75,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should return error when no CA and no cached certificate", func(t *testing.T) {
 		manager := infratls.NewCertManager(nil, nil)
 
-		_, err := manager.GetCertificate("test.local")
+		_, err := manager.GetCertificate(hosts.Example.Host())
 		require.Error(t, err)
 	})
 
@@ -124,7 +125,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}
 
-		certs := make(map[string]interface{})
+		certs := make(map[string]any)
 		for _, host := range hosts {
 			cert, err := manager.GetCertificate(host)
 			require.NoError(t, err)

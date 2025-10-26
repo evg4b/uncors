@@ -10,13 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	configDir = ".config"
+	uncorsDir = "uncors"
+)
+
 func TestGetCAPath(t *testing.T) {
 	t.Run("should return valid CA path", func(t *testing.T) {
 		path, err := infratls.GetCAPath()
 		require.NoError(t, err)
 		assert.NotEmpty(t, path)
-		assert.Contains(t, path, ".config")
-		assert.Contains(t, path, "uncors")
+		assert.Contains(t, path, configDir)
+		assert.Contains(t, path, uncorsDir)
 	})
 
 	t.Run("should return path containing user home", func(t *testing.T) {
@@ -48,7 +53,7 @@ func TestCAExists(t *testing.T) {
 
 		assert.False(t, infratls.CAExists(nil))
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			OutputDir:    caDir,
@@ -69,7 +74,7 @@ func TestLoadDefaultCA(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			OutputDir:    caDir,
