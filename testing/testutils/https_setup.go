@@ -1,0 +1,58 @@
+package testutils
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"net/http"
+	"os"
+	"path/filepath"
+	"testing"
+
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
+)
+
+// SetupHTTPSTest sets up CA for HTTPS tests and returns HTTP client with proper TLS config.
+func SetupHTTPSTest(t *testing.T, fs afero.Fs) *http.Client {
+	t.Helper()
+
+	tmpDir := t.TempDir()
+	fakeHome := filepath.Join(tmpDir, "home")
+	CheckNoError(t, os.MkdirAll(fakeHome, 0o755))
+	t.Setenv("HOME", fakeHome)
+
+	// Generate CA using uncors
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
+	caConfig := infratls.CAConfig{
+		ValidityDays: 365,
+		OutputDir:    caDir,
+		Fs:           fs,
+	}
+	certPath, keyPath, err := infratls.GenerateCA(caConfig)
+	CheckNoError(t, err)
+
+	// Load CA certificate for client
+	caCertData, err := afero.ReadFile(fs, certPath)
+	CheckNoError(t, err)
+
+	caKeyData, err := afero.ReadFile(fs, keyPath)
+	CheckNoError(t, err)
+
+	// Setup client TLS config to trust the CA
+	certsPool := x509.NewCertPool()
+	certsPool.AppendCertsFromPEM(caCertData)
+
+	serverCert, err := tls.X509KeyPair(caCertData, caKeyData)
+	CheckNoError(t, err)
+
+	_ = serverCert // Server uses auto-generated certs via buildTLSConfig
+
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				MinVersion: tls.VersionTLS12,
+				RootCAs:    certsPool,
+			},
+		},
+	}
+}
