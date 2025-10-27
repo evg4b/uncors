@@ -193,11 +193,11 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 		// Start listener for this port
 		app.waitGroup.Add(1)
-		go app.startListener(ctx, portSrv, uncorsConfig)
+		go app.startListener(portSrv)
 	}
 }
 
-func (app *App) startListener(_ context.Context, portSrv *portServer, _ *config.UncorsConfig) {
+func (app *App) startListener(portSrv *portServer) {
 	defer app.waitGroup.Done()
 
 	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
