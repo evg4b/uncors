@@ -5,7 +5,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators/base"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -17,8 +16,6 @@ type StaticValidator struct {
 }
 
 func (s *StaticValidator) IsValid(errors *validate.Errors) {
-	helpers.PassedOrOsFs(&s.Fs)
-
 	errors.Append(validate.Validate(
 		&base.PathValidator{
 			Field: joinPath(s.Field, "path"),

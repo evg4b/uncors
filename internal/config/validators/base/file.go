@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/evg4b/uncors/internal/helpers"
-
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -17,8 +15,6 @@ type FileValidator struct {
 }
 
 func (f *FileValidator) IsValid(errors *validate.Errors) {
-	helpers.PassedOrOsFs(&f.Fs)
-
 	stat, err := f.Fs.Stat(f.Value)
 	if err != nil {
 		switch {
