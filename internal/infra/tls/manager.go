@@ -73,8 +73,26 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 // CheckCAExpiration checks if the CA certificate is expiring soon and logs a warning.
 func CheckCAExpiration(cert *x509.Certificate) {
 	expiresSoon, timeLeft := CheckExpiration(cert, expirationWarningThreshold)
-	if expiresSoon {
+	if !expiresSoon {
+		return
+	}
+
+	switch {
+	case timeLeft < 0:
+		log.Errorf("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
+	case timeLeft < 24*time.Hour:
+		hours := int(timeLeft.Hours())
+		log.Warnf(
+			"CA certificate expires in less than %d hours! "+
+				"Consider regenerating it with: uncors generate-certs --force",
+			hours,
+		)
+	default:
 		days := int(timeLeft.Hours() / hoursInDay)
-		log.Warnf("CA certificate expires in %d days! Consider regenerating it with: uncors generate-certs --force", days)
+		log.Warnf(
+			"CA certificate expires in %d days! "+
+				"Consider regenerating it with: uncors generate-certs --force",
+			days,
+		)
 	}
 }

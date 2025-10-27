@@ -1,7 +1,9 @@
 package tls_test
 
 import (
+	"crypto/x509"
 	"testing"
+	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -183,6 +185,42 @@ func TestCheckCAExpiration(t *testing.T) {
 		// Should not panic even with expiring cert
 		assert.NotPanics(t, func() {
 			infratls.CheckCAExpiration(caCert)
+		})
+	})
+
+	t.Run("should show correct message for expired certificate", func(t *testing.T) {
+		// Create a certificate that has already expired
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(-24 * time.Hour), // Expired yesterday
+		}
+
+		// Should not panic with expired cert
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
+		})
+	})
+
+	t.Run("should show correct message for certificate expiring in hours", func(t *testing.T) {
+		// Create a certificate that expires in less than 24 hours
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(12 * time.Hour), // Expires in 12 hours
+		}
+
+		// Should not panic
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
+		})
+	})
+
+	t.Run("should not show warning for certificate valid for more than 7 days", func(t *testing.T) {
+		// Create a certificate that expires in more than 7 days
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(10 * 24 * time.Hour), // Expires in 10 days
+		}
+
+		// Should not panic and should not log warning
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
 		})
 	})
 }
