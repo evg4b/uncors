@@ -14,17 +14,18 @@ import (
 
 func TestNewCertGenerator(t *testing.T) {
 	t.Run("should create cert generator with valid CA", func(t *testing.T) {
-		tmpDir := t.TempDir()
+		fs := afero.NewMemMapFs()
+		tmpDir := "/tmp/test"
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
-			Fs:           afero.NewOsFs(),
+			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		generator := infratls.NewCertGenerator(caCert, caKey)
@@ -33,16 +34,17 @@ func TestNewCertGenerator(t *testing.T) {
 }
 
 func TestCertGenerator_GenerateCertificate(t *testing.T) {
-	tmpDir := t.TempDir()
+	fs := afero.NewMemMapFs()
+	tmpDir := "/tmp/test"
 	config := infratls.CAConfig{
 		ValidityDays: 365,
-			Fs:           afero.NewOsFs(),
+		Fs:           fs,
 		OutputDir:    tmpDir,
 	}
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	generator := infratls.NewCertGenerator(caCert, caKey)
