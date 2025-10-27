@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+const minHostsFileFields = 2 // Minimum fields in hosts file: IP and at least one hostname
+
 // GetHostsFilePath returns the path to the system hosts file based on the operating system.
 func GetHostsFilePath() string {
 	if runtime.GOOS == "windows" {
@@ -47,7 +49,7 @@ func ReadHostsFile(fs afero.Fs) (map[string]string, error) {
 
 		// Split by whitespace
 		fields := strings.Fields(line)
-		if len(fields) < 2 {
+		if len(fields) < minHostsFileFields {
 			continue
 		}
 

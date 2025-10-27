@@ -73,7 +73,7 @@ func TestReadHostsFile(t *testing.T) {
 192.168.1.1 external.com
 `
 		hostsPath := helpers.GetHostsFilePath()
-		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0644)
+		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0o644)
 		require.NoError(t, err)
 
 		hosts, err := helpers.ReadHostsFile(fs)
@@ -91,7 +91,7 @@ func TestReadHostsFile(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
 		hosts, err := helpers.ReadHostsFile(fs)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, hosts)
 	})
 
@@ -103,7 +103,7 @@ invalid-line
 127.0.0.2 test.local
 `
 		hostsPath := helpers.GetHostsFilePath()
-		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0644)
+		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0o644)
 		require.NoError(t, err)
 
 		hosts, err := helpers.ReadHostsFile(fs)

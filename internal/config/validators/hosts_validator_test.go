@@ -13,7 +13,7 @@ import (
 
 func createMockHostsFile(t *testing.T, fs afero.Fs, content string) {
 	hostsPath := helpers.GetHostsFilePath()
-	err := afero.WriteFile(fs, hostsPath, []byte(content), 0644)
+	err := afero.WriteFile(fs, hostsPath, []byte(content), 0o644)
 	require.NoError(t, err)
 }
 
@@ -92,7 +92,7 @@ func TestValidateHostsFileEntries(t *testing.T) {
 
 	t.Run("should warn about missing hosts", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		createMockHostsFile(t, fs, "127.0.0.1 localhost\n")
+		createMockHostsFile(t, fs, "127.0.0.1 localhost\n127.0.0.1 other.local\n")
 
 		cfg := &config.UncorsConfig{
 			Mappings: []config.Mapping{
@@ -101,6 +101,21 @@ func TestValidateHostsFileEntries(t *testing.T) {
 		}
 
 		// Should not panic, just log warning
+		assert.NotPanics(t, func() {
+			validators.ValidateHostsFileEntries(cfg, fs)
+		})
+	})
+
+	t.Run("should not warn when host exists in hosts file", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		createMockHostsFile(t, fs, "127.0.0.1 localhost api.local app.local\n")
+
+		cfg := &config.UncorsConfig{
+			Mappings: []config.Mapping{
+				{From: "http://api.local:8080", To: "https://example.com"},
+			},
+		}
+
 		assert.NotPanics(t, func() {
 			validators.ValidateHostsFileEntries(cfg, fs)
 		})
