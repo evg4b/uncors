@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -238,7 +239,7 @@ func (app *App) createServerForPort(
 			helpers.NormaliseRequest(request)
 			portHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
-		ErrorLog: log.StandardLog(),
+		ErrorLog: infra.NewHTTPServerErrorLogger(app.logger),
 	}
 	server.RegisterOnShutdown(portCtxCancel)
 
