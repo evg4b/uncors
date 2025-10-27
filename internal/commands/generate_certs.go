@@ -25,8 +25,10 @@ type GenerateCertsCommand struct {
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
-func NewGenerateCertsCommand() *GenerateCertsCommand {
-	return &GenerateCertsCommand{}
+func NewGenerateCertsCommand(fs afero.Fs) *GenerateCertsCommand {
+	return &GenerateCertsCommand{
+		fs: fs,
+	}
 }
 
 // DefineFlags defines command-line flags for the generate-certs command.
@@ -37,10 +39,6 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet) {
 
 // Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
-	if c.fs == nil {
-		c.fs = afero.NewOsFs()
-	}
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)

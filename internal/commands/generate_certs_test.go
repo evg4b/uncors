@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/commands"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,14 +21,16 @@ const (
 
 func TestNewGenerateCertsCommand(t *testing.T) {
 	t.Run("should create new command", func(t *testing.T) {
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		assert.NotNil(t, cmd)
 	})
 }
 
 func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 	t.Run("should define validity-days flag", func(t *testing.T) {
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 		cmd.DefineFlags(flags)
@@ -38,7 +41,8 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 	})
 
 	t.Run("should define force flag", func(t *testing.T) {
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 		cmd.DefineFlags(flags)
@@ -54,10 +58,11 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -81,10 +86,11 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -110,17 +116,18 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 	t.Run("should fail when CA already exists without force flag", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
+		fs := afero.NewOsFs()
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand()
+		cmd1 := commands.NewGenerateCertsCommand(fs)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand()
+		cmd2 := commands.NewGenerateCertsCommand(fs)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
 		err = cmd2.Execute()
@@ -130,24 +137,25 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 	t.Run("should overwrite CA with force flag", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
+		fs := afero.NewOsFs()
 		fakeHome := filepath.Join(tmpDir, "home")
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand()
+		cmd1 := commands.NewGenerateCertsCommand(fs)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
 		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		cert1, _, err := infratls.LoadCA(nil,
+		cert1, _, err := infratls.LoadCA(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand()
+		cmd2 := commands.NewGenerateCertsCommand(fs)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
 		err = flags2.Set("force", "true")
@@ -170,7 +178,8 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		fakeHome := filepath.Join(tmpDir, "home")
 		t.Setenv("HOME", fakeHome)
 
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -195,7 +204,8 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		certPath := filepath.Join(caDir, caCertFile)
 		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
 
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -218,7 +228,8 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		keyPath := filepath.Join(caDir, caKeyFile)
 		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
 
-		cmd := commands.NewGenerateCertsCommand()
+		fs := afero.NewOsFs()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
