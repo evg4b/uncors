@@ -57,7 +57,7 @@ func TestCAExists(t *testing.T) {
 		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
-		Fs:           afero.NewOsFs(),
+			Fs:           afero.NewOsFs(),
 			OutputDir:    caDir,
 		}
 		_, _, err := infratls.GenerateCA(config)
@@ -79,7 +79,7 @@ func TestLoadDefaultCA(t *testing.T) {
 		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
-		Fs:           afero.NewOsFs(),
+			Fs:           afero.NewOsFs(),
 			OutputDir:    caDir,
 		}
 		_, _, err := infratls.GenerateCA(config)

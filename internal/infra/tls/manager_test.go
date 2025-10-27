@@ -13,7 +13,7 @@ import (
 func TestNewCertManager(t *testing.T) {
 	t.Run("should create cert manager with CA", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		tmpDir := "/tmp/test"
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			Fs:           fs,
@@ -37,7 +37,7 @@ func TestNewCertManager(t *testing.T) {
 
 func TestCertManager_GetCertificate(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	tmpDir := "/tmp/test"
+	tmpDir := testTmpDir
 	config := infratls.CAConfig{
 		ValidityDays: 365,
 		Fs:           fs,
@@ -148,7 +148,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 func TestCheckCAExpiration(t *testing.T) {
 	t.Run("should not panic with valid certificate", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		tmpDir := "/tmp/test"
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 365,
 			Fs:           fs,
@@ -168,7 +168,7 @@ func TestCheckCAExpiration(t *testing.T) {
 
 	t.Run("should handle expiring certificate", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		tmpDir := "/tmp/test"
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 5, // Will expire soon
 			Fs:           fs,

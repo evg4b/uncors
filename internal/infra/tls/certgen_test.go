@@ -12,10 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testTmpDir = "/tmp/test"
+
 func TestNewCertGenerator(t *testing.T) {
 	t.Run("should create cert generator with valid CA", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		tmpDir := "/tmp/test"
+		tmpDir := testTmpDir
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
@@ -35,7 +37,7 @@ func TestNewCertGenerator(t *testing.T) {
 
 func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	tmpDir := "/tmp/test"
+	tmpDir := testTmpDir
 	config := infratls.CAConfig{
 		ValidityDays: 365,
 		Fs:           fs,
