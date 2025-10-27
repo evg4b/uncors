@@ -7,22 +7,27 @@ import (
 	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+const testTmpDir = "/tmp/test"
+
 func TestNewCertGenerator(t *testing.T) {
 	t.Run("should create cert generator with valid CA", func(t *testing.T) {
-		tmpDir := t.TempDir()
+		fs := afero.NewMemMapFs()
+		tmpDir := testTmpDir
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		generator := infratls.NewCertGenerator(caCert, caKey)
@@ -31,15 +36,17 @@ func TestNewCertGenerator(t *testing.T) {
 }
 
 func TestCertGenerator_GenerateCertificate(t *testing.T) {
-	tmpDir := t.TempDir()
+	fs := afero.NewMemMapFs()
+	tmpDir := testTmpDir
 	config := infratls.CAConfig{
 		ValidityDays: 365,
+		Fs:           fs,
 		OutputDir:    tmpDir,
 	}
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	generator := infratls.NewCertGenerator(caCert, caKey)

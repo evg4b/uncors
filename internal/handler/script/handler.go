@@ -25,6 +25,7 @@ func NewHandler(options ...HandlerOption) *Handler {
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	if err := h.executeScript(writer, request); err != nil {
+		h.logger.Error("Script handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(writer, err)
 
 		return

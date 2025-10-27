@@ -3,7 +3,6 @@ package uncors //nolint:testpackage // Testing unexported function
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -31,10 +30,10 @@ func TestBuildTLSConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		caConfig := infratls.CAConfig{
@@ -73,10 +72,10 @@ func TestBuildTLSConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		mappings := config.Mappings{
 			{
@@ -96,10 +95,10 @@ func TestBuildTLSConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		caConfig := infratls.CAConfig{
@@ -137,10 +136,10 @@ func TestBuildTLSConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		// Generate CA for auto-generated certificates
 		caDir := filepath.Join(fakeHome, ".config", "uncors")

@@ -32,6 +32,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	}
 
 	if err := h.writeResponse(writer, request); err != nil {
+		h.logger.Error("Mock handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(writer, err)
 
 		return

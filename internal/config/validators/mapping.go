@@ -32,6 +32,7 @@ func (m *MappingValidator) IsValid(errors *validate.Errors) {
 		errors.Append(validate.Validate(&StaticValidator{
 			Field: joinPath(m.Field, "statics", index(i)),
 			Value: static,
+			Fs:    m.Fs,
 		}))
 	}
 

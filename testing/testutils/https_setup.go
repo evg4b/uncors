@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -23,7 +22,7 @@ func SetupHTTPSTest(t *testing.T, fs afero.Fs) *http.Client {
 
 	tmpDir := t.TempDir()
 	fakeHome := filepath.Join(tmpDir, "home")
-	CheckNoError(t, os.MkdirAll(fakeHome, defaultDirPermissions))
+	CheckNoError(t, fs.MkdirAll(fakeHome, defaultDirPermissions))
 	t.Setenv("HOME", fakeHome)
 
 	// Generate CA using uncors

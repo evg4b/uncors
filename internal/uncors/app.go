@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 )
@@ -193,11 +194,11 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 		// Start listener for this port
 		app.waitGroup.Add(1)
-		go app.startListener(ctx, portSrv, uncorsConfig)
+		go app.startListener(portSrv)
 	}
 }
 
-func (app *App) startListener(_ context.Context, portSrv *portServer, _ *config.UncorsConfig) {
+func (app *App) startListener(portSrv *portServer) {
 	defer app.waitGroup.Done()
 
 	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
@@ -238,7 +239,7 @@ func (app *App) createServerForPort(
 			helpers.NormaliseRequest(request)
 			portHandler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 		}),
-		ErrorLog: log.StandardLog(),
+		ErrorLog: infra.NewHTTPServerErrorLogger(app.logger),
 	}
 	server.RegisterOnShutdown(portCtxCancel)
 

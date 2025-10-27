@@ -8,7 +8,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators/base"
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 type ScriptValidator struct {
@@ -18,8 +17,6 @@ type ScriptValidator struct {
 }
 
 func (s *ScriptValidator) IsValid(errors *validate.Errors) {
-	helpers.PassedOrOsFs(&s.Fs)
-
 	errors.Append(validate.Validate(
 		&RequestMatcherValidator{
 			Field: s.Field,

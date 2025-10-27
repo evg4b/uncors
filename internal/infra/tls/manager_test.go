@@ -1,25 +1,30 @@
 package tls_test
 
 import (
+	"crypto/x509"
 	"testing"
+	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewCertManager(t *testing.T) {
 	t.Run("should create cert manager with CA", func(t *testing.T) {
-		tmpDir := t.TempDir()
+		fs := afero.NewMemMapFs()
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		manager := infratls.NewCertManager(caCert, caKey)
@@ -33,15 +38,17 @@ func TestNewCertManager(t *testing.T) {
 }
 
 func TestCertManager_GetCertificate(t *testing.T) {
-	tmpDir := t.TempDir()
+	fs := afero.NewMemMapFs()
+	tmpDir := testTmpDir
 	config := infratls.CAConfig{
 		ValidityDays: 365,
+		Fs:           fs,
 		OutputDir:    tmpDir,
 	}
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	t.Run("should generate and cache certificate", func(t *testing.T) {
@@ -142,15 +149,17 @@ func TestCertManager_GetCertificate(t *testing.T) {
 
 func TestCheckCAExpiration(t *testing.T) {
 	t.Run("should not panic with valid certificate", func(t *testing.T) {
-		tmpDir := t.TempDir()
+		fs := afero.NewMemMapFs()
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic
@@ -160,20 +169,58 @@ func TestCheckCAExpiration(t *testing.T) {
 	})
 
 	t.Run("should handle expiring certificate", func(t *testing.T) {
-		tmpDir := t.TempDir()
+		fs := afero.NewMemMapFs()
+		tmpDir := testTmpDir
 		config := infratls.CAConfig{
 			ValidityDays: 5, // Will expire soon
+			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic even with expiring cert
 		assert.NotPanics(t, func() {
 			infratls.CheckCAExpiration(caCert)
+		})
+	})
+
+	t.Run("should show correct message for expired certificate", func(t *testing.T) {
+		// Create a certificate that has already expired
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(-24 * time.Hour), // Expired yesterday
+		}
+
+		// Should not panic with expired cert
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
+		})
+	})
+
+	t.Run("should show correct message for certificate expiring in hours", func(t *testing.T) {
+		// Create a certificate that expires in less than 24 hours
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(12 * time.Hour), // Expires in 12 hours
+		}
+
+		// Should not panic
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
+		})
+	})
+
+	t.Run("should not show warning for certificate valid for more than 7 days", func(t *testing.T) {
+		// Create a certificate that expires in more than 7 days
+		cert := &x509.Certificate{
+			NotAfter: time.Now().Add(10 * 24 * time.Hour), // Expires in 10 days
+		}
+
+		// Should not panic and should not log warning
+		assert.NotPanics(t, func() {
+			infratls.CheckCAExpiration(cert)
 		})
 	})
 }

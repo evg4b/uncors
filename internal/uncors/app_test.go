@@ -23,7 +23,7 @@ const delay = 10 * time.Millisecond
 
 func TestUncorsApp(t *testing.T) {
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 	expectedResponse := "UNCORS OK!"
 
 	t.Run("handle request", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
@@ -192,7 +192,7 @@ func mocks(response string) config.Mocks {
 
 func TestApp_Wait(t *testing.T) {
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	t.Run("wait for servers to finish", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port := freeport.GetPort()
@@ -231,7 +231,7 @@ func TestApp_Wait(t *testing.T) {
 
 func TestApp_Shutdown(t *testing.T) {
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	t.Run("graceful shutdown", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port := freeport.GetPort()
@@ -282,7 +282,7 @@ func TestApp_Shutdown(t *testing.T) {
 
 func TestApp_GetListenerAddr(t *testing.T) {
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	t.Run("get HTTP listener address", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port := freeport.GetPort()
@@ -359,7 +359,7 @@ func TestApp_GetListenerAddr(t *testing.T) {
 
 func TestApp_MultiPort(t *testing.T) {
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	t.Run("multiple HTTP ports", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port1 := freeport.GetPort()
@@ -538,7 +538,7 @@ func TestApp_HTTPSWithoutCerts(t *testing.T) {
 	t.Skip()
 
 	ctx := t.Context()
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	t.Run("HTTPS mapping without cert configuration", testutils.LogTest(func(t *testing.T, logBuffer *bytes.Buffer) {
 		httpsPort := freeport.GetPort()

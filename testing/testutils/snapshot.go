@@ -23,18 +23,6 @@ func MatchSnapshot(t *testing.T, values ...any) {
 	config.MatchSnapshot(t, values...)
 }
 
-// MatchJSON matches the given JSON value against a snapshot.
-func MatchJSON(t *testing.T, value any) {
-	config := snaps.WithConfig(snaps.Dir(getSnapshotDir()))
-	config.MatchJSON(t, value)
-}
-
-// MatchYAML matches the given YAML value against a snapshot.
-func MatchYAML(t *testing.T, value any) {
-	config := snaps.WithConfig(snaps.Dir(getSnapshotDir()))
-	config.MatchYAML(t, value)
-}
-
 func initDirs() {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -60,11 +48,4 @@ func getSnapshotDir() string {
 	}
 
 	return filepath.Join(snapshotsDir, relPath)
-}
-
-// WithSnapshotConfig allows custom snapshot configuration.
-func WithSnapshotConfig(options ...func(*snaps.Config)) *snaps.Config {
-	opts := append([]func(*snaps.Config){snaps.Dir(getSnapshotDir())}, options...)
-
-	return snaps.WithConfig(opts...)
 }

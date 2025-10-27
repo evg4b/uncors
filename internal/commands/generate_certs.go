@@ -14,8 +14,6 @@ import (
 const (
 	defaultValidityDays = 365
 	defaultConfigDir    = ".config/uncors"
-	caCertFileName      = "ca.crt"
-	caKeyFileName       = "ca.key"
 )
 
 // GenerateCertsCommand handles the 'generate-certs' command.
@@ -27,8 +25,10 @@ type GenerateCertsCommand struct {
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
-func NewGenerateCertsCommand() *GenerateCertsCommand {
-	return &GenerateCertsCommand{}
+func NewGenerateCertsCommand(fs afero.Fs) *GenerateCertsCommand {
+	return &GenerateCertsCommand{
+		fs: fs,
+	}
 }
 
 // DefineFlags defines command-line flags for the generate-certs command.
@@ -39,18 +39,14 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet) {
 
 // Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
-	if c.fs == nil {
-		c.fs = afero.NewOsFs()
-	}
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
 	}
 	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
 
-	certPath := filepath.Join(c.outputDir, caCertFileName)
-	keyPath := filepath.Join(c.outputDir, caKeyFileName)
+	certPath := filepath.Join(c.outputDir, infratls.CACertFileName)
+	keyPath := filepath.Join(c.outputDir, infratls.CAKeyFileName)
 
 	if !c.force {
 		if _, err := c.fs.Stat(certPath); err == nil {

@@ -36,7 +36,7 @@ func run() int {
 	infra.ConfigureLogger()
 
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
-		cmd := commands.NewGenerateCertsCommand()
+		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
 		if err := flags.Parse(os.Args[2:]); err != nil {

@@ -10,31 +10,24 @@ import (
 
 const defaultTimeout = 5 * time.Minute
 
-var defaultHTTPClient = http.Client{
-	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	},
-	Transport: &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-	},
-	Jar:     nil,
-	Timeout: defaultTimeout,
-}
-
 func MakeHTTPClient(proxy string) *http.Client {
-	if len(proxy) > 0 {
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+	}
+
+	if proxy != "" {
 		parsedURL, err := urlparser.Parse(proxy)
 		if err != nil {
 			panic(fmt.Errorf("failed to create http client: %w", err))
 		}
-
-		httpClient := defaultHTTPClient
-		httpClient.Transport = &http.Transport{
-			Proxy: http.ProxyURL(parsedURL),
-		}
-
-		return &httpClient
+		transport.Proxy = http.ProxyURL(parsedURL)
 	}
 
-	return &defaultHTTPClient
+	return &http.Client{
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Transport: transport,
+		Timeout:   defaultTimeout,
+	}
 }

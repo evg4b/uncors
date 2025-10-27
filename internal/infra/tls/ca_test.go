@@ -8,6 +8,7 @@ import (
 	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,6 +19,7 @@ func TestGenerateCA(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 
@@ -44,6 +46,7 @@ func TestGenerateCA(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    outputDir,
 		}
 
@@ -59,6 +62,7 @@ func TestGenerateCA(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 730,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 
@@ -66,7 +70,7 @@ func TestGenerateCA(t *testing.T) {
 		require.NoError(t, err)
 
 		// Load and verify certificate
-		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, key, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -96,13 +100,14 @@ func TestLoadCA(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
 		// Load CA
-		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, key, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -112,7 +117,7 @@ func TestLoadCA(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		_, _, err := infratls.LoadCA(
-			nil,
+			afero.NewOsFs(),
 			filepath.Join(tmpDir, "nonexistent.crt"),
 			filepath.Join(tmpDir, "nonexistent.key"),
 		)
@@ -124,12 +129,13 @@ func TestLoadCA(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, _, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		_, _, err = infratls.LoadCA(nil, certPath, filepath.Join(tmpDir, "nonexistent.key"))
+		_, _, err = infratls.LoadCA(afero.NewOsFs(), certPath, filepath.Join(tmpDir, "nonexistent.key"))
 		require.Error(t, err)
 	})
 
@@ -143,7 +149,7 @@ func TestLoadCA(t *testing.T) {
 		err = os.WriteFile(keyPath, []byte("not a valid key"), 0o600)
 		require.NoError(t, err)
 
-		_, _, err = infratls.LoadCA(nil, invalidCertPath, keyPath)
+		_, _, err = infratls.LoadCA(afero.NewOsFs(), invalidCertPath, keyPath)
 		require.Error(t, err)
 	})
 }
@@ -154,12 +160,13 @@ func TestCheckExpiration(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 5, // 5 days
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, _, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		// Check with 7-day threshold
@@ -174,12 +181,13 @@ func TestCheckExpiration(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, _, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		// Check with 7-day threshold
@@ -193,12 +201,13 @@ func TestCheckExpiration(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 1,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		cert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, _, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		// Manually modify cert to make it expired (for testing)
@@ -216,6 +225,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
@@ -225,7 +235,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		err = os.WriteFile(keyPath, []byte("not a valid key PEM"), 0o600)
 		require.NoError(t, err)
 
-		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		_, _, err = infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.Error(t, err)
 	})
 
@@ -248,7 +258,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		_, _ = keyFile.WriteString("key")
 		keyFile.Close()
 
-		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		_, _, err = infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to parse certificate")
 	})
@@ -258,6 +268,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
@@ -271,7 +282,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		_, _ = keyFile.WriteString("-----END RSA PRIVATE KEY-----\n")
 		keyFile.Close()
 
-		_, _, err = infratls.LoadCA(nil, certPath, keyPath)
+		_, _, err = infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to parse private key")
 	})
@@ -283,8 +294,8 @@ func TestGenerateCA_ErrorCases(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
-			Fs:           nil,
 		}
 
 		certPath, keyPath, err := infratls.GenerateCA(config)
@@ -301,14 +312,14 @@ func TestLoadCA_UseDefaultFilesystem(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
-			Fs:           nil,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
 		// Load with nil filesystem
-		cert, key, err := infratls.LoadCA(nil, certPath, keyPath)
+		cert, key, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)

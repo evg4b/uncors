@@ -15,7 +15,7 @@ type serveConfig struct {
 }
 
 func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
-	return app.internalServeForPort(portSrv, &serveConfig{
+	return app.internalServeForPort(&serveConfig{
 		addr:  addr,
 		serve: portSrv.server.Serve,
 		setListener: func(l net.Listener) {
@@ -27,7 +27,7 @@ func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
 }
 
 func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, tlsConfig *tls.Config) error {
-	return app.internalServeForPort(portSrv, &serveConfig{
+	return app.internalServeForPort(&serveConfig{
 		addr: addr,
 		serve: func(l net.Listener) error {
 			tlsListener := tls.NewListener(l, tlsConfig)
@@ -42,7 +42,7 @@ func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, tlsCo
 	})
 }
 
-func (app *App) internalServeForPort(_ *portServer, config *serveConfig) error {
+func (app *App) internalServeForPort(config *serveConfig) error {
 	if app.shuttingDown.Load() {
 		return http.ErrServerClosed
 	}
