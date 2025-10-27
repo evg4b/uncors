@@ -3,9 +3,10 @@ package helpers
 import (
 	"bufio"
 	"net"
-	"os"
 	"runtime"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 // GetHostsFilePath returns the path to the system hosts file based on the operating system.
@@ -23,11 +24,11 @@ type HostsEntry struct {
 	Hostnames []string
 }
 
-// ReadHostsFile reads and parses the system hosts file.
+// ReadHostsFile reads and parses the system hosts file using the provided filesystem.
 // It returns a map where the key is the hostname and the value is the IP address.
-func ReadHostsFile() (map[string]string, error) {
+func ReadHostsFile(fs afero.Fs) (map[string]string, error) {
 	hostsPath := GetHostsFilePath()
-	file, err := os.Open(hostsPath)
+	file, err := fs.Open(hostsPath)
 	if err != nil {
 		return nil, err
 	}

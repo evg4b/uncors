@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsLocalhost(t *testing.T) {
@@ -57,6 +59,61 @@ func TestIsHostInHostsFile(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestReadHostsFile(t *testing.T) {
+	t.Run("should parse hosts file correctly", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		hostsContent := `# This is a comment
+127.0.0.1 localhost
+127.0.0.1 api.local app.local
+::1       ipv6.local
+
+# Another comment
+192.168.1.1 external.com
+`
+		hostsPath := helpers.GetHostsFilePath()
+		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0644)
+		require.NoError(t, err)
+
+		hosts, err := helpers.ReadHostsFile(fs)
+		require.NoError(t, err)
+		assert.NotNil(t, hosts)
+
+		assert.Equal(t, "127.0.0.1", hosts["localhost"])
+		assert.Equal(t, "127.0.0.1", hosts["api.local"])
+		assert.Equal(t, "127.0.0.1", hosts["app.local"])
+		assert.Equal(t, "::1", hosts["ipv6.local"])
+		assert.Equal(t, "192.168.1.1", hosts["external.com"])
+	})
+
+	t.Run("should handle non-existent file", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		hosts, err := helpers.ReadHostsFile(fs)
+		assert.Error(t, err)
+		assert.Nil(t, hosts)
+	})
+
+	t.Run("should skip invalid lines", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		hostsContent := `127.0.0.1 localhost
+invalid-line
+
+127.0.0.2 test.local
+`
+		hostsPath := helpers.GetHostsFilePath()
+		err := afero.WriteFile(fs, hostsPath, []byte(hostsContent), 0644)
+		require.NoError(t, err)
+
+		hosts, err := helpers.ReadHostsFile(fs)
+		require.NoError(t, err)
+		assert.NotNil(t, hosts)
+
+		assert.Equal(t, "127.0.0.1", hosts["localhost"])
+		assert.Equal(t, "127.0.0.2", hosts["test.local"])
+		assert.Len(t, hosts, 2)
+	})
 }
 
 func TestGetHostsFilePath(t *testing.T) {

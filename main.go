@@ -101,7 +101,7 @@ func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsCo
 	}
 
 	// Validate that hosts from mappings are present in the hosts file
-	validators.ValidateHostsFileEntries(uncorsConfig)
+	validators.ValidateHostsFileEntries(uncorsConfig, fs)
 
 	return uncorsConfig
 }

@@ -7,14 +7,16 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/spf13/afero"
 )
 
 // ValidateHostsFileEntries checks if all hosts from mappings are present in the hosts file.
 // If a host is not found in the hosts file, it logs a warning.
-func ValidateHostsFileEntries(cfg *config.UncorsConfig) {
-	hosts, err := helpers.ReadHostsFile()
+func ValidateHostsFileEntries(cfg *config.UncorsConfig, fs afero.Fs) {
+	hosts, err := helpers.ReadHostsFile(fs)
 	if err != nil {
 		log.Warnf("Failed to read hosts file: %v. Skipping hosts validation.", err)
+
 		return
 	}
 
@@ -22,6 +24,7 @@ func ValidateHostsFileEntries(cfg *config.UncorsConfig) {
 		parsedURL, err := urlparser.Parse(mapping.From)
 		if err != nil {
 			log.Warnf("Failed to parse 'from' URL '%s': %v", mapping.From, err)
+
 			continue
 		}
 
