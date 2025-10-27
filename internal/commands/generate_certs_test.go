@@ -73,7 +73,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		assert.FileExists(t, filepath.Join(caDir, caCertFile))
 		assert.FileExists(t, filepath.Join(caDir, caKeyFile))
 
-		cert, key, err := infratls.LoadCA(nil,
+		cert, key, err := infratls.LoadCA(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
@@ -101,7 +101,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		cert, _, err := infratls.LoadCA(nil,
+		cert, _, err := infratls.LoadCA(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
@@ -164,7 +164,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err = cmd2.Execute()
 		require.NoError(t, err)
 
-		cert2, _, err := infratls.LoadCA(nil,
+		cert2, _, err := infratls.LoadCA(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)

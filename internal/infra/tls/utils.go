@@ -27,10 +27,6 @@ func GetCAPath() (string, error) {
 
 // CAExists checks if CA certificate files exist.
 func CAExists(fs afero.Fs) bool {
-	if fs == nil {
-		fs = afero.NewOsFs()
-	}
-
 	caDir, err := GetCAPath()
 	if err != nil {
 		return false
@@ -47,10 +43,6 @@ func CAExists(fs afero.Fs) bool {
 
 // LoadDefaultCA loads the CA certificate from the default location.
 func LoadDefaultCA(fs afero.Fs) (*x509.Certificate, *rsa.PrivateKey, error) {
-	if fs == nil {
-		fs = afero.NewOsFs()
-	}
-
 	caDir, err := GetCAPath()
 	if err != nil {
 		return nil, nil, err

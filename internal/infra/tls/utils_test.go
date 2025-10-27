@@ -39,7 +39,7 @@ func TestCAExists(t *testing.T) {
 	t.Run("should return false when CA does not exist", func(_ *testing.T) {
 		// Temporarily override home dir for testing
 		// This is tricky, so we just test the function doesn't panic
-		exists := infratls.CAExists(nil)
+		exists := infratls.CAExists(afero.NewOsFs())
 		// May be true or false depending on system state
 		// Just verify it doesn't panic
 		_ = exists
@@ -52,18 +52,19 @@ func TestCAExists(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		assert.False(t, infratls.CAExists(nil))
+		assert.False(t, infratls.CAExists(afero.NewOsFs()))
 
 		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+		Fs:           afero.NewOsFs(),
 			OutputDir:    caDir,
 		}
 		_, _, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
 		// CA should exist now
-		assert.True(t, infratls.CAExists(nil))
+		assert.True(t, infratls.CAExists(afero.NewOsFs()))
 	})
 }
 
@@ -78,13 +79,14 @@ func TestLoadDefaultCA(t *testing.T) {
 		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+		Fs:           afero.NewOsFs(),
 			OutputDir:    caDir,
 		}
 		_, _, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
 		// Load default CA
-		cert, key, err := infratls.LoadDefaultCA(nil)
+		cert, key, err := infratls.LoadDefaultCA(afero.NewOsFs())
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -98,7 +100,7 @@ func TestLoadDefaultCA(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		// Try to load non-existent CA
-		_, _, err := infratls.LoadDefaultCA(nil)
+		_, _, err := infratls.LoadDefaultCA(afero.NewOsFs())
 		require.Error(t, err)
 	})
 
@@ -143,7 +145,7 @@ func TestCAExists_EdgeCases(t *testing.T) {
 		certPath := filepath.Join(caDir, "ca.crt")
 		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
 
-		exists := infratls.CAExists(nil)
+		exists := infratls.CAExists(afero.NewOsFs())
 		assert.False(t, exists, "should return false when only cert exists")
 	})
 
@@ -161,7 +163,7 @@ func TestCAExists_EdgeCases(t *testing.T) {
 		keyPath := filepath.Join(caDir, "ca.key")
 		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
 
-		exists := infratls.CAExists(nil)
+		exists := infratls.CAExists(afero.NewOsFs())
 		assert.False(t, exists, "should return false when only key exists")
 	})
 

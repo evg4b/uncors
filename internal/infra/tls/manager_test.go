@@ -5,6 +5,7 @@ import (
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,12 +15,13 @@ func TestNewCertManager(t *testing.T) {
 		tmpDir := t.TempDir()
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		manager := infratls.NewCertManager(caCert, caKey)
@@ -36,12 +38,13 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	tmpDir := t.TempDir()
 	config := infratls.CAConfig{
 		ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 		OutputDir:    tmpDir,
 	}
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 	require.NoError(t, err)
 
 	t.Run("should generate and cache certificate", func(t *testing.T) {
@@ -145,12 +148,13 @@ func TestCheckCAExpiration(t *testing.T) {
 		tmpDir := t.TempDir()
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic
@@ -163,12 +167,13 @@ func TestCheckCAExpiration(t *testing.T) {
 		tmpDir := t.TempDir()
 		config := infratls.CAConfig{
 			ValidityDays: 5, // Will expire soon
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, _, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		// Should not panic even with expiring cert

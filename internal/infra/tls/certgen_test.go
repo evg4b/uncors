@@ -7,6 +7,7 @@ import (
 	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,12 +18,13 @@ func TestNewCertGenerator(t *testing.T) {
 
 		config := infratls.CAConfig{
 			ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
 		certPath, keyPath, err := infratls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+		caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
 		generator := infratls.NewCertGenerator(caCert, caKey)
@@ -34,12 +36,13 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	tmpDir := t.TempDir()
 	config := infratls.CAConfig{
 		ValidityDays: 365,
+			Fs:           afero.NewOsFs(),
 		OutputDir:    tmpDir,
 	}
 	certPath, keyPath, err := infratls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(nil, certPath, keyPath)
+	caCert, caKey, err := infratls.LoadCA(afero.NewOsFs(), certPath, keyPath)
 	require.NoError(t, err)
 
 	generator := infratls.NewCertGenerator(caCert, caKey)

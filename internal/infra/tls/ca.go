@@ -34,10 +34,6 @@ type CAConfig struct {
 // GenerateCA generates a new CA certificate and private key.
 // Returns the paths to the generated certificate and key files.
 func GenerateCA(config CAConfig) (string, string, error) {
-	if config.Fs == nil {
-		config.Fs = afero.NewOsFs()
-	}
-
 	privateKey, certDER, err := generateCACertificate(config.ValidityDays)
 	if err != nil {
 		return "", "", err
@@ -143,10 +139,6 @@ func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateK
 
 // LoadCA loads CA certificate and private key from files.
 func LoadCA(fs afero.Fs, certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
-	if fs == nil {
-		fs = afero.NewOsFs()
-	}
-
 	certPEM, err := afero.ReadFile(fs, certPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read certificate file: %w", err)
