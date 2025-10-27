@@ -32,6 +32,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
 	if err := h.handle(response, request); err != nil {
+		h.proxyLogger.Error("Proxy handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(response, err)
 	}
 }

@@ -36,6 +36,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			if errors.Is(err, errNotHandled) {
 				next.ServeHTTP(response, request)
 			} else {
+				h.logger.Error("Static handler error", "error", err, "url", request.URL.String())
 				infra.HTTPError(response, err)
 			}
 
