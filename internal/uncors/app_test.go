@@ -2,14 +2,19 @@ package uncors_test
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/appbuilder"
@@ -20,6 +25,51 @@ import (
 )
 
 const delay = 10 * time.Millisecond
+
+// setupHTTPSTest sets up CA for HTTPS tests and returns HTTP client with proper TLS config.
+func setupHTTPSTest(t *testing.T, fs afero.Fs) *http.Client {
+	t.Helper()
+
+	tmpDir := t.TempDir()
+	fakeHome := filepath.Join(tmpDir, "home")
+	testutils.CheckNoError(t, os.MkdirAll(fakeHome, 0o755))
+	t.Setenv("HOME", fakeHome)
+
+	// Generate CA using uncors
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
+	caConfig := infratls.CAConfig{
+		ValidityDays: 365,
+		OutputDir:    caDir,
+		Fs:           fs,
+	}
+	certPath, keyPath, err := infratls.GenerateCA(caConfig)
+	testutils.CheckNoError(t, err)
+
+	// Load CA certificate for client
+	caCertData, err := afero.ReadFile(fs, certPath)
+	testutils.CheckNoError(t, err)
+
+	caKeyData, err := afero.ReadFile(fs, keyPath)
+	testutils.CheckNoError(t, err)
+
+	// Setup client TLS config to trust the CA
+	certsPool := x509.NewCertPool()
+	certsPool.AppendCertsFromPEM(caCertData)
+
+	serverCert, err := tls.X509KeyPair(caCertData, caKeyData)
+	testutils.CheckNoError(t, err)
+
+	_ = serverCert // Server uses auto-generated certs via buildTLSConfig
+
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				MinVersion: tls.VersionTLS12,
+				RootCAs:    certsPool,
+			},
+		},
+	}
+}
 
 func TestUncorsApp(t *testing.T) {
 	ctx := t.Context()
@@ -51,7 +101,8 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, expectedResponse, response)
 		})
 
-		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+		t.Run("HTTPS", func(t *testing.T) {
+			httpClient := setupHTTPSTest(t, fs)
 			port := freeport.GetPort()
 			appBuilder := appbuilder.NewAppBuilder(t).
 				WithFs(fs).
@@ -71,16 +122,10 @@ func TestUncorsApp(t *testing.T) {
 				testutils.CheckNoServerError(t, err)
 			}()
 
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: certs.ClientTLSConf,
-				},
-			}
-
 			response := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
-		}))
+		})
 	}))
 
 	t.Run("restart server", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
@@ -125,7 +170,8 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, otherExpectedRepose, response2)
 		})
 
-		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+		t.Run("HTTPS", func(t *testing.T) {
+			httpClient := setupHTTPSTest(t, fs)
 			port := freeport.GetPort()
 			appBuilder := appbuilder.NewAppBuilder(t).
 				WithFs(fs).
@@ -144,12 +190,6 @@ func TestUncorsApp(t *testing.T) {
 				err := uncorsApp.Close()
 				testutils.CheckNoServerError(t, err)
 			}()
-
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: certs.ClientTLSConf,
-				},
-			}
 
 			response := makeRequest(t, httpClient, appBuilder.URI())
 
@@ -170,7 +210,7 @@ func TestUncorsApp(t *testing.T) {
 			response2 := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, otherExpectedRepose, response2)
-		}))
+		})
 	}))
 }
 
@@ -409,7 +449,8 @@ func TestApp_MultiPort(t *testing.T) {
 		assert.NotNil(t, httpAddr)
 	}))
 
-	t.Run("mixed HTTP and HTTPS ports", testutils.WithTmpCerts(fs, func(t *testing.T, _ *testutils.Certs) {
+	t.Run("mixed HTTP and HTTPS ports", func(t *testing.T) {
+		setupHTTPSTest(t, fs)
 		httpPort := freeport.GetPort()
 		httpsPort := freeport.GetPort()
 		appBuilder := appbuilder.NewAppBuilder(t).
@@ -443,7 +484,7 @@ func TestApp_MultiPort(t *testing.T) {
 
 		httpsAddr := uncorsApp.HTTPSAddr()
 		assert.NotNil(t, httpsAddr)
-	}))
+	})
 
 	t.Run("HTTPAddr and HTTPSAddr return nil when no servers", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port := freeport.GetPort()
