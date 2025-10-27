@@ -12,19 +12,24 @@ import (
 	"github.com/spf13/afero"
 )
 
+const (
+	defaultDirPermissions = 0o755
+	defaultCAValidityDays = 365
+)
+
 // SetupHTTPSTest sets up CA for HTTPS tests and returns HTTP client with proper TLS config.
 func SetupHTTPSTest(t *testing.T, fs afero.Fs) *http.Client {
 	t.Helper()
 
 	tmpDir := t.TempDir()
 	fakeHome := filepath.Join(tmpDir, "home")
-	CheckNoError(t, os.MkdirAll(fakeHome, 0o755))
+	CheckNoError(t, os.MkdirAll(fakeHome, defaultDirPermissions))
 	t.Setenv("HOME", fakeHome)
 
 	// Generate CA using uncors
 	caDir := filepath.Join(fakeHome, ".config", "uncors")
 	caConfig := infratls.CAConfig{
-		ValidityDays: 365,
+		ValidityDays: defaultCAValidityDays,
 		OutputDir:    caDir,
 		Fs:           fs,
 	}
