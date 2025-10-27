@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	caCertFileName = "ca.crt"
-	caKeyFileName  = "ca.key"
+	CACertFileName = "ca.crt"
+	CAKeyFileName  = "ca.key"
 )
 
 // GetCAPath returns the default path to the CA certificate directory.
@@ -36,8 +36,8 @@ func CAExists(fs afero.Fs) bool {
 		return false
 	}
 
-	certPath := filepath.Join(caDir, caCertFileName)
-	keyPath := filepath.Join(caDir, caKeyFileName)
+	certPath := filepath.Join(caDir, CACertFileName)
+	keyPath := filepath.Join(caDir, CAKeyFileName)
 
 	_, certErr := fs.Stat(certPath)
 	_, keyErr := fs.Stat(keyPath)
@@ -56,8 +56,8 @@ func LoadDefaultCA(fs afero.Fs) (*x509.Certificate, *rsa.PrivateKey, error) {
 		return nil, nil, err
 	}
 
-	certPath := filepath.Join(caDir, caCertFileName)
-	keyPath := filepath.Join(caDir, caKeyFileName)
+	certPath := filepath.Join(caDir, CACertFileName)
+	keyPath := filepath.Join(caDir, CAKeyFileName)
 
 	return LoadCA(fs, certPath, keyPath)
 }
