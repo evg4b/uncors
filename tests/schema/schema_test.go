@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/tests/schema"
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xeipuuv/gojsonschema"
@@ -18,8 +19,8 @@ func loadUncorsSchema(t *testing.T) gojsonschema.JSONLoader {
 	return gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
 }
 
-func loadFileSchema(t *testing.T, file string) gojsonschema.JSONLoader {
-	targetJSONFile := schema.TransformToJSON(t, file)
+func loadFileSchema(t *testing.T, fs afero.Fs, file string) gojsonschema.JSONLoader {
+	targetJSONFile := schema.TransformToJSON(t, fs, file)
 
 	return gojsonschema.NewReferenceLoader("file://" + targetJSONFile)
 }
@@ -35,12 +36,13 @@ func TestJsonSchema(t *testing.T) {
 }
 
 func TestInvalidJsonSchema(t *testing.T) {
-	testCases := schema.LoadTestCasesWithErrors(t, testutils.CurrentDir(t), "invalid")
+	fs := afero.NewOsFs()
+	testCases := schema.LoadTestCasesWithErrors(t, fs, testutils.CurrentDir(t), "invalid")
 	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			documentLoader := loadFileSchema(t, testCase.File)
+			documentLoader := loadFileSchema(t, fs, testCase.File)
 
 			result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 			require.NoError(t, err)
@@ -55,12 +57,13 @@ func TestInvalidJsonSchema(t *testing.T) {
 }
 
 func TestValidJsonSchema(t *testing.T) {
-	testCases := schema.LoadTestCases(t, testutils.CurrentDir(t), "valid")
+	fs := afero.NewOsFs()
+	testCases := schema.LoadTestCases(t, fs, testutils.CurrentDir(t), "valid")
 	schemaLoader := loadUncorsSchema(t)
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			documentLoader := loadFileSchema(t, testCase.File)
+			documentLoader := loadFileSchema(t, fs, testCase.File)
 
 			result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 			require.NoError(t, err)

@@ -2,7 +2,7 @@ package schema
 
 import (
 	"encoding/json"
-	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -12,10 +12,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TransformToJSON(t *testing.T, yamlFilePath string) string {
+func TransformToJSON(t *testing.T, fs afero.Fs, yamlFilePath string) string {
 	t.Helper()
 
-	fs := afero.NewOsFs()
 	jsonFilePath := filepath.Join(t.TempDir(), strings.Replace(filepath.Base(yamlFilePath), ".yaml", ".json", 1))
 
 	yamlFile, err := fs.Open(yamlFilePath)
@@ -42,36 +41,34 @@ type TestCase struct {
 	Errors []string
 }
 
-func readErrors(t *testing.T, filePath string) []string {
+func readErrors(t *testing.T, fs afero.Fs, filePath string) []string {
 	t.Helper()
 
-	fs := afero.NewOsFs()
 	content, err := afero.ReadFile(fs, filePath)
 	require.NoError(t, err)
 
 	return strings.Split(string(content), "\n")
 }
 
-func LoadTestCases(t *testing.T, parts ...string) []TestCase {
-	return loadTestCasesInternal(t, false, parts...)
+func LoadTestCases(t *testing.T, fs afero.Fs, parts ...string) []TestCase {
+	return loadTestCasesInternal(t, fs, false, parts...)
 }
 
-func LoadTestCasesWithErrors(t *testing.T, parts ...string) []TestCase {
-	return loadTestCasesInternal(t, true, parts...)
+func LoadTestCasesWithErrors(t *testing.T, fs afero.Fs, parts ...string) []TestCase {
+	return loadTestCasesInternal(t, fs, true, parts...)
 }
 
-func loadTestCasesInternal(t *testing.T, errors bool, parts ...string) []TestCase {
+func loadTestCasesInternal(t *testing.T, fs afero.Fs, errors bool, parts ...string) []TestCase {
 	t.Helper()
 	dir := filepath.Join(parts...)
 
-	afs := afero.NewOsFs()
 	testCases := make([]TestCase, 0, 30) //nolint:mnd
-	err := afero.Walk(afs, dir, func(path string, info fs.FileInfo, err error) error {
+	err := afero.Walk(fs, dir, func(path string, info os.FileInfo, err error) error {
 		require.NoError(t, err)
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".yaml") {
 			var errorsArray []string
 			if errors {
-				errorsArray = readErrors(t, path+".errors")
+				errorsArray = readErrors(t, fs, path+".errors")
 			}
 
 			relPath, err := filepath.Rel(dir, path)
