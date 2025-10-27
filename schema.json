@@ -74,7 +74,7 @@
               "type": "array"
             },
             "from": {
-              "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified.",
+              "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified. HTTPS mappings use auto-generated certificates (requires CA certificate generated with 'uncors generate-certs').",
               "type": "string"
             },
             "mocks": {
@@ -368,18 +368,10 @@
       },
       "type": "object"
     },
-    "cert-file": {
-      "description": "Path to HTTPS certificate file",
-      "type": "string"
-    },
     "debug": {
       "default": false,
       "description": "Show debug output",
       "type": "boolean"
-    },
-    "key-file": {
-      "description": "Path to matching for certificate private key",
-      "type": "string"
     },
     "mappings": {
       "description": "A list of mappings that describe how to forward requests. Ports are specified in the 'from' URL (e.g., http://localhost:8080).",

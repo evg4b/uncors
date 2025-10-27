@@ -2,6 +2,7 @@ package uncors
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
@@ -25,11 +26,13 @@ func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
 	})
 }
 
-func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, certFile, keyFile string) error {
+func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, tlsConfig *tls.Config) error {
 	return app.internalServeForPort(portSrv, &serveConfig{
 		addr: addr,
 		serve: func(l net.Listener) error {
-			return portSrv.server.ServeTLS(l, certFile, keyFile)
+			tlsListener := tls.NewListener(l, tlsConfig)
+
+			return portSrv.server.Serve(tlsListener)
 		},
 		setListener: func(l net.Listener) {
 			portSrv.mutex.Lock()

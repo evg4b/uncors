@@ -85,13 +85,11 @@ Multiple `--from`/`--to` pairs can be specified to define additional mappings. E
 
 ## Global Configuration
 
-| Parameter     | Short | Description                                |
-| ------------- | ----- | ------------------------------------------ |
-| `--cert-file` |       | Path to HTTPS certificate file             |
-| `--key-file`  |       | Path to certificate private key file       |
-| `--proxy`     |       | HTTP/HTTPS proxy URL for upstream requests |
-| `--config`    |       | Path to YAML configuration file            |
-| `--debug`     |       | Enable debug logging output                |
+| Parameter  | Short | Description                                |
+| ---------- | ----- | ------------------------------------------ |
+| `--proxy`  |       | HTTP/HTTPS proxy URL for upstream requests |
+| `--config` |       | Path to YAML configuration file            |
+| `--debug`  |       | Enable debug logging output                |
 
 > [!NOTE]
 > CLI parameters override configuration file settings.
@@ -104,8 +102,6 @@ UNCORS uses YAML format for configuration files. Below is a comprehensive exampl
 # global configuration
 debug: false
 proxy: localhost:8080
-cert-file: ~/server.crt
-key-file: ~/server.key
 
 # mappings configuration
 mappings:
@@ -140,13 +136,11 @@ mappings:
 
 # Global Configuration Properties
 
-| Property    | Type    | Default | Description                                     |
-| ----------- | ------- | ------- | ----------------------------------------------- |
-| `cert-file` | string  | -       | Path to HTTPS certificate file                  |
-| `key-file`  | string  | -       | Path to certificate private key file            |
-| `proxy`     | string  | -       | HTTP/HTTPS proxy URL for upstream requests      |
-| `debug`     | boolean | false   | Enable debug logging output                     |
-| `mappings`  | array   | []      | List of host mapping configurations (see below) |
+| Property   | Type    | Default | Description                                     |
+| ---------- | ------- | ------- | ----------------------------------------------- |
+| `proxy`    | string  | -       | HTTP/HTTPS proxy URL for upstream requests      |
+| `debug`    | boolean | false   | Enable debug logging output                     |
+| `mappings` | array   | []      | List of host mapping configurations (see below) |
 
 # Mapping Configuration
 
@@ -306,28 +300,49 @@ mappings:
 
 # HTTPS Configuration
 
-UNCORS supports HTTPS for both incoming requests and upstream connections. HTTPS functionality requires valid SSL/TLS certificates—both production certificates and self-signed certificates are supported.
+UNCORS supports HTTPS for both incoming requests and upstream connections using auto-generated certificates.
 
-**Certificate requirements:**
+## Auto-Generated Certificates
 
-- Certificate file (`.crt` or `.pem`)
-- Private key file (`.key`)
+UNCORS automatically generates and signs TLS certificates on-the-fly using a local Certificate Authority (CA).
 
-**Configuration example:**
+**Setup:**
 
-```yaml
-cert-file: ~/path/to/cert.crt
-key-file: ~/path/to/cert.key
+```bash
+# Generate CA certificate (one-time setup)
+uncors generate-certs
+
+# Optional: specify validity period
+uncors generate-certs --validity-days 730
+
+# Force regenerate existing CA
+uncors generate-certs --force
 ```
 
-**Mapping configuration for HTTPS:**
+This creates a CA certificate in `~/.config/uncors/`:
+
+- `ca.crt` - CA certificate (add to system trust store)
+- `ca.key` - CA private key
+
+**Trust the CA certificate:**
+
+After generating, add `ca.crt` to your system's trusted certificates:
+
+- **macOS**: Double-click `ca.crt` and add to Keychain Access
+- **Linux**: Copy to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`
+- **Windows**: Import via Certificate Manager (certmgr.msc)
+
+**HTTPS mapping:**
 
 ```yaml
 mappings:
-  - https://localhost:8443: https://github.com
-  # OR
-  - //localhost:8443: //github.com
+  - from: https://localhost:8443
+    to: https://github.com
+  # Certificates are generated automatically for each host
 ```
+
+> [!TIP]
+> Auto-generated certificates are cached in memory and regenerated only when needed.
 
 > [!NOTE]
 > HTTPS server functionality is only activated when at least one mapping uses the `https://` scheme. Each mapping specifies its own port in the `from` URL.

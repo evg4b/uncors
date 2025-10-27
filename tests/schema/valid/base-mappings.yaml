@@ -1,7 +1,5 @@
 debug: false
 proxy: http://localhost:8080
-key-file: /path/to/key.pem
-cert-file: /path/to/cert.pem
 cache-config:
   clear-time: 10m
   expiration-time: 1h

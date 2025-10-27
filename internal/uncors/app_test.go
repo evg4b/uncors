@@ -51,15 +51,14 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, expectedResponse, response)
 		})
 
-		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+		t.Run("HTTPS", func(t *testing.T) {
+			httpClient := testutils.SetupHTTPSTest(t, fs)
 			port := freeport.GetPort()
 			appBuilder := appbuilder.NewAppBuilder(t).
 				WithFs(fs).
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
 						From:  hosts.Loopback.HTTPSPort(port),
@@ -73,16 +72,10 @@ func TestUncorsApp(t *testing.T) {
 				testutils.CheckNoServerError(t, err)
 			}()
 
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: certs.ClientTLSConf,
-				},
-			}
-
 			response := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
-		}))
+		})
 	}))
 
 	t.Run("restart server", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
@@ -127,15 +120,14 @@ func TestUncorsApp(t *testing.T) {
 			assert.Equal(t, otherExpectedRepose, response2)
 		})
 
-		t.Run("HTTPS", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+		t.Run("HTTPS", func(t *testing.T) {
+			httpClient := testutils.SetupHTTPSTest(t, fs)
 			port := freeport.GetPort()
 			appBuilder := appbuilder.NewAppBuilder(t).
 				WithFs(fs).
 				WithHTTPS()
 
 			uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
 						From:  hosts.Loopback.HTTPSPort(port),
@@ -149,19 +141,11 @@ func TestUncorsApp(t *testing.T) {
 				testutils.CheckNoServerError(t, err)
 			}()
 
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: certs.ClientTLSConf,
-				},
-			}
-
 			response := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, expectedResponse, response)
 
 			uncorsApp.Restart(ctx, &config.UncorsConfig{
-				CertFile: certs.CertPath,
-				KeyFile:  certs.KeyPath,
 				Mappings: config.Mappings{
 					config.Mapping{
 						From:  hosts.Loopback.HTTPSPort(port),
@@ -176,7 +160,7 @@ func TestUncorsApp(t *testing.T) {
 			response2 := makeRequest(t, httpClient, appBuilder.URI())
 
 			assert.Equal(t, otherExpectedRepose, response2)
-		}))
+		})
 	}))
 }
 
@@ -415,7 +399,8 @@ func TestApp_MultiPort(t *testing.T) {
 		assert.NotNil(t, httpAddr)
 	}))
 
-	t.Run("mixed HTTP and HTTPS ports", testutils.WithTmpCerts(fs, func(t *testing.T, certs *testutils.Certs) {
+	t.Run("mixed HTTP and HTTPS ports", func(t *testing.T) {
+		testutils.SetupHTTPSTest(t, fs)
 		httpPort := freeport.GetPort()
 		httpsPort := freeport.GetPort()
 		appBuilder := appbuilder.NewAppBuilder(t).
@@ -423,8 +408,6 @@ func TestApp_MultiPort(t *testing.T) {
 			WithHTTPS()
 
 		uncorsApp := appBuilder.Start(ctx, &config.UncorsConfig{
-			CertFile: certs.CertPath,
-			KeyFile:  certs.KeyPath,
 			Mappings: config.Mappings{
 				config.Mapping{
 					From:  hosts.Loopback.HTTPPort(httpPort),
@@ -451,7 +434,7 @@ func TestApp_MultiPort(t *testing.T) {
 
 		httpsAddr := uncorsApp.HTTPSAddr()
 		assert.NotNil(t, httpsAddr)
-	}))
+	})
 
 	t.Run("HTTPAddr and HTTPSAddr return nil when no servers", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
 		port := freeport.GetPort()
@@ -485,7 +468,6 @@ func TestApp_StaticAndCacheHandler(t *testing.T) {
 	ctx := t.Context()
 	fs := afero.NewMemMapFs()
 
-	// Create a static file
 	err := afero.WriteFile(fs, "/static/test.txt", []byte("static content"), 0o644)
 	testutils.CheckNoError(t, err)
 

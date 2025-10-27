@@ -16,14 +16,7 @@ type UncorsConfig struct {
 	Mappings    Mappings    `mapstructure:"mappings"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
-	HTTPSPort   int         `mapstructure:"https-port"`
-	CertFile    string      `mapstructure:"cert-file"`
-	KeyFile     string      `mapstructure:"key-file"`
 	CacheConfig CacheConfig `mapstructure:"cache-config"`
-}
-
-func (c *UncorsConfig) IsHTTPSEnabled() bool {
-	return len(c.CertFile) > 0 && len(c.KeyFile) > 0
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
@@ -74,9 +67,6 @@ func defineFlags() {
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
 	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
 	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
-	flags.UintP("https-port", "s", 0, "Local HTTPS listening port")
-	flags.String("cert-file", "", "Path to HTTPS certificate file")
-	flags.String("key-file", "", "Path to private key file matching the certificate")
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.StringP("config", "c", "", "Path to the configuration file")

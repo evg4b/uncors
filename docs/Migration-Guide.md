@@ -4,6 +4,129 @@ This guide helps you migrate your UNCORS configuration files to the latest versi
 
 ## Version 0.5.x to 0.6.x
 
+### Custom Certificate Support Removal
+
+**Breaking Change:** Per-mapping `cert-file` and `key-file` configuration properties have been removed. UNCORS now exclusively uses auto-generated certificates for HTTPS mappings.
+
+#### Why This Change?
+
+The custom certificate feature added unnecessary complexity to the codebase while the auto-generated certificate approach with a local CA provides a simpler and more consistent development experience. Auto-generated certificates work seamlessly across all HTTPS mappings and eliminate the need to manage individual certificate files.
+
+#### Migration Steps
+
+**Old Configuration (v0.6.x and earlier):**
+
+```yaml
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+    cert-file: ~/certs/app.crt
+    key-file: ~/certs/app.key
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+    cert-file: ~/certs/admin.crt
+    key-file: ~/certs/admin.key
+```
+
+**New Configuration (v0.7.x):**
+
+```yaml
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+```
+
+Before using HTTPS mappings, you need to create a local CA (one-time setup):
+
+```bash
+uncors generate-certs
+```
+
+This will create a CA certificate in `~/.config/uncors/ca.crt`. Add this certificate to your system's trusted certificates to avoid browser warnings.
+
+**Key Changes:**
+
+1. **Remove** all `cert-file` and `key-file` properties from your mappings
+2. **Run** `uncors generate-certs` to create a local CA if you haven't already
+3. **Trust** the CA certificate in your system's certificate store
+
+#### Benefits of Auto-Generated Certificates Only
+
+- Simpler configuration without managing certificate files
+- Consistent certificate handling across all HTTPS mappings
+- Automatic certificate generation for any host
+- Full SNI (Server Name Indication) support
+- Reduced maintenance overhead
+
+#### Troubleshooting
+
+**Problem:** Configuration validation fails with "Additional property cert-file/key-file is not allowed"
+
+**Solution:** Remove `cert-file` and `key-file` properties from all mappings in your configuration file.
+
+---
+
+**Problem:** HTTPS connection fails or shows certificate warnings
+
+**Solution:** Run `uncors generate-certs` to create the CA certificate, then add `~/.config/uncors/ca.crt` to your system's trusted certificates.
+
+---
+
+### TLS Certificate Configuration Changes
+
+**Breaking Change:** Global `cert-file` and `key-file` configuration properties have been removed from the root level. TLS certificates must now use auto-generated certificates with a local CA.
+
+#### Why This Change?
+
+The previous architecture required all HTTPS mappings to share the same certificate. The new approach uses auto-generated certificates with a local CA, providing greater flexibility and simpler configuration.
+
+#### TLS Configuration Migration Steps
+
+**Old Configuration (v0.5.x and earlier):**
+
+```yaml
+cert-file: ~/certs/server.crt
+key-file: ~/certs/server.key
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+```
+
+**New Configuration (v0.6.x):**
+
+```yaml
+mappings:
+  - from: https://app.local:8443
+    to: https://api.example.com
+  - from: https://admin.local:8443
+    to: https://admin.example.com
+```
+
+Before using HTTPS mappings, you need to create a local CA:
+
+```bash
+uncors generate-certs
+```
+
+This will create a CA certificate in `~/.config/uncors/ca.crt`. Add this certificate to your system's trusted certificates to avoid browser warnings.
+
+**Key Changes:**
+
+1. **Remove** the global `cert-file` and `key-file` properties from root level
+2. **Generate** a local CA using `uncors generate-certs`
+3. **Trust** the CA certificate in your system's certificate store
+
+#### Benefits of Auto-Generated Certificates
+
+- Automatic certificate generation for any host
+- No need to manage certificate files
+- Better security through automatic certificate management
+- Support for SNI (Server Name Indication) for multiple hosts on the same port
+
 ### Port Configuration Changes
 
 **Breaking Change:** Global `http-port` and `https-port` configuration properties have been removed. Ports are now specified directly in the mapping URLs.
@@ -153,13 +276,11 @@ mappings:
         dir: ./public
 ```
 
-**After:**
+**After (v0.6.x):**
 
 ```yaml
 debug: true
 proxy: http://proxy.example.com:3128
-cert-file: ~/certs/server.crt
-key-file: ~/certs/server.key
 
 mappings:
   - from: http://api.local:8080
@@ -175,6 +296,9 @@ mappings:
       - path: /static
         dir: ./public
 ```
+
+> [!NOTE]
+> In v0.7.x and later, the `cert-file` and `key-file` fields shown in the "Before" example are no longer supported.
 
 #### Schema Validation
 
@@ -227,7 +351,7 @@ The Lua script handler provides a more flexible and powerful way to generate dyn
 
 #### Migration Steps
 
-**Old Configuration (v0.7.x and earlier):**
+**Old Configuration (v0.5.x and earlier):**
 
 ```yaml
 mappings:
@@ -247,7 +371,7 @@ mappings:
           seed: 12345
 ```
 
-**New Configuration (v0.8.x) - Using Script Handler:**
+**New Configuration (v0.6.x) - Using Script Handler:**
 
 ```yaml
 mappings:

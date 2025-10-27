@@ -170,11 +170,11 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "Overwrite existing response headers",
 			reqHeader: http.Header{
-				headers.Origin:                     []string{"http://example.com"},
+				headers.Origin:                     []string{hosts.Example.HTTP()},
 				headers.AccessControlRequestMethod: []string{"DELETE"},
 			},
 			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"http://example.com"},
+				headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTP()},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{"DELETE"},

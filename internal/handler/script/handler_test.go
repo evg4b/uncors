@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/script"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -367,13 +368,13 @@ response:WriteString("OK")
 		)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Origin", "http://example.com")
+		req.Header.Set("Origin", hosts.Example.HTTP())
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
 
 		// Check CORS headers are set (when Origin is set, it should be returned)
-		assert.Equal(t, "http://example.com", recorder.Header().Get(headers.AccessControlAllowOrigin))
+		assert.Equal(t, hosts.Example.HTTP(), recorder.Header().Get(headers.AccessControlAllowOrigin))
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
 		assert.Equal(t, testconstants.AllMethods, recorder.Header().Get(headers.AccessControlAllowMethods))

@@ -8,7 +8,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
 	"github.com/spf13/viper"
@@ -158,11 +157,8 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy:     hosts.Localhost.Port(8080),
-					Debug:     true,
-					HTTPSPort: 8081,
-					CertFile:  testconstants.CertFilePath,
-					KeyFile:   testconstants.KeyFilePath,
+					Proxy: hosts.Localhost.Port(8080),
+					Debug: true,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
 						ClearTime:      30 * time.Minute,
@@ -307,47 +303,4 @@ func TestLoadConfiguration(t *testing.T) {
 			})
 		}
 	})
-}
-
-func TestUncorsConfigIsHTTPSEnabled(t *testing.T) {
-	tests := []struct {
-		name     string
-		config   *config.UncorsConfig
-		expected bool
-	}{
-		{
-			name:     "false by default",
-			config:   &config.UncorsConfig{},
-			expected: false,
-		},
-		{
-			name: "true when https configured",
-			config: &config.UncorsConfig{
-				CertFile: testconstants.CertFilePath,
-				KeyFile:  testconstants.KeyFilePath,
-			},
-			expected: true,
-		},
-		{
-			name: "false when cert file is not configured",
-			config: &config.UncorsConfig{
-				KeyFile: testconstants.KeyFilePath,
-			},
-			expected: false,
-		},
-		{
-			name: "false when key file is not configured",
-			config: &config.UncorsConfig{
-				CertFile: testconstants.CertFilePath,
-			},
-			expected: false,
-		},
-	}
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			actual := testCase.config.IsHTTPSEnabled()
-
-			assert.Equal(t, testCase.expected, actual)
-		})
-	}
 }
