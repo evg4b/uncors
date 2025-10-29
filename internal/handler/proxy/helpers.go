@@ -3,15 +3,8 @@ package proxy
 import (
 	"net/http"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
-)
-
-var excluded = mapset.NewSet[string](
-	headers.Cookie,
-	headers.SetCookie,
-	headers.ContentLength,
 )
 
 type modificationsMap = map[string]func(string) (string, error)
@@ -20,7 +13,7 @@ func noop(s string) (string, error) { return s, nil }
 
 func copyHeaders(source, dest http.Header, modifications modificationsMap) error {
 	for key, values := range source {
-		if excluded.Contains(key) {
+		if key == headers.Cookie || key == headers.SetCookie || key == headers.ContentLength {
 			continue
 		}
 
