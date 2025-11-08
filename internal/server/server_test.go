@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/phayes/freeport"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
@@ -310,19 +312,19 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("wait", func(t *testing.T) {
-		eventsCh := make(chan string, 10)
+		queue := testutils.QueueEvents{}
 
 		port := freeport.GetPort()
 
 		instance := server.New()
 
-		eventsCh <- "server started"
+		queue.Track("server started")
 
 		instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
 				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
-					eventsCh <- "handler trigered"
+					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
 					_, err := fmt.Fprint(w, expectedContent)
@@ -335,28 +337,26 @@ func TestServer(t *testing.T) {
 			require.NoError(t, instance.Close())
 		}()
 
-		go func() {
-			eventsCh <- "waiting started"
+		var waitGroup sync.WaitGroup
+
+		waitGroup.Go(func() {
+			queue.Track("waiting started")
 
 			instance.Wait()
 
-			eventsCh <- "waiting finished"
-		}()
+			queue.Track("waiting finished")
+		})
 
 		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
 
-		go func(t *testing.T) {
-			eventsCh <- "shutdown trigered"
+		waitGroup.Go(func() {
+			queue.Track("shutdown trigered")
 
 			err := instance.Shutdown(t.Context())
 			assert.NoError(t, err)
-			close(eventsCh)
-		}(t)
+		})
 
-		var events []string
-		for v := range eventsCh {
-			events = append(events, v)
-		}
+		waitGroup.Wait()
 
 		assert.Equal(t, []string{
 			"server started",
@@ -364,7 +364,7 @@ func TestServer(t *testing.T) {
 			"handler trigered",
 			"shutdown trigered",
 			"waiting finished",
-		}, events)
+		}, queue.List())
 	})
 }
 
