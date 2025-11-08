@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
@@ -208,6 +209,8 @@ func TestServer(t *testing.T) {
 		defer func() {
 			require.NoError(t, instance.Close())
 		}()
+
+		time.Sleep(50 * time.Millisecond)
 
 		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
 
