@@ -104,7 +104,6 @@ Understanding these terms will help you navigate the documentation more effectiv
 - [Static file serving](./Static-File-Serving)
 - [Response caching](./Response-Caching)
 - [Request rewriting](./Request-Rewriting)
-- [Request flow](./Request-Flow)
 - [Migration guide](./Migration-Guide)
 - [Script handler](./Script-Handler)
 - [Troubleshooting](./Troubleshooting)
