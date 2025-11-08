@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -17,16 +18,18 @@ const (
 )
 
 type Server struct {
-	servers []*PortListner
+	waitGroup sync.WaitGroup
+	servers   []*PortListner
 }
 
 func New() *Server {
 	return &Server{
-		servers: []*PortListner{},
+		waitGroup: sync.WaitGroup{},
+		servers:   []*PortListner{},
 	}
 }
 
-func (s *Server) Start(ctx context.Context, groups []config.PortGroup) error {
+func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
 	s.servers = lo.Map(groups, func(portGroup config.PortGroup, _ int) *PortListner {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
@@ -41,20 +44,53 @@ func (s *Server) Start(ctx context.Context, groups []config.PortGroup) error {
 					writer.Write([]byte("Tetst"))
 				}),
 			},
+			port: portGroup.Port,
 		}
 
-		portListner.Server.RegisterOnShutdown(portCtxCancel)
+		portListner.RegisterOnShutdown(portCtxCancel)
 
 		return &portListner
 	})
 
-	lo.ForEach(s.servers, func(server *PortListner, _ int) {
-		go server.Lister(ctx)
-	})
+	for _, server := range s.servers {
+		s.waitGroup.Go(func() {
+			err := server.Lister(ctx)
+			if err != nil {
+				panic(err)
+			}
+		})
+	}
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	defer cancel()
+
+	var waitGroup sync.WaitGroup
+
+	errChan := make(chan error, len(s.servers))
+
+	for _, server := range s.servers {
+		waitGroup.Go(func() {
+			err := server.Shutdown(ctx)
+			if err != nil {
+				errChan <- err
+			}
+		})
+	}
+
+	waitGroup.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func (s *Server) Waite() {
-	<-make(chan int)
+func (s *Server) Wait() {
+	s.waitGroup.Wait()
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	s := server.New()
+	instance := server.New()
 
 	mapping := config.Mappings{
 		config.Mapping{From: "http://localhost:3000", To: "https://gihub.com"},
@@ -17,7 +17,7 @@ func TestServer(t *testing.T) {
 		config.Mapping{From: "http://localhost:5000", To: "https://gihub.com"},
 	}
 
-	s.Start(context.Background(), mapping.GroupByPort())
+	instance.Start(context.Background(), mapping.GroupByPort())
 
-	s.Waite()
+	instance.Wait()
 }
