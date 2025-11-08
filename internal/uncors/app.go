@@ -17,7 +17,7 @@ import (
 
 const baseAddress = "127.0.0.1"
 
-type App struct {
+type Uncors struct {
 	fs      afero.Fs
 	version string
 	cache   appCache
@@ -25,8 +25,8 @@ type App struct {
 	server  *server.Server
 }
 
-func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
-	return &App{
+func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
+	return &Uncors{
 		fs:      fs,
 		version: version,
 		logger:  logger,
@@ -34,7 +34,7 @@ func CreateApp(fs afero.Fs, logger *log.Logger, version string) *App {
 	}
 }
 
-func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	tui.PrintLogo(os.Stdout, app.version)
 	log.Print("")
 	tui.PrintWarningBox(os.Stdout, DisclaimerMessage)
@@ -52,7 +52,7 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) er
 	return nil
 }
 
-func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	log.Print("")
 	log.Info("Restarting server....")
 	log.Print("")
@@ -73,19 +73,19 @@ func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	return nil
 }
 
-func (app *App) Close() error {
+func (app *Uncors) Close() error {
 	return app.server.Close()
 }
 
-func (app *App) Wait() {
+func (app *Uncors) Wait() {
 	app.server.Wait()
 }
 
-func (app *App) Shutdown(ctx context.Context) error {
+func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
-func (app *App) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
+func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
 	groupedMappings := uncorsConfig.Mappings.GroupByPort()
 
 	targets := make([]server.Target, 0, len(groupedMappings))

@@ -1,20 +1,14 @@
 package server_test
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"fmt"
 	"io"
-	"math/big"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
@@ -27,44 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func createServerCert(t *testing.T, caCert *x509.Certificate, caKey *rsa.PrivateKey, host string) tls.Certificate {
-	t.Helper()
-
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
-
-	serial, _ := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	tmpl := x509.Certificate{
-		SerialNumber: serial,
-		Subject: pkix.Name{
-			CommonName: host,
-		},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().AddDate(1, 0, 0),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-
-	if ip := net.ParseIP(host); ip != nil {
-		tmpl.IPAddresses = []net.IP{ip}
-	} else {
-		tmpl.DNSNames = []string{host}
-	}
-
-	derBytes, err := x509.CreateCertificate(rand.Reader, &tmpl, caCert, &serverKey.PublicKey, caKey)
-	require.NoError(t, err)
-
-	// кодируем в PEM для tls.X509KeyPair
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)})
-
-	cert, err := tls.X509KeyPair(certPEM, keyPEM)
-	require.NoError(t, err)
-
-	return cert
-}
 
 func TestServer(t *testing.T) {
 	const porstCount = 5
@@ -157,7 +113,7 @@ func TestServer(t *testing.T) {
 				TLSConfgi: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					Certificates: []tls.Certificate{
-						createServerCert(t, caCert, caKey, hosts.Loopback.Host()),
+						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),
 					},
 				},
 			}
@@ -212,7 +168,7 @@ func TestServer(t *testing.T) {
 				TLSConfgi: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					Certificates: []tls.Certificate{
-						createServerCert(t, caCert, caKey, hosts.Loopback.Host()),
+						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),
 					},
 				},
 			}

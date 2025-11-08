@@ -67,7 +67,7 @@ func run() int {
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateApp(fs, log.Default(), Version)
+	app := uncors.CreateUncors(fs, log.Default(), Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {

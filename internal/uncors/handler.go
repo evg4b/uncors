@@ -25,7 +25,7 @@ type appCache struct {
 	scriptHandlerFactory handler.RequestHandlerOption
 }
 
-func (app *App) buildHandlerForMappings(
+func (app *Uncors) buildHandlerForMappings(
 	uncorsConfig *config.UncorsConfig,
 	mappings config.Mappings,
 ) *handler.RequestHandler {
@@ -73,7 +73,7 @@ func (app *App) buildHandlerForMappings(
 	return portHandler
 }
 
-func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {
+func (app *Uncors) getMockHandlerFactory() handler.RequestHandlerOption {
 	if app.cache.mockHandlerFactory == nil {
 		factoryFunc := func(response config.Response) contracts.Handler {
 			return mock.NewMockHandler(
@@ -89,7 +89,7 @@ func (app *App) getMockHandlerFactory() handler.RequestHandlerOption {
 	return app.cache.mockHandlerFactory
 }
 
-func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
+func (app *Uncors) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 	if app.cache.staticHandlerFactory == nil {
 		factoryFunc := func(path string, dir config.StaticDirectory) contracts.Middleware {
 			return static.NewStaticMiddleware(
@@ -106,7 +106,7 @@ func (app *App) getWithStaticHandlerFactory() handler.RequestHandlerOption {
 	return app.cache.staticHandlerFactory
 }
 
-func (app *App) getScriptHandlerFactory() handler.RequestHandlerOption {
+func (app *Uncors) getScriptHandlerFactory() handler.RequestHandlerOption {
 	if app.cache.scriptHandlerFactory == nil {
 		factoryFunc := func(s config.Script) contracts.Handler {
 			return script.NewHandler(
