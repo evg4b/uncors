@@ -2,20 +2,13 @@ package appbuilder
 
 import (
 	"context"
-	"io"
-	"net"
 	"net/url"
 	"testing"
-	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/uncors"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 )
-
-const delay = 10 * time.Millisecond
 
 type Builder struct {
 	t     *testing.T
@@ -50,48 +43,8 @@ func (a *Builder) URI() *url.URL {
 	return a.uri
 }
 
-func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncors.App {
+func (a *Builder) Start(_ context.Context, _ *config.UncorsConfig) *uncors.App {
 	a.t.Helper()
 
-	app := uncors.CreateApp(a.fs, log.New(io.Discard), "x.x.x")
-	go app.Start(ctx, config)
-
-	// Wait for server to be ready with retries
-	maxRetries := 50
-	for range maxRetries {
-		time.Sleep(delay)
-
-		if addr := a.getAddr(app); addr != nil {
-			var err error
-
-			a.uri, err = url.Parse(a.prefix() + addr.String())
-			testutils.CheckNoError(a.t, err)
-
-			return app
-		}
-	}
-
-	a.t.Fatal("server failed to start within timeout")
-
-	return app
-}
-
-func (a *Builder) getAddr(app *uncors.App) net.Addr {
-	a.t.Helper()
-
-	if a.https {
-		return app.HTTPSAddr()
-	}
-
-	return app.HTTPAddr()
-}
-
-func (a *Builder) prefix() string {
-	a.t.Helper()
-
-	if a.https {
-		return "https://"
-	}
-
-	return "http://"
+	panic("deda")
 }
