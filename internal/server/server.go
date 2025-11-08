@@ -11,6 +11,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 )
 
@@ -83,27 +84,29 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 	var waitGroup sync.WaitGroup
 
-	errChan := make(chan error, len(s.servers))
+	var (
+		errors     *multierror.Error
+		errorMutex sync.Mutex
+	)
 
 	for _, server := range s.servers {
 		waitGroup.Go(func() {
 			err := server.Shutdown(ctx)
 			if err != nil {
-				errChan <- err
+				errorMutex.Lock()
+				defer errorMutex.Unlock()
+
+				errors = multierror.Append(errors, err)
 			}
 		})
 	}
 
 	waitGroup.Wait()
-	close(errChan)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
+	errorMutex.Lock()
+	defer errorMutex.Unlock()
 
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
@@ -122,10 +125,14 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) Close() error {
-	var err error
+	var errors *multierror.Error
+
 	for _, pl := range s.servers {
-		err = pl.Close()
+		err := pl.Close()
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
 	}
 
-	return err
+	return errors.ErrorOrNil()
 }
