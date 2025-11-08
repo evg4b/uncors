@@ -50,8 +50,6 @@ func run() int {
 
 		err = cmd.Execute()
 		if err != nil {
-			log.Error(err)
-
 			return 1
 		}
 

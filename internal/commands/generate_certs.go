@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -52,16 +53,22 @@ func (c *GenerateCertsCommand) Execute() error {
 	if !c.force {
 		_, err := c.fs.Stat(certPath)
 		if err == nil {
-			log.Errorf("CA certificate already exists at %s", certPath)
-			log.Info("Use --force to overwrite")
+			tui.PrintErrorBox(
+				os.Stdout,
+				fmt.Sprintf("CA certificate already exists at %s", certPath),
+				"Use --force to overwrite",
+			)
 
 			return ErrCAAlreadyExists
 		}
 
 		_, err = c.fs.Stat(keyPath)
 		if err == nil {
-			log.Errorf("CA private key already exists at %s", keyPath)
-			log.Info("Use --force to overwrite")
+			tui.PrintErrorBox(
+				os.Stdout,
+				fmt.Sprintf("CA private key already exists at %s", keyPath),
+				"Use --force to overwrite",
+			)
 
 			return ErrCAKeyAlreadyExists
 		}
@@ -78,15 +85,18 @@ func (c *GenerateCertsCommand) Execute() error {
 		return fmt.Errorf("failed to generate CA certificate: %w", err)
 	}
 
-	log.Infof("CA certificate generated successfully!")
-	log.Infof("  Certificate: %s", certPath)
-	log.Infof("  Private key: %s", keyPath)
-	log.Infof("  Validity: %d days", c.validityDays)
-	log.Info("")
-	log.Info("To use auto-generated certificates:")
-	log.Info("  1. Add the CA certificate to your system's trusted certificates")
-	log.Info("  2. Configure HTTPS mappings in your uncors config without cert-file/key-file")
-	log.Info("  3. UNCORS will automatically generate and sign certificates on-the-fly")
+	tui.PrintInfoBox(
+		os.Stdout,
+		"CA certificate generated successfully!",
+		fmt.Sprintf("  Certificate: %s", certPath),
+		fmt.Sprintf("  Private key: %s", keyPath),
+		fmt.Sprintf("  Validity: %d days", c.validityDays),
+		"",
+		"To use auto-generated certificates:",
+		"  1. Add the CA certificate to your system's trusted certificates",
+		"  2. Configure HTTPS mappings in your uncors config without cert-file/key-file",
+		"  3. UNCORS will automatically generate and sign certificates on-the-fly",
+	)
 
 	return nil
 }

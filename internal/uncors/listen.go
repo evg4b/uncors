@@ -14,41 +14,42 @@ type serveConfig struct {
 	setListener func(l net.Listener)
 }
 
-func (app *App) listenAndServeForPort(portSrv *portServer, addr string) error {
-	return app.internalServeForPort(&serveConfig{
+func (app *App) listenAndServeForPort(ctx context.Context, srv *portServer, addr string) error {
+	return app.internalServeForPort(ctx, &serveConfig{
 		addr:  addr,
-		serve: portSrv.server.Serve,
+		serve: srv.server.Serve,
 		setListener: func(l net.Listener) {
-			portSrv.mutex.Lock()
-			portSrv.listener = l
-			portSrv.mutex.Unlock()
+			srv.mutex.Lock()
+			srv.listener = l
+			srv.mutex.Unlock()
 		},
 	})
 }
 
-func (app *App) listenAndServeTLSForPort(portSrv *portServer, addr string, tlsConfig *tls.Config) error {
-	return app.internalServeForPort(&serveConfig{
+func (app *App) listenAndServeTLSForPort(ctx context.Context, srv *portServer, addr string, config *tls.Config) error {
+	return app.internalServeForPort(ctx, &serveConfig{
 		addr: addr,
 		serve: func(l net.Listener) error {
-			tlsListener := tls.NewListener(l, tlsConfig)
+			tlsListener := tls.NewListener(l, config)
 
-			return portSrv.server.Serve(tlsListener)
+			return srv.server.Serve(tlsListener)
 		},
 		setListener: func(l net.Listener) {
-			portSrv.mutex.Lock()
-			portSrv.listener = l
-			portSrv.mutex.Unlock()
+			srv.mutex.Lock()
+			srv.listener = l
+			srv.mutex.Unlock()
 		},
 	})
 }
 
-func (app *App) internalServeForPort(config *serveConfig) error {
+func (app *App) internalServeForPort(ctx context.Context, config *serveConfig) error {
 	if app.shuttingDown.Load() {
 		return http.ErrServerClosed
 	}
 
-	// nolint: noctx
-	listener, err := net.Listen("tcp", config.addr)
+	lc := net.ListenConfig{}
+
+	listener, err := lc.Listen(ctx, "tcp", config.addr)
 	if err != nil {
 		return err
 	}

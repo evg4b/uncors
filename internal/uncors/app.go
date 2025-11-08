@@ -199,11 +199,11 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 		// Start listener for this port
 		app.waitGroup.Add(1)
 
-		go app.startListener(portSrv)
+		go app.startListener(ctx, portSrv)
 	}
 }
 
-func (app *App) startListener(portSrv *portServer) {
+func (app *App) startListener(ctx context.Context, portSrv *portServer) {
 	defer app.waitGroup.Done()
 
 	addr := net.JoinHostPort(baseAddress, strconv.Itoa(portSrv.port))
@@ -222,9 +222,9 @@ func (app *App) startListener(portSrv *portServer) {
 			return
 		}
 
-		err = app.listenAndServeTLSForPort(portSrv, addr, tlsConfig)
+		err = app.listenAndServeTLSForPort(ctx, portSrv, addr, tlsConfig)
 	} else {
-		err = app.listenAndServeForPort(portSrv, addr)
+		err = app.listenAndServeForPort(ctx, portSrv, addr)
 	}
 
 	handleHTTPServerError(serverName, err)

@@ -9,21 +9,30 @@ import (
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
-func PrintWarningBox(out io.Writer, message string) {
+func PrintWarningBox(out io.Writer, messages ...string) {
 	printMessageBox(
 		out,
-		message,
+		strings.Join(messages, "\n"),
 		warningLabel,
 		styles.WarningBlockStyle,
 	)
 }
 
-func PrintInfoBox(out io.Writer, message string) {
+func PrintInfoBox(out io.Writer, messages ...string) {
 	printMessageBox(
 		out,
-		message,
+		strings.Join(messages, "\n"),
 		infoLabel,
 		styles.InfoBlockStyle,
+	)
+}
+
+func PrintErrorBox(out io.Writer, messages ...string) {
+	printMessageBox(
+		out,
+		strings.Join(messages, "\n"),
+		errorLabel,
+		styles.ErrorBlockStyle,
 	)
 }
 
