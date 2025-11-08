@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"sync"
@@ -33,7 +34,7 @@ func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
 	s.servers = lo.Map(groups, func(portGroup config.PortGroup, _ int) *PortListner {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
-		portListner := PortListner{
+		portListner := &PortListner{
 			Server: http.Server{
 				BaseContext: func(_ net.Listener) context.Context {
 					return portCtx
@@ -41,7 +42,11 @@ func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
 				ReadHeaderTimeout: readHeaderTimeout,
 				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 					writer.WriteHeader(http.StatusOK)
-					writer.Write([]byte("Tetst"))
+
+					_, err := writer.Write([]byte(request.URL.String()))
+					if err != nil {
+						panic(err)
+					}
 				}),
 			},
 			port: portGroup.Port,
@@ -49,17 +54,24 @@ func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
 
 		portListner.RegisterOnShutdown(portCtxCancel)
 
-		return &portListner
+		return portListner
 	})
+
+	var launchWaitGroup sync.WaitGroup
+	launchWaitGroup.Add(len(s.servers))
 
 	for _, server := range s.servers {
 		s.waitGroup.Go(func() {
+			launchWaitGroup.Done()
+
 			err := server.Lister(ctx)
-			if err != nil {
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				panic(err)
 			}
 		})
 	}
+
+	launchWaitGroup.Wait()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
