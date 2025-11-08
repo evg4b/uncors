@@ -27,7 +27,7 @@ func (m Mappings) String() string {
 			lines = append(lines, fmt.Sprintf("%s => %s", mapping.From, mapping.To))
 		}
 
-		mapping := group[0]
+		mapping := lo.FirstOrEmpty(group)
 		for _, mock := range mapping.Mocks {
 			lines = append(lines, fmt.Sprintf("    mock: %s", mock.String()))
 		}
