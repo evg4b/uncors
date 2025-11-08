@@ -11,7 +11,7 @@ func CloneMap[K comparable, V any](data map[K]V) map[K]V {
 	for key, value := range data {
 		if cloneable, ok := any(value).(lo.Clonable[V]); ok {
 			cloned[key] = cloneable.Clone()
-		} else if cloneablePtr, ok := any(&value).(lo.Clonable[V]); ok { //nolint:gosec
+		} else if cloneablePtr, ok := any(&value).(lo.Clonable[V]); ok {
 			cloned[key] = cloneablePtr.Clone()
 		} else {
 			cloned[key] = value

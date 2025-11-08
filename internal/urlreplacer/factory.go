@@ -29,11 +29,12 @@ var (
 )
 
 func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
-	if len(urlMappings) < 1 {
+	mappingsCount := len(urlMappings)
+	if mappingsCount < 1 {
 		panic(ErrMappingNotSpecified)
 	}
 
-	var mappings []mapping //nolint:prealloc
+	mappings := make([]mapping, 0, mappingsCount)
 
 	for _, urlMapping := range urlMappings {
 		target, source, err := replacers(urlMapping.From, urlMapping.To)

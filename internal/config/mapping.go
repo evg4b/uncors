@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"net/url"
 	"reflect"
 
@@ -94,11 +95,17 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 
 		if data, ok := rawData.(map[string]any); ok {
 			availableFields, _ := lo.Difference(lo.Keys(data), mappingFields)
+
 			if len(data) == 1 && len(availableFields) == 1 {
-				return Mapping{
-					From: availableFields[0],
-					To:   data[availableFields[0]].(string), // nolint: forcetypeassert
-				}, nil
+				from := lo.FirstOrEmpty(availableFields)
+				if to, ok := data[from].(string); ok {
+					return Mapping{
+						From: from,
+						To:   to,
+					}, nil
+				}
+
+				return nil, errors.ErrUnsupported
 			}
 
 			mapping := Mapping{}

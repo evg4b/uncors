@@ -11,7 +11,7 @@ var (
 	notifyFn  = signal.Notify
 	sigintFix = func() {
 		// fix prints after "^C"
-		println("") // nolint:forbidigo
+		os.Stdout.WriteString("\n")
 	}
 )
 

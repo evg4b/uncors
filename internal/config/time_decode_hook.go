@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -14,8 +15,10 @@ func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
-		return time.ParseDuration(
-			strings.ReplaceAll(data.(string), " ", ""), //nolint: forcetypeassert
-		)
+		if value, ok := data.(string); ok {
+			return time.ParseDuration(strings.ReplaceAll(value, " ", ""))
+		}
+
+		return nil, errors.ErrUnsupported
 	}
 }

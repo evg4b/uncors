@@ -36,17 +36,18 @@ func PrintErrorBox(out io.Writer, messages ...string) {
 	)
 }
 
-func printMessageBox(out io.Writer, message, prefix string, block lipgloss.Style) {
+func printMessageBox(out io.Writer, message, prefix string, blockStyles lipgloss.Style) {
 	height := lipgloss.Height(message)
 	space := strings.Repeat("\n", height-1)
 
-	block = block.Margin(0, 1, 0, 0)
-
-	_, err := fmt.Fprintln(out, lipgloss.JoinHorizontal( //nolint:forbidigo
+	blockStyles = blockStyles.Margin(0, 1, 0, 0)
+	block := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		block.Render(prefix, space),
+		blockStyles.Render(prefix, space),
 		message,
-	))
+	)
+
+	_, err := fmt.Fprintln(out, block)
 	if err != nil {
 		panic(err)
 	}

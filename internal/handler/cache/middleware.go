@@ -113,7 +113,11 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 
 func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
 	if cachedResponse, ok := m.storage.Get(cacheKey); ok {
-		return cachedResponse.(*CachedResponse) // nolint: forcetypeassert
+		if resp, ok := cachedResponse.(*CachedResponse); ok {
+			return resp
+		}
+
+		return nil
 	}
 
 	return nil

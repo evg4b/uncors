@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/evg4b/uncors/internal/tui/styles"
 
@@ -31,4 +32,11 @@ func Logo(version string) string {
 		lipgloss.JoinHorizontal(lipgloss.Top, red(unLetters), yellow(corsLetters)),
 		fmt.Sprintf("version: %s", version),
 	)
+}
+
+func PrintLogo(out io.Writer, version string) {
+	_, err := fmt.Fprintln(out, Logo(version))
+	if err != nil {
+		panic(err)
+	}
 }

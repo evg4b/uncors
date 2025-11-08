@@ -40,7 +40,7 @@ func (s StaticDirectories) Clone() StaticDirectories {
 
 var staticDirMappingsType = reflect.TypeFor[StaticDirectories]()
 
-func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
+func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != staticDirMappingsType || f.Kind() != reflect.Map {
 			return rawData, nil

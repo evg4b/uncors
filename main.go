@@ -57,7 +57,7 @@ func run() int {
 	}
 
 	pflag.Usage = func() {
-		println(tui.Logo(Version)) //nolint:forbidigo
+		tui.PrintLogo(os.Stdout, Version)
 		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}

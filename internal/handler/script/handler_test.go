@@ -62,7 +62,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 	}
 }
 
-func TestScriptHandler(t *testing.T) { // nolint:cyclop, gocognit
+func TestScriptHandler(t *testing.T) {
 	t.Run("inline script execution", func(t *testing.T) {
 		tests := []scriptTestCase{
 			{

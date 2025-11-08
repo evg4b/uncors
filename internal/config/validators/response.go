@@ -41,8 +41,10 @@ func (r *ResponseValidator) IsValid(errors *validate.Errors) {
 	}
 }
 
+const nodesMaxCount = 2
+
 func (r *ResponseValidator) validateFiles(errors *validate.Errors) bool {
-	nodes := make([]string, 0, 2) //nolint:mnd
+	nodes := make([]string, 0, nodesMaxCount)
 
 	if r.Value.Raw != "" {
 		nodes = append(nodes, joinPath(r.Field, "raw"))
@@ -61,7 +63,7 @@ func (r *ResponseValidator) validateFiles(errors *validate.Errors) bool {
 		))
 	case 1:
 		return false
-	case 2: //nolint:mnd
+	case nodesMaxCount:
 		errors.Add(r.Field, fmt.Sprintf("only one of %s or %s must be set", nodes[0], nodes[1]))
 	}
 

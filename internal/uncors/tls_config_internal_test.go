@@ -1,4 +1,4 @@
-package uncors //nolint:testpackage // Testing unexported function
+package uncors
 
 import (
 	"crypto/tls"

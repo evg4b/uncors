@@ -12,6 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const defaultCollenctionSize = 30
+
 func TransformToJSON(t *testing.T, fs afero.Fs, yamlFilePath string) string {
 	t.Helper()
 
@@ -66,7 +68,7 @@ func loadTestCasesInternal(t *testing.T, fs afero.Fs, errors bool, parts ...stri
 
 	dir := filepath.Join(parts...)
 
-	testCases := make([]TestCase, 0, 30) //nolint:mnd
+	testCases := make([]TestCase, 0, defaultCollenctionSize)
 	err := afero.Walk(fs, dir, func(path string, info os.FileInfo, err error) error {
 		require.NoError(t, err)
 
