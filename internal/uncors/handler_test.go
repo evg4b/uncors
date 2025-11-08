@@ -50,7 +50,10 @@ func TestHandlerWithHTTP(t *testing.T) {
 	defer app.Close()
 
 	t.Run("GET request", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/test")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/test", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -61,7 +64,11 @@ func TestHandlerWithHTTP(t *testing.T) {
 	})
 
 	t.Run("POST request", func(t *testing.T) {
-		resp, err := http.Post(hosts.Loopback.HTTPPort(port)+"/api", "application/json", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, hosts.Loopback.HTTPPort(port)+"/api", nil)
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -175,7 +182,10 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 
 	defer app.Close()
 
-	resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/api/mock")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/api/mock", nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
 	defer resp.Body.Close()
@@ -221,7 +231,10 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	defer app.Close()
 
 	t.Run("serve index file", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/static/")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/static/", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -232,7 +245,15 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("serve specific file", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/static/test.txt")
+		req, err := http.NewRequestWithContext(
+			t.Context(),
+			http.MethodGet,
+			hosts.Loopback.HTTPPort(port)+"/static/test.txt",
+			nil,
+		)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -249,7 +270,7 @@ func TestHandlerWithCache(t *testing.T) {
 
 	callCount := 0
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		callCount++
 
 		w.WriteHeader(http.StatusOK)
@@ -281,7 +302,10 @@ func TestHandlerWithCache(t *testing.T) {
 	defer app.Close()
 
 	t.Run("first request", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/cached/test")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/cached/test", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -291,7 +315,10 @@ func TestHandlerWithCache(t *testing.T) {
 	})
 
 	t.Run("cached request", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/cached/test")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/cached/test", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -302,7 +329,10 @@ func TestHandlerWithCache(t *testing.T) {
 	})
 
 	t.Run("non-cached path", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/other/path")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/other/path", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -317,12 +347,12 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.Default(), "test")
 
-	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
 	}))
 	defer server1.Close()
 
-	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 2")
 	}))
 	defer server2.Close()
@@ -350,7 +380,10 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	defer app.Close()
 
 	t.Run("mapping 1", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port1))
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port1), nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -360,7 +393,10 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	})
 
 	t.Run("mapping 2", func(t *testing.T) {
-		resp, err := http.Get(hosts.Loopback.HTTPPort(port2))
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port2), nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
@@ -401,7 +437,10 @@ func TestHandlerWithRewrite(t *testing.T) {
 
 	defer app.Close()
 
-	resp, err := http.Get(hosts.Loopback.HTTPPort(port) + "/test")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/test", nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
 	defer resp.Body.Close()
@@ -414,7 +453,7 @@ func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.Default(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer targetServer.Close()
@@ -442,7 +481,7 @@ func TestHandlerWithOptions(t *testing.T) {
 
 	defer app.Close()
 
-	req, err := http.NewRequest(http.MethodOptions, hosts.Loopback.HTTPPort(port)+"/test", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, hosts.Loopback.HTTPPort(port)+"/test", nil)
 	require.NoError(t, err)
 
 	client := &http.Client{}
