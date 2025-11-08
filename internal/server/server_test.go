@@ -3,14 +3,13 @@ package server_test
 import (
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/phayes/freeport"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -25,20 +24,17 @@ func TestServer(t *testing.T) {
 	freePorts, err := freeport.GetFreePorts(3)
 	require.NoError(t, err)
 
-	hosts := lo.Map(freePorts, func(port int, _ int) string {
-		return net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	hostsList := lo.Map(freePorts, func(port int, _ int) string {
+		return hosts.Loopback.Port(port)
 	})
 
-	mappings := lo.Map(hosts, func(host string, _ int) config.Mapping {
-		return config.Mapping{
-			From: host,
-			To:   "https://github.com",
-		}
+	mappings := lo.Map(hostsList, func(host string, _ int) config.Mapping {
+		return config.Mapping{From: host, To: hosts.Github.HTTP()}
 	})
 
 	targets := lo.Map(config.Mappings(mappings).GroupByPort(), func(group config.PortGroup, _ int) server.Target {
 		return server.Target{
-			Port: group.Port,
+			Address: hosts.Loopback.Port(group.Port),
 			Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
 				w.WriteHeader(http.StatusOK)
 				_, err := fmt.Fprint(w, expectedContent)
@@ -54,8 +50,8 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	for _, host := range hosts {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+host, nil)
+	for _, port := range freePorts {
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
 		require.NoError(t, err)
 
 		response, err := http.DefaultClient.Do(req)

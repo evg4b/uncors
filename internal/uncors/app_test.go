@@ -109,7 +109,7 @@ func TestUncorsApp(t *testing.T) {
 			response := makeRequest(t, http.DefaultClient, appBuilder.URI())
 			assert.Equal(t, expectedResponse, response)
 
-			uncorsApp.Restart(ctx, &config.UncorsConfig{
+			err := uncorsApp.Restart(ctx, &config.UncorsConfig{
 				Mappings: config.Mappings{
 					config.Mapping{
 						From:  hosts.Loopback.HTTPPort(port),
@@ -118,6 +118,8 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
+			require.NoError(t, err)
 
 			time.Sleep(delay)
 
@@ -152,7 +154,7 @@ func TestUncorsApp(t *testing.T) {
 
 			assert.Equal(t, expectedResponse, response)
 
-			uncorsApp.Restart(ctx, &config.UncorsConfig{
+			err := uncorsApp.Restart(ctx, &config.UncorsConfig{
 				Mappings: config.Mappings{
 					config.Mapping{
 						From:  hosts.Loopback.HTTPSPort(port),
@@ -161,6 +163,8 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
+			require.NoError(t, err)
 
 			time.Sleep(delay)
 

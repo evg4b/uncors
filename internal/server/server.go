@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
@@ -14,14 +15,14 @@ import (
 )
 
 const (
-	baseAddress       = "127.0.0.1"
 	readHeaderTimeout = 30 * time.Second
 	shutdownTimeout   = 15 * time.Second
 )
 
 type Target struct {
-	Port    int
-	Handler contracts.Handler
+	Address   string
+	TLSConfgi *tls.Config
+	Handler   contracts.Handler
 }
 
 type Server struct {
@@ -37,7 +38,7 @@ func New() *Server {
 }
 
 func (s *Server) Start(ctx context.Context, targets []Target) {
-	s.servers = lo.Map(targets, func(portGroup Target, _ int) *PortListner {
+	s.servers = lo.Map(targets, func(target Target, _ int) *PortListner {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
 		portListner := &PortListner{
@@ -48,10 +49,10 @@ func (s *Server) Start(ctx context.Context, targets []Target) {
 				ReadHeaderTimeout: readHeaderTimeout,
 				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 					helpers.NormaliseRequest(request)
-					portGroup.Handler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
+					target.Handler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 				}),
 			},
-			port: portGroup.Port,
+			target: &target,
 		}
 
 		portListner.RegisterOnShutdown(portCtxCancel)
@@ -118,4 +119,13 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 
 func (s *Server) Wait() {
 	s.waitGroup.Wait()
+}
+
+func (s *Server) Close() error {
+	var err error
+	for _, pl := range s.servers {
+		err = pl.Close()
+	}
+
+	return err
 }

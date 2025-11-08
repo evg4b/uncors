@@ -2,25 +2,27 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
-	"strconv"
 )
 
 type PortListner struct {
 	http.Server
 
-	port int
+	target *Target
 }
 
 func (ps *PortListner) Lister(ctx context.Context) error {
 	var listenConfig net.ListenConfig
 
-	address := net.JoinHostPort(baseAddress, strconv.Itoa(ps.port))
-
-	listner, err := listenConfig.Listen(ctx, "tcp", address)
+	listner, err := listenConfig.Listen(ctx, "tcp", ps.target.Address)
 	if err != nil {
 		return err
+	}
+
+	if ps.target.TLSConfgi != nil {
+		listner = tls.NewListener(listner, ps.target.TLSConfgi)
 	}
 
 	err = ps.Serve(listner)

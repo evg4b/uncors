@@ -74,13 +74,19 @@ func run() int {
 			log.Errorf("Config reloading error: %v", value)
 		})
 
-		app.Restart(ctx, loadConfiguration(viperInstance, fs))
+		err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
+		if err != nil {
+			log.Errorf("Failed to restart server: %v", err)
+		}
 	})
 	viperInstance.WatchConfig()
 
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 
-	app.Start(ctx, uncorsConfig)
+	err := app.Start(ctx, uncorsConfig)
+	if err != nil {
+		panic(err)
+	}
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Debug("shutdown signal received")
