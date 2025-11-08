@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/samber/lo"
 )
 
@@ -17,6 +18,11 @@ const (
 	readHeaderTimeout = 30 * time.Second
 	shutdownTimeout   = 15 * time.Second
 )
+
+type Target struct {
+	Port    int
+	Handler contracts.Handler
+}
 
 type Server struct {
 	waitGroup sync.WaitGroup
@@ -30,8 +36,8 @@ func New() *Server {
 	}
 }
 
-func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
-	s.servers = lo.Map(groups, func(portGroup config.PortGroup, _ int) *PortListner {
+func (s *Server) Start(ctx context.Context, targets []Target) {
+	s.servers = lo.Map(targets, func(portGroup Target, _ int) *PortListner {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
 		portListner := &PortListner{
@@ -41,12 +47,8 @@ func (s *Server) Start(ctx context.Context, groups []config.PortGroup) {
 				},
 				ReadHeaderTimeout: readHeaderTimeout,
 				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-					writer.WriteHeader(http.StatusOK)
-
-					_, err := writer.Write([]byte(request.URL.String()))
-					if err != nil {
-						panic(err)
-					}
+					helpers.NormaliseRequest(request)
+					portGroup.Handler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 				}),
 			},
 			port: portGroup.Port,
@@ -99,6 +101,17 @@ func (s *Server) Shutdown(ctx context.Context) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (s *Server) Restart(ctx context.Context, targets []Target) error {
+	err := s.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.Start(ctx, targets)
 
 	return nil
 }
