@@ -31,7 +31,8 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		return
 	}
 
-	if err := h.writeResponse(writer, request); err != nil {
+	err := h.writeResponse(writer, request)
+	if err != nil {
 		h.logger.Error("Mock handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(writer, err)
 
@@ -47,17 +48,20 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(header, origin)
+
 	for key, value := range response.Headers {
 		header.Set(key, value)
 	}
 
 	switch {
 	case response.IsFile():
-		if err := h.serveFileContent(writer, request); err != nil {
+		err := h.serveFileContent(writer, request)
+		if err != nil {
 			return err
 		}
 	case response.IsRaw():
-		if err := h.serveRawContent(writer); err != nil {
+		err := h.serveRawContent(writer)
+		if err != nil {
 			return err
 		}
 	default:
@@ -74,6 +78,7 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
 		url := request.URL.RequestURI()
+
 	waitingLoop:
 		for {
 			select {

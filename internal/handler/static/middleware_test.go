@@ -99,8 +99,10 @@ func TestStaticMiddleware(t *testing.T) {
 	}
 
 	t.Run("index file is not configured", func(t *testing.T) {
-		const testHTTPStatusCode = 999
-		const testHTTPBody = "this is tests response"
+		const (
+			testHTTPStatusCode = 999
+			testHTTPBody       = "this is tests response"
+		)
 
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),

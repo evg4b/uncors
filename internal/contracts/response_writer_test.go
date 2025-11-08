@@ -11,8 +11,10 @@ import (
 )
 
 func TestResponseWriterWrapper(t *testing.T) {
-	const expectedValue = `{ "status": "ok" }`
-	const expectedCode = 201
+	const (
+		expectedValue = `{ "status": "ok" }`
+		expectedCode  = 201
+	)
 
 	recorder := httptest.NewRecorder()
 	writer := contracts.WrapResponseWriter(recorder)

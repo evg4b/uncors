@@ -22,6 +22,7 @@ const (
 
 func TestStaticDirMappingHookFunc(t *testing.T) {
 	const configFile = "config.yaml"
+
 	type testType struct {
 		Statics config.StaticDirectories `mapstructure:"statics"`
 	}

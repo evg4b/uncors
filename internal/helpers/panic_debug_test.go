@@ -35,6 +35,7 @@ func TestPanicInterceptor(t *testing.T) {
 			assert.Panics(t, func() {
 				defer helpers.PanicInterceptor(func(data any) {
 					called = true
+
 					assert.Equal(t, testCast.panicData, data)
 				})
 

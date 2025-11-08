@@ -20,11 +20,9 @@ type Env struct {
 }
 
 func (e *Env) Go(action func()) {
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
+	e.wg.Go(func() {
 		action()
-	}()
+	})
 }
 
 func (e *Env) CheckAfterAll(action func()) {
@@ -44,6 +42,7 @@ func WithGoroutines(test func(t *testing.T, env *Env)) func(t *testing.T) {
 		env := Env{wg: &sync.WaitGroup{}, mutex: sync.Mutex{}}
 		test(t, &env)
 		env.wg.Wait()
+
 		for _, f := range env.afterAll {
 			f()
 		}
@@ -93,9 +92,12 @@ func TestGracefulShutdown(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, WithGoroutines(func(t *testing.T, env *Env) {
 				env.Lock()
+
 				var systemSig chan<- os.Signal
+
 				notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
 					systemSig = c
+
 					env.Unlock()
 				}
 
@@ -104,6 +106,7 @@ func TestGracefulShutdown(t *testing.T) {
 				})
 
 				called := false
+
 				env.Go(func() {
 					GracefulShutdown(t.Context(), func(_ context.Context) error {
 						called = true
@@ -114,6 +117,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 				<-time.After(50 * time.Millisecond)
 				env.Lock()
+
 				systemSig <- testCase.signal
 
 				env.CheckAfterAll(func() {
@@ -125,9 +129,12 @@ func TestGracefulShutdown(t *testing.T) {
 
 	t.Run("apply additional ui fix for SIGINT signal", WithGoroutines(func(t *testing.T, env *Env) {
 		var systemSig chan<- os.Signal
+
 		env.Lock()
+
 		notifyFn = func(c chan<- os.Signal, _ ...os.Signal) {
 			systemSig = c
+
 			env.Unlock()
 		}
 		called := false
@@ -147,6 +154,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 		<-time.After(50 * time.Millisecond)
 		env.Lock()
+
 		systemSig <- syscall.SIGINT
 
 		env.CheckAfterAll(func() {

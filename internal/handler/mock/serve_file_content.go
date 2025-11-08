@@ -8,6 +8,7 @@ import (
 
 func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Request) error {
 	fileName := h.response.File
+
 	file, err := h.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", fileName, err)

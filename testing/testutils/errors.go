@@ -18,6 +18,7 @@ func CheckNoError(t *testing.T, err error) {
 
 func CheckNoServerError(t *testing.T, err error) {
 	t.Helper()
+
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		t.Fatal(err)
 	}

@@ -1,4 +1,3 @@
-// nolint: dupl
 package config_test
 
 import (
@@ -102,9 +101,11 @@ func TestNormaliseMappings(t *testing.T) {
 				for i := range actual {
 					actual[i].ClearCache()
 				}
+
 				for i := range testCase.expected {
 					testCase.expected[i].ClearCache()
 				}
+
 				assert.Equal(t, testCase.expected, actual)
 			})
 		}

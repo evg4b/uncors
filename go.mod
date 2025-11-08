@@ -1,6 +1,6 @@
 module github.com/evg4b/uncors
 
-go 1.24.1
+go 1.25.3
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1

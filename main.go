@@ -33,18 +33,23 @@ func run() int {
 	})
 
 	fs := afero.NewOsFs()
+
 	infra.ConfigureLogger()
 
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
 		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
-		if err := flags.Parse(os.Args[2:]); err != nil {
+
+		err := flags.Parse(os.Args[2:])
+		if err != nil {
 			log.Error(err)
 
 			return 1
 		}
-		if err := cmd.Execute(); err != nil {
+
+		err = cmd.Execute()
+		if err != nil {
 			log.Error(err)
 
 			return 1
@@ -65,6 +70,7 @@ func run() int {
 
 	ctx := context.Background()
 	app := uncors.CreateApp(fs, log.Default(), Version)
+
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
 			log.Errorf("Config reloading error: %v", value)
@@ -73,13 +79,17 @@ func run() int {
 		app.Restart(ctx, loadConfiguration(viperInstance, fs))
 	})
 	viperInstance.WatchConfig()
+
 	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
+
 	app.Start(ctx, uncorsConfig)
+
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Debug("shutdown signal received")
 
 		return app.Shutdown(shutdownCtx)
 	})
+
 	app.Wait()
 	log.Info("Server was stopped")
 
@@ -88,6 +98,7 @@ func run() int {
 
 func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
+
 	err := validators.ValidateConfig(uncorsConfig, fs)
 	if err != nil {
 		panic(err)

@@ -28,6 +28,7 @@ func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 
 func CurrentDir(t *testing.T) string {
 	t.Helper()
+
 	_, callerFile, _, ok := runtime.Caller(1)
 	require.True(t, ok, "Failed to get caller information")
 

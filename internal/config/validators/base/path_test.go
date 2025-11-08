@@ -43,6 +43,7 @@ func TestPathValidator(t *testing.T) {
 
 		t.Run("should register errors for invalid hosts", func(t *testing.T) {
 			t.Skip("This test is not implemented yet.")
+
 			tests := []struct {
 				name  string
 				value string

@@ -29,6 +29,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		response := contracts.WrapResponseWriter(writer)
 
 		filePath := h.extractFilePath(request)
+
 		file, stat, err := h.openFile(filePath)
 		defer helpers.CloseSafe(file)
 

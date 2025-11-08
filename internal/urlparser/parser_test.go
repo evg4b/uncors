@@ -108,6 +108,7 @@ func TestParse(t *testing.T) {
 		if !testCase.err {
 			require.NoError(t, err)
 		}
+
 		if testCase.err {
 			require.Error(t, err)
 		}

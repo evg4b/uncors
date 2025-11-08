@@ -90,6 +90,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		manager := infratls.NewCertManager(caCert, caKey)
 
 		const numGoroutines = 10
+
 		results := make(chan error, numGoroutines)
 
 		for range numGoroutines {
@@ -110,6 +111,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		manager := infratls.NewCertManager(caCert, caKey)
 
 		const numGoroutines = 5
+
 		results := make(chan error, numGoroutines)
 
 		for i := range numGoroutines {
@@ -133,9 +135,11 @@ func TestCertManager_GetCertificate(t *testing.T) {
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}
 
 		certs := make(map[string]any)
+
 		for _, host := range hosts {
 			cert, err := manager.GetCertificate(host)
 			require.NoError(t, err)
+
 			certs[host] = cert
 		}
 

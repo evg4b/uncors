@@ -74,10 +74,12 @@ func (app *App) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 
 func (app *App) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) {
 	defer app.waitGroup.Done()
+
 	app.waitGroup.Add(1)
 	log.Print("")
 	log.Info("Restarting server....")
 	log.Print("")
+
 	err := app.internalShutdown(ctx)
 	if err != nil {
 		// TODO(v2.0): Replace panic with graceful error handling and user notification
@@ -94,8 +96,10 @@ func (app *App) Close() error {
 	defer app.serversMutex.RUnlock()
 
 	var firstErr error
+
 	for _, portSrv := range app.servers {
-		if err := portSrv.server.Close(); err != nil && firstErr == nil {
+		err := portSrv.server.Close()
+		if err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
@@ -194,6 +198,7 @@ func (app *App) initServer(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 		// Start listener for this port
 		app.waitGroup.Add(1)
+
 		go app.startListener(portSrv)
 	}
 }
@@ -207,6 +212,7 @@ func (app *App) startListener(portSrv *portServer) {
 	log.Debugf("Starting %s server on port %d", portSrv.scheme, portSrv.port)
 
 	var err error
+
 	if portSrv.scheme == "https" {
 		// Build TLS config for this port's mappings
 		tlsConfig, tlsErr := buildTLSConfig(app.fs, portSrv.mappings)
@@ -215,6 +221,7 @@ func (app *App) startListener(portSrv *portServer) {
 
 			return
 		}
+
 		err = app.listenAndServeTLSForPort(portSrv, addr, tlsConfig)
 	} else {
 		err = app.listenAndServeForPort(portSrv, addr)

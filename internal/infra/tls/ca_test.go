@@ -248,6 +248,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		// Create PEM with invalid certificate data
 		certFile, err := os.Create(certPath)
 		require.NoError(t, err)
+
 		_, _ = certFile.WriteString("-----BEGIN CERTIFICATE-----\n")
 		_, _ = certFile.WriteString("aW52YWxpZCBjZXJ0aWZpY2F0ZSBkYXRh\n")
 		_, _ = certFile.WriteString("-----END CERTIFICATE-----\n")
@@ -255,6 +256,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 
 		keyFile, err := os.Create(keyPath)
 		require.NoError(t, err)
+
 		_, _ = keyFile.WriteString("key")
 		keyFile.Close()
 
@@ -277,6 +279,7 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		// Create PEM with invalid key data
 		keyFile, err := os.Create(keyPath)
 		require.NoError(t, err)
+
 		_, _ = keyFile.WriteString("-----BEGIN RSA PRIVATE KEY-----\n")
 		_, _ = keyFile.WriteString("aW52YWxpZCBrZXkgZGF0YQ==\n")
 		_, _ = keyFile.WriteString("-----END RSA PRIVATE KEY-----\n")

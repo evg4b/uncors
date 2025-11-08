@@ -45,11 +45,13 @@ func (h *HostValidator) validateHostLength(errors *validate.Errors) bool {
 
 	if length == 0 {
 		errors.Add(h.Field, fmt.Sprintf("%s must not be empty", h.Field))
+
 		result = false
 	}
 
 	if length > maxHostLength {
 		errors.Add(h.Field, fmt.Sprintf("%s must not be longer than 255 characters, but got %d", h.Field, len(h.Value)))
+
 		result = false
 	}
 

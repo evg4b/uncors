@@ -142,6 +142,7 @@ func addResponseMethods(
 
 		if !*headerWritten {
 			writer.WriteHeader(http.StatusOK)
+
 			*headerWritten = true
 		}
 
@@ -165,6 +166,7 @@ func addResponseMethods(
 
 		if !*headerWritten {
 			writer.WriteHeader(http.StatusOK)
+
 			*headerWritten = true
 		}
 
@@ -188,6 +190,7 @@ func addResponseMethods(
 
 		if !*headerWritten {
 			writer.WriteHeader(code)
+
 			*headerWritten = true
 		}
 

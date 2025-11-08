@@ -47,6 +47,7 @@ func (r *ResponseValidator) validateFiles(errors *validate.Errors) bool {
 	if r.Value.Raw != "" {
 		nodes = append(nodes, joinPath(r.Field, "raw"))
 	}
+
 	if r.Value.File != "" {
 		nodes = append(nodes, joinPath(r.Field, "file"))
 	}

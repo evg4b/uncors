@@ -23,6 +23,7 @@ func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}
+
 	infratls.CheckCAExpiration(caCert)
 
 	return &hostCertManager{
@@ -52,6 +53,7 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 	// If no SNI host provided, try to use fallback
 	if host == "" {
 		var err error
+
 		host, err = m.getFallbackHost()
 		if err != nil {
 			return nil, err

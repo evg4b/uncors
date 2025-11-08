@@ -368,6 +368,7 @@ func TestHandler(t *testing.T) {
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
 							assert.Equal(t, testCase.expected, duration)
+
 							called = true
 
 							return time.After(time.Nanosecond)
@@ -401,11 +402,10 @@ func TestHandler(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
 			var waitGroup sync.WaitGroup
-			waitGroup.Add(1)
-			go func() {
-				defer waitGroup.Done()
+
+			waitGroup.Go(func() {
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request.WithContext(ctx))
-			}()
+			})
 
 			cancel()
 

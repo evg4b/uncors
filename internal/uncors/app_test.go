@@ -41,6 +41,7 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
 			defer func() {
 				err := uncorsApp.Close()
 				testutils.CheckNoServerError(t, err)
@@ -67,6 +68,7 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
 			defer func() {
 				err := uncorsApp.Close()
 				testutils.CheckNoServerError(t, err)
@@ -95,6 +97,7 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
 			defer func() {
 				err := uncorsApp.Close()
 				testutils.CheckNoServerError(t, err)
@@ -136,6 +139,7 @@ func TestUncorsApp(t *testing.T) {
 					},
 				},
 			})
+
 			defer func() {
 				err := uncorsApp.Close()
 				testutils.CheckNoServerError(t, err)
@@ -166,8 +170,10 @@ func TestUncorsApp(t *testing.T) {
 
 func makeRequest(t *testing.T, httpClient *http.Client, uri *url.URL) string {
 	t.Helper()
+
 	res, err := httpClient.Do(&http.Request{URL: uri, Method: http.MethodGet})
 	testutils.CheckNoError(t, err)
+
 	defer helpers.CloseSafe(res.Body)
 
 	data, err := io.ReadAll(res.Body)
@@ -210,8 +216,10 @@ func TestApp_Wait(t *testing.T) {
 
 		// Test Wait in a goroutine
 		done := make(chan bool)
+
 		go func() {
 			uncorsApp.Wait()
+
 			done <- true
 		}()
 
@@ -297,6 +305,7 @@ func TestApp_GetListenerAddr(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)
@@ -322,6 +331,7 @@ func TestApp_GetListenerAddr(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)
@@ -380,6 +390,7 @@ func TestApp_MultiPort(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)
@@ -401,6 +412,7 @@ func TestApp_MultiPort(t *testing.T) {
 
 	t.Run("mixed HTTP and HTTPS ports", func(t *testing.T) {
 		testutils.SetupHTTPSTest(t, fs)
+
 		httpPort := freeport.GetPort()
 		httpsPort := freeport.GetPort()
 		appBuilder := appbuilder.NewAppBuilder(t).
@@ -421,6 +433,7 @@ func TestApp_MultiPort(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)
@@ -490,6 +503,7 @@ func TestApp_StaticAndCacheHandler(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)
@@ -521,6 +535,7 @@ func TestApp_StaticAndCacheHandler(t *testing.T) {
 				},
 			},
 		})
+
 		defer func() {
 			err := uncorsApp.Close()
 			testutils.CheckNoServerError(t, err)

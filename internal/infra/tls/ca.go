@@ -39,7 +39,8 @@ func GenerateCA(config CAConfig) (string, string, error) {
 		return "", "", err
 	}
 
-	if err := config.Fs.MkdirAll(config.OutputDir, dirPermissions); err != nil {
+	err = config.Fs.MkdirAll(config.OutputDir, dirPermissions)
+	if err != nil {
 		return "", "", fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -97,16 +98,15 @@ func generateCACertificate(validityDays int) (*rsa.PrivateKey, []byte, error) {
 // writeCertificateFile writes the certificate to a file in PEM format.
 func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string, error) {
 	certPath := filepath.Join(outputDir, CACertFileName)
+
 	certFile, err := fs.Create(certPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create certificate file: %w", err)
 	}
 	defer certFile.Close()
 
-	if err := pem.Encode(certFile, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certDER,
-	}); err != nil {
+	err = pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	if err != nil {
 		return "", fmt.Errorf("failed to write certificate: %w", err)
 	}
 
@@ -116,21 +116,22 @@ func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string
 // writePrivateKeyFile writes the private key to a file in PEM format.
 func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateKey) (string, error) {
 	keyPath := filepath.Join(outputDir, CAKeyFileName)
+
 	keyFile, err := fs.Create(keyPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create key file: %w", err)
 	}
 	defer keyFile.Close()
 
-	if err := fs.Chmod(keyPath, keyFilePermissions); err != nil {
+	err = fs.Chmod(keyPath, keyFilePermissions)
+	if err != nil {
 		return "", fmt.Errorf("failed to set key file permissions: %w", err)
 	}
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	if err := pem.Encode(keyFile, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: privateKeyBytes,
-	}); err != nil {
+
+	err = pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes})
+	if err != nil {
 		return "", fmt.Errorf("failed to write private key: %w", err)
 	}
 

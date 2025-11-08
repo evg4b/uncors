@@ -61,7 +61,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+
 		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
@@ -89,7 +91,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
+
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+
 		cmd := commands.NewGenerateCertsCommand(fs)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)

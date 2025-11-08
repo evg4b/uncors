@@ -52,6 +52,7 @@ func (a *Builder) URI() *url.URL {
 
 func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncors.App {
 	a.t.Helper()
+
 	app := uncors.CreateApp(a.fs, log.New(io.Discard), "x.x.x")
 	go app.Start(ctx, config)
 
@@ -59,8 +60,10 @@ func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncor
 	maxRetries := 50
 	for range maxRetries {
 		time.Sleep(delay)
+
 		if addr := a.getAddr(app); addr != nil {
 			var err error
+
 			a.uri, err = url.Parse(a.prefix() + addr.String())
 			testutils.CheckNoError(a.t, err)
 
@@ -75,6 +78,7 @@ func (a *Builder) Start(ctx context.Context, config *config.UncorsConfig) *uncor
 
 func (a *Builder) getAddr(app *uncors.App) net.Addr {
 	a.t.Helper()
+
 	if a.https {
 		return app.HTTPSAddr()
 	}
@@ -84,6 +88,7 @@ func (a *Builder) getAddr(app *uncors.App) net.Addr {
 
 func (a *Builder) prefix() string {
 	a.t.Helper()
+
 	if a.https {
 		return "https://"
 	}

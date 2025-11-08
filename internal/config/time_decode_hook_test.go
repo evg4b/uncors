@@ -13,6 +13,7 @@ import (
 
 func TestStringToTimeDurationHookFunc(t *testing.T) {
 	const key = "duration"
+
 	viperInstance := viper.New()
 	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		config.StringToTimeDurationHookFunc(),
@@ -73,6 +74,7 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 			viperInstance.Set(key, "value,value2")
 
 			var stringValue []string
+
 			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
 			testutils.CheckNoError(t, err)
 

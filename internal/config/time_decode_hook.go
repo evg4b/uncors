@@ -10,7 +10,7 @@ import (
 
 func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if f.Kind() != reflect.String || t != reflect.TypeOf(time.Second) {
+		if f.Kind() != reflect.String || t != reflect.TypeFor[time.Duration]() {
 			return data, nil
 		}
 

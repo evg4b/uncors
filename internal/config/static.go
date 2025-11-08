@@ -38,7 +38,7 @@ func (s StaticDirectories) Clone() StaticDirectories {
 	})
 }
 
-var staticDirMappingsType = reflect.TypeOf(StaticDirectories{})
+var staticDirMappingsType = reflect.TypeFor[StaticDirectories]()
 
 func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
@@ -52,6 +52,7 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 		}
 
 		var mappings StaticDirectories
+
 		for path, mappingDef := range mappingsDefs {
 			if def, ok := mappingDef.(string); ok {
 				mappings = append(mappings, StaticDirectory{
@@ -63,6 +64,7 @@ func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc { //nolint: ireturn
 			}
 
 			mapping := StaticDirectory{}
+
 			err := decodeConfig(mappingDef, &mapping)
 			if err != nil {
 				return nil, err

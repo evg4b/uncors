@@ -41,11 +41,13 @@ func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertManage
 // If auto-generation is enabled and no certificate exists, it generates a new one.
 func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	m.mutex.RLock()
+
 	if cert, exists := m.cache[host]; exists {
 		m.mutex.RUnlock()
 
 		return cert, nil
 	}
+
 	m.mutex.RUnlock()
 
 	if m.generator == nil {

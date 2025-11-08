@@ -41,19 +41,23 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	}
 
 	var err error
+
 	replacer := &Replacer{
 		hooks: map[string]func(string) string{},
 	}
 
-	if replacer.source, err = urlparser.Parse(source); err != nil {
+	replacer.source, err = urlparser.Parse(source)
+	if err != nil {
 		return nil, ErrInvalidSourceURL
 	}
 
-	if replacer.target, err = urlparser.Parse(target); err != nil {
+	replacer.target, err = urlparser.Parse(target)
+	if err != nil {
 		return nil, ErrInvalidTargetURL
 	}
 
-	if replacer.regexp, _, err = wildCardToRegexp(replacer.source); err != nil {
+	replacer.regexp, _, err = wildCardToRegexp(replacer.source)
+	if err != nil {
 		return nil, err
 	}
 
@@ -90,6 +94,7 @@ func (r *Replacer) Replace(source string) (string, error) {
 		if len(subExpName) > 0 {
 			partPattern := fmt.Sprintf("${%s}", subExpName)
 			partIndex := r.regexp.SubexpIndex(subExpName)
+
 			partValue := matches[partIndex]
 			if hook, ok := r.hooks[subExpName]; ok {
 				partValue = hook(partValue)
@@ -103,7 +108,8 @@ func (r *Replacer) Replace(source string) (string, error) {
 }
 
 func (r *Replacer) ReplaceSoft(source string) string {
-	if replaced, err := r.Replace(source); err == nil {
+	replaced, err := r.Replace(source)
+	if err == nil {
 		return replaced
 	}
 

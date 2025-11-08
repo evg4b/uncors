@@ -20,7 +20,8 @@ func GracefulShutdown(ctx context.Context, shutdownFunc func(ctx context.Context
 		return
 	}
 
-	if err := shutdownFunc(ctx); err != nil {
+	err := shutdownFunc(ctx)
+	if err != nil {
 		panic(err)
 	}
 }

@@ -19,9 +19,11 @@ import (
 )
 
 func TestCacheMiddleware(t *testing.T) {
-	const expectedBody = "this is test"
-	const cacheGlob = "/api/**"
-	const constantEndpoint = "/api/constants"
+	const (
+		expectedBody     = "this is test"
+		cacheGlob        = "/api/**"
+		constantEndpoint = "/api/constants"
+	)
 
 	expectedHeader := http.Header{
 		headers.ContentType:     {"text/html; charset=iso-8859-1"},
@@ -180,6 +182,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 	t.Run("should not cache response between different hosts matched by one rule", func(t *testing.T) {
 		const count = 5
+
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(
@@ -208,6 +211,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 	t.Run("should not cache response between different methods matched by one rule", func(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut}
+
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(

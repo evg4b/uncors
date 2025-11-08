@@ -12,6 +12,7 @@ import (
 func TestNewHTTPServerErrorLogger(t *testing.T) {
 	t.Run("should log messages with ERROR level", func(t *testing.T) {
 		var buf bytes.Buffer
+
 		logger := log.New(&buf)
 		logger.SetLevel(log.DebugLevel)
 
@@ -26,6 +27,7 @@ func TestNewHTTPServerErrorLogger(t *testing.T) {
 
 	t.Run("should trim whitespace from messages", func(t *testing.T) {
 		var buf bytes.Buffer
+
 		logger := log.New(&buf)
 		logger.SetLevel(log.DebugLevel)
 
@@ -40,6 +42,7 @@ func TestNewHTTPServerErrorLogger(t *testing.T) {
 
 	t.Run("should not log empty messages", func(t *testing.T) {
 		var buf bytes.Buffer
+
 		logger := log.New(&buf)
 		logger.SetLevel(log.DebugLevel)
 

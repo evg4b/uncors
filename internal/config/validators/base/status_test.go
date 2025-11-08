@@ -13,6 +13,7 @@ import (
 
 func TestStatusValidator(t *testing.T) {
 	const field = "status"
+
 	t.Run("valid status code", func(t *testing.T) {
 		validCodes := []int{
 			100,

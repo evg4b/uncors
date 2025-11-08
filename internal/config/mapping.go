@@ -49,6 +49,7 @@ func (m *Mapping) GetFromURL() (*url.URL, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		m.fromURL = parsedURL
 	}
 
@@ -63,6 +64,7 @@ func (m *Mapping) GetFromHostPort() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
+
 		m.fromHost, m.fromPort, err = urlparser.SplitHostPort(uri)
 		if err != nil {
 			return "", "", err
@@ -80,7 +82,7 @@ func (m *Mapping) ClearCache() {
 }
 
 var (
-	mappingType   = reflect.TypeOf(Mapping{})
+	mappingType   = reflect.TypeFor[Mapping]()
 	mappingFields = getTagValues(mappingType, "mapstructure")
 )
 

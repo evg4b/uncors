@@ -31,6 +31,7 @@ func TestMiddlewareWrap(t *testing.T) {
 
 		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {
 			nextCalled = true
+
 			assert.Equal(t, expectedURL, request.URL.Path)
 			assert.Equal(t, expectedHost, request.Context().Value(rewrite.RewriteHostKey))
 		})
@@ -57,6 +58,7 @@ func TestMiddlewareWrap(t *testing.T) {
 
 		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {
 			nextCalled = true
+
 			assert.Equal(t, expectedURL, request.URL.Path)
 			assert.Nil(t, request.Context().Value(rewrite.RewriteHostKey))
 		})

@@ -24,7 +24,8 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.L
 	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
 	if request.Body != nil {
-		if body, err := io.ReadAll(request.Body); err == nil {
+		body, err := io.ReadAll(request.Body)
+		if err == nil {
 			reqTable.RawSetString("body", lua.LString(string(body)))
 		}
 	}
@@ -43,6 +44,7 @@ func createHeadersTable(luaState *lua.LState, headers map[string][]string) *lua.
 			for _, value := range values {
 				valuesList.Append(lua.LString(value))
 			}
+
 			headersTable.RawSetString(key, valuesList)
 		}
 	}
@@ -61,6 +63,7 @@ func createQueryParamsTable(luaState *lua.LState, queryParams map[string][]strin
 			for _, value := range values {
 				valuesList.Append(lua.LString(value))
 			}
+
 			queryTable.RawSetString(key, valuesList)
 		}
 	}

@@ -31,7 +31,8 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
-	if err := h.handle(response, request); err != nil {
+	err := h.handle(response, request)
+	if err != nil {
 		h.proxyLogger.Error("Proxy handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(response, err)
 	}
@@ -96,6 +97,7 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+
 	tui.PrintResponse(h.logger(request), originalResponse.Request, originalResponse.StatusCode)
 
 	return originalResponse, nil

@@ -22,11 +22,14 @@ type UncorsConfig struct {
 func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
 	defineFlags()
 	helpers.AssertIsDefined(flags)
-	if err := flags.Parse(args); err != nil {
+
+	err := flags.Parse(args)
+	if err != nil {
 		panic(fmt.Errorf("failed parsing flags: %w", err))
 	}
 
-	if err := viperInstance.BindPFlags(flags); err != nil {
+	err = viperInstance.BindPFlags(flags)
+	if err != nil {
 		panic(fmt.Errorf("failed binding flags: %w", err))
 	}
 
@@ -36,7 +39,9 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 
 	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {
 		viperInstance.SetConfigFile(configPath)
-		if err := viperInstance.ReadInConfig(); err != nil {
+
+		err := viperInstance.ReadInConfig()
+		if err != nil {
 			panic(fmt.Errorf("failed to read config file '%s': %w", configPath, err))
 		}
 	}
@@ -48,11 +53,14 @@ func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig 
 	))
 
 	setDefaultValues(viperInstance)
-	if err := viperInstance.Unmarshal(configuration, configOption); err != nil {
+
+	err = viperInstance.Unmarshal(configuration, configOption)
+	if err != nil {
 		panic(fmt.Errorf("failed parsing config: %w", err))
 	}
 
-	if err := readURLMapping(viperInstance, configuration); err != nil {
+	err = readURLMapping(viperInstance, configuration)
+	if err != nil {
 		panic(err)
 	}
 

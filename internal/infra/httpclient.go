@@ -20,6 +20,7 @@ func MakeHTTPClient(proxy string) *http.Client {
 		if err != nil {
 			panic(fmt.Errorf("failed to create http client: %w", err))
 		}
+
 		transport.Proxy = http.ProxyURL(parsedURL)
 	}
 

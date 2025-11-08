@@ -30,6 +30,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 
 	for index, key := range from {
 		found := false
+
 		for i := range configuration.Mappings {
 			if strings.EqualFold(configuration.Mappings[i].From, key) {
 				configuration.Mappings[i].To = to[index]
@@ -56,6 +57,7 @@ func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.Decod
 		mapstructure.StringToSliceHookFunc(","),
 		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
 	)
+
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:               mapping,
 		DecodeHook:           hook,
@@ -78,6 +80,7 @@ const (
 
 func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := Mappings{}
+
 	for _, mapping := range mappings {
 		host, portStr, err := mapping.GetFromHostPort()
 		if err != nil {
@@ -105,8 +108,10 @@ func normalizeURL(parsedURL url.URL, host, portStr string) string {
 	}
 
 	var port int
+
 	if portStr != "" {
 		var err error
+
 		port, err = strconv.Atoi(portStr)
 		if err != nil {
 			panic(fmt.Errorf("invalid port number: %w", err))

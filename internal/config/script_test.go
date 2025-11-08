@@ -157,6 +157,7 @@ func TestScripts_Clone(t *testing.T) {
 
 	t.Run("nil scripts", func(t *testing.T) {
 		var original config.Scripts
+
 		cloned := original.Clone()
 		assert.Nil(t, cloned)
 	})

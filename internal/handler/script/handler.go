@@ -24,7 +24,8 @@ func NewHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
-	if err := h.executeScript(writer, request); err != nil {
+	err := h.executeScript(writer, request)
+	if err != nil {
 		h.logger.Error("Script handler error", "error", err, "url", request.URL.String())
 		infra.HTTPError(writer, err)
 
@@ -47,7 +48,8 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	if err := h.runScript(luaState); err != nil {
+	err := h.runScript(luaState)
+	if err != nil {
 		return fmt.Errorf("script error: %w", err)
 	}
 

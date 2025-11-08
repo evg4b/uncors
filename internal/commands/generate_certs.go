@@ -43,19 +43,23 @@ func (c *GenerateCertsCommand) Execute() error {
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
 	}
+
 	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
 
 	certPath := filepath.Join(c.outputDir, infratls.CACertFileName)
 	keyPath := filepath.Join(c.outputDir, infratls.CAKeyFileName)
 
 	if !c.force {
-		if _, err := c.fs.Stat(certPath); err == nil {
+		_, err := c.fs.Stat(certPath)
+		if err == nil {
 			log.Errorf("CA certificate already exists at %s", certPath)
 			log.Info("Use --force to overwrite")
 
 			return ErrCAAlreadyExists
 		}
-		if _, err := c.fs.Stat(keyPath); err == nil {
+
+		_, err = c.fs.Stat(keyPath)
+		if err == nil {
 			log.Errorf("CA private key already exists at %s", keyPath)
 			log.Info("Use --force to overwrite")
 
@@ -64,6 +68,7 @@ func (c *GenerateCertsCommand) Execute() error {
 	}
 
 	log.Info("Generating CA certificate...")
+
 	certPath, keyPath, err = infratls.GenerateCA(infratls.CAConfig{
 		ValidityDays: c.validityDays,
 		OutputDir:    c.outputDir,

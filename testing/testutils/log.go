@@ -10,6 +10,7 @@ import (
 
 func LogTest(action func(t *testing.T, output *bytes.Buffer)) func(t *testing.T) {
 	buffer := &bytes.Buffer{}
+
 	infra.ConfigureLogger()
 
 	logger := log.Default()

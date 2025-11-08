@@ -16,8 +16,10 @@ import (
 )
 
 func TestMappingValidator(t *testing.T) {
-	const field = "mapping"
-	const demoJSONPath = "/tmp/demo.json"
+	const (
+		field        = "mapping"
+		demoJSONPath = "/tmp/demo.json"
+	)
 
 	t.Run("should not register errors for", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{

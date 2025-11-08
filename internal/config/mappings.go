@@ -31,9 +31,11 @@ func (m Mappings) String() string {
 		for _, mock := range mapping.Mocks {
 			lines = append(lines, fmt.Sprintf("    mock: %s", mock.String()))
 		}
+
 		for _, static := range mapping.Statics {
 			lines = append(lines, fmt.Sprintf("    static: %s", static.String()))
 		}
+
 		for _, cacheGlob := range mapping.Cache {
 			lines = append(lines, fmt.Sprintf("    cache: %s", cacheGlob))
 		}

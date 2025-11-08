@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"maps"
 	"math"
 
 	"github.com/charmbracelet/lipgloss"
@@ -85,7 +86,5 @@ func CreateLogger(logger *log.Logger, prefix string) *log.Logger {
 }
 
 func copyMap(source, dest map[string]lipgloss.Style) {
-	for key, value := range source {
-		dest[key] = value
-	}
+	maps.Copy(dest, source)
 }

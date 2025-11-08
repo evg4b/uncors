@@ -32,6 +32,7 @@ type scriptTestCase struct {
 
 func runScriptTests(t *testing.T, tests []scriptTestCase) {
 	t.Helper()
+
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			handler := script.NewHandler(
@@ -44,6 +45,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 
 			req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
 			req.Header.Set(headers.UserAgent, "TestAgent/1.0")
+
 			recorder := httptest.NewRecorder()
 
 			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -310,6 +312,7 @@ response:WriteString("Body: " .. request.body)
 				} else {
 					req = httptest.NewRequest(http.MethodGet, "/", nil)
 				}
+
 				testCase.setupRequest(req)
 
 				handler := script.NewHandler(
@@ -369,6 +372,7 @@ response:WriteString("OK")
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.Header.Set("Origin", hosts.Example.HTTP())
+
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -708,11 +712,13 @@ end
 
 				req := httptest.NewRequest(http.MethodGet, "/test", nil)
 				parsedQuery := req.URL.Query()
+
 				for key, values := range testCase.queryParams {
 					for _, value := range values {
 						parsedQuery.Add(key, value)
 					}
 				}
+
 				req.URL.RawQuery = parsedQuery.Encode()
 
 				recorder := httptest.NewRecorder()
@@ -783,6 +789,7 @@ end
 				)
 
 				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+
 				for key, values := range testCase.headers {
 					for _, value := range values {
 						req.Header.Add(key, value)

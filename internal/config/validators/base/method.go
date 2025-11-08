@@ -37,8 +37,10 @@ func (m *MethodValidator) IsValid(errors *validate.Errors) {
 	if !lo.Contains(allowedMethods, m.Value) {
 		builder := strings.Builder{}
 		builder.WriteString(fmt.Sprintf("%s must be one of ", m.Field))
+
 		for i, allowedMethod := range allowedMethods {
 			builder.WriteString(allowedMethod)
+
 			if i != lastAllowedMethodIndex {
 				builder.WriteString(", ")
 			}

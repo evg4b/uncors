@@ -198,6 +198,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			t.Run("where schemes set as //", func(t *testing.T) {
 				replacer, err := urlreplacer.NewReplacer("//*.localhost.com", "//api.*.com")
 				testutils.CheckNoError(t, err)
+
 				for _, testsCase := range testsCases {
 					t.Run(testsCase.name, func(t *testing.T) {
 						actual, err := replacer.Replace(testsCase.source)
@@ -241,6 +242,7 @@ var isSecureTestCases = []struct {
 func TestReplacerIsSourceSecure(t *testing.T) {
 	makeReplacer := func(source string) *urlreplacer.Replacer {
 		t.Helper()
+
 		replacer, err := urlreplacer.NewReplacer(source, hosts.Github.HTTPS())
 		if err != nil {
 			t.Error(err)
@@ -261,6 +263,7 @@ func TestReplacerIsSourceSecure(t *testing.T) {
 func TestReplacerIsTargetSecure(t *testing.T) {
 	makeReplacer := func(target string) *urlreplacer.Replacer {
 		t.Helper()
+
 		replacer, err := urlreplacer.NewReplacer(hosts.Github.HTTPS(), target)
 		if err != nil {
 			t.Error(err)

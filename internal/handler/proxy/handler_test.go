@@ -129,6 +129,7 @@ func TestProxyHandler(t *testing.T) {
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
 				testutils.CheckNoError(t, err)
+
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
 				req.URL.Path = expectedURL.Path
@@ -164,6 +165,7 @@ func TestProxyHandler(t *testing.T) {
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
+
 		req.URL.Scheme = "http"
 		req.Host = "premium.local.com"
 		helpers.NormaliseRequest(req)
@@ -184,6 +186,7 @@ func TestProxyHandler(t *testing.T) {
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
 		t.Skip()
+
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),

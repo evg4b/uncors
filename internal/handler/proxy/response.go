@@ -24,7 +24,8 @@ func (h *Handler) makeUncorsResponse(
 		},
 	}
 
-	if err := copyHeaders(original.Header, target.Header(), modifications); err != nil {
+	err := copyHeaders(original.Header, target.Header(), modifications)
+	if err != nil {
 		return err
 	}
 
@@ -37,7 +38,8 @@ func (h *Handler) makeUncorsResponse(
 func copyResponseData(resp http.ResponseWriter, targetResp *http.Response) error {
 	resp.WriteHeader(targetResp.StatusCode)
 
-	if _, err := io.Copy(resp, targetResp.Body); err != nil {
+	_, err := io.Copy(resp, targetResp.Body)
+	if err != nil {
 		return fmt.Errorf("failed to copy body to response: %w", err)
 	}
 

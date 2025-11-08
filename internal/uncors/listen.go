@@ -47,12 +47,14 @@ func (app *App) internalServeForPort(config *serveConfig) error {
 		return http.ErrServerClosed
 	}
 
+	// nolint: noctx
 	listener, err := net.Listen("tcp", config.addr)
 	if err != nil {
 		return err
 	}
 
 	config.setListener(listener)
+
 	defer func() { config.setListener(nil) }()
 
 	err = config.serve(listener)

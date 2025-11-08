@@ -8,8 +8,9 @@ type ResponseWriter interface {
 }
 
 type ResponseWriterWrap struct {
-	Code int
 	http.ResponseWriter
+
+	Code int
 }
 
 func WrapResponseWriter(writer http.ResponseWriter) *ResponseWriterWrap {

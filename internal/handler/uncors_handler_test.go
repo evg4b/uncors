@@ -121,6 +121,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 func TestUncorsRequestHandler(t *testing.T) {
 	log.SetOutput(io.Discard)
+
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -267,6 +268,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+
 				expectedMessage := "failed to open index file: open /assets/index.php: file does not exist"
 				assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
 			})
@@ -366,6 +368,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+
 			expectedMessage := "failed to open file /unknown.json: open /unknown.json: file does not exist"
 			assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
 		})
@@ -843,6 +846,7 @@ func TestMockMiddleware(t *testing.T) {
 				for key, value := range testCase.headers {
 					request.Header.Add(key, value)
 				}
+
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)

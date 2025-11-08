@@ -10,8 +10,10 @@ import (
 )
 
 func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
-	var result strings.Builder
-	var count int
+	var (
+		result strings.Builder
+		count  int
+	)
 
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
 
@@ -43,6 +45,7 @@ func wildCardToRegexp(parsedPattern *url.URL) (*regexp.Regexp, int, error) {
 
 func wildCardToReplacePattern(parsedPattern *url.URL) (string, int) {
 	result := &strings.Builder{}
+
 	var count int
 
 	result.WriteString("${scheme}")

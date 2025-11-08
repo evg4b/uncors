@@ -46,7 +46,9 @@ func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := checkHost(host); err != nil {
+
+	err = checkHost(host)
+	if err != nil {
 		return nil, err
 	}
 
@@ -67,6 +69,7 @@ func defaultScheme(rawURL, scheme string) string {
 
 		return rawURL
 	}
+
 	if !strings.Contains(rawURL, "://") {
 		if len(scheme) > 0 {
 			// Missing scheme. Force http.
@@ -95,7 +98,8 @@ func checkHost(host string) error {
 		return nil
 	}
 
-	if punycode, err := idna.ToASCII(host); err != nil {
+	punycode, err := idna.ToASCII(host)
+	if err != nil {
 		return err
 	} else if domainRegexp.MatchString(punycode) {
 		return nil
@@ -116,6 +120,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	if parsedURL == nil {
 		return "", "", &url.Error{Op: "host", URL: "", Err: ErrEmptyURL}
 	}
+
 	host := parsedURL.Host
 
 	// Find last colon.
@@ -138,7 +143,8 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	port := host[index+1:]
 	host = host[:index]
 
-	if _, err := strconv.Atoi(port); err != nil {
+	_, err := strconv.Atoi(port)
+	if err != nil {
 		return "", "", &url.Error{Op: "port", URL: parsedURL.String(), Err: err}
 	}
 

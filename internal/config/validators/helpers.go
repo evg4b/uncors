@@ -7,6 +7,7 @@ import (
 
 func joinPath(paths ...string) string {
 	builder := strings.Builder{}
+
 	prevPath := ""
 	for _, path := range paths {
 		if prevPath != "" && !strings.HasPrefix(path, "[") {

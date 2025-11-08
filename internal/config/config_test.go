@@ -1,4 +1,3 @@
-// nolint: nosprintfhostport
 package config_test
 
 import (
@@ -193,6 +192,7 @@ func TestLoadConfiguration(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				viper.Reset()
+
 				viperInstance := viper.New()
 				viperInstance.SetFs(fs)
 
@@ -293,6 +293,7 @@ func TestLoadConfiguration(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				for _, expected := range testCase.expected {
 					viper.Reset()
+
 					viperInstance := viper.New()
 					viperInstance.SetFs(fs)
 

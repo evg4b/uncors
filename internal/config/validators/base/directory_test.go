@@ -12,8 +12,10 @@ import (
 )
 
 func TestDirectoryValidator(t *testing.T) {
-	const field = "test"
-	const path = "/demo"
+	const (
+		field = "test"
+		path  = "/demo"
+	)
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		"file.go": "package validators",

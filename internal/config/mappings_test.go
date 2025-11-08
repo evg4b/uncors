@@ -284,6 +284,7 @@ func TestMappings_GroupByPort(t *testing.T) {
 
 	t.Run("empty mappings", func(t *testing.T) {
 		var mappings config.Mappings
+
 		groups := mappings.GroupByPort()
 		assert.Empty(t, groups)
 	})
@@ -292,6 +293,7 @@ func TestMappings_GroupByPort(t *testing.T) {
 		mappings := config.Mappings{
 			{From: "://invalid-url", To: hosts.Github.HTTPS()},
 		}
+
 		assert.Panics(t, func() {
 			_ = mappings.GroupByPort()
 		})
@@ -301,6 +303,7 @@ func TestMappings_GroupByPort(t *testing.T) {
 		mappings := config.Mappings{
 			{From: "http://localhost:invalid-port", To: hosts.Github.HTTPS()},
 		}
+
 		assert.Panics(t, func() {
 			_ = mappings.GroupByPort()
 		})
@@ -312,6 +315,7 @@ func TestMappings_String_Panics(t *testing.T) {
 		mappings := config.Mappings{
 			{From: "://invalid-url", To: hosts.Github.HTTPS()},
 		}
+
 		assert.Panics(t, func() {
 			_ = mappings.String()
 		})

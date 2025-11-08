@@ -12,10 +12,13 @@ import (
 )
 
 func TestCacheableResponseWriter(t *testing.T) {
-	const defaultContentType = "text/plain; charset=utf-8"
-	const customContentType = "application/xml"
-	const authorization = "xxxxxx"
-	const bodyString = "Test Body"
+	const (
+		defaultContentType = "text/plain; charset=utf-8"
+		customContentType  = "application/xml"
+		authorization      = "xxxxxx"
+		bodyString         = "Test Body"
+	)
+
 	bodyBytes := []byte{0x54, 0x65, 0x73, 0x74, 0x20, 0x42, 0x6f, 0x64, 0x79}
 
 	tests := []struct {

@@ -12,9 +12,11 @@ import (
 )
 
 func TestStaticValidator(t *testing.T) {
-	const assetsPath = "/assets"
-	const staticPath = "/static"
-	const indexFilePath = "/static/index.html"
+	const (
+		assetsPath    = "/assets"
+		staticPath    = "/static"
+		indexFilePath = "/static/index.html"
+	)
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexFilePath: indexFilePath,

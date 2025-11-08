@@ -46,6 +46,7 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 	m.logger.Debugf("extracted %s from request", cacheKey)
+
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 		m.logger.Debugf("extracted %s from request", cacheKey)
 
@@ -59,6 +60,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 
 	cacheableWriter := NewCacheableWriter(writer)
 	next.ServeHTTP(cacheableWriter, request)
+
 	if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
 		response := cacheableWriter.GetCachedResponse()
 		m.storage.SetDefault(cacheKey, response)
@@ -74,8 +76,10 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 	}
 
 	writer.WriteHeader(cachedResponse.Code)
+
 	if len(cachedResponse.Body) > 0 {
-		if _, err := writer.Write(cachedResponse.Body); err != nil {
+		_, err := writer.Write(cachedResponse.Body)
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -94,6 +98,7 @@ func (m *Middleware) isCacheableRequest(request *contracts.Request) bool {
 
 func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 	values := url.Query()
+
 	items := make([]string, 0, len(values))
 	for key, value := range values {
 		sort.Strings(value)

@@ -25,6 +25,7 @@ func (h *RequestHandler) makeRewritedRoutes(
 
 		redirect := router.NewRoute()
 		redirect.Path(clearPath).Handler(handler)
+
 		route := router.NewRoute()
 		route.PathPrefix(path).Handler(handler)
 	}
