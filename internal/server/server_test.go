@@ -120,8 +120,7 @@ func TestServer(t *testing.T) {
 		instance.Start(t.Context(), targets)
 
 		defer func() {
-			err := instance.Close()
-			require.NoError(t, err)
+			require.NoError(t, instance.Close())
 		}()
 
 		for _, port := range freePorts {
@@ -166,8 +165,7 @@ func TestServer(t *testing.T) {
 		instance.Start(t.Context(), targets)
 
 		defer func() {
-			err := instance.Close()
-			require.NoError(t, err)
+			require.NoError(t, instance.Close())
 		}()
 
 		for _, port := range freePorts {
@@ -222,8 +220,7 @@ func TestServer(t *testing.T) {
 		instance.Start(t.Context(), append(httpTargets, httpsTargets...))
 
 		defer func() {
-			err := instance.Close()
-			require.NoError(t, err)
+			require.NoError(t, instance.Close())
 		}()
 
 		for _, port := range freeHTTPSPorts {
@@ -238,4 +235,145 @@ func TestServer(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("shutdown", func(t *testing.T) {
+		port := freeport.GetPort()
+
+		instance := server.New()
+		instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(port),
+				Handler: handler,
+			},
+		})
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+
+		err := instance.Shutdown(t.Context())
+		require.NoError(t, err)
+
+		assert.True(t, IsPortFree(port))
+	})
+
+	t.Run("close", func(t *testing.T) {
+		port := freeport.GetPort()
+
+		instance := server.New()
+		instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(port),
+				Handler: handler,
+			},
+		})
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+
+		err := instance.Close()
+		require.NoError(t, err)
+
+		assert.True(t, IsPortFree(port))
+	})
+
+	t.Run("Restart", func(t *testing.T) {
+		initial := freeport.GetPort()
+		restarted := freeport.GetPort()
+		instance := server.New()
+
+		instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(initial),
+				Handler: handler,
+			},
+		})
+
+		assertResponse(t, hosts.Loopback.HTTPPort(initial), nil)
+		require.True(t, IsPortFree(restarted))
+
+		err := instance.Restart(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(restarted),
+				Handler: handler,
+			},
+		})
+		require.NoError(t, err)
+
+		assert.True(t, IsPortFree(initial))
+		assertResponse(t, hosts.Loopback.HTTPPort(restarted), nil)
+	})
+
+	t.Run("wait", func(t *testing.T) {
+		eventsCh := make(chan string, 10)
+
+		port := freeport.GetPort()
+
+		instance := server.New()
+
+		eventsCh <- "server started"
+
+		instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(port),
+				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+					eventsCh <- "handler trigered"
+
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprint(w, expectedContent)
+					require.NoError(t, err)
+				}),
+			},
+		})
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		go func() {
+			eventsCh <- "waiting started"
+
+			instance.Wait()
+
+			eventsCh <- "waiting finished"
+		}()
+
+		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+
+		go func(t *testing.T) {
+			eventsCh <- "shutdown trigered"
+
+			err := instance.Shutdown(t.Context())
+			assert.NoError(t, err)
+			close(eventsCh)
+		}(t)
+
+		var events []string
+		for v := range eventsCh {
+			events = append(events, v)
+		}
+
+		assert.Equal(t, []string{
+			"server started",
+			"waiting started",
+			"handler trigered",
+			"shutdown trigered",
+			"waiting finished",
+		}, events)
+	})
+}
+
+func IsPortFree(port int) bool {
+	l, err := net.Listen("tcp", hosts.Loopback.Port(port)) // nolint: noctx
+	if err != nil {
+		return false
+	}
+	defer l.Close()
+
+	return true
 }
