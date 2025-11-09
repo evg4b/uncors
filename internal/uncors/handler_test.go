@@ -17,7 +17,7 @@ import (
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/phayes/freeport"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ import (
 
 func TestHandlerWithHTTP(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -34,10 +34,9 @@ func TestHandlerWithHTTP(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	err := app.Start(t.Context(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -49,8 +48,47 @@ func TestHandlerWithHTTP(t *testing.T) {
 
 	defer app.Close()
 
-	t.Run("GET request", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/test", nil)
+	methods := []string{
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodHead,
+	}
+
+	for _, method := range methods {
+		t.Run(method, func(t *testing.T) {
+			url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "api", method)
+			req, err := http.NewRequestWithContext(t.Context(), method, url, nil)
+			require.NoError(t, err)
+
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "test-value", resp.Header.Get("X-Test-Header"))
+
+			// HEAD-запрос не имеет тела
+			if method != http.MethodHead {
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+				assert.Contains(t, string(body), fmt.Sprintf("Hello from target: %s /api/%s", method, method))
+			}
+		})
+	}
+
+	t.Run("OPTIONS request", func(t *testing.T) {
+		req, err := http.NewRequestWithContext(
+			t.Context(),
+			http.MethodOptions,
+			testutils.JoinPath(hosts.Loopback.HTTPPort(port), "/api/OPTIONS"),
+			nil,
+		)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -59,33 +97,18 @@ func TestHandlerWithHTTP(t *testing.T) {
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		body, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(body), "Hello from target: GET /test")
-	})
-
-	t.Run("POST request", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, hosts.Loopback.HTTPPort(port)+"/api", nil)
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		body, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(body), "POST /api")
+		assert.Contains(t, resp.Header.Get("Access-Control-Allow-Origin"), "*")
 	})
 }
 
 func TestHandlerWithHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Test-Header", "test-value")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "HTTPS response: %s", r.URL.Path)
+		fmt.Fprintf(w, "HTTPS response: %s %s", r.Method, r.URL.Path)
 	}))
 	defer targetServer.Close()
 
@@ -108,16 +131,14 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				MinVersion:         tls.VersionTLS13,
-				RootCAs:            pool,
-				ServerName:         "127.0.0.1",
-				InsecureSkipVerify: false,
+				MinVersion: tls.VersionTLS13,
+				RootCAs:    pool,
+				ServerName: "127.0.0.1",
 			},
 		},
 	}
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
 	err = app.Start(t.Context(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -131,35 +152,69 @@ func TestHandlerWithHTTPS(t *testing.T) {
 
 	defer app.Close()
 
-	req, err := http.NewRequestWithContext(
-		t.Context(),
+	methods := []string{
 		http.MethodGet,
-		hosts.Loopback.HTTPSPort(port)+"/secure",
-		nil,
-	)
-	require.NoError(t, err)
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodHead,
+	}
 
-	resp, err := client.Do(req)
-	require.NoError(t, err)
+	for _, method := range methods {
+		t.Run(method, func(t *testing.T) {
+			url := testutils.JoinPath(hosts.Loopback.HTTPSPort(port), "secure", method)
+			req, err := http.NewRequestWithContext(t.Context(), method, url, nil)
+			require.NoError(t, err)
 
-	defer resp.Body.Close()
+			req.Header.Set("Content-Type", "application/json")
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "HTTPS response: /secure")
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "test-value", resp.Header.Get("X-Test-Header"))
+
+			if method != http.MethodHead {
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+				assert.Contains(t, string(body), fmt.Sprintf("HTTPS response: %s /secure/%s", method, method))
+			}
+		})
+	}
+
+	t.Run("OPTIONS request", func(t *testing.T) {
+		req, err := http.NewRequestWithContext(
+			t.Context(),
+			http.MethodOptions,
+			testutils.JoinPath(hosts.Loopback.HTTPSPort(port), "/secure/OPTIONS"),
+			nil,
+		)
+		require.NoError(t, err)
+
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Contains(t, resp.Header.Get("Access-Control-Allow-Origin"), "*")
+	})
 }
 
 func TestHandlerWithMockMiddleware(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	err := afero.WriteFile(fs, "/mock-response.json", []byte(`{"message":"mocked"}`), 0o644)
-	require.NoError(t, err)
+	mockFile := "/mock-response.json"
+	mockContent := `{"message":"mocked"}`
+	require.NoError(t, afero.WriteFile(fs, mockFile, []byte(mockContent), 0o644))
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -170,19 +225,20 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 							Path: "/api/mock",
 						},
 						Response: config.Response{
-							Code: 200,
-							File: "/mock-response.json",
+							Code: http.StatusOK,
+							File: mockFile,
 						},
 					},
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/api/mock", nil)
+	url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "api", "mock")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -190,48 +246,51 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
-	assert.JSONEq(t, `{"message":"mocked"}`, string(body))
+	assert.JSONEq(t, mockContent, string(body))
 }
 
 func TestHandlerWithStaticMiddleware(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	err := fs.MkdirAll("/static", 0o755)
-	require.NoError(t, err)
+	// --- Arrange ---
+	staticDir := "/static"
+	indexFile := filepath.Join(staticDir, "index.html")
+	textFile := filepath.Join(staticDir, "test.txt")
 
-	err = afero.WriteFile(fs, "/static/index.html", []byte("<html>Static Content</html>"), 0o644)
-	require.NoError(t, err)
+	require.NoError(t, fs.MkdirAll(staticDir, 0o755))
+	require.NoError(t, afero.WriteFile(fs, indexFile, []byte("<html>Static Content</html>"), 0o644))
+	require.NoError(t, afero.WriteFile(fs, textFile, []byte("test file content"), 0o644))
 
-	err = afero.WriteFile(fs, "/static/test.txt", []byte("test file content"), 0o644)
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
-
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
 				To:   "http://example.com",
 				Statics: []config.StaticDirectory{
 					{
-						Path:  "/static",
-						Dir:   "/static",
+						Path:  staticDir,
+						Dir:   staticDir,
 						Index: "index.html",
 					},
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
+	// --- Tests ---
 	t.Run("serve index file", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/static/", nil)
+		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static", "/")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -239,18 +298,16 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 
 		defer resp.Body.Close()
 
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		body, _ := io.ReadAll(resp.Body)
 		assert.Contains(t, string(body), "Static Content")
 	})
 
 	t.Run("serve specific file", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(
-			t.Context(),
-			http.MethodGet,
-			hosts.Loopback.HTTPPort(port)+"/static/test.txt",
-			nil,
-		)
+		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static", "test.txt")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -258,16 +315,19 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 
 		defer resp.Body.Close()
 
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		body, _ := io.ReadAll(resp.Body)
 		assert.Equal(t, "test file content", string(body))
 	})
 }
 
 func TestHandlerWithCache(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
+	// --- Arrange ---
 	callCount := 0
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -278,10 +338,9 @@ func TestHandlerWithCache(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -292,52 +351,65 @@ func TestHandlerWithCache(t *testing.T) {
 			},
 		},
 		CacheConfig: config.CacheConfig{
-			Methods:        []string{"GET"},
-			ExpirationTime: 1 * time.Minute,
+			Methods:        []string{http.MethodGet},
+			ExpirationTime: time.Minute,
 			ClearTime:      2 * time.Minute,
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
+	client := http.DefaultClient
+	baseURL := hosts.Loopback.HTTPPort(port)
+
+	// --- Tests ---
 	t.Run("first request", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/cached/test", nil)
+		url := testutils.JoinPath(baseURL, "cached", "test")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
 		assert.Contains(t, string(body), "Response #1")
 	})
 
 	t.Run("cached request", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/cached/test", nil)
+		url := testutils.JoinPath(baseURL, "cached", "test")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
 		assert.Contains(t, string(body), "Response #1")
 		assert.Equal(t, 1, callCount, "should use cached response")
 	})
 
 	t.Run("non-cached path", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/other/path", nil)
+		url := testutils.JoinPath(baseURL, "other", "path")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
 		assert.Contains(t, string(body), "Response #2")
 		assert.Equal(t, 2, callCount, "should not use cache for different path")
 	})
@@ -345,8 +417,9 @@ func TestHandlerWithCache(t *testing.T) {
 
 func TestHandlerWithMultipleMappings(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
+	// --- Arrange ---
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
 	}))
@@ -357,13 +430,10 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	}))
 	defer server2.Close()
 
-	port1, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port1 := testutils.GetFreePort(t)
+	port2 := testutils.GetFreePort(t)
 
-	port2, err := freeport.GetFreePort()
-	require.NoError(t, err)
-
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port1),
@@ -374,52 +444,59 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 				To:   server2.URL,
 			},
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
+	client := http.DefaultClient
+
+	// --- Tests ---
 	t.Run("mapping 1", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port1), nil)
+		url := hosts.Loopback.HTTPPort(port1)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
 		assert.Equal(t, "Server 1", string(body))
 	})
 
 	t.Run("mapping 2", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port2), nil)
+		url := hosts.Loopback.HTTPPort(port2)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		require.NoError(t, err)
 
 		defer resp.Body.Close()
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
 		assert.Equal(t, "Server 2", string(body))
 	})
 }
 
 func TestHandlerWithRewrite(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
+	// --- Arrange ---
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Path: %s, Host: %s", r.URL.Path, r.Host)
 	}))
 	defer targetServer.Close()
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -432,40 +509,48 @@ func TestHandlerWithRewrite(t *testing.T) {
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/test", nil)
+	client := http.DefaultClient
+	url := hosts.Loopback.HTTPPort(port) + "/test"
+
+	// --- Act ---
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	require.NoError(t, err)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	// --- Assert ---
 	assert.Contains(t, string(body), "/test")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
+	// --- Arrange ---
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer targetServer.Close()
 
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
+	port := testutils.GetFreePort(t)
 
 	customHeaders := map[string]string{
 		"X-Custom-Header": "custom-value",
 	}
 
-	err = app.Start(t.Context(), &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -476,20 +561,24 @@ func TestHandlerWithOptions(t *testing.T) {
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
+	}
 
+	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, hosts.Loopback.HTTPPort(port)+"/test", nil)
+	url := hosts.Loopback.HTTPPort(port) + "/test"
+	client := &http.Client{}
+
+	// --- Act ---
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, url, nil)
 	require.NoError(t, err)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
+	// --- Assert ---
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, "custom-value", resp.Header.Get("X-Custom-Header"))
 }

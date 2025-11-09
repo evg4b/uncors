@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"sync"
 	"testing"
@@ -65,8 +64,7 @@ func TestServer(t *testing.T) {
 	}
 
 	t.Run("multiple http ports", func(t *testing.T) {
-		freePorts, err := freeport.GetFreePorts(porstCount)
-		require.NoError(t, err)
+		freePorts := testutils.GetFreePorts(t, porstCount)
 
 		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
 			return server.Target{
@@ -90,8 +88,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("multiple https ports", func(t *testing.T) {
-		freePorts, err := freeport.GetFreePorts(porstCount)
-		require.NoError(t, err)
+		freePorts := testutils.GetFreePorts(t, porstCount)
 
 		fs := afero.NewMemMapFs()
 		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
@@ -135,11 +132,9 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("mix of http and https ports", func(t *testing.T) {
-		freeHTTPPorts, err := freeport.GetFreePorts(porstCount)
-		require.NoError(t, err)
+		freeHTTPPorts := testutils.GetFreePorts(t, porstCount)
 
-		freeHTTPSPorts, err := freeport.GetFreePorts(porstCount)
-		require.NoError(t, err)
+		freeHTTPSPorts := testutils.GetFreePorts(t, porstCount)
 
 		fs := afero.NewMemMapFs()
 		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
@@ -217,7 +212,7 @@ func TestServer(t *testing.T) {
 		err := instance.Shutdown(t.Context())
 		require.NoError(t, err)
 
-		assert.True(t, IsPortFree(port))
+		assert.True(t, testutils.IsPortFree(port))
 	})
 
 	t.Run("close", func(t *testing.T) {
@@ -240,7 +235,7 @@ func TestServer(t *testing.T) {
 		err := instance.Close()
 		require.NoError(t, err)
 
-		assert.True(t, IsPortFree(port))
+		assert.True(t, testutils.IsPortFree(port))
 	})
 
 	t.Run("Restart", func(t *testing.T) {
@@ -256,7 +251,7 @@ func TestServer(t *testing.T) {
 		})
 
 		assertResponse(t, hosts.Loopback.HTTPPort(initial), nil)
-		require.True(t, IsPortFree(restarted))
+		require.True(t, testutils.IsPortFree(restarted))
 
 		err := instance.Restart(t.Context(), []server.Target{
 			{
@@ -266,14 +261,14 @@ func TestServer(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		assert.True(t, IsPortFree(initial))
+		assert.True(t, testutils.IsPortFree(initial))
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted), nil)
 	})
 
 	t.Run("wait", func(t *testing.T) {
 		queue := testutils.QueueEvents{}
 
-		port := freeport.GetPort()
+		port := testutils.GetFreePort(t)
 
 		instance := server.New()
 
@@ -325,14 +320,4 @@ func TestServer(t *testing.T) {
 			"waiting finished",
 		}, queue.List())
 	})
-}
-
-func IsPortFree(port int) bool {
-	l, err := net.Listen("tcp", hosts.Loopback.Port(port)) // nolint: noctx
-	if err != nil {
-		return false
-	}
-	defer l.Close()
-
-	return true
 }

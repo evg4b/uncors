@@ -19,7 +19,7 @@ import (
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/phayes/freeport"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,15 +64,6 @@ func setupTLSClient(t *testing.T, fs afero.Fs) *http.Client {
 			},
 		},
 	}
-}
-
-func getFreePort(t *testing.T) int {
-	t.Helper()
-
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
-
-	return port
 }
 
 func doGetRequest(ctx context.Context, t *testing.T, url string) (*http.Response, []byte) {
@@ -148,7 +139,7 @@ func TestUncorsApp(t *testing.T) {
 	defer targetServer.Close()
 
 	client := setupTLSClient(t, fs)
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(t.Context(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -186,7 +177,7 @@ func TestUncorsStart(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -217,7 +208,7 @@ func TestUncorsRestart(t *testing.T) {
 	}))
 	defer server2.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -258,7 +249,7 @@ func TestUncorsClose(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -289,7 +280,7 @@ func TestUncorsShutdown(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -316,7 +307,7 @@ func TestUncorsWait(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -358,7 +349,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	defer targetServer.Close()
 
 	client := setupTLSClient(t, fs)
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -392,8 +383,8 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	defer httpsServer.Close()
 
 	tlsClient := setupTLSClient(t, fs)
-	httpPort := getFreePort(t)
-	httpsPort := getFreePort(t)
+	httpPort := testutils.GetFreePort(t)
+	httpsPort := testutils.GetFreePort(t)
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
@@ -438,7 +429,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	port := getFreePort(t)
+	port := testutils.GetFreePort(t)
 
 	err = app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
