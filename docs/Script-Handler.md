@@ -1,5 +1,3 @@
-# Script Handler
-
 The script handler allows you to implement custom request handling logic using scripts. This provides maximum flexibility for generating dynamic responses, implementing custom business logic, or creating complex API simulations during development and testing.
 
 **Key features:**

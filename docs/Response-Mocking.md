@@ -1,5 +1,3 @@
-# Response Mocking
-
 The mocking system allows you to simulate API responses for specific endpoints during development and testing. Mock responses can be filtered by path, HTTP method, query parameters, and headers using the [gorilla/mux route matching system](https://github.com/gorilla/mux#matching-routes).
 
 **Key features:**

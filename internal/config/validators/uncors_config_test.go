@@ -23,7 +23,6 @@ func TestUncorsConfigValidator(t *testing.T) {
 			{
 				name: "minimal config",
 				value: &config.UncorsConfig{
-					HTTPPort: 8080,
 					Mappings: []config.Mapping{
 						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
@@ -51,24 +50,8 @@ func TestUncorsConfigValidator(t *testing.T) {
 			error string
 		}{
 			{
-				name: "invalid http port",
-				value: &config.UncorsConfig{
-					HTTPPort: 0,
-					Mappings: []config.Mapping{
-						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
-					},
-					CacheConfig: config.CacheConfig{
-						ClearTime:      10 * time.Minute,
-						ExpirationTime: 10 * time.Minute,
-						Methods:        []string{http.MethodGet},
-					},
-				},
-				error: "http-port must be between 1 and 65535",
-			},
-			{
 				name: "invalid mapping",
 				value: &config.UncorsConfig{
-					HTTPPort: 8080,
 					Mappings: []config.Mapping{},
 					CacheConfig: config.CacheConfig{
 						ClearTime:      10 * time.Minute,

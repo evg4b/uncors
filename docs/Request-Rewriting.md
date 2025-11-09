@@ -1,5 +1,3 @@
-# Request Rewriting
-
 Request rewriting allows you to transform request paths and hosts before they're forwarded to the upstream server. This is useful for:
 
 - Adapting client URLs to match server API structure

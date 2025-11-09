@@ -1,5 +1,3 @@
-# Configuration
-
 UNCORS supports two configuration methods: command-line arguments and configuration files. When both are used, CLI arguments take precedence and will override settings defined in the configuration file.
 
 The configuration system is built around the concept of host mappings, which translate local domains (defined in your hosts file) to external domains. Configuration settings are organized into two levels:
@@ -49,26 +47,6 @@ mappings:
 
 > [!TIP]
 > For complete working examples, see [Real-World Examples](./Real-World-Examples)
-
-## Table of Contents
-
-- [Configuration](#configuration)
-  - [Quick Reference](#quick-reference)
-  - [Table of Contents](#table-of-contents)
-- [Command-Line Options](#command-line-options)
-  - [Mapping Configuration](#mapping-configuration)
-  - [Global Configuration](#global-configuration)
-- [Configuration File](#configuration-file)
-- [Global Configuration Properties](#global-configuration-properties)
-- [Mapping Configuration](#mapping-configuration-1)
-  - [OPTIONS Request Handling](#options-request-handling)
-  - [Protocol Scheme Mapping](#protocol-scheme-mapping)
-  - [Wildcard Mapping](#wildcard-mapping)
-  - [Simplified Syntax](#simplified-syntax)
-- [HTTPS Configuration](#https-configuration)
-- [Proxy Configuration](#proxy-configuration)
-
----
 
 # Command-Line Options
 

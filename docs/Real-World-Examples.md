@@ -1,19 +1,4 @@
-# Real-World Examples
-
 This guide provides practical, copy-paste ready examples for common UNCORS use cases.
-
-## Table of Contents
-
-- [Frontend Development with Backend API](#frontend-development-with-backend-api)
-- [Microservices Development](#microservices-development)
-- [API Mocking for Testing](#api-mocking-for-testing)
-- [Local Development with Production APIs](#local-development-with-production-apis)
-- [SPA Development with API Proxying](#spa-development-with-api-proxying)
-- [Multi-Environment Setup](#multi-environment-setup)
-- [GraphQL API Development](#graphql-api-development)
-- [WebSocket Proxying](#websocket-proxying)
-
----
 
 ## Frontend Development with Backend API
 

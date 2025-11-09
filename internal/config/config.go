@@ -12,7 +12,6 @@ import (
 var flags *pflag.FlagSet
 
 type UncorsConfig struct {
-	HTTPPort    int         `mapstructure:"http-port"`
 	Mappings    Mappings    `mapstructure:"mappings"`
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
@@ -74,7 +73,6 @@ func defineFlags() {
 	flags.Usage = pflag.Usage
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
 	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
-	flags.UintP("http-port", "p", defaultHTTPPort, "Local HTTP listening port")
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.StringP("config", "c", "", "Path to the configuration file")

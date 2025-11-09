@@ -1,5 +1,3 @@
-# Response Caching
-
 UNCORS provides response caching to optimize development workflows by reducing latency for expensive or frequently repeated requests. Cache entries are matched using URL glob patterns.
 
 **Benefits:**

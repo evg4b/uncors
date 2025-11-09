@@ -1,5 +1,3 @@
-# Static File Serving
-
 Configure UNCORS to serve static files from local directories. This feature is useful for:
 
 - Running local Single-Page Applications (SPAs)

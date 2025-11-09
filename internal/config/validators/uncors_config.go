@@ -2,7 +2,6 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/config/validators/base"
 	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
@@ -13,10 +12,6 @@ type UncorsConfigValidator struct {
 }
 
 func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
-	errors.Append(validate.Validate(
-		&base.PortValidator{Field: "http-port", Value: u.config.HTTPPort},
-	))
-
 	if len(u.config.Mappings) == 0 {
 		errors.Add("mappings", "mappings must not be empty")
 

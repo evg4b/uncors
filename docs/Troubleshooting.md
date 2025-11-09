@@ -1,5 +1,3 @@
-# Troubleshooting
-
 This guide helps you diagnose and resolve common issues when using UNCORS.
 
 ## Quick Diagnostics Checklist

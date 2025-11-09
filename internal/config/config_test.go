@@ -24,8 +24,7 @@ const acceptEncoding = "accept-encoding"
 
 const (
 	corruptedConfigPath = "/corrupted-config.yaml"
-	corruptedConfig     = `http-port: 8080
-mappings&
+	corruptedConfig     = `mappings&
   - http://demo: https://demo.com
 `
 )
@@ -66,9 +65,8 @@ cache-config:
 
 const (
 	incorrectConfigPath = "/incorrect-config.yaml"
-	incorrectConfig     = `http-port: xxx
-mappings:
-  - http://localhost: https://github.com
+	incorrectConfig     = `mappings:
+  - http://localhost: 123
 `
 )
 
@@ -98,7 +96,6 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "return default config",
 				args: []string{},
 				expected: &config.UncorsConfig{
-					HTTPPort: 80,
 					Mappings: config.Mappings{},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
@@ -111,7 +108,6 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "minimal config is set",
 				args: []string{params.Config, minimalConfigPath},
 				expected: &config.UncorsConfig{
-					HTTPPort: 80,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 					},
@@ -126,7 +122,6 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "read all fields from config file config is set",
 				args: []string{params.Config, fullConfigPath},
 				expected: &config.UncorsConfig{
-					HTTPPort: 80,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 						{
@@ -175,7 +170,6 @@ func TestLoadConfiguration(t *testing.T) {
 					params.From, hosts.Localhost2.HTTPPort(9090), params.To, hosts.Stackoverflow.Host(),
 				},
 				expected: &config.UncorsConfig{
-					HTTPPort: 80,
 					Mappings: config.Mappings{
 						{From: hosts.Localhost1.HTTP(), To: hosts.Github.Host()},
 						{From: hosts.Localhost2.HTTPPort(9090), To: hosts.Stackoverflow.Host()},
@@ -265,17 +259,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				expected: []string{
 					"failed to read config file '/corrupted-config.yaml': " +
-						"While parsing config: yaml: line 2: could not find expected ':'",
-				},
-			},
-			{
-				name: "incorrect param type",
-				args: []string{
-					params.HTTPPort, "xxx",
-				},
-				expected: []string{
-					"failed parsing flags: invalid argument \"xxx\" for \"-p, --http-port\" flag: " +
-						"strconv.ParseUint: parsing \"xxx\": invalid syntax",
+						"While parsing config: yaml: line 2: mapping values are not allowed in this context",
 				},
 			},
 			{
@@ -284,8 +268,8 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, incorrectConfigPath,
 				},
 				expected: []string{
-					"failed parsing config: decoding failed due to the following error(s):\n\n" +
-						"'http-port' cannot parse value as 'int': strconv.ParseInt: invalid syntax",
+					"failed parsing config: decoding failed due to the following error(s):\n" +
+						"\n'mappings[0]' unsupported operation",
 				},
 			},
 		}
