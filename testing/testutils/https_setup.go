@@ -32,24 +32,17 @@ func SetupHTTPSTest(t *testing.T, fs afero.Fs) *http.Client {
 		OutputDir:    caDir,
 		Fs:           fs,
 	}
-	certPath, keyPath, err := infratls.GenerateCA(caConfig)
+	certPath, _, err := infratls.GenerateCA(caConfig)
 	CheckNoError(t, err)
 
 	// Load CA certificate for client
 	caCertData, err := afero.ReadFile(fs, certPath)
 	CheckNoError(t, err)
-
-	caKeyData, err := afero.ReadFile(fs, keyPath)
 	CheckNoError(t, err)
 
 	// Setup client TLS config to trust the CA
 	certsPool := x509.NewCertPool()
 	certsPool.AppendCertsFromPEM(caCertData)
-
-	serverCert, err := tls.X509KeyPair(caCertData, caKeyData)
-	CheckNoError(t, err)
-
-	_ = serverCert // Server uses auto-generated certs via buildTLSConfig
 
 	return &http.Client{
 		Transport: &http.Transport{

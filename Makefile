@@ -56,11 +56,11 @@ upgrade:
 ## test: Run all tests
 test:
 	@gum style --foreground 11 "Running tests..."
-	@$(GOTEST) ./...
+	@$(GOTEST) -race ./...
 
 test-release:
 	@gum style --foreground 11 "Running release tests..."
-	@$(GOTEST) -tags release ./...
+	@$(GOTEST) -tags release  -race ./...
 
 ## test-cover: Run tests with race detection and generate coverage report
 test-cover:
