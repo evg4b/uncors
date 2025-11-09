@@ -15,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/phayes/freeport"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -191,7 +190,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("shutdown", func(t *testing.T) {
-		port := freeport.GetPort()
+		port := testutils.GetFreePort(t)
 
 		instance := server.New()
 		instance.Start(t.Context(), []server.Target{
@@ -216,7 +215,7 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("close", func(t *testing.T) {
-		port := freeport.GetPort()
+		port := testutils.GetFreePort(t)
 
 		instance := server.New()
 		instance.Start(t.Context(), []server.Target{
@@ -239,8 +238,8 @@ func TestServer(t *testing.T) {
 	})
 
 	t.Run("Restart", func(t *testing.T) {
-		initial := freeport.GetPort()
-		restarted := freeport.GetPort()
+		initial := testutils.GetFreePort(t)
+		restarted := testutils.GetFreePort(t)
 		instance := server.New()
 
 		instance.Start(t.Context(), []server.Target{

@@ -25,20 +25,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Helper functions
+func TestCreateUncors(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	logger := log.Default()
+	version := "1.0.0"
 
-func setupTestApp(t *testing.T) (*uncors.Uncors, afero.Fs) {
-	t.Helper()
+	app := uncors.CreateUncors(fs, logger, version)
+	assert.NotNil(t, app)
+}
 
+func TestUncorsApp(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.Default(), "test")
 
-	return app, fs
-}
+	testResponceHeader := "# Test resrver"
+	hostFmt := func(host string) string { return fmt.Sprintf("\tHost: %v", host) }
+	methodFmt := func(method string) string { return fmt.Sprintf("\tMethod: %v", method) }
+	urlFmt := func(method string) string { return fmt.Sprintf("\tURL: %v", method) }
 
-func setupTLSClient(t *testing.T, fs afero.Fs) *http.Client {
-	t.Helper()
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, testResponceHeader)
+		fmt.Fprintln(w, methodFmt(r.Method))
+		fmt.Fprintln(w, urlFmt(r.URL.String()))
+		fmt.Fprintln(w, hostFmt(r.Host))
+	}))
+	defer targetServer.Close()
 
+	// inlined setupTLSClient
 	homeDir, err := os.UserHomeDir()
 	require.NoError(t, err)
 
@@ -55,7 +69,7 @@ func setupTLSClient(t *testing.T, fs afero.Fs) *http.Client {
 	pool := x509.NewCertPool()
 	pool.AddCert(caCert)
 
-	return &http.Client{
+	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				MinVersion: tls.VersionTLS13,
@@ -64,84 +78,10 @@ func setupTLSClient(t *testing.T, fs afero.Fs) *http.Client {
 			},
 		},
 	}
-}
 
-func doGetRequest(ctx context.Context, t *testing.T, url string) (*http.Response, []byte) {
-	t.Helper()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	require.NoError(t, err)
-
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	resp.Body.Close()
-
-	return resp, body
-}
-
-func doGetRequestWithClient(
-	ctx context.Context,
-	t *testing.T,
-	client *http.Client,
-	url string,
-) (*http.Response, []byte) {
-	t.Helper()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	require.NoError(t, err)
-
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	resp.Body.Close()
-
-	return resp, body
-}
-
-// Tests
-
-func TestCreateUncors(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	logger := log.Default()
-	version := "1.0.0"
-
-	app := uncors.CreateUncors(fs, logger, version)
-
-	assert.NotNil(t, app)
-}
-
-func TestUncorsApp(t *testing.T) {
-	app, fs := setupTestApp(t)
-
-	testResponceHeader := "# Test resrver"
-	hostFmt := func(host string) string {
-		return fmt.Sprintf("\tHost: %v", host)
-	}
-	methodFmt := func(method string) string {
-		return fmt.Sprintf("\tMethod: %v", method)
-	}
-	urlFmt := func(method string) string {
-		return fmt.Sprintf("\tURL: %v", method)
-	}
-
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, testResponceHeader)
-		fmt.Fprintln(w, methodFmt(r.Method))
-		fmt.Fprintln(w, urlFmt(r.URL.String()))
-		fmt.Fprintln(w, hostFmt(r.Host))
-	}))
-	defer targetServer.Close()
-
-	client := setupTLSClient(t, fs)
 	port := testutils.GetFreePort(t)
 
-	err := app.Start(t.Context(), &config.UncorsConfig{
+	err = app.Start(t.Context(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
@@ -151,12 +91,19 @@ func TestUncorsApp(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	defer func() {
-		require.NoError(t, app.Close())
-	}()
+	defer func() { require.NoError(t, app.Close()) }()
 
 	t.Run("proxy", func(t *testing.T) {
-		resp, bodyData := doGetRequestWithClient(t.Context(), t, client, hosts.Loopback.HTTPPort(port))
+		// inlined doGetRequestWithClient
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
+		require.NoError(t, err)
+
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+
+		bodyData, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -169,7 +116,8 @@ func TestUncorsApp(t *testing.T) {
 }
 
 func TestUncorsStart(t *testing.T) {
-	app, _ := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -191,12 +139,24 @@ func TestUncorsStart(t *testing.T) {
 
 	defer app.Close()
 
-	resp, _ := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port))
+	// inlined doGetRequest
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	resp.Body.Close()
+
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "OK", string(body))
 }
 
 func TestUncorsRestart(t *testing.T) {
-	app, _ := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -212,37 +172,44 @@ func TestUncorsRestart(t *testing.T) {
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(port),
-				To:   server1.URL,
-			},
+			{From: hosts.Loopback.HTTPPort(port), To: server1.URL},
 		},
 	})
 	require.NoError(t, err)
 
 	defer app.Close()
 
-	_, body := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port))
-	assert.Equal(t, "Server 1", string(body))
+	// inlined doGetRequest
+	req1, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
+	require.NoError(t, err)
+	resp1, err := http.DefaultClient.Do(req1)
+	require.NoError(t, err)
+	body1, err := io.ReadAll(resp1.Body)
+	require.NoError(t, err)
+	resp1.Body.Close()
+	assert.Equal(t, "Server 1", string(body1))
 
 	err = app.Restart(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(port),
-				To:   server2.URL,
-			},
+			{From: hosts.Loopback.HTTPPort(port), To: server2.URL},
 		},
 	})
 	require.NoError(t, err)
-
 	time.Sleep(100 * time.Millisecond)
 
-	_, body = doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port))
-	assert.Equal(t, "Server 2", string(body))
+	req2, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
+	require.NoError(t, err)
+	resp2, err := http.DefaultClient.Do(req2)
+	require.NoError(t, err)
+	body2, err := io.ReadAll(resp2.Body)
+	require.NoError(t, err)
+	resp2.Body.Close()
+	assert.Equal(t, "Server 2", string(body2))
 }
 
 func TestUncorsClose(t *testing.T) {
-	app, _ := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -250,14 +217,8 @@ func TestUncorsClose(t *testing.T) {
 	defer targetServer.Close()
 
 	port := testutils.GetFreePort(t)
-
 	err := app.Start(context.Background(), &config.UncorsConfig{
-		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
-			},
-		},
+		Mappings: []config.Mapping{{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL}},
 	})
 	require.NoError(t, err)
 
@@ -266,13 +227,13 @@ func TestUncorsClose(t *testing.T) {
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port), nil)
 	require.NoError(t, err)
-
 	_, err = http.DefaultClient.Do(req)
 	assert.Error(t, err)
 }
 
 func TestUncorsShutdown(t *testing.T) {
-	app, _ := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)
@@ -281,14 +242,8 @@ func TestUncorsShutdown(t *testing.T) {
 	defer targetServer.Close()
 
 	port := testutils.GetFreePort(t)
-
 	err := app.Start(context.Background(), &config.UncorsConfig{
-		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
-			},
-		},
+		Mappings: []config.Mapping{{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL}},
 	})
 	require.NoError(t, err)
 
@@ -300,7 +255,8 @@ func TestUncorsShutdown(t *testing.T) {
 }
 
 func TestUncorsWait(t *testing.T) {
-	app, _ := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -308,14 +264,8 @@ func TestUncorsWait(t *testing.T) {
 	defer targetServer.Close()
 
 	port := testutils.GetFreePort(t)
-
 	err := app.Start(context.Background(), &config.UncorsConfig{
-		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
-			},
-		},
+		Mappings: []config.Mapping{{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL}},
 	})
 	require.NoError(t, err)
 
@@ -326,7 +276,6 @@ func TestUncorsWait(t *testing.T) {
 
 		done <- true
 	}()
-
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		app.Close()
@@ -340,7 +289,8 @@ func TestUncorsWait(t *testing.T) {
 }
 
 func TestUncorsWithHTTPSMapping(t *testing.T) {
-	app, fs := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -348,29 +298,48 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	client := setupTLSClient(t, fs)
-	port := testutils.GetFreePort(t)
+	// inlined setupTLSClient
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
+		Fs: fs, ValidityDays: 10, OutputDir: filepath.Join(homeDir, ".config", "uncors"),
+	})
+	require.NoError(t, err)
+	caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
+	require.NoError(t, err)
 
-	err := app.Start(context.Background(), &config.UncorsConfig{
-		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPSPort(port),
-				To:   targetServer.URL,
-			},
+	pool := x509.NewCertPool()
+	pool.AddCert(caCert)
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS13, RootCAs: pool, ServerName: "127.0.0.1"},
 		},
+	}
+
+	port := testutils.GetFreePort(t)
+	err = app.Start(context.Background(), &config.UncorsConfig{
+		Mappings: []config.Mapping{{From: hosts.Loopback.HTTPSPort(port), To: targetServer.URL}},
 	})
 	require.NoError(t, err)
 
 	defer app.Close()
 
-	resp, body := doGetRequestWithClient(context.Background(), t, client, hosts.Loopback.HTTPSPort(port))
+	// inlined doGetRequestWithClient
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPSPort(port), nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "HTTPS OK", string(body))
 }
 
 func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
-	app, fs := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTP")
@@ -382,20 +351,31 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	}))
 	defer httpsServer.Close()
 
-	tlsClient := setupTLSClient(t, fs)
+	// inlined TLS client
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
+		Fs: fs, ValidityDays: 10, OutputDir: filepath.Join(homeDir, ".config", "uncors"),
+	})
+	require.NoError(t, err)
+	caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
+	require.NoError(t, err)
+
+	pool := x509.NewCertPool()
+	pool.AddCert(caCert)
+	tlsClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS13, RootCAs: pool, ServerName: "127.0.0.1"},
+		},
+	}
+
 	httpPort := testutils.GetFreePort(t)
 	httpsPort := testutils.GetFreePort(t)
 
-	err := app.Start(context.Background(), &config.UncorsConfig{
+	err = app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{
-				From: hosts.Loopback.HTTPPort(httpPort),
-				To:   httpServer.URL,
-			},
-			{
-				From: hosts.Loopback.HTTPSPort(httpsPort),
-				To:   httpsServer.URL,
-			},
+			{From: hosts.Loopback.HTTPPort(httpPort), To: httpServer.URL},
+			{From: hosts.Loopback.HTTPSPort(httpsPort), To: httpsServer.URL},
 		},
 	})
 	require.NoError(t, err)
@@ -403,25 +383,35 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	defer app.Close()
 
 	t.Run("HTTP endpoint", func(t *testing.T) {
-		_, body := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(httpPort))
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(httpPort), nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 		assert.Equal(t, "HTTP", string(body))
 	})
 
 	t.Run("HTTPS endpoint", func(t *testing.T) {
-		_, body := doGetRequestWithClient(context.Background(), t, tlsClient, hosts.Loopback.HTTPSPort(httpsPort))
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPSPort(httpsPort), nil)
+		require.NoError(t, err)
+		resp, err := tlsClient.Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 		assert.Equal(t, "HTTPS", string(body))
 	})
 }
 
 func TestUncorsWithComplexConfiguration(t *testing.T) {
-	app, fs := setupTestApp(t)
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, log.Default(), "test")
 
-	err := fs.MkdirAll("/static", 0o755)
-	require.NoError(t, err)
-	err = afero.WriteFile(fs, "/static/index.html", []byte("Static"), 0o644)
-	require.NoError(t, err)
-	err = afero.WriteFile(fs, "/mock.json", []byte(`{"mocked":true}`), 0o644)
-	require.NoError(t, err)
+	require.NoError(t, fs.MkdirAll("/static", 0o755))
+	require.NoError(t, afero.WriteFile(fs, "/static/index.html", []byte("Static"), 0o644))
+	require.NoError(t, afero.WriteFile(fs, "/mock.json", []byte(`{"mocked":true}`), 0o644))
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -430,27 +420,19 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 	defer targetServer.Close()
 
 	port := testutils.GetFreePort(t)
-
-	err = app.Start(context.Background(), &config.UncorsConfig{
+	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
 				To:   targetServer.URL,
 				Statics: []config.StaticDirectory{
-					{
-						Path:  "/static",
-						Dir:   "/static",
-						Index: "index.html",
-					},
+					{Path: "/static", Dir: "/static", Index: "index.html"},
 				},
 				Mocks: []config.Mock{
 					{
-						Matcher: config.RequestMatcher{
-							Path: "/api/mock",
-						},
+						Matcher: config.RequestMatcher{Path: "/api/mock"},
 						Response: config.Response{
-							Code: 200,
-							File: "/mock.json",
+							Code: 200, File: "/mock.json",
 						},
 					},
 				},
@@ -468,17 +450,35 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 	defer app.Close()
 
 	t.Run("static content", func(t *testing.T) {
-		_, body := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port)+"/static/")
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/static/", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 		assert.Contains(t, string(body), "Static")
 	})
 
 	t.Run("mock endpoint", func(t *testing.T) {
-		_, body := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port)+"/api/mock")
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/api/mock", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 		assert.JSONEq(t, `{"mocked":true}`, string(body))
 	})
 
 	t.Run("proxied content", func(t *testing.T) {
-		_, body := doGetRequest(context.Background(), t, hosts.Loopback.HTTPPort(port)+"/other")
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, hosts.Loopback.HTTPPort(port)+"/other", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		resp.Body.Close()
 		assert.Equal(t, "Proxied", string(body))
 	})
 }

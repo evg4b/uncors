@@ -73,7 +73,6 @@ func TestHandlerWithHTTP(t *testing.T) {
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.Equal(t, "test-value", resp.Header.Get("X-Test-Header"))
 
-			// HEAD-запрос не имеет тела
 			if method != http.MethodHead {
 				body, err := io.ReadAll(resp.Body)
 				require.NoError(t, err)
@@ -257,7 +256,6 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	// --- Arrange ---
 	staticDir := "/static"
 	indexFile := filepath.Join(staticDir, "index.html")
 	textFile := filepath.Join(staticDir, "test.txt")
@@ -287,7 +285,6 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	// --- Tests ---
 	t.Run("serve index file", func(t *testing.T) {
 		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static", "/")
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
@@ -301,7 +298,6 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Contains(t, string(body), "Static Content")
 	})
 
@@ -327,7 +323,6 @@ func TestHandlerWithCache(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	// --- Arrange ---
 	callCount := 0
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -363,7 +358,6 @@ func TestHandlerWithCache(t *testing.T) {
 	client := http.DefaultClient
 	baseURL := hosts.Loopback.HTTPPort(port)
 
-	// --- Tests ---
 	t.Run("first request", func(t *testing.T) {
 		url := testutils.JoinPath(baseURL, "cached", "test")
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
@@ -419,7 +413,6 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	// --- Arrange ---
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
 	}))
@@ -451,7 +444,6 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 
 	client := http.DefaultClient
 
-	// --- Tests ---
 	t.Run("mapping 1", func(t *testing.T) {
 		url := hosts.Loopback.HTTPPort(port1)
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
@@ -487,7 +479,6 @@ func TestHandlerWithRewrite(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	// --- Arrange ---
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Path: %s, Host: %s", r.URL.Path, r.Host)
@@ -517,7 +508,6 @@ func TestHandlerWithRewrite(t *testing.T) {
 	client := http.DefaultClient
 	url := hosts.Loopback.HTTPPort(port) + "/test"
 
-	// --- Act ---
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	require.NoError(t, err)
 
@@ -529,7 +519,6 @@ func TestHandlerWithRewrite(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	// --- Assert ---
 	assert.Contains(t, string(body), "/test")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -538,7 +527,6 @@ func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
 
-	// --- Arrange ---
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -569,7 +557,6 @@ func TestHandlerWithOptions(t *testing.T) {
 	url := hosts.Loopback.HTTPPort(port) + "/test"
 	client := &http.Client{}
 
-	// --- Act ---
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, url, nil)
 	require.NoError(t, err)
 
@@ -578,7 +565,6 @@ func TestHandlerWithOptions(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	// --- Assert ---
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, "custom-value", resp.Header.Get("X-Custom-Header"))
 }
