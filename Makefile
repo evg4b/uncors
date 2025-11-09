@@ -43,7 +43,8 @@ format:
 ## format-docs: Format documentation files using Prettier
 format-docs:
 	@gum style --foreground 11 "Formatting documentation for fakedata tool..."
-	@npx -y prettier ./docs --write
+	@npx -y prettier ./docs/**/*.md --write
+	@npx -y prettier ./*.md --write
 
 ## upgrade: Upgrade dependencies and tidy go.mod
 upgrade:

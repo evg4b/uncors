@@ -51,16 +51,14 @@
 # Core features
 
 - CORS header replacement
-- [Wildcard host mapping](https://github.com/evg4b/uncors/wiki/2.-Configuration#wildcard-mapping)
-- [HTTPS support](https://github.com/evg4b/uncors/wiki/2.-Configuration#https-configuration) with auto-generated certificates
-- [Response mocking](https://github.com/evg4b/uncors/wiki/3.-Response-mocking)
-- [Script handler](https://github.com/evg4b/uncors/wiki/9.-Script-Handler) (Lua scripting with JSON support)
-- [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/2.-Configuration#proxy-configuration)
-- [Static file serving](https://github.com/evg4b/uncors/wiki/4.-Static-file-serving)
-- [Response caching](https://github.com/evg4b/uncors/wiki/5.-Response-caching)
-- [Request rewriting](https://github.com/evg4b/uncors/wiki/6.-Request-rewriting)
-
-Other new features you can find in [roadmap](https://github.com/evg4b/uncors/blob/main/ROADMAP.md).
+- [Wildcard host mapping](https://github.com/evg4b/uncors/wiki/Configuration#wildcard-mapping)
+- [HTTPS support](https://github.com/evg4b/uncors/wiki/Configuration#https-configuration) with auto-generated certificates
+- [Response mocking](https://github.com/evg4b/uncors/wiki/Response-mocking)
+- [Script handler](https://github.com/evg4b/uncors/wiki/Script-Handler) (Lua scripting with JSON support)
+- [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/Configuration#proxy-configuration)
+- [Static file serving](https://github.com/evg4b/uncors/wiki/Static-file-serving)
+- [Response caching](https://github.com/evg4b/uncors/wiki/Response-caching)
+- [Request rewriting](https://github.com/evg4b/uncors/wiki/Request-rewriting)
 
 Full documentation can be found on the [wiki pages](https://github.com/evg4b/uncors/wiki).
 
@@ -104,7 +102,7 @@ docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https:
 stew install evg4b/uncors
 ```
 
-Or find more installation methods in [uncors wiki](https://github.com/evg4b/uncors/wiki/1.-Installation).
+Or find more installation methods in [uncors wiki](https://github.com/evg4b/uncors/wiki/Installation).
 
 # Usage
 
