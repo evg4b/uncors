@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				Body: []byte("test"),
 				Code: http.StatusOK,
 				Headers: []contracts.CachedHeader{
-					{Name: headers.ContentType, Value: []string{"text/plain; charset=utf-8"}},
+					testutils.CachedHeader(headers.ContentType, "text/plain; charset=utf-8"),
 				},
 			},
 		},
@@ -75,9 +76,9 @@ func TestCacheableResponseWriter(t *testing.T) {
 				Body: nil,
 				Code: http.StatusOK,
 				Headers: []contracts.CachedHeader{
-					{Name: headers.XForwardedFor, Value: []string{"127.0.0.1"}},
-					{Name: headers.XForwardedProto, Value: []string{"https"}},
-					{Name: headers.XPoweredBy, Value: []string{"uncors"}},
+					testutils.CachedHeader(headers.XForwardedFor, "127.0.0.1"),
+					testutils.CachedHeader(headers.XForwardedProto, "https"),
+					testutils.CachedHeader(headers.XPoweredBy, "uncors"),
 				},
 			},
 		},
@@ -98,9 +99,9 @@ func TestCacheableResponseWriter(t *testing.T) {
 				Code: http.StatusCreated,
 				Body: pngSignature,
 				Headers: []contracts.CachedHeader{
-					{Name: headers.ContentType, Value: []string{"image/png"}},
-					{Name: headers.CacheControl, Value: []string{"no-cache"}},
-					{Name: headers.XPoweredBy, Value: []string{"uncors"}},
+					testutils.CachedHeader(headers.ContentType, "image/png"),
+					testutils.CachedHeader(headers.CacheControl, "no-cache"),
+					testutils.CachedHeader(headers.XPoweredBy, "uncors"),
 				},
 			},
 		},
