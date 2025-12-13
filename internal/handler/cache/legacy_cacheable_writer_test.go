@@ -24,14 +24,14 @@ func TestCacheableResponseWriter(t *testing.T) {
 	tests := []struct {
 		name     string
 		action   func(w http.ResponseWriter)
-		expected *cache.CachedResponse
+		expected *cache.LegacyCachedResponse
 	}{
 		{
 			name: "write body bytes only",
 			action: func(w http.ResponseWriter) {
 				fmt.Fprint(w, bodyString)
 			},
-			expected: &cache.CachedResponse{
+			expected: &cache.LegacyCachedResponse{
 				Header: http.Header{
 					headers.ContentType: {defaultContentType},
 				},
@@ -43,7 +43,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 			action: func(w http.ResponseWriter) {
 				w.WriteHeader(http.StatusBadGateway)
 			},
-			expected: &cache.CachedResponse{
+			expected: &cache.LegacyCachedResponse{
 				Header: http.Header{},
 				Code:   http.StatusBadGateway,
 			},
@@ -55,7 +55,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				header.Set(headers.ContentType, customContentType)
 				header.Set(headers.Authorization, authorization)
 			},
-			expected: &cache.CachedResponse{
+			expected: &cache.LegacyCachedResponse{
 				Header: http.Header{
 					headers.ContentType:   {customContentType},
 					headers.Authorization: {authorization},
@@ -69,7 +69,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				header.Set(headers.ContentLength, "999")
 				fmt.Fprint(w, bodyString)
 			},
-			expected: &cache.CachedResponse{
+			expected: &cache.LegacyCachedResponse{
 				Header: http.Header{
 					headers.ContentType: {defaultContentType},
 				},
@@ -86,7 +86,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 				writer.WriteHeader(http.StatusBadGateway)
 				fmt.Fprint(writer, bodyString)
 			},
-			expected: &cache.CachedResponse{
+			expected: &cache.LegacyCachedResponse{
 				Code: http.StatusBadGateway,
 				Header: http.Header{
 					headers.ContentType:   {customContentType},
@@ -99,7 +99,7 @@ func TestCacheableResponseWriter(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			cacheableWriter := cache.NewCacheableWriter(recorder)
+			cacheableWriter := cache.NewLegacyCacheableWriter(recorder)
 
 			testCase.action(cacheableWriter)
 			actual := cacheableWriter.GetCachedResponse()

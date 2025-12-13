@@ -58,7 +58,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 
 	m.logger.Debugf("request with key %s is not cached", cacheKey)
 
-	cacheableWriter := NewCacheableWriter(writer)
+	cacheableWriter := NewLegacyCacheableWriter(writer)
 	next.ServeHTTP(cacheableWriter, request)
 
 	if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
@@ -67,7 +67,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 	}
 }
 
-func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *CachedResponse) {
+func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *LegacyCachedResponse) {
 	header := writer.Header()
 	for key, values := range cachedResponse.Header {
 		for _, value := range values {
@@ -111,9 +111,9 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 	return fmt.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
 }
 
-func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
+func (m *Middleware) getCachedResponse(cacheKey string) *LegacyCachedResponse {
 	if cachedResponse, ok := m.storage.Get(cacheKey); ok {
-		if resp, ok := cachedResponse.(*CachedResponse); ok {
+		if resp, ok := cachedResponse.(*LegacyCachedResponse); ok {
 			return resp
 		}
 
