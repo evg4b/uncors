@@ -16,6 +16,12 @@ func CalcCost(value *contracts.CachedResponse) int64 {
 	return int64(cost)
 }
 
+const (
+	numCounters = 1e5
+	bufferItems = 64
+	ttl         = 10 * time.Minute
+)
+
 type RistrettoCache struct {
 	storage *ristretto.Cache[string, contracts.CachedResponse]
 	ttl     time.Duration
@@ -23,9 +29,9 @@ type RistrettoCache struct {
 
 func NewCache(maxBytes int64) *RistrettoCache {
 	storage, err := ristretto.NewCache(&ristretto.Config[string, contracts.CachedResponse]{
-		NumCounters: 1e5,
+		NumCounters: numCounters,
 		MaxCost:     maxBytes,
-		BufferItems: 64,
+		BufferItems: bufferItems,
 	})
 	if err != nil {
 		panic(err)
@@ -33,7 +39,7 @@ func NewCache(maxBytes int64) *RistrettoCache {
 
 	return &RistrettoCache{
 		storage: storage,
-		ttl:     10 * time.Minute,
+		ttl:     ttl,
 	}
 }
 
