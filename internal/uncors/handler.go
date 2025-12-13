@@ -6,7 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
-	cache2 "github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -15,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/patrickmn/go-cache"
 	"github.com/spf13/afero"
 )
 
@@ -24,6 +23,8 @@ type appCache struct {
 	mockHandlerFactory   handler.RequestHandlerOption
 	scriptHandlerFactory handler.RequestHandlerOption
 }
+
+const size = 2 << 6
 
 func (app *Uncors) buildHandlerForMappings(
 	uncorsConfig *config.UncorsConfig,
@@ -34,14 +35,13 @@ func (app *Uncors) buildHandlerForMappings(
 		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
-			// TODO: Add cache storage reusage
-			cacheStorage := cache.New(cacheConfig.ExpirationTime, cacheConfig.ClearTime)
+			cacheStorage := cache.NewRistrettoCache(size, cacheConfig.ExpirationTime)
 
-			return cache2.NewMiddleware(
-				cache2.WithLogger(NewCacheLogger(app.logger)),
-				cache2.WithMethods(cacheConfig.Methods),
-				cache2.WithCacheStorage(cacheStorage),
-				cache2.WithGlobs(globs),
+			return cache.NewMiddleware(
+				cache.WithLogger(NewCacheLogger(app.logger)),
+				cache.WithMethods(cacheConfig.Methods),
+				cache.WithCacheStorage(cacheStorage),
+				cache.WithGlobs(globs),
 			)
 		}),
 		handler.WithRewriteHandlerFactory(func(rewriting config.RewritingOption) contracts.Middleware {

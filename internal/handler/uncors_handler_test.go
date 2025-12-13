@@ -24,7 +24,6 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
-	goCache "github.com/patrickmn/go-cache"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,7 +54,7 @@ func cacheFactory() handler.CacheMiddlewareFactory {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
 			cache.WithLogger(log.New(io.Discard)),
-			cache.WithCacheStorage(goCache.New(goCache.DefaultExpiration, goCache.DefaultExpiration)),
+			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
 		)
 	}
 }

@@ -49,8 +49,8 @@ func (cs *RistrettoCache) Get(key string) (contracts.CachedResponse, bool) {
 	return cs.storage.Get(key)
 }
 
-func (cs *RistrettoCache) Set(key string, value *contracts.CachedResponse) {
-	cs.storage.SetWithTTL(key, *value, CalcCost(value), cs.ttl)
+func (cs *RistrettoCache) Set(key string, value contracts.CachedResponse) {
+	cs.storage.SetWithTTL(key, value, CalcCost(&value), cs.ttl)
 }
 
 func (cs *RistrettoCache) Wait() {

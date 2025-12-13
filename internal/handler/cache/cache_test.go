@@ -77,7 +77,7 @@ func TestRistrettoCache(t *testing.T) {
 
 	t.Run("Set and Get key", func(t *testing.T) {
 		key := "test-key"
-		value := &contracts.CachedResponse{
+		value := contracts.CachedResponse{
 			Body: []byte("test-body"),
 			Headers: []contracts.CachedHeader{
 				testutils.CachedHeader("H", "V"),
