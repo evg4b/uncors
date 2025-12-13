@@ -2,7 +2,7 @@ package contracts
 
 type CachedHeader struct {
 	Name  string
-	Value string
+	Value []string
 }
 
 type CachedResponse struct {

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCacheableResponseWriter(t *testing.T) {
+func TestLegacyCacheableResponseWriter(t *testing.T) {
 	const (
 		defaultContentType = "text/plain; charset=utf-8"
 		customContentType  = "application/xml"
