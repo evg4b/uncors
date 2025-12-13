@@ -9,9 +9,11 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -141,6 +143,24 @@ func TestCacheableResponseWriter(t *testing.T) {
 
 			testCase.action(cacheableWriter)
 			cacheableWriter.Close()
+		})
+	}
+
+	for _, code := range slices.Concat(statusCodes, []int{http.StatusOK, http.StatusNoContent}) {
+		t.Run(fmt.Sprintf("writer should return %d code", code), func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+
+			cacheMock := mocks.NewCacheMock(t)
+			if helpers.Is2xxCode(code) {
+				cacheMock.SetMock.Set(func(_ string, _ contracts.CachedResponse) {})
+			}
+
+			cacheableWriter := cache.NewCacheableResponseWriter(cacheMock, recorder, "cache-key")
+
+			cacheableWriter.WriteHeader(code)
+			defer cacheableWriter.Close()
+
+			assert.Equal(t, code, cacheableWriter.StatusCode())
 		})
 	}
 }
