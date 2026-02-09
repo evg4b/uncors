@@ -20,7 +20,7 @@ type PortGroup struct {
 type PortGroups []PortGroup
 
 func (m Mappings) String() string {
-	var lines []string
+	lines := make([]string, 0, len(m))
 
 	for _, group := range lo.GroupBy(m, extractHost) {
 		for _, mapping := range group {

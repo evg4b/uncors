@@ -1,6 +1,7 @@
 package uncors
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/spf13/afero"
-	"golang.org/x/net/context"
 )
 
 const baseAddress = "127.0.0.1"
