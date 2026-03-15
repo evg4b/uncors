@@ -99,8 +99,8 @@ func TestCacheableResponseWriter(t *testing.T) {
 				Code: http.StatusCreated,
 				Body: pngSignature,
 				Headers: []contracts.CachedHeader{
-					testutils.CachedHeader(headers.ContentType, "image/png"),
 					testutils.CachedHeader(headers.CacheControl, "no-cache"),
+					testutils.CachedHeader(headers.ContentType, "image/png"),
 					testutils.CachedHeader(headers.XPoweredBy, "uncors"),
 				},
 			},

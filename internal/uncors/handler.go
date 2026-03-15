@@ -24,8 +24,6 @@ type appCache struct {
 	scriptHandlerFactory handler.RequestHandlerOption
 }
 
-const size = 2 << 6
-
 func (app *Uncors) buildHandlerForMappings(
 	uncorsConfig *config.UncorsConfig,
 	mappings config.Mappings,
@@ -35,7 +33,7 @@ func (app *Uncors) buildHandlerForMappings(
 		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
-			cacheStorage := cache.NewRistrettoCache(size, cacheConfig.ExpirationTime)
+			cacheStorage := cache.NewRistrettoCache(cacheConfig.MaxSize, cacheConfig.ExpirationTime)
 
 			return cache.NewMiddleware(
 				cache.WithLogger(NewCacheLogger(app.logger)),

@@ -30,7 +30,7 @@ func TestCacheMiddleware(t *testing.T) {
 	}
 
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
+		cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 		cache.WithLogger(log.New(io.Discard)),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
@@ -185,7 +185,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
@@ -214,7 +214,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods(methods),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),

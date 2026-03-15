@@ -56,7 +56,7 @@ cert-file: /etc/certificates/cert-file.pem
 key-file: /etc/certificates/key-file.key
 cache-config:
   expiration-time: 1h
-  clear-time: 30m
+  max-size: 52428800
   methods:
     - GET
     - POST
@@ -99,7 +99,7 @@ func TestLoadConfiguration(t *testing.T) {
 					Mappings: config.Mappings{},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
-						ClearTime:      config.DefaultClearTime,
+						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
 				},
@@ -113,7 +113,7 @@ func TestLoadConfiguration(t *testing.T) {
 					},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
-						ClearTime:      config.DefaultClearTime,
+						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
 				},
@@ -155,7 +155,7 @@ func TestLoadConfiguration(t *testing.T) {
 					Debug: true,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
-						ClearTime:      30 * time.Minute,
+						MaxSize:        52428800,
 						Methods: []string{
 							http.MethodGet,
 							http.MethodPost,
@@ -176,7 +176,7 @@ func TestLoadConfiguration(t *testing.T) {
 					},
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: config.DefaultExpirationTime,
-						ClearTime:      config.DefaultClearTime,
+						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
 				},

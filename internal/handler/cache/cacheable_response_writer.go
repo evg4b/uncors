@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"sort"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -59,14 +60,20 @@ func (w *CacheableResponseWriter) Close() {
 		return
 	}
 
+	headers := lo.MapToSlice(w.Header(), func(key string, value []string) contracts.CachedHeader {
+		return contracts.CachedHeader{
+			Name:  key,
+			Value: value,
+		}
+	})
+
+	sort.Slice(headers, func(i, j int) bool {
+		return headers[i].Name < headers[j].Name
+	})
+
 	w.storage.Set(w.key, contracts.CachedResponse{
-		Code: w.code,
-		Body: w.buffer.Bytes(),
-		Headers: lo.MapToSlice(w.Header(), func(key string, value []string) contracts.CachedHeader {
-			return contracts.CachedHeader{
-				Name:  key,
-				Value: value,
-			}
-		}),
+		Code:    w.code,
+		Body:    w.buffer.Bytes(),
+		Headers: headers,
 	})
 }

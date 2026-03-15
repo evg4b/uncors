@@ -24,7 +24,7 @@ func TestCacheConfigValidator(t *testing.T) {
 				name: "full filled config",
 				value: config.CacheConfig{
 					ExpirationTime: 5 * time.Minute,
-					ClearTime:      30 * time.Second,
+					MaxSize:        100 * 1024 * 1024,
 					Methods: []string{
 						http.MethodGet,
 						http.MethodPost,
@@ -53,7 +53,7 @@ func TestCacheConfigValidator(t *testing.T) {
 			{
 				name: "config with empty expiration time",
 				value: config.CacheConfig{
-					ClearTime: 30 * time.Second,
+					MaxSize: 100 * 1024 * 1024,
 					Methods: []string{
 						http.MethodGet,
 						http.MethodPost,
@@ -62,22 +62,34 @@ func TestCacheConfigValidator(t *testing.T) {
 				error: "test.expiration-time must be greater than 0",
 			},
 			{
-				name: "config with empty clear time",
+				name: "config with zero max size",
 				value: config.CacheConfig{
 					ExpirationTime: 5 * time.Minute,
+					MaxSize:        0,
 					Methods: []string{
 						http.MethodGet,
 						http.MethodPost,
 					},
 				},
-				error: "test.clear-time must be greater than 0",
+				error: "test.max-size must be greater than 0",
 			},
-
+			{
+				name: "config with negative max size",
+				value: config.CacheConfig{
+					ExpirationTime: 5 * time.Minute,
+					MaxSize:        -1,
+					Methods: []string{
+						http.MethodGet,
+						http.MethodPost,
+					},
+				},
+				error: "test.max-size must be greater than 0",
+			},
 			{
 				name: "config with empty methods",
 				value: config.CacheConfig{
 					ExpirationTime: 5 * time.Minute,
-					ClearTime:      30 * time.Second,
+					MaxSize:        100 * 1024 * 1024,
 				},
 				error: "methods must not be empty",
 			},
@@ -85,7 +97,7 @@ func TestCacheConfigValidator(t *testing.T) {
 				name: "config with invalid methods",
 				value: config.CacheConfig{
 					ExpirationTime: 5 * time.Minute,
-					ClearTime:      30 * time.Second,
+					MaxSize:        100 * 1024 * 1024,
 					Methods: []string{
 						"invalid",
 					},
@@ -93,10 +105,10 @@ func TestCacheConfigValidator(t *testing.T) {
 				error: "test.methods[0] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE",
 			},
 			{
-				name: "config with invalid methods",
+				name: "config with invalid second method",
 				value: config.CacheConfig{
 					ExpirationTime: 5 * time.Minute,
-					ClearTime:      30 * time.Second,
+					MaxSize:        100 * 1024 * 1024,
 					Methods: []string{
 						http.MethodGet,
 						"invalid",

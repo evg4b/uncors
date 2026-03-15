@@ -19,7 +19,7 @@ func (g CacheGlobs) Clone() CacheGlobs {
 
 type CacheConfig struct {
 	ExpirationTime time.Duration `mapstructure:"expiration-time"`
-	ClearTime      time.Duration `mapstructure:"clear-time"`
+	MaxSize        int64         `mapstructure:"max-size"`
 	Methods        []string      `mapstructure:"methods"`
 }
 
@@ -31,7 +31,7 @@ func (c *CacheConfig) Clone() *CacheConfig {
 
 	return &CacheConfig{
 		ExpirationTime: c.ExpirationTime,
-		ClearTime:      c.ClearTime,
+		MaxSize:        c.MaxSize,
 		Methods:        methods,
 	}
 }
