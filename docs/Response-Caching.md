@@ -58,16 +58,16 @@ Configure caching behavior globally using the `cache-config` section:
 cache-config:
   methods: [GET]
   expiration-time: 10m
-  clear-time: 15m
+  max-size: 104857600
 ```
 
 ## Configuration Properties
 
-| Property          | Type     | Default | Description                                        |
-| ----------------- | -------- | ------- | -------------------------------------------------- |
-| `methods`         | array    | `[GET]` | HTTP methods to cache (e.g., `GET`, `POST`, `PUT`) |
-| `expiration-time` | duration | -       | Time until cached response is considered stale     |
-| `clear-time`      | duration | -       | Time until cached response is permanently removed  |
+| Property          | Type     | Default      | Description                                        |
+| ----------------- | -------- | ------------ | -------------------------------------------------- |
+| `methods`         | array    | `[GET]`      | HTTP methods to cache (e.g., `GET`, `POST`, `PUT`) |
+| `expiration-time` | duration | `30m`        | Time until a cached response is evicted            |
+| `max-size`        | integer  | `104857600`  | Maximum total cache size in bytes (default 100 MB) |
 
 **Duration format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours)
 
@@ -80,9 +80,9 @@ cache-config:
 
 ## Cache Lifecycle
 
-1. **Fresh**: Response is returned immediately from cache
-2. **Stale** (after `expiration-time`): Response is revalidated with upstream server
-3. **Removed** (after `clear-time`): Cache entry is deleted, next request fetches fresh data
+1. **Hit**: Response is returned immediately from cache
+2. **Miss**: Request is forwarded to the upstream server and the response is stored in cache
+3. **Evicted** (after `expiration-time` or when `max-size` is reached): Cache entry is removed; the next request fetches fresh data from upstream
 
 ## Examples
 
@@ -100,7 +100,7 @@ mappings:
 cache-config:
   methods: [GET]
   expiration-time: 5m
-  clear-time: 1h
+  max-size: 52428800
 ```
 
 ### Cache Multiple Methods
@@ -109,7 +109,7 @@ cache-config:
 cache-config:
   methods: [GET, POST, PUT]
   expiration-time: 2m
-  clear-time: 30m
+  max-size: 104857600
 
 mappings:
   - from: http://localhost

@@ -31,7 +31,7 @@ func TestCacheGlobsClone(t *testing.T) {
 func TestCacheConfigClone(t *testing.T) {
 	cacheConfig := &config.CacheConfig{
 		ExpirationTime: 5 * time.Minute,
-		ClearTime:      30 * time.Second,
+		MaxSize:        50 * 1024 * 1024,
 		Methods:        []string{http.MethodGet, http.MethodPost},
 	}
 

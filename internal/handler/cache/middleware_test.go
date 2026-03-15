@@ -14,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
-	goCache "github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +30,7 @@ func TestCacheMiddleware(t *testing.T) {
 	}
 
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
+		cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 		cache.WithLogger(log.New(io.Discard)),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
@@ -186,7 +185,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
@@ -215,7 +214,7 @@ func TestCacheMiddleware(t *testing.T) {
 		handler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(goCache.New(time.Minute, time.Minute)),
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 			cache.WithLogger(log.New(io.Discard)),
 			cache.WithMethods(methods),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),

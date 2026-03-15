@@ -11,13 +11,12 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 )
 
 type Middleware struct {
 	logger    contracts.Logger
-	storage   *cache.Cache
+	cache     contracts.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
 }
@@ -26,7 +25,7 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	middleware := helpers.ApplyOptions(&Middleware{}, options)
 
 	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
-	helpers.AssertIsDefined(middleware.storage, "Cache storage is not configured")
+	helpers.AssertIsDefined(middleware.cache, "Cache storage is not configured")
 
 	return middleware
 }
@@ -58,20 +57,18 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 
 	m.logger.Debugf("request with key %s is not cached", cacheKey)
 
-	cacheableWriter := NewCacheableWriter(writer)
-	next.ServeHTTP(cacheableWriter, request)
+	cacheableWriter := NewCacheableResponseWriter(m.cache, writer, cacheKey)
+	defer cacheableWriter.Close()
 
-	if helpers.Is2xxCode(cacheableWriter.StatusCode()) {
-		response := cacheableWriter.GetCachedResponse()
-		m.storage.SetDefault(cacheKey, response)
-	}
+	next.ServeHTTP(cacheableWriter, request)
 }
 
-func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *CachedResponse) {
+func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *contracts.CachedResponse) {
 	header := writer.Header()
-	for key, values := range cachedResponse.Header {
-		for _, value := range values {
-			header.Add(key, value)
+
+	for _, cachedHeader := range cachedResponse.Headers {
+		for _, value := range cachedHeader.Value {
+			header.Add(cachedHeader.Name, value)
 		}
 	}
 
@@ -111,13 +108,9 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 	return fmt.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
 }
 
-func (m *Middleware) getCachedResponse(cacheKey string) *CachedResponse {
-	if cachedResponse, ok := m.storage.Get(cacheKey); ok {
-		if resp, ok := cachedResponse.(*CachedResponse); ok {
-			return resp
-		}
-
-		return nil
+func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedResponse {
+	if cachedResponse, ok := m.cache.Get(cacheKey); ok {
+		return &cachedResponse
 	}
 
 	return nil

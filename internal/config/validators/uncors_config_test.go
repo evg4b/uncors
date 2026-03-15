@@ -27,7 +27,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
 					},
 					CacheConfig: config.CacheConfig{
-						ClearTime:      10 * time.Minute,
+						MaxSize:        100 * 1024 * 1024,
 						ExpirationTime: 10 * time.Minute,
 						Methods:        []string{http.MethodGet},
 					},
@@ -54,7 +54,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 				value: &config.UncorsConfig{
 					Mappings: []config.Mapping{},
 					CacheConfig: config.CacheConfig{
-						ClearTime:      10 * time.Minute,
+						MaxSize:        100 * 1024 * 1024,
 						ExpirationTime: 10 * time.Minute,
 						Methods:        []string{http.MethodGet},
 					},
