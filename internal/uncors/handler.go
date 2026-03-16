@@ -78,7 +78,10 @@ func (app *Uncors) buildHARMiddlewareFactory() handler.HARMiddlewareFactory {
 			w := har.NewWriter(harConfig.File)
 			app.registerCloser(w)
 
-			return har.NewMiddleware(har.WithWriter(w))
+			return har.NewMiddleware(
+				har.WithWriter(w),
+				har.WithCaptureCookies(harConfig.CaptureCookies),
+			)
 		})
 	}
 }

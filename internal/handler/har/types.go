@@ -56,10 +56,13 @@ type Response struct {
 }
 
 // Content holds response body details.
+// When Encoding is "base64", Text contains the base64-encoded body bytes
+// (used for payloads that could not be decoded, e.g. unknown compressions).
 type Content struct {
 	Size     int64  `json:"size"`
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text,omitempty"`
+	Encoding string `json:"encoding,omitempty"`
 }
 
 // Timings breaks down request time into phases (all in ms).
