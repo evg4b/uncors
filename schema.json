@@ -3,6 +3,38 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
   "definitions": {
+    "HARConfig": {
+      "description": "HAR (HTTP Archive) collector configuration. Records all proxied request/response pairs to a file in HAR 1.2 format.",
+      "oneOf": [
+        {
+          "description": "Short form: path to the output HAR file",
+          "type": "string",
+          "examples": [
+            "./recordings/api.har",
+            "/tmp/trace.har"
+          ]
+        },
+        {
+          "additionalProperties": false,
+          "description": "Full form with all options",
+          "properties": {
+            "capture-secure-headers": {
+              "default": false,
+              "description": "Include security-sensitive headers in HAR entries. When false (default), Cookie, Set-Cookie, Authorization, WWW-Authenticate, Proxy-Authorization and Proxy-Authenticate headers are excluded.",
+              "type": "boolean"
+            },
+            "file": {
+              "description": "Path to the output HAR file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "file"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "Duration": {
       "description": "Duration in human-readable format. Supported units are 'h' (hours), 'm' (minutes), 's' (seconds), 'ms' (milliseconds), 'us' (microseconds), 'ns' (nanoseconds).",
       "examples": [
@@ -76,6 +108,10 @@
             "from": {
               "description": "The local host with protocol and port for the resource from which proxying will take place (e.g., http://localhost:8080). Port defaults to 80 for HTTP and 443 for HTTPS if not specified. HTTPS mappings use auto-generated certificates (requires CA certificate generated with 'uncors generate-certs').",
               "type": "string"
+            },
+            "har": {
+              "$ref": "#/definitions/HARConfig",
+              "description": "HAR collector configuration. When set, all requests for this mapping are recorded to the specified HAR file."
             },
             "mocks": {
               "description": "List the mocked requests",
