@@ -50,7 +50,7 @@ type Response struct {
 	Headers     []NameValue `json:"headers"`
 	Cookies     []Cookie    `json:"cookies"`
 	Content     Content     `json:"content"`
-	RedirectURL string      `json:"redirectURL"`
+	RedirectURL string      `json:"redirectUrl"`
 	HeadersSize int         `json:"headersSize"`
 	BodySize    int64       `json:"bodySize"`
 }

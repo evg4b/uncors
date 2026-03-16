@@ -17,15 +17,15 @@ func TestWriter(t *testing.T) {
 		dir := t.TempDir()
 		path := filepath.Join(dir, "out.har")
 
-		w := har.NewWriter(path)
-		w.AddEntry(har.Entry{
+		harWriter := har.NewWriter(path)
+		harWriter.AddEntry(har.Entry{
 			StartedDateTime: time.Now(),
 			Time:            42,
 			Request:         har.Request{Method: "GET", URL: "http://example.com/"},
 			Response:        har.Response{Status: 200},
 		})
 
-		require.NoError(t, w.Close())
+		require.NoError(t, harWriter.Close())
 
 		data, err := os.ReadFile(path)
 		require.NoError(t, err)
@@ -40,29 +40,29 @@ func TestWriter(t *testing.T) {
 
 	t.Run("multiple Close calls are safe", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "out.har")
-		w := har.NewWriter(path)
+		harWriter := har.NewWriter(path)
 
-		require.NoError(t, w.Close())
-		require.NoError(t, w.Close())
+		require.NoError(t, harWriter.Close())
+		require.NoError(t, harWriter.Close())
 	})
 
 	t.Run("AddEntry does not block when channel is full", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "out.har")
-		w := har.NewWriter(path)
+		harWriter := har.NewWriter(path)
 
 		// Send well over the buffer capacity without blocking.
-		for i := 0; i < 10_000; i++ {
-			w.AddEntry(har.Entry{})
+		for range 10_000 {
+			harWriter.AddEntry(har.Entry{})
 		}
 
-		require.NoError(t, w.Close())
+		require.NoError(t, harWriter.Close())
 	})
 
 	t.Run("file is valid JSON after Close with no entries", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "empty.har")
-		w := har.NewWriter(path)
+		harWriter := har.NewWriter(path)
 
-		require.NoError(t, w.Close())
+		require.NoError(t, harWriter.Close())
 
 		data, err := os.ReadFile(path)
 		require.NoError(t, err)

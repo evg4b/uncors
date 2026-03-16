@@ -15,6 +15,7 @@ func gzipEncode(t *testing.T, data string) []byte {
 	t.Helper()
 
 	var buf bytes.Buffer
+
 	w := gzip.NewWriter(&buf)
 	_, err := w.Write([]byte(data))
 	require.NoError(t, err)
@@ -29,6 +30,7 @@ func gzipEncode(t *testing.T, data string) []byte {
 
 func TestBuildContent_Gzip(t *testing.T) {
 	const body = `{"hello":"world"}`
+
 	compressed := gzipEncode(t, body)
 
 	// The function is unexported; test via middleware_test helpers.
