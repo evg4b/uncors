@@ -115,6 +115,7 @@ func URLMappingHookFunc() mapstructure.DecodeHookFunc {
 				data,
 				&mapping,
 				StaticDirMappingHookFunc(),
+				HARConfigHookFunc(),
 			)
 
 			return mapping, err
