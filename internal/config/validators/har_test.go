@@ -5,7 +5,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
-	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,10 +30,8 @@ func TestHARValidator(t *testing.T) {
 
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
-				errs := validate.Validate(&validators.HARValidator{
-					Field: "mappings[0].har",
-					Value: tc.value,
-				})
+				errs := &validators.Errors{}
+				validators.ValidateHAR("mappings[0].har", tc.value, errs)
 
 				assert.False(t, errs.HasAny())
 			})
@@ -43,10 +40,8 @@ func TestHARValidator(t *testing.T) {
 
 	t.Run("invalid cases", func(t *testing.T) {
 		t.Run("file path without extension", func(t *testing.T) {
-			errs := validate.Validate(&validators.HARValidator{
-				Field: "mappings[0].har",
-				Value: config.HARConfig{File: "outputfile"},
-			})
+			errs := &validators.Errors{}
+			validators.ValidateHAR("mappings[0].har", config.HARConfig{File: "outputfile"}, errs)
 
 			assert.True(t, errs.HasAny())
 		})

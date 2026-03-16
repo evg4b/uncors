@@ -19,15 +19,15 @@ type captureWriter struct {
 	code   int
 }
 
-func newCaptureWriter(w contracts.ResponseWriter) *captureWriter {
-	cw := &captureWriter{
-		ResponseWriter: w,
+func newCaptureWriter(wrapped contracts.ResponseWriter) *captureWriter {
+	capture := &captureWriter{
+		ResponseWriter: wrapped,
 		code:           http.StatusOK,
 	}
 
-	cw.output = io.MultiWriter(&cw.buffer, w)
+	capture.output = io.MultiWriter(&capture.buffer, wrapped)
 
-	return cw
+	return capture
 }
 
 func (cw *captureWriter) Write(b []byte) (int, error) {

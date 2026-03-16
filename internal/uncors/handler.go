@@ -83,7 +83,7 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 
 func (app *Uncors) buildHARMiddlewareFactory() handler.HARMiddlewareFactory {
 	return func(harConfig config.HARConfig) contracts.Middleware {
-		return contracts.LazyMiddleware(func() contracts.Middleware {
+		return handler.LazyMiddleware(func() contracts.Middleware {
 			w := har.NewWriter(harConfig.File)
 			app.registerCloser(w)
 

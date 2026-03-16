@@ -13,6 +13,8 @@ const (
 	// entryChanBuffer is the capacity of the entry channel.
 	// Senders never block as long as fewer than this many entries are in-flight.
 	entryChanBuffer = 4096
+	// harFileMode is the permission bits used when writing the HAR file.
+	harFileMode = 0o600
 )
 
 // Writer asynchronously appends HAR entries to a file.
@@ -31,17 +33,17 @@ type Writer struct {
 // NewWriter creates a Writer that records entries to path.
 // The background goroutine starts immediately.
 func NewWriter(path string) *Writer {
-	w := &Writer{
+	writer := &Writer{
 		path:    path,
 		entries: make(chan Entry, entryChanBuffer),
 		done:    make(chan struct{}),
 	}
 
-	w.wg.Add(1)
+	writer.wg.Add(1)
 
-	go w.run()
+	go writer.run()
 
-	return w
+	return writer
 }
 
 // AddEntry enqueues an entry for writing. It never blocks the caller:
@@ -123,7 +125,8 @@ func (w *Writer) flush() {
 
 	tmp := w.path + ".tmp"
 
-	if err = os.WriteFile(tmp, data, 0o600); err != nil {
+	err = os.WriteFile(tmp, data, harFileMode)
+	if err != nil {
 		return
 	}
 

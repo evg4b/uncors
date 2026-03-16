@@ -22,7 +22,8 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 
 	switch encoding {
 	case "gzip", "x-gzip":
-		if decoded, err := decodeGzip(raw); err == nil {
+		decoded, err := decodeGzip(raw)
+		if err == nil {
 			return Content{
 				Size:     int64(len(decoded)),
 				MimeType: mimeType,
@@ -31,7 +32,8 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 		}
 
 	case "deflate":
-		if decoded, err := decodeDeflate(raw); err == nil {
+		decoded, err := decodeDeflate(raw)
+		if err == nil {
 			return Content{
 				Size:     int64(len(decoded)),
 				MimeType: mimeType,
@@ -58,22 +60,22 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 }
 
 func decodeGzip(data []byte) ([]byte, error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
+	reader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
 
-	defer r.Close()
+	defer reader.Close()
 
-	return io.ReadAll(r)
+	return io.ReadAll(reader)
 }
 
 func decodeDeflate(data []byte) ([]byte, error) {
 	// The deflate encoding used in HTTP can be raw DEFLATE or zlib-wrapped.
 	// Try zlib first; fall back to raw flate.
-	r := flate.NewReader(bytes.NewReader(data))
+	reader := flate.NewReader(bytes.NewReader(data))
 
-	defer r.Close()
+	defer reader.Close()
 
-	return io.ReadAll(r)
+	return io.ReadAll(reader)
 }
