@@ -115,13 +115,40 @@ standalone middleware (`internal/handler/har`).
 
 **Configuration:**
 
+The simplest form uses a string shorthand — the value is treated as the output file path:
+
+```yaml
+mappings:
+  - from: http://localhost:3000
+    to: https://api.example.com
+    har: ./recordings/api.har
+```
+
+For full control, use the object form:
+
 ```yaml
 mappings:
   - from: http://localhost:3000
     to: https://api.example.com
     har:
       file: ./recordings/api.har
+      capture-secure-headers: true   # default: false
 ```
+
+**Security-sensitive headers:**
+
+By default the following headers are **excluded** from HAR entries to avoid
+persisting credentials on disk. Set `capture-secure-headers: true` to include
+them.
+
+| Header                | Why it is sensitive                        |
+|-----------------------|--------------------------------------------|
+| `Cookie`              | Session identifiers                        |
+| `Set-Cookie`          | Session identifiers set by the server      |
+| `Authorization`       | Bearer tokens, Basic credentials           |
+| `WWW-Authenticate`    | Server auth challenges (reveals scheme)    |
+| `Proxy-Authorization` | Proxy credentials                          |
+| `Proxy-Authenticate`  | Proxy auth challenges                      |
 
 ## Key Design Patterns
 
