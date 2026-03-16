@@ -21,6 +21,7 @@ type (
 	ScriptHandlerFactory     = func(script config.Script) contracts.Handler
 	RewriteMiddlewareFactory = func(rewrite config.RewritingOption) contracts.Middleware
 	OptionsMiddlewareFactory = func(options config.OptionsHandling) contracts.Middleware
+	HARMiddlewareFactory     = func(harConfig config.HARConfig) contracts.Middleware
 )
 
 type RequestHandler struct {
@@ -35,6 +36,7 @@ type RequestHandler struct {
 	scriptHandlerFactory     ScriptHandlerFactory
 	rewriteMiddlewareFactory RewriteMiddlewareFactory
 	optionsMiddlewareFactory OptionsMiddlewareFactory
+	harMiddlewareFactory     HARMiddlewareFactory
 }
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -55,6 +57,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, handler.proxyHandler)
 		defaultHandler = handler.wrapCacheMiddleware(mapping.Cache, defaultHandler)
+		defaultHandler = handler.wrapHARMiddleware(mapping.HAR, defaultHandler)
 
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
@@ -145,5 +148,11 @@ func WithRewriteHandlerFactory(factory RewriteMiddlewareFactory) RequestHandlerO
 func WithOptionsHandlerFactory(factory OptionsMiddlewareFactory) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.optionsMiddlewareFactory = factory
+	}
+}
+
+func WithHARMiddlewareFactory(factory HARMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.harMiddlewareFactory = factory
 	}
 }

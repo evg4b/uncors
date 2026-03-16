@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -31,6 +32,7 @@ func (app *Uncors) buildHandlerForMappings(
 		handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
 		handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
 		handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
+		handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
 	)
 }
 
@@ -66,6 +68,17 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 				options.WithHeaders(cfg.Headers),
 				options.WithCode(cfg.Code),
 			)
+		})
+	}
+}
+
+func (app *Uncors) buildHARMiddlewareFactory() handler.HARMiddlewareFactory {
+	return func(harConfig config.HARConfig) contracts.Middleware {
+		return contracts.LazyMiddleware(func() contracts.Middleware {
+			w := har.NewWriter(harConfig.File)
+			app.registerCloser(w)
+
+			return har.NewMiddleware(har.WithWriter(w))
 		})
 	}
 }
