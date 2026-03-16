@@ -9,3 +9,12 @@ func WithWriter(w *Writer) MiddlewareOption {
 		m.writer = w
 	}
 }
+
+// WithCaptureCookies controls whether Cookie request headers and Set-Cookie
+// response headers are included in the HAR output. Defaults to false to
+// avoid accidentally persisting sensitive session data.
+func WithCaptureCookies(capture bool) MiddlewareOption {
+	return func(m *Middleware) {
+		m.captureCookies = capture
+	}
+}
