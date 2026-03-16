@@ -84,7 +84,7 @@ func (app *Uncors) buildHARMiddlewareFactory() handler.HARMiddlewareFactory {
 
 			return har.NewMiddleware(
 				har.WithWriter(w),
-				har.WithCaptureCookies(harConfig.CaptureCookies),
+				har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
 			)
 		})
 	}
