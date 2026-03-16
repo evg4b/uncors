@@ -126,16 +126,18 @@ func TestMiddleware_Wrap(t *testing.T) {
 		assert.Equal(t, body, received)
 	})
 
-	t.Run("cookies not captured by default", func(t *testing.T) {
-		m, w, path := newMiddleware(t) // no WithCaptureCookies → default false
+	t.Run("secure headers not captured by default", func(t *testing.T) {
+		m, w, path := newMiddleware(t) // captureSecureHeaders defaults to false
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
+			rw.Header().Set("Www-Authenticate", `Bearer realm="api"`)
 			rw.WriteHeader(http.StatusOK)
 		})
 
 		req := makeRequest(http.MethodGet, "http://example.com/")
 		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
+		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
 		m.Wrap(next).ServeHTTP(makeWriter(rec), req)
@@ -150,18 +152,22 @@ func TestMiddleware_Wrap(t *testing.T) {
 		assert.Empty(t, entry.Request.Cookies)
 		assert.Empty(t, entry.Response.Cookies)
 
-		// Cookie / Set-Cookie headers must not appear.
-		for _, nv := range entry.Request.Headers {
-			assert.NotEqual(t, "Cookie", nv.Name)
+		// Sensitive headers must not appear.
+		blocked := []string{"Cookie", "Authorization"}
+		for _, name := range blocked {
+			for _, nv := range entry.Request.Headers {
+				assert.NotEqual(t, name, nv.Name, "request header %s must be stripped", name)
+			}
 		}
 
 		for _, nv := range entry.Response.Headers {
 			assert.NotEqual(t, "Set-Cookie", nv.Name)
+			assert.NotEqual(t, "Www-Authenticate", nv.Name)
 		}
 	})
 
-	t.Run("cookies captured when WithCaptureCookies(true)", func(t *testing.T) {
-		m, w, path := newMiddleware(t, har.WithCaptureCookies(true))
+	t.Run("secure headers captured when WithCaptureSecureHeaders(true)", func(t *testing.T) {
+		m, w, path := newMiddleware(t, har.WithCaptureSecureHeaders(true))
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
@@ -170,6 +176,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		req := makeRequest(http.MethodGet, "http://example.com/")
 		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
+		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
 		m.Wrap(next).ServeHTTP(makeWriter(rec), req)
@@ -182,6 +189,18 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		assert.NotEmpty(t, entry.Request.Cookies)
 		assert.NotEmpty(t, entry.Response.Cookies)
+
+		var hasAuth bool
+
+		for _, nv := range entry.Request.Headers {
+			if nv.Name == "Authorization" {
+				hasAuth = true
+
+				break
+			}
+		}
+
+		assert.True(t, hasAuth, "Authorization header must be present when captureSecureHeaders is true")
 	})
 
 	t.Run("gzip response body is decoded in HAR", func(t *testing.T) {

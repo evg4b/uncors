@@ -4,8 +4,8 @@ package config
 // When File is non-empty, all requests/responses passing through the proxy
 // for this mapping will be recorded to the specified HAR file.
 type HARConfig struct {
-	File           string `mapstructure:"file"`
-	CaptureCookies bool   `mapstructure:"capture-cookies"`
+	File                  string `mapstructure:"file"`
+	CaptureSecureHeaders  bool   `mapstructure:"capture-secure-headers"`
 }
 
 func (h HARConfig) Enabled() bool {
@@ -14,7 +14,7 @@ func (h HARConfig) Enabled() bool {
 
 func (h HARConfig) Clone() HARConfig {
 	return HARConfig{
-		File:           h.File,
-		CaptureCookies: h.CaptureCookies,
+		File:                 h.File,
+		CaptureSecureHeaders: h.CaptureSecureHeaders,
 	}
 }
