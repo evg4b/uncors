@@ -12,6 +12,9 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
+// nanosecondsPerMillisecond is used to convert nanoseconds to milliseconds.
+const nanosecondsPerMillisecond = 1e6
+
 // secureHeaderNames is the set of HTTP headers that may carry credentials or
 // session data. They are stripped from HAR entries by default and are only
 // included when captureSecureHeaders is true.
@@ -46,48 +49,48 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 // Wrap returns a Handler that records the transaction before passing
 // control to next.
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) {
 		start := time.Now()
 
-		cw := newCaptureWriter(w)
+		capture := newCaptureWriter(w)
 
 		var reqBodySize int64
 
-		if r.Body != nil && r.Body != http.NoBody {
+		if req.Body != nil && req.Body != http.NoBody {
 			var buf strings.Builder
 
-			n, _ := io.Copy(&buf, r.Body)
+			n, _ := io.Copy(&buf, req.Body)
 			reqBodySize = n
-			_ = r.Body.Close()
+			_ = req.Body.Close()
 
 			// Restore body so the next handler can read it.
-			r.Body = io.NopCloser(strings.NewReader(buf.String()))
+			req.Body = io.NopCloser(strings.NewReader(buf.String()))
 		}
 
-		next.ServeHTTP(cw, r)
+		next.ServeHTTP(capture, req)
 
 		elapsed := time.Since(start)
 
-		entry := m.buildEntry(r, cw, start, elapsed, reqBodySize)
+		entry := m.buildEntry(req, capture, start, elapsed, reqBodySize)
 
 		m.writer.AddEntry(entry)
 	})
 }
 
 func (m *Middleware) buildEntry(
-	r *http.Request,
-	cw *captureWriter,
+	req *http.Request,
+	capture *captureWriter,
 	start time.Time,
 	elapsed time.Duration,
 	reqBodySize int64,
 ) Entry {
-	elapsedMS := float64(elapsed.Nanoseconds()) / 1e6
+	elapsedMS := float64(elapsed.Nanoseconds()) / nanosecondsPerMillisecond
 
 	return Entry{
 		StartedDateTime: start,
 		Time:            elapsedMS,
-		Request:         m.buildRequest(r, reqBodySize),
-		Response:        m.buildResponse(cw),
+		Request:         m.buildRequest(req, reqBodySize),
+		Response:        m.buildResponse(capture),
 		Timings: Timings{
 			Send:    0,
 			Wait:    elapsedMS,
@@ -96,34 +99,34 @@ func (m *Middleware) buildEntry(
 	}
 }
 
-func (m *Middleware) buildRequest(r *http.Request, bodySize int64) Request {
+func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
 	scheme := "http"
-	if r.TLS != nil {
+	if req.TLS != nil {
 		scheme = "https"
 	}
 
-	fullURL := fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+	fullURL := fmt.Sprintf("%s://%s%s", scheme, req.Host, req.RequestURI)
 
 	var cookies []Cookie
 
 	if m.captureSecureHeaders {
-		cookies = cookiesToHAR(r.Cookies())
+		cookies = cookiesToHAR(req.Cookies())
 	}
 
 	return Request{
-		Method:      r.Method,
+		Method:      req.Method,
 		URL:         fullURL,
-		HTTPVersion: r.Proto,
-		Headers:     m.headersToNameValues(r.Header),
-		QueryString: queryToNameValues(r.URL.Query()),
+		HTTPVersion: req.Proto,
+		Headers:     m.headersToNameValues(req.Header),
+		QueryString: queryToNameValues(req.URL.Query()),
 		Cookies:     cookies,
 		HeadersSize: -1,
 		BodySize:    bodySize,
 	}
 }
 
-func (m *Middleware) buildResponse(cw *captureWriter) Response {
-	mimeType := cw.Header().Get("Content-Type")
+func (m *Middleware) buildResponse(capture *captureWriter) Response {
+	mimeType := capture.Header().Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
@@ -131,20 +134,20 @@ func (m *Middleware) buildResponse(cw *captureWriter) Response {
 	var cookies []Cookie
 
 	if m.captureSecureHeaders {
-		cookies = cookiesToHAR(extractResponseCookies(cw.Header()))
+		cookies = cookiesToHAR(extractResponseCookies(capture.Header()))
 	}
 
-	rawBody := cw.body()
-	content := buildContent(rawBody, cw.Header().Get("Content-Encoding"), mimeType)
+	rawBody := capture.body()
+	content := buildContent(rawBody, capture.Header().Get("Content-Encoding"), mimeType)
 
 	return Response{
-		Status:      cw.code,
-		StatusText:  http.StatusText(cw.code),
+		Status:      capture.code,
+		StatusText:  http.StatusText(capture.code),
 		HTTPVersion: "HTTP/1.1",
-		Headers:     m.headersToNameValues(cw.Header()),
+		Headers:     m.headersToNameValues(capture.Header()),
 		Cookies:     cookies,
 		Content:     content,
-		RedirectURL: cw.Header().Get("Location"),
+		RedirectURL: capture.Header().Get("Location"),
 		HeadersSize: -1,
 		BodySize:    int64(len(rawBody)),
 	}

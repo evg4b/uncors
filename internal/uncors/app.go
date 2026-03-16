@@ -33,18 +33,6 @@ type Uncors struct {
 	closers          []io.Closer
 }
 
-func (app *Uncors) registerCloser(c io.Closer) {
-	app.closers = append(app.closers, c)
-}
-
-func (app *Uncors) closeAll() {
-	for _, c := range app.closers {
-		_ = c.Close()
-	}
-
-	app.closers = nil
-}
-
 func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
@@ -124,6 +112,18 @@ func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
 	})
 
 	return app.cacheStorage
+}
+
+func (app *Uncors) registerCloser(c io.Closer) {
+	app.closers = append(app.closers, c)
+}
+
+func (app *Uncors) closeAll() {
+	for _, c := range app.closers {
+		_ = c.Close()
+	}
+
+	app.closers = nil
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {

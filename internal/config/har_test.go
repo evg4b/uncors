@@ -46,19 +46,20 @@ func TestHARConfigHookFunc(t *testing.T) {
 
 func TestHARShorthandInMapping(t *testing.T) {
 	const configFile = "config.yaml"
+
 	const yaml = `
 from: http://localhost:3000
 to: https://api.example.com
 har: ./recordings/api.har
 `
 
-	v := viper.New()
-	v.SetFs(testutils.FsFromMap(t, map[string]string{configFile: yaml}))
-	v.SetConfigFile(configFile)
-	require.NoError(t, v.ReadInConfig())
+	viperCfg := viper.New()
+	viperCfg.SetFs(testutils.FsFromMap(t, map[string]string{configFile: yaml}))
+	viperCfg.SetConfigFile(configFile)
+	require.NoError(t, viperCfg.ReadInConfig())
 
 	actual := config.Mapping{}
-	require.NoError(t, v.Unmarshal(&actual, viper.DecodeHook(
+	require.NoError(t, viperCfg.Unmarshal(&actual, viper.DecodeHook(
 		config.URLMappingHookFunc(),
 	)))
 

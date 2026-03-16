@@ -31,7 +31,7 @@ var harConfigType = reflect.TypeFor[HARConfig]()
 // to be specified as a plain string in YAML/config files.
 //
 // Short form:  har: ./recordings/api.har
-// Full form:   har: { file: ./recordings/api.har, capture-secure-headers: true }
+// Full form:   har: { file: ./recordings/api.har, capture-secure-headers: true }.
 func HARConfigHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
 		if t != harConfigType || f.Kind() != reflect.String {
