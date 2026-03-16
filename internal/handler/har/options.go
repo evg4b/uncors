@@ -10,11 +10,18 @@ func WithWriter(w *Writer) MiddlewareOption {
 	}
 }
 
-// WithCaptureCookies controls whether Cookie request headers and Set-Cookie
-// response headers are included in the HAR output. Defaults to false to
-// avoid accidentally persisting sensitive session data.
-func WithCaptureCookies(capture bool) MiddlewareOption {
+// WithCaptureSecureHeaders controls whether security-sensitive HTTP headers
+// are included in the HAR output. Defaults to false to prevent credentials
+// from being persisted to disk.
+//
+// Filtered headers when false:
+//   - Cookie / Set-Cookie  (session identifiers)
+//   - Authorization        (Bearer tokens, Basic credentials)
+//   - WWW-Authenticate     (server auth challenges)
+//   - Proxy-Authorization  (proxy credentials)
+//   - Proxy-Authenticate   (proxy auth challenges)
+func WithCaptureSecureHeaders(capture bool) MiddlewareOption {
 	return func(m *Middleware) {
-		m.captureCookies = capture
+		m.captureSecureHeaders = capture
 	}
 }

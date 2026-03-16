@@ -12,18 +12,30 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
-// cookieHeaderNames are headers that carry cookie data.
-// They are excluded from header lists when captureCookies is false.
-var cookieHeaderNames = map[string]bool{
-	"Cookie":     true,
-	"Set-Cookie": true,
+// secureHeaderNames is the set of HTTP headers that may carry credentials or
+// session data. They are stripped from HAR entries by default and are only
+// included when captureSecureHeaders is true.
+//
+// The list covers RFC-defined authentication and cookie headers:
+//   - Cookie / Set-Cookie  — session identifiers
+//   - Authorization        — Bearer tokens, Basic credentials
+//   - WWW-Authenticate     — server auth challenges (reveals scheme/realm)
+//   - Proxy-Authorization  — proxy credentials
+//   - Proxy-Authenticate   — proxy auth challenges
+var secureHeaderNames = map[string]bool{
+	"Cookie":              true,
+	"Set-Cookie":          true,
+	"Authorization":       true,
+	"Www-Authenticate":    true, // Go canonicalises header names
+	"Proxy-Authorization": true,
+	"Proxy-Authenticate":  true,
 }
 
 // Middleware captures every request/response pair and enqueues a HAR
 // entry to the async Writer. The handler chain is never blocked.
 type Middleware struct {
-	writer         *Writer
-	captureCookies bool
+	writer               *Writer
+	captureSecureHeaders bool
 }
 
 // NewMiddleware creates a Middleware backed by the given Writer.
@@ -94,7 +106,7 @@ func (m *Middleware) buildRequest(r *http.Request, bodySize int64) Request {
 
 	var cookies []Cookie
 
-	if m.captureCookies {
+	if m.captureSecureHeaders {
 		cookies = cookiesToHAR(r.Cookies())
 	}
 
@@ -118,7 +130,7 @@ func (m *Middleware) buildResponse(cw *captureWriter) Response {
 
 	var cookies []Cookie
 
-	if m.captureCookies {
+	if m.captureSecureHeaders {
 		cookies = cookiesToHAR(extractResponseCookies(cw.Header()))
 	}
 
@@ -139,12 +151,13 @@ func (m *Middleware) buildResponse(cw *captureWriter) Response {
 }
 
 // headersToNameValues converts an http.Header to a slice of NameValue pairs.
-// When captureCookies is false, Cookie and Set-Cookie headers are excluded.
+// When captureSecureHeaders is false, all headers in secureHeaderNames are
+// excluded to avoid persisting credentials in the HAR file.
 func (m *Middleware) headersToNameValues(h http.Header) []NameValue {
 	result := make([]NameValue, 0, len(h))
 
 	for name, values := range h {
-		if !m.captureCookies && cookieHeaderNames[name] {
+		if !m.captureSecureHeaders && secureHeaderNames[name] {
 			continue
 		}
 
