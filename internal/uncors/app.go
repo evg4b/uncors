@@ -3,6 +3,7 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -29,6 +30,19 @@ type Uncors struct {
 
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
+	closers          []io.Closer
+}
+
+func (app *Uncors) registerCloser(c io.Closer) {
+	app.closers = append(app.closers, c)
+}
+
+func (app *Uncors) closeAll() {
+	for _, c := range app.closers {
+		_ = c.Close()
+	}
+
+	app.closers = nil
 }
 
 func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
@@ -63,6 +77,11 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+	app.output.Info("Restarting server....")
+
+	previous := app.closers
+	app.closers = nil
+
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
 		return err
@@ -71,6 +90,10 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	err = app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
+	}
+
+	for _, c := range previous {
+		_ = c.Close()
 	}
 
 	app.output.InfoBox(
@@ -82,6 +105,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *Uncors) Close() error {
+	app.closeAll()
+
 	return app.server.Close()
 }
 

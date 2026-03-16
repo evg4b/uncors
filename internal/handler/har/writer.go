@@ -56,11 +56,14 @@ func (w *Writer) AddEntry(entry Entry) {
 
 // Close flushes all pending entries to disk and stops the background goroutine.
 // Calling Close more than once is safe; subsequent calls are no-ops.
-func (w *Writer) Close() {
+// It implements io.Closer.
+func (w *Writer) Close() error {
 	w.once.Do(func() {
 		close(w.done)
 		w.wg.Wait()
 	})
+
+	return nil
 }
 
 // run is the single goroutine responsible for accumulating entries and
