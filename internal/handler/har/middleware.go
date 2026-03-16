@@ -12,10 +12,18 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
+// cookieHeaderNames are headers that carry cookie data.
+// They are excluded from header lists when captureCookies is false.
+var cookieHeaderNames = map[string]bool{
+	"Cookie":     true,
+	"Set-Cookie": true,
+}
+
 // Middleware captures every request/response pair and enqueues a HAR
 // entry to the async Writer. The handler chain is never blocked.
 type Middleware struct {
-	writer *Writer
+	writer         *Writer
+	captureCookies bool
 }
 
 // NewMiddleware creates a Middleware backed by the given Writer.
@@ -63,13 +71,11 @@ func (m *Middleware) buildEntry(
 ) Entry {
 	elapsedMS := float64(elapsed.Nanoseconds()) / 1e6
 
-	respBody := cw.body()
-
 	return Entry{
 		StartedDateTime: start,
 		Time:            elapsedMS,
 		Request:         m.buildRequest(r, reqBodySize),
-		Response:        m.buildResponse(cw, respBody),
+		Response:        m.buildResponse(cw),
 		Timings: Timings{
 			Send:    0,
 			Wait:    elapsedMS,
@@ -78,7 +84,7 @@ func (m *Middleware) buildEntry(
 	}
 }
 
-func (*Middleware) buildRequest(r *http.Request, bodySize int64) Request {
+func (m *Middleware) buildRequest(r *http.Request, bodySize int64) Request {
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
@@ -86,45 +92,62 @@ func (*Middleware) buildRequest(r *http.Request, bodySize int64) Request {
 
 	fullURL := fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
 
+	var cookies []Cookie
+
+	if m.captureCookies {
+		cookies = cookiesToHAR(r.Cookies())
+	}
+
 	return Request{
 		Method:      r.Method,
 		URL:         fullURL,
 		HTTPVersion: r.Proto,
-		Headers:     headersToNameValues(r.Header),
+		Headers:     m.headersToNameValues(r.Header),
 		QueryString: queryToNameValues(r.URL.Query()),
-		Cookies:     cookiesToHAR(r.Cookies()),
+		Cookies:     cookies,
 		HeadersSize: -1,
 		BodySize:    bodySize,
 	}
 }
 
-func (*Middleware) buildResponse(cw *captureWriter, body []byte) Response {
+func (m *Middleware) buildResponse(cw *captureWriter) Response {
 	mimeType := cw.Header().Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
 
+	var cookies []Cookie
+
+	if m.captureCookies {
+		cookies = cookiesToHAR(extractResponseCookies(cw.Header()))
+	}
+
+	rawBody := cw.body()
+	content := buildContent(rawBody, cw.Header().Get("Content-Encoding"), mimeType)
+
 	return Response{
 		Status:      cw.code,
 		StatusText:  http.StatusText(cw.code),
 		HTTPVersion: "HTTP/1.1",
-		Headers:     headersToNameValues(cw.Header()),
-		Cookies:     cookiesToHAR(extractResponseCookies(cw.Header())),
-		Content: Content{
-			Size:     int64(len(body)),
-			MimeType: mimeType,
-			Text:     string(body),
-		},
+		Headers:     m.headersToNameValues(cw.Header()),
+		Cookies:     cookies,
+		Content:     content,
 		RedirectURL: cw.Header().Get("Location"),
 		HeadersSize: -1,
-		BodySize:    int64(len(body)),
+		BodySize:    int64(len(rawBody)),
 	}
 }
 
-func headersToNameValues(h http.Header) []NameValue {
+// headersToNameValues converts an http.Header to a slice of NameValue pairs.
+// When captureCookies is false, Cookie and Set-Cookie headers are excluded.
+func (m *Middleware) headersToNameValues(h http.Header) []NameValue {
 	result := make([]NameValue, 0, len(h))
 
 	for name, values := range h {
+		if !m.captureCookies && cookieHeaderNames[name] {
+			continue
+		}
+
 		for _, v := range values {
 			result = append(result, NameValue{Name: name, Value: v})
 		}
