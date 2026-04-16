@@ -18,17 +18,11 @@ import (
 	"github.com/spf13/afero"
 )
 
-type appCache struct {
-	staticHandlerFactory handler.RequestHandlerOption
-	mockHandlerFactory   handler.RequestHandlerOption
-	scriptHandlerFactory handler.RequestHandlerOption
-}
-
 func (app *Uncors) buildHandlerForMappings(
 	uncorsConfig *config.UncorsConfig,
 	mappings config.Mappings,
 ) *handler.RequestHandler {
-	portHandler := handler.NewUncorsRequestHandler(
+	return handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
@@ -45,11 +39,11 @@ func (app *Uncors) buildHandlerForMappings(
 		handler.WithRewriteHandlerFactory(func(rewriting config.RewritingOption) contracts.Middleware {
 			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
 		}),
-		handler.WithOptionsHandlerFactory(func(config config.OptionsHandling) contracts.Middleware {
+		handler.WithOptionsHandlerFactory(func(cfg config.OptionsHandling) contracts.Middleware {
 			return options.NewMiddleware(
 				options.WithLogger(NewOptionsLogger(app.logger)),
-				options.WithHeaders(config.Headers),
-				options.WithCode(config.Code),
+				options.WithHeaders(cfg.Headers),
+				options.WithCode(cfg.Code),
 			)
 		}),
 		handler.WithProxyHandlerFactory(func() contracts.Handler {
@@ -63,58 +57,28 @@ func (app *Uncors) buildHandlerForMappings(
 				proxy.WithRewriteLogger(NewRewriteLogger(app.logger)),
 			)
 		}),
-		app.getWithStaticHandlerFactory(),
-		app.getMockHandlerFactory(),
-		app.getScriptHandlerFactory(),
-	)
-
-	return portHandler
-}
-
-func (app *Uncors) getMockHandlerFactory() handler.RequestHandlerOption {
-	if app.cache.mockHandlerFactory == nil {
-		factoryFunc := func(response config.Response) contracts.Handler {
-			return mock.NewMockHandler(
-				mock.WithLogger(NewMockLogger(app.logger)),
-				mock.WithResponse(response),
-				mock.WithFileSystem(app.fs),
-				mock.WithAfter(time.After),
-			)
-		}
-		app.cache.mockHandlerFactory = handler.WithMockHandlerFactory(factoryFunc)
-	}
-
-	return app.cache.mockHandlerFactory
-}
-
-func (app *Uncors) getWithStaticHandlerFactory() handler.RequestHandlerOption {
-	if app.cache.staticHandlerFactory == nil {
-		factoryFunc := func(path string, dir config.StaticDirectory) contracts.Middleware {
+		handler.WithStaticHandlerFactory(func(path string, dir config.StaticDirectory) contracts.Middleware {
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
 				static.WithLogger(NewStaticLogger(app.logger)),
 				static.WithPrefix(path),
 			)
-		}
-
-		app.cache.staticHandlerFactory = handler.WithStaticHandlerFactory(factoryFunc)
-	}
-
-	return app.cache.staticHandlerFactory
-}
-
-func (app *Uncors) getScriptHandlerFactory() handler.RequestHandlerOption {
-	if app.cache.scriptHandlerFactory == nil {
-		factoryFunc := func(s config.Script) contracts.Handler {
+		}),
+		handler.WithMockHandlerFactory(func(response config.Response) contracts.Handler {
+			return mock.NewMockHandler(
+				mock.WithLogger(NewMockLogger(app.logger)),
+				mock.WithResponse(response),
+				mock.WithFileSystem(app.fs),
+				mock.WithAfter(time.After),
+			)
+		}),
+		handler.WithScriptHandlerFactory(func(s config.Script) contracts.Handler {
 			return script.NewHandler(
 				script.WithLogger(NewScriptLogger(app.logger)),
 				script.WithScript(s),
 				script.WithFileSystem(app.fs),
 			)
-		}
-		app.cache.scriptHandlerFactory = handler.WithScriptHandlerFactory(factoryFunc)
-	}
-
-	return app.cache.scriptHandlerFactory
+		}),
+	)
 }

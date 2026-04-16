@@ -20,7 +20,6 @@ const baseAddress = "127.0.0.1"
 type Uncors struct {
 	fs      afero.Fs
 	version string
-	cache   appCache
 	logger  *log.Logger
 	server  *server.Server
 }
