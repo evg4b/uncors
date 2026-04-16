@@ -25,14 +25,5 @@ func (ps *PortListener) Listen(ctx context.Context) error {
 		listener = tls.NewListener(listener, ps.target.TLSConfig)
 	}
 
-	err = ps.Serve(listener)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ps *PortListener) Shutdown(ctx context.Context) error {
-	return ps.Server.Shutdown(ctx)
+	return ps.Serve(listener)
 }
