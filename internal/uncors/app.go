@@ -6,7 +6,10 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
@@ -22,6 +25,9 @@ type Uncors struct {
 	version string
 	logger  *log.Logger
 	server  *server.Server
+
+	cacheStorageOnce sync.Once
+	cacheStorage     contracts.Cache
 }
 
 func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
@@ -31,6 +37,14 @@ func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
 		logger:  logger,
 		server:  server.New(),
 	}
+}
+
+func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
+	app.cacheStorageOnce.Do(func() {
+		app.cacheStorage = cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
+	})
+
+	return app.cacheStorage
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {

@@ -1,7 +1,6 @@
 package uncors
 
 import (
-	"sync"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -25,19 +24,6 @@ func (app *Uncors) buildHandlerForMappings(
 ) *handler.RequestHandler {
 	cacheConfig := uncorsConfig.CacheConfig
 
-	// cacheStorage is shared across all mappings — created once on first cache hit.
-	var (
-		cacheStorageOnce sync.Once
-		cacheStorage     contracts.Cache
-	)
-	getCacheStorage := func() contracts.Cache {
-		cacheStorageOnce.Do(func() {
-			cacheStorage = cache.NewRistrettoCache(cacheConfig.MaxSize, cacheConfig.ExpirationTime)
-		})
-
-		return cacheStorage
-	}
-
 	return handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
 		handler.WithProxyHandler(contracts.LazyHandler(func() contracts.Handler {
@@ -53,7 +39,7 @@ func (app *Uncors) buildHandlerForMappings(
 				return cache.NewMiddleware(
 					cache.WithLogger(NewCacheLogger(app.logger)),
 					cache.WithMethods(cacheConfig.Methods),
-					cache.WithCacheStorage(getCacheStorage()),
+					cache.WithCacheStorage(app.getCacheStorage(cacheConfig)),
 					cache.WithGlobs(globs),
 				)
 			})
