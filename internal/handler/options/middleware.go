@@ -42,3 +42,23 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
 
 	tui.PrintResponse(m.logger, req, statucCode)
 }
+
+type MiddlewareOption = func(*Middleware)
+
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(m *Middleware) {
+		m.logger = logger
+	}
+}
+
+func WithHeaders(headers map[string]string) MiddlewareOption {
+	return func(m *Middleware) {
+		m.headers = headers
+	}
+}
+
+func WithCode(code int) MiddlewareOption {
+	return func(m *Middleware) {
+		m.code = code
+	}
+}

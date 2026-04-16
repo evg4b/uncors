@@ -133,3 +133,29 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 
 	return false
 }
+
+type HandlerOption = func(*Handler)
+
+func WithLogger(logger contracts.Logger) HandlerOption {
+	return func(h *Handler) {
+		h.logger = logger
+	}
+}
+
+func WithResponse(response config.Response) HandlerOption {
+	return func(h *Handler) {
+		h.response = response
+	}
+}
+
+func WithFileSystem(fs afero.Fs) HandlerOption {
+	return func(h *Handler) {
+		h.fs = fs
+	}
+}
+
+func WithAfter(after func(duration time.Duration) <-chan time.Time) HandlerOption {
+	return func(h *Handler) {
+		h.after = after
+	}
+}

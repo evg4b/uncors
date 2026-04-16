@@ -113,3 +113,29 @@ func (h *Middleware) openIndexFile() (afero.File, error) {
 
 	return file, nil
 }
+
+type MiddlewareOption = func(*Middleware)
+
+func WithFileSystem(fs afero.Fs) MiddlewareOption {
+	return func(h *Middleware) {
+		h.fs = fs
+	}
+}
+
+func WithIndex(index string) MiddlewareOption {
+	return func(h *Middleware) {
+		h.index = index
+	}
+}
+
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(h *Middleware) {
+		h.logger = logger
+	}
+}
+
+func WithPrefix(prefix string) MiddlewareOption {
+	return func(h *Middleware) {
+		h.prefix = prefix
+	}
+}

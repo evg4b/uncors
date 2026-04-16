@@ -48,3 +48,11 @@ func replace(s string, data map[string]string) string {
 
 	return s
 }
+
+type MiddlewareOption = func(*Middleware)
+
+func WithRewritingOptions(rewrite config.RewritingOption) MiddlewareOption {
+	return func(h *Middleware) {
+		h.rewrite = rewrite
+	}
+}
