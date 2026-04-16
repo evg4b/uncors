@@ -62,7 +62,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
 		handler.makeScriptRoutes(router, mapping.Scripts)
-		handler.makeRewritedRoutes(router, mapping.Rewrites, defaultHandler)
+		handler.makeRewrittenRoutes(router, mapping.Rewrites, defaultHandler)
 
 		setDefaultHandler(router, defaultHandler)
 	}

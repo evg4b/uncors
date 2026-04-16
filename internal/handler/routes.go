@@ -65,7 +65,7 @@ func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scr
 	}
 }
 
-func (h *RequestHandler) makeRewritedRoutes(
+func (h *RequestHandler) makeRewrittenRoutes(
 	router *mux.Router,
 	rewrites config.RewriteOptions,
 	next contracts.Handler,

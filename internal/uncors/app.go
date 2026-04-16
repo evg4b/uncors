@@ -105,7 +105,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
 			Handler:   app.buildHandlerForMappings(uncorsConfig, group.Mappings),
-			TLSConfgi: tlsConfig,
+			TLSConfig: tlsConfig,
 		})
 	}
 

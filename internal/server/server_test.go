@@ -107,7 +107,7 @@ func TestServer(t *testing.T) {
 			return server.Target{
 				Address: hosts.Loopback.Port(port),
 				Handler: handler,
-				TLSConfgi: &tls.Config{
+				TLSConfig: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					Certificates: []tls.Certificate{
 						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),
@@ -160,7 +160,7 @@ func TestServer(t *testing.T) {
 			return server.Target{
 				Address: hosts.Loopback.Port(port),
 				Handler: handler,
-				TLSConfgi: &tls.Config{
+				TLSConfig: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					Certificates: []tls.Certificate{
 						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),

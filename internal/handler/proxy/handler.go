@@ -41,7 +41,7 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	targetReplacer, sourceReplacer, err := h.careteReplacers(req)
+	targetReplacer, sourceReplacer, err := h.createReplacers(req)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (h *Handler) makeUncorsResponse(
 	return nil
 }
 
-func (h *Handler) careteReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
+func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
 	rewriteHost, err := rewrite.GetRewriteHost(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
