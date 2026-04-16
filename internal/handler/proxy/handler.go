@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -10,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/go-http-utils/headers"
 )
 
 type Handler struct {
@@ -59,6 +61,63 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer, req)
 	if err != nil {
 		return fmt.Errorf("failed to make uncors response: %w", err)
+	}
+
+	return nil
+}
+
+func (h *Handler) makeOriginalRequest(
+	req *http.Request,
+	replacer *urlreplacer.Replacer,
+) (*http.Request, error) {
+	url, err := replacer.Replace(req.URL.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to replace URL: %w", err)
+	}
+
+	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request to original server: %w", err)
+	}
+
+	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{
+		headers.Origin:  replacer.Replace,
+		headers.Referer: replacer.Replace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	copyCookiesToTarget(req, replacer, originalRequest)
+
+	return originalRequest, nil
+}
+
+func (h *Handler) makeUncorsResponse(
+	original *http.Response,
+	target http.ResponseWriter,
+	replacer *urlreplacer.Replacer,
+	req *http.Request,
+) error {
+	copyCookiesToSource(original, replacer, target)
+
+	err := copyHeaders(original.Header, target.Header(), modificationsMap{
+		headers.Location: func(s string) (string, error) { //nolint:unparam
+			return replacer.ReplaceSoft(s), nil
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	origin := req.Header.Get(headers.Origin)
+	infra.WriteCorsHeaders(target.Header(), origin)
+
+	target.WriteHeader(original.StatusCode)
+
+	_, err = io.Copy(target, original.Body)
+	if err != nil {
+		return fmt.Errorf("failed to copy body to response: %w", err)
 	}
 
 	return nil

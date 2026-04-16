@@ -2,7 +2,9 @@ package mock
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -10,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 )
 
@@ -67,6 +70,39 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 	default:
 		return ErrResponseIsNotDefined
 	}
+
+	return nil
+}
+
+func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
+	response := h.response
+
+	header := writer.Header()
+	if len(header.Get(headers.ContentType)) == 0 {
+		contentType := http.DetectContentType([]byte(response.Raw))
+		header.Set(headers.ContentType, contentType)
+	}
+
+	writer.WriteHeader(helpers.NormaliseStatusCode(response.Code))
+	_, err := fmt.Fprint(writer, response.Raw)
+
+	return err
+}
+
+func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Request) error {
+	fileName := h.response.File
+
+	file, err := h.fs.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", fileName, err)
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to receive file information: %w", err)
+	}
+
+	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
 	return nil
 }
