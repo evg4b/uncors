@@ -47,7 +47,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 	m.logger.Debugf("extracted %s from request", cacheKey)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.logger.Debugf("extracted %s from request", cacheKey)
+		m.logger.Debugf("cache hit for key %s", cacheKey)
 
 		m.writeCachedResponse(writer, cachedResponse)
 		tui.PrintResponse(m.logger, request, writer.StatusCode())
