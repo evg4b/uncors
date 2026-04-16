@@ -16,7 +16,6 @@ import (
 
 type (
 	CacheMiddlewareFactory   = func(globs config.CacheGlobs) contracts.Middleware
-	ProxyHandlerFactory      = func() contracts.Handler
 	StaticMiddlewareFactory  = func(path string, dir config.StaticDirectory) contracts.Middleware
 	MockHandlerFactory       = func(response config.Response) contracts.Handler
 	ScriptHandlerFactory     = func(script config.Script) contracts.Handler
@@ -27,12 +26,11 @@ type (
 type RequestHandler struct {
 	*mux.Router
 
-	logger   contracts.Logger
 	mappings config.Mappings
 
 	cacheMiddlewareFactory   CacheMiddlewareFactory
 	staticMiddlewareFactory  StaticMiddlewareFactory
-	proxyHandlerFactory      ProxyHandlerFactory
+	proxyHandler             contracts.Handler
 	mockHandlerFactory       MockHandlerFactory
 	scriptHandlerFactory     ScriptHandlerFactory
 	rewriteMiddlewareFactory RewriteMiddlewareFactory
@@ -45,8 +43,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 	handler := helpers.ApplyOptions(&RequestHandler{Router: mux.NewRouter(), mappings: config.Mappings{}}, options)
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
-
-	proxyHandler := handler.proxyHandlerFactory()
+	helpers.AssertIsDefined(handler.proxyHandler, "Proxy handler is not set")
 
 	for _, mapping := range handler.mappings {
 		host, _, err := mapping.GetFromHostPort()
@@ -56,7 +53,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		router := handler.Host(replaceWildcards(host)).Subrouter()
 
-		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, proxyHandler)
+		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, handler.proxyHandler)
 		defaultHandler = handler.wrapCacheMiddleware(mapping.Cache, defaultHandler)
 
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)
@@ -103,12 +100,6 @@ func replaceWildcards(host string) string {
 
 type RequestHandlerOption = func(*RequestHandler)
 
-func WithLogger(logger contracts.Logger) RequestHandlerOption {
-	return func(h *RequestHandler) {
-		h.logger = logger
-	}
-}
-
 func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.mappings = mappings
@@ -121,9 +112,9 @@ func WithCacheMiddlewareFactory(factory CacheMiddlewareFactory) RequestHandlerOp
 	}
 }
 
-func WithProxyHandlerFactory(factory ProxyHandlerFactory) RequestHandlerOption {
+func WithProxyHandler(proxyHandler contracts.Handler) RequestHandlerOption {
 	return func(h *RequestHandler) {
-		h.proxyHandlerFactory = factory
+		h.proxyHandler = proxyHandler
 	}
 }
 

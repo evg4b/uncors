@@ -63,7 +63,7 @@ func proxyFactory(
 	t *testing.T,
 	replacerFactory urlreplacer.ReplacerFactory,
 	httpClient contracts.HTTPClient,
-) handler.ProxyHandlerFactory {
+) contracts.Handler {
 	if replacerFactory == nil {
 		replacerFactory = mocks.NewReplacerFactoryMock(t)
 	}
@@ -72,14 +72,12 @@ func proxyFactory(
 		httpClient = mocks.NewHTTPClientMock(t)
 	}
 
-	return func() contracts.Handler {
-		return proxy.NewProxyHandler(
-			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithHTTPClient(httpClient),
-			proxy.WithProxyLogger(log.New(io.Discard)),
-			proxy.WithRewriteLogger(log.New(io.Discard)),
-		)
-	}
+	return proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(replacerFactory),
+		proxy.WithHTTPClient(httpClient),
+		proxy.WithProxyLogger(log.New(io.Discard)),
+		proxy.WithRewriteLogger(log.New(io.Discard)),
+	)
 }
 
 func optionsFactory() handler.OptionsMiddlewareFactory {
@@ -201,10 +199,9 @@ func TestUncorsRequestHandler(t *testing.T) {
 	})
 
 	uncorsHandler := handler.NewUncorsRequestHandler(
-		handler.WithLogger(mocks.NewLoggerMock(t)),
 		handler.WithMappings(mappings),
 		handler.WithCacheMiddlewareFactory(cacheFactory()),
-		handler.WithProxyHandlerFactory(proxyFactory(t, factory, httpMock)),
+		handler.WithProxyHandler(proxyFactory(t, factory, httpMock)),
 		handler.WithStaticHandlerFactory(staticFactory(fs)),
 		handler.WithMockHandlerFactory(mockFactory(fs)),
 		handler.WithOptionsHandlerFactory(optionsFactory()),
@@ -376,13 +373,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 func TestMockMiddleware(t *testing.T) {
 	log.SetOutput(io.Discard)
-	logger := log.New(io.Discard)
 
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			requestHandler := handler.NewUncorsRequestHandler(
-				handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
-				handler.WithLogger(logger),
+				handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 				handler.WithMappings(config.Mappings{
 					{
 						From: "*",
@@ -447,10 +442,9 @@ func TestMockMiddleware(t *testing.T) {
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 			middleware := handler.NewUncorsRequestHandler(
-				handler.WithLogger(logger),
 				handler.WithMappings(mappings),
 				handler.WithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+				handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
 							Request:    req,
@@ -554,10 +548,9 @@ func TestMockMiddleware(t *testing.T) {
 		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(mappings),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+			handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    req,
@@ -628,7 +621,6 @@ func TestMockMiddleware(t *testing.T) {
 
 	t.Run("query handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
@@ -668,7 +660,7 @@ func TestMockMiddleware(t *testing.T) {
 				}},
 			}),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
+			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
 			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
@@ -732,7 +724,6 @@ func TestMockMiddleware(t *testing.T) {
 
 	t.Run("header handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
@@ -772,7 +763,7 @@ func TestMockMiddleware(t *testing.T) {
 				}},
 			}),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
+			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
 			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)

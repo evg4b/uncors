@@ -24,7 +24,6 @@ func (app *Uncors) buildHandlerForMappings(
 ) *handler.RequestHandler {
 	return handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
-		handler.WithLogger(NewMockLogger(app.logger)),
 		handler.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			cacheConfig := uncorsConfig.CacheConfig
 			cacheStorage := cache.NewRistrettoCache(cacheConfig.MaxSize, cacheConfig.ExpirationTime)
@@ -46,7 +45,7 @@ func (app *Uncors) buildHandlerForMappings(
 				options.WithCode(cfg.Code),
 			)
 		}),
-		handler.WithProxyHandlerFactory(func() contracts.Handler {
+		handler.WithProxyHandler(func() contracts.Handler {
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 			httpClient := infra.MakeHTTPClient(uncorsConfig.Proxy)
 
@@ -56,7 +55,7 @@ func (app *Uncors) buildHandlerForMappings(
 				proxy.WithProxyLogger(NewProxyLogger(app.logger)),
 				proxy.WithRewriteLogger(NewRewriteLogger(app.logger)),
 			)
-		}),
+		}()),
 		handler.WithStaticHandlerFactory(func(path string, dir config.StaticDirectory) contracts.Middleware {
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
