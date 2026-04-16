@@ -19,7 +19,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 		fmt.Fprint(w, expectedBody)
 	})
 
-	request := httptest.NewRequest(http.MethodGet, "/data", nil)
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
 	handler := contracts.CastToHTTPHandler(handlerStub)
 
 	t.Run("cast correctly", func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestHandlerFunc(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	responseWriter := contracts.WrapResponseWriter(recorder)
-	request := httptest.NewRequest(http.MethodGet, "/data", nil)
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
 
 	uncorsHandler.ServeHTTP(responseWriter, request)
 

@@ -48,7 +48,7 @@ func TestValidateHost(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
 		runErr(t, "empty", "field must not be empty",
 			func(e *validators.Errors) { validators.ValidateHost(field, "", e) })
-		runErr(t, "too long", fmt.Sprintf("field must not be longer than 255 characters, but got 256"),
+		runErr(t, "too long", "field must not be longer than 255 characters, but got 256",
 			func(e *validators.Errors) { validators.ValidateHost(field, strings.Repeat("a", 256), e) })
 		runErr(t, "with path", "field must not contain a path",
 			func(e *validators.Errors) { validators.ValidateHost(field, "example.com/path", e) })

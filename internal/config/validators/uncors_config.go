@@ -12,6 +12,7 @@ func ValidateConfig(cfg *config.UncorsConfig, fs afero.Fs) error {
 
 	if len(cfg.Mappings) == 0 {
 		errs.add("mappings must not be empty")
+
 		return errs
 	}
 

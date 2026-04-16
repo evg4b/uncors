@@ -44,7 +44,11 @@ func TestRequestMatcherValidator(t *testing.T) {
 
 	t.Run("should register error for invalid method", func(t *testing.T) {
 		var errs validators.Errors
-		validators.ValidateRequestMatcher("test", config.RequestMatcher{Path: requestMatcherTestPath, Method: "INVALID"}, &errs)
+		validators.ValidateRequestMatcher(
+			"test",
+			config.RequestMatcher{Path: requestMatcherTestPath, Method: "INVALID"},
+			&errs,
+		)
 		assert.True(t, errs.HasAny())
 		assert.Contains(t, errs.Error(), "method must be one of")
 	})

@@ -30,7 +30,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Hello from target: %s %s", r.Method, r.URL.Path)
+		fmt.Fprintf(w, "Hello from target: %s %s", r.Method, r.URL.Path) //nolint:gosec // G705: test handler
 	}))
 	defer targetServer.Close()
 
@@ -107,7 +107,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "HTTPS response: %s %s", r.Method, r.URL.Path)
+		fmt.Fprintf(w, "HTTPS response: %s %s", r.Method, r.URL.Path) //nolint:gosec // G705: test handler
 	}))
 	defer targetServer.Close()
 
@@ -481,7 +481,7 @@ func TestHandlerWithRewrite(t *testing.T) {
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Path: %s, Host: %s", r.URL.Path, r.Host)
+		fmt.Fprintf(w, "Path: %s, Host: %s", r.URL.Path, r.Host) //nolint:gosec // G705: test handler
 	}))
 	defer targetServer.Close()
 

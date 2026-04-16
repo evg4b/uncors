@@ -51,8 +51,12 @@ func TestCacheConfigValidator(t *testing.T) {
 				error: "methods must not be empty",
 			},
 			{
-				name:  "invalid method",
-				value: config.CacheConfig{ExpirationTime: 5 * time.Minute, MaxSize: 100 * 1024 * 1024, Methods: []string{"invalid"}},
+				name: "invalid method",
+				value: config.CacheConfig{
+					ExpirationTime: 5 * time.Minute,
+					MaxSize:        100 * 1024 * 1024,
+					Methods:        []string{"invalid"},
+				},
 				error: "test.methods[0] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE",
 			},
 			{

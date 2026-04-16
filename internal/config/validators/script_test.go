@@ -33,6 +33,7 @@ func TestScriptValidator(t *testing.T) {
 
 	t.Run("valid file script", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{testScriptFilePath: testScriptContent})
+
 		var errs validators.Errors
 		validators.ValidateScript("script", config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath, Method: "POST"},
@@ -106,6 +107,7 @@ func TestScriptValidator(t *testing.T) {
 
 	t.Run("both script and file provided", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{testScriptFilePath: testScriptContent})
+
 		var errs validators.Errors
 		validators.ValidateScript("script", config.Script{
 			Matcher: config.RequestMatcher{Path: "/api/test"},

@@ -17,7 +17,8 @@ func ValidateProxy(field, value string, errs *Errors) {
 		return
 	}
 
-	if _, err := urlparser.Parse(value); err != nil {
+	_, err := urlparser.Parse(value)
+	if err != nil {
 		errs.add(fmt.Sprintf("%s is not a valid URL", field))
 	}
 }
@@ -89,11 +90,13 @@ func ValidateScript(field string, value config.Script, fs afero.Fs, errs *Errors
 	case value.Script == "" && value.File == "":
 		scriptField := joinPath(field, "script")
 		fileField := joinPath(field, "file")
+
 		errs.add(fmt.Sprintf("%s: either 'script' or 'file' must be provided", scriptField))
 		errs.add(fmt.Sprintf("%s: either 'script' or 'file' must be provided", fileField))
 	case value.Script != "" && value.File != "":
 		scriptField := joinPath(field, "script")
 		fileField := joinPath(field, "file")
+
 		errs.add(fmt.Sprintf("%s: only one of 'script' or 'file' can be provided", scriptField))
 		errs.add(fmt.Sprintf("%s: only one of 'script' or 'file' can be provided", fileField))
 	case value.File != "":
@@ -118,7 +121,7 @@ func ValidateCacheConfig(field string, value config.CacheConfig, errs *Errors) {
 	}
 }
 
-func ValidateTLS(field string, mapping config.Mapping, fs afero.Fs, errs *Errors) {
+func ValidateTLS(_ string, mapping config.Mapping, fs afero.Fs, errs *Errors) {
 	fromURL, err := mapping.GetFromURL()
 	if err != nil || fromURL.Scheme != "https" {
 		return
@@ -130,13 +133,13 @@ func ValidateTLS(field string, mapping config.Mapping, fs afero.Fs, errs *Errors
 }
 
 func formatTLSError(host string) string {
-	var b strings.Builder
-	b.WriteString(fmt.Sprintf("HTTPS mapping '%s' requires a local CA certificate for automatic TLS.\n\n", host))
-	b.WriteString("Generate a local CA certificate:\n")
-	b.WriteString("  uncors generate-certs\n\n")
-	b.WriteString("After generating CA, you can add it to your system's trusted certificates.")
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "HTTPS mapping '%s' requires a local CA certificate for automatic TLS.\n\n", host)
+	builder.WriteString("Generate a local CA certificate:\n")
+	builder.WriteString("  uncors generate-certs\n\n")
+	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
 
-	return b.String()
+	return builder.String()
 }
 
 func ValidateMapping(field string, value config.Mapping, fs afero.Fs, errs *Errors) {

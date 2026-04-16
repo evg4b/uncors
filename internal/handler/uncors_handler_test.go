@@ -234,7 +234,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				for _, testCase := range tests {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
-						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
 						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -291,7 +291,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				for _, testCase := range tests {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
-						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
 						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)

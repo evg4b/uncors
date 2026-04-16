@@ -39,14 +39,6 @@ func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
 	}
 }
 
-func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
-	app.cacheStorageOnce.Do(func() {
-		app.cacheStorage = cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
-	})
-
-	return app.cacheStorage
-}
-
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	tui.PrintLogo(os.Stdout, app.version)
 	log.Print("")
@@ -96,6 +88,14 @@ func (app *Uncors) Wait() {
 
 func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
+}
+
+func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
+	app.cacheStorageOnce.Do(func() {
+		app.cacheStorage = cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
+	})
+
+	return app.cacheStorage
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {

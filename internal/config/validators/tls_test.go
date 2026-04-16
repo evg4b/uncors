@@ -17,13 +17,23 @@ import (
 func TestValidateTLS(t *testing.T) {
 	t.Run("skip validation for invalid URL", func(t *testing.T) {
 		var errs validators.Errors
-		validators.ValidateTLS("test", config.Mapping{From: "://invalid-url", To: hosts.Example.HTTP()}, afero.NewMemMapFs(), &errs)
+		validators.ValidateTLS(
+			"test",
+			config.Mapping{From: "://invalid-url", To: hosts.Example.HTTP()},
+			afero.NewMemMapFs(),
+			&errs,
+		)
 		assert.False(t, errs.HasAny())
 	})
 
 	t.Run("skip validation for non-HTTPS", func(t *testing.T) {
 		var errs validators.Errors
-		validators.ValidateTLS("test", config.Mapping{From: "http://localhost:8080", To: hosts.Example.HTTP()}, afero.NewMemMapFs(), &errs)
+		validators.ValidateTLS(
+			"test",
+			config.Mapping{From: "http://localhost:8080", To: hosts.Example.HTTP()},
+			afero.NewMemMapFs(),
+			&errs,
+		)
 		assert.False(t, errs.HasAny())
 	})
 

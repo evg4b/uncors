@@ -30,15 +30,19 @@ func (h *RequestHandler) makeStaticRoutes(
 }
 
 func (h *RequestHandler) makeMockedRoutes(router *mux.Router, mocks config.Mocks) {
-	registerMatchedRoutes(mocks, func(def config.Mock) *config.RequestMatcher { return &def.Matcher }, func(def config.Mock) {
+	matcher := func(def config.Mock) *config.RequestMatcher { return &def.Matcher }
+	register := func(def config.Mock) {
 		h.createRoute(router, def.Matcher).Handler(h.createHandler(def.Response))
-	})
+	}
+	registerMatchedRoutes(mocks, matcher, register)
 }
 
 func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scripts) {
-	registerMatchedRoutes(scripts, func(def config.Script) *config.RequestMatcher { return &def.Matcher }, func(def config.Script) {
+	matcher := func(def config.Script) *config.RequestMatcher { return &def.Matcher }
+	register := func(def config.Script) {
 		h.createRoute(router, def.Matcher).Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(def)))
-	})
+	}
+	registerMatchedRoutes(scripts, matcher, register)
 }
 
 // registerMatchedRoutes registers routes in two passes: specific matchers first, path-only matchers second.

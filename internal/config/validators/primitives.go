@@ -18,17 +18,20 @@ const maxHostLength = 255
 func ValidateHost(field, value string, errs *Errors) {
 	if value == "" {
 		errs.add(fmt.Sprintf("%s must not be empty", field))
+
 		return
 	}
 
 	if len(value) > maxHostLength {
 		errs.add(fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value)))
+
 		return
 	}
 
 	uri, err := urlparser.Parse(value)
 	if err != nil {
 		errs.add(fmt.Sprintf("%s is not a valid host", field))
+
 		return
 	}
 
@@ -48,17 +51,20 @@ func ValidateHost(field, value string, errs *Errors) {
 func ValidatePath(field, value string, relative bool, errs *Errors) {
 	if value == "" {
 		errs.add(fmt.Sprintf("%s must not be empty", field))
+
 		return
 	}
 
 	if !relative && !strings.HasPrefix(value, "/") {
 		errs.add(fmt.Sprintf("%s must be absolute and start with /", field))
+
 		return
 	}
 
 	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		errs.add(fmt.Sprintf("%s is not a valid path", field))
+
 		return
 	}
 
@@ -90,6 +96,7 @@ func ValidateFile(field, value string, fs afero.Fs, errs *Errors) {
 func ValidateDirectory(field, value string, fs afero.Fs, errs *Errors) {
 	if value == "" {
 		errs.add(fmt.Sprintf("%s must not be empty", field))
+
 		return
 	}
 
@@ -164,7 +171,7 @@ func ValidateGlobPattern(field, value string, errs *Errors) {
 	}
 }
 
-func ValidateStringEnum(field, value string, options []string, errs *Errors) {
+func ValidateStringEnum(_ string, value string, options []string, errs *Errors) {
 	if !slices.Contains(options, value) {
 		errs.add(fmt.Sprintf("'%s' is not a valid option", value))
 	}

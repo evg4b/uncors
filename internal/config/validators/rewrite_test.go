@@ -22,8 +22,14 @@ func TestRewritingOptionValidatorIsValidNoError(t *testing.T) {
 	}{
 		{name: "valid paths and host", value: config.RewritingOption{From: fromPath, To: toPath, Host: hosts.Github.Host()}},
 		{name: "no host", value: config.RewritingOption{From: fromPath, To: toPath}},
-		{name: "relative from path", value: config.RewritingOption{From: "../relative/from/path", To: toPath, Host: hosts.Github.Host()}},
-		{name: "relative to path", value: config.RewritingOption{From: fromPath, To: "../relative/to/path", Host: hosts.Github.Host()}},
+		{
+			name:  "relative from path",
+			value: config.RewritingOption{From: "../relative/from/path", To: toPath, Host: hosts.Github.Host()},
+		},
+		{
+			name:  "relative to path",
+			value: config.RewritingOption{From: fromPath, To: "../relative/to/path", Host: hosts.Github.Host()},
+		},
 	}
 
 	for _, tt := range tests {
