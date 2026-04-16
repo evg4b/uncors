@@ -2,44 +2,28 @@ package validators
 
 import (
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/gobuffalo/validate"
 	"github.com/spf13/afero"
 )
 
-type UncorsConfigValidator struct {
-	config *config.UncorsConfig
-	fs     afero.Fs
-}
+// ValidateConfig validates the full uncors configuration and returns a combined
+// error listing all validation failures. Returns nil if the config is valid.
+func ValidateConfig(cfg *config.UncorsConfig, fs afero.Fs) error {
+	var errs Errors
 
-func (u *UncorsConfigValidator) IsValid(errors *validate.Errors) {
-	if len(u.config.Mappings) == 0 {
-		errors.Add("mappings", "mappings must not be empty")
-
-		return
+	if len(cfg.Mappings) == 0 {
+		errs.add("mappings must not be empty")
+		return errs
 	}
 
-	for i, mapping := range u.config.Mappings {
-		errors.Append(validate.Validate(&MappingValidator{
-			Field: joinPath("mappings", index(i)),
-			Value: mapping,
-			Fs:    u.fs,
-		}))
+	for i, mapping := range cfg.Mappings {
+		ValidateMapping(joinPath("mappings", index(i)), mapping, fs, &errs)
 	}
 
-	errors.Append(validate.Validate(
-		&ProxyValidator{Field: "proxy", Value: u.config.Proxy},
-		&CacheConfigValidator{Field: "cache-config", Value: u.config.CacheConfig},
-	))
-}
+	ValidateProxy("proxy", cfg.Proxy, &errs)
+	ValidateCacheConfig("cache-config", cfg.CacheConfig, &errs)
 
-func ValidateConfig(config *config.UncorsConfig, fs afero.Fs) error {
-	errors := validate.Validate(&UncorsConfigValidator{
-		config: config,
-		fs:     fs,
-	})
-
-	if errors.HasAny() {
-		return errors
+	if errs.HasAny() {
+		return errs
 	}
 
 	return nil

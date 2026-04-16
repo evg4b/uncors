@@ -6,7 +6,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,115 +16,53 @@ const (
 )
 
 func TestRewritingOptionValidatorIsValidNoError(t *testing.T) {
-	t.Run("valid host", func(t *testing.T) {
-		tests := []struct {
-			name  string
-			field string
-			value config.RewritingOption
-		}{
-			{
-				name:  "valid paths and host",
-				field: "testField",
-				value: config.RewritingOption{
-					From: fromPath,
-					To:   toPath,
-					Host: hosts.Github.Host(),
-				},
-			},
-			{
-				name:  "invalid host",
-				field: "testField",
-				value: config.RewritingOption{
-					From: fromPath,
-					To:   toPath,
-					Host: "",
-				},
-			},
-			{
-				name:  "relative from path",
-				field: "testField",
-				value: config.RewritingOption{
-					From: "../relative/from/path",
-					To:   toPath,
-					Host: hosts.Github.Host(),
-				},
-			},
-			{
-				name:  "relative to path",
-				field: "testField",
-				value: config.RewritingOption{
-					From: fromPath,
-					To:   "../relative/to/path",
-					Host: hosts.Github.Host(),
-				},
-			},
-		}
+	tests := []struct {
+		name  string
+		value config.RewritingOption
+	}{
+		{name: "valid paths and host", value: config.RewritingOption{From: fromPath, To: toPath, Host: hosts.Github.Host()}},
+		{name: "no host", value: config.RewritingOption{From: fromPath, To: toPath}},
+		{name: "relative from path", value: config.RewritingOption{From: "../relative/from/path", To: toPath, Host: hosts.Github.Host()}},
+		{name: "relative to path", value: config.RewritingOption{From: fromPath, To: "../relative/to/path", Host: hosts.Github.Host()}},
+	}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				v := &validators.RewritingOptionValidator{
-					Field: tt.field,
-					Value: tt.value,
-				}
-				errors := validate.NewErrors()
-				v.IsValid(errors)
-
-				assert.Empty(t, errors.Errors)
-			})
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var errs validators.Errors
+			validators.ValidateRewritingOption("testField", tt.value, &errs)
+			assert.False(t, errs.HasAny())
+		})
+	}
 }
 
 func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 	tests := []struct {
-		name          string
-		field         string
-		value         config.RewritingOption
-		expectedError string
+		name  string
+		value config.RewritingOption
+		error string
 	}{
 		{
 			name:  "invalid from path",
-			field: "testField",
-			value: config.RewritingOption{
-				From: "",
-				To:   toPath,
-				Host: hosts.Github.Host(),
-			},
-			expectedError: "testField.from must not be empty",
+			value: config.RewritingOption{From: "", To: toPath, Host: hosts.Github.Host()},
+			error: "testField.from must not be empty",
 		},
 		{
 			name:  "invalid to path",
-			field: "testField",
-			value: config.RewritingOption{
-				From: fromPath,
-				To:   "",
-				Host: hosts.Github.Host(),
-			},
-			expectedError: "testField.to must not be empty",
+			value: config.RewritingOption{From: fromPath, To: "", Host: hosts.Github.Host()},
+			error: "testField.to must not be empty",
 		},
 		{
 			name:  "invalid host format",
-			field: "testField",
-			value: config.RewritingOption{
-				From: fromPath,
-				To:   toPath,
-				Host: "&&&",
-			},
-			expectedError: "testField.host is not a valid host",
+			value: config.RewritingOption{From: fromPath, To: toPath, Host: "&&&"},
+			error: "testField.host is not a valid host",
 		},
 	}
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			v := &validators.RewritingOptionValidator{
-				Field: testCase.field,
-				Value: testCase.value,
-			}
-			errors := validate.NewErrors()
-			v.IsValid(errors)
-
-			assert.NotEmpty(t, errors.Errors)
-			require.EqualError(t, errors, testCase.expectedError)
+			var errs validators.Errors
+			validators.ValidateRewritingOption("testField", testCase.value, &errs)
+			require.EqualError(t, errs, testCase.error)
 		})
 	}
 }
