@@ -247,7 +247,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return index file by default", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/cc/unknown.html", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -258,7 +258,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/pnp/unknown.html", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -304,7 +304,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return original file", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -345,7 +345,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := httptest.NewRecorder()
-					request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
 					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -358,7 +358,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 		t.Run("should return error code when mock file doesn't exists", func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest(http.MethodGet, "http://localhost/api/mocks/4", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
 			uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -412,7 +412,7 @@ func TestMockMiddleware(t *testing.T) {
 
 			for _, method := range methods {
 				t.Run(method, func(t *testing.T) {
-					request := httptest.NewRequest(method, api, nil)
+					request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 					recorder := httptest.NewRecorder()
 
 					requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -468,7 +468,7 @@ func TestMockMiddleware(t *testing.T) {
 
 				for _, method := range methods {
 					t.Run(method, func(t *testing.T) {
-						request := httptest.NewRequest(method, api, nil)
+						request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 						recorder := httptest.NewRecorder()
 
 						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -479,7 +479,7 @@ func TestMockMiddleware(t *testing.T) {
 				}
 
 				t.Run(http.MethodOptions, func(t *testing.T) {
-					request := httptest.NewRequest(http.MethodOptions, api, nil)
+					request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
 					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -490,7 +490,7 @@ func TestMockMiddleware(t *testing.T) {
 			})
 
 			t.Run("method is matched", func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodPut, api, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -607,7 +607,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -710,7 +710,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -832,7 +832,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodPost, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testCase.url, nil)
 				for key, value := range testCase.headers {
 					request.Header.Add(key, value)
 				}

@@ -77,7 +77,7 @@ func TestHandler(t *testing.T) {
 				)
 
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
@@ -145,7 +145,7 @@ func TestHandler(t *testing.T) {
 				)
 
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
 
 				header := testutils.ReadHeader(t, recorder)
@@ -245,7 +245,7 @@ func TestHandler(t *testing.T) {
 					}),
 				)
 
-				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -299,7 +299,7 @@ func TestHandler(t *testing.T) {
 					}),
 				)
 
-				request := httptest.NewRequest(http.MethodGet, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -375,7 +375,7 @@ func TestHandler(t *testing.T) {
 						}),
 					)
 
-					request := httptest.NewRequest(http.MethodGet, "/", nil)
+					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
 
 					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -397,7 +397,7 @@ func TestHandler(t *testing.T) {
 				mock.WithAfter(time.After),
 			)
 
-			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 			ctx, cancel := context.WithCancel(t.Context())
 			recorder := httptest.NewRecorder()
 

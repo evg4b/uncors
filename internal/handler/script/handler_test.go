@@ -43,7 +43,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 				script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 			)
 
-			req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test/path", nil)
 			req.Header.Set(headers.UserAgent, "TestAgent/1.0")
 
 			recorder := httptest.NewRecorder()
@@ -232,7 +232,7 @@ response:WriteString("Error response")
 					script.WithFileSystem(fileSystem),
 				)
 
-				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -308,9 +308,9 @@ response:WriteString("Body: " .. request.body)
 			t.Run(testCase.name, func(t *testing.T) {
 				var req *http.Request
 				if testCase.name == "access request body" {
-					req = httptest.NewRequest(http.MethodPost, "/", strings.NewReader("test request body"))
+					req = httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", strings.NewReader("test request body"))
 				} else {
-					req = httptest.NewRequest(http.MethodGet, "/", nil)
+					req = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				}
 
 				testCase.setupRequest(req)
@@ -345,7 +345,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/users/123/edit", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/123/edit", nil)
 		req = testutils.SetMuxVars(req, map[string]string{
 			"id":     "123",
 			"action": "edit",
@@ -370,7 +370,7 @@ response:WriteString("OK")
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		req.Header.Set("Origin", hosts.Example.HTTP())
 
 		recorder := httptest.NewRecorder()
@@ -424,7 +424,7 @@ response:WriteString(x.field)  -- This will cause an error
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
-				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -446,7 +446,7 @@ response:WriteString("Default status")
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -467,7 +467,7 @@ response:WriteHeader(204)
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -491,7 +491,7 @@ response:WriteString(result)
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -592,7 +592,7 @@ response:WriteString("old and new")
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
-				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
 				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -642,7 +642,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 
 		require.NotNil(t, handler)
 
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -710,7 +710,7 @@ end
 					script.WithScript(config.Script{Script: testCase.script}),
 				)
 
-				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 				parsedQuery := req.URL.Query()
 
 				for key, values := range testCase.queryParams {
@@ -788,7 +788,7 @@ end
 					script.WithScript(config.Script{Script: testCase.script}),
 				)
 
-				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 
 				for key, values := range testCase.headers {
 					for _, value := range values {
@@ -819,7 +819,7 @@ response:WriteString("Status not writable")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -840,7 +840,7 @@ response:WriteString("Actual body")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -861,7 +861,7 @@ response:WriteString("Custom: " .. response.custom_field)
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -882,7 +882,7 @@ response:WriteString("First status wins")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -901,7 +901,7 @@ response:Write("Auto status")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -920,7 +920,7 @@ response:WriteString("Auto status with string")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -942,7 +942,7 @@ response:WriteString("Value: " .. value)
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -963,7 +963,7 @@ response:WriteString("Header set")
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
@@ -985,7 +985,7 @@ response:WriteString("CT: " .. ct)
 			}),
 		)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)

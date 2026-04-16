@@ -75,7 +75,8 @@ func (h *Handler) makeOriginalRequest(
 		return nil, fmt.Errorf("failed to replace URL: %w", err)
 	}
 
-	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body) //nolint:gosec // G704: forwarding to user-configured target is intentional
+	//nolint:gosec // G704: forwarding to user-configured target is intentional
+	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to original server: %w", err)
 	}

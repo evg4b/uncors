@@ -186,7 +186,7 @@ func TestMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				request := httptest.NewRequest(http.MethodOptions, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 				if testCase.args.requestHeaders != nil {
 					request.Header = testCase.args.requestHeaders
 				}
@@ -212,7 +212,7 @@ func TestMiddleware(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodOptions, "/", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
 		middleware.Wrap(mockedNextHandler).
@@ -240,7 +240,7 @@ func TestMiddleware(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodOptions, "/", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
 		middleware.Wrap(mockedNextHandler).
@@ -263,7 +263,7 @@ func TestMiddleware(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodOptions, "/", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
@@ -289,7 +289,7 @@ func TestMiddleware(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodOptions, "/", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
@@ -330,7 +330,7 @@ func TestMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				response := contracts.WrapResponseWriter(recorder)
-				request := httptest.NewRequest(method, "/", nil)
+				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request)
 
