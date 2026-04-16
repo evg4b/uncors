@@ -30,38 +30,32 @@ func (h *RequestHandler) makeStaticRoutes(
 }
 
 func (h *RequestHandler) makeMockedRoutes(router *mux.Router, mocks config.Mocks) {
-	var defaultMocks config.Mocks
-
-	for _, mockDef := range mocks {
-		if !mockDef.Matcher.IsPathOnly() {
-			h.createRoute(router, mockDef.Matcher).
-				Handler(h.createHandler(mockDef.Response))
-		} else {
-			defaultMocks = append(defaultMocks, mockDef)
-		}
-	}
-
-	for _, mockDef := range defaultMocks {
-		h.createRoute(router, mockDef.Matcher).
-			Handler(h.createHandler(mockDef.Response))
-	}
+	registerMatchedRoutes(mocks, func(def config.Mock) *config.RequestMatcher { return &def.Matcher }, func(def config.Mock) {
+		h.createRoute(router, def.Matcher).Handler(h.createHandler(def.Response))
+	})
 }
 
 func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scripts) {
-	var defaultScripts config.Scripts
+	registerMatchedRoutes(scripts, func(def config.Script) *config.RequestMatcher { return &def.Matcher }, func(def config.Script) {
+		h.createRoute(router, def.Matcher).Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(def)))
+	})
+}
 
-	for _, scriptDef := range scripts {
-		if !scriptDef.Matcher.IsPathOnly() {
-			h.createRoute(router, scriptDef.Matcher).
-				Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
+// registerMatchedRoutes registers routes in two passes: specific matchers first, path-only matchers second.
+// This ensures specific routes take priority over catch-all path routes in gorilla/mux.
+func registerMatchedRoutes[T any](items []T, matcher func(T) *config.RequestMatcher, register func(T)) {
+	var defaults []T
+
+	for _, item := range items {
+		if !matcher(item).IsPathOnly() {
+			register(item)
 		} else {
-			defaultScripts = append(defaultScripts, scriptDef)
+			defaults = append(defaults, item)
 		}
 	}
 
-	for _, scriptDef := range defaultScripts {
-		h.createRoute(router, scriptDef.Matcher).
-			Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(scriptDef)))
+	for _, item := range defaults {
+		register(item)
 	}
 }
 
