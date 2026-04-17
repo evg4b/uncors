@@ -3,6 +3,7 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
 	"os"
 	"strconv"
@@ -24,6 +25,7 @@ type Uncors struct {
 	fs      afero.Fs
 	version string
 	logger  *log.Logger
+	stdout  io.Writer
 	server  *server.Server
 
 	cacheStorageOnce sync.Once
@@ -35,17 +37,18 @@ func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
 		fs:      fs,
 		version: version,
 		logger:  logger,
+		stdout:  os.Stdout,
 		server:  server.New(),
 	}
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	tui.PrintLogo(os.Stdout, app.version)
-	log.Print("")
-	tui.PrintWarningBox(os.Stdout, DisclaimerMessage)
-	log.Print("")
-	tui.PrintInfoBox(os.Stdout, uncorsConfig.Mappings.String())
-	log.Print("")
+	tui.PrintLogo(app.stdout, app.version)
+	app.logger.Print("")
+	tui.PrintWarningBox(app.stdout, DisclaimerMessage)
+	app.logger.Print("")
+	tui.PrintInfoBox(app.stdout, uncorsConfig.Mappings.String())
+	app.logger.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -58,9 +61,9 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	log.Print("")
-	log.Info("Restarting server....")
-	log.Print("")
+	app.logger.Print("")
+	app.logger.Info("Restarting server....")
+	app.logger.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -72,8 +75,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("")
+	app.logger.Info(uncorsConfig.Mappings.String())
+	app.logger.Print("")
 
 	return nil
 }
@@ -112,7 +115,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		if group.Scheme == "https" {
 			tlsConfig, err = buildTLSConfig(app.fs, group.Mappings)
 			if err != nil {
-				return []server.Target{}, err
+				return nil, err
 			}
 		}
 
