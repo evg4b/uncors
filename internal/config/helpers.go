@@ -79,7 +79,7 @@ const (
 )
 
 func NormaliseMappings(mappings Mappings) Mappings {
-	processedMappings := Mappings{}
+	processedMappings := make(Mappings, 0, len(mappings))
 
 	for _, mapping := range mappings {
 		host, portStr, err := mapping.GetFromHostPort()

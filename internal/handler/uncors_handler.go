@@ -16,7 +16,6 @@ import (
 
 type (
 	CacheMiddlewareFactory   = func(globs config.CacheGlobs) contracts.Middleware
-	ProxyHandlerFactory      = func() contracts.Handler
 	StaticMiddlewareFactory  = func(path string, dir config.StaticDirectory) contracts.Middleware
 	MockHandlerFactory       = func(response config.Response) contracts.Handler
 	ScriptHandlerFactory     = func(script config.Script) contracts.Handler
@@ -27,12 +26,11 @@ type (
 type RequestHandler struct {
 	*mux.Router
 
-	logger   contracts.Logger
 	mappings config.Mappings
 
 	cacheMiddlewareFactory   CacheMiddlewareFactory
 	staticMiddlewareFactory  StaticMiddlewareFactory
-	proxyHandlerFactory      ProxyHandlerFactory
+	proxyHandler             contracts.Handler
 	mockHandlerFactory       MockHandlerFactory
 	scriptHandlerFactory     ScriptHandlerFactory
 	rewriteMiddlewareFactory RewriteMiddlewareFactory
@@ -45,8 +43,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 	handler := helpers.ApplyOptions(&RequestHandler{Router: mux.NewRouter(), mappings: config.Mappings{}}, options)
 
 	helpers.AssertIsDefined(handler.cacheMiddlewareFactory, "Cache middleware is not set")
-
-	proxyHandler := handler.proxyHandlerFactory()
+	helpers.AssertIsDefined(handler.proxyHandler, "Proxy handler is not set")
 
 	for _, mapping := range handler.mappings {
 		host, _, err := mapping.GetFromHostPort()
@@ -56,13 +53,13 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 		router := handler.Host(replaceWildcards(host)).Subrouter()
 
-		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, proxyHandler)
+		defaultHandler := handler.wrapOptionsMiddleware(mapping.OptionsHandling, handler.proxyHandler)
 		defaultHandler = handler.wrapCacheMiddleware(mapping.Cache, defaultHandler)
 
 		handler.makeStaticRoutes(router, mapping.Statics, defaultHandler)
 		handler.makeMockedRoutes(router, mapping.Mocks)
 		handler.makeScriptRoutes(router, mapping.Scripts)
-		handler.makeRewritedRoutes(router, mapping.Rewrites, defaultHandler)
+		handler.makeRewrittenRoutes(router, mapping.Rewrites, defaultHandler)
 
 		setDefaultHandler(router, defaultHandler)
 	}
@@ -99,4 +96,54 @@ func replaceWildcards(host string) string {
 	}
 
 	return host
+}
+
+type RequestHandlerOption = func(*RequestHandler)
+
+func WithMappings(mappings config.Mappings) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.mappings = mappings
+	}
+}
+
+func WithCacheMiddlewareFactory(factory CacheMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.cacheMiddlewareFactory = factory
+	}
+}
+
+func WithProxyHandler(proxyHandler contracts.Handler) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.proxyHandler = proxyHandler
+	}
+}
+
+func WithStaticHandlerFactory(factory StaticMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.staticMiddlewareFactory = factory
+	}
+}
+
+func WithMockHandlerFactory(factory MockHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.mockHandlerFactory = factory
+	}
+}
+
+func WithScriptHandlerFactory(factory ScriptHandlerFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.scriptHandlerFactory = factory
+	}
+}
+
+func WithRewriteHandlerFactory(factory RewriteMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.rewriteMiddlewareFactory = factory
+	}
+}
+
+func WithOptionsHandlerFactory(factory OptionsMiddlewareFactory) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.optionsMiddlewareFactory = factory
+	}
 }

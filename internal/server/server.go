@@ -22,27 +22,27 @@ const (
 
 type Target struct {
 	Address   string
-	TLSConfgi *tls.Config
+	TLSConfig *tls.Config
 	Handler   contracts.Handler
 }
 
 type Server struct {
 	waitGroup sync.WaitGroup
-	servers   []*PortListner
+	servers   []*PortListener
 }
 
 func New() *Server {
 	return &Server{
 		waitGroup: sync.WaitGroup{},
-		servers:   []*PortListner{},
+		servers:   []*PortListener{},
 	}
 }
 
 func (s *Server) Start(ctx context.Context, targets []Target) {
-	s.servers = lo.Map(targets, func(target Target, _ int) *PortListner {
+	s.servers = lo.Map(targets, func(target Target, _ int) *PortListener {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
-		portListner := &PortListner{
+		portListener := &PortListener{
 			Server: http.Server{
 				BaseContext: func(_ net.Listener) context.Context {
 					return portCtx
@@ -56,9 +56,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) {
 			target: &target,
 		}
 
-		portListner.RegisterOnShutdown(portCtxCancel)
+		portListener.RegisterOnShutdown(portCtxCancel)
 
-		return portListner
+		return portListener
 	})
 
 	var launchWaitGroup sync.WaitGroup
@@ -68,7 +68,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) {
 		s.waitGroup.Go(func() {
 			launchWaitGroup.Done()
 
-			err := server.Lister(ctx)
+			err := server.Listen(ctx)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				panic(err)
 			}

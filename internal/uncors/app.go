@@ -3,10 +3,14 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
 	"os"
 	"strconv"
+	"sync"
 
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
@@ -20,9 +24,12 @@ const baseAddress = "127.0.0.1"
 type Uncors struct {
 	fs      afero.Fs
 	version string
-	cache   appCache
 	logger  *log.Logger
+	stdout  io.Writer
 	server  *server.Server
+
+	cacheStorageOnce sync.Once
+	cacheStorage     contracts.Cache
 }
 
 func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
@@ -30,17 +37,18 @@ func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
 		fs:      fs,
 		version: version,
 		logger:  logger,
+		stdout:  os.Stdout,
 		server:  server.New(),
 	}
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	tui.PrintLogo(os.Stdout, app.version)
-	log.Print("")
-	tui.PrintWarningBox(os.Stdout, DisclaimerMessage)
-	log.Print("")
-	tui.PrintInfoBox(os.Stdout, uncorsConfig.Mappings.String())
-	log.Print("")
+	tui.PrintLogo(app.stdout, app.version)
+	app.logger.Print("")
+	tui.PrintWarningBox(app.stdout, DisclaimerMessage)
+	app.logger.Print("")
+	tui.PrintInfoBox(app.stdout, uncorsConfig.Mappings.String())
+	app.logger.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -53,9 +61,9 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	log.Print("")
-	log.Info("Restarting server....")
-	log.Print("")
+	app.logger.Print("")
+	app.logger.Info("Restarting server....")
+	app.logger.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -67,8 +75,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
-	log.Info(uncorsConfig.Mappings.String())
-	log.Print("")
+	app.logger.Info(uncorsConfig.Mappings.String())
+	app.logger.Print("")
 
 	return nil
 }
@@ -85,6 +93,14 @@ func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
+func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
+	app.cacheStorageOnce.Do(func() {
+		app.cacheStorage = cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
+	})
+
+	return app.cacheStorage
+}
+
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
 	groupedMappings := uncorsConfig.Mappings.GroupByPort()
 
@@ -99,14 +115,14 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		if group.Scheme == "https" {
 			tlsConfig, err = buildTLSConfig(app.fs, group.Mappings)
 			if err != nil {
-				return []server.Target{}, err
+				return nil, err
 			}
 		}
 
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
 			Handler:   app.buildHandlerForMappings(uncorsConfig, group.Mappings),
-			TLSConfgi: tlsConfig,
+			TLSConfig: tlsConfig,
 		})
 	}
 

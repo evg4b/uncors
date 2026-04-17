@@ -105,7 +105,7 @@ func TestCacheMiddleware(t *testing.T) {
 					recorder := httptest.NewRecorder()
 					wrappedHandler.ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
-						httptest.NewRequest(testCase.method, testCase.path, nil),
+						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
 					)
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
@@ -168,7 +168,7 @@ func TestCacheMiddleware(t *testing.T) {
 					recorder := httptest.NewRecorder()
 					wrappedHandler.ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
-						httptest.NewRequest(testCase.method, testCase.path, nil),
+						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
 					)
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
@@ -196,7 +196,7 @@ func TestCacheMiddleware(t *testing.T) {
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("https://test-host-%d.com:4200/api/test", index)
-			request := httptest.NewRequest(http.MethodGet, url, nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 			wrappedHandler.ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,
@@ -230,7 +230,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest(method, "https://test-host.com:4200/api/test", nil)
+			request := httptest.NewRequestWithContext(t.Context(), method, "https://test-host.com:4200/api/test", nil)
 			wrappedHandler.ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,

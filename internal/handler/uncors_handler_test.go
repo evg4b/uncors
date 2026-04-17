@@ -63,7 +63,7 @@ func proxyFactory(
 	t *testing.T,
 	replacerFactory urlreplacer.ReplacerFactory,
 	httpClient contracts.HTTPClient,
-) handler.ProxyHandlerFactory {
+) contracts.Handler {
 	if replacerFactory == nil {
 		replacerFactory = mocks.NewReplacerFactoryMock(t)
 	}
@@ -72,14 +72,12 @@ func proxyFactory(
 		httpClient = mocks.NewHTTPClientMock(t)
 	}
 
-	return func() contracts.Handler {
-		return proxy.NewProxyHandler(
-			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithHTTPClient(httpClient),
-			proxy.WithProxyLogger(log.New(io.Discard)),
-			proxy.WithRewriteLogger(log.New(io.Discard)),
-		)
-	}
+	return proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(replacerFactory),
+		proxy.WithHTTPClient(httpClient),
+		proxy.WithProxyLogger(log.New(io.Discard)),
+		proxy.WithRewriteLogger(log.New(io.Discard)),
+	)
 }
 
 func optionsFactory() handler.OptionsMiddlewareFactory {
@@ -201,10 +199,9 @@ func TestUncorsRequestHandler(t *testing.T) {
 	})
 
 	uncorsHandler := handler.NewUncorsRequestHandler(
-		handler.WithLogger(mocks.NewLoggerMock(t)),
 		handler.WithMappings(mappings),
 		handler.WithCacheMiddlewareFactory(cacheFactory()),
-		handler.WithProxyHandlerFactory(proxyFactory(t, factory, httpMock)),
+		handler.WithProxyHandler(proxyFactory(t, factory, httpMock)),
 		handler.WithStaticHandlerFactory(staticFactory(fs)),
 		handler.WithMockHandlerFactory(mockFactory(fs)),
 		handler.WithOptionsHandlerFactory(optionsFactory()),
@@ -237,7 +234,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				for _, testCase := range tests {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
-						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
 						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -250,7 +247,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return index file by default", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/cc/unknown.html", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -261,7 +258,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/pnp/unknown.html", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -294,7 +291,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				for _, testCase := range tests {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
-						request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
 						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -307,7 +304,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 			t.Run("should return original file", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
-				request := httptest.NewRequest(http.MethodGet, "http://localhost/img/original.png", nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
 				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -348,7 +345,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := httptest.NewRecorder()
-					request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
 					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -361,7 +358,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 		t.Run("should return error code when mock file doesn't exists", func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			request := httptest.NewRequest(http.MethodGet, "http://localhost/api/mocks/4", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
 			uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -376,13 +373,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 
 func TestMockMiddleware(t *testing.T) {
 	log.SetOutput(io.Discard)
-	logger := log.New(io.Discard)
 
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			requestHandler := handler.NewUncorsRequestHandler(
-				handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
-				handler.WithLogger(logger),
+				handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 				handler.WithMappings(config.Mappings{
 					{
 						From: "*",
@@ -417,7 +412,7 @@ func TestMockMiddleware(t *testing.T) {
 
 			for _, method := range methods {
 				t.Run(method, func(t *testing.T) {
-					request := httptest.NewRequest(method, api, nil)
+					request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 					recorder := httptest.NewRecorder()
 
 					requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -447,10 +442,9 @@ func TestMockMiddleware(t *testing.T) {
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 			middleware := handler.NewUncorsRequestHandler(
-				handler.WithLogger(logger),
 				handler.WithMappings(mappings),
 				handler.WithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+				handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
 							Request:    req,
@@ -474,7 +468,7 @@ func TestMockMiddleware(t *testing.T) {
 
 				for _, method := range methods {
 					t.Run(method, func(t *testing.T) {
-						request := httptest.NewRequest(method, api, nil)
+						request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 						recorder := httptest.NewRecorder()
 
 						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -485,7 +479,7 @@ func TestMockMiddleware(t *testing.T) {
 				}
 
 				t.Run(http.MethodOptions, func(t *testing.T) {
-					request := httptest.NewRequest(http.MethodOptions, api, nil)
+					request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
 					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -496,7 +490,7 @@ func TestMockMiddleware(t *testing.T) {
 			})
 
 			t.Run("method is matched", func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodPut, api, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -554,10 +548,9 @@ func TestMockMiddleware(t *testing.T) {
 		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(mappings),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+			handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    req,
@@ -614,7 +607,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -628,7 +621,6 @@ func TestMockMiddleware(t *testing.T) {
 
 	t.Run("query handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
@@ -668,7 +660,7 @@ func TestMockMiddleware(t *testing.T) {
 				}},
 			}),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
+			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
 			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
@@ -718,7 +710,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodGet, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
 				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
@@ -732,7 +724,6 @@ func TestMockMiddleware(t *testing.T) {
 
 	t.Run("header handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
-			handler.WithLogger(logger),
 			handler.WithMappings(config.Mappings{
 				{From: "*", To: "*", Mocks: config.Mocks{
 					{
@@ -772,7 +763,7 @@ func TestMockMiddleware(t *testing.T) {
 				}},
 			}),
 			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandlerFactory(proxyFactory(t, nil, nil)),
+			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 			handler.WithMockHandlerFactory(mockFactory(nil)),
 			handler.WithOptionsHandlerFactory(optionsFactory()),
 		)
@@ -841,7 +832,7 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequest(http.MethodPost, testCase.url, nil)
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testCase.url, nil)
 				for key, value := range testCase.headers {
 					request.Header.Add(key, value)
 				}

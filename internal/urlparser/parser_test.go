@@ -69,7 +69,7 @@ func TestParse(t *testing.T) {
 		// // Test userinfo:
 		{in: "user@example.com", out: "//user@example.com"},
 		{in: "user:passwd@example.com", out: "//user:passwd@example.com"},
-		{in: "https://user:passwd@subsub.sub.example.com", out: "https://user:passwd@subsub.sub.example.com"},
+		{in: "https://user:passwd@subsub.sub.example.com", out: "https://user:passwd@subsub.sub.example.com"}, //nolint:gosec // G101: test data
 		{in: "http://user@example.com", out: "http://user@example.com"},
 
 		// // Lowercase scheme and host by default. Let net/url normalize URL by default:

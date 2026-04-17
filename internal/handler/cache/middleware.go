@@ -47,7 +47,7 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 	m.logger.Debugf("extracted %s from request", cacheKey)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.logger.Debugf("extracted %s from request", cacheKey)
+		m.logger.Debugf("cache hit for key %s", cacheKey)
 
 		m.writeCachedResponse(writer, cachedResponse)
 		tui.PrintResponse(m.logger, request, writer.StatusCode())
@@ -114,4 +114,30 @@ func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedRespons
 	}
 
 	return nil
+}
+
+type MiddlewareOption = func(*Middleware)
+
+func WithLogger(logger contracts.Logger) MiddlewareOption {
+	return func(m *Middleware) {
+		m.logger = logger
+	}
+}
+
+func WithMethods(methods []string) MiddlewareOption {
+	return func(m *Middleware) {
+		m.methods = methods
+	}
+}
+
+func WithGlobs(globs config.CacheGlobs) MiddlewareOption {
+	return func(m *Middleware) {
+		m.pathGlobs = globs
+	}
+}
+
+func WithCacheStorage(cache contracts.Cache) MiddlewareOption {
+	return func(m *Middleware) {
+		m.cache = cache
+	}
 }

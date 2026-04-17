@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -10,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/go-http-utils/headers"
 )
 
 type Handler struct {
@@ -39,7 +41,7 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	targetReplacer, sourceReplacer, err := h.careteReplacers(req)
+	targetReplacer, sourceReplacer, err := h.createReplacers(req)
 	if err != nil {
 		return err
 	}
@@ -64,7 +66,65 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-func (h *Handler) careteReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
+func (h *Handler) makeOriginalRequest(
+	req *http.Request,
+	replacer *urlreplacer.Replacer,
+) (*http.Request, error) {
+	url, err := replacer.Replace(req.URL.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to replace URL: %w", err)
+	}
+
+	//nolint:gosec // G704: forwarding to user-configured target is intentional
+	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request to original server: %w", err)
+	}
+
+	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{
+		headers.Origin:  replacer.Replace,
+		headers.Referer: replacer.Replace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	copyCookiesToTarget(req, replacer, originalRequest)
+
+	return originalRequest, nil
+}
+
+func (h *Handler) makeUncorsResponse(
+	original *http.Response,
+	target http.ResponseWriter,
+	replacer *urlreplacer.Replacer,
+	req *http.Request,
+) error {
+	copyCookiesToSource(original, replacer, target)
+
+	err := copyHeaders(original.Header, target.Header(), modificationsMap{
+		headers.Location: func(s string) (string, error) { //nolint:unparam
+			return replacer.ReplaceSoft(s), nil
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	origin := req.Header.Get(headers.Origin)
+	infra.WriteCorsHeaders(target.Header(), origin)
+
+	target.WriteHeader(original.StatusCode)
+
+	_, err = io.Copy(target, original.Body)
+	if err != nil {
+		return fmt.Errorf("failed to copy body to response: %w", err)
+	}
+
+	return nil
+}
+
+func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
 	rewriteHost, err := rewrite.GetRewriteHost(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
@@ -109,4 +169,30 @@ func (h *Handler) logger(request *http.Request) contracts.Logger {
 	}
 
 	return h.proxyLogger
+}
+
+type HandlerOption = func(*Handler)
+
+func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) HandlerOption {
+	return func(m *Handler) {
+		m.replacers = replacerFactory
+	}
+}
+
+func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
+	return func(m *Handler) {
+		m.http = http
+	}
+}
+
+func WithProxyLogger(logger contracts.Logger) HandlerOption {
+	return func(m *Handler) {
+		m.proxyLogger = logger
+	}
+}
+
+func WithRewriteLogger(logger contracts.Logger) HandlerOption {
+	return func(m *Handler) {
+		m.rewriteLogger = logger
+	}
 }

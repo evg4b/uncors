@@ -26,7 +26,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/original", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
 		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {
@@ -53,7 +53,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		)
 
 		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodGet, "/original", nil)
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
 		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) {

@@ -4,15 +4,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/evg4b/uncors/testing/hosts"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/gobuffalo/validate"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMappingValidator(t *testing.T) {
@@ -80,13 +77,9 @@ func TestMappingValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.MappingValidator{
-					Field: field,
-					Value: test.value,
-					Fs:    fs,
-				})
-
-				assert.False(t, errors.HasAny())
+				var errs validators.Errors
+				validators.ValidateMapping(field, test.value, fs, &errs)
+				assert.False(t, errs.HasAny())
 			})
 		}
 	})
@@ -160,7 +153,7 @@ func TestMappingValidator(t *testing.T) {
 				error: "mapping.mocks[0].method must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE",
 			},
 			{
-				name: "mapping with invalid mocks",
+				name: "mapping with invalid cache glob",
 				value: config.Mapping{
 					From:    "localhost",
 					To:      hosts.Github.Host(),
@@ -175,13 +168,9 @@ func TestMappingValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				errors := validate.Validate(&validators.MappingValidator{
-					Field: field,
-					Value: test.value,
-					Fs:    fs,
-				})
-
-				require.EqualError(t, errors, test.error)
+				var errs validators.Errors
+				validators.ValidateMapping(field, test.value, fs, &errs)
+				require.EqualError(t, errs, test.error)
 			})
 		}
 	})
