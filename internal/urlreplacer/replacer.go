@@ -116,14 +116,6 @@ func (r *Replacer) ReplaceSoft(source string) string {
 	return source
 }
 
-func (r *Replacer) IsSourceSecure() bool {
-	if len(r.source.Scheme) > 0 {
-		return isSecure(r.source.Scheme)
-	}
-
-	return false
-}
-
 func (r *Replacer) IsTargetSecure() bool {
 	if len(r.target.Scheme) > 0 {
 		return isSecure(r.target.Scheme)
