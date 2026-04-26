@@ -33,7 +33,7 @@ var boxLength = 8
 
 var levelStyles = map[Level]lipgloss.Style{
 	DebugLevel: styles.DebugBlockStyle.Width(boxLength).Bold(true),
-	InfoLevel:  styles.InfoBlockStyle.Width(boxLength).Bold(false),
+	InfoLevel:  styles.InfoBlockStyle.Width(boxLength).Bold(true),
 	WarnLevel:  styles.WarningBlockStyle.Width(boxLength).Bold(true),
 	ErrorLevel: styles.ErrorBlockStyle.Width(boxLength).Bold(true),
 	noLevel:    lipgloss.NewStyle(),

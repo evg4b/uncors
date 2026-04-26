@@ -117,7 +117,6 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 }
 
 func TestUncorsRequestHandler(t *testing.T) {
-	// log.SetOutput(io.Discard)
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -371,7 +370,6 @@ func TestUncorsRequestHandler(t *testing.T) {
 }
 
 func TestMockMiddleware(t *testing.T) {
-	// log.SetOutput(io.Discard)
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			requestHandler := handler.NewUncorsRequestHandler(
