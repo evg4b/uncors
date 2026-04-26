@@ -1,7 +1,8 @@
 package tui
 
 var (
-	infoLabel    = "INFO"
-	warningLabel = "WARN"
-	errorLabel   = "ERROR"
+	DebugLabel   = "DEBUG"
+	InfoLabel    = "INFO"
+	WarningLabel = "WARN"
+	ErrorLabel   = "ERROR"
 )

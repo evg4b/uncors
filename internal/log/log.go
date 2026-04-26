@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
@@ -42,10 +43,10 @@ var levelStyles = map[Level]lipgloss.Style{
 var faintStyle = lipgloss.NewStyle().Faint(true)
 
 var messageMap = map[Level]string{
-	DebugLevel: "DEBUG",
-	InfoLevel:  "INFO",
-	WarnLevel:  "WARN",
-	ErrorLevel: "ERROR",
+	DebugLevel: tui.DebugLabel,
+	InfoLevel:  tui.InfoLabel,
+	WarnLevel:  tui.WarningLabel,
+	ErrorLevel: tui.ErrorLabel,
 }
 
 // Logger implements contracts.Logger.
