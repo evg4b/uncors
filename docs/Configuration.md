@@ -210,19 +210,19 @@ mappings:
 > [!NOTE]
 > HTTPS mappings require valid SSL/TLS certificates. See [HTTPS Configuration](#https-configuration) for setup instructions.
 
-## Wildcard Mapping
+## Named Placeholder Mapping
 
-UNCORS supports wildcard patterns in host mappings for flexible domain matching. The `*` wildcard matches any sequence of characters except `.` (dot) and `/` (slash), enabling you to handle multiple subdomains or implement dynamic routing.
+UNCORS supports named placeholders in host mappings for flexible domain matching. A placeholder is written as `{name}` and matches any sequence of characters in that hostname segment (excluding `.` and `/`). Using explicit names makes multi-placeholder mappings self-documenting and allows each placeholder to be referenced by name in the target URL.
 
-**Example 1: Static target with wildcard source**
+**Example 1: Static target with placeholder source**
 
 ```yaml
 mappings:
-  - from: http://*.local.com:8080
+  - from: http://{repo}.local.com:8080
     to: https://github.com
 ```
 
-All requests matching the `*.local.com` pattern on port 8080 are forwarded to the same target:
+All requests matching the `{repo}.local.com` pattern on port 8080 are forwarded to the same target:
 
 | Local request                           | Target request                  |
 | --------------------------------------- | ------------------------------- |
@@ -235,11 +235,11 @@ All requests matching the `*.local.com` pattern on port 8080 are forwarded to th
 
 ```yaml
 mappings:
-  - from: http://*.local.com:8080
-    to: https://*.github.com
+  - from: http://{repo}.local.com:8080
+    to: https://{repo}.github.com
 ```
 
-The wildcard value captured from the source is substituted into the target URL:
+The value captured by `{repo}` from the source URL is substituted into the target URL:
 
 | Local request                           | Target request                       |
 | --------------------------------------- | ------------------------------------ |
@@ -248,8 +248,24 @@ The wildcard value captured from the source is substituted into the target URL:
 | `http://docs.local.com:8080`            | `https://docs.github.com`            |
 | `http://docs.local.com:8080/index.html` | `https://docs.github.com/index.html` |
 
+**Example 3: Multiple named placeholders**
+
+```yaml
+mappings:
+  - from: http://{env}.{service}.local.com
+    to: https://{service}.{env}.api.com
+```
+
+Each placeholder is matched and substituted **by name**, so the order in source and target can differ:
+
+| Local request                             | Target request                        |
+| ----------------------------------------- | ------------------------------------- |
+| `http://prod.auth.local.com`              | `https://auth.prod.api.com`           |
+| `http://prod.auth.local.com/login`        | `https://auth.prod.api.com/login`     |
+| `http://staging.users.local.com`          | `https://users.staging.api.com`       |
+
 > [!NOTE]
-> **Multiple wildcards:** When using multiple `*` characters, they are matched and replaced in order of appearance from left to right.
+> Every placeholder name in a `from` URL must be unique. Using the same name twice (e.g., `{client}.{client}.com`) is a configuration error.
 
 ## Simplified Syntax
 
@@ -266,7 +282,7 @@ Both syntax styles can be mixed within the same configuration file:
 mappings:
   - http://localhost:8080: https://github.com
   - http://host1:3000: https://gitlab.com
-  - http://*.com:8080: https://*.io
+  - http://{repo}.com:8080: https://{repo}.io
   - from: http://host2:9090
     to: https://gitea.com
     mocks: [...]
@@ -274,7 +290,7 @@ mappings:
 ```
 
 > [!WARNING]
-> Domain mappings only work for hosts defined in your system's hosts file. A wildcard mapping like `https://*` will not intercept all internet traffic—only requests to domains explicitly configured in your hosts file.
+> Domain mappings only work for hosts defined in your system's hosts file. A placeholder mapping like `http://{name}.local.com` will not intercept all internet traffic—only requests to domains explicitly configured in your hosts file.
 
 # HTTPS Configuration
 
