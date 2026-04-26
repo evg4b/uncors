@@ -11,4 +11,3 @@ func CheckNoError(t *testing.T, err error) {
 		t.Fatal(err)
 	}
 }
-
