@@ -14,8 +14,8 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 

@@ -113,16 +113,14 @@ func (l *Logger) log(level Level, msg any, keyvals ...any) {
 		l.buf.WriteString(l.prefix)
 	}
 
-	if level == ErrorLevel {
-		renderer := levelStyles[ErrorLevel]
-		levelMessage := messageMap[ErrorLevel]
-		l.buf.WriteString(renderer.Render(levelMessage))
-	}
+	renderer := levelStyles[level]
+	levelMessage := messageMap[level]
+	l.buf.WriteString(renderer.Render(levelMessage))
 
-	if !strings.HasSuffix(msg.(string), "\n") {
-		l.buf.WriteString(fmt.Sprintln(msg))
-	} else {
+	if strings.HasSuffix(msg.(string), "\n") {
 		l.buf.WriteString(fmt.Sprint(msg))
+	} else {
+		l.buf.WriteString(fmt.Sprintln(msg))
 	}
 
 	if err := l.flushBuffer(); err != nil {
@@ -143,7 +141,6 @@ func (l *Logger) flushBuffer() error {
 	return err
 }
 
-// SetLevel sets the logging level.
 func (l *Logger) SetLevel(level Level) {
 	atomic.StoreInt32(&l.level, int32(level))
 }

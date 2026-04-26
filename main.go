@@ -29,7 +29,7 @@ func main() {
 }
 
 func run() int {
-	logger := log.New(os.Stdout)
+	logger := log.Default()
 
 	defer helpers.PanicInterceptor(func(value any) {
 		logger.Error(value)
@@ -41,6 +41,8 @@ func run() int {
 
 	clog.Error("test")
 	logger.Error("test")
+	clog.Infof("test %d: %d", 123, 123)
+	logger.Infof("test %d: %d", 123, 123)
 
 	os.Exit(0)
 
@@ -76,7 +78,7 @@ func run() int {
 	uncorsConfig := loadConfiguration(logger, viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, clog.Default(), Version)
+	app := uncors.CreateUncors(fs, logger, Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {

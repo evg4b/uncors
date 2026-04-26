@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/testutils"
 )
 
 func TestLoggers(t *testing.T) {
 	t.Run("NewProxyLogger", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-		log.SetLevel(log.DebugLevel)
+		//log.SetLevel(log.DebugLevel)
 
 		tests := []struct {
 			name   string
