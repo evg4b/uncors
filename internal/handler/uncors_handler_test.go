@@ -376,8 +376,8 @@ func TestMockMiddleware(t *testing.T) {
 				handler.WithProxyHandler(proxyFactory(t, nil, nil)),
 				handler.WithMappings(config.Mappings{
 					{
-						From: "*",
-						To:   "*",
+						From: "{host}",
+						To:   "{host}",
 						Mocks: config.Mocks{
 							{
 								Matcher: config.RequestMatcher{
@@ -424,7 +424,7 @@ func TestMockMiddleware(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
-				{From: "*", To: "*", Mocks: config.Mocks{{
+				{From: "{host}", To: "{host}", Mocks: config.Mocks{{
 					Matcher: config.RequestMatcher{
 						Path:   "/api",
 						Method: http.MethodPut,
@@ -502,7 +502,7 @@ func TestMockMiddleware(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
 		mappings := config.Mappings{
-			{From: "*", To: "*", Mocks: config.Mocks{
+			{From: "{host}", To: "{host}", Mocks: config.Mocks{
 				{
 					Matcher: config.RequestMatcher{
 						Path: userPath,
@@ -618,7 +618,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("query handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithMappings(config.Mappings{
-				{From: "*", To: "*", Mocks: config.Mocks{
+				{From: "{host}", To: "{host}", Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
 							Path: userPath,
@@ -721,7 +721,7 @@ func TestMockMiddleware(t *testing.T) {
 	t.Run("header handling", func(t *testing.T) {
 		middleware := handler.NewUncorsRequestHandler(
 			handler.WithMappings(config.Mappings{
-				{From: "*", To: "*", Mocks: config.Mocks{
+				{From: "{host}", To: "{host}", Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
 							Path: userPath,

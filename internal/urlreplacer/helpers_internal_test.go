@@ -1,12 +1,9 @@
 package urlreplacer
 
 import (
-	"net/url"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -83,11 +80,7 @@ func TestWildCardToRegexp(t *testing.T) {
 	t.Run("regexp", func(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlparser.Parse(testCase.url)
-				testutils.CheckNoError(t, err)
-
-				keys := extractKeys(testCase.url)
-				compiledRegexp, err := wildCardToRegexp(parsedPattern, keys)
+				compiledRegexp, err := wildCardToRegexp(testCase.url)
 
 				require.NoError(t, err)
 				assert.Equal(t, testCase.expectedRegexp, compiledRegexp.String())
@@ -101,58 +94,22 @@ func TestWildCardToRegexp(t *testing.T) {
 			url      string
 			expected []string
 		}{
-			{
-				name:     "no placeholders",
-				url:      hosts.Localhost.Host(),
-				expected: []string{},
-			},
-			{
-				name:     "single placeholder",
-				url:      "{tenant}",
-				expected: []string{"tenant"},
-			},
-			{
-				name:     "two placeholders",
-				url:      "{region}.{tenant}.com",
-				expected: []string{"region", "tenant"},
-			},
-			{
-				name:     "three placeholders",
-				url:      "api.{env}.{region}.{tenant}.com",
-				expected: []string{"env", "region", "tenant"},
-			},
+			{name: "no placeholders", url: hosts.Localhost.Host(), expected: []string{}},
+			{name: "single placeholder", url: "{tenant}", expected: []string{"tenant"}},
+			{name: "two placeholders", url: "{region}.{tenant}.com", expected: []string{"region", "tenant"}},
+			{name: "three placeholders", url: "api.{env}.{region}.{tenant}.com", expected: []string{"env", "region", "tenant"}},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				keys := extractKeys(testCase.url)
-				if testCase.expected == nil {
-					testCase.expected = []string{}
-				}
-				assert.Equal(t, testCase.expected, keys)
+				assert.Equal(t, testCase.expected, extractKeys(testCase.url))
 			})
 		}
 	})
 
 	t.Run("error handling", func(t *testing.T) {
-		testCases := []struct {
-			name          string
-			parsedPattern url.URL
-			expected      string
-		}{
-			{
-				name:          "incorrect port",
-				parsedPattern: url.URL{Host: "localhost:"},
-				expected:      `failed to build url glob: port "//localhost:": empty port`,
-			},
-		}
-		for _, testCase := range testCases {
-			t.Run(testCase.name, func(t *testing.T) {
-				pattern := testCase.parsedPattern
-				_, err := wildCardToRegexp(&pattern, nil)
+		_, err := wildCardToRegexp("localhost:")
 
-				require.EqualError(t, err, testCase.expected)
-			})
-		}
+		require.EqualError(t, err, `failed to build url glob: port "//localhost:": empty port`)
 	})
 }
 
@@ -160,51 +117,7 @@ func TestWildCardToReplacePattern(t *testing.T) {
 	t.Run("pattern", func(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlparser.Parse(testCase.url)
-				testutils.CheckNoError(t, err)
-
-				keys := extractKeys(testCase.url)
-				pattern := wildCardToReplacePattern(parsedPattern, keys)
-
-				assert.Equal(t, testCase.expectedPattern, pattern)
-			})
-		}
-	})
-
-	t.Run("extracted keys", func(t *testing.T) {
-		testCases := []struct {
-			name     string
-			url      string
-			expected []string
-		}{
-			{
-				name:     "no placeholders",
-				url:      hosts.Localhost.Host(),
-				expected: []string{},
-			},
-			{
-				name:     "single placeholder",
-				url:      "{tenant}",
-				expected: []string{"tenant"},
-			},
-			{
-				name:     "two placeholders",
-				url:      "{region}.{tenant}.com",
-				expected: []string{"region", "tenant"},
-			},
-			{
-				name:     "three placeholders",
-				url:      "api.{env}.{region}.{tenant}.com",
-				expected: []string{"env", "region", "tenant"},
-			},
-		}
-		for _, testCase := range testCases {
-			t.Run(testCase.name, func(t *testing.T) {
-				keys := extractKeys(testCase.url)
-				if testCase.expected == nil {
-					testCase.expected = []string{}
-				}
-				assert.Equal(t, testCase.expected, keys)
+				assert.Equal(t, testCase.expectedPattern, wildCardToReplacePattern(testCase.url))
 			})
 		}
 	})

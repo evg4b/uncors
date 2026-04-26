@@ -16,9 +16,9 @@ var (
 )
 
 var (
-	ErrInvalidSourceURL  = errors.New("source host is invalid")
-	ErrInvalidTargetURL  = errors.New("target host is invalid")
-	ErrURLNotMatched     = errors.New("is not matched")
+	ErrInvalidSourceURL   = errors.New("source host is invalid")
+	ErrInvalidTargetURL   = errors.New("target host is invalid")
+	ErrURLNotMatched      = errors.New("is not matched")
 	ErrDuplicateSourceKey = errors.New("source url contains duplicate placeholder key")
 )
 
@@ -46,8 +46,6 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, fmt.Errorf("%w: {%s}", ErrDuplicateSourceKey, dup)
 	}
 
-	targetKeys := extractKeys(target)
-
 	var err error
 
 	replacer := &Replacer{
@@ -64,12 +62,12 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, ErrInvalidTargetURL
 	}
 
-	replacer.regexp, err = wildCardToRegexp(replacer.source, sourceKeys)
+	replacer.regexp, err = wildCardToRegexp(source)
 	if err != nil {
 		return nil, err
 	}
 
-	replacer.pattern = wildCardToReplacePattern(replacer.target, targetKeys)
+	replacer.pattern = wildCardToReplacePattern(target)
 
 	if len(replacer.target.Scheme) > 0 {
 		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
