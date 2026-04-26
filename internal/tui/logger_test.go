@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/log"
+
+	"github.com/evg4b/uncors/internal/contracts"
+	new_log "github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -27,20 +30,20 @@ func newTestLogger(buf *bytes.Buffer) *log.Logger {
 func TestDefaultStyles(t *testing.T) {
 	tests := []struct {
 		name string
-		fn   func(*log.Logger)
+		fn   func(contracts.Logger)
 	}{
-		{"debug", func(l *log.Logger) { l.Debug("test message") }},
-		{"info", func(l *log.Logger) { l.Info("test message") }},
-		{"warn", func(l *log.Logger) { l.Warn("test message") }},
-		{"error", func(l *log.Logger) { l.Error("test message") }},
-		{"fatal", func(l *log.Logger) { l.Log(log.FatalLevel, "test message") }},
-		{"print (no level)", func(l *log.Logger) { l.Print("test message") }},
+		{"debug", func(l contracts.Logger) { l.Debug("test message") }},
+		{"info", func(l contracts.Logger) { l.Info("test message") }},
+		{"warn", func(l contracts.Logger) { l.Warn("test message") }},
+		{"error", func(l contracts.Logger) { l.Error("test message") }},
+		//{"fatal", func(l contracts.Logger) { l.Log(log.FatalLevel, "test message") }},
+		{"print (no level)", func(l contracts.Logger) { l.Print("test message") }},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, testutils.WithTrueColor(func(t *testing.T) {
 			buf := &bytes.Buffer{}
-			logger := newTestLogger(buf)
+			logger := new_log.New(buf)
 			tc.fn(logger)
 			testutils.MatchSnapshot(t, buf.String())
 		}))

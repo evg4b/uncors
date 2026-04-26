@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/log"
+	clog "github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
@@ -28,13 +29,20 @@ func main() {
 }
 
 func run() int {
+	logger := log.New(os.Stdout)
+
 	defer helpers.PanicInterceptor(func(value any) {
-		log.Error(value)
+		logger.Error(value)
 	})
 
 	fs := afero.NewOsFs()
 
 	infra.ConfigureLogger()
+
+	clog.Error("test")
+	logger.Error("test")
+
+	os.Exit(0)
 
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
 		cmd := commands.NewGenerateCertsCommand(fs)
@@ -43,13 +51,14 @@ func run() int {
 
 		err := flags.Parse(os.Args[2:])
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 
 			return 1
 		}
 
 		err = cmd.Execute()
 		if err != nil {
+			logger.Error(err)
 			return 1
 		}
 
@@ -64,19 +73,19 @@ func run() int {
 
 	viperInstance := viper.GetViper()
 
-	uncorsConfig := loadConfiguration(viperInstance, fs)
+	uncorsConfig := loadConfiguration(logger, viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, log.Default(), Version)
+	app := uncors.CreateUncors(fs, clog.Default(), Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
-			log.Errorf("Config reloading error: %v", value)
+			logger.Errorf("Config reloading error: %v", value)
 		})
 
-		err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
+		err := app.Restart(ctx, loadConfiguration(logger, viperInstance, fs))
 		if err != nil {
-			log.Errorf("Failed to restart server: %v", err)
+			logger.Errorf("Failed to restart server: %v", err)
 		}
 	})
 	viperInstance.WatchConfig()
@@ -89,18 +98,18 @@ func run() int {
 	}
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		log.Debug("shutdown signal received")
+		logger.Debug("shutdown signal received")
 
 		return app.Shutdown(shutdownCtx)
 	})
 
 	app.Wait()
-	log.Info("Server was stopped")
+	logger.Info("Server was stopped")
 
 	return 0
 }
 
-func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
+func loadConfiguration(logger *log.Logger, viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
 
 	err := validators.ValidateConfig(uncorsConfig, fs)
@@ -109,10 +118,10 @@ func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsCo
 	}
 
 	if uncorsConfig.Debug {
-		log.SetLevel(log.DebugLevel)
-		log.Debug("Enabled debug messages")
+		logger.SetLevel(log.DebugLevel)
+		logger.Debug("Enabled debug messages")
 	} else {
-		log.SetLevel(log.InfoLevel)
+		logger.SetLevel(log.InfoLevel)
 	}
 
 	return uncorsConfig
