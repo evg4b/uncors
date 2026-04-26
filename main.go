@@ -39,8 +39,8 @@ func run() int {
 
 	infra.ConfigureLogger()
 
-	clog.Error("test")
-	logger.Error("test")
+	clog.Error("test", "demo", 123)
+	logger.Error("test", "demo", 123)
 	clog.Infof("test %d: %d", 123, 123)
 	logger.Infof("test %d: %d", 123, 123)
 
