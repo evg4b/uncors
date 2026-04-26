@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/hashicorp/go-version"
 )
@@ -21,25 +21,27 @@ type versionInfo struct {
 }
 
 func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurrentVersion string) {
-	log.Debug("Checking new version")
+	logger := log.Default()
+
+	logger.Debug("Checking new version")
 
 	currentVersion, err := version.NewVersion(rawCurrentVersion)
 	if err != nil {
-		log.Debugf("failed to parse current version: %v", err)
+		logger.Debugf("failed to parse current version: %v", err)
 
 		return
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
 	if err != nil {
-		log.Debugf("failed to generate new version check request: %v", err)
+		logger.Debugf("failed to generate new version check request: %v", err)
 
 		return
 	}
 
 	response, err := client.Do(request)
 	if err != nil {
-		log.Debugf("http error occurred: %v", err)
+		logger.Debugf("http error occurred: %v", err)
 
 		return
 	}
@@ -50,22 +52,22 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 	lastVersionInfo := versionInfo{}
 	err = decoder.Decode(&lastVersionInfo)
 	if err != nil {
-		log.Debugf("failed to parse last version response: %v", err)
+		logger.Debugf("failed to parse last version response: %v", err)
 
 		return
 	}
 
 	lastVersion, err := version.NewVersion(lastVersionInfo.Version)
 	if err != nil {
-		log.Debugf("failed to parse last version: %v", err)
+		logger.Debugf("failed to parse last version: %v", err)
 
 		return
 	}
 
 	if lastVersion.GreaterThan(currentVersion) {
-		log.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		log.Info("")
+		logger.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
+		logger.Info("")
 	} else {
-		log.Debug("Version is up to date")
+		logger.Debug("Version is up to date")
 	}
 }

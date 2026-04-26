@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -18,7 +18,7 @@ import (
 
 func TestPrintResponse(t *testing.T) {
 	t.Run("should correctly format", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := log.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		tests := []struct {
 			name       string
@@ -70,7 +70,7 @@ func TestPrintResponse(t *testing.T) {
 	}))
 
 	t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := log.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		assert.Panics(t, func() {
 			tui.PrintResponse(logger, request(http.MethodGet, "/"), 50)
@@ -78,7 +78,7 @@ func TestPrintResponse(t *testing.T) {
 	}))
 
 	t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-		logger := tui.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
+		logger := log.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
 
 		assert.Panics(t, func() {
 			tui.PrintResponse(logger, request(http.MethodGet, "/"), 600)

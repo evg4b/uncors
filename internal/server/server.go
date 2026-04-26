@@ -66,9 +66,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) {
 
 	for _, server := range s.servers {
 		s.waitGroup.Go(func() {
-			launchWaitGroup.Done()
-
-			err := server.Listen(ctx)
+			err := server.Listen(ctx, launchWaitGroup.Done)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				panic(err)
 			}

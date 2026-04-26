@@ -5,7 +5,6 @@ go 1.25.7
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/charmbracelet/log v0.4.0
 	github.com/dgraph-io/ristretto/v2 v2.4.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gkampitakis/go-snaps v0.5.21
@@ -38,9 +37,9 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/gkampitakis/ciinfo v0.3.4 // indirect
-	github.com/go-logfmt/logfmt v0.6.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect

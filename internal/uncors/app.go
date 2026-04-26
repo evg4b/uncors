@@ -14,8 +14,8 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 
@@ -113,7 +113,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		)
 
 		if group.Scheme == "https" {
-			tlsConfig, err = buildTLSConfig(app.fs, group.Mappings)
+			tlsConfig, err = buildTLSConfig(app.fs, app.logger, group.Mappings)
 			if err != nil {
 				return nil, err
 			}

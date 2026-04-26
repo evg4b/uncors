@@ -13,10 +13,8 @@ type ReplacerFactory interface {
 }
 
 type mapping struct {
-	rawSource string
-	source    *Replacer
-	rawTarget string
-	target    *Replacer
+	source *Replacer
+	target *Replacer
 }
 
 type Factory struct {
@@ -43,10 +41,8 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 		}
 
 		mappings = append(mappings, mapping{
-			rawSource: urlMapping.From,
-			source:    source,
-			rawTarget: urlMapping.To,
-			target:    target,
+			source: source,
+			target: target,
 		})
 	}
 

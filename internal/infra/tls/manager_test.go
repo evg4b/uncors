@@ -6,6 +6,7 @@ import (
 	"time"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -27,12 +28,12 @@ func TestNewCertManager(t *testing.T) {
 		caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 		assert.NotNil(t, manager)
 	})
 
 	t.Run("should create cert manager without CA", func(t *testing.T) {
-		manager := infratls.NewCertManager(nil, nil)
+		manager := infratls.NewCertManager(nil, nil, log.Null())
 		assert.NotNil(t, manager)
 	})
 }
@@ -52,7 +53,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("should generate and cache certificate", func(t *testing.T) {
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 
 		cert1, err := manager.GetCertificate(hosts.Example.Host())
 		require.NoError(t, err)
@@ -68,7 +69,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate different certificates for different hosts", func(t *testing.T) {
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 
 		cert1, err := manager.GetCertificate("host1.local")
 		require.NoError(t, err)
@@ -80,14 +81,14 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should return error when no CA and no cached certificate", func(t *testing.T) {
-		manager := infratls.NewCertManager(nil, nil)
+		manager := infratls.NewCertManager(nil, nil, log.Null())
 
 		_, err := manager.GetCertificate(hosts.Example.Host())
 		require.Error(t, err)
 	})
 
 	t.Run("should handle concurrent requests for same host", func(t *testing.T) {
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 
 		const numGoroutines = 10
 
@@ -108,7 +109,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should handle concurrent requests for different hosts", func(t *testing.T) {
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 
 		const numGoroutines = 5
 
@@ -130,7 +131,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should cache certificates correctly", func(t *testing.T) {
-		manager := infratls.NewCertManager(caCert, caKey)
+		manager := infratls.NewCertManager(caCert, caKey, log.Null())
 
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}
 
@@ -166,10 +167,7 @@ func TestCheckCAExpiration(t *testing.T) {
 		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		// Should not panic
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(caCert)
-		})
+		require.NoError(t, infratls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should handle expiring certificate", func(t *testing.T) {
@@ -186,34 +184,23 @@ func TestCheckCAExpiration(t *testing.T) {
 		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		// Should not panic even with expiring cert
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(caCert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should show correct message for expired certificate", func(t *testing.T) {
-		// Create a certificate that has already expired
 		cert := &x509.Certificate{
 			NotAfter: time.Now().Add(-24 * time.Hour), // Expired yesterday
 		}
 
-		// Should not panic with expired cert
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should show correct message for certificate expiring in hours", func(t *testing.T) {
-		// Create a certificate that expires in less than 24 hours
 		cert := &x509.Certificate{
 			NotAfter: time.Now().Add(12 * time.Hour), // Expires in 12 hours
 		}
 
-		// Should not panic
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should not show warning for certificate valid for more than 7 days", func(t *testing.T) {
@@ -222,9 +209,6 @@ func TestCheckCAExpiration(t *testing.T) {
 			NotAfter: time.Now().Add(10 * 24 * time.Hour), // Expires in 10 days
 		}
 
-		// Should not panic and should not log warning
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.NoError(t, infratls.CheckCAExpiration(cert))
 	})
 }

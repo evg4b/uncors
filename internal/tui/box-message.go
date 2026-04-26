@@ -13,7 +13,7 @@ func PrintWarningBox(out io.Writer, messages ...string) {
 	printMessageBox(
 		out,
 		strings.Join(messages, "\n"),
-		warningLabel,
+		WarningLabel,
 		styles.WarningBlockStyle,
 	)
 }
@@ -22,7 +22,7 @@ func PrintInfoBox(out io.Writer, messages ...string) {
 	printMessageBox(
 		out,
 		strings.Join(messages, "\n"),
-		infoLabel,
+		InfoLabel,
 		styles.InfoBlockStyle,
 	)
 }
@@ -31,7 +31,7 @@ func PrintErrorBox(out io.Writer, messages ...string) {
 	printMessageBox(
 		out,
 		strings.Join(messages, "\n"),
-		errorLabel,
+		ErrorLabel,
 		styles.ErrorBlockStyle,
 	)
 }

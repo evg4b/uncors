@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/commands"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ const (
 func TestNewGenerateCertsCommand(t *testing.T) {
 	t.Run("should create new command", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		assert.NotNil(t, cmd)
 	})
 }
@@ -30,7 +31,7 @@ func TestNewGenerateCertsCommand(t *testing.T) {
 func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 	t.Run("should define validity-days flag", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 		cmd.DefineFlags(flags)
@@ -42,7 +43,7 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 
 	t.Run("should define force flag", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 		cmd.DefineFlags(flags)
@@ -64,7 +65,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -94,7 +95,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -125,13 +126,13 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand(fs)
+		cmd1 := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand(fs)
+		cmd2 := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
 		err = cmd2.Execute()
@@ -146,7 +147,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand(fs)
+		cmd1 := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
@@ -159,7 +160,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand(fs)
+		cmd2 := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
 		err = flags2.Set("force", "true")
@@ -183,7 +184,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, log.Null())
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
 
@@ -194,51 +195,34 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		assert.DirExists(t, caDir)
 	})
 
-	t.Run("should fail when only cert file exists without force flag", func(t *testing.T) {
-		tmpDir := t.TempDir()
+	for _, testCase := range []struct {
+		name     string
+		filename string
+		content  []byte
+		wantErr  error
+	}{
+		{"only cert file", caCertFile, []byte("cert"), commands.ErrCAAlreadyExists},
+		{"only key file", caKeyFile, []byte("key"), commands.ErrCAKeyAlreadyExists},
+	} {
+		t.Run("should fail when "+testCase.name+" exists without force flag", func(t *testing.T) {
+			tmpDir := t.TempDir()
 
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
+			fakeHome := filepath.Join(tmpDir, "home")
+			require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+			t.Setenv("HOME", fakeHome)
 
-		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		require.NoError(t, os.MkdirAll(caDir, 0o755))
+			caDir := filepath.Join(fakeHome, configDir, "uncors")
+			require.NoError(t, os.MkdirAll(caDir, 0o755))
+			require.NoError(t, os.WriteFile(filepath.Join(caDir, testCase.filename), testCase.content, 0o600))
 
-		// Create only cert file
-		certPath := filepath.Join(caDir, caCertFile)
-		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
+			fs := afero.NewOsFs()
+			cmd := commands.NewGenerateCertsCommand(fs, log.Null())
+			flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			cmd.DefineFlags(flags)
 
-		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
-		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd.DefineFlags(flags)
-
-		err := cmd.Execute()
-		require.Error(t, err)
-		assert.Equal(t, commands.ErrCAAlreadyExists, err)
-	})
-
-	t.Run("should fail when only key file exists without force flag", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		require.NoError(t, os.MkdirAll(caDir, 0o755))
-
-		// Create only key file
-		keyPath := filepath.Join(caDir, caKeyFile)
-		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
-
-		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(fs)
-		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd.DefineFlags(flags)
-
-		err := cmd.Execute()
-		require.Error(t, err)
-		assert.Equal(t, commands.ErrCAKeyAlreadyExists, err)
-	})
+			err := cmd.Execute()
+			require.Error(t, err)
+			assert.Equal(t, testCase.wantErr, err)
+		})
+	}
 }

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/log"
 )
 
 const (
@@ -21,11 +21,12 @@ type CertManager struct {
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
 	mutex     sync.RWMutex
+	logger    *log.Logger
 }
 
 // NewCertManager creates a new certificate manager.
 // If caCert and caKey are provided, it enables auto-generation.
-func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertManager {
+func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey, logger *log.Logger) *CertManager {
 	var generator *CertGenerator
 	if caCert != nil && caKey != nil {
 		generator = NewCertGenerator(caCert, caKey)
@@ -34,6 +35,7 @@ func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertManage
 	return &CertManager{
 		generator: generator,
 		cache:     make(map[string]*tls.Certificate),
+		logger:    logger,
 	}
 }
 
@@ -67,34 +69,28 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	}
 
 	m.cache[host] = cert
-	log.Debugf("Generated TLS certificate for host: %s", host)
+	m.logger.Debugf("Generated TLS certificate for host: %s", host)
 
 	return cert, nil
 }
 
 // CheckCAExpiration checks if the CA certificate is expiring soon and logs a warning.
-func CheckCAExpiration(cert *x509.Certificate) {
+func CheckCAExpiration(cert *x509.Certificate) error {
 	expiresSoon, timeLeft := CheckExpiration(cert, expirationWarningThreshold)
 	if !expiresSoon {
-		return
+		return nil
 	}
 
 	switch {
 	case timeLeft < 0:
-		log.Errorf("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
+		return ErrCACertExpired
 	case timeLeft < 24*time.Hour:
 		hours := int(timeLeft.Hours())
-		log.Warnf(
-			"CA certificate expires in less than %d hours! "+
-				"Consider regenerating it with: uncors generate-certs --force",
-			hours,
-		)
+
+		return fmt.Errorf("CA certificate expires in less than %d hours! %w", hours, ErrCACertExpiringSoon)
 	default:
 		days := int(timeLeft.Hours() / hoursInDay)
-		log.Warnf(
-			"CA certificate expires in %d days! "+
-				"Consider regenerating it with: uncors generate-certs --force",
-			days,
-		)
+
+		return fmt.Errorf("CA certificate expires in %d days! %w", days, ErrCACertExpiringSoon)
 	}
 }

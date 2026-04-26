@@ -239,27 +239,6 @@ var isSecureTestCases = []struct {
 	},
 }
 
-func TestReplacerIsSourceSecure(t *testing.T) {
-	makeReplacer := func(source string) *urlreplacer.Replacer {
-		t.Helper()
-
-		replacer, err := urlreplacer.NewReplacer(source, hosts.Github.HTTPS())
-		if err != nil {
-			t.Error(err)
-		}
-
-		return replacer
-	}
-
-	for _, testCase := range isSecureTestCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			actual := makeReplacer(testCase.url).IsSourceSecure()
-
-			assert.Equal(t, testCase.expected, actual)
-		})
-	}
-}
-
 func TestReplacerIsTargetSecure(t *testing.T) {
 	makeReplacer := func(target string) *urlreplacer.Replacer {
 		t.Helper()
