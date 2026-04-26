@@ -7,12 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/log"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -69,8 +68,8 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithProxyLogger(log.New(io.Discard)),
-					proxy.WithRewriteLogger(log.New(io.Discard)),
+					proxy.WithProxyLogger(log.Null()),
+					proxy.WithRewriteLogger(log.Null()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
@@ -123,8 +122,8 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithProxyLogger(log.New(io.Discard)),
-					proxy.WithRewriteLogger(log.New(io.Discard)),
+					proxy.WithProxyLogger(log.Null()),
+					proxy.WithRewriteLogger(log.Null()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
@@ -159,8 +158,8 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithProxyLogger(log.New(io.Discard)),
-			proxy.WithRewriteLogger(log.New(io.Discard)),
+			proxy.WithProxyLogger(log.Null()),
+			proxy.WithRewriteLogger(log.Null()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
@@ -190,8 +189,8 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithProxyLogger(log.New(io.Discard)),
-			proxy.WithRewriteLogger(log.New(io.Discard)),
+			proxy.WithProxyLogger(log.Null()),
+			proxy.WithRewriteLogger(log.Null()),
 		)
 
 		t.Run("should correctly create response", func(t *testing.T) {

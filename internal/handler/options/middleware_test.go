@@ -1,14 +1,13 @@
 package options_test
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
@@ -18,7 +17,7 @@ import (
 func TestMiddleware(t *testing.T) {
 	testAllowedHeaders := "Content-Type, Authorization"
 
-	loggerMock := log.New(io.Discard)
+	loggerMock := log.Null()
 
 	t.Run("for OPTIONS request", func(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)

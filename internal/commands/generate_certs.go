@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/charmbracelet/log"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -23,12 +23,14 @@ type GenerateCertsCommand struct {
 	force        bool
 	outputDir    string
 	fs           afero.Fs
+	logger       *log.Logger
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
-func NewGenerateCertsCommand(fs afero.Fs) *GenerateCertsCommand {
+func NewGenerateCertsCommand(fs afero.Fs, logger *log.Logger) *GenerateCertsCommand {
 	return &GenerateCertsCommand{
-		fs: fs,
+		fs:     fs,
+		logger: logger,
 	}
 }
 
@@ -74,7 +76,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		}
 	}
 
-	log.Info("Generating CA certificate...")
+	c.logger.Info("Generating CA certificate...")
 
 	certPath, keyPath, err = infratls.GenerateCA(infratls.CAConfig{
 		ValidityDays: c.validityDays,

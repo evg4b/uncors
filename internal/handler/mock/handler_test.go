@@ -2,18 +2,16 @@ package mock_test
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/log"
-
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -68,7 +66,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithLogger(log.New(io.Discard)),
+					mock.WithLogger(log.Null()),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -136,7 +134,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithLogger(log.New(io.Discard)),
+					mock.WithLogger(log.Null()),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -237,7 +235,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithLogger(log.New(io.Discard)),
+					mock.WithLogger(log.Null()),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -291,7 +289,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithLogger(log.New(io.Discard)),
+					mock.WithLogger(log.Null()),
 					mock.WithResponse(testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -363,7 +361,7 @@ func TestHandler(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
 					handler := mock.NewMockHandler(
-						mock.WithLogger(log.New(io.Discard)),
+						mock.WithLogger(log.Null()),
 						mock.WithResponse(testCase.response),
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
@@ -387,7 +385,7 @@ func TestHandler(t *testing.T) {
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
 			handler := mock.NewMockHandler(
-				mock.WithLogger(log.New(io.Discard)),
+				mock.WithLogger(log.Null()),
 				mock.WithResponse(config.Response{
 					Code:  http.StatusOK,
 					Delay: 1 * time.Hour,

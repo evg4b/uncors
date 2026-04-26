@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	clog "github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
@@ -37,17 +36,8 @@ func run() int {
 
 	fs := afero.NewOsFs()
 
-	infra.ConfigureLogger()
-
-	clog.Error("test", "demo", 123)
-	logger.Error("test", "demo", 123)
-	clog.Infof("test %d: %d", 123, 123)
-	logger.Infof("test %d: %d", 123, 123)
-
-	os.Exit(0)
-
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
-		cmd := commands.NewGenerateCertsCommand(fs)
+		cmd := commands.NewGenerateCertsCommand(fs, logger)
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
 
@@ -61,6 +51,7 @@ func run() int {
 		err = cmd.Execute()
 		if err != nil {
 			logger.Error(err)
+
 			return 1
 		}
 

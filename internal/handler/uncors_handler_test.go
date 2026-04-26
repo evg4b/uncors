@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
@@ -19,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -53,7 +53,7 @@ func cacheFactory() handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithLogger(log.New(io.Discard)),
+			cache.WithLogger(log.Null()),
 			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
 		)
 	}
@@ -75,15 +75,15 @@ func proxyFactory(
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
-		proxy.WithProxyLogger(log.New(io.Discard)),
-		proxy.WithRewriteLogger(log.New(io.Discard)),
+		proxy.WithProxyLogger(log.Null()),
+		proxy.WithRewriteLogger(log.Null()),
 	)
 }
 
 func optionsFactory() handler.OptionsMiddlewareFactory {
 	return func(config config.OptionsHandling) contracts.Middleware {
 		return options.NewMiddleware(
-			options.WithLogger(log.New(io.Discard)),
+			options.WithLogger(log.Null()),
 			options.WithHeaders(config.Headers),
 			options.WithCode(config.Code),
 		)
@@ -95,7 +95,7 @@ func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
 		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithLogger(log.New(io.Discard)),
+			static.WithLogger(log.Null()),
 			static.WithPrefix(path),
 		)
 	}
@@ -108,7 +108,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 	return func(response config.Response) contracts.Handler {
 		return mock.NewMockHandler(
-			mock.WithLogger(log.New(io.Discard)),
+			mock.WithLogger(log.Null()),
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),
@@ -117,8 +117,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 }
 
 func TestUncorsRequestHandler(t *testing.T) {
-	log.SetOutput(io.Discard)
-
+	// log.SetOutput(io.Discard)
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -372,8 +371,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 }
 
 func TestMockMiddleware(t *testing.T) {
-	log.SetOutput(io.Discard)
-
+	// log.SetOutput(io.Discard)
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
 			requestHandler := handler.NewUncorsRequestHandler(

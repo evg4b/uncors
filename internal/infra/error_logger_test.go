@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 

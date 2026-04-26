@@ -1,6 +1,7 @@
 package log
 
 import (
+	"io"
 	"os"
 	"sync"
 )
@@ -14,5 +15,10 @@ func Default() *Logger {
 	defaultLoggerOnce.Do(func() {
 		defaultLogger = New(os.Stdout)
 	})
+
 	return defaultLogger
+}
+
+func Null() *Logger {
+	return New(io.Discard)
 }

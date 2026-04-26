@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	clog "github.com/charmbracelet/log"
+	clog "github.com/evg4b/uncors/internal/log"
 )
 
 type errorLogWriter struct {

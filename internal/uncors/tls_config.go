@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/charmbracelet/log"
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 
@@ -14,21 +14,26 @@ import (
 type hostCertManager struct {
 	mappings    config.Mappings
 	certManager *infratls.CertManager // for auto-generated certificates
+	logger      *log.Logger
 }
 
 // newHostCertManager creates a new host-based certificate manager.
-func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager, error) {
+func newHostCertManager(fs afero.Fs, logger *log.Logger, mappings config.Mappings) (*hostCertManager, error) {
 	// Load CA for auto-generation
 	caCert, caKey, err := infratls.LoadDefaultCA(fs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}
 
-	infratls.CheckCAExpiration(caCert)
+	err = infratls.CheckCAExpiration(caCert)
+	if err != nil {
+		return nil, fmt.Errorf("CA certificate validation failed: %w", err)
+	}
 
 	return &hostCertManager{
 		mappings:    mappings,
-		certManager: infratls.NewCertManager(caCert, caKey),
+		certManager: infratls.NewCertManager(caCert, caKey, logger),
+		logger:      logger,
 	}, nil
 }
 
@@ -37,7 +42,7 @@ func (m *hostCertManager) getFallbackHost() (string, error) {
 	if len(m.mappings) > 0 {
 		firstHost, _, err := m.mappings[0].GetFromHostPort()
 		if err == nil {
-			log.Debugf("No SNI provided, using fallback host from mappings: %s", firstHost)
+			m.logger.Debugf("No SNI provided, using fallback host from mappings: %s", firstHost)
 
 			return firstHost, nil
 		}
@@ -71,12 +76,12 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 
 // buildTLSConfig creates a TLS configuration for the given HTTPS mappings.
 // It uses auto-generated certificates with SNI support.
-func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) {
+func buildTLSConfig(fs afero.Fs, logger *log.Logger, mappings config.Mappings) (*tls.Config, error) {
 	if len(mappings) == 0 {
 		return nil, infratls.ErrNoMappingsProvided
 	}
 
-	manager, err := newHostCertManager(fs, mappings)
+	manager, err := newHostCertManager(fs, logger, mappings)
 	if err != nil {
 		return nil, err
 	}

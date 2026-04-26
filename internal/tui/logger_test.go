@@ -5,23 +5,18 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/charmbracelet/log"
+	"github.com/evg4b/uncors/internal/log"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	new_log "github.com/evg4b/uncors/internal/log"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/muesli/termenv"
 )
 
 func newTestLogger(buf *bytes.Buffer) *log.Logger {
 	logger := log.New(buf)
-	logger.SetReportTimestamp(false)
-	logger.SetReportCaller(false)
-	logger.SetStyles(&tui.DefaultStyles)
 	logger.SetLevel(log.DebugLevel)
-	logger.SetColorProfile(termenv.TrueColor)
+
 	return logger
 }
 
@@ -36,7 +31,7 @@ func TestDefaultStyles(t *testing.T) {
 		{"info", func(l contracts.Logger) { l.Info("test message") }},
 		{"warn", func(l contracts.Logger) { l.Warn("test message") }},
 		{"error", func(l contracts.Logger) { l.Error("test message") }},
-		//{"fatal", func(l contracts.Logger) { l.Log(log.FatalLevel, "test message") }},
+		// {"fatal", func(l contracts.Logger) { l.Log(log.FatalLevel, "test message") }},
 		{"print (no level)", func(l contracts.Logger) { l.Print("test message") }},
 	}
 
@@ -108,18 +103,19 @@ func TestCreateLogger(t *testing.T) {
 		{"info", func(l *log.Logger) { l.Info("test message") }},
 		{"warn", func(l *log.Logger) { l.Warn("test message") }},
 		{"error", func(l *log.Logger) { l.Error("test message") }},
-		{"fatal", func(l *log.Logger) { l.Log(log.FatalLevel, "test message") }},
+		// {"fatal", func(l *log.Logger) { l.Log(log.FatalLevel, "test message") }},
 		{"print (no level)", func(l *log.Logger) { l.Print("test message") }},
 	}
 
 	for _, p := range allPrefixes() {
 		t.Run(p.name, testutils.WithTrueColor(func(t *testing.T) {
 			prefix := p.render() // rendered with TrueColor active
+
 			for _, lvl := range levels {
 				t.Run(lvl.name, func(t *testing.T) {
 					buf := &bytes.Buffer{}
 					base := newTestLogger(buf)
-					logger := tui.CreateLogger(base, prefix)
+					logger := log.CreateLogger(base, prefix)
 					lvl.fn(logger)
 					testutils.MatchSnapshot(t, buf.String())
 				})
@@ -163,11 +159,12 @@ func TestCreateLoggerWithKeyValues(t *testing.T) {
 	for _, p := range allPrefixes() {
 		t.Run(p.name, testutils.WithTrueColor(func(t *testing.T) {
 			prefix := p.render()
+
 			for _, c := range cases {
 				t.Run(c.name, func(t *testing.T) {
 					buf := &bytes.Buffer{}
 					base := newTestLogger(buf)
-					logger := tui.CreateLogger(base, prefix)
+					logger := log.CreateLogger(base, prefix)
 					c.fn(logger)
 					testutils.MatchSnapshot(t, buf.String())
 				})

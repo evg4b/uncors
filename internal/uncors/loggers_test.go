@@ -11,8 +11,7 @@ import (
 
 func TestLoggers(t *testing.T) {
 	t.Run("NewProxyLogger", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-		//log.SetLevel(log.DebugLevel)
-
+		// log.SetLevel(log.DebugLevel)
 		tests := []struct {
 			name   string
 			logger *log.Logger

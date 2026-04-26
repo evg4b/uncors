@@ -32,10 +32,10 @@ const (
 var boxLength = 8
 
 var levelStyles = map[Level]lipgloss.Style{
-	DebugLevel: styles.DebugBlockStyle.Width(boxLength),
-	InfoLevel:  styles.InfoBlockStyle.Width(boxLength),
-	WarnLevel:  styles.WarningBlockStyle.Width(boxLength),
-	ErrorLevel: styles.ErrorBlockStyle.Width(boxLength),
+	DebugLevel: styles.DebugBlockStyle.Width(boxLength).Bold(true),
+	InfoLevel:  styles.InfoBlockStyle.Width(boxLength).Bold(false),
+	WarnLevel:  styles.WarningBlockStyle.Width(boxLength).Bold(true),
+	ErrorLevel: styles.ErrorBlockStyle.Width(boxLength).Bold(true),
 	noLevel:    lipgloss.NewStyle(),
 }
 
@@ -48,7 +48,7 @@ var messageMap = map[Level]string{
 	ErrorLevel: "ERROR",
 }
 
-// implements internal.contracts.Logger
+// implements internal.contracts.Logger.
 type Logger struct {
 	w      io.Writer
 	level  int32
@@ -99,11 +99,11 @@ func (l *Logger) Debugf(msg string, args ...any) {
 }
 
 func (l *Logger) Print(msg any, keyvals ...any) {
-	l.log(InfoLevel, fmt.Sprint(msg), keyvals...)
+	l.log(noLevel, fmt.Sprint(msg), keyvals...)
 }
 
 func (l *Logger) Printf(msg string, args ...any) {
-	l.log(InfoLevel, fmt.Sprintf(msg, args...))
+	l.log(noLevel, fmt.Sprintf(msg, args...))
 }
 
 func (l *Logger) log(level Level, msg string, keyvals ...any) {
@@ -117,7 +117,8 @@ func (l *Logger) log(level Level, msg string, keyvals ...any) {
 	l.renderKeyVals(keyvals)
 	l.buf.WriteByte('\n')
 
-	if err := l.flushBuffer(); err != nil {
+	err := l.flushBuffer()
+	if err != nil {
 		panic(err)
 	}
 }
@@ -129,6 +130,7 @@ func (l *Logger) renderKeyVals(keyvals []any) {
 
 	for i := 0; i < len(keyvals); i += 2 {
 		l.buf.WriteByte(' ')
+
 		if i+1 >= len(keyvals) {
 			context := fmt.Sprintf("%v=undefined-value", keyvals[i])
 			l.buf.WriteString(faintStyle.Render(context))
@@ -141,7 +143,7 @@ func (l *Logger) renderKeyVals(keyvals []any) {
 
 func (l *Logger) renderMessage(msg string) {
 	msg = strings.TrimSuffix(msg, "\n")
-	l.buf.WriteString(fmt.Sprint(msg))
+	fmt.Fprint(&l.buf, msg)
 }
 
 func (l *Logger) renderLevel(level Level) {
@@ -154,7 +156,6 @@ func (l *Logger) renderLevel(level Level) {
 func (l *Logger) renderPrefix() {
 	if len(l.prefix) > 0 {
 		l.buf.WriteString(l.prefix)
-		l.buf.WriteByte(' ')
 	}
 }
 
@@ -167,6 +168,7 @@ func (l *Logger) flushBuffer() error {
 	defer l.mu.Unlock()
 
 	defer l.buf.Reset()
+
 	_, err := l.w.Write(l.buf.Bytes())
 
 	return err
@@ -174,4 +176,11 @@ func (l *Logger) flushBuffer() error {
 
 func (l *Logger) SetLevel(level Level) {
 	atomic.StoreInt32(&l.level, int32(level))
+}
+
+func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.w = w
 }
