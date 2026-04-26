@@ -2,12 +2,17 @@ package logger_test
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/testutils"
+)
+
+var (
+	errConnectionRefused = errors.New("connection refused")
+	errDiskFull          = errors.New("disk full")
 )
 
 func newBase() (*bytes.Buffer, *log.Logger) {
@@ -72,11 +77,17 @@ func TestLoggerKeyValues(t *testing.T) {
 		{"debug with kv", func(l *log.Logger) { l.Debug("details", "component", "router") }},
 		{"info single kv", func(l *log.Logger) { l.Info("request handled", "status", 200) }},
 		{"info two kv pairs", func(l *log.Logger) { l.Info("request handled", "status", 200, "latency_ms", 42) }},
-		{"info three kv pairs", func(l *log.Logger) { l.Info("request handled", "status", 200, "latency_ms", 42, "path", "/api") }},
+		{
+			"info three kv pairs",
+			func(l *log.Logger) { l.Info("request handled", "status", 200, "latency_ms", 42, "path", "/api") },
+		},
 		{"warn with kv", func(l *log.Logger) { l.Warn("slow response", "latency_ms", 1500) }},
 		{"error with kv", func(l *log.Logger) { l.Error("request failed", "status", 500) }},
-		{"error with error value", func(l *log.Logger) { l.Error("failed", "err", fmt.Errorf("connection refused")) }},
-		{"print with kv (no level)", func(l *log.Logger) { l.Print("proxying", "from", "localhost:8080", "to", "api.example.com") }},
+		{"error with error value", func(l *log.Logger) { l.Error("failed", "err", errConnectionRefused) }},
+		{
+			"print with kv (no level)",
+			func(l *log.Logger) { l.Print("proxying", "from", "localhost:8080", "to", "api.example.com") },
+		},
 		{"odd kv count (missing value)", func(l *log.Logger) { l.Info("unexpected", "orphan-key") }},
 	}
 
@@ -99,7 +110,7 @@ func TestLoggerMessageVariants(t *testing.T) {
 		{"trailing newline stripped", func(l *log.Logger) { l.Info("message with newline\n") }},
 		{"empty message", func(l *log.Logger) { l.Info("") }},
 		{"numeric message", func(l *log.Logger) { l.Info(42) }},
-		{"error as message", func(l *log.Logger) { l.Error(fmt.Errorf("disk full")) }},
+		{"error as message", func(l *log.Logger) { l.Error(errDiskFull) }},
 	}
 
 	for _, tc := range cases {
@@ -220,8 +231,11 @@ func TestNamedLoggerKeyValues(t *testing.T) {
 		{"info multiple kv", func(l *log.Logger) { l.Info("request handled", "status", 200, "latency_ms", 42) }},
 		{"debug with kv", func(l *log.Logger) { l.Debug("component started", "name", "router") }},
 		{"warn with kv", func(l *log.Logger) { l.Warn("slow response", "latency_ms", 1500) }},
-		{"error with error value", func(l *log.Logger) { l.Error("request failed", "err", fmt.Errorf("connection refused")) }},
-		{"print with kv (no level)", func(l *log.Logger) { l.Print("proxying", "from", "localhost:8080", "to", "api.example.com") }},
+		{"error with error value", func(l *log.Logger) { l.Error("request failed", "err", errConnectionRefused) }},
+		{
+			"print with kv (no level)",
+			func(l *log.Logger) { l.Print("proxying", "from", "localhost:8080", "to", "api.example.com") },
+		},
 		{"odd kv count (missing value)", func(l *log.Logger) { l.Info("unexpected", "orphan-key") }},
 	}
 

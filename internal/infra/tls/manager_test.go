@@ -167,10 +167,7 @@ func TestCheckCAExpiration(t *testing.T) {
 		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		// Should not panic
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(caCert)
-		})
+		require.NoError(t, infratls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should handle expiring certificate", func(t *testing.T) {
@@ -187,34 +184,23 @@ func TestCheckCAExpiration(t *testing.T) {
 		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		// Should not panic even with expiring cert
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(caCert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should show correct message for expired certificate", func(t *testing.T) {
-		// Create a certificate that has already expired
 		cert := &x509.Certificate{
 			NotAfter: time.Now().Add(-24 * time.Hour), // Expired yesterday
 		}
 
-		// Should not panic with expired cert
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should show correct message for certificate expiring in hours", func(t *testing.T) {
-		// Create a certificate that expires in less than 24 hours
 		cert := &x509.Certificate{
 			NotAfter: time.Now().Add(12 * time.Hour), // Expires in 12 hours
 		}
 
-		// Should not panic
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.Error(t, infratls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should not show warning for certificate valid for more than 7 days", func(t *testing.T) {
@@ -223,9 +209,6 @@ func TestCheckCAExpiration(t *testing.T) {
 			NotAfter: time.Now().Add(10 * 24 * time.Hour), // Expires in 10 days
 		}
 
-		// Should not panic and should not log warning
-		assert.NotPanics(t, func() {
-			infratls.CheckCAExpiration(cert)
-		})
+		require.NoError(t, infratls.CheckCAExpiration(cert))
 	})
 }

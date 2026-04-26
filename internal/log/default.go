@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	defaultLogger     *Logger = nil
+	defaultLogger     *Logger
 	defaultLoggerOnce sync.Once
 )
 

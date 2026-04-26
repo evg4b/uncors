@@ -83,22 +83,14 @@ func CheckCAExpiration(cert *x509.Certificate) error {
 
 	switch {
 	case timeLeft < 0:
-		return fmt.Errorf("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
+		return ErrCACertExpired
 	case timeLeft < 24*time.Hour:
 		hours := int(timeLeft.Hours())
 
-		return fmt.Errorf(
-			"CA certificate expires in less than %d hours! "+
-				"Consider regenerating it with: uncors generate-certs --force",
-			hours,
-		)
+		return fmt.Errorf("CA certificate expires in less than %d hours! %w", hours, ErrCACertExpiringSoon)
 	default:
 		days := int(timeLeft.Hours() / hoursInDay)
 
-		return fmt.Errorf(
-			"CA certificate expires in %d days! "+
-				"Consider regenerating it with: uncors generate-certs --force",
-			days,
-		)
+		return fmt.Errorf("CA certificate expires in %d days! %w", days, ErrCACertExpiringSoon)
 	}
 }

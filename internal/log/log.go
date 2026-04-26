@@ -48,7 +48,7 @@ var messageMap = map[Level]string{
 	ErrorLevel: "ERROR",
 }
 
-// implements internal.contracts.Logger.
+// Logger implements contracts.Logger.
 type Logger struct {
 	w      io.Writer
 	level  int32
@@ -106,6 +106,17 @@ func (l *Logger) Printf(msg string, args ...any) {
 	l.log(noLevel, fmt.Sprintf(msg, args...))
 }
 
+func (l *Logger) SetLevel(level Level) {
+	atomic.StoreInt32(&l.level, int32(level))
+}
+
+func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.w = w
+}
+
 func (l *Logger) log(level Level, msg string, keyvals ...any) {
 	if atomic.LoadInt32(&l.level) > int32(level) {
 		return
@@ -128,14 +139,14 @@ func (l *Logger) renderKeyVals(keyvals []any) {
 		return
 	}
 
-	for i := 0; i < len(keyvals); i += 2 {
+	for kvIdx := 0; kvIdx < len(keyvals); kvIdx += 2 {
 		l.buf.WriteByte(' ')
 
-		if i+1 >= len(keyvals) {
-			context := fmt.Sprintf("%v=undefined-value", keyvals[i])
+		if kvIdx+1 >= len(keyvals) {
+			context := fmt.Sprintf("%v=undefined-value", keyvals[kvIdx])
 			l.buf.WriteString(faintStyle.Render(context))
 		} else {
-			context := fmt.Sprintf("%v=%+v", keyvals[i], keyvals[i+1])
+			context := fmt.Sprintf("%v=%+v", keyvals[kvIdx], keyvals[kvIdx+1])
 			l.buf.WriteString(faintStyle.Render(context))
 		}
 	}
@@ -172,15 +183,4 @@ func (l *Logger) flushBuffer() error {
 	_, err := l.w.Write(l.buf.Bytes())
 
 	return err
-}
-
-func (l *Logger) SetLevel(level Level) {
-	atomic.StoreInt32(&l.level, int32(level))
-}
-
-func (l *Logger) SetOutput(w io.Writer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	l.w = w
 }
