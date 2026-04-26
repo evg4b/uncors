@@ -1,0 +1,39 @@
+
+[TestCheckNewVersion/do_not_panic_where/current_version_is_not_correct - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m failed to parse current version: malformed version: #
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/http_error_is_occupied - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m http error occurred: some http error
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/invalid_json_received - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m failed to parse last version response: unexpected EOF
+
+---
+
+[TestCheckNewVersion/do_not_panic_where/incorrect_json_from_api_received - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m failed to parse last version: malformed version: #
+
+---
+
+[TestCheckNewVersion/should_print_/prop1 - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;0;113;206m [0m[1;38;2;0;0;0;48;2;0;113;206mINFO[0m[48;2;0;113;206m [0m[48;2;0;113;206m  [0m NEW VERSION IS AVAILABLE!
+0.0.4 is not the latest version, you should upgrade to 0.0.7.
+See more information at https://github.com/evg4b/uncors/releases
+[48;2;0;113;206m [0m[1;38;2;0;0;0;48;2;0;113;206mINFO[0m[48;2;0;113;206m [0m[48;2;0;113;206m  [0m 
+
+---
+
+[TestCheckNewVersion/should_print_/prop2 - 1]
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Checking new version
+[48;2;140;140;140m [0m[1;38;2;0;0;0;48;2;140;140;140mDEBUG[0m[48;2;140;140;140m [0m[48;2;140;140;140m [0m Version is up to date
+
+---
