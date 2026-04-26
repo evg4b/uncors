@@ -31,10 +31,16 @@ func TestReplacerV2Replace(t *testing.T) {
 		})
 	})
 
+	t.Run("duplicate source key", func(t *testing.T) {
+		_, err := urlreplacer.NewReplacer("http://{client}.{client}.com", "http://api.com")
+
+		require.ErrorIs(t, err, urlreplacer.ErrDuplicateSourceKey)
+	})
+
 	t.Run("Replace", func(t *testing.T) {
 		t.Run("where schemes given and", func(t *testing.T) {
 			t.Run("schemes are equal", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "http://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("http://{tenant}.localhost.com", "http://api.{tenant}.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -70,7 +76,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("mapped from http to https", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacer("http://*.localhost.com", "https://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("http://{tenant}.localhost.com", "https://api.{tenant}.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -106,7 +112,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("mapped from https to http", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacer("https://*.localhost.com", "http://api.*.com")
+				replacer, err := urlreplacer.NewReplacer("https://{tenant}.localhost.com", "http://api.{tenant}.com")
 				testutils.CheckNoError(t, err)
 
 				testsCases := []replacerTestCase{
@@ -182,7 +188,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			}
 
 			t.Run("where schemes are not given", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacer("*.localhost.com", "api.*.com")
+				replacer, err := urlreplacer.NewReplacer("{tenant}.localhost.com", "api.{tenant}.com")
 				testutils.CheckNoError(t, err)
 
 				for _, testsCase := range testsCases {
@@ -196,7 +202,7 @@ func TestReplacerV2Replace(t *testing.T) {
 			})
 
 			t.Run("where schemes set as //", func(t *testing.T) {
-				replacer, err := urlreplacer.NewReplacer("//*.localhost.com", "//api.*.com")
+				replacer, err := urlreplacer.NewReplacer("//{tenant}.localhost.com", "//api.{tenant}.com")
 				testutils.CheckNoError(t, err)
 
 				for _, testsCase := range testsCases {
@@ -261,7 +267,7 @@ func TestReplacerIsTargetSecure(t *testing.T) {
 }
 
 func TestReplacerIsMatched(t *testing.T) {
-	replacer, err := urlreplacer.NewReplacer("*.my.cc:3000", "https://*.master-staging.com")
+	replacer, err := urlreplacer.NewReplacer("{tenant}.my.cc:3000", "https://{tenant}.master-staging.com")
 	testutils.CheckNoError(t, err)
 
 	testsCases := []struct {

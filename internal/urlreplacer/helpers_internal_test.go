@@ -30,52 +30,52 @@ var testCases = []struct {
 		expectedPattern: "${scheme}localhost:3000${path}",
 	},
 	{
-		name:            "single star",
-		url:             "*",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}${path}",
+		name:            "single placeholder",
+		url:             "{tenant}",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${tenant}${path}",
 	},
 	{
-		name:            "single star with port",
-		url:             "*:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}:3001${path}",
+		name:            "single placeholder with port",
+		url:             "{tenant}:3001",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${tenant}:3001${path}",
 	},
 	{
-		name:            "single star with url part",
-		url:             "demo.*.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?demo\.(?P<part1>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}demo.${part1}.com${path}",
+		name:            "single placeholder with url part",
+		url:             "demo.{tenant}.com",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?demo\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}demo.${tenant}.com${path}",
 	},
 	{
-		name:            "single star with url part and port",
-		url:             "api.*.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?api\.(?P<part1>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}api.${part1}.com:3001${path}",
+		name:            "single placeholder with url part and port",
+		url:             "api.{tenant}.com:3001",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?api\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}api.${tenant}.com:3001${path}",
 	},
 	{
-		name:            "multiple stars with url part",
-		url:             "*.host.*.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)\.host\.(?P<part2>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}.host.${part2}.com${path}",
+		name:            "multiple placeholders with url part",
+		url:             "{region}.host.{tenant}.com",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${region}.host.${tenant}.com${path}",
 	},
 	{
-		name:            "multiple stars with url part and port",
-		url:             "*.host.*.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)\.host\.(?P<part2>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}.host.${part2}.com:3001${path}",
+		name:            "multiple placeholders with url part and port",
+		url:             "{region}.host.{tenant}.com:3001",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${region}.host.${tenant}.com:3001${path}",
 	},
 	{
 		name:            "host with default http port",
-		url:             "*.api.com:80",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}.api.com:80${path}",
+		url:             "{tenant}.api.com:80",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${tenant}.api.com:80${path}",
 	},
 	{
 		name:            "host with default https port",
-		url:             "*.api.com:443",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<part1>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${part1}.api.com:443${path}",
+		url:             "{tenant}.api.com:443",
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedPattern: "${scheme}${tenant}.api.com:443${path}",
 	},
 }
 
@@ -86,50 +86,49 @@ func TestWildCardToRegexp(t *testing.T) {
 				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
-				regexp, _, err := wildCardToRegexp(parsedPattern)
+				keys := extractKeys(testCase.url)
+				compiledRegexp, err := wildCardToRegexp(parsedPattern, keys)
 
 				require.NoError(t, err)
-				assert.Equal(t, testCase.expectedRegexp, regexp.String())
+				assert.Equal(t, testCase.expectedRegexp, compiledRegexp.String())
 			})
 		}
 	})
 
-	t.Run("wildcard count", func(t *testing.T) {
+	t.Run("extracted keys", func(t *testing.T) {
 		testCases := []struct {
 			name     string
 			url      string
-			expected int
+			expected []string
 		}{
 			{
-				name:     "no wildcards",
+				name:     "no placeholders",
 				url:      hosts.Localhost.Host(),
-				expected: 0,
+				expected: []string{},
 			},
 			{
-				name:     "single star",
-				url:      "*",
-				expected: 1,
+				name:     "single placeholder",
+				url:      "{tenant}",
+				expected: []string{"tenant"},
 			},
 			{
-				name:     "two stars",
-				url:      "*.*.com",
-				expected: 2,
+				name:     "two placeholders",
+				url:      "{region}.{tenant}.com",
+				expected: []string{"region", "tenant"},
 			},
 			{
-				name:     "three stars",
-				url:      "api.*.*.*.com",
-				expected: 3,
+				name:     "three placeholders",
+				url:      "api.{env}.{region}.{tenant}.com",
+				expected: []string{"env", "region", "tenant"},
 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlparser.Parse(testCase.url)
-				testutils.CheckNoError(t, err)
-
-				_, count, err := wildCardToRegexp(parsedPattern)
-
-				require.NoError(t, err)
-				assert.Equal(t, testCase.expected, count)
+				keys := extractKeys(testCase.url)
+				if testCase.expected == nil {
+					testCase.expected = []string{}
+				}
+				assert.Equal(t, testCase.expected, keys)
 			})
 		}
 	})
@@ -149,7 +148,7 @@ func TestWildCardToRegexp(t *testing.T) {
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
 				pattern := testCase.parsedPattern
-				_, _, err := wildCardToRegexp(&pattern)
+				_, err := wildCardToRegexp(&pattern, nil)
 
 				require.EqualError(t, err, testCase.expected)
 			})
@@ -164,49 +163,48 @@ func TestWildCardToReplacePattern(t *testing.T) {
 				parsedPattern, err := urlparser.Parse(testCase.url)
 				testutils.CheckNoError(t, err)
 
-				pattern, _ := wildCardToReplacePattern(parsedPattern)
+				keys := extractKeys(testCase.url)
+				pattern := wildCardToReplacePattern(parsedPattern, keys)
 
 				assert.Equal(t, testCase.expectedPattern, pattern)
 			})
 		}
 	})
 
-	t.Run("wildcard count", func(t *testing.T) {
+	t.Run("extracted keys", func(t *testing.T) {
 		testCases := []struct {
 			name     string
 			url      string
-			expected int
+			expected []string
 		}{
 			{
-				name:     "no wildcards",
+				name:     "no placeholders",
 				url:      hosts.Localhost.Host(),
-				expected: 0,
+				expected: []string{},
 			},
 			{
-				name:     "single star",
-				url:      "*",
-				expected: 1,
+				name:     "single placeholder",
+				url:      "{tenant}",
+				expected: []string{"tenant"},
 			},
 			{
-				name:     "two stars",
-				url:      "*.*.com",
-				expected: 2,
+				name:     "two placeholders",
+				url:      "{region}.{tenant}.com",
+				expected: []string{"region", "tenant"},
 			},
 			{
-				name:     "three stars",
-				url:      "api.*.*.*.com",
-				expected: 3,
+				name:     "three placeholders",
+				url:      "api.{env}.{region}.{tenant}.com",
+				expected: []string{"env", "region", "tenant"},
 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.name, func(t *testing.T) {
-				parsedPattern, err := urlparser.Parse(testCase.url)
-				testutils.CheckNoError(t, err)
-
-				_, count := wildCardToReplacePattern(parsedPattern)
-
-				require.NoError(t, err)
-				assert.Equal(t, testCase.expected, count)
+				keys := extractKeys(testCase.url)
+				if testCase.expected == nil {
+					testCase.expected = []string{}
+				}
+				assert.Equal(t, testCase.expected, keys)
 			})
 		}
 	})
