@@ -34,6 +34,8 @@ func Parse(rawURL string) (*url.URL, error) {
 // If the URL doesn't have a scheme, the provided scheme will be used.
 // If scheme is empty, the URL will be parsed without a default scheme.
 func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
+	// Replace {key} placeholders with * to allow parsing by net/url
+	// This preserves the placeholder intent while working with Go's URL parser
 	rawURL = placeholderRegexp.ReplaceAllString(rawURL, "*")
 	rawURL = defaultScheme(rawURL, scheme)
 
@@ -85,9 +87,9 @@ func defaultScheme(rawURL, scheme string) string {
 
 var (
 	// placeholderRegexp matches named URL placeholders like {client} or {region}.
-	// Placeholders are normalized to * before URL parsing.
 	placeholderRegexp = regexp.MustCompile(`\{[a-zA-Z][a-zA-Z0-9_]*\}`)
 
+	// domainRegexp validates domain names including * wildcards and {key} placeholders
 	domainRegexp = regexp.MustCompile(`^([a-zA-Z0-9-_*]{1,63}\.)*([a-zA-Z0-9-*]{1,63})$`)
 	ipv4Regexp   = regexp.MustCompile(`^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$`)
 	ipv6Regexp   = regexp.MustCompile(`^\[[a-fA-F0-9:]+]$`)

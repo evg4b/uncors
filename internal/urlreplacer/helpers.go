@@ -3,12 +3,14 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 )
 
 var (
 	placeholderRegexp = regexp.MustCompile(`\{([a-zA-Z][a-zA-Z0-9_]*)\}`)
+	schemeRegexp      = regexp.MustCompile(`^(https?):`)
 	errEmptyPort      = errors.New("empty port")
 )
 
@@ -127,4 +129,50 @@ func wildCardToReplacePattern(rawTarget string) string {
 	result.WriteString("${path}")
 
 	return result.String()
+}
+
+// validateRawURL checks that a raw URL pattern is valid: no path or query.
+// It works by temporarily replacing {key} placeholders with * for validation.
+func validateRawURL(rawURL string) error {
+	if len(rawURL) == 0 {
+		return errors.New("url is empty")
+	}
+
+	// Replace {key} placeholders with * for validation (only placeholders, not other braces)
+	// This allows standard url.Parse to validate the structure
+	normalized := placeholderRegexp.ReplaceAllString(rawURL, "*")
+
+	// Ensure URL has a scheme for proper parsing
+	if !strings.Contains(normalized, "://") {
+		if strings.HasPrefix(normalized, "//") {
+			normalized = "http:" + normalized
+		} else {
+			normalized = "http://" + normalized
+		}
+	}
+
+	// Validate with standard library
+	parsed, err := url.Parse(normalized)
+	if err != nil {
+		return fmt.Errorf("invalid url: %w", err)
+	}
+
+	// Check for path/query/fragment
+	if len(parsed.Path) > 0 && parsed.Path != "/" {
+		return errors.New("url must not have a path")
+	}
+	if len(parsed.RawQuery) > 0 {
+		return errors.New("url must not have query parameters")
+	}
+
+	return nil
+}
+
+// extractScheme returns the scheme (http or https) from a raw URL, or empty string.
+func extractScheme(rawURL string) string {
+	matches := schemeRegexp.FindStringSubmatch(rawURL)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
 }

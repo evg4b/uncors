@@ -3,11 +3,8 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
-
-	"github.com/evg4b/uncors/internal/urlparser"
 )
 
 var (
@@ -20,16 +17,17 @@ var (
 	ErrInvalidTargetURL   = errors.New("target host is invalid")
 	ErrURLNotMatched      = errors.New("is not matched")
 	ErrDuplicateSourceKey = errors.New("source url contains duplicate placeholder key")
+	ErrURLHasPath         = errors.New("url must not have a path")
+	ErrURLHasQuery        = errors.New("url must not have query parameters")
 )
 
 type hook = func(string) string
 
 type Replacer struct {
-	source  *url.URL
-	target  *url.URL
 	regexp  *regexp.Regexp
 	pattern string
 	hooks   map[string]hook
+	scheme  string // target scheme (http or https), or empty
 }
 
 func NewReplacer(source, target string) (*Replacer, error) {
@@ -46,22 +44,20 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, fmt.Errorf("%w: {%s}", ErrDuplicateSourceKey, dup)
 	}
 
-	var err error
+	// Validate raw URLs before any processing
+	if err := validateRawURL(source); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidSourceURL, err)
+	}
+
+	if err := validateRawURL(target); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidTargetURL, err)
+	}
 
 	replacer := &Replacer{
 		hooks: map[string]func(string) string{},
 	}
 
-	replacer.source, err = urlparser.Parse(source)
-	if err != nil {
-		return nil, ErrInvalidSourceURL
-	}
-
-	replacer.target, err = urlparser.Parse(target)
-	if err != nil {
-		return nil, ErrInvalidTargetURL
-	}
-
+	var err error
 	replacer.regexp, err = wildCardToRegexp(source)
 	if err != nil {
 		return nil, err
@@ -69,23 +65,13 @@ func NewReplacer(source, target string) (*Replacer, error) {
 
 	replacer.pattern = wildCardToReplacePattern(target)
 
-	if len(replacer.target.Scheme) > 0 {
-		replacer.hooks["scheme"] = schemeHookFactory(replacer.target.Scheme)
+	// Extract and store target scheme
+	replacer.scheme = extractScheme(target)
+	if len(replacer.scheme) > 0 {
+		replacer.hooks["scheme"] = schemeHookFactory(replacer.scheme)
 	}
 
-	return replacer, validateReplacer(replacer)
-}
-
-func validateReplacer(replacer *Replacer) error {
-	if len(replacer.source.Path) > 0 || len(replacer.source.RawQuery) > 0 {
-		return ErrInvalidSourceURL
-	}
-
-	if len(replacer.target.Path) > 0 || len(replacer.target.RawQuery) > 0 {
-		return ErrInvalidTargetURL
-	}
-
-	return nil
+	return replacer, nil
 }
 
 func (r *Replacer) Replace(source string) (string, error) {
@@ -123,8 +109,8 @@ func (r *Replacer) ReplaceSoft(source string) string {
 }
 
 func (r *Replacer) IsTargetSecure() bool {
-	if len(r.target.Scheme) > 0 {
-		return isSecure(r.target.Scheme)
+	if len(r.scheme) > 0 {
+		return isSecure(r.scheme)
 	}
 
 	return false
