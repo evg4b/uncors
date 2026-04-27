@@ -131,16 +131,21 @@ func wildCardToReplacePattern(rawTarget string) string {
 	return result.String()
 }
 
-// validateRawURL checks that a raw URL pattern is valid: no path or query.
-// It works by temporarily replacing {key} placeholders with * for validation.
+// validateRawURL checks that a raw URL pattern is valid: no path or query, no wildcard *.
+// Only {key} placeholders are allowed, not * wildcards.
 func validateRawURL(rawURL string) error {
 	if len(rawURL) == 0 {
 		return errors.New("url is empty")
 	}
 
-	// Replace {key} placeholders with * for validation (only placeholders, not other braces)
+	// Check for * wildcard usage - not allowed, use {key} placeholders instead
+	if strings.Contains(rawURL, "*") {
+		return errors.New("wildcard * is not allowed, use {key} placeholders instead (e.g., {tenant}.demo.com)")
+	}
+
+	// Replace {key} placeholders with a placeholder for validation
 	// This allows standard url.Parse to validate the structure
-	normalized := placeholderRegexp.ReplaceAllString(rawURL, "*")
+	normalized := placeholderRegexp.ReplaceAllString(rawURL, "x")
 
 	// Ensure URL has a scheme for proper parsing
 	if !strings.Contains(normalized, "://") {
