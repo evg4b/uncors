@@ -89,7 +89,7 @@ var (
 	// placeholderRegexp matches named URL placeholders like {client} or {region}.
 	placeholderRegexp = regexp.MustCompile(`\{[a-zA-Z][a-zA-Z0-9_]*\}`)
 
-	// domainRegexp validates domain names including * wildcards and {key} placeholders
+	// domainRegexp validates domain names including * wildcards and {key} placeholders.
 	domainRegexp = regexp.MustCompile(`^([a-zA-Z0-9-_*]{1,63}\.)*([a-zA-Z0-9-*]{1,63})$`)
 	ipv4Regexp   = regexp.MustCompile(`^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$`)
 	ipv6Regexp   = regexp.MustCompile(`^\[[a-fA-F0-9:]+]$`)

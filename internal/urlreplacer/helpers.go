@@ -9,9 +9,13 @@ import (
 )
 
 var (
-	placeholderRegexp = regexp.MustCompile(`\{([a-zA-Z][a-zA-Z0-9_]*)\}`)
-	schemeRegexp      = regexp.MustCompile(`^(https?):`)
-	errEmptyPort      = errors.New("empty port")
+	placeholderRegexp     = regexp.MustCompile(`\{([a-zA-Z][a-zA-Z0-9_]*)\}`)
+	schemeRegexp          = regexp.MustCompile(`^(https?):`)
+	errEmptyPort          = errors.New("empty port")
+	errEmptyURL           = errors.New("url is empty")
+	errWildcardNotAllowed = errors.New("use {key} placeholders instead of * wildcard")
+	errURLHasPath         = errors.New("url must not have a path")
+	errURLHasQuery        = errors.New("url must not have query parameters")
 )
 
 // extractKeys returns the ordered placeholder key names from a raw URL pattern.
@@ -135,12 +139,12 @@ func wildCardToReplacePattern(rawTarget string) string {
 // Only {key} placeholders are allowed, not * wildcards.
 func validateRawURL(rawURL string) error {
 	if len(rawURL) == 0 {
-		return errors.New("url is empty")
+		return errEmptyURL
 	}
 
 	// Check for * wildcard usage - not allowed, use {key} placeholders instead
 	if strings.Contains(rawURL, "*") {
-		return errors.New("wildcard * is not allowed, use {key} placeholders instead (e.g., {tenant}.demo.com)")
+		return errWildcardNotAllowed
 	}
 
 	// Replace {key} placeholders with a placeholder for validation
@@ -164,10 +168,11 @@ func validateRawURL(rawURL string) error {
 
 	// Check for path/query/fragment
 	if len(parsed.Path) > 0 && parsed.Path != "/" {
-		return errors.New("url must not have a path")
+		return errURLHasPath
 	}
+
 	if len(parsed.RawQuery) > 0 {
-		return errors.New("url must not have query parameters")
+		return errURLHasQuery
 	}
 
 	return nil
@@ -179,5 +184,6 @@ func extractScheme(rawURL string) string {
 	if len(matches) > 1 {
 		return matches[1]
 	}
+
 	return ""
 }

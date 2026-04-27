@@ -45,19 +45,20 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	}
 
 	// Validate raw URLs before any processing
-	if err := validateRawURL(source); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidSourceURL, err)
+	err := validateRawURL(source)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidSourceURL, err)
 	}
 
-	if err := validateRawURL(target); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidTargetURL, err)
+	err = validateRawURL(target)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidTargetURL, err)
 	}
 
 	replacer := &Replacer{
 		hooks: map[string]func(string) string{},
 	}
 
-	var err error
 	replacer.regexp, err = wildCardToRegexp(source)
 	if err != nil {
 		return nil, err
