@@ -30,6 +30,7 @@ type Uncors struct {
 
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
+	closers          []io.Closer
 }
 
 func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
@@ -65,6 +66,11 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	app.logger.Info("Restarting server....")
 	app.logger.Print("")
 
+	// Snapshot current closers so they can be drained after the new handlers
+	// are running (new closers will be registered during mappingsToTarget).
+	previous := app.closers
+	app.closers = nil
+
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
 		return err
@@ -75,6 +81,11 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
+	// Flush and close the previous set of HAR writers now that new ones are live.
+	for _, c := range previous {
+		_ = c.Close()
+	}
+
 	app.logger.Info(uncorsConfig.Mappings.String())
 	app.logger.Print("")
 
@@ -82,6 +93,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *Uncors) Close() error {
+	app.closeAll()
+
 	return app.server.Close()
 }
 
@@ -99,6 +112,18 @@ func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
 	})
 
 	return app.cacheStorage
+}
+
+func (app *Uncors) registerCloser(c io.Closer) {
+	app.closers = append(app.closers, c)
+}
+
+func (app *Uncors) closeAll() {
+	for _, c := range app.closers {
+		_ = c.Close()
+	}
+
+	app.closers = nil
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
