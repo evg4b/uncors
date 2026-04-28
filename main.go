@@ -117,5 +117,8 @@ func loadConfiguration(logger *log.Logger, viperInstance *viper.Viper, fs afero.
 		logger.SetLevel(log.InfoLevel)
 	}
 
+	// Validate that hosts from mappings are present in the hosts file
+	validators.ValidateHostsFileEntries(uncorsConfig, fs)
+
 	return uncorsConfig
 }
