@@ -85,6 +85,12 @@ func TestParse(t *testing.T) {
 		{in: "https://pressly.餐厅", out: "https://pressly.%E9%A4%90%E5%8E%85"},
 		{in: "https://pressly.组织机构", out: "https://pressly.%E7%BB%84%E7%BB%87%E6%9C%BA%E6%9E%84"},
 
+		// Named placeholder patterns ({key} syntax):
+		{in: "http://{client}.local.com", out: "http://*.local.com"},
+		{in: "{tenant}.local.com", out: "//*.local.com"},
+		{in: "http://{region}.{tenant}.host.com", out: "http://*.*.host.com"},
+		{in: "{tenant}.local.com:8080", out: "//*.local.com:8080"},
+
 		// // Some obviously wrong data:
 		{in: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", err: true},
 		{in: "javascript:evilFunction()", err: true},
