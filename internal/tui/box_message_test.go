@@ -26,7 +26,8 @@ func TestPrintWarningBox(t *testing.T) {
 		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
 			buffer := strings.Builder{}
 
-			tui.PrintWarningBox(&buffer, testCase.message)
+			tui.NewCliOutput(&buffer).
+				WarnBox(testCase.message)
 
 			testutils.MatchSnapshot(t, buffer.String())
 		}))
@@ -51,7 +52,8 @@ func TestPrintInfoBox(t *testing.T) {
 		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
 			buffer := strings.Builder{}
 
-			tui.PrintInfoBox(&buffer, testCase.message)
+			tui.NewCliOutput(&buffer).
+				InfoBox(testCase.message)
 
 			testutils.MatchSnapshot(t, buffer.String())
 		}))

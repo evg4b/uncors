@@ -1,12 +1,10 @@
 package tui_test
 
 import (
-	"net/http"
-	"net/url"
 	"testing"
 )
 
-func TestPrintResponse(t *testing.T) {
+func TestPrintResponse(_ *testing.T) {
 	/*
 		t.Run("should correctly format", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 			tests := []struct {
@@ -74,6 +72,7 @@ func TestPrintResponse(t *testing.T) {
 	*/
 }
 
+/*
 func request(method string, path string) *http.Request {
 	return &http.Request{
 		Method: method,
@@ -84,3 +83,4 @@ func request(method string, path string) *http.Request {
 		},
 	}
 }
+*/
