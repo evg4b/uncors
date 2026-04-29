@@ -19,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -30,13 +31,13 @@ func TestCreateUncors(t *testing.T) {
 	logger := log.Default()
 	version := "1.0.0"
 
-	app := uncors.CreateUncors(fs, logger, version)
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), logger, version)
 	assert.NotNil(t, app)
 }
 
 func TestUncorsApp(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	testResponceHeader := "# Test resrver"
 	hostFmt := func(host string) string { return fmt.Sprintf("\tHost: %v", host) }
@@ -117,7 +118,7 @@ func TestUncorsApp(t *testing.T) {
 
 func TestUncorsStart(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -157,7 +158,7 @@ func TestUncorsStart(t *testing.T) {
 
 func TestUncorsRestart(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -219,7 +220,7 @@ func TestUncorsRestart(t *testing.T) {
 
 func TestUncorsClose(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -250,7 +251,7 @@ func TestUncorsClose(t *testing.T) {
 
 func TestUncorsShutdown(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)
@@ -275,7 +276,7 @@ func TestUncorsShutdown(t *testing.T) {
 
 func TestUncorsWait(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -311,7 +312,7 @@ func TestUncorsWait(t *testing.T) {
 
 func TestUncorsWithHTTPSMapping(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -371,7 +372,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 
 func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTP")
@@ -452,7 +453,7 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 
 func TestUncorsWithComplexConfiguration(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
 
 	require.NoError(t, fs.MkdirAll("/static", 0o755))
 	require.NoError(t, afero.WriteFile(fs, "/static/index.html", []byte("Static"), 0o644))

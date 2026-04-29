@@ -17,6 +17,7 @@ import (
 	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ import (
 
 func TestHandlerWithHTTP(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -102,7 +103,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 
 func TestHandlerWithHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -205,7 +206,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 
 func TestHandlerWithMockMiddleware(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	mockFile := "/mock-response.json"
 	mockContent := `{"message":"mocked"}`
@@ -254,7 +255,7 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 
 func TestHandlerWithStaticMiddleware(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	staticDir := "/static"
 	indexFile := filepath.Join(staticDir, "index.html")
@@ -321,7 +322,7 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 
 func TestHandlerWithCache(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	callCount := 0
 
@@ -411,7 +412,7 @@ func TestHandlerWithCache(t *testing.T) {
 
 func TestHandlerWithMultipleMappings(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -477,7 +478,7 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 
 func TestHandlerWithRewrite(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -525,7 +526,7 @@ func TestHandlerWithRewrite(t *testing.T) {
 
 func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, log.New(io.Discard), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.New(io.Discard), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

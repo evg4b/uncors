@@ -25,6 +25,7 @@ type Uncors struct {
 	fs      afero.Fs
 	version string
 	logger  *log.Logger
+	ouptut  contracts.Output
 	stdout  io.Writer
 	server  *server.Server
 
@@ -32,11 +33,12 @@ type Uncors struct {
 	cacheStorage     contracts.Cache
 }
 
-func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
+func CreateUncors(fs afero.Fs, output contracts.Output, logger *log.Logger, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
 		logger:  logger,
+		ouptut:  output,
 		stdout:  os.Stdout,
 		server:  server.New(),
 	}

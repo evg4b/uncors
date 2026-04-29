@@ -29,8 +29,10 @@ func main() {
 
 func run() int {
 	logger := log.Default()
+	output := tui.NewCliOutput(os.Stdout)
 
 	defer helpers.PanicInterceptor(func(value any) {
+		output.Error(value)
 		logger.Error(value)
 	})
 
@@ -43,6 +45,7 @@ func run() int {
 
 		err := flags.Parse(os.Args[2:])
 		if err != nil {
+			output.Error(err)
 			logger.Error(err)
 
 			return 1
@@ -51,6 +54,7 @@ func run() int {
 		err = cmd.Execute()
 		if err != nil {
 			logger.Error(err)
+			output.Error(err)
 
 			return 1
 		}
@@ -59,8 +63,8 @@ func run() int {
 	}
 
 	pflag.Usage = func() {
-		tui.PrintLogo(os.Stdout, Version)
-		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		tui.PrintLogo(output, Version)
+		fmt.Fprintf(output, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 
@@ -69,16 +73,18 @@ func run() int {
 	uncorsConfig := loadConfiguration(logger, viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, logger, Version)
+	app := uncors.CreateUncors(fs, output, logger, Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
 			logger.Errorf("Config reloading error: %v", value)
+			output.Errorf("Config reloading error: %v", value)
 		})
 
 		err := app.Restart(ctx, loadConfiguration(logger, viperInstance, fs))
 		if err != nil {
 			logger.Errorf("Failed to restart server: %v", err)
+			output.Errorf("Failed to restart server: %v", err)
 		}
 	})
 	viperInstance.WatchConfig()
@@ -97,7 +103,7 @@ func run() int {
 	})
 
 	app.Wait()
-	logger.Info("Server was stopped")
+	output.Info("Server was stopped")
 
 	return 0
 }
