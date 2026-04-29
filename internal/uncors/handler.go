@@ -52,7 +52,7 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return contracts.LazyMiddleware(func() contracts.Middleware {
 			return cache.NewMiddleware(
-				cache.WithLogger(NewCacheLogger(app.logger)),
+				cache.WithOutput(app.output.NewPrefixOutput(styles.CacheStyle.Render("CACHE"))),
 				cache.WithMethods(cfg.Methods),
 				cache.WithCacheStorage(app.getCacheStorage(cfg)),
 				cache.WithGlobs(globs),
@@ -65,7 +65,7 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 	return func(cfg config.OptionsHandling) contracts.Middleware {
 		return contracts.LazyMiddleware(func() contracts.Middleware {
 			return options.NewMiddleware(
-				options.WithLogger(NewOptionsLogger(app.logger)),
+				options.WithOutput(app.output.NewPrefixOutput(styles.OptionsStyle.Render("OPTIONS"))),
 				options.WithHeaders(cfg.Headers),
 				options.WithCode(cfg.Code),
 			)

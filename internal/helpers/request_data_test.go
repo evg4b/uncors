@@ -106,9 +106,7 @@ func TestToRequestData(t *testing.T) {
 				Header: testCase.headers,
 			}
 
-			res := &mockResponseWriter{statusCode: testCase.statusCode}
-
-			result := helpers.ToRequestData(req, res)
+			result := helpers.ToRequestData(req, testCase.statusCode)
 
 			if result.Method != testCase.expectedMethod {
 				t.Errorf("expected method %s, got %s", testCase.expectedMethod, result.Method)
@@ -141,9 +139,7 @@ func TestToRequestDataPreservesURL(t *testing.T) {
 		Header: make(http.Header),
 	}
 
-	res := &mockResponseWriter{statusCode: 200}
-
-	result := helpers.ToRequestData(req, res)
+	result := helpers.ToRequestData(req, 200)
 
 	if result.URL.String() != url.String() {
 		t.Errorf("expected URL %s, got %s", url.String(), result.URL.String())

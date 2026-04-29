@@ -7,11 +7,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 )
 
 type Middleware struct {
-	logger  contracts.Logger
+	output  contracts.Output
 	headers map[string]string
 	code    int
 }
@@ -40,14 +39,14 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
 	statucCode := helpers.NormaliseStatusCode(m.code)
 	resp.WriteHeader(statucCode)
 
-	tui.PrintResponse(m.logger, req, statucCode)
+	m.output.Request(helpers.ToRequestData(req, statucCode))
 }
 
 type MiddlewareOption = func(*Middleware)
 
-func WithLogger(logger contracts.Logger) MiddlewareOption {
+func WithOutput(output contracts.Output) MiddlewareOption {
 	return func(m *Middleware) {
-		m.logger = logger
+		m.output = output
 	}
 }
 

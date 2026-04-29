@@ -53,7 +53,7 @@ func cacheFactory() handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithLogger(log.Null()),
+			cache.WithOutput(mocks.NoopOutput()),
 			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
 		)
 	}
@@ -83,7 +83,7 @@ func proxyFactory(
 func optionsFactory() handler.OptionsMiddlewareFactory {
 	return func(config config.OptionsHandling) contracts.Middleware {
 		return options.NewMiddleware(
-			options.WithLogger(log.Null()),
+			options.WithOutput(mocks.NoopOutput()),
 			options.WithHeaders(config.Headers),
 			options.WithCode(config.Code),
 		)

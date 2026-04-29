@@ -42,7 +42,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		return
 	}
 
-	h.output.Request(helpers.ToRequestData(request, writer))
+	h.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
