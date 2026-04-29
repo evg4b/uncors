@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
@@ -89,7 +90,7 @@ func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 	return func(response config.Response) contracts.Handler {
 		return contracts.LazyHandler(func() contracts.Handler {
 			return mock.NewMockHandler(
-				mock.WithLogger(NewMockLogger(app.logger)),
+				mock.WithOutput(app.output.NewPrefixOutput(styles.MockStyle.Render("MOCK"))),
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),

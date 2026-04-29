@@ -3,6 +3,7 @@ package mock
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -11,14 +12,13 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 )
 
 type Handler struct {
 	response config.Response
-	logger   contracts.Logger
+	output   contracts.Output
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }
@@ -36,13 +36,13 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		h.logger.Error("Mock handler error", "error", err, "url", request.URL.String())
+		log.Printf("ERROR: Mock handler error: %s (URL: %s)", err.Error(), request.URL.String())
 		infra.HTTPError(writer, err)
 
 		return
 	}
 
-	tui.PrintResponse(h.logger, request, writer.StatusCode())
+	h.output.Request(helpers.ToRequestData(request, writer))
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -111,7 +111,7 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 	response := h.response
 
 	if response.Delay > 0 {
-		h.logger.Debugf("Delay %s for %s", response.Delay, request.URL.RequestURI())
+		log.Printf("Delay %s for %s", response.Delay, request.URL.RequestURI())
 		ctx := request.Context()
 		url := request.URL.RequestURI()
 
@@ -120,11 +120,11 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 			select {
 			case <-ctx.Done():
 				writer.WriteHeader(http.StatusServiceUnavailable)
-				h.logger.Debugf("Delay is canceled (url: %s)", url)
+				log.Printf("Delay is canceled (url: %s)", url)
 
 				return true
 			case <-h.after(response.Delay):
-				h.logger.Debugf("Delay is complete (url: %s)", url)
+				log.Printf("Delay is complete (url: %s)", url)
 
 				break waitingLoop
 			}
@@ -132,30 +132,4 @@ func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts
 	}
 
 	return false
-}
-
-type HandlerOption = func(*Handler)
-
-func WithLogger(logger contracts.Logger) HandlerOption {
-	return func(h *Handler) {
-		h.logger = logger
-	}
-}
-
-func WithResponse(response config.Response) HandlerOption {
-	return func(h *Handler) {
-		h.response = response
-	}
-}
-
-func WithFileSystem(fs afero.Fs) HandlerOption {
-	return func(h *Handler) {
-		h.fs = fs
-	}
-}
-
-func WithAfter(after func(duration time.Duration) <-chan time.Time) HandlerOption {
-	return func(h *Handler) {
-		h.after = after
-	}
 }

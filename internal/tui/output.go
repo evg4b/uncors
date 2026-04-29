@@ -52,6 +52,12 @@ func WithPrefix(prefix string) Option {
 	}
 }
 
+func withMutex(mutex *sync.RWMutex) Option {
+	return func(o *CliOutput) {
+		o.mutex = mutex
+	}
+}
+
 func NewCliOutput(output io.Writer, options ...Option) *CliOutput {
 	return helpers.ApplyOptions(&CliOutput{
 		mutex:  &sync.RWMutex{},
@@ -71,6 +77,19 @@ func (o *CliOutput) Info(msg any) {
 	o.print(fmt.Sprint(msg), infoOutput)
 }
 
+func (o *CliOutput) Infof(msg string, args ...any) {
+	o.print(fmt.Sprintf(msg, args...), infoOutput)
+}
+
+func (o *CliOutput) InfoBox(messages ...string) {
+	printMessageBox(
+		o.output,
+		strings.Join(messages, "\n"),
+		InfoLabel,
+		styles.InfoBlockStyle,
+	)
+}
+
 func (o *CliOutput) Error(msg any) {
 	o.print(fmt.Sprint(msg), errorOutput)
 }
@@ -79,12 +98,46 @@ func (o *CliOutput) Errorf(msg string, args ...any) {
 	o.print(fmt.Sprintf(msg, args...), errorOutput)
 }
 
+func (o *CliOutput) ErrorBox(messages ...string) {
+	printMessageBox(
+		o.output,
+		strings.Join(messages, "\n"),
+		ErrorLabel,
+		styles.ErrorBlockStyle,
+	)
+}
+
+func (o *CliOutput) Warn(msg any) {
+	o.print(fmt.Sprint(msg), warnOutput)
+}
+
+func (o *CliOutput) Warnf(msg string, args ...any) {
+	o.print(fmt.Sprintf(msg, args...), warnOutput)
+}
+
+func (o *CliOutput) WarnBox(messages ...string) {
+	printMessageBox(
+		o.output,
+		strings.Join(messages, "\n"),
+		WarningLabel,
+		styles.WarningBlockStyle,
+	)
+}
+
 func (o *CliOutput) Print(msg any) {
 	o.print(fmt.Sprint(msg), defaultOutput)
 }
 
+func (o *CliOutput) Printf(msg string, args ...any) {
+	o.print(fmt.Sprintf(msg, args...), defaultOutput)
+}
+
 func (o *CliOutput) Request(data *contracts.ReqestData) {
 	o.print(printResponse(data), defaultOutput)
+}
+
+func (o *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
+	return NewCliOutput(o.output, WithPrefix(prefix), withMutex(o.mutex))
 }
 
 func (o *CliOutput) print(msg string, outputType ouputType) {

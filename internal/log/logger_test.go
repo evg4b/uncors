@@ -159,7 +159,6 @@ func allLoggerFactories() []loggerFactory {
 		{"no prefix", func(base *log.Logger) *log.Logger { return base }},
 		{"proxy", uncors.NewProxyLogger},
 		{"options", uncors.NewOptionsLogger},
-		{"mock", uncors.NewMockLogger},
 		{"static", uncors.NewStaticLogger},
 		{"cache", uncors.NewCacheLogger},
 		{"rewrite", uncors.NewRewriteLogger},

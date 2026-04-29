@@ -108,7 +108,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 	return func(response config.Response) contracts.Handler {
 		return mock.NewMockHandler(
-			mock.WithLogger(log.Null()),
+			mock.WithOutput(mocks.NoopOutput()),
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),

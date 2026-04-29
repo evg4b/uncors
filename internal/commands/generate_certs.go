@@ -8,7 +8,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -25,20 +24,6 @@ type GenerateCertsCommand struct {
 	outputDir    string
 	fs           afero.Fs
 	output       contracts.Output
-}
-
-type Option = func(*GenerateCertsCommand)
-
-func WithOutput(output contracts.Output) Option {
-	return func(c *GenerateCertsCommand) {
-		c.output = output
-	}
-}
-
-func WithFs(fs afero.Fs) Option {
-	return func(c *GenerateCertsCommand) {
-		c.fs = fs
-	}
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
@@ -67,8 +52,7 @@ func (c *GenerateCertsCommand) Execute() error {
 	if !c.force {
 		_, err := c.fs.Stat(certPath)
 		if err == nil {
-			tui.PrintErrorBox(
-				c.output,
+			c.output.Printf(
 				fmt.Sprintf("CA certificate already exists at %s", certPath),
 				"Use --force to overwrite",
 			)
@@ -78,8 +62,7 @@ func (c *GenerateCertsCommand) Execute() error {
 
 		_, err = c.fs.Stat(keyPath)
 		if err == nil {
-			tui.PrintErrorBox(
-				c.output,
+			c.output.Printf(
 				fmt.Sprintf("CA private key already exists at %s", keyPath),
 				"Use --force to overwrite",
 			)
@@ -99,8 +82,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		return fmt.Errorf("failed to generate CA certificate: %w", err)
 	}
 
-	tui.PrintInfoBox(
-		c.output,
+	c.output.InfoBox(
 		"CA certificate generated successfully!",
 		fmt.Sprintf("  Certificate: %s", certPath),
 		fmt.Sprintf("  Private key: %s", keyPath),

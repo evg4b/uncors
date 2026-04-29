@@ -3,9 +3,7 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
-	"io"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 
@@ -26,7 +24,6 @@ type Uncors struct {
 	version string
 	logger  *log.Logger
 	output  contracts.Output
-	stdout  io.Writer
 	server  *server.Server
 
 	cacheStorageOnce sync.Once
@@ -39,17 +36,16 @@ func CreateUncors(fs afero.Fs, output contracts.Output, logger *log.Logger, vers
 		version: version,
 		logger:  logger,
 		output:  output,
-		stdout:  os.Stdout,
 		server:  server.New(),
 	}
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	tui.PrintLogo(app.stdout, app.version)
+	tui.PrintLogo(app.output, app.version)
 	app.output.Print("")
-	tui.PrintWarningBox(app.stdout, DisclaimerMessage)
+	app.output.WarnBox(DisclaimerMessage)
 	app.output.Print("")
-	tui.PrintInfoBox(app.stdout, uncorsConfig.Mappings.String())
+	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)

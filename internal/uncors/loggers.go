@@ -14,10 +14,6 @@ func NewOptionsLogger(logger *log.Logger) *log.Logger {
 	return log.CreateLogger(logger, styles.ProxyStyle.Render("OPTNS"))
 }
 
-func NewMockLogger(logger *log.Logger) *log.Logger {
-	return log.CreateLogger(logger, styles.MockStyle.Render("MOCK"))
-}
-
 func NewStaticLogger(logger *log.Logger) *log.Logger {
 	return log.CreateLogger(logger, styles.StaticStyle.Render("STATIC"))
 }

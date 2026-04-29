@@ -27,15 +27,6 @@ func PrintInfoBox(out io.Writer, messages ...string) {
 	)
 }
 
-func PrintErrorBox(out io.Writer, messages ...string) {
-	printMessageBox(
-		out,
-		strings.Join(messages, "\n"),
-		ErrorLabel,
-		styles.ErrorBlockStyle,
-	)
-}
-
 func printMessageBox(out io.Writer, message, prefix string, blockStyles lipgloss.Style) {
 	height := lipgloss.Height(message)
 	space := strings.Repeat("\n", height-1)
