@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/gorilla/mux"
 )
 
@@ -27,7 +27,6 @@ type RequestHandler struct {
 	*mux.Router
 
 	mappings                 config.Mappings
-	logger                   *log.Logger
 	output                   contracts.Output
 	cacheMiddlewareFactory   CacheMiddlewareFactory
 	staticMiddlewareFactory  StaticMiddlewareFactory
@@ -67,7 +66,8 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 
 	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, r *http.Request) {
 		infra.HTTPError(writer, errHostNotMapped)
-		handler.logger.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
+		handler.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
+		log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
 	}))
 
 	return handler

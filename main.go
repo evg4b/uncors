@@ -30,7 +30,6 @@ func main() {
 }
 
 func run() int {
-	logger := uncors_log.Default()
 	output := tui.NewCliOutput(os.Stdout)
 
 	defer helpers.PanicInterceptor(func(value any) {
@@ -51,15 +50,15 @@ func run() int {
 		err := flags.Parse(os.Args[2:])
 		if err != nil {
 			output.Error(err)
-			logger.Error(err)
+			log.Printf("Error: %v", err)
 
 			return 1
 		}
 
 		err = cmd.Execute()
 		if err != nil {
-			logger.Error(err)
 			output.Error(err)
+			log.Printf("Error: %v", err)
 
 			return 1
 		}
@@ -78,17 +77,17 @@ func run() int {
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, output, logger, Version)
+	app := uncors.CreateUncors(fs, output, uncors_log.Default(), Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
-			logger.Errorf("Config reloading error: %v", value)
+			log.Printf("Config reloading error: %v", value)
 			output.Errorf("Config reloading error: %v", value)
 		})
 
 		err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
 		if err != nil {
-			logger.Errorf("Failed to restart server: %v", err)
+			log.Printf("Failed to restart server: %v", err)
 			output.Errorf("Failed to restart server: %v", err)
 		}
 	})
@@ -102,7 +101,7 @@ func run() int {
 	}
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		logger.Debug("shutdown signal received")
+		log.Println("shutdown signal received")
 
 		return app.Shutdown(shutdownCtx)
 	})

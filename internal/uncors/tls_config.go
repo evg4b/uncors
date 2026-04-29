@@ -3,10 +3,11 @@ package uncors
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 
@@ -14,11 +15,11 @@ import (
 type hostCertManager struct {
 	mappings    config.Mappings
 	certManager *infratls.CertManager // for auto-generated certificates
-	logger      *log.Logger
+	output      contracts.Output
 }
 
 // newHostCertManager creates a new host-based certificate manager.
-func newHostCertManager(fs afero.Fs, logger *log.Logger, mappings config.Mappings) (*hostCertManager, error) {
+func newHostCertManager(fs afero.Fs, output contracts.Output, mappings config.Mappings) (*hostCertManager, error) {
 	// Load CA for auto-generation
 	caCert, caKey, err := infratls.LoadDefaultCA(fs)
 	if err != nil {
@@ -31,9 +32,12 @@ func newHostCertManager(fs afero.Fs, logger *log.Logger, mappings config.Mapping
 	}
 
 	return &hostCertManager{
-		mappings:    mappings,
-		certManager: infratls.NewCertManager(caCert, caKey, logger),
-		logger:      logger,
+		mappings: mappings,
+		certManager: infratls.NewCertManager(
+			infratls.WithCert(caCert, caKey),
+			infratls.WithOutput(output),
+		),
+		output: output,
 	}, nil
 }
 
@@ -42,7 +46,7 @@ func (m *hostCertManager) getFallbackHost() (string, error) {
 	if len(m.mappings) > 0 {
 		firstHost, _, err := m.mappings[0].GetFromHostPort()
 		if err == nil {
-			m.logger.Debugf("No SNI provided, using fallback host from mappings: %s", firstHost)
+			log.Printf("No SNI provided, using fallback host from mappings: %s", firstHost)
 
 			return firstHost, nil
 		}
@@ -76,12 +80,12 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 
 // buildTLSConfig creates a TLS configuration for the given HTTPS mappings.
 // It uses auto-generated certificates with SNI support.
-func buildTLSConfig(fs afero.Fs, logger *log.Logger, mappings config.Mappings) (*tls.Config, error) {
+func buildTLSConfig(fs afero.Fs, output contracts.Output, mappings config.Mappings) (*tls.Config, error) {
 	if len(mappings) == 0 {
 		return nil, infratls.ErrNoMappingsProvided
 	}
 
-	manager, err := newHostCertManager(fs, logger, mappings)
+	manager, err := newHostCertManager(fs, output, mappings)
 	if err != nil {
 		return nil, err
 	}

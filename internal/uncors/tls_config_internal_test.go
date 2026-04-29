@@ -8,8 +8,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		mappings := config.Mappings{}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
@@ -52,7 +52,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -85,7 +85,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
@@ -118,7 +118,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -164,7 +164,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)

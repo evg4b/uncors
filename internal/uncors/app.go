@@ -111,7 +111,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		)
 
 		if group.Scheme == "https" {
-			tlsConfig, err = buildTLSConfig(app.fs, app.logger, group.Mappings)
+			tlsConfig, err = buildTLSConfig(app.fs, app.output, group.Mappings)
 			if err != nil {
 				return nil, err
 			}
