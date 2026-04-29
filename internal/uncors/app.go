@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/tui"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 
@@ -22,7 +21,6 @@ const baseAddress = "127.0.0.1"
 type Uncors struct {
 	fs      afero.Fs
 	version string
-	logger  *log.Logger
 	output  contracts.Output
 	server  *server.Server
 
@@ -30,11 +28,10 @@ type Uncors struct {
 	cacheStorage     contracts.Cache
 }
 
-func CreateUncors(fs afero.Fs, output contracts.Output, logger *log.Logger, version string) *Uncors {
+func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
-		logger:  logger,
 		output:  output,
 		server:  server.New(),
 	}

@@ -60,6 +60,13 @@ type OutputMock struct {
 	beforeInfofCounter uint64
 	InfofMock          mOutputMockInfof
 
+	funcNewPrefixOutput          func(prefix string) (o1 mm_contracts.Output)
+	funcNewPrefixOutputOrigin    string
+	inspectFuncNewPrefixOutput   func(prefix string)
+	afterNewPrefixOutputCounter  uint64
+	beforeNewPrefixOutputCounter uint64
+	NewPrefixOutputMock          mOutputMockNewPrefixOutput
+
 	funcPrint          func(msg any)
 	funcPrintOrigin    string
 	inspectFuncPrint   func(msg any)
@@ -135,6 +142,9 @@ func NewOutputMock(t minimock.Tester) *OutputMock {
 
 	m.InfofMock = mOutputMockInfof{mock: m}
 	m.InfofMock.callArgs = []*OutputMockInfofParams{}
+
+	m.NewPrefixOutputMock = mOutputMockNewPrefixOutput{mock: m}
+	m.NewPrefixOutputMock.callArgs = []*OutputMockNewPrefixOutputParams{}
 
 	m.PrintMock = mOutputMockPrint{mock: m}
 	m.PrintMock.callArgs = []*OutputMockPrintParams{}
@@ -2045,6 +2055,317 @@ func (m *OutputMock) MinimockInfofInspect() {
 	if !m.InfofMock.invocationsDone() && afterInfofCounter > 0 {
 		m.t.Errorf("Expected %d calls to OutputMock.Infof at\n%s but found %d calls",
 			mm_atomic.LoadUint64(&m.InfofMock.expectedInvocations), m.InfofMock.expectedInvocationsOrigin, afterInfofCounter)
+	}
+}
+
+type mOutputMockNewPrefixOutput struct {
+	optional           bool
+	mock               *OutputMock
+	defaultExpectation *OutputMockNewPrefixOutputExpectation
+	expectations       []*OutputMockNewPrefixOutputExpectation
+
+	callArgs []*OutputMockNewPrefixOutputParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// OutputMockNewPrefixOutputExpectation specifies expectation struct of the Output.NewPrefixOutput
+type OutputMockNewPrefixOutputExpectation struct {
+	mock               *OutputMock
+	params             *OutputMockNewPrefixOutputParams
+	paramPtrs          *OutputMockNewPrefixOutputParamPtrs
+	expectationOrigins OutputMockNewPrefixOutputExpectationOrigins
+	results            *OutputMockNewPrefixOutputResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// OutputMockNewPrefixOutputParams contains parameters of the Output.NewPrefixOutput
+type OutputMockNewPrefixOutputParams struct {
+	prefix string
+}
+
+// OutputMockNewPrefixOutputParamPtrs contains pointers to parameters of the Output.NewPrefixOutput
+type OutputMockNewPrefixOutputParamPtrs struct {
+	prefix *string
+}
+
+// OutputMockNewPrefixOutputResults contains results of the Output.NewPrefixOutput
+type OutputMockNewPrefixOutputResults struct {
+	o1 mm_contracts.Output
+}
+
+// OutputMockNewPrefixOutputOrigins contains origins of expectations of the Output.NewPrefixOutput
+type OutputMockNewPrefixOutputExpectationOrigins struct {
+	origin       string
+	originPrefix string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Optional() *mOutputMockNewPrefixOutput {
+	mmNewPrefixOutput.optional = true
+	return mmNewPrefixOutput
+}
+
+// Expect sets up expected params for Output.NewPrefixOutput
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Expect(prefix string) *mOutputMockNewPrefixOutput {
+	if mmNewPrefixOutput.mock.funcNewPrefixOutput != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by Set")
+	}
+
+	if mmNewPrefixOutput.defaultExpectation == nil {
+		mmNewPrefixOutput.defaultExpectation = &OutputMockNewPrefixOutputExpectation{}
+	}
+
+	if mmNewPrefixOutput.defaultExpectation.paramPtrs != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by ExpectParams functions")
+	}
+
+	mmNewPrefixOutput.defaultExpectation.params = &OutputMockNewPrefixOutputParams{prefix}
+	mmNewPrefixOutput.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmNewPrefixOutput.expectations {
+		if minimock.Equal(e.params, mmNewPrefixOutput.defaultExpectation.params) {
+			mmNewPrefixOutput.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmNewPrefixOutput.defaultExpectation.params)
+		}
+	}
+
+	return mmNewPrefixOutput
+}
+
+// ExpectPrefixParam1 sets up expected param prefix for Output.NewPrefixOutput
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) ExpectPrefixParam1(prefix string) *mOutputMockNewPrefixOutput {
+	if mmNewPrefixOutput.mock.funcNewPrefixOutput != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by Set")
+	}
+
+	if mmNewPrefixOutput.defaultExpectation == nil {
+		mmNewPrefixOutput.defaultExpectation = &OutputMockNewPrefixOutputExpectation{}
+	}
+
+	if mmNewPrefixOutput.defaultExpectation.params != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by Expect")
+	}
+
+	if mmNewPrefixOutput.defaultExpectation.paramPtrs == nil {
+		mmNewPrefixOutput.defaultExpectation.paramPtrs = &OutputMockNewPrefixOutputParamPtrs{}
+	}
+	mmNewPrefixOutput.defaultExpectation.paramPtrs.prefix = &prefix
+	mmNewPrefixOutput.defaultExpectation.expectationOrigins.originPrefix = minimock.CallerInfo(1)
+
+	return mmNewPrefixOutput
+}
+
+// Inspect accepts an inspector function that has same arguments as the Output.NewPrefixOutput
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Inspect(f func(prefix string)) *mOutputMockNewPrefixOutput {
+	if mmNewPrefixOutput.mock.inspectFuncNewPrefixOutput != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("Inspect function is already set for OutputMock.NewPrefixOutput")
+	}
+
+	mmNewPrefixOutput.mock.inspectFuncNewPrefixOutput = f
+
+	return mmNewPrefixOutput
+}
+
+// Return sets up results that will be returned by Output.NewPrefixOutput
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Return(o1 mm_contracts.Output) *OutputMock {
+	if mmNewPrefixOutput.mock.funcNewPrefixOutput != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by Set")
+	}
+
+	if mmNewPrefixOutput.defaultExpectation == nil {
+		mmNewPrefixOutput.defaultExpectation = &OutputMockNewPrefixOutputExpectation{mock: mmNewPrefixOutput.mock}
+	}
+	mmNewPrefixOutput.defaultExpectation.results = &OutputMockNewPrefixOutputResults{o1}
+	mmNewPrefixOutput.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmNewPrefixOutput.mock
+}
+
+// Set uses given function f to mock the Output.NewPrefixOutput method
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Set(f func(prefix string) (o1 mm_contracts.Output)) *OutputMock {
+	if mmNewPrefixOutput.defaultExpectation != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("Default expectation is already set for the Output.NewPrefixOutput method")
+	}
+
+	if len(mmNewPrefixOutput.expectations) > 0 {
+		mmNewPrefixOutput.mock.t.Fatalf("Some expectations are already set for the Output.NewPrefixOutput method")
+	}
+
+	mmNewPrefixOutput.mock.funcNewPrefixOutput = f
+	mmNewPrefixOutput.mock.funcNewPrefixOutputOrigin = minimock.CallerInfo(1)
+	return mmNewPrefixOutput.mock
+}
+
+// When sets expectation for the Output.NewPrefixOutput which will trigger the result defined by the following
+// Then helper
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) When(prefix string) *OutputMockNewPrefixOutputExpectation {
+	if mmNewPrefixOutput.mock.funcNewPrefixOutput != nil {
+		mmNewPrefixOutput.mock.t.Fatalf("OutputMock.NewPrefixOutput mock is already set by Set")
+	}
+
+	expectation := &OutputMockNewPrefixOutputExpectation{
+		mock:               mmNewPrefixOutput.mock,
+		params:             &OutputMockNewPrefixOutputParams{prefix},
+		expectationOrigins: OutputMockNewPrefixOutputExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmNewPrefixOutput.expectations = append(mmNewPrefixOutput.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Output.NewPrefixOutput return parameters for the expectation previously defined by the When method
+func (e *OutputMockNewPrefixOutputExpectation) Then(o1 mm_contracts.Output) *OutputMock {
+	e.results = &OutputMockNewPrefixOutputResults{o1}
+	return e.mock
+}
+
+// Times sets number of times Output.NewPrefixOutput should be invoked
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Times(n uint64) *mOutputMockNewPrefixOutput {
+	if n == 0 {
+		mmNewPrefixOutput.mock.t.Fatalf("Times of OutputMock.NewPrefixOutput mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmNewPrefixOutput.expectedInvocations, n)
+	mmNewPrefixOutput.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmNewPrefixOutput
+}
+
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) invocationsDone() bool {
+	if len(mmNewPrefixOutput.expectations) == 0 && mmNewPrefixOutput.defaultExpectation == nil && mmNewPrefixOutput.mock.funcNewPrefixOutput == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmNewPrefixOutput.mock.afterNewPrefixOutputCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmNewPrefixOutput.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// NewPrefixOutput implements mm_contracts.Output
+func (mmNewPrefixOutput *OutputMock) NewPrefixOutput(prefix string) (o1 mm_contracts.Output) {
+	mm_atomic.AddUint64(&mmNewPrefixOutput.beforeNewPrefixOutputCounter, 1)
+	defer mm_atomic.AddUint64(&mmNewPrefixOutput.afterNewPrefixOutputCounter, 1)
+
+	mmNewPrefixOutput.t.Helper()
+
+	if mmNewPrefixOutput.inspectFuncNewPrefixOutput != nil {
+		mmNewPrefixOutput.inspectFuncNewPrefixOutput(prefix)
+	}
+
+	mm_params := OutputMockNewPrefixOutputParams{prefix}
+
+	// Record call args
+	mmNewPrefixOutput.NewPrefixOutputMock.mutex.Lock()
+	mmNewPrefixOutput.NewPrefixOutputMock.callArgs = append(mmNewPrefixOutput.NewPrefixOutputMock.callArgs, &mm_params)
+	mmNewPrefixOutput.NewPrefixOutputMock.mutex.Unlock()
+
+	for _, e := range mmNewPrefixOutput.NewPrefixOutputMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.o1
+		}
+	}
+
+	if mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.Counter, 1)
+		mm_want := mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.params
+		mm_want_ptrs := mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.paramPtrs
+
+		mm_got := OutputMockNewPrefixOutputParams{prefix}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.prefix != nil && !minimock.Equal(*mm_want_ptrs.prefix, mm_got.prefix) {
+				mmNewPrefixOutput.t.Errorf("OutputMock.NewPrefixOutput got unexpected parameter prefix, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.expectationOrigins.originPrefix, *mm_want_ptrs.prefix, mm_got.prefix, minimock.Diff(*mm_want_ptrs.prefix, mm_got.prefix))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmNewPrefixOutput.t.Errorf("OutputMock.NewPrefixOutput got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmNewPrefixOutput.NewPrefixOutputMock.defaultExpectation.results
+		if mm_results == nil {
+			mmNewPrefixOutput.t.Fatal("No results are set for the OutputMock.NewPrefixOutput")
+		}
+		return (*mm_results).o1
+	}
+	if mmNewPrefixOutput.funcNewPrefixOutput != nil {
+		return mmNewPrefixOutput.funcNewPrefixOutput(prefix)
+	}
+	mmNewPrefixOutput.t.Fatalf("Unexpected call to OutputMock.NewPrefixOutput. %v", prefix)
+	return
+}
+
+// NewPrefixOutputAfterCounter returns a count of finished OutputMock.NewPrefixOutput invocations
+func (mmNewPrefixOutput *OutputMock) NewPrefixOutputAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmNewPrefixOutput.afterNewPrefixOutputCounter)
+}
+
+// NewPrefixOutputBeforeCounter returns a count of OutputMock.NewPrefixOutput invocations
+func (mmNewPrefixOutput *OutputMock) NewPrefixOutputBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmNewPrefixOutput.beforeNewPrefixOutputCounter)
+}
+
+// Calls returns a list of arguments used in each call to OutputMock.NewPrefixOutput.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmNewPrefixOutput *mOutputMockNewPrefixOutput) Calls() []*OutputMockNewPrefixOutputParams {
+	mmNewPrefixOutput.mutex.RLock()
+
+	argCopy := make([]*OutputMockNewPrefixOutputParams, len(mmNewPrefixOutput.callArgs))
+	copy(argCopy, mmNewPrefixOutput.callArgs)
+
+	mmNewPrefixOutput.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockNewPrefixOutputDone returns true if the count of the NewPrefixOutput invocations corresponds
+// the number of defined expectations
+func (m *OutputMock) MinimockNewPrefixOutputDone() bool {
+	if m.NewPrefixOutputMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.NewPrefixOutputMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.NewPrefixOutputMock.invocationsDone()
+}
+
+// MinimockNewPrefixOutputInspect logs each unmet expectation
+func (m *OutputMock) MinimockNewPrefixOutputInspect() {
+	for _, e := range m.NewPrefixOutputMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to OutputMock.NewPrefixOutput at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterNewPrefixOutputCounter := mm_atomic.LoadUint64(&m.afterNewPrefixOutputCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.NewPrefixOutputMock.defaultExpectation != nil && afterNewPrefixOutputCounter < 1 {
+		if m.NewPrefixOutputMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to OutputMock.NewPrefixOutput at\n%s", m.NewPrefixOutputMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to OutputMock.NewPrefixOutput at\n%s with params: %#v", m.NewPrefixOutputMock.defaultExpectation.expectationOrigins.origin, *m.NewPrefixOutputMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcNewPrefixOutput != nil && afterNewPrefixOutputCounter < 1 {
+		m.t.Errorf("Expected call to OutputMock.NewPrefixOutput at\n%s", m.funcNewPrefixOutputOrigin)
+	}
+
+	if !m.NewPrefixOutputMock.invocationsDone() && afterNewPrefixOutputCounter > 0 {
+		m.t.Errorf("Expected %d calls to OutputMock.NewPrefixOutput at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.NewPrefixOutputMock.expectedInvocations), m.NewPrefixOutputMock.expectedInvocationsOrigin, afterNewPrefixOutputCounter)
 	}
 }
 
@@ -4262,6 +4583,8 @@ func (m *OutputMock) MinimockFinish() {
 
 			m.MinimockInfofInspect()
 
+			m.MinimockNewPrefixOutputInspect()
+
 			m.MinimockPrintInspect()
 
 			m.MinimockPrintfInspect()
@@ -4304,6 +4627,7 @@ func (m *OutputMock) minimockDone() bool {
 		m.MinimockInfoDone() &&
 		m.MinimockInfoBoxDone() &&
 		m.MinimockInfofDone() &&
+		m.MinimockNewPrefixOutputDone() &&
 		m.MinimockPrintDone() &&
 		m.MinimockPrintfDone() &&
 		m.MinimockRequestDone() &&

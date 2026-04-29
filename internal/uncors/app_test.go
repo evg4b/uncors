@@ -16,7 +16,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -28,16 +27,15 @@ import (
 
 func TestCreateUncors(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	logger := log.Default()
 	version := "1.0.0"
 
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), logger, version)
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), version)
 	assert.NotNil(t, app)
 }
 
 func TestUncorsApp(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	testResponceHeader := "# Test resrver"
 	hostFmt := func(host string) string { return fmt.Sprintf("\tHost: %v", host) }
@@ -118,7 +116,7 @@ func TestUncorsApp(t *testing.T) {
 
 func TestUncorsStart(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -158,7 +156,7 @@ func TestUncorsStart(t *testing.T) {
 
 func TestUncorsRestart(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -220,7 +218,7 @@ func TestUncorsRestart(t *testing.T) {
 
 func TestUncorsClose(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -251,7 +249,7 @@ func TestUncorsClose(t *testing.T) {
 
 func TestUncorsShutdown(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)
@@ -276,7 +274,7 @@ func TestUncorsShutdown(t *testing.T) {
 
 func TestUncorsWait(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -312,7 +310,7 @@ func TestUncorsWait(t *testing.T) {
 
 func TestUncorsWithHTTPSMapping(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -372,7 +370,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 
 func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTP")
@@ -453,7 +451,7 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 
 func TestUncorsWithComplexConfiguration(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), log.Default(), "test")
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	require.NoError(t, fs.MkdirAll("/static", 0o755))
 	require.NoError(t, afero.WriteFile(fs, "/static/index.html", []byte("Static"), 0o644))

@@ -4,11 +4,11 @@ package version
 
 import (
 	"context"
+	"log"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/log"
 )
 
-func CheckNewVersion(_ context.Context, _ contracts.HTTPClient, _ string) {
-	log.Default().Debug("Check new version stub")
+func CheckNewVersion(_ context.Context, _ contracts.Output, _ contracts.HTTPClient, _ string) {
+	log.Print("Check new version stub")
 }

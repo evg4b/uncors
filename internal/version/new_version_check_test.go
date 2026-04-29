@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -56,7 +57,7 @@ func TestCheckNewVersion(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
 				assert.NotPanics(t, func() {
-					version.CheckNewVersion(context.Background(), testCase.client, testCase.version)
+					version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), testCase.client, testCase.version)
 
 					outputData, err := io.ReadAll(output)
 					testutils.CheckNoError(t, err)
@@ -72,7 +73,7 @@ func TestCheckNewVersion(t *testing.T) {
 			httpClient := mocks.NewHTTPClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
-			version.CheckNewVersion(context.Background(), httpClient, "0.0.4")
+			version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), httpClient, "0.0.4")
 
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)
@@ -84,7 +85,7 @@ func TestCheckNewVersion(t *testing.T) {
 			httpClient := mocks.NewHTTPClientMock(t).
 				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
-			version.CheckNewVersion(context.Background(), httpClient, "0.0.7")
+			version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), httpClient, "0.0.7")
 
 			outputData, err := io.ReadAll(output)
 			testutils.CheckNoError(t, err)

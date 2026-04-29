@@ -12,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	uncors_log "github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
@@ -77,7 +76,7 @@ func run() int {
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, output, uncors_log.Default(), Version)
+	app := uncors.CreateUncors(fs, output, Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
@@ -93,7 +92,7 @@ func run() int {
 	})
 	viperInstance.WatchConfig()
 
-	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
+	go version.CheckNewVersion(ctx, output, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 
 	err := app.Start(ctx, uncorsConfig)
 	if err != nil {
