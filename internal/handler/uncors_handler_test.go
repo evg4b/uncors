@@ -18,7 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -75,8 +74,7 @@ func proxyFactory(
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
-		proxy.WithProxyLogger(log.Null()),
-		proxy.WithRewriteLogger(log.Null()),
+		proxy.WithOutput(mocks.NoopOutput()),
 	)
 }
 

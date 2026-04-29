@@ -42,8 +42,7 @@ func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings
 		return proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 			proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-			proxy.WithProxyLogger(NewProxyLogger(app.logger)),
-			proxy.WithRewriteLogger(NewRewriteLogger(app.logger)),
+			proxy.WithOutput(app.output.NewPrefixOutput(styles.ProxyStyle.Render("PROXY"))),
 		)
 	})
 }
