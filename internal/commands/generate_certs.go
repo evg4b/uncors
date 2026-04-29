@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -23,15 +24,26 @@ type GenerateCertsCommand struct {
 	force        bool
 	outputDir    string
 	fs           afero.Fs
-	logger       *log.Logger
+	output       contracts.Output
+}
+
+type Option = func(*GenerateCertsCommand)
+
+func WithOutput(output contracts.Output) Option {
+	return func(c *GenerateCertsCommand) {
+		c.output = output
+	}
+}
+
+func WithFs(fs afero.Fs) Option {
+	return func(c *GenerateCertsCommand) {
+		c.fs = fs
+	}
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
-func NewGenerateCertsCommand(fs afero.Fs, logger *log.Logger) *GenerateCertsCommand {
-	return &GenerateCertsCommand{
-		fs:     fs,
-		logger: logger,
-	}
+func NewGenerateCertsCommand(options ...Option) *GenerateCertsCommand {
+	return helpers.ApplyOptions(&GenerateCertsCommand{}, options)
 }
 
 // DefineFlags defines command-line flags for the generate-certs command.
@@ -56,7 +68,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		_, err := c.fs.Stat(certPath)
 		if err == nil {
 			tui.PrintErrorBox(
-				os.Stdout,
+				c.output,
 				fmt.Sprintf("CA certificate already exists at %s", certPath),
 				"Use --force to overwrite",
 			)
@@ -67,7 +79,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		_, err = c.fs.Stat(keyPath)
 		if err == nil {
 			tui.PrintErrorBox(
-				os.Stdout,
+				c.output,
 				fmt.Sprintf("CA private key already exists at %s", keyPath),
 				"Use --force to overwrite",
 			)
@@ -76,7 +88,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		}
 	}
 
-	c.logger.Info("Generating CA certificate...")
+	c.output.Info("Generating CA certificate...")
 
 	certPath, keyPath, err = infratls.GenerateCA(infratls.CAConfig{
 		ValidityDays: c.validityDays,
@@ -88,7 +100,7 @@ func (c *GenerateCertsCommand) Execute() error {
 	}
 
 	tui.PrintInfoBox(
-		os.Stdout,
+		c.output,
 		"CA certificate generated successfully!",
 		fmt.Sprintf("  Certificate: %s", certPath),
 		fmt.Sprintf("  Private key: %s", keyPath),
