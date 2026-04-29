@@ -103,7 +103,7 @@ func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(s config.Script) contracts.Handler {
 		return contracts.LazyHandler(func() contracts.Handler {
 			return script.NewHandler(
-				script.WithLogger(NewScriptLogger(app.logger)),
+				script.WithOutput(app.output.NewPrefixOutput(styles.RewriteStyle.Render("SCRIPT"))),
 				script.WithScript(s),
 				script.WithFileSystem(app.fs),
 			)
