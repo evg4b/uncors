@@ -7,7 +7,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/options"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
@@ -16,8 +15,6 @@ import (
 
 func TestMiddleware(t *testing.T) {
 	testAllowedHeaders := "Content-Type, Authorization"
-
-	loggerMock := log.Null()
 
 	t.Run("for OPTIONS request", func(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
@@ -178,7 +175,7 @@ func TestMiddleware(t *testing.T) {
 		for _, testCase := range cases {
 			t.Run(testCase.name, func(t *testing.T) {
 				middleware := options.NewMiddleware(
-					options.WithLogger(loggerMock),
+					options.WithOutput(mocks.NoopOutput()),
 					options.WithHeaders(testCase.args.headers),
 					options.WithCode(testCase.args.code),
 				)
@@ -207,7 +204,7 @@ func TestMiddleware(t *testing.T) {
 
 		testOrigin := hosts.Example.HTTPS()
 		middleware := options.NewMiddleware(
-			options.WithLogger(loggerMock),
+			options.WithOutput(mocks.NoopOutput()),
 		)
 
 		recorder := httptest.NewRecorder()
@@ -235,7 +232,7 @@ func TestMiddleware(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
 
 		middleware := options.NewMiddleware(
-			options.WithLogger(loggerMock),
+			options.WithOutput(mocks.NoopOutput()),
 		)
 
 		recorder := httptest.NewRecorder()
@@ -258,7 +255,7 @@ func TestMiddleware(t *testing.T) {
 		testOrigin := "https://api.example.com"
 		testHeaders := "X-Custom-Header, X-Another-Header"
 		middleware := options.NewMiddleware(
-			options.WithLogger(loggerMock),
+			options.WithOutput(mocks.NoopOutput()),
 		)
 
 		recorder := httptest.NewRecorder()
@@ -284,7 +281,7 @@ func TestMiddleware(t *testing.T) {
 		testHeaders := "Content-Type, Authorization, X-Api-Key"
 		testMethod := "DELETE"
 		middleware := options.NewMiddleware(
-			options.WithLogger(loggerMock),
+			options.WithOutput(mocks.NoopOutput()),
 		)
 
 		recorder := httptest.NewRecorder()
@@ -324,7 +321,7 @@ func TestMiddleware(t *testing.T) {
 				mockedNextHandler := mocks.NewHandlerMock(t)
 
 				middleware := options.NewMiddleware(
-					options.WithLogger(loggerMock),
+					options.WithOutput(mocks.NoopOutput()),
 				)
 
 				recorder := httptest.NewRecorder()

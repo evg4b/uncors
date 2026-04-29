@@ -1,0 +1,45 @@
+
+[TestCliOutput_Info/Info - 1]
+[48;2;0;113;206m [0m[1;38;2;0;0;0;48;2;0;113;206mINFO[0m[48;2;0;113;206m [0m[48;2;0;113;206m  [0m test message
+
+---
+
+[TestCliOutput_Info/Infof - 1]
+[48;2;0;113;206m [0m[1;38;2;0;0;0;48;2;0;113;206mINFO[0m[48;2;0;113;206m [0m[48;2;0;113;206m  [0m formatted message 42
+
+---
+
+[TestCliOutput_Error/Error - 1]
+[48;2;220;1;0m [0m[1;38;2;0;0;0;48;2;220;1;0mERROR[0m[48;2;220;1;0m [0m[48;2;220;1;0m [0m test error
+
+---
+
+[TestCliOutput_Error/Errorf - 1]
+[48;2;220;1;0m [0m[1;38;2;0;0;0;48;2;220;1;0mERROR[0m[48;2;220;1;0m [0m[48;2;220;1;0m [0m formatted error 42
+
+---
+
+[TestCliOutput_Warn/Warn - 1]
+[48;2;255;211;0m [0m[1;38;2;0;0;0;48;2;255;211;0mWARN[0m[48;2;255;211;0m [0m[48;2;255;211;0m  [0m test warning
+
+---
+
+[TestCliOutput_Warn/Warnf - 1]
+[48;2;255;211;0m [0m[1;38;2;0;0;0;48;2;255;211;0mWARN[0m[48;2;255;211;0m [0m[48;2;255;211;0m  [0m formatted warning 42
+
+---
+
+[TestCliOutput_Print/Print - 1]
+ plain message
+
+---
+
+[TestCliOutput_Print/Printf - 1]
+ formatted plain 42
+
+---
+
+[TestCliOutput_WithPrefix/snapshot_with_prefix - 1]
+[pfx][48;2;0;113;206m [0m[1;38;2;0;0;0;48;2;0;113;206mINFO[0m[48;2;0;113;206m [0m[48;2;0;113;206m  [0m message
+
+---

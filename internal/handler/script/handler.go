@@ -10,12 +10,11 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 )
 
 type Handler struct {
 	script config.Script
-	logger contracts.Logger
+	output contracts.Output
 	fs     afero.Fs
 }
 
@@ -26,13 +25,13 @@ func NewHandler(options ...HandlerOption) *Handler {
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
 	err := h.executeScript(writer, request)
 	if err != nil {
-		h.logger.Error("Script handler error", "error", err, "url", request.URL.String())
+		h.output.Errorf("Script handler error: %v", err)
 		infra.HTTPError(writer, err)
 
 		return
 	}
 
-	tui.PrintResponse(h.logger, request, writer.StatusCode())
+	h.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -71,9 +70,9 @@ func (h *Handler) runScript(luaState *lua.LState) error {
 
 type HandlerOption = func(*Handler)
 
-func WithLogger(logger contracts.Logger) HandlerOption {
+func WithOutput(output contracts.Output) HandlerOption {
 	return func(h *Handler) {
-		h.logger = logger
+		h.output = output
 	}
 }
 

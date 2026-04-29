@@ -11,10 +11,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -68,8 +68,7 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithProxyLogger(log.Null()),
-					proxy.WithRewriteLogger(log.Null()),
+					proxy.WithOutput(mocks.NoopOutput()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
@@ -122,8 +121,7 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithProxyLogger(log.Null()),
-					proxy.WithRewriteLogger(log.Null()),
+					proxy.WithOutput(mocks.NoopOutput()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
@@ -158,8 +156,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithProxyLogger(log.Null()),
-			proxy.WithRewriteLogger(log.Null()),
+			proxy.WithOutput(mocks.NoopOutput()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
@@ -189,8 +186,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithProxyLogger(log.Null()),
-			proxy.WithRewriteLogger(log.Null()),
+			proxy.WithOutput(mocks.NoopOutput()),
 		)
 
 		t.Run("should correctly create response", func(t *testing.T) {

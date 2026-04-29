@@ -5,11 +5,11 @@ package version
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/hashicorp/go-version"
 )
@@ -20,28 +20,26 @@ type versionInfo struct {
 	Version string `json:"tag_name"`
 }
 
-func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurrentVersion string) {
-	logger := log.Default()
-
-	logger.Debug("Checking new version")
+func CheckNewVersion(ctx context.Context, output contracts.Output, client contracts.HTTPClient, rawCurrentVersion string) {
+	log.Print("Checking new version")
 
 	currentVersion, err := version.NewVersion(rawCurrentVersion)
 	if err != nil {
-		logger.Debugf("failed to parse current version: %v", err)
+		log.Printf("failed to parse current version: %v", err)
 
 		return
 	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
 	if err != nil {
-		logger.Debugf("failed to generate new version check request: %v", err)
+		log.Printf("failed to generate new version check request: %v", err)
 
 		return
 	}
 
 	response, err := client.Do(request)
 	if err != nil {
-		logger.Debugf("http error occurred: %v", err)
+		log.Printf("http error occurred: %v", err)
 
 		return
 	}
@@ -52,22 +50,22 @@ func CheckNewVersion(ctx context.Context, client contracts.HTTPClient, rawCurren
 	lastVersionInfo := versionInfo{}
 	err = decoder.Decode(&lastVersionInfo)
 	if err != nil {
-		logger.Debugf("failed to parse last version response: %v", err)
+		log.Printf("failed to parse last version response: %v", err)
 
 		return
 	}
 
 	lastVersion, err := version.NewVersion(lastVersionInfo.Version)
 	if err != nil {
-		logger.Debugf("failed to parse last version: %v", err)
+		log.Printf("failed to parse last version: %v", err)
 
 		return
 	}
 
 	if lastVersion.GreaterThan(currentVersion) {
-		logger.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		logger.Info("")
+		output.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
+		output.Info("")
 	} else {
-		logger.Debug("Version is up to date")
+		log.Print("Version is up to date")
 	}
 }
