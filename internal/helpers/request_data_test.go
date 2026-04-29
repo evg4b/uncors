@@ -9,26 +9,6 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
-type mockResponseWriter struct {
-	statusCode int
-}
-
-func (m *mockResponseWriter) Header() http.Header {
-	return make(http.Header)
-}
-
-func (m *mockResponseWriter) Write([]byte) (int, error) {
-	return 0, nil
-}
-
-func (m *mockResponseWriter) WriteHeader(statusCode int) {
-	m.statusCode = statusCode
-}
-
-func (m *mockResponseWriter) StatusCode() int {
-	return m.statusCode
-}
-
 func headersEqual(header1, header2 http.Header) bool {
 	if len(header1) != len(header2) {
 		return false
