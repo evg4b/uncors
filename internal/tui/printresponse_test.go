@@ -1,86 +1,86 @@
 package tui_test
 
 import (
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestPrintResponse(_ *testing.T) {
-	/*
-		t.Run("should correctly format", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-			tests := []struct {
-				name       string
-				response   *http.Response
-				request    *contracts.Request
-				statusCode int
-			}{
-				{
-					name:       "response with status code 1xx",
-					statusCode: 100,
-					request:    request(http.MethodPost, "/api/info"),
-				},
-				{
-					name:       "response with success code 2xx",
-					statusCode: 200,
-					request:    request(http.MethodGet, "/help"),
-				},
-				{
-					name:       "response with redirect code 3xx",
-					statusCode: 300,
-					request:    request(http.MethodPatch, "/api/user"),
-				},
-				{
-					name:       "response with user request error code 4xx",
-					statusCode: 400,
-					request:    request(http.MethodDelete, "/api/user/permission"),
-				},
-				{
-					name:       "response with internal server error code 5xx",
-					statusCode: 500,
-					request:    request(http.MethodPost, "/"),
-				},
-			}
-			for _, testCase := range tests {
-				t.Run(testCase.name, func(t *testing.T) {
-					t.Run("should print single line", testutils.UniqOutput(output, func(t *testing.T, _ *bytes.Buffer) {
-						// tui.PrintResponse(logger, testCase.request, testCase.statusCode)
+func makeRequestData(method, rawURL string, code int) *contracts.ReqestData {
+	u, _ := url.Parse(rawURL)
 
-						assert.Equal(t, 1, lipgloss.Height(strings.Trim(output.String(), "\n")))
-					}))
-
-					t.Run("should print correctly", testutils.UniqOutput(output, func(t *testing.T, _ *bytes.Buffer) {
-						// tui.PrintResponse(logger, testCase.request, testCase.statusCode)
-
-						testutils.MatchSnapshot(t, output.String())
-					}))
-				})
-			}
-		}))
-
-		t.Run("should panic for status code less then 100", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-			assert.Panics(t, func() {
-				// tui.PrintResponse(logger, request(http.MethodGet, "/"), 50)
-			})
-		}))
-
-		t.Run("should panic for status code great then 599", testutils.LogTest(func(t *testing.T, _ *bytes.Buffer) {
-			// logger := log.CreateLogger(log.Default(), styles.ProxyStyle.Render("Test"))
-
-			assert.Panics(t, func() {
-				// tui.PrintResponse(logger, request(http.MethodGet, "/"), 600)
-			})
-		}))
-	*/
-}
-
-/*
-func request(method string, path string) *http.Request {
-	return &http.Request{
+	return &contracts.ReqestData{
 		Method: method,
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   "api.domain.com",
-			Path:   path,
-		},
+		URL:    u,
+		Code:   code,
 	}
 }
-*/
+
+func TestPrintResponse(t *testing.T) {
+	tests := []struct {
+		name string
+		data *contracts.ReqestData
+	}{
+		{
+			name: "1xx informational",
+			data: makeRequestData(http.MethodPost, "https://api.domain.com/api/info", 100),
+		},
+		{
+			name: "2xx success",
+			data: makeRequestData(http.MethodGet, "https://api.domain.com/help", 200),
+		},
+		{
+			name: "3xx redirect",
+			data: makeRequestData(http.MethodPatch, "https://api.domain.com/api/user", 301),
+		},
+		{
+			name: "4xx client error",
+			data: makeRequestData(http.MethodDelete, "https://api.domain.com/api/user/permission", 404),
+		},
+		{
+			name: "5xx server error",
+			data: makeRequestData(http.MethodPost, "https://api.domain.com/", 500),
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Run("should print single line", testutils.WithTrueColor(func(t *testing.T) {
+				var buf strings.Builder
+				tui.NewCliOutput(&buf).Request(testCase.data)
+				output := strings.Trim(buf.String(), "\n")
+				assert.Equal(t, 1, lipgloss.Height(output))
+			}))
+
+			t.Run("should match snapshot", testutils.WithTrueColor(func(t *testing.T) {
+				var buf strings.Builder
+				tui.NewCliOutput(&buf).Request(testCase.data)
+				testutils.MatchSnapshot(t, buf.String())
+			}))
+		})
+	}
+}
+
+func TestPrintResponse_PanicsForUnsupportedCodes(t *testing.T) {
+	out := tui.NewCliOutput(io.Discard)
+
+	t.Run("code below 100", func(t *testing.T) {
+		assert.Panics(t, func() {
+			out.Request(makeRequestData(http.MethodGet, "https://example.com/", 99))
+		})
+	})
+
+	t.Run("code above 599", func(t *testing.T) {
+		assert.Panics(t, func() {
+			out.Request(makeRequestData(http.MethodGet, "https://example.com/", 600))
+		})
+	})
+}
