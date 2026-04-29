@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 )
 
@@ -31,6 +32,7 @@ func (app *Uncors) buildHandlerForMappings(
 		handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
 		handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
 		handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
+		handler.WithOutput(app.output),
 	)
 }
 
@@ -76,7 +78,7 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
-				static.WithLogger(NewStaticLogger(app.logger)),
+				static.WithOutput(mocks.NoopOutput()),
 				static.WithPrefix(path),
 			)
 		})

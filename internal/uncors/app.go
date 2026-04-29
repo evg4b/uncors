@@ -25,7 +25,7 @@ type Uncors struct {
 	fs      afero.Fs
 	version string
 	logger  *log.Logger
-	ouptut  contracts.Output
+	output  contracts.Output
 	stdout  io.Writer
 	server  *server.Server
 
@@ -38,7 +38,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, logger *log.Logger, vers
 		fs:      fs,
 		version: version,
 		logger:  logger,
-		ouptut:  output,
+		output:  output,
 		stdout:  os.Stdout,
 		server:  server.New(),
 	}
@@ -46,11 +46,11 @@ func CreateUncors(fs afero.Fs, output contracts.Output, logger *log.Logger, vers
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	tui.PrintLogo(app.stdout, app.version)
-	app.logger.Print("")
+	app.output.Print("")
 	tui.PrintWarningBox(app.stdout, DisclaimerMessage)
-	app.logger.Print("")
+	app.output.Print("")
 	tui.PrintInfoBox(app.stdout, uncorsConfig.Mappings.String())
-	app.logger.Print("")
+	app.output.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -63,9 +63,9 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	app.logger.Print("")
-	app.logger.Info("Restarting server....")
-	app.logger.Print("")
+	app.output.Print("")
+	app.output.Info("Restarting server....")
+	app.output.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -77,8 +77,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
-	app.logger.Info(uncorsConfig.Mappings.String())
-	app.logger.Print("")
+	app.output.Info(uncorsConfig.Mappings.String())
+	app.output.Print("")
 
 	return nil
 }

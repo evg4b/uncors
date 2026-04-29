@@ -28,6 +28,7 @@ type RequestHandler struct {
 
 	mappings                 config.Mappings
 	logger                   *log.Logger
+	output                   contracts.Output
 	cacheMiddlewareFactory   CacheMiddlewareFactory
 	staticMiddlewareFactory  StaticMiddlewareFactory
 	proxyHandler             contracts.Handler
@@ -103,6 +104,12 @@ type RequestHandlerOption = func(*RequestHandler)
 func WithMappings(mappings config.Mappings) RequestHandlerOption {
 	return func(h *RequestHandler) {
 		h.mappings = mappings
+	}
+}
+
+func WithOutput(output contracts.Output) RequestHandlerOption {
+	return func(h *RequestHandler) {
+		h.output = output
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -12,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
 
@@ -21,7 +21,7 @@ var errNotHandled = errors.New("request is not handled")
 type Middleware struct {
 	fs     afero.Fs
 	index  string
-	logger contracts.Logger
+	output contracts.Output
 	prefix string
 }
 
@@ -42,7 +42,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			if errors.Is(err, errNotHandled) {
 				next.ServeHTTP(response, request)
 			} else {
-				h.logger.Error("Static handler error", "error", err, "url", request.URL.String())
+				log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
 				infra.HTTPError(response, err)
 			}
 
@@ -50,7 +50,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-		tui.PrintResponse(h.logger, request, response.StatusCode())
+		h.output.Request(helpers.ToRequestData(request, response))
 	})
 }
 
@@ -128,9 +128,9 @@ func WithIndex(index string) MiddlewareOption {
 	}
 }
 
-func WithLogger(logger contracts.Logger) MiddlewareOption {
+func WithOutput(output contracts.Output) MiddlewareOption {
 	return func(h *Middleware) {
-		h.logger = logger
+		h.output = output
 	}
 }
 

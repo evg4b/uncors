@@ -10,7 +10,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ const (
 )
 
 func TestStaticMiddleware(t *testing.T) {
-	loggerMock := log.Null()
+	outputMock := mocks.NoopOutput()
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
@@ -105,7 +104,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithLogger(loggerMock),
+			static.WithOutput(outputMock),
 		)
 
 		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
@@ -153,7 +152,7 @@ func TestStaticMiddleware(t *testing.T) {
 	t.Run("index file is configured", func(t *testing.T) {
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithLogger(loggerMock),
+			static.WithOutput(outputMock),
 			static.WithIndex(indexHTML),
 		)
 
@@ -198,7 +197,7 @@ func TestStaticMiddleware(t *testing.T) {
 		t.Run("index file doesn't exists", func(t *testing.T) {
 			middleware := static.NewStaticMiddleware(
 				static.WithFileSystem(fs),
-				static.WithLogger(loggerMock),
+				static.WithOutput(outputMock),
 				static.WithIndex("/not-exists.html"),
 			)
 

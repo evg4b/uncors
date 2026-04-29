@@ -95,7 +95,7 @@ func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
 		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithLogger(log.Null()),
+			static.WithOutput(mocks.NoopOutput()),
 			static.WithPrefix(path),
 		)
 	}

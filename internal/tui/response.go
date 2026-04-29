@@ -5,5 +5,5 @@ import (
 )
 
 func PrintResponse(logger contracts.Logger, request *contracts.Request, statusCode int) {
-	logger.Print(printResponse(request, statusCode))
+	logger.Print(printResponseOld(request, statusCode))
 }

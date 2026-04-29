@@ -11,12 +11,20 @@ import (
 
 const prefixWidth = 13
 
-func printResponse(request *contracts.Request, statusCode int) string {
+func printResponseOld(request *contracts.Request, statusCode int) string {
 	prefix := fmt.Sprintf("%d %s", statusCode, request.Method)
 	prefixStyle, textStyle := getStyles(statusCode)
 	prefixStyle = prefixStyle.Width(prefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(request.URL.String()))
+}
+
+func printResponse(data *contracts.ReqestData) string {
+	prefix := fmt.Sprintf("%d %s", data.Code, data.Method)
+	prefixStyle, textStyle := getStyles(data.Code)
+	prefixStyle = prefixStyle.Width(prefixWidth)
+
+	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(data.URL.String()))
 }
 
 func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
