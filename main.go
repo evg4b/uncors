@@ -92,7 +92,13 @@ func run() int {
 	})
 	viperInstance.WatchConfig()
 
-	go version.CheckNewVersion(ctx, output, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
+	versionChecker := version.NewVersionChecker(
+		version.WithOutput(output),
+		version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+		version.WithCurrentVersion(Version),
+	)
+
+	go versionChecker.CheckNewVersion(ctx)
 
 	err := app.Start(ctx, uncorsConfig)
 	if err != nil {

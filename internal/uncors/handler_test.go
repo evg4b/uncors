@@ -568,3 +568,41 @@ func TestHandlerWithOptions(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.Equal(t, "custom-value", resp.Header.Get("X-Custom-Header"))
 }
+
+func TestHandlerWithScript(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
+
+	port := testutils.GetFreePort(t)
+
+	cfg := &config.UncorsConfig{
+		Mappings: []config.Mapping{
+			{
+				From: hosts.Loopback.HTTPPort(port),
+				To:   "http://example.com",
+				Scripts: config.Scripts{
+					{
+						Matcher: config.RequestMatcher{
+							Path: "/script",
+						},
+						Script: `response:WriteHeader(201)`,
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Start(t.Context(), cfg))
+	defer app.Close()
+
+	reqURL := hosts.Loopback.HTTPPort(port) + "/script"
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, reqURL, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+}

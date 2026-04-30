@@ -1,5 +1,3 @@
-//go:build release
-
 package version
 
 import (
@@ -8,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/hashicorp/go-version"
@@ -17,15 +14,15 @@ import (
 const lastVersionURL = "https://api.github.com/repos/evg4b/uncors/releases/latest"
 
 type versionInfo struct {
-	Version string `json:"tag_name"`
+	Version string `json:"tag_name"` // nolint: tagliatelle
 }
 
-func CheckNewVersion(ctx context.Context, output contracts.Output, client contracts.HTTPClient, rawCurrentVersion string) {
+func (checker *Checker) CheckNewVersion(ctx context.Context) {
 	log.Print("Checking new version")
 
-	currentVersion, err := version.NewVersion(rawCurrentVersion)
-	if err != nil {
-		log.Printf("failed to parse current version: %v", err)
+	if checker.skip {
+		log.Print("Skipping version check in debug mode")
+		checker.output.Info("Skipping version check in debug mode")
 
 		return
 	}
@@ -37,7 +34,7 @@ func CheckNewVersion(ctx context.Context, output contracts.Output, client contra
 		return
 	}
 
-	response, err := client.Do(request)
+	response, err := checker.http.Do(request)
 	if err != nil {
 		log.Printf("http error occurred: %v", err)
 
@@ -45,9 +42,11 @@ func CheckNewVersion(ctx context.Context, output contracts.Output, client contra
 	}
 
 	defer helpers.CloseSafe(response.Body)
+
 	decoder := json.NewDecoder(response.Body)
 
 	lastVersionInfo := versionInfo{}
+
 	err = decoder.Decode(&lastVersionInfo)
 	if err != nil {
 		log.Printf("failed to parse last version response: %v", err)
@@ -62,9 +61,9 @@ func CheckNewVersion(ctx context.Context, output contracts.Output, client contra
 		return
 	}
 
-	if lastVersion.GreaterThan(currentVersion) {
-		output.Infof(uncors.NewVersionIsAvailable, currentVersion.String(), lastVersion.String())
-		output.Info("")
+	if lastVersion.GreaterThan(checker.currentVersion) {
+		checker.output.Infof(uncors.NewVersionIsAvailable, checker.currentVersion.String(), lastVersion.String())
+		checker.output.Info("")
 	} else {
 		log.Print("Version is up to date")
 	}

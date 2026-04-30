@@ -1,85 +1,120 @@
-//go:build release
-
 package version_test
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
+
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/version"
+	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
+var errSome = errors.New("some error")
+
 func TestCheckNewVersion(t *testing.T) {
-	/*
-		t.Run("do not panic where", func(t *testing.T) {
-			tests := []struct {
-				name    string
-				client  contracts.HTTPClient
-				version string
-			}{
-				{
-					name:    "current version is not correct",
-					client:  mocks.NewHTTPClientMock(t),
-					version: "#",
-				},
-				{
-					name: "http error is occupied",
-					client: mocks.NewHTTPClientMock(t).
-						DoMock.Return(nil, errors.New("some http error")),
-					version: "0.0.3",
-				},
-				{
-					name: "invalid json received",
-					client: mocks.NewHTTPClientMock(t).
-						DoMock.Return(&http.Response{
-						Body: io.NopCloser(strings.NewReader(`{ "version"`)),
-					}, nil),
-					version: "0.0.3",
-				},
-				{
-					name: "incorrect json from api received",
-					client: mocks.NewHTTPClientMock(t).
-						DoMock.Return(&http.Response{
-						Body: io.NopCloser(strings.NewReader(`{ "tag_name": "#" }`)),
-					}, nil),
-					version: "0.0.3",
-				},
-			}
-			for _, testCase := range tests {
-				t.Run(testCase.name, testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-					assert.NotPanics(t, func() {
-						version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), testCase.client, testCase.version)
+	t.Run("do not panic where", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			client  contracts.HTTPClient
+			version string
+		}{
+			{
+				name: "http error is occupied",
+				client: mocks.NewHTTPClientMock(t).
+					DoMock.Return(nil, errSome),
+				version: "0.0.3",
+			},
+			{
+				name: "invalid json received",
+				client: mocks.NewHTTPClientMock(t).
+					DoMock.Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader(`{ "version"`)),
+				}, nil),
+				version: "0.0.3",
+			},
+			{
+				name: "incorrect json from api received",
+				client: mocks.NewHTTPClientMock(t).
+					DoMock.Return(&http.Response{
+					Body: io.NopCloser(strings.NewReader(`{ "tag_name": "#" }`)),
+				}, nil),
+				version: "0.0.3",
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				assert.NotPanics(t, func() {
+					output := &bytes.Buffer{}
 
-						outputData, err := io.ReadAll(output)
-						testutils.CheckNoError(t, err)
+					versionChecker := version.NewVersionChecker(
+						version.WithOutput(tui.NewCliOutput(output)),
+						version.WithHTTPClient(testCase.client),
+						version.WithCurrentVersion(testCase.version),
+					)
 
-						testutils.MatchSnapshot(t, string(outputData))
-					})
-				}))
-			}
+					versionChecker.CheckNewVersion(t.Context())
+
+					outputData, err := io.ReadAll(output)
+					testutils.CheckNoError(t, err)
+
+					testutils.MatchSnapshot(t, string(outputData))
+				})
+			})
+		}
+	})
+
+	t.Run("should panic when current version is incorrect", func(t *testing.T) {
+		assert.Panics(t, func() {
+			version.NewVersionChecker(
+				version.WithCurrentVersion("#"),
+			)
+		})
+	})
+
+	t.Run("should print", func(t *testing.T) {
+		t.Run("prop1", func(t *testing.T) {
+			output := &bytes.Buffer{}
+
+			httpClient := mocks.NewHTTPClientMock(t).
+				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
+
+			versionChecker := version.NewVersionChecker(
+				version.WithOutput(tui.NewCliOutput(output)),
+				version.WithHTTPClient(httpClient),
+				version.WithCurrentVersion("0.0.4"),
+			)
+			versionChecker.CheckNewVersion(t.Context())
+
+			outputData, err := io.ReadAll(output)
+			testutils.CheckNoError(t, err)
+
+			testutils.MatchSnapshot(t, string(outputData))
 		})
 
-		t.Run("should print ", func(t *testing.T) {
-			t.Run("prop1", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-				httpClient := mocks.NewHTTPClientMock(t).
-					DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
+		t.Run("prop2", func(t *testing.T) {
+			output := &bytes.Buffer{}
 
-				version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), httpClient, "0.0.4")
+			httpClient := mocks.NewHTTPClientMock(t).
+				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
 
-				outputData, err := io.ReadAll(output)
-				testutils.CheckNoError(t, err)
+			versionChecker := version.NewVersionChecker(
+				version.WithOutput(tui.NewCliOutput(output)),
+				version.WithHTTPClient(httpClient),
+				version.WithCurrentVersion("0.0.7"),
+			)
+			versionChecker.CheckNewVersion(t.Context())
 
-				testutils.MatchSnapshot(t, string(outputData))
-			}))
+			outputData, err := io.ReadAll(output)
+			testutils.CheckNoError(t, err)
 
-			t.Run("prop2", testutils.LogTest(func(t *testing.T, output *bytes.Buffer) {
-				httpClient := mocks.NewHTTPClientMock(t).
-					DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
-
-				version.CheckNewVersion(context.Background(), tui.NewCliOutput(output), httpClient, "0.0.7")
-
-				outputData, err := io.ReadAll(output)
-				testutils.CheckNoError(t, err)
-
-				testutils.MatchSnapshot(t, string(outputData))
-			}))
+			testutils.MatchSnapshot(t, string(outputData))
 		})
-	*/
+	})
 }
