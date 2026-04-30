@@ -3,7 +3,16 @@ package contracts
 import (
 	"errors"
 	"net/http"
+	"net/url"
 )
+
+type ReqestData struct {
+	Method string
+	URL    *url.URL
+	Header http.Header
+	Body   []byte
+	Code   int
+}
 
 type Request = http.Request
 

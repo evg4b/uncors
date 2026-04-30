@@ -3,14 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"os"
+	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
@@ -28,29 +30,35 @@ func main() {
 }
 
 func run() int {
-	logger := log.Default()
+	output := tui.NewCliOutput(os.Stdout)
 
 	defer helpers.PanicInterceptor(func(value any) {
-		logger.Error(value)
+		output.Error(value)
+		log.Fatalf("Caught panic: %v", value)
 	})
 
 	fs := afero.NewOsFs()
 
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
-		cmd := commands.NewGenerateCertsCommand(fs, logger)
+		cmd := commands.NewGenerateCertsCommand(
+			commands.WithFs(fs),
+			commands.WithOutput(output),
+		)
 		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
 		cmd.DefineFlags(flags)
 
 		err := flags.Parse(os.Args[2:])
 		if err != nil {
-			logger.Error(err)
+			output.Error(err)
+			log.Printf("Error: %v", err)
 
 			return 1
 		}
 
 		err = cmd.Execute()
 		if err != nil {
-			logger.Error(err)
+			output.Error(err)
+			log.Printf("Error: %v", err)
 
 			return 1
 		}
@@ -59,50 +67,63 @@ func run() int {
 	}
 
 	pflag.Usage = func() {
-		tui.PrintLogo(os.Stdout, Version)
-		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		tui.PrintLogo(output, Version)
+		fmt.Fprintf(output, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 
 	viperInstance := viper.GetViper()
 
-	uncorsConfig := loadConfiguration(logger, viperInstance, fs)
+	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, logger, Version)
+	app := uncors.CreateUncors(fs, output, Version)
 
 	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 		defer helpers.PanicInterceptor(func(value any) {
-			logger.Errorf("Config reloading error: %v", value)
+			log.Printf("Config reloading error: %v", value)
+			output.Errorf("Config reloading error: %v", value)
 		})
 
-		err := app.Restart(ctx, loadConfiguration(logger, viperInstance, fs))
+		err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
 		if err != nil {
-			logger.Errorf("Failed to restart server: %v", err)
+			log.Printf("Failed to restart server: %v", err)
+			output.Errorf("Failed to restart server: %v", err)
 		}
 	})
 	viperInstance.WatchConfig()
-
-	go version.CheckNewVersion(ctx, infra.MakeHTTPClient(uncorsConfig.Proxy), Version)
 
 	err := app.Start(ctx, uncorsConfig)
 	if err != nil {
 		panic(err)
 	}
 
+	go func() {
+		const checkDelay = 50 * time.Second
+
+		versionChecker := version.NewVersionChecker(
+			version.WithOutput(output),
+			version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+			version.WithCurrentVersion(Version),
+		)
+
+		time.Sleep(checkDelay)
+		versionChecker.CheckNewVersion(ctx)
+	}()
+
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		logger.Debug("shutdown signal received")
+		log.Println("shutdown signal received")
 
 		return app.Shutdown(shutdownCtx)
 	})
 
 	app.Wait()
-	logger.Info("Server was stopped")
+	output.Info("Server was stopped")
 
 	return 0
 }
 
-func loadConfiguration(logger *log.Logger, viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
+func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
 	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
 
 	err := validators.ValidateConfig(uncorsConfig, fs)
@@ -111,10 +132,15 @@ func loadConfiguration(logger *log.Logger, viperInstance *viper.Viper, fs afero.
 	}
 
 	if uncorsConfig.Debug {
-		logger.SetLevel(log.DebugLevel)
-		logger.Debug("Enabled debug messages")
+		logFile, err := os.OpenFile("uncors.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to open log file: %v", err))
+		}
+
+		log.SetOutput(logFile)
+		log.Print("Enabled debug messages")
 	} else {
-		logger.SetLevel(log.InfoLevel)
+		log.SetOutput(io.Discard)
 	}
 
 	return uncorsConfig

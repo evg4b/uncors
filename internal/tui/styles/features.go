@@ -6,4 +6,5 @@ var (
 	StaticStyle  = blockStyle.Background(staticColor)
 	CacheStyle   = blockStyle.Background(cacheColor)
 	RewriteStyle = blockStyle.Background(rewriteColor)
+	OptionsStyle = blockStyle.Background(optionsColor)
 )

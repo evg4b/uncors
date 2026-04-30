@@ -18,7 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -53,7 +52,7 @@ func cacheFactory() handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithLogger(log.Null()),
+			cache.WithOutput(mocks.NoopOutput()),
 			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
 		)
 	}
@@ -75,15 +74,14 @@ func proxyFactory(
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
-		proxy.WithProxyLogger(log.Null()),
-		proxy.WithRewriteLogger(log.Null()),
+		proxy.WithOutput(mocks.NoopOutput()),
 	)
 }
 
 func optionsFactory() handler.OptionsMiddlewareFactory {
 	return func(config config.OptionsHandling) contracts.Middleware {
 		return options.NewMiddleware(
-			options.WithLogger(log.Null()),
+			options.WithOutput(mocks.NoopOutput()),
 			options.WithHeaders(config.Headers),
 			options.WithCode(config.Code),
 		)
@@ -95,7 +93,7 @@ func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
 		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithLogger(log.Null()),
+			static.WithOutput(mocks.NoopOutput()),
 			static.WithPrefix(path),
 		)
 	}
@@ -108,7 +106,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 	return func(response config.Response) contracts.Handler {
 		return mock.NewMockHandler(
-			mock.WithLogger(log.Null()),
+			mock.WithOutput(mocks.NoopOutput()),
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),

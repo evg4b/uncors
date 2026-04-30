@@ -5,10 +5,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
-	"github.com/evg4b/uncors/internal/log"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 const (
@@ -21,22 +23,31 @@ type CertManager struct {
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
 	mutex     sync.RWMutex
-	logger    *log.Logger
+	output    contracts.Output
+}
+
+type CertManagerOptions = func(*CertManager)
+
+func WithOutput(output contracts.Output) CertManagerOptions {
+	return func(m *CertManager) {
+		m.output = output
+	}
+}
+
+func WithCert(caCert *x509.Certificate, caKey *rsa.PrivateKey) CertManagerOptions {
+	return func(m *CertManager) {
+		if caCert != nil && caKey != nil {
+			m.generator = NewCertGenerator(caCert, caKey)
+		}
+	}
 }
 
 // NewCertManager creates a new certificate manager.
 // If caCert and caKey are provided, it enables auto-generation.
-func NewCertManager(caCert *x509.Certificate, caKey *rsa.PrivateKey, logger *log.Logger) *CertManager {
-	var generator *CertGenerator
-	if caCert != nil && caKey != nil {
-		generator = NewCertGenerator(caCert, caKey)
-	}
-
-	return &CertManager{
-		generator: generator,
-		cache:     make(map[string]*tls.Certificate),
-		logger:    logger,
-	}
+func NewCertManager(options ...CertManagerOptions) *CertManager {
+	return helpers.ApplyOptions(&CertManager{
+		cache: make(map[string]*tls.Certificate),
+	}, options)
 }
 
 // GetCertificate returns a certificate for the given host.
@@ -69,7 +80,7 @@ func (m *CertManager) GetCertificate(host string) (*tls.Certificate, error) {
 	}
 
 	m.cache[host] = cert
-	m.logger.Debugf("Generated TLS certificate for host: %s", host)
+	log.Printf("Generated TLS certificate for host: %s", host)
 
 	return cert, nil
 }

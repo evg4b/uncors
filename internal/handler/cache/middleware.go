@@ -10,12 +10,11 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/samber/lo"
 )
 
 type Middleware struct {
-	logger    contracts.Logger
+	output    contracts.Output
 	cache     contracts.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
@@ -24,7 +23,6 @@ type Middleware struct {
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	middleware := helpers.ApplyOptions(&Middleware{}, options)
 
-	helpers.AssertIsDefined(middleware.logger, "Logger is not configured")
 	helpers.AssertIsDefined(middleware.cache, "Cache storage is not configured")
 
 	return middleware
@@ -44,18 +42,13 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
-	m.logger.Debugf("extracted %s from request", cacheKey)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		m.logger.Debugf("cache hit for key %s", cacheKey)
-
 		m.writeCachedResponse(writer, cachedResponse)
-		tui.PrintResponse(m.logger, request, writer.StatusCode())
+		m.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 
 		return
 	}
-
-	m.logger.Debugf("request with key %s is not cached", cacheKey)
 
 	cacheableWriter := NewCacheableResponseWriter(m.cache, writer, cacheKey)
 	defer cacheableWriter.Close()
@@ -118,9 +111,9 @@ func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedRespons
 
 type MiddlewareOption = func(*Middleware)
 
-func WithLogger(logger contracts.Logger) MiddlewareOption {
+func WithOutput(output contracts.Output) MiddlewareOption {
 	return func(m *Middleware) {
-		m.logger = logger
+		m.output = output
 	}
 }
 

@@ -3,9 +3,7 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
-	"io"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 
@@ -15,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/tui"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/spf13/afero"
 )
 
@@ -24,31 +21,29 @@ const baseAddress = "127.0.0.1"
 type Uncors struct {
 	fs      afero.Fs
 	version string
-	logger  *log.Logger
-	stdout  io.Writer
+	output  contracts.Output
 	server  *server.Server
 
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
 }
 
-func CreateUncors(fs afero.Fs, logger *log.Logger, version string) *Uncors {
+func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
-		logger:  logger,
-		stdout:  os.Stdout,
+		output:  output,
 		server:  server.New(),
 	}
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	tui.PrintLogo(app.stdout, app.version)
-	app.logger.Print("")
-	tui.PrintWarningBox(app.stdout, DisclaimerMessage)
-	app.logger.Print("")
-	tui.PrintInfoBox(app.stdout, uncorsConfig.Mappings.String())
-	app.logger.Print("")
+	tui.PrintLogo(app.output, app.version)
+	app.output.Print("")
+	app.output.WarnBox(DisclaimerMessage)
+	app.output.Print("")
+	app.output.InfoBox(uncorsConfig.Mappings.String())
+	app.output.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -61,9 +56,9 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	app.logger.Print("")
-	app.logger.Info("Restarting server....")
-	app.logger.Print("")
+	app.output.Print("")
+	app.output.Info("Restarting server....")
+	app.output.Print("")
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -75,8 +70,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
-	app.logger.Info(uncorsConfig.Mappings.String())
-	app.logger.Print("")
+	app.output.Info(uncorsConfig.Mappings.String())
+	app.output.Print("")
 
 	return nil
 }
@@ -113,7 +108,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		)
 
 		if group.Scheme == "https" {
-			tlsConfig, err = buildTLSConfig(app.fs, app.logger, group.Mappings)
+			tlsConfig, err = buildTLSConfig(app.fs, app.output, group.Mappings)
 			if err != nil {
 				return nil, err
 			}

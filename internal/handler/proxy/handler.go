@@ -9,24 +9,21 @@ import (
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
 )
 
 type Handler struct {
-	replacers     urlreplacer.ReplacerFactory
-	http          contracts.HTTPClient
-	proxyLogger   contracts.Logger
-	rewriteLogger contracts.Logger
+	replacers urlreplacer.ReplacerFactory
+	http      contracts.HTTPClient
+	output    contracts.Output
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
 	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middleware.proxyLogger, "ProxyHandler: Logger is not configured")
-	helpers.AssertIsDefined(middleware.rewriteLogger, "ProxyHandler: Logger is not configured")
+	helpers.AssertIsDefined(middleware.output, "ProxyHandler: Output is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
 
 	return middleware
@@ -35,7 +32,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
 	err := h.handle(response, request)
 	if err != nil {
-		h.proxyLogger.Error("Proxy handler error", "error", err, "url", request.URL.String())
+		h.output.Errorf("Proxy handler error: %v", err)
 		infra.HTTPError(response, err)
 	}
 }
@@ -158,17 +155,9 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
-	tui.PrintResponse(h.logger(request), originalResponse.Request, originalResponse.StatusCode)
+	h.output.Request(helpers.ToRequestData(originalResponse.Request, originalResponse.StatusCode))
 
 	return originalResponse, nil
-}
-
-func (h *Handler) logger(request *http.Request) contracts.Logger {
-	if rewrite.IsRewriteRequest(request) {
-		return h.rewriteLogger
-	}
-
-	return h.proxyLogger
 }
 
 type HandlerOption = func(*Handler)
@@ -185,14 +174,8 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	}
 }
 
-func WithProxyLogger(logger contracts.Logger) HandlerOption {
+func WithOutput(output contracts.Output) HandlerOption {
 	return func(m *Handler) {
-		m.proxyLogger = logger
-	}
-}
-
-func WithRewriteLogger(logger contracts.Logger) HandlerOption {
-	return func(m *Handler) {
-		m.rewriteLogger = logger
+		m.output = output
 	}
 }

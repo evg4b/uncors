@@ -8,8 +8,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/internal/log"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		mappings := config.Mappings{}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
@@ -52,7 +52,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -85,7 +85,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
@@ -118,7 +118,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -164,7 +164,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		}
 
-		tlsConfig, err := buildTLSConfig(fs, log.Null(), mappings)
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), mappings)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -191,5 +191,94 @@ func TestBuildTLSConfig(t *testing.T) {
 		// Verify that each certificate is valid for its respective host
 		assert.NotContains(t, apiX509Cert.DNSNames, "app.local", "api cert should not contain app.local")
 		assert.NotContains(t, appX509Cert.DNSNames, "api.local", "app cert should not contain api.local")
+	})
+}
+
+func TestGetFallbackHost(t *testing.T) {
+	t.Run("returns error when no mappings", func(t *testing.T) {
+		manager := &hostCertManager{mappings: config.Mappings{}}
+
+		host, err := manager.getFallbackHost()
+
+		assert.Empty(t, host)
+		assert.ErrorIs(t, err, infratls.ErrNoSNIAndNoFallback)
+	})
+
+	t.Run("returns first host when mappings exist", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		fakeHome := filepath.Join(tmpDir, "home")
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		require.NoError(t, err)
+
+		manager, err := newHostCertManager(fs, mocks.NoopOutput(), config.Mappings{
+			{From: "https://api.local:8443", To: "http://api.example.com"},
+		})
+		require.NoError(t, err)
+
+		host, err := manager.getFallbackHost()
+
+		require.NoError(t, err)
+		assert.Equal(t, "api.local", host)
+	})
+}
+
+func TestGetCertificate_EmptySNI(t *testing.T) {
+	t.Run("uses fallback host when SNI is empty", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		fakeHome := filepath.Join(tmpDir, "home")
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		require.NoError(t, err)
+
+		tlsConfig, err := buildTLSConfig(fs, mocks.NoopOutput(), config.Mappings{
+			{From: "https://fallback.local:8443", To: "http://example.com"},
+		})
+		require.NoError(t, err)
+
+		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: ""})
+
+		require.NoError(t, err)
+		require.NotNil(t, cert)
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		require.NoError(t, err)
+		assert.Contains(t, x509Cert.DNSNames, "fallback.local")
+	})
+
+	t.Run("returns error when SNI is empty and no fallback", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		fakeHome := filepath.Join(tmpDir, "home")
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		require.NoError(t, err)
+
+		manager, err := newHostCertManager(fs, mocks.NoopOutput(), config.Mappings{
+			{From: "https://api.local:8443", To: "http://example.com"},
+		})
+		require.NoError(t, err)
+
+		// Drain the mappings so fallback also fails
+		manager.mappings = config.Mappings{}
+
+		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
+
+		assert.Nil(t, cert)
+		assert.ErrorIs(t, err, infratls.ErrNoSNIAndNoFallback)
 	})
 }
