@@ -3,6 +3,7 @@ package version_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -78,43 +79,60 @@ func TestCheckNewVersion(t *testing.T) {
 		})
 	})
 
-	t.Run("should print", func(t *testing.T) {
-		t.Run("prop1", func(t *testing.T) {
-			output := &bytes.Buffer{}
+	versionResponse := func(version string) io.ReadCloser {
+		return io.NopCloser(strings.NewReader(fmt.Sprintf(`{ "tag_name": "%s" }`, version)))
+	}
 
-			httpClient := mocks.NewHTTPClientMock(t).
-				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
+	t.Run("should print info about new version", func(t *testing.T) {
+		output := &bytes.Buffer{}
 
-			versionChecker := version.NewVersionChecker(
-				version.WithOutput(tui.NewCliOutput(output)),
-				version.WithHTTPClient(httpClient),
-				version.WithCurrentVersion("0.0.4"),
-			)
-			versionChecker.CheckNewVersion(t.Context())
+		httpClient := mocks.NewHTTPClientMock(t).
+			DoMock.Return(&http.Response{Body: versionResponse("0.0.7")}, nil)
 
-			outputData, err := io.ReadAll(output)
-			testutils.CheckNoError(t, err)
+		versionChecker := version.NewVersionChecker(
+			version.WithOutput(tui.NewCliOutput(output)),
+			version.WithHTTPClient(httpClient),
+			version.WithCurrentVersion("0.0.4"),
+		)
+		versionChecker.CheckNewVersion(t.Context())
 
-			testutils.MatchSnapshot(t, string(outputData))
-		})
+		outputData, err := io.ReadAll(output)
+		testutils.CheckNoError(t, err)
 
-		t.Run("prop2", func(t *testing.T) {
-			output := &bytes.Buffer{}
+		testutils.MatchSnapshot(t, string(outputData))
+	})
 
-			httpClient := mocks.NewHTTPClientMock(t).
-				DoMock.Return(&http.Response{Body: io.NopCloser(strings.NewReader(`{ "tag_name": "0.0.7" }`))}, nil)
+	t.Run("should not print info about same version", func(t *testing.T) {
+		output := &bytes.Buffer{}
 
-			versionChecker := version.NewVersionChecker(
-				version.WithOutput(tui.NewCliOutput(output)),
-				version.WithHTTPClient(httpClient),
-				version.WithCurrentVersion("0.0.7"),
-			)
-			versionChecker.CheckNewVersion(t.Context())
+		httpClient := mocks.NewHTTPClientMock(t).
+			DoMock.Return(&http.Response{Body: versionResponse("0.0.7")}, nil)
 
-			outputData, err := io.ReadAll(output)
-			testutils.CheckNoError(t, err)
+		versionChecker := version.NewVersionChecker(
+			version.WithOutput(tui.NewCliOutput(output)),
+			version.WithHTTPClient(httpClient),
+			version.WithCurrentVersion("0.0.7"),
+		)
+		versionChecker.CheckNewVersion(t.Context())
 
-			testutils.MatchSnapshot(t, string(outputData))
-		})
+		outputData, err := io.ReadAll(output)
+		testutils.CheckNoError(t, err)
+
+		testutils.MatchSnapshot(t, string(outputData))
+	})
+
+	t.Run("should print version check stub message", func(t *testing.T) {
+		output := &bytes.Buffer{}
+
+		versionChecker := version.NewVersionChecker(
+			version.WithOutput(tui.NewCliOutput(output)),
+			version.WithCurrentVersion("X.X.X"),
+		)
+		versionChecker.CheckNewVersion(t.Context())
+
+		outputData, err := io.ReadAll(output)
+		testutils.CheckNoError(t, err)
+
+		testutils.MatchSnapshot(t, string(outputData))
 	})
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
@@ -92,18 +93,23 @@ func run() int {
 	})
 	viperInstance.WatchConfig()
 
-	versionChecker := version.NewVersionChecker(
-		version.WithOutput(output),
-		version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-		version.WithCurrentVersion(Version),
-	)
-
-	go versionChecker.CheckNewVersion(ctx)
-
 	err := app.Start(ctx, uncorsConfig)
 	if err != nil {
 		panic(err)
 	}
+
+	go func() {
+		const checkDelay = 50 * time.Second
+
+		versionChecker := version.NewVersionChecker(
+			version.WithOutput(output),
+			version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+			version.WithCurrentVersion(Version),
+		)
+
+		time.Sleep(checkDelay)
+		versionChecker.CheckNewVersion(ctx)
+	}()
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Println("shutdown signal received")

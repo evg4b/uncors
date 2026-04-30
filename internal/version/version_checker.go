@@ -1,6 +1,8 @@
 package version
 
 import (
+	"strings"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/hashicorp/go-version"
@@ -29,18 +31,16 @@ func WithHTTPClient(client contracts.HTTPClient) Option {
 
 func WithCurrentVersion(rawVersion string) Option {
 	return func(checker *Checker) {
-		currentVersion, err := version.NewVersion(rawVersion)
-		if err != nil {
-			panic(err)
+		if strings.EqualFold(rawVersion, "x.x.x") {
+			checker.skip = true
+		} else {
+			currentVersion, err := version.NewVersion(rawVersion)
+			if err != nil {
+				panic(err)
+			}
+
+			checker.currentVersion = currentVersion
 		}
-
-		checker.currentVersion = currentVersion
-	}
-}
-
-func WithSkip() Option {
-	return func(checker *Checker) {
-		checker.skip = true
 	}
 }
 

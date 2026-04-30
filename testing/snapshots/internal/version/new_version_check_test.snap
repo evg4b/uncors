@@ -11,7 +11,7 @@
 
 ---
 
-[TestCheckNewVersion/should_print/prop1 - 1]
+[TestCheckNewVersion/should_print_info_about_new_version - 1]
  INFO    NEW VERSION IS AVAILABLE!
 0.0.4 is not the latest version, you should upgrade to 0.0.7.
 See more information at https://github.com/evg4b/uncors/releases
@@ -19,6 +19,11 @@ See more information at https://github.com/evg4b/uncors/releases
 
 ---
 
-[TestCheckNewVersion/should_print/prop2 - 1]
+[TestCheckNewVersion/should_not_print_info_about_same_version - 1]
+
+---
+
+[TestCheckNewVersion/should_print_version_check_stub_message - 1]
+ INFO    Skipping version check in debug mode
 
 ---
