@@ -38,7 +38,7 @@ func (app *Uncors) buildHandlerForMappings(
 }
 
 func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings config.Mappings) contracts.Handler {
-	return contracts.LazyHandler(func() contracts.Handler {
+	return handler.LazyHandler(func() contracts.Handler {
 		return proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 			proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
@@ -49,7 +49,7 @@ func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings
 
 func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
-		return contracts.LazyMiddleware(func() contracts.Middleware {
+		return handler.LazyMiddleware(func() contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithOutput(app.output.NewPrefixOutput(styles.CacheStyle.Render("CACHE"))),
 				cache.WithMethods(cfg.Methods),
@@ -62,7 +62,7 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 
 func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFactory {
 	return func(cfg config.OptionsHandling) contracts.Middleware {
-		return contracts.LazyMiddleware(func() contracts.Middleware {
+		return handler.LazyMiddleware(func() contracts.Middleware {
 			return options.NewMiddleware(
 				options.WithOutput(app.output.NewPrefixOutput(styles.OptionsStyle.Render("OPTIONS"))),
 				options.WithHeaders(cfg.Headers),
@@ -74,7 +74,7 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 
 func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactory {
 	return func(path string, dir config.StaticDirectory) contracts.Middleware {
-		return contracts.LazyMiddleware(func() contracts.Middleware {
+		return handler.LazyMiddleware(func() contracts.Middleware {
 			return static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
@@ -87,7 +87,7 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 
 func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 	return func(response config.Response) contracts.Handler {
-		return contracts.LazyHandler(func() contracts.Handler {
+		return handler.LazyHandler(func() contracts.Handler {
 			return mock.NewMockHandler(
 				mock.WithOutput(app.output.NewPrefixOutput(styles.MockStyle.Render("MOCK"))),
 				mock.WithResponse(response),
@@ -100,7 +100,7 @@ func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 
 func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(s config.Script) contracts.Handler {
-		return contracts.LazyHandler(func() contracts.Handler {
+		return handler.LazyHandler(func() contracts.Handler {
 			return script.NewHandler(
 				script.WithOutput(app.output.NewPrefixOutput(styles.RewriteStyle.Render("SCRIPT"))),
 				script.WithScript(s),
@@ -112,7 +112,7 @@ func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
 
 func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFactory {
 	return func(rewriting config.RewritingOption) contracts.Middleware {
-		return contracts.LazyMiddleware(func() contracts.Middleware {
+		return handler.LazyMiddleware(func() contracts.Middleware {
 			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
 		})
 	}

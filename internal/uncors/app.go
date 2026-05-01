@@ -40,7 +40,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	tui.PrintLogo(app.output, app.version)
 	app.output.Print("")
-	app.output.WarnBox(DisclaimerMessage)
+	app.output.WarnBox(tui.DisclaimerMessage)
 	app.output.Print("")
 	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")

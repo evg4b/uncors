@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/uncors"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/hashicorp/go-version"
 )
 
@@ -62,7 +62,7 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) {
 	}
 
 	if lastVersion.GreaterThan(checker.currentVersion) {
-		checker.output.Infof(uncors.NewVersionIsAvailable, checker.currentVersion.String(), lastVersion.String())
+		checker.output.Infof(tui.NewVersionIsAvailable, checker.currentVersion.String(), lastVersion.String())
 		checker.output.Info("")
 	} else {
 		log.Print("Version is up to date")
