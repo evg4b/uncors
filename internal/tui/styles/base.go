@@ -1,6 +1,6 @@
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+import lipgloss "charm.land/lipgloss/v2"
 
 var underlineStyle = lipgloss.NewStyle().
 	Underline(true)

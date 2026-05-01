@@ -6,7 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/tui/styles"
 
-	"github.com/charmbracelet/lipgloss"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 const unLetters = `██    ██ ███    ██ 

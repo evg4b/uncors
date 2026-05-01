@@ -12,10 +12,10 @@
 ---
 
 [TestCheckNewVersion/should_print_info_about_new_version - 1]
- INFO    NEW VERSION IS AVAILABLE!
+[48;2;0;114;206m [m[1;38;2;0;0;0;48;2;0;114;206mINFO[m[48;2;0;114;206m [m[48;2;0;114;206m  [m NEW VERSION IS AVAILABLE!
 0.0.4 is not the latest version, you should upgrade to 0.0.7.
 See more information at https://github.com/evg4b/uncors/releases
- INFO    
+[48;2;0;114;206m [m[1;38;2;0;0;0;48;2;0;114;206mINFO[m[48;2;0;114;206m [m[48;2;0;114;206m  [m 
 
 ---
 
@@ -24,6 +24,6 @@ See more information at https://github.com/evg4b/uncors/releases
 ---
 
 [TestCheckNewVersion/should_print_version_check_stub_message - 1]
- INFO    Skipping version check in debug mode
+[48;2;0;114;206m [m[1;38;2;0;0;0;48;2;0;114;206mINFO[m[48;2;0;114;206m [m[48;2;0;114;206m  [m Skipping version check in debug mode
 
 ---
