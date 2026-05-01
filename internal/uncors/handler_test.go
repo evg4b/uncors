@@ -523,6 +523,56 @@ func TestHandlerWithRewrite(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHandlerWithRewritePath(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
+
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Path: %s", r.URL.Path) //nolint:gosec // G705: test handler
+	}))
+	defer targetServer.Close()
+
+	port := testutils.GetFreePort(t)
+
+	cfg := &config.UncorsConfig{
+		Mappings: []config.Mapping{
+			{
+				From: hosts.Loopback.HTTPPort(port),
+				To:   targetServer.URL,
+				Rewrites: []config.RewritingOption{
+					{
+						From: "/api/v1",
+						To:   "/api/v2",
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, app.Start(t.Context(), cfg))
+	defer app.Close()
+
+	req, err := http.NewRequestWithContext(
+		t.Context(),
+		http.MethodGet,
+		hosts.Loopback.HTTPPort(port)+"/api/v1",
+		nil,
+	)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, string(body), "/api/v2")
+}
+
 func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")

@@ -1,6 +1,8 @@
 package proxy_test
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -19,7 +22,15 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+const (
+	premiumLocalHost   = "premium.local.com"
+	premiumLocalScheme = "http"
+)
+
+var errNetworkError = errors.New("network error")
 
 func TestProxyHandler(t *testing.T) {
 	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
@@ -162,8 +173,8 @@ func TestProxyHandler(t *testing.T) {
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
 		testutils.CheckNoError(t, err)
 
-		req.URL.Scheme = "http"
-		req.Host = "premium.local.com"
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
 		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
@@ -178,6 +189,161 @@ func TestProxyHandler(t *testing.T) {
 			testconstants.AllMethods,
 			header.Get(headers.AccessControlAllowMethods),
 		)
+	})
+
+	t.Run("should forward non-mapped headers unchanged", func(t *testing.T) {
+		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
+			assert.Equal(t, "application/json", req.Header.Get(headers.ContentType))
+
+			return &http.Response{
+				Status:        "200 OK",
+				StatusCode:    http.StatusOK,
+				Header:        http.Header{},
+				Body:          io.NopCloser(strings.NewReader("")),
+				ContentLength: 0,
+				Request:       req,
+			}
+		})
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		require.NoError(t, err)
+
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
+		req.Header.Set(headers.ContentType, "application/json")
+		helpers.NormaliseRequest(req)
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)
+	})
+
+	t.Run("should forward cookies from request to target", func(t *testing.T) {
+		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
+			cookie, err := req.Cookie("session")
+			require.NoError(t, err)
+			assert.Equal(t, "abc123", cookie.Value)
+
+			return &http.Response{
+				Status:        "200 OK",
+				StatusCode:    http.StatusOK,
+				Header:        http.Header{},
+				Body:          io.NopCloser(strings.NewReader("")),
+				ContentLength: 0,
+				Request:       req,
+			}
+		})
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		require.NoError(t, err)
+
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
+		req.AddCookie(&http.Cookie{Name: "session", Value: "abc123"})
+		helpers.NormaliseRequest(req)
+
+		handler.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)
+	})
+
+	t.Run("should forward cookies from response to source", func(t *testing.T) {
+		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
+			return &http.Response{
+				Status:     "200 OK",
+				StatusCode: http.StatusOK,
+				Header: http.Header{
+					"Set-Cookie": {"session=abc123; Path=/"},
+				},
+				Body:          io.NopCloser(strings.NewReader("")),
+				ContentLength: 0,
+				Request:       req,
+			}
+		})
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		require.NoError(t, err)
+
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
+		helpers.NormaliseRequest(req)
+
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		cookies := recorder.Result().Cookies()
+		require.NotEmpty(t, cookies)
+		assert.Equal(t, "abc123", cookies[0].Value)
+	})
+
+	t.Run("should proxy request using rewrite host from context", func(t *testing.T) {
+		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
+			assert.Equal(t, "premium.api.com", req.URL.Host)
+
+			return &http.Response{
+				Status:        "200 OK",
+				StatusCode:    http.StatusOK,
+				Header:        http.Header{},
+				Body:          io.NopCloser(strings.NewReader("")),
+				ContentLength: 0,
+				Request:       req,
+			}
+		})
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/app", nil)
+		require.NoError(t, err)
+
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
+		helpers.NormaliseRequest(req)
+		req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, "premium.api.com"))
+
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+	})
+
+	t.Run("should return error when http client fails", func(t *testing.T) {
+		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(_ *http.Request) (*http.Response, error) {
+			return nil, errNetworkError
+		})
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(httpMock),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		require.NoError(t, err)
+
+		req.URL.Scheme = premiumLocalScheme
+		req.Host = premiumLocalHost
+		helpers.NormaliseRequest(req)
+
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {

@@ -266,6 +266,21 @@ func TestReplacerIsTargetSecure(t *testing.T) {
 	}
 }
 
+func TestReplacerReplaceSoft(t *testing.T) {
+	replacer, err := urlreplacer.NewReplacer("http://local.com", "https://api.com")
+	require.NoError(t, err)
+
+	t.Run("returns replaced url when source matches", func(t *testing.T) {
+		result := replacer.ReplaceSoft("http://local.com/path")
+		assert.Equal(t, "https://api.com/path", result)
+	})
+
+	t.Run("returns original url when source does not match", func(t *testing.T) {
+		result := replacer.ReplaceSoft("http://other.com/path")
+		assert.Equal(t, "http://other.com/path", result)
+	})
+}
+
 func TestReplacerIsMatched(t *testing.T) {
 	replacer, err := urlreplacer.NewReplacer("{tenant}.my.cc:3000", "https://{tenant}.master-staging.com")
 	testutils.CheckNoError(t, err)
