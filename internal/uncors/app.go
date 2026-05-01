@@ -50,9 +50,7 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 		return err
 	}
 
-	app.server.Start(ctx, targets)
-
-	return nil
+	return app.server.Start(ctx, targets)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {

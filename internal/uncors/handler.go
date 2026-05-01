@@ -21,13 +21,12 @@ import (
 )
 
 func (app *Uncors) buildHandlerForMappings(
-	uncorsConfig *config.UncorsConfig,
-	mappings config.Mappings,
+	config *config.UncorsConfig, mappings config.Mappings,
 ) *handler.RequestHandler {
 	return handler.NewUncorsRequestHandler(
 		handler.WithMappings(mappings),
-		handler.WithProxyHandler(app.buildProxyHandler(uncorsConfig, mappings)),
-		handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
+		handler.WithProxyHandler(app.buildProxyHandler(config, mappings)),
+		handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(config.CacheConfig)),
 		handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
 		handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
 		handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),

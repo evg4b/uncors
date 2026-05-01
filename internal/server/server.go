@@ -27,19 +27,19 @@ type Target struct {
 }
 
 type Server struct {
-	waitGroup sync.WaitGroup
-	servers   []*PortListener
+	sync.WaitGroup
+
+	listeners []*PortListener
 }
 
 func New() *Server {
 	return &Server{
-		waitGroup: sync.WaitGroup{},
-		servers:   []*PortListener{},
+		listeners: []*PortListener{},
 	}
 }
 
-func (s *Server) Start(ctx context.Context, targets []Target) {
-	s.servers = lo.Map(targets, func(target Target, _ int) *PortListener {
+func (s *Server) Start(ctx context.Context, targets []Target) error {
+	s.listeners = lo.Map(targets, func(target Target, _ int) *PortListener {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
 		portListener := &PortListener{
@@ -62,18 +62,40 @@ func (s *Server) Start(ctx context.Context, targets []Target) {
 	})
 
 	var launchWaitGroup sync.WaitGroup
-	launchWaitGroup.Add(len(s.servers))
+	launchWaitGroup.Add(len(s.listeners))
 
-	for _, server := range s.servers {
-		s.waitGroup.Go(func() {
-			err := server.Listen(ctx, launchWaitGroup.Done)
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				panic(err)
+	var (
+		errMu        sync.Mutex
+		launchErrors *multierror.Error
+	)
+
+	for _, server := range s.listeners {
+		s.Go(func() {
+			var startupFailed bool
+
+			err := server.Listen(ctx, func(listenErr error) {
+				if listenErr != nil {
+					startupFailed = true
+
+					errMu.Lock()
+					launchErrors = multierror.Append(launchErrors, listenErr)
+					errMu.Unlock()
+				}
+
+				launchWaitGroup.Done()
+			})
+
+			if !startupFailed && err != nil && !errors.Is(err, http.ErrServerClosed) {
+				errMu.Lock()
+				launchErrors = multierror.Append(launchErrors, err)
+				errMu.Unlock()
 			}
 		})
 	}
 
 	launchWaitGroup.Wait()
+
+	return launchErrors.ErrorOrNil()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
@@ -82,27 +104,18 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 	var waitGroup sync.WaitGroup
 
-	var (
-		errors     *multierror.Error
-		errorMutex sync.Mutex
-	)
+	var errors *multierror.Error
 
-	for _, server := range s.servers {
+	for _, server := range s.listeners {
 		waitGroup.Go(func() {
 			err := server.Shutdown(ctx)
 			if err != nil {
-				errorMutex.Lock()
-				defer errorMutex.Unlock()
-
 				errors = multierror.Append(errors, err)
 			}
 		})
 	}
 
 	waitGroup.Wait()
-
-	errorMutex.Lock()
-	defer errorMutex.Unlock()
 
 	return errors.ErrorOrNil()
 }
@@ -113,19 +126,17 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 		return err
 	}
 
-	s.Start(ctx, targets)
-
-	return nil
+	return s.Start(ctx, targets)
 }
 
 func (s *Server) Wait() {
-	s.waitGroup.Wait()
+	s.WaitGroup.Wait()
 }
 
 func (s *Server) Close() error {
 	var errors *multierror.Error
 
-	for _, pl := range s.servers {
+	for _, pl := range s.listeners {
 		err := pl.Close()
 		if err != nil {
 			errors = multierror.Append(errors, err)

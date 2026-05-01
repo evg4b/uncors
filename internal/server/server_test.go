@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"testing"
@@ -73,7 +74,7 @@ func TestServer(t *testing.T) {
 		})
 
 		instance := server.New()
-		instance.Start(t.Context(), targets)
+		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -117,7 +118,7 @@ func TestServer(t *testing.T) {
 		})
 
 		instance := server.New()
-		instance.Start(t.Context(), targets)
+		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -170,7 +171,7 @@ func TestServer(t *testing.T) {
 		})
 
 		instance := server.New()
-		instance.Start(t.Context(), append(httpTargets, httpsTargets...))
+		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -193,12 +194,12 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		instance := server.New()
-		instance.Start(t.Context(), []server.Target{
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
 				Handler: handler,
 			},
-		})
+		}))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -218,12 +219,12 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		instance := server.New()
-		instance.Start(t.Context(), []server.Target{
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
 				Handler: handler,
 			},
-		})
+		}))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -242,12 +243,12 @@ func TestServer(t *testing.T) {
 		restarted := testutils.GetFreePort(t)
 		instance := server.New()
 
-		instance.Start(t.Context(), []server.Target{
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(initial),
 				Handler: handler,
 			},
-		})
+		}))
 
 		assertResponse(t, hosts.Loopback.HTTPPort(initial), nil)
 		require.True(t, testutils.IsPortFree(restarted))
@@ -273,7 +274,7 @@ func TestServer(t *testing.T) {
 
 		queue.Track("server started")
 
-		instance.Start(t.Context(), []server.Target{
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
 				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
@@ -284,7 +285,7 @@ func TestServer(t *testing.T) {
 					require.NoError(t, err)
 				}),
 			},
-		})
+		}))
 
 		defer func() {
 			require.NoError(t, instance.Close())
@@ -318,5 +319,23 @@ func TestServer(t *testing.T) {
 			"shutdown trigered",
 			"waiting finished",
 		}, queue.List())
+	})
+
+	t.Run("returns error when port is already in use", func(t *testing.T) {
+		port := testutils.GetFreePort(t)
+
+		ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", hosts.Loopback.Port(port))
+		require.NoError(t, err)
+		t.Cleanup(func() { ln.Close() })
+
+		instance := server.New()
+		err = instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(port),
+				Handler: handler,
+			},
+		})
+
+		require.Error(t, err)
 	})
 }

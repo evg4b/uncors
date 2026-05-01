@@ -13,12 +13,12 @@ type PortListener struct {
 	target *Target
 }
 
-func (ps *PortListener) Listen(ctx context.Context, onListening func()) error {
+func (ps *PortListener) Listen(ctx context.Context, onReady func(error)) error {
 	var listenConfig net.ListenConfig
 
 	listener, err := listenConfig.Listen(ctx, "tcp", ps.target.Address)
 	if err != nil {
-		onListening()
+		onReady(err)
 
 		return err
 	}
@@ -27,7 +27,7 @@ func (ps *PortListener) Listen(ctx context.Context, onListening func()) error {
 		listener = tls.NewListener(listener, ps.target.TLSConfig)
 	}
 
-	onListening()
+	onReady(nil)
 
 	return ps.Serve(listener)
 }
