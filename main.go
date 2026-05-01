@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/config/validators"
@@ -15,6 +16,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
+	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
@@ -77,48 +79,57 @@ func run() int {
 	uncorsConfig := loadConfiguration(viperInstance, fs)
 
 	ctx := context.Background()
-	app := uncors.CreateUncors(fs, output, Version)
 
-	viperInstance.OnConfigChange(func(_ fsnotify.Event) {
-		defer helpers.PanicInterceptor(func(value any) {
-			log.Printf("Config reloading error: %v", value)
-			output.Errorf("Config reloading error: %v", value)
+	if !uncorsConfig.Interactive {
+		app := uncors.CreateUncors(fs, output, Version)
+
+		viperInstance.OnConfigChange(func(_ fsnotify.Event) {
+			defer helpers.PanicInterceptor(func(value any) {
+				log.Printf("Config reloading error: %v", value)
+				output.Errorf("Config reloading error: %v", value)
+			})
+
+			err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
+			if err != nil {
+				log.Printf("Failed to restart server: %v", err)
+				output.Errorf("Failed to restart server: %v", err)
+			}
+		})
+		viperInstance.WatchConfig()
+
+		err := app.Start(ctx, uncorsConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		go func() {
+			const checkDelay = 50 * time.Second
+
+			versionChecker := version.NewVersionChecker(
+				version.WithOutput(output),
+				version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+				version.WithCurrentVersion(Version),
+			)
+
+			time.Sleep(checkDelay)
+			versionChecker.CheckNewVersion(ctx)
+		}()
+
+		go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
+			log.Println("shutdown signal received")
+
+			return app.Shutdown(shutdownCtx)
 		})
 
-		err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
-		if err != nil {
-			log.Printf("Failed to restart server: %v", err)
-			output.Errorf("Failed to restart server: %v", err)
+		app.Wait()
+		output.Info("Server was stopped")
+	} else {
+		app := uncorsapp.NewModles(Version)
+		p := tea.NewProgram(app)
+		if _, err := p.Run(); err != nil {
+			log.Fatal(err)
 		}
-	})
-	viperInstance.WatchConfig()
-
-	err := app.Start(ctx, uncorsConfig)
-	if err != nil {
-		panic(err)
 	}
-
-	go func() {
-		const checkDelay = 50 * time.Second
-
-		versionChecker := version.NewVersionChecker(
-			version.WithOutput(output),
-			version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-			version.WithCurrentVersion(Version),
-		)
-
-		time.Sleep(checkDelay)
-		versionChecker.CheckNewVersion(ctx)
-	}()
-
-	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		log.Println("shutdown signal received")
-
-		return app.Shutdown(shutdownCtx)
-	})
-
-	app.Wait()
-	output.Info("Server was stopped")
 
 	return 0
 }
