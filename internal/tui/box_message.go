@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 func printMessageBox(out io.Writer, message, prefix string, blockStyles lipgloss.Style) {
