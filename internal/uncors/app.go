@@ -24,6 +24,8 @@ type Uncors struct {
 	output  contracts.Output
 	server  *server.Server
 
+	handlerWrapper func(contracts.Handler) contracts.Handler
+
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
 }
@@ -35,6 +37,11 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		output:  output,
 		server:  server.New(),
 	}
+}
+
+func (app *Uncors) WithHandlerWrapper(wrapper func(contracts.Handler) contracts.Handler) *Uncors {
+	app.handlerWrapper = wrapper
+	return app
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
@@ -112,9 +119,14 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			}
 		}
 
+		h := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
+		if app.handlerWrapper != nil {
+			h = app.handlerWrapper(h)
+		}
+
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   app.buildHandlerForMappings(uncorsConfig, group.Mappings),
+			Handler:   h,
 			TLSConfig: tlsConfig,
 		})
 	}

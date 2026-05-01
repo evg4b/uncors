@@ -2,11 +2,14 @@ package uncorsapp
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	help "charm.land/bubbles/v2/help"
 	key "charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -18,18 +21,25 @@ import (
 )
 
 const (
-	outputChannelSize  = 100
-	shutdownTimeout    = 5 * time.Second
-	versionCheckDelay  = 50 * time.Second
+	outputChannelSize = 100
+	shutdownTimeout   = 5 * time.Second
+	versionCheckDelay = 50 * time.Second
+	tickInterval      = 200 * time.Millisecond
 )
+
+var pendingMethodStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#FFFFFF")).
+	Background(lipgloss.Color("#8C8C8C")).
+	Padding(0, 1)
 
 type uncorsApp struct {
 	version string
 	keys    keyMap
 	help    help.Model
 
-	app    *uncors.Uncors
-	output *tuiOutput
+	app     *uncors.Uncors
+	output  *tuiOutput
+	tracker *requestTracker
 
 	outputCh chan string
 	ctx      context.Context
@@ -38,12 +48,18 @@ type uncorsApp struct {
 	cfg        *config.UncorsConfig
 	loadConfig func() *config.UncorsConfig
 	viper      *viper.Viper
+
+	pending map[uint64]requestEvent
+	ticking bool
 }
 
 type outputLineMsg string
 type serverStartedMsg struct{}
 type serverErrMsg struct{ err error }
 type shutdownMsg struct{}
+type requestEventMsg requestEvent
+type tickMsg struct{}
+type restartMsg struct{}
 
 func NewUncorsApp(
 	ver string,
@@ -54,20 +70,24 @@ func NewUncorsApp(
 ) tea.Model {
 	ch := make(chan string, outputChannelSize)
 	output := newTuiOutput(ch)
+	tracker := newRequestTracker()
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return uncorsApp{
-		version:    ver,
-		keys:       newKeyMap(),
-		help:       help.New(),
-		app:        uncors.CreateUncors(fs, output, ver),
+		version: ver,
+		keys:    newKeyMap(),
+		help:    help.New(),
+		app: uncors.CreateUncors(fs, output, ver).
+			WithHandlerWrapper(tracker.Wrap),
 		output:     output,
+		tracker:    tracker,
 		outputCh:   ch,
 		ctx:        ctx,
 		cancel:     cancel,
 		cfg:        cfg,
 		loadConfig: loadConfig,
 		viper:      viperInstance,
+		pending:    make(map[uint64]requestEvent),
 	}
 }
 
@@ -77,6 +97,7 @@ func (m uncorsApp) Init() tea.Cmd {
 		tea.Batch(
 			m.startServerCmd(),
 			m.waitOutputCmd(),
+			m.watchEventsCmd(),
 		),
 	)
 }
@@ -91,6 +112,26 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Println(string(msg)),
 			m.waitOutputCmd(),
 		)
+
+	case requestEventMsg:
+		if msg.done {
+			delete(m.pending, msg.id)
+		} else {
+			m.pending[msg.id] = requestEvent(msg)
+		}
+		cmds := []tea.Cmd{m.watchEventsCmd()}
+		if len(m.pending) > 0 && !m.ticking {
+			m.ticking = true
+			cmds = append(cmds, m.tickCmd())
+		}
+		return m, tea.Batch(cmds...)
+
+	case tickMsg:
+		if len(m.pending) > 0 {
+			return m, m.tickCmd()
+		}
+		m.ticking = false
+		return m, nil
 
 	case serverStartedMsg:
 		m.viper.OnConfigChange(func(_ fsnotify.Event) {
@@ -111,6 +152,11 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Quit,
 		)
 
+	case restartMsg:
+		m.pending = make(map[uint64]requestEvent)
+		m.ticking = false
+		return m, nil
+
 	case shutdownMsg:
 		return m, tea.Quit
 
@@ -118,6 +164,8 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
+		case key.Matches(msg, m.keys.Restart):
+			return m, m.restartCmd()
 		case key.Matches(msg, m.keys.Quit):
 			return m, m.shutdownCmd()
 		}
@@ -127,7 +175,24 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m uncorsApp) View() tea.View {
-	return tea.NewView(m.help.View(m.keys))
+	var b strings.Builder
+
+	if len(m.pending) > 0 {
+		fmt.Fprintf(&b, "In progress (%d):\n", len(m.pending))
+		for _, req := range m.pending {
+			elapsed := formatElapsed(time.Since(req.startedAt))
+			fmt.Fprintf(&b, "  %s %s  %s\n",
+				pendingMethodStyle.Render(req.method),
+				req.url.String(),
+				elapsed,
+			)
+		}
+		b.WriteByte('\n')
+	}
+
+	b.WriteString(m.help.View(m.keys))
+
+	return tea.NewView(b.String())
 }
 
 func (m uncorsApp) startServerCmd() tea.Cmd {
@@ -153,6 +218,26 @@ func (m uncorsApp) waitOutputCmd() tea.Cmd {
 	}
 }
 
+func (m uncorsApp) watchEventsCmd() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case event, ok := <-m.tracker.events:
+			if !ok {
+				return nil
+			}
+			return requestEventMsg(event)
+		case <-m.ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (m uncorsApp) tickCmd() tea.Cmd {
+	return tea.Tick(tickInterval, func(_ time.Time) tea.Msg {
+		return tickMsg{}
+	})
+}
+
 func (m uncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
 		m.cancel()
@@ -160,6 +245,19 @@ func (m uncorsApp) shutdownCmd() tea.Cmd {
 		defer cancel()
 		_ = m.app.Shutdown(ctx)
 		return shutdownMsg{}
+	}
+}
+
+func (m uncorsApp) restartCmd() tea.Cmd {
+	return func() tea.Msg {
+		defer helpers.PanicInterceptor(func(value any) {
+			m.output.Errorf("Restart error: %v", value)
+		})
+		newCfg := m.loadConfig()
+		if err := m.app.Restart(m.ctx, newCfg); err != nil {
+			m.output.Errorf("Failed to restart: %v", err)
+		}
+		return restartMsg{}
 	}
 }
 
@@ -174,4 +272,12 @@ func (m uncorsApp) versionCheckCmd() tea.Cmd {
 		versionChecker.CheckNewVersion(m.ctx)
 		return nil
 	}
+}
+
+func formatElapsed(d time.Duration) string {
+	d = d.Truncate(time.Millisecond)
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	return fmt.Sprintf("%.1fs", d.Seconds())
 }
