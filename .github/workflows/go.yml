@@ -68,7 +68,6 @@ jobs:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [test, build, lint]
     permissions:
       security-events: write
       packages: read
