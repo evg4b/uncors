@@ -124,7 +124,13 @@ func run() int {
 		app.Wait()
 		output.Info("Server was stopped")
 	} else {
-		app := uncorsapp.NewModles(Version)
+		app := uncorsapp.NewUncorsApp(
+			Version,
+			fs,
+			viperInstance,
+			uncorsConfig,
+			func() *config.UncorsConfig { return loadConfiguration(viperInstance, fs) },
+		)
 		p := tea.NewProgram(app)
 		if _, err := p.Run(); err != nil {
 			log.Fatal(err)
