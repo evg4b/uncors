@@ -8,6 +8,7 @@ import (
 
 	help "charm.land/bubbles/v2/help"
 	key "charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
@@ -27,10 +28,18 @@ const (
 	tickInterval      = 200 * time.Millisecond
 )
 
-var pendingMethodStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#FFFFFF")).
-	Background(lipgloss.Color("#8C8C8C")).
-	Padding(0, 1)
+var (
+	pendingMethodStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#8C8C8C")).
+				Padding(0, 1)
+
+	statusBarStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888"))
+
+	scrollBarStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#444444"))
+)
 
 type uncorsApp struct {
 	version string
@@ -48,6 +57,12 @@ type uncorsApp struct {
 	cfg        *config.UncorsConfig
 	loadConfig func() *config.UncorsConfig
 	viper      *viper.Viper
+
+	hist       *history
+	vp         viewport.Model
+	autoScroll bool
+	termHeight int
+	termWidth  int
 
 	pending map[uint64]requestEvent
 	ticking bool
@@ -73,6 +88,11 @@ func NewUncorsApp(
 	tracker := newRequestTracker()
 	ctx, cancel := context.WithCancel(context.Background())
 
+	hist, err := newHistory()
+	if err != nil {
+		panic(fmt.Sprintf("failed to create history: %v", err))
+	}
+
 	return uncorsApp{
 		version: ver,
 		keys:    newKeyMap(),
@@ -87,37 +107,52 @@ func NewUncorsApp(
 		cfg:        cfg,
 		loadConfig: loadConfig,
 		viper:      viperInstance,
+		hist:       hist,
+		vp:         viewport.New(),
+		autoScroll: true,
 		pending:    make(map[uint64]requestEvent),
 	}
 }
 
 func (m uncorsApp) Init() tea.Cmd {
-	return tea.Sequence(
-		tea.ClearScreen,
-		tea.Batch(
-			m.startServerCmd(),
-			m.waitOutputCmd(),
-			m.watchEventsCmd(),
-		),
+	return tea.Batch(
+		m.startServerCmd(),
+		m.waitOutputCmd(),
+		m.watchEventsCmd(),
 	)
 }
 
 func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.termHeight = msg.Height
+		m.termWidth = msg.Width
 		m.help.SetWidth(msg.Width)
+		m.vp.SetWidth(msg.Width)
+		m.vp.SetHeight(m.historyHeight())
+		if m.autoScroll {
+			m.vp.GotoBottom()
+		}
 
 	case outputLineMsg:
-		return m, tea.Sequence(
-			tea.Println(string(msg)),
-			m.waitOutputCmd(),
-		)
+		atBottom := m.autoScroll
+		m.hist.AppendLine(string(msg))
+		m.vp.SetContentLines(m.hist.Lines())
+		if atBottom {
+			m.vp.GotoBottom()
+		}
+		return m, m.waitOutputCmd()
 
 	case requestEventMsg:
 		if msg.done {
 			delete(m.pending, msg.id)
 		} else {
 			m.pending[msg.id] = requestEvent(msg)
+		}
+		// Recalculate viewport height since footer size changed.
+		m.vp.SetHeight(m.historyHeight())
+		if m.autoScroll {
+			m.vp.GotoBottom()
 		}
 		cmds := []tea.Cmd{m.watchEventsCmd()}
 		if len(m.pending) > 0 && !m.ticking {
@@ -131,7 +166,6 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.tickCmd()
 		}
 		m.ticking = false
-		return m, nil
 
 	case serverStartedMsg:
 		m.viper.OnConfigChange(func(_ fsnotify.Event) {
@@ -147,23 +181,43 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.versionCheckCmd()
 
 	case serverErrMsg:
-		return m, tea.Sequence(
-			tea.Println(msg.err.Error()),
-			tea.Quit,
-		)
+		m.hist.AppendLine(msg.err.Error())
+		m.vp.SetContentLines(m.hist.Lines())
+		m.vp.GotoBottom()
+		return m, tea.Quit
 
 	case restartMsg:
 		m.pending = make(map[uint64]requestEvent)
 		m.ticking = false
-		return m, nil
+		m.vp.SetHeight(m.historyHeight())
 
 	case shutdownMsg:
+		_ = m.hist.Close()
 		return m, tea.Quit
 
 	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
+			m.vp.SetHeight(m.historyHeight())
+		case key.Matches(msg, m.keys.ScrollUp):
+			m.vp.ScrollUp(1)
+			m.autoScroll = m.vp.AtBottom()
+		case key.Matches(msg, m.keys.ScrollDown):
+			m.vp.ScrollDown(1)
+			m.autoScroll = m.vp.AtBottom()
+		case key.Matches(msg, m.keys.PageUp):
+			m.vp.PageUp()
+			m.autoScroll = m.vp.AtBottom()
+		case key.Matches(msg, m.keys.PageDown):
+			m.vp.PageDown()
+			m.autoScroll = m.vp.AtBottom()
+		case key.Matches(msg, m.keys.GotoTop):
+			m.vp.GotoTop()
+			m.autoScroll = false
+		case key.Matches(msg, m.keys.GotoBottom):
+			m.vp.GotoBottom()
+			m.autoScroll = true
 		case key.Matches(msg, m.keys.Restart):
 			return m, m.restartCmd()
 		case key.Matches(msg, m.keys.Quit):
@@ -177,6 +231,11 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m uncorsApp) View() tea.View {
 	var b strings.Builder
 
+	b.WriteString(m.vp.View())
+	b.WriteByte('\n')
+	b.WriteString(m.renderStatusBar())
+	b.WriteByte('\n')
+
 	if len(m.pending) > 0 {
 		fmt.Fprintf(&b, "In progress (%d):\n", len(m.pending))
 		for _, req := range m.pending {
@@ -187,12 +246,56 @@ func (m uncorsApp) View() tea.View {
 				elapsed,
 			)
 		}
-		b.WriteByte('\n')
 	}
 
 	b.WriteString(m.help.View(m.keys))
 
-	return tea.NewView(b.String())
+	v := tea.NewView(b.String())
+	v.AltScreen = true
+	return v
+}
+
+// historyHeight returns the number of lines the viewport should occupy.
+func (m uncorsApp) historyHeight() int {
+	h := m.termHeight - m.footerHeight()
+	if h < 1 {
+		return 1
+	}
+	return h
+}
+
+// footerHeight returns the total number of lines below the viewport.
+func (m uncorsApp) footerHeight() int {
+	h := 2 // status bar + help bar
+	if len(m.pending) > 0 {
+		h += 1 + len(m.pending) // "In progress:" header + N request lines
+	}
+	if m.help.ShowAll {
+		// FullHelp has 3 rows; add the extra rows beyond 1
+		h += 2
+	}
+	return h
+}
+
+func (m uncorsApp) renderStatusBar() string {
+	total := m.hist.LineCount()
+	if total == 0 {
+		return statusBarStyle.Render("─ starting...")
+	}
+
+	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
+	scrollStr := fmt.Sprintf("%d%%", pct)
+	if m.autoScroll {
+		scrollStr += " [auto]"
+	}
+
+	scrollIndicator := scrollBarStyle.Render(
+		fmt.Sprintf("─ %s (%d lines) ", scrollStr, total),
+	)
+
+	divider := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(scrollIndicator))))
+
+	return scrollIndicator + divider
 }
 
 func (m uncorsApp) startServerCmd() tea.Cmd {
@@ -281,3 +384,4 @@ func formatElapsed(d time.Duration) string {
 	}
 	return fmt.Sprintf("%.1fs", d.Seconds())
 }
+
