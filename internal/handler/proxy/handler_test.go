@@ -249,7 +249,13 @@ func TestProxyHandler(t *testing.T) {
 
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
-		req.AddCookie(&http.Cookie{Name: "session", Value: "abc123"})
+		req.AddCookie(&http.Cookie{
+			Name:     "session",
+			Value:    "abc123",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		helpers.NormaliseRequest(req)
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(httptest.NewRecorder()), req)

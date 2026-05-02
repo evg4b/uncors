@@ -133,7 +133,9 @@ func run() int {
 		)
 
 		p := tea.NewProgram(app)
-		if _, err := p.Run(); err != nil {
+
+		_, err := p.Run()
+		if err != nil {
 			log.Fatal(err)
 		}
 	}

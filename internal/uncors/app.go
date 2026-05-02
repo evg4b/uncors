@@ -120,14 +120,14 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			}
 		}
 
-		h := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
+		handler := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
 		if app.handlerWrapper != nil {
-			h = app.handlerWrapper(h)
+			handler = app.handlerWrapper(handler)
 		}
 
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   h,
+			Handler:   handler,
 			TLSConfig: tlsConfig,
 		})
 	}

@@ -17,27 +17,6 @@ func newTuiOutput(ch chan<- string) *tuiOutput {
 	return &tuiOutput{ch: ch}
 }
 
-func (o *tuiOutput) send(msg string) {
-	msg = strings.TrimRight(msg, "\n")
-	if len(msg) > 0 {
-		o.ch <- msg
-	}
-}
-
-func (o *tuiOutput) capture(fn func(out *tui.CliOutput)) {
-	var buf bytes.Buffer
-
-	tmp := tui.NewCliOutput(&buf, tui.WithPrefix(o.prefix))
-	fn(tmp)
-	o.send(buf.String())
-}
-
-func (o *tuiOutput) captureBox(fn func(out *tui.CliOutput)) {
-	var buf bytes.Buffer
-	fn(tui.NewCliOutput(&buf))
-	o.send(buf.String())
-}
-
 func (o *tuiOutput) Write(p []byte) (int, error) {
 	o.send(string(p))
 
@@ -97,4 +76,25 @@ func (o *tuiOutput) NewPrefixOutput(prefix string) contracts.Output {
 		ch:     o.ch,
 		prefix: prefix,
 	}
+}
+
+func (o *tuiOutput) send(msg string) {
+	msg = strings.TrimRight(msg, "\n")
+	if len(msg) > 0 {
+		o.ch <- msg
+	}
+}
+
+func (o *tuiOutput) capture(fn func(out *tui.CliOutput)) {
+	var buf bytes.Buffer
+
+	tmp := tui.NewCliOutput(&buf, tui.WithPrefix(o.prefix))
+	fn(tmp)
+	o.send(buf.String())
+}
+
+func (o *tuiOutput) captureBox(fn func(out *tui.CliOutput)) {
+	var buf bytes.Buffer
+	fn(tui.NewCliOutput(&buf))
+	o.send(buf.String())
 }

@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,7 +15,7 @@ import (
 
 func makeRequest(method, rawURL string) *contracts.Request {
 	u, _ := url.Parse(rawURL)
-	r := httptest.NewRequest(method, rawURL, nil)
+	r := httptest.NewRequestWithContext(context.Background(), method, rawURL, nil)
 	r.URL = u
 
 	return r
@@ -29,19 +30,19 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		tracker := newRequestTracker()
 		handlerDone := make(chan struct{})
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
 			close(handlerDone)
 		}))
 
 		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
 
-		ev := <-tracker.events
+		event := <-tracker.events
 
-		assert.False(t, ev.done)
-		assert.Equal(t, http.MethodGet, ev.method)
-		assert.Equal(t, "/path", ev.url.Path)
-		assert.NotZero(t, ev.id)
-		assert.NotZero(t, ev.startedAt)
+		assert.False(t, event.done)
+		assert.Equal(t, http.MethodGet, event.method)
+		assert.Equal(t, "/path", event.url.Path)
+		assert.NotZero(t, event.id)
+		assert.NotZero(t, event.startedAt)
 
 		<-handlerDone
 		<-tracker.events // drain done event
@@ -52,7 +53,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		handlerDone := make(chan struct{})
 		blocker := make(chan struct{})
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
 			<-blocker
 			close(handlerDone)
 		}))
@@ -80,22 +81,22 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	t.Run("start event carries correct method and URL", func(t *testing.T) {
 		tracker := newRequestTracker()
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {}))
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodDelete, "http://host.local/resource?q=1"))
 
-		ev := <-tracker.events
+		event := <-tracker.events
 		<-tracker.events // done
 
-		assert.Equal(t, http.MethodDelete, ev.method)
-		assert.Equal(t, "/resource", ev.url.Path)
-		assert.Equal(t, "q=1", ev.url.RawQuery)
+		assert.Equal(t, http.MethodDelete, event.method)
+		assert.Equal(t, "/resource", event.url.Path)
+		assert.Equal(t, "q=1", event.url.RawQuery)
 	})
 
 	t.Run("underlying handler is called exactly once", func(t *testing.T) {
 		tracker := newRequestTracker()
 		calls := 0
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
 			calls++
 		}))
 
@@ -109,41 +110,41 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	t.Run("concurrent requests get unique IDs", func(t *testing.T) {
 		tracker := newRequestTracker()
 
-		const n = 10
+		const requestCount = 10
 
 		var wg sync.WaitGroup
-		wg.Add(n)
+		wg.Add(requestCount)
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
 			wg.Done()
 			wg.Wait()
 		}))
 
-		for range n {
+		for range requestCount {
 			go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/"))
 		}
 
 		seen := make(map[uint64]bool)
 
-		for range n {
-			ev := <-tracker.events
-			assert.False(t, seen[ev.id], "duplicate ID %d", ev.id)
-			seen[ev.id] = true
+		for range requestCount {
+			event := <-tracker.events
+			assert.False(t, seen[event.id], "duplicate ID %d", event.id)
+			seen[event.id] = true
 		}
 
-		for range n {
+		for range requestCount {
 			<-tracker.events // drain done events
 		}
 
-		assert.Len(t, seen, n)
+		assert.Len(t, seen, requestCount)
 	})
 
 	t.Run("IDs are monotonically increasing", func(t *testing.T) {
 		tracker := newRequestTracker()
 
-		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {}))
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 
-		var ids []uint64
+		ids := make([]uint64, 0, 5)
 
 		for range 5 {
 			wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/"))

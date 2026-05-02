@@ -11,11 +11,12 @@ import (
 const (
 	historyInitialSize = 1 << 20 // 1 MB
 	historyGrowFactor  = 2
+	historyCacheSize   = 1024
 )
 
 type lineInfo struct {
 	offset int64
-	length int32
+	length int
 }
 
 // history stores log lines in a memory-mapped temp file so the backing store
@@ -31,31 +32,33 @@ type history struct {
 }
 
 func newHistory() (*history, error) {
-	f, err := os.CreateTemp("", "uncors-history-*.log")
+	historyFile, err := os.CreateTemp("", "uncors-history-*.log")
 	if err != nil {
 		return nil, fmt.Errorf("create history file: %w", err)
 	}
 
 	capacity := int64(historyInitialSize)
-	if err := f.Truncate(capacity); err != nil {
-		_ = f.Close()
+
+	err = historyFile.Truncate(capacity)
+	if err != nil {
+		_ = historyFile.Close()
 
 		return nil, fmt.Errorf("allocate history file: %w", err)
 	}
 
-	data, err := syscall.Mmap(int(f.Fd()), 0, int(capacity),
+	data, err := syscall.Mmap(int(historyFile.Fd()), 0, int(capacity),
 		syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
-		_ = f.Close()
+		_ = historyFile.Close()
 
 		return nil, fmt.Errorf("mmap history: %w", err)
 	}
 
 	return &history{
-		file:     f,
+		file:     historyFile,
 		data:     data,
-		lines:    make([]lineInfo, 0, 1024),
-		cache:    make([]string, 0, 1024),
+		lines:    make([]lineInfo, 0, historyCacheSize),
+		cache:    make([]string, 0, historyCacheSize),
 		capacity: capacity,
 	}, nil
 }
@@ -69,28 +72,6 @@ func (h *history) AppendLine(line string) {
 	for subline := range strings.SplitSeq(line, "\n") {
 		h.appendSingleLine(subline)
 	}
-}
-
-func (h *history) appendSingleLine(line string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	content := line + "\n"
-
-	needed := h.writePos + int64(len(content))
-	if needed > h.capacity {
-		err := h.grow(needed)
-		if err != nil {
-			return
-		}
-	}
-
-	offset := h.writePos
-	n := copy(h.data[offset:], content)
-	lineLen := int32(n - 1)
-	h.lines = append(h.lines, lineInfo{offset: offset, length: lineLen})
-	h.cache = append(h.cache, string(h.data[offset:offset+int64(lineLen)]))
-	h.writePos += int64(n)
 }
 
 // Lines returns the cached slice of all stored lines.
@@ -122,17 +103,41 @@ func (h *history) Close() error {
 	return os.Remove(name)
 }
 
+func (h *history) appendSingleLine(line string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	content := line + "\n"
+
+	needed := h.writePos + int64(len(content))
+	if needed > h.capacity {
+		err := h.grow(needed)
+		if err != nil {
+			return
+		}
+	}
+
+	offset := h.writePos
+	writtenBytes := copy(h.data[offset:], content)
+	lineLength := writtenBytes - 1
+	h.lines = append(h.lines, lineInfo{offset: offset, length: lineLength})
+	h.cache = append(h.cache, string(h.data[offset:offset+int64(lineLength)]))
+	h.writePos += int64(writtenBytes)
+}
+
 func (h *history) grow(needed int64) error {
 	newCap := h.capacity * historyGrowFactor
 	for newCap < needed {
 		newCap *= historyGrowFactor
 	}
 
-	if err := syscall.Munmap(h.data); err != nil {
+	err := syscall.Munmap(h.data)
+	if err != nil {
 		return err
 	}
 
-	if err := h.file.Truncate(newCap); err != nil {
+	err = h.file.Truncate(newCap)
+	if err != nil {
 		return err
 	}
 

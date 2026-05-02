@@ -24,9 +24,9 @@ func recv(t *testing.T, ch <-chan string) string {
 }
 
 func newTestOutput() (*tuiOutput, <-chan string) {
-	ch := make(chan string, 10)
+	outputCh := make(chan string, 10)
 
-	return newTuiOutput(ch), ch
+	return newTuiOutput(outputCh), outputCh
 }
 
 func TestTuiOutput_Info(t *testing.T) {
@@ -131,7 +131,8 @@ func TestTuiOutput_Write(t *testing.T) {
 
 	t.Run("Write with only whitespace does not send", func(t *testing.T) {
 		out, ch := newTestOutput()
-		out.Write([]byte("\n\n"))
+		_, err := out.Write([]byte("\n\n"))
+		require.NoError(t, err)
 
 		select {
 		case msg := <-ch:
@@ -143,7 +144,7 @@ func TestTuiOutput_Write(t *testing.T) {
 
 func TestTuiOutput_Request(t *testing.T) {
 	t.Run("Request sends formatted request data", func(t *testing.T) {
-		out, ch := newTestOutput()
+		out, outputCh := newTestOutput()
 		u, _ := url.Parse("http://example.com/api/resource")
 		out.Request(&contracts.ReqestData{
 			Method: "GET",
@@ -151,20 +152,20 @@ func TestTuiOutput_Request(t *testing.T) {
 			Code:   200,
 		})
 
-		msg := recv(t, ch)
+		msg := recv(t, outputCh)
 		assert.NotEmpty(t, msg)
 	})
 }
 
 func TestTuiOutput_NewPrefixOutput(t *testing.T) {
 	t.Run("returns output that shares the same channel", func(t *testing.T) {
-		out, ch := newTestOutput()
+		out, outputCh := newTestOutput()
 		prefixed := out.NewPrefixOutput("[SVC]")
 		prefixed.Info("service message")
-		assert.NotEmpty(t, recv(t, ch))
+		assert.NotEmpty(t, recv(t, outputCh))
 	})
 
-	t.Run("NewPrefixOutput implements contracts.Output", func(t *testing.T) {
+	t.Run("NewPrefixOutput implements contracts.Output", func(_ *testing.T) {
 		out, _ := newTestOutput()
 
 		_ = out.NewPrefixOutput("prefix")

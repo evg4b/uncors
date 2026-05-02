@@ -28,6 +28,7 @@ const (
 	versionCheckDelay = 50 * time.Second
 	tickInterval      = 200 * time.Millisecond
 	memTickInterval   = 2 * time.Second
+	bytesPerMegabyte  = 1024 * 1024
 )
 
 var (
@@ -52,9 +53,10 @@ type uncorsApp struct {
 	output  *tuiOutput
 	tracker *requestTracker
 
-	outputCh chan string
-	ctx      context.Context
-	cancel   context.CancelFunc
+	outputCh   chan string
+	appContext func() context.Context
+	appDone    <-chan struct{}
+	cancel     context.CancelFunc
 
 	cfg        *config.UncorsConfig
 	loadConfig func() *config.UncorsConfig
@@ -83,6 +85,10 @@ type (
 	memUpdateMsg     struct{ mb float64 }
 )
 
+type appUpdateMsg interface {
+	update(app *uncorsApp) tea.Cmd
+}
+
 func NewUncorsApp(
 	ver string,
 	fs afero.Fs,
@@ -90,20 +96,20 @@ func NewUncorsApp(
 	cfg *config.UncorsConfig,
 	loadConfig func() *config.UncorsConfig,
 ) tea.Model {
-	ch := make(chan string, outputChannelSize)
-	output := newTuiOutput(ch)
+	outputCh := make(chan string, outputChannelSize)
+	output := newTuiOutput(outputCh)
 	tracker := newRequestTracker()
-	ctx, cancel := context.WithCancel(context.Background())
+	appCtx, cancel := context.WithCancel(context.Background())
 
 	hist, err := newHistory()
 	if err != nil {
 		panic(fmt.Sprintf("failed to create history: %v", err))
 	}
 
-	var ms runtime.MemStats
-	runtime.ReadMemStats(&ms)
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
 
-	return uncorsApp{
+	return &uncorsApp{
 		version: ver,
 		keys:    newKeyMap(),
 		help:    help.New(),
@@ -111,8 +117,9 @@ func NewUncorsApp(
 			WithHandlerWrapper(tracker.Wrap),
 		output:     output,
 		tracker:    tracker,
-		outputCh:   ch,
-		ctx:        ctx,
+		outputCh:   outputCh,
+		appContext: func() context.Context { return appCtx },
+		appDone:    appCtx.Done(),
 		cancel:     cancel,
 		cfg:        cfg,
 		loadConfig: loadConfig,
@@ -121,11 +128,11 @@ func NewUncorsApp(
 		vp:         viewport.New(),
 		autoScroll: true,
 		pending:    make(map[uint64]requestEvent),
-		memMB:      float64(ms.HeapAlloc) / (1024 * 1024),
+		memMB:      float64(memStats.HeapAlloc) / bytesPerMegabyte,
 	}
 }
 
-func (m uncorsApp) Init() tea.Cmd {
+func (m *uncorsApp) Init() tea.Cmd {
 	return tea.Batch(
 		m.startServerCmd(),
 		m.waitOutputCmd(),
@@ -134,147 +141,44 @@ func (m uncorsApp) Init() tea.Cmd {
 	)
 }
 
-func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.termHeight = msg.Height
-		m.termWidth = msg.Width
-		m.help.SetWidth(msg.Width)
-		m.vp.SetWidth(msg.Width)
-		m.vp.SetHeight(m.historyHeight())
+		m.handleWindowSize(typedMsg)
 
-		if m.autoScroll {
-			m.vp.GotoBottom()
-		}
-
-	case outputLineMsg:
-		atBottom := m.autoScroll
-		m.hist.AppendLine(string(msg))
-		m.vp.SetHeight(m.historyHeight())
-		m.vp.SetContentLines(m.hist.Lines())
-
-		if atBottom {
-			m.vp.GotoBottom()
-		}
-
-		return m, m.waitOutputCmd()
-
-	case requestEventMsg:
-		if msg.done {
-			delete(m.pending, msg.id)
-		} else {
-			m.pending[msg.id] = requestEvent(msg)
-		}
-
-		m.vp.SetHeight(m.historyHeight())
-
-		if m.autoScroll {
-			m.vp.GotoBottom()
-		}
-
-		cmds := []tea.Cmd{m.watchEventsCmd()}
-		if len(m.pending) > 0 && !m.ticking {
-			m.ticking = true
-			cmds = append(cmds, m.tickCmd())
-		}
-
-		return m, tea.Batch(cmds...)
-
-	case tickMsg:
-		if len(m.pending) > 0 {
-			return m, m.tickCmd()
-		}
-
-		m.ticking = false
-
-	case memUpdateMsg:
-		m.memMB = msg.mb
-
-		return m, memTickCmd()
-
-	case serverStartedMsg:
-		m.viper.OnConfigChange(func(_ fsnotify.Event) {
-			defer helpers.PanicInterceptor(func(value any) {
-				m.output.Errorf("Config reloading error: %v", value)
-			})
-
-			newCfg := m.loadConfig()
-			err := m.app.Restart(m.ctx, newCfg)
-			if err != nil {
-				m.output.Errorf("Failed to restart server: %v", err)
-			}
-		})
-		m.viper.WatchConfig()
-
-		return m, m.versionCheckCmd()
-
-	case serverErrMsg:
-		m.hist.AppendLine(msg.err.Error())
-		m.vp.SetContentLines(m.hist.Lines())
-		m.vp.GotoBottom()
-
-		return m, tea.Quit
-
+		return m, nil
 	case restartMsg:
-		m.pending = make(map[uint64]requestEvent)
-		m.ticking = false
-		m.vp.SetHeight(m.historyHeight())
+		m.handleRestart()
 
-	case shutdownMsg:
-		_ = m.hist.Close()
-
-		return m, tea.Quit
-
+		return m, nil
 	case tea.KeyPressMsg:
-		switch {
-		case key.Matches(msg, m.keys.Help):
-			m.help.ShowAll = !m.help.ShowAll
-			m.vp.SetHeight(m.historyHeight())
-		case key.Matches(msg, m.keys.ScrollUp):
-			m.vp.ScrollUp(1)
-			m.autoScroll = m.vp.AtBottom()
-		case key.Matches(msg, m.keys.ScrollDown):
-			m.vp.ScrollDown(1)
-			m.autoScroll = m.vp.AtBottom()
-		case key.Matches(msg, m.keys.PageUp):
-			m.vp.PageUp()
-			m.autoScroll = m.vp.AtBottom()
-		case key.Matches(msg, m.keys.PageDown):
-			m.vp.PageDown()
-			m.autoScroll = m.vp.AtBottom()
-		case key.Matches(msg, m.keys.GotoTop):
-			m.vp.GotoTop()
-			m.autoScroll = false
-		case key.Matches(msg, m.keys.GotoBottom):
-			m.vp.GotoBottom()
-			m.autoScroll = true
-		case key.Matches(msg, m.keys.Restart):
-			return m, m.restartCmd()
-		case key.Matches(msg, m.keys.Quit):
-			return m, m.shutdownCmd()
-		}
+		return m, m.handleKeyPress(typedMsg)
+	}
+
+	if appMsg, ok := msg.(appUpdateMsg); ok {
+		return m, appMsg.update(m)
 	}
 
 	return m, nil
 }
 
-func (m uncorsApp) View() tea.View {
-	var b strings.Builder
+func (m *uncorsApp) View() tea.View {
+	var viewBuilder strings.Builder
 
-	b.WriteString(m.vp.View())
-	b.WriteByte('\n')
+	viewBuilder.WriteString(m.vp.View())
+	viewBuilder.WriteByte('\n')
 
 	if m.hist.LineCount() > 0 {
-		b.WriteString(m.renderStatusBar())
-		b.WriteByte('\n')
+		viewBuilder.WriteString(m.renderStatusBar())
+		viewBuilder.WriteByte('\n')
 	}
 
 	if len(m.pending) > 0 {
-		fmt.Fprintf(&b, "In progress (%d):\n", len(m.pending))
+		fmt.Fprintf(&viewBuilder, "In progress (%d):\n", len(m.pending))
 
 		for _, req := range m.pending {
 			elapsed := formatElapsed(time.Since(req.startedAt))
-			fmt.Fprintf(&b, "  %s %s  %s\n",
+			fmt.Fprintf(&viewBuilder, "  %s %s  %s\n",
 				pendingMethodStyle.Render(req.method),
 				req.url.String(),
 				elapsed,
@@ -282,43 +186,200 @@ func (m uncorsApp) View() tea.View {
 		}
 	}
 
-	b.WriteString(m.renderHelpBar())
+	viewBuilder.WriteString(m.renderHelpBar())
 
-	v := tea.NewView(b.String())
+	v := tea.NewView(viewBuilder.String())
 	v.AltScreen = true
 
 	return v
 }
 
+func (msg outputLineMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleOutputLine(msg)
+}
+
+func (msg requestEventMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleRequestEvent(msg)
+}
+
+func (msg tickMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleTick()
+}
+
+func (msg memUpdateMsg) update(app *uncorsApp) tea.Cmd {
+	app.memMB = msg.mb
+
+	return memTickCmd()
+}
+
+func (msg serverStartedMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleServerStarted()
+}
+
+func (msg serverErrMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleServerError(msg)
+}
+
+func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
+	return app.handleShutdown()
+}
+
+func (m *uncorsApp) handleWindowSize(msg tea.WindowSizeMsg) {
+	m.termHeight = msg.Height
+	m.termWidth = msg.Width
+	m.help.SetWidth(msg.Width)
+	m.vp.SetWidth(msg.Width)
+	m.vp.SetHeight(m.historyHeight())
+
+	if m.autoScroll {
+		m.vp.GotoBottom()
+	}
+}
+
+func (m *uncorsApp) handleOutputLine(msg outputLineMsg) tea.Cmd {
+	atBottom := m.autoScroll
+	m.hist.AppendLine(string(msg))
+	m.vp.SetHeight(m.historyHeight())
+	m.vp.SetContentLines(m.hist.Lines())
+
+	if atBottom {
+		m.vp.GotoBottom()
+	}
+
+	return m.waitOutputCmd()
+}
+
+func (m *uncorsApp) handleRequestEvent(msg requestEventMsg) tea.Cmd {
+	if msg.done {
+		delete(m.pending, msg.id)
+	} else {
+		m.pending[msg.id] = requestEvent(msg)
+	}
+
+	m.vp.SetHeight(m.historyHeight())
+
+	if m.autoScroll {
+		m.vp.GotoBottom()
+	}
+
+	cmds := []tea.Cmd{m.watchEventsCmd()}
+	if len(m.pending) > 0 && !m.ticking {
+		m.ticking = true
+		cmds = append(cmds, m.tickCmd())
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m *uncorsApp) handleTick() tea.Cmd {
+	if len(m.pending) > 0 {
+		return m.tickCmd()
+	}
+
+	m.ticking = false
+
+	return nil
+}
+
+func (m *uncorsApp) handleServerStarted() tea.Cmd {
+	m.viper.OnConfigChange(func(_ fsnotify.Event) {
+		defer helpers.PanicInterceptor(func(value any) {
+			m.output.Errorf("Config reloading error: %v", value)
+		})
+
+		newCfg := m.loadConfig()
+
+		err := m.app.Restart(m.appContext(), newCfg)
+		if err != nil {
+			m.output.Errorf("Failed to restart server: %v", err)
+		}
+	})
+	m.viper.WatchConfig()
+
+	return m.versionCheckCmd()
+}
+
+func (m *uncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
+	m.hist.AppendLine(msg.err.Error())
+	m.vp.SetContentLines(m.hist.Lines())
+	m.vp.GotoBottom()
+
+	return tea.Quit
+}
+
+func (m *uncorsApp) handleRestart() {
+	m.pending = make(map[uint64]requestEvent)
+	m.ticking = false
+	m.vp.SetHeight(m.historyHeight())
+}
+
+func (m *uncorsApp) handleShutdown() tea.Cmd {
+	_ = m.hist.Close()
+
+	return tea.Quit
+}
+
+func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
+	switch {
+	case key.Matches(msg, m.keys.Help):
+		m.help.ShowAll = !m.help.ShowAll
+		m.vp.SetHeight(m.historyHeight())
+	case key.Matches(msg, m.keys.ScrollUp):
+		m.vp.ScrollUp(1)
+		m.autoScroll = m.vp.AtBottom()
+	case key.Matches(msg, m.keys.ScrollDown):
+		m.vp.ScrollDown(1)
+		m.autoScroll = m.vp.AtBottom()
+	case key.Matches(msg, m.keys.PageUp):
+		m.vp.PageUp()
+		m.autoScroll = m.vp.AtBottom()
+	case key.Matches(msg, m.keys.PageDown):
+		m.vp.PageDown()
+		m.autoScroll = m.vp.AtBottom()
+	case key.Matches(msg, m.keys.GotoTop):
+		m.vp.GotoTop()
+		m.autoScroll = false
+	case key.Matches(msg, m.keys.GotoBottom):
+		m.vp.GotoBottom()
+		m.autoScroll = true
+	case key.Matches(msg, m.keys.Restart):
+		return m.restartCmd()
+	case key.Matches(msg, m.keys.Quit):
+		return m.shutdownCmd()
+	}
+
+	return nil
+}
+
 // historyHeight returns the number of lines the viewport should occupy.
-func (m uncorsApp) historyHeight() int {
-	h := m.termHeight - m.footerHeight()
-	if h < 1 {
+func (m *uncorsApp) historyHeight() int {
+	viewportHeight := m.termHeight - m.footerHeight()
+	if viewportHeight < 1 {
 		return 1
 	}
 
-	return h
+	return viewportHeight
 }
 
 // footerHeight returns the total number of lines rendered below the viewport.
-func (m uncorsApp) footerHeight() int {
-	h := 1 // help bar
+func (m *uncorsApp) footerHeight() int {
+	footerHeight := 1 // help bar
 	if m.hist.LineCount() > 0 {
-		h++ // status bar — only when there is something to scroll
+		footerHeight++ // status bar — only when there is something to scroll
 	}
 
 	if len(m.pending) > 0 {
-		h += 1 + len(m.pending) // "In progress:" header + N request lines
+		footerHeight += 1 + len(m.pending) // "In progress:" header + N request lines
 	}
 
 	if m.help.ShowAll {
-		h += 2 // FullHelp has 3 rows; +2 beyond the base row
+		footerHeight += 2 // FullHelp has 3 rows; +2 beyond the base row
 	}
 
-	return h
+	return footerHeight
 }
 
-func (m uncorsApp) renderStatusBar() string {
+func (m *uncorsApp) renderStatusBar() string {
 	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
 
 	scrollStr := fmt.Sprintf("%d%%", pct)
@@ -332,7 +393,7 @@ func (m uncorsApp) renderStatusBar() string {
 	return left + fill
 }
 
-func (m uncorsApp) renderHelpBar() string {
+func (m *uncorsApp) renderHelpBar() string {
 	helpStr := m.help.View(m.keys)
 	memStr := memWidgetStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
 
@@ -344,9 +405,9 @@ func (m uncorsApp) renderHelpBar() string {
 	return helpStr
 }
 
-func (m uncorsApp) startServerCmd() tea.Cmd {
+func (m *uncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.app.Start(m.ctx, m.cfg)
+		err := m.app.Start(m.appContext(), m.cfg)
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -355,7 +416,7 @@ func (m uncorsApp) startServerCmd() tea.Cmd {
 	}
 }
 
-func (m uncorsApp) waitOutputCmd() tea.Cmd {
+func (m *uncorsApp) waitOutputCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
 		case line, ok := <-m.outputCh:
@@ -364,13 +425,13 @@ func (m uncorsApp) waitOutputCmd() tea.Cmd {
 			}
 
 			return outputLineMsg(line)
-		case <-m.ctx.Done():
+		case <-m.appDone:
 			return nil
 		}
 	}
 }
 
-func (m uncorsApp) watchEventsCmd() tea.Cmd {
+func (m *uncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
 		case event, ok := <-m.tracker.events:
@@ -379,13 +440,13 @@ func (m uncorsApp) watchEventsCmd() tea.Cmd {
 			}
 
 			return requestEventMsg(event)
-		case <-m.ctx.Done():
+		case <-m.appDone:
 			return nil
 		}
 	}
 }
 
-func (m uncorsApp) tickCmd() tea.Cmd {
+func (m *uncorsApp) tickCmd() tea.Cmd {
 	return tea.Tick(tickInterval, func(_ time.Time) tea.Msg {
 		return tickMsg{}
 	})
@@ -393,14 +454,14 @@ func (m uncorsApp) tickCmd() tea.Cmd {
 
 func memTickCmd() tea.Cmd {
 	return tea.Tick(memTickInterval, func(_ time.Time) tea.Msg {
-		var ms runtime.MemStats
-		runtime.ReadMemStats(&ms)
+		var memStats runtime.MemStats
+		runtime.ReadMemStats(&memStats)
 
-		return memUpdateMsg{mb: float64(ms.HeapAlloc) / (1024 * 1024)}
+		return memUpdateMsg{mb: float64(memStats.HeapAlloc) / bytesPerMegabyte}
 	})
 }
 
-func (m uncorsApp) shutdownCmd() tea.Cmd {
+func (m *uncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
 		m.cancel()
 
@@ -413,14 +474,15 @@ func (m uncorsApp) shutdownCmd() tea.Cmd {
 	}
 }
 
-func (m uncorsApp) restartCmd() tea.Cmd {
+func (m *uncorsApp) restartCmd() tea.Cmd {
 	return func() tea.Msg {
 		defer helpers.PanicInterceptor(func(value any) {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
 		newCfg := m.loadConfig()
-		err := m.app.Restart(m.ctx, newCfg)
+
+		err := m.app.Restart(m.appContext(), newCfg)
 		if err != nil {
 			m.output.Errorf("Failed to restart: %v", err)
 		}
@@ -429,7 +491,7 @@ func (m uncorsApp) restartCmd() tea.Cmd {
 	}
 }
 
-func (m uncorsApp) versionCheckCmd() tea.Cmd {
+func (m *uncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {
 		versionChecker := version.NewVersionChecker(
 			version.WithOutput(m.output),
@@ -438,17 +500,17 @@ func (m uncorsApp) versionCheckCmd() tea.Cmd {
 		)
 
 		time.Sleep(versionCheckDelay)
-		versionChecker.CheckNewVersion(m.ctx)
+		versionChecker.CheckNewVersion(m.appContext())
 
 		return nil
 	}
 }
 
-func formatElapsed(d time.Duration) string {
-	d = d.Truncate(time.Millisecond)
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+func formatElapsed(duration time.Duration) string {
+	duration = duration.Truncate(time.Millisecond)
+	if duration < time.Second {
+		return fmt.Sprintf("%dms", duration.Milliseconds())
 	}
 
-	return fmt.Sprintf("%.1fs", d.Seconds())
+	return fmt.Sprintf("%.1fs", duration.Seconds())
 }

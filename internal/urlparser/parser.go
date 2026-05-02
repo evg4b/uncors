@@ -19,6 +19,11 @@ var (
 	ErrEmptyURL    = errors.New("empty url")
 )
 
+const (
+	hostOperation = "host"
+	portOperation = "port"
+)
+
 // Parse parses raw URL string into the net/url URL struct.
 // It uses the url.Parse() internally, but it slightly changes
 // its behavior:
@@ -97,7 +102,7 @@ var (
 
 func checkHost(host string) error {
 	if host == "" {
-		return &url.Error{Op: "host", URL: host, Err: ErrEmptyHost}
+		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
 	}
 
 	host = strings.ToLower(host)
@@ -117,7 +122,7 @@ func checkHost(host string) error {
 		return nil
 	}
 
-	return &url.Error{Op: "host", URL: host, Err: ErrInvalidHost}
+	return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
 }
 
 // SplitHostPort splits network address of the form "host:port" into
@@ -125,7 +130,7 @@ func checkHost(host string) error {
 // from [IPv6] host, and it accepts net/url.URL struct instead of a string.
 func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	if parsedURL == nil {
-		return "", "", &url.Error{Op: "host", URL: "", Err: ErrEmptyURL}
+		return "", "", &url.Error{Op: hostOperation, URL: "", Err: ErrEmptyURL}
 	}
 
 	host := parsedURL.Host
@@ -144,7 +149,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	}
 
 	if index == len(host)-1 {
-		return "", "", &url.Error{Op: "port", URL: parsedURL.String(), Err: ErrEmptyPort}
+		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: ErrEmptyPort}
 	}
 
 	port := host[index+1:]
@@ -152,7 +157,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 
 	_, err := strconv.Atoi(port)
 	if err != nil {
-		return "", "", &url.Error{Op: "port", URL: parsedURL.String(), Err: err}
+		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: err}
 	}
 
 	return host, port, nil

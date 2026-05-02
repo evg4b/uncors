@@ -14,6 +14,7 @@ func GetFreePort(t *testing.T) int {
 
 	listener, err := net.Listen("tcp4", hosts.Loopback.Port(0)) //nolint:noctx
 	require.NoError(t, err)
+
 	defer listener.Close()
 
 	addr, ok := listener.Addr().(*net.TCPAddr)
@@ -26,7 +27,7 @@ func GetFreePorts(t *testing.T, count int) []int {
 	t.Helper()
 
 	ports := make([]int, 0, count)
-	for i := 0; i < count; i++ {
+	for range count {
 		ports = append(ports, GetFreePort(t))
 	}
 
