@@ -81,7 +81,10 @@ func (o *tuiOutput) NewPrefixOutput(prefix string) contracts.Output {
 func (o *tuiOutput) send(msg string) {
 	msg = strings.TrimRight(msg, "\n")
 	if len(msg) > 0 {
-		o.ch <- msg
+		select {
+		case o.ch <- msg:
+		default:
+		}
 	}
 }
 

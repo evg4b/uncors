@@ -3,7 +3,6 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
@@ -52,12 +51,7 @@ func cleanupTestApp(t *testing.T, app *uncorsApp) {
 	app.cancel()
 	_ = app.app.Close()
 
-	if app.historyWidget == nil || app.historyWidget.hist == nil || app.historyWidget.hist.file == nil {
-		return
-	}
-
-	_, err := os.Stat(app.historyWidget.hist.file.Name())
-	if err == nil {
+	if app.historyWidget != nil && app.historyWidget.hist != nil {
 		_ = app.historyWidget.hist.Close()
 	}
 }
@@ -292,20 +286,14 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		assert.False(t, app.trackerWidget.ticking)
 	})
 
-	t.Run("shutdown message closes history file", func(t *testing.T) {
+	t.Run("shutdown message quits app", func(t *testing.T) {
 		app, _ := newTestApp(t)
 		app.historyWidget.hist.AppendLine("hello")
-
-		historyPath := app.historyWidget.hist.file.Name()
-		_, statErr := os.Stat(historyPath)
-		require.NoError(t, statErr)
 
 		model, cmd := app.Update(shutdownMsg{})
 		require.Same(t, app, model)
 		require.NotNil(t, cmd)
-
-		_, statErr = os.Stat(historyPath)
-		assert.True(t, os.IsNotExist(statErr))
+		assert.Equal(t, tea.Quit(), cmd())
 
 		app.cancel()
 		_ = app.app.Close()

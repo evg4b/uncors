@@ -8,7 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-const requestEventsBufferSize = 50
+const requestEventsBufferSize = 1000
 
 type requestEvent struct {
 	id        uint64
@@ -32,15 +32,21 @@ func newRequestTracker() *requestTracker {
 func (t *requestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		requestID := t.nextID.Add(1)
-		t.events <- requestEvent{
+		select {
+		case t.events <- requestEvent{
 			id:        requestID,
 			method:    request.Method,
 			url:       request.URL,
 			startedAt: time.Now(),
+		}:
+		default:
 		}
 
 		handler.ServeHTTP(writer, request)
 
-		t.events <- requestEvent{id: requestID, done: true}
+		select {
+		case t.events <- requestEvent{id: requestID, done: true}:
+		default:
+		}
 	})
 }

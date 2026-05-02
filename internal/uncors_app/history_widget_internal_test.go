@@ -1,29 +1,23 @@
 package uncorsapp
 
 import (
-	"os"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHistoryWidget(t *testing.T) {
 	keys := newKeyMap()
 
 	cleanup := func(widget *HistoryWidget) {
-		if widget != nil && widget.hist != nil && widget.hist.file != nil {
-			_, err := os.Stat(widget.hist.file.Name())
-			if err == nil {
-				_ = widget.Close()
-			}
+		if widget != nil && widget.hist != nil {
+			_ = widget.Close()
 		}
 	}
 
 	t.Run("NewHistoryWidget initializes correctly", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 
@@ -35,8 +29,7 @@ func TestHistoryWidget(t *testing.T) {
 	})
 
 	t.Run("Update handles tea.WindowSizeMsg", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 
@@ -49,8 +42,7 @@ func TestHistoryWidget(t *testing.T) {
 	})
 
 	t.Run("Update handles outputLineMsg", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 
@@ -64,8 +56,7 @@ func TestHistoryWidget(t *testing.T) {
 	})
 
 	t.Run("Update handles restartMsg", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 
@@ -75,8 +66,7 @@ func TestHistoryWidget(t *testing.T) {
 	})
 
 	t.Run("Update handles key presses", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 
@@ -112,8 +102,7 @@ func TestHistoryWidget(t *testing.T) {
 	})
 
 	t.Run("View and SetHeight work correctly", func(t *testing.T) {
-		widget, err := NewHistoryWidget(keys)
-		require.NoError(t, err)
+		widget := NewHistoryWidget(keys)
 
 		defer cleanup(widget)
 

@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	outputChannelSize = 100
+	outputChannelSize = 1000
 	shutdownTimeout   = 5 * time.Second
 	versionCheckDelay = 50 * time.Second
 	tickInterval      = 200 * time.Millisecond
@@ -78,10 +78,7 @@ func NewUncorsApp(
 
 	keys := newKeyMap()
 
-	historyWidget, err := NewHistoryWidget(keys)
-	if err != nil {
-		panic(err)
-	}
+	historyWidget := NewHistoryWidget(keys)
 
 	return &uncorsApp{
 		version:       ver,

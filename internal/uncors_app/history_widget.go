@@ -23,18 +23,15 @@ type HistoryWidget struct {
 	termWidth  int
 }
 
-func NewHistoryWidget(keys keyMap) (*HistoryWidget, error) {
-	hist, err := newHistory()
-	if err != nil {
-		return nil, err
-	}
+func NewHistoryWidget(keys keyMap) *HistoryWidget {
+	hist := newHistory()
 
 	return &HistoryWidget{
 		hist:       hist,
 		vp:         viewport.New(),
 		keys:       keys,
 		autoScroll: true,
-	}, nil
+	}
 }
 
 func (m *HistoryWidget) Init() tea.Cmd {
