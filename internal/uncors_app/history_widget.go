@@ -1,17 +1,10 @@
 package uncorsapp
 
 import (
-	"fmt"
-	"strings"
-
 	key "charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
-	lipgloss "charm.land/lipgloss/v2"
 )
-
-var scrollBarStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#555555"))
 
 type outputLineMsg string
 
@@ -82,16 +75,7 @@ func (m *HistoryWidget) Close() error {
 }
 
 func (m *HistoryWidget) View() tea.View {
-	var viewBuilder strings.Builder
-
-	viewBuilder.WriteString(m.vp.View())
-
-	if m.HasLines() {
-		viewBuilder.WriteByte('\n')
-		viewBuilder.WriteString(m.renderStatusBar())
-	}
-
-	return tea.NewView(viewBuilder.String())
+	return tea.NewView(m.vp.View())
 }
 
 func (m *HistoryWidget) handleKeyPress(msg tea.KeyPressMsg) {
@@ -115,18 +99,4 @@ func (m *HistoryWidget) handleKeyPress(msg tea.KeyPressMsg) {
 		m.vp.GotoBottom()
 		m.autoScroll = true
 	}
-}
-
-func (m *HistoryWidget) renderStatusBar() string {
-	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
-
-	scrollStr := fmt.Sprintf("%d%%", pct)
-	if m.autoScroll {
-		scrollStr += " [auto]"
-	}
-
-	left := scrollBarStyle.Render(fmt.Sprintf("─ %s (%d lines) ", scrollStr, m.hist.LineCount()))
-	fill := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(left))))
-
-	return left + fill
 }

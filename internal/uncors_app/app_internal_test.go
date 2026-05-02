@@ -117,7 +117,6 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.Contains(t, view.Content, "In progress (1):")
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
-	assert.Contains(t, view.Content, "lines")
 
 	model, cmd = app.Update(requestEventMsg{id: 7, done: true})
 	require.Same(t, app, model)
@@ -151,11 +150,6 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 
 	app.termWidth = 1
 	assert.Equal(t, app.helpWidget.help.View(app.keys), app.helpWidget.View().Content)
-
-	app.termWidth = 80
-	app.historyWidget.autoScroll = false
-	assert.Contains(t, app.historyWidget.renderStatusBar(), "0%")
-	assert.NotContains(t, app.historyWidget.renderStatusBar(), "[auto]")
 }
 
 func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {

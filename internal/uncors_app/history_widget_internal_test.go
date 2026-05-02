@@ -115,6 +115,5 @@ func TestHistoryWidget(t *testing.T) {
 		view := widget.View()
 		assert.Contains(t, view.Content, "line 1")
 		assert.Contains(t, view.Content, "line 2")
-		assert.Contains(t, view.Content, "2 lines") // from status bar
 	})
 }
