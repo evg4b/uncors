@@ -131,6 +131,7 @@ func run() int {
 			uncorsConfig,
 			func() *config.UncorsConfig { return loadConfiguration(viperInstance, fs) },
 		)
+
 		p := tea.NewProgram(app)
 		if _, err := p.Run(); err != nil {
 			log.Fatal(err)

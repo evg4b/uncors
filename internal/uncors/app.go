@@ -41,6 +41,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 
 func (app *Uncors) WithHandlerWrapper(wrapper func(contracts.Handler) contracts.Handler) *Uncors {
 	app.handlerWrapper = wrapper
+
 	return app
 }
 

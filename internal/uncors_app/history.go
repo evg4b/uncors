@@ -39,6 +39,7 @@ func newHistory() (*history, error) {
 	capacity := int64(historyInitialSize)
 	if err := f.Truncate(capacity); err != nil {
 		_ = f.Close()
+
 		return nil, fmt.Errorf("allocate history file: %w", err)
 	}
 
@@ -46,6 +47,7 @@ func newHistory() (*history, error) {
 		syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
 		_ = f.Close()
+
 		return nil, fmt.Errorf("mmap history: %w", err)
 	}
 
@@ -74,9 +76,11 @@ func (h *history) appendSingleLine(line string) {
 	defer h.mu.Unlock()
 
 	content := line + "\n"
+
 	needed := h.writePos + int64(len(content))
 	if needed > h.capacity {
-		if err := h.grow(needed); err != nil {
+		err := h.grow(needed)
+		if err != nil {
 			return
 		}
 	}
@@ -94,6 +98,7 @@ func (h *history) appendSingleLine(line string) {
 func (h *history) Lines() []string {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
 	return h.cache
 }
 
@@ -101,6 +106,7 @@ func (h *history) Lines() []string {
 func (h *history) LineCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+
 	return len(h.lines)
 }
 
@@ -108,9 +114,11 @@ func (h *history) LineCount() int {
 func (h *history) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	_ = syscall.Munmap(h.data)
 	name := h.file.Name()
 	_ = h.file.Close()
+
 	return os.Remove(name)
 }
 
@@ -119,18 +127,23 @@ func (h *history) grow(needed int64) error {
 	for newCap < needed {
 		newCap *= historyGrowFactor
 	}
+
 	if err := syscall.Munmap(h.data); err != nil {
 		return err
 	}
+
 	if err := h.file.Truncate(newCap); err != nil {
 		return err
 	}
+
 	data, err := syscall.Mmap(int(h.file.Fd()), 0, int(newCap),
 		syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
 		return err
 	}
+
 	h.data = data
 	h.capacity = newCap
+
 	return nil
 }

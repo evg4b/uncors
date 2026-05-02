@@ -26,6 +26,7 @@ func (o *tuiOutput) send(msg string) {
 
 func (o *tuiOutput) capture(fn func(out *tui.CliOutput)) {
 	var buf bytes.Buffer
+
 	tmp := tui.NewCliOutput(&buf, tui.WithPrefix(o.prefix))
 	fn(tmp)
 	o.send(buf.String())
@@ -39,6 +40,7 @@ func (o *tuiOutput) captureBox(fn func(out *tui.CliOutput)) {
 
 func (o *tuiOutput) Write(p []byte) (int, error) {
 	o.send(string(p))
+
 	return len(p), nil
 }
 

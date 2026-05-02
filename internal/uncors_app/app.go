@@ -72,14 +72,16 @@ type uncorsApp struct {
 	memMB float64
 }
 
-type outputLineMsg string
-type serverStartedMsg struct{}
-type serverErrMsg struct{ err error }
-type shutdownMsg struct{}
-type requestEventMsg requestEvent
-type tickMsg struct{}
-type restartMsg struct{}
-type memUpdateMsg struct{ mb float64 }
+type (
+	outputLineMsg    string
+	serverStartedMsg struct{}
+	serverErrMsg     struct{ err error }
+	shutdownMsg      struct{}
+	requestEventMsg  requestEvent
+	tickMsg          struct{}
+	restartMsg       struct{}
+	memUpdateMsg     struct{ mb float64 }
+)
 
 func NewUncorsApp(
 	ver string,
@@ -140,6 +142,7 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.help.SetWidth(msg.Width)
 		m.vp.SetWidth(msg.Width)
 		m.vp.SetHeight(m.historyHeight())
+
 		if m.autoScroll {
 			m.vp.GotoBottom()
 		}
@@ -149,9 +152,11 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.hist.AppendLine(string(msg))
 		m.vp.SetHeight(m.historyHeight())
 		m.vp.SetContentLines(m.hist.Lines())
+
 		if atBottom {
 			m.vp.GotoBottom()
 		}
+
 		return m, m.waitOutputCmd()
 
 	case requestEventMsg:
@@ -160,25 +165,31 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.pending[msg.id] = requestEvent(msg)
 		}
+
 		m.vp.SetHeight(m.historyHeight())
+
 		if m.autoScroll {
 			m.vp.GotoBottom()
 		}
+
 		cmds := []tea.Cmd{m.watchEventsCmd()}
 		if len(m.pending) > 0 && !m.ticking {
 			m.ticking = true
 			cmds = append(cmds, m.tickCmd())
 		}
+
 		return m, tea.Batch(cmds...)
 
 	case tickMsg:
 		if len(m.pending) > 0 {
 			return m, m.tickCmd()
 		}
+
 		m.ticking = false
 
 	case memUpdateMsg:
 		m.memMB = msg.mb
+
 		return m, memTickCmd()
 
 	case serverStartedMsg:
@@ -186,18 +197,22 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			defer helpers.PanicInterceptor(func(value any) {
 				m.output.Errorf("Config reloading error: %v", value)
 			})
+
 			newCfg := m.loadConfig()
-			if err := m.app.Restart(m.ctx, newCfg); err != nil {
+			err := m.app.Restart(m.ctx, newCfg)
+			if err != nil {
 				m.output.Errorf("Failed to restart server: %v", err)
 			}
 		})
 		m.viper.WatchConfig()
+
 		return m, m.versionCheckCmd()
 
 	case serverErrMsg:
 		m.hist.AppendLine(msg.err.Error())
 		m.vp.SetContentLines(m.hist.Lines())
 		m.vp.GotoBottom()
+
 		return m, tea.Quit
 
 	case restartMsg:
@@ -207,6 +222,7 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shutdownMsg:
 		_ = m.hist.Close()
+
 		return m, tea.Quit
 
 	case tea.KeyPressMsg:
@@ -255,6 +271,7 @@ func (m uncorsApp) View() tea.View {
 
 	if len(m.pending) > 0 {
 		fmt.Fprintf(&b, "In progress (%d):\n", len(m.pending))
+
 		for _, req := range m.pending {
 			elapsed := formatElapsed(time.Since(req.startedAt))
 			fmt.Fprintf(&b, "  %s %s  %s\n",
@@ -269,6 +286,7 @@ func (m uncorsApp) View() tea.View {
 
 	v := tea.NewView(b.String())
 	v.AltScreen = true
+
 	return v
 }
 
@@ -278,6 +296,7 @@ func (m uncorsApp) historyHeight() int {
 	if h < 1 {
 		return 1
 	}
+
 	return h
 }
 
@@ -287,17 +306,21 @@ func (m uncorsApp) footerHeight() int {
 	if m.hist.LineCount() > 0 {
 		h++ // status bar — only when there is something to scroll
 	}
+
 	if len(m.pending) > 0 {
 		h += 1 + len(m.pending) // "In progress:" header + N request lines
 	}
+
 	if m.help.ShowAll {
 		h += 2 // FullHelp has 3 rows; +2 beyond the base row
 	}
+
 	return h
 }
 
 func (m uncorsApp) renderStatusBar() string {
 	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
+
 	scrollStr := fmt.Sprintf("%d%%", pct)
 	if m.autoScroll {
 		scrollStr += " [auto]"
@@ -305,6 +328,7 @@ func (m uncorsApp) renderStatusBar() string {
 
 	left := scrollBarStyle.Render(fmt.Sprintf("─ %s (%d lines) ", scrollStr, m.hist.LineCount()))
 	fill := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(left))))
+
 	return left + fill
 }
 
@@ -316,14 +340,17 @@ func (m uncorsApp) renderHelpBar() string {
 	if gap > 0 {
 		return helpStr + strings.Repeat(" ", gap) + memStr
 	}
+
 	return helpStr
 }
 
 func (m uncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		if err := m.app.Start(m.ctx, m.cfg); err != nil {
+		err := m.app.Start(m.ctx, m.cfg)
+		if err != nil {
 			return serverErrMsg{err: err}
 		}
+
 		return serverStartedMsg{}
 	}
 }
@@ -335,6 +362,7 @@ func (m uncorsApp) waitOutputCmd() tea.Cmd {
 			if !ok {
 				return nil
 			}
+
 			return outputLineMsg(line)
 		case <-m.ctx.Done():
 			return nil
@@ -349,6 +377,7 @@ func (m uncorsApp) watchEventsCmd() tea.Cmd {
 			if !ok {
 				return nil
 			}
+
 			return requestEventMsg(event)
 		case <-m.ctx.Done():
 			return nil
@@ -366,6 +395,7 @@ func memTickCmd() tea.Cmd {
 	return tea.Tick(memTickInterval, func(_ time.Time) tea.Msg {
 		var ms runtime.MemStats
 		runtime.ReadMemStats(&ms)
+
 		return memUpdateMsg{mb: float64(ms.HeapAlloc) / (1024 * 1024)}
 	})
 }
@@ -373,9 +403,12 @@ func memTickCmd() tea.Cmd {
 func (m uncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
 		m.cancel()
+
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
+
 		_ = m.app.Shutdown(ctx)
+
 		return shutdownMsg{}
 	}
 }
@@ -385,10 +418,13 @@ func (m uncorsApp) restartCmd() tea.Cmd {
 		defer helpers.PanicInterceptor(func(value any) {
 			m.output.Errorf("Restart error: %v", value)
 		})
+
 		newCfg := m.loadConfig()
-		if err := m.app.Restart(m.ctx, newCfg); err != nil {
+		err := m.app.Restart(m.ctx, newCfg)
+		if err != nil {
 			m.output.Errorf("Failed to restart: %v", err)
 		}
+
 		return restartMsg{}
 	}
 }
@@ -400,8 +436,10 @@ func (m uncorsApp) versionCheckCmd() tea.Cmd {
 			version.WithHTTPClient(infra.MakeHTTPClient(m.cfg.Proxy)),
 			version.WithCurrentVersion(m.version),
 		)
+
 		time.Sleep(versionCheckDelay)
 		versionChecker.CheckNewVersion(m.ctx)
+
 		return nil
 	}
 }
@@ -411,5 +449,6 @@ func formatElapsed(d time.Duration) string {
 	if d < time.Second {
 		return fmt.Sprintf("%dms", d.Milliseconds())
 	}
+
 	return fmt.Sprintf("%.1fs", d.Seconds())
 }

@@ -36,7 +36,9 @@ func (t *requestTracker) Wrap(h contracts.Handler) contracts.Handler {
 			url:       r.URL,
 			startedAt: time.Now(),
 		}
+
 		h.ServeHTTP(w, r)
+
 		t.events <- requestEvent{id: id, done: true}
 	})
 }

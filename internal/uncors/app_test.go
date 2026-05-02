@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -24,6 +25,52 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUncorsWithHandlerWrapper(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
+
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "target")
+	}))
+	defer targetServer.Close()
+
+	wrapperCalled := 0
+
+	app.WithHandlerWrapper(func(h contracts.Handler) contracts.Handler {
+		return contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+			wrapperCalled++
+
+			h.ServeHTTP(w, r)
+		})
+	})
+
+	port := testutils.GetFreePort(t)
+	err := app.Start(context.Background(), &config.UncorsConfig{
+		Mappings: []config.Mapping{
+			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+		},
+	})
+	require.NoError(t, err)
+
+	defer app.Close()
+
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		hosts.Loopback.HTTPPort(port),
+		nil,
+	)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, wrapperCalled)
+}
 
 func TestCreateUncors(t *testing.T) {
 	fs := afero.NewMemMapFs()
