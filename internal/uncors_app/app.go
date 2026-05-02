@@ -3,6 +3,7 @@ package uncorsapp
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ const (
 	shutdownTimeout   = 5 * time.Second
 	versionCheckDelay = 50 * time.Second
 	tickInterval      = 200 * time.Millisecond
+	memTickInterval   = 2 * time.Second
 )
 
 var (
@@ -34,11 +36,11 @@ var (
 				Background(lipgloss.Color("#8C8C8C")).
 				Padding(0, 1)
 
-	statusBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888"))
-
 	scrollBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#444444"))
+			Foreground(lipgloss.Color("#555555"))
+
+	memWidgetStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#777777"))
 )
 
 type uncorsApp struct {
@@ -66,6 +68,8 @@ type uncorsApp struct {
 
 	pending map[uint64]requestEvent
 	ticking bool
+
+	memMB float64
 }
 
 type outputLineMsg string
@@ -75,6 +79,7 @@ type shutdownMsg struct{}
 type requestEventMsg requestEvent
 type tickMsg struct{}
 type restartMsg struct{}
+type memUpdateMsg struct{ mb float64 }
 
 func NewUncorsApp(
 	ver string,
@@ -92,6 +97,9 @@ func NewUncorsApp(
 	if err != nil {
 		panic(fmt.Sprintf("failed to create history: %v", err))
 	}
+
+	var ms runtime.MemStats
+	runtime.ReadMemStats(&ms)
 
 	return uncorsApp{
 		version: ver,
@@ -111,6 +119,7 @@ func NewUncorsApp(
 		vp:         viewport.New(),
 		autoScroll: true,
 		pending:    make(map[uint64]requestEvent),
+		memMB:      float64(ms.HeapAlloc) / (1024 * 1024),
 	}
 }
 
@@ -119,6 +128,7 @@ func (m uncorsApp) Init() tea.Cmd {
 		m.startServerCmd(),
 		m.waitOutputCmd(),
 		m.watchEventsCmd(),
+		memTickCmd(),
 	)
 }
 
@@ -137,6 +147,7 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case outputLineMsg:
 		atBottom := m.autoScroll
 		m.hist.AppendLine(string(msg))
+		m.vp.SetHeight(m.historyHeight())
 		m.vp.SetContentLines(m.hist.Lines())
 		if atBottom {
 			m.vp.GotoBottom()
@@ -149,7 +160,6 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.pending[msg.id] = requestEvent(msg)
 		}
-		// Recalculate viewport height since footer size changed.
 		m.vp.SetHeight(m.historyHeight())
 		if m.autoScroll {
 			m.vp.GotoBottom()
@@ -166,6 +176,10 @@ func (m uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.tickCmd()
 		}
 		m.ticking = false
+
+	case memUpdateMsg:
+		m.memMB = msg.mb
+		return m, memTickCmd()
 
 	case serverStartedMsg:
 		m.viper.OnConfigChange(func(_ fsnotify.Event) {
@@ -233,8 +247,11 @@ func (m uncorsApp) View() tea.View {
 
 	b.WriteString(m.vp.View())
 	b.WriteByte('\n')
-	b.WriteString(m.renderStatusBar())
-	b.WriteByte('\n')
+
+	if m.hist.LineCount() > 0 {
+		b.WriteString(m.renderStatusBar())
+		b.WriteByte('\n')
+	}
 
 	if len(m.pending) > 0 {
 		fmt.Fprintf(&b, "In progress (%d):\n", len(m.pending))
@@ -248,7 +265,7 @@ func (m uncorsApp) View() tea.View {
 		}
 	}
 
-	b.WriteString(m.help.View(m.keys))
+	b.WriteString(m.renderHelpBar())
 
 	v := tea.NewView(b.String())
 	v.AltScreen = true
@@ -264,38 +281,42 @@ func (m uncorsApp) historyHeight() int {
 	return h
 }
 
-// footerHeight returns the total number of lines below the viewport.
+// footerHeight returns the total number of lines rendered below the viewport.
 func (m uncorsApp) footerHeight() int {
-	h := 2 // status bar + help bar
+	h := 1 // help bar
+	if m.hist.LineCount() > 0 {
+		h++ // status bar — only when there is something to scroll
+	}
 	if len(m.pending) > 0 {
 		h += 1 + len(m.pending) // "In progress:" header + N request lines
 	}
 	if m.help.ShowAll {
-		// FullHelp has 3 rows; add the extra rows beyond 1
-		h += 2
+		h += 2 // FullHelp has 3 rows; +2 beyond the base row
 	}
 	return h
 }
 
 func (m uncorsApp) renderStatusBar() string {
-	total := m.hist.LineCount()
-	if total == 0 {
-		return statusBarStyle.Render("─ starting...")
-	}
-
 	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
 	scrollStr := fmt.Sprintf("%d%%", pct)
 	if m.autoScroll {
 		scrollStr += " [auto]"
 	}
 
-	scrollIndicator := scrollBarStyle.Render(
-		fmt.Sprintf("─ %s (%d lines) ", scrollStr, total),
-	)
+	left := scrollBarStyle.Render(fmt.Sprintf("─ %s (%d lines) ", scrollStr, m.hist.LineCount()))
+	fill := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(left))))
+	return left + fill
+}
 
-	divider := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(scrollIndicator))))
+func (m uncorsApp) renderHelpBar() string {
+	helpStr := m.help.View(m.keys)
+	memStr := memWidgetStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
 
-	return scrollIndicator + divider
+	gap := m.termWidth - lipgloss.Width(helpStr) - lipgloss.Width(memStr)
+	if gap > 0 {
+		return helpStr + strings.Repeat(" ", gap) + memStr
+	}
+	return helpStr
 }
 
 func (m uncorsApp) startServerCmd() tea.Cmd {
@@ -338,6 +359,14 @@ func (m uncorsApp) watchEventsCmd() tea.Cmd {
 func (m uncorsApp) tickCmd() tea.Cmd {
 	return tea.Tick(tickInterval, func(_ time.Time) tea.Msg {
 		return tickMsg{}
+	})
+}
+
+func memTickCmd() tea.Cmd {
+	return tea.Tick(memTickInterval, func(_ time.Time) tea.Msg {
+		var ms runtime.MemStats
+		runtime.ReadMemStats(&ms)
+		return memUpdateMsg{mb: float64(ms.HeapAlloc) / (1024 * 1024)}
 	})
 }
 
@@ -384,4 +413,3 @@ func formatElapsed(d time.Duration) string {
 	}
 	return fmt.Sprintf("%.1fs", d.Seconds())
 }
-

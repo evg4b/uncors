@@ -59,10 +59,17 @@ func newHistory() (*history, error) {
 }
 
 // AppendLine writes line to the mmap file and appends it to the string cache.
+// Multi-line strings (logo, box messages) are split on '\n' so the viewport
+// receives one entry per visual row.
 // Must be called from the bubbletea Update goroutine.
 func (h *history) AppendLine(line string) {
 	line = strings.TrimRight(line, "\n")
+	for subline := range strings.SplitSeq(line, "\n") {
+		h.appendSingleLine(subline)
+	}
+}
 
+func (h *history) appendSingleLine(line string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -70,15 +77,14 @@ func (h *history) AppendLine(line string) {
 	needed := h.writePos + int64(len(content))
 	if needed > h.capacity {
 		if err := h.grow(needed); err != nil {
-			return // silent drop on grow failure
+			return
 		}
 	}
 
 	offset := h.writePos
 	n := copy(h.data[offset:], content)
-	lineLen := int32(n - 1) // length without trailing newline
+	lineLen := int32(n - 1)
 	h.lines = append(h.lines, lineInfo{offset: offset, length: lineLen})
-	// Build string from the mapped region so both cache and mmap share the same bytes.
 	h.cache = append(h.cache, string(h.data[offset:offset+int64(lineLen)]))
 	h.writePos += int64(n)
 }
