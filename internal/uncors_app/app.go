@@ -170,17 +170,18 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *uncorsApp) View() tea.View {
 	var viewBuilder strings.Builder
 
-	// 1. History (Viewport + Status bar)
+	// 1. History
 	viewBuilder.WriteString(m.historyWidget.View().Content)
-	viewBuilder.WriteByte('\n')
 
 	// 2. Tracker (In progress requests)
 	if m.trackerWidget.ActiveCount() > 0 {
-		viewBuilder.WriteString(m.trackerWidget.View().Content)
 		viewBuilder.WriteByte('\n')
+		viewBuilder.WriteString(m.trackerWidget.View().Content)
 	}
 
 	// 3. Help Bar and Memory
+	viewBuilder.WriteByte('\n')
+
 	helpStr := m.helpWidget.View().Content
 	memStr := m.memWidget.View().Content
 
@@ -225,11 +226,10 @@ func (m *uncorsApp) updateHistoryHeight() {
 
 func (m *uncorsApp) footerHeight() int {
 	footerHeight := m.helpWidget.Height()
-	if m.historyWidget.HasLines() {
-		footerHeight++ // status bar
-	}
 
-	footerHeight += m.trackerWidget.Height()
+	if m.trackerWidget.ActiveCount() > 0 {
+		footerHeight += m.trackerWidget.Height()
+	}
 
 	return footerHeight
 }

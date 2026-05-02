@@ -4,6 +4,7 @@ import (
 	help "charm.land/bubbles/v2/help"
 	key "charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 type HelpWidget struct {
@@ -36,11 +37,7 @@ func (m *HelpWidget) Update(msg tea.Msg) (*HelpWidget, tea.Cmd) {
 }
 
 func (m *HelpWidget) Height() int {
-	if m.help.ShowAll {
-		return 3 //nolint:mnd // FullHelp has 3 rows (base row + 2)
-	}
-
-	return 1
+	return lipgloss.Height(m.help.View(m.keys))
 }
 
 func (m *HelpWidget) View() tea.View {

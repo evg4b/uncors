@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,19 +90,17 @@ func TestHistory_AppendLine(t *testing.T) {
 		assert.Equal(t, styled, lines[0])
 	})
 
-	t.Run("respects historyMaxLines", func(t *testing.T) {
+	t.Run("handles large number of lines", func(t *testing.T) {
 		history := newHistory()
 
 		defer history.Close()
 
-		longLine := "a"
-
-		count := historyMaxLines + 5
-		for range count {
-			history.AppendLine(longLine)
+		count := 20000
+		for i := range count {
+			history.AppendLine(strings.Repeat("a", i%100))
 		}
 
-		assert.Equal(t, historyMaxLines, history.LineCount())
+		assert.Equal(t, count, history.LineCount())
 	})
 }
 

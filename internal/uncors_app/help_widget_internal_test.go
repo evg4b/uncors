@@ -39,7 +39,7 @@ func TestHelpWidget(t *testing.T) {
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
 		assert.True(t, widget.help.ShowAll)
-		assert.Equal(t, 3, widget.Height()) // Expanded height
+		assert.Equal(t, 4, widget.Height()) // Expanded height
 
 		// Toggle back
 		newWidget, cmd = widget.Update(msg)
