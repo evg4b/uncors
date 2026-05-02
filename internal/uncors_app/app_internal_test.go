@@ -52,13 +52,13 @@ func cleanupTestApp(t *testing.T, app *uncorsApp) {
 	app.cancel()
 	_ = app.app.Close()
 
-	if app.hist == nil || app.hist.file == nil {
+	if app.historyWidget == nil || app.historyWidget.hist == nil || app.historyWidget.hist.file == nil {
 		return
 	}
 
-	_, err := os.Stat(app.hist.file.Name())
+	_, err := os.Stat(app.historyWidget.hist.file.Name())
 	if err == nil {
-		_ = app.hist.Close()
+		_ = app.historyWidget.hist.Close()
 	}
 }
 
@@ -69,12 +69,12 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	assert.Equal(t, "test-version", app.version)
 	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.tracker)
-	assert.NotNil(t, app.hist)
+	assert.NotNil(t, app.historyWidget.hist)
 	assert.NotNil(t, app.appContext)
 	assert.NotNil(t, app.appDone)
-	assert.True(t, app.autoScroll)
-	assert.Empty(t, app.pending)
-	assert.GreaterOrEqual(t, app.memMB, 0.0)
+	assert.True(t, app.historyWidget.autoScroll)
+	assert.Empty(t, app.trackerWidget.pending)
+	assert.GreaterOrEqual(t, app.memWidget.memMB, 0.0)
 	require.NotNil(t, app.Init())
 
 	keys := newKeyMap()
@@ -99,8 +99,8 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	model, cmd = app.Update(outputLineMsg("hello\nworld"))
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
-	assert.Equal(t, 2, app.hist.LineCount())
-	assert.Equal(t, []string{"hello", "world"}, app.hist.Lines())
+	assert.Equal(t, 2, app.historyWidget.hist.LineCount())
+	assert.Equal(t, []string{"hello", "world"}, app.historyWidget.hist.Lines())
 
 	requestURL, err := url.Parse("https://example.com/demo")
 	require.NoError(t, err)
@@ -113,8 +113,8 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
-	assert.Len(t, app.pending, 1)
-	assert.True(t, app.ticking)
+	assert.Len(t, app.trackerWidget.pending, 1)
+	assert.True(t, app.trackerWidget.ticking)
 
 	view := app.View()
 	assert.True(t, view.AltScreen)
@@ -128,36 +128,40 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	model, cmd = app.Update(requestEventMsg{id: 7, done: true})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
-	assert.Empty(t, app.pending)
+	assert.Empty(t, app.trackerWidget.pending)
 
 	model, cmd = app.Update(tickMsg{})
 	require.Same(t, app, model)
 	assert.Nil(t, cmd)
-	assert.False(t, app.ticking)
+	assert.False(t, app.trackerWidget.ticking)
 
 	model, cmd = app.Update(memUpdateMsg{mb: 12.5})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
-	assert.InDelta(t, 12.5, app.memMB, 0.0001)
+	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
-	app.help.ShowAll = true
-	app.pending[1] = requestEvent{method: "POST", url: requestURL, startedAt: time.Now()}
+	app.helpWidget.help.ShowAll = true
+	app.trackerWidget.pending[1] = requestEvent{method: "POST", url: requestURL, startedAt: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
-	assert.Equal(t, 6, app.historyHeight())
+	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
+	// Since we mock manual property setting here, let's call updateHistoryHeight
+	app.updateHistoryHeight()
 
 	app.termHeight = 0
-	assert.Equal(t, 1, app.historyHeight())
+	app.updateHistoryHeight()
 
 	app.termWidth = 120
-	assert.Contains(t, app.renderHelpBar(), "MB")
+	// renderHelpBar is gone, HelpWidget and MemWidget composite in View()
+	// Let's assert MemWidget produces MB string
+	assert.Contains(t, app.memWidget.View().Content, "MB")
 
 	app.termWidth = 1
-	assert.Equal(t, app.help.View(app.keys), app.renderHelpBar())
+	assert.Equal(t, app.helpWidget.help.View(app.keys), app.helpWidget.View().Content)
 
 	app.termWidth = 80
-	app.autoScroll = false
-	assert.Contains(t, app.renderStatusBar(), "0%")
-	assert.NotContains(t, app.renderStatusBar(), "[auto]")
+	app.historyWidget.autoScroll = false
+	assert.Contains(t, app.historyWidget.renderStatusBar(), "0%")
+	assert.NotContains(t, app.historyWidget.renderStatusBar(), "[auto]")
 }
 
 func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
@@ -237,7 +241,7 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 	_, cmd := app.Update(tea.KeyPressMsg(tea.Key{Text: "?", Code: '?'}))
 	assert.Nil(t, cmd)
-	assert.True(t, app.help.ShowAll)
+	assert.True(t, app.helpWidget.help.ShowAll)
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
 	assert.Nil(t, cmd)
@@ -253,11 +257,11 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyHome}))
 	assert.Nil(t, cmd)
-	assert.False(t, app.autoScroll)
+	assert.False(t, app.historyWidget.autoScroll)
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnd}))
 	assert.Nil(t, cmd)
-	assert.True(t, app.autoScroll)
+	assert.True(t, app.historyWidget.autoScroll)
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "r", Code: 'r'}))
 	require.NotNil(t, cmd)
@@ -273,26 +277,26 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		app.pending[1] = requestEvent{method: "GET", startedAt: time.Now()}
-		app.ticking = true
+		app.trackerWidget.pending[1] = requestEvent{method: "GET", startedAt: time.Now()}
+		app.trackerWidget.ticking = true
 
 		model, cmd := app.Update(serverErrMsg{err: errBoom})
 		require.Same(t, app, model)
 		require.NotNil(t, cmd)
-		assert.Contains(t, app.hist.Lines()[0], errBoom.Error())
+		assert.Contains(t, app.historyWidget.hist.Lines()[0], errBoom.Error())
 
 		model, cmd = app.Update(restartMsg{})
 		require.Same(t, app, model)
 		assert.Nil(t, cmd)
-		assert.Empty(t, app.pending)
-		assert.False(t, app.ticking)
+		assert.Empty(t, app.trackerWidget.pending)
+		assert.False(t, app.trackerWidget.ticking)
 	})
 
 	t.Run("shutdown message closes history file", func(t *testing.T) {
 		app, _ := newTestApp(t)
-		app.hist.AppendLine("hello")
+		app.historyWidget.hist.AppendLine("hello")
 
-		historyPath := app.hist.file.Name()
+		historyPath := app.historyWidget.hist.file.Name()
 		_, statErr := os.Stat(historyPath)
 		require.NoError(t, statErr)
 

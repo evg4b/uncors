@@ -2,14 +2,10 @@ package uncorsapp
 
 import (
 	"context"
-	"fmt"
-	"runtime"
 	"strings"
 	"time"
 
-	help "charm.land/bubbles/v2/help"
 	key "charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
@@ -31,23 +27,9 @@ const (
 	bytesPerMegabyte  = 1024 * 1024
 )
 
-var (
-	pendingMethodStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FFFFFF")).
-				Background(lipgloss.Color("#8C8C8C")).
-				Padding(0, 1)
-
-	scrollBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#555555"))
-
-	memWidgetStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#777777"))
-)
-
 type uncorsApp struct {
 	version string
 	keys    keyMap
-	help    help.Model
 
 	app     *uncors.Uncors
 	output  *tuiOutput
@@ -62,27 +44,20 @@ type uncorsApp struct {
 	loadConfig func() *config.UncorsConfig
 	viper      *viper.Viper
 
-	hist       *history
-	vp         viewport.Model
-	autoScroll bool
 	termHeight int
 	termWidth  int
 
-	pending map[uint64]requestEvent
-	ticking bool
-
-	memMB float64
+	historyWidget *HistoryWidget
+	trackerWidget *TrackerWidget
+	helpWidget    *HelpWidget
+	memWidget     *MemoryWidget
 }
 
 type (
-	outputLineMsg    string
 	serverStartedMsg struct{}
 	serverErrMsg     struct{ err error }
 	shutdownMsg      struct{}
-	requestEventMsg  requestEvent
-	tickMsg          struct{}
 	restartMsg       struct{}
-	memUpdateMsg     struct{ mb float64 }
 )
 
 type appUpdateMsg interface {
@@ -101,34 +76,30 @@ func NewUncorsApp(
 	tracker := newRequestTracker()
 	appCtx, cancel := context.WithCancel(context.Background())
 
-	hist, err := newHistory()
+	keys := newKeyMap()
+
+	historyWidget, err := NewHistoryWidget(keys)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create history: %v", err))
+		panic(err)
 	}
 
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
 	return &uncorsApp{
-		version: ver,
-		keys:    newKeyMap(),
-		help:    help.New(),
-		app: uncors.CreateUncors(fs, output, ver).
-			WithHandlerWrapper(tracker.Wrap),
-		output:     output,
-		tracker:    tracker,
-		outputCh:   outputCh,
-		appContext: func() context.Context { return appCtx },
-		appDone:    appCtx.Done(),
-		cancel:     cancel,
-		cfg:        cfg,
-		loadConfig: loadConfig,
-		viper:      viperInstance,
-		hist:       hist,
-		vp:         viewport.New(),
-		autoScroll: true,
-		pending:    make(map[uint64]requestEvent),
-		memMB:      float64(memStats.HeapAlloc) / bytesPerMegabyte,
+		version:       ver,
+		keys:          keys,
+		app:           uncors.CreateUncors(fs, output, ver).WithHandlerWrapper(tracker.Wrap),
+		output:        output,
+		tracker:       tracker,
+		outputCh:      outputCh,
+		appContext:    func() context.Context { return appCtx },
+		appDone:       appCtx.Done(),
+		cancel:        cancel,
+		cfg:           cfg,
+		loadConfig:    loadConfig,
+		viper:         viperInstance,
+		historyWidget: historyWidget,
+		trackerWidget: NewTrackerWidget(),
+		helpWidget:    NewHelpWidget(keys),
+		memWidget:     NewMemoryWidget(),
 	}
 }
 
@@ -137,56 +108,91 @@ func (m *uncorsApp) Init() tea.Cmd {
 		m.startServerCmd(),
 		m.waitOutputCmd(),
 		m.watchEventsCmd(),
-		memTickCmd(),
+		m.memWidget.Init(),
+		m.trackerWidget.Init(),
+		m.historyWidget.Init(),
+		m.helpWidget.Init(),
 	)
 }
 
 func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.handleWindowSize(typedMsg)
+		m.termHeight = typedMsg.Height
+		m.termWidth = typedMsg.Width
+		m.updateHistoryHeight()
 
-		return m, nil
 	case restartMsg:
 		m.handleRestart()
 
-		return m, nil
+	case outputLineMsg:
+		cmds = append(cmds, m.waitOutputCmd())
+
+	case requestEventMsg:
+		cmds = append(cmds, m.watchEventsCmd())
+
 	case tea.KeyPressMsg:
-		return m, m.handleKeyPress(typedMsg)
+		if cmd := m.handleKeyPress(typedMsg); cmd != nil {
+			return m, cmd
+		}
 	}
 
 	if appMsg, ok := msg.(appUpdateMsg); ok {
-		return m, appMsg.update(m)
+		cmds = append(cmds, appMsg.update(m))
 	}
 
-	return m, nil
+	// Update widgets
+	hw, hwCmd := m.historyWidget.Update(msg)
+	m.historyWidget = hw
+
+	cmds = append(cmds, hwCmd)
+
+	tw, twCmd := m.trackerWidget.Update(msg)
+	m.trackerWidget = tw
+
+	cmds = append(cmds, twCmd)
+
+	hpw, hpwCmd := m.helpWidget.Update(msg)
+	m.helpWidget = hpw
+
+	cmds = append(cmds, hpwCmd)
+
+	mw, mwCmd := m.memWidget.Update(msg)
+	m.memWidget = mw
+
+	cmds = append(cmds, mwCmd)
+
+	// Re-calculate history height if tracker or help dimensions changed
+	m.updateLayout(msg)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *uncorsApp) View() tea.View {
 	var viewBuilder strings.Builder
 
-	viewBuilder.WriteString(m.vp.View())
+	// 1. History (Viewport + Status bar)
+	viewBuilder.WriteString(m.historyWidget.View().Content)
 	viewBuilder.WriteByte('\n')
 
-	if m.hist.LineCount() > 0 {
-		viewBuilder.WriteString(m.renderStatusBar())
+	// 2. Tracker (In progress requests)
+	if m.trackerWidget.ActiveCount() > 0 {
+		viewBuilder.WriteString(m.trackerWidget.View().Content)
 		viewBuilder.WriteByte('\n')
 	}
 
-	if len(m.pending) > 0 {
-		fmt.Fprintf(&viewBuilder, "In progress (%d):\n", len(m.pending))
+	// 3. Help Bar and Memory
+	helpStr := m.helpWidget.View().Content
+	memStr := m.memWidget.View().Content
 
-		for _, req := range m.pending {
-			elapsed := formatElapsed(time.Since(req.startedAt))
-			fmt.Fprintf(&viewBuilder, "  %s %s  %s\n",
-				pendingMethodStyle.Render(req.method),
-				req.url.String(),
-				elapsed,
-			)
-		}
+	gap := m.termWidth - lipgloss.Width(helpStr) - lipgloss.Width(memStr)
+	if gap > 0 {
+		viewBuilder.WriteString(helpStr + strings.Repeat(" ", gap) + memStr)
+	} else {
+		viewBuilder.WriteString(helpStr)
 	}
-
-	viewBuilder.WriteString(m.renderHelpBar())
 
 	v := tea.NewView(viewBuilder.String())
 	v.AltScreen = true
@@ -194,22 +200,41 @@ func (m *uncorsApp) View() tea.View {
 	return v
 }
 
-func (msg outputLineMsg) update(app *uncorsApp) tea.Cmd {
-	return app.handleOutputLine(msg)
+func (m *uncorsApp) updateLayout(msg tea.Msg) {
+	if _, isRequest := msg.(requestEventMsg); isRequest {
+		m.updateHistoryHeight()
+	} else if _, isKey := msg.(tea.KeyPressMsg); isKey {
+		m.updateHistoryHeight()
+	}
 }
 
-func (msg requestEventMsg) update(app *uncorsApp) tea.Cmd {
-	return app.handleRequestEvent(msg)
+func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
+	if key.Matches(msg, m.keys.Restart) {
+		return m.restartCmd()
+	}
+
+	if key.Matches(msg, m.keys.Quit) {
+		return m.shutdownCmd()
+	}
+
+	return nil
 }
 
-func (msg tickMsg) update(app *uncorsApp) tea.Cmd {
-	return app.handleTick()
+func (m *uncorsApp) updateHistoryHeight() {
+	viewportHeight := max(m.termHeight-m.footerHeight(), 1)
+
+	m.historyWidget.SetHeight(viewportHeight)
 }
 
-func (msg memUpdateMsg) update(app *uncorsApp) tea.Cmd {
-	app.memMB = msg.mb
+func (m *uncorsApp) footerHeight() int {
+	footerHeight := m.helpWidget.Height()
+	if m.historyWidget.HasLines() {
+		footerHeight++ // status bar
+	}
 
-	return memTickCmd()
+	footerHeight += m.trackerWidget.Height()
+
+	return footerHeight
 }
 
 func (msg serverStartedMsg) update(app *uncorsApp) tea.Cmd {
@@ -222,63 +247,6 @@ func (msg serverErrMsg) update(app *uncorsApp) tea.Cmd {
 
 func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
 	return app.handleShutdown()
-}
-
-func (m *uncorsApp) handleWindowSize(msg tea.WindowSizeMsg) {
-	m.termHeight = msg.Height
-	m.termWidth = msg.Width
-	m.help.SetWidth(msg.Width)
-	m.vp.SetWidth(msg.Width)
-	m.vp.SetHeight(m.historyHeight())
-
-	if m.autoScroll {
-		m.vp.GotoBottom()
-	}
-}
-
-func (m *uncorsApp) handleOutputLine(msg outputLineMsg) tea.Cmd {
-	atBottom := m.autoScroll
-	m.hist.AppendLine(string(msg))
-	m.vp.SetHeight(m.historyHeight())
-	m.vp.SetContentLines(m.hist.Lines())
-
-	if atBottom {
-		m.vp.GotoBottom()
-	}
-
-	return m.waitOutputCmd()
-}
-
-func (m *uncorsApp) handleRequestEvent(msg requestEventMsg) tea.Cmd {
-	if msg.done {
-		delete(m.pending, msg.id)
-	} else {
-		m.pending[msg.id] = requestEvent(msg)
-	}
-
-	m.vp.SetHeight(m.historyHeight())
-
-	if m.autoScroll {
-		m.vp.GotoBottom()
-	}
-
-	cmds := []tea.Cmd{m.watchEventsCmd()}
-	if len(m.pending) > 0 && !m.ticking {
-		m.ticking = true
-		cmds = append(cmds, m.tickCmd())
-	}
-
-	return tea.Batch(cmds...)
-}
-
-func (m *uncorsApp) handleTick() tea.Cmd {
-	if len(m.pending) > 0 {
-		return m.tickCmd()
-	}
-
-	m.ticking = false
-
-	return nil
 }
 
 func (m *uncorsApp) handleServerStarted() tea.Cmd {
@@ -300,109 +268,19 @@ func (m *uncorsApp) handleServerStarted() tea.Cmd {
 }
 
 func (m *uncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
-	m.hist.AppendLine(msg.err.Error())
-	m.vp.SetContentLines(m.hist.Lines())
-	m.vp.GotoBottom()
+	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
 
 	return tea.Quit
 }
 
 func (m *uncorsApp) handleRestart() {
-	m.pending = make(map[uint64]requestEvent)
-	m.ticking = false
-	m.vp.SetHeight(m.historyHeight())
+	m.updateHistoryHeight()
 }
 
 func (m *uncorsApp) handleShutdown() tea.Cmd {
-	_ = m.hist.Close()
+	_ = m.historyWidget.Close()
 
 	return tea.Quit
-}
-
-func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
-	switch {
-	case key.Matches(msg, m.keys.Help):
-		m.help.ShowAll = !m.help.ShowAll
-		m.vp.SetHeight(m.historyHeight())
-	case key.Matches(msg, m.keys.ScrollUp):
-		m.vp.ScrollUp(1)
-		m.autoScroll = m.vp.AtBottom()
-	case key.Matches(msg, m.keys.ScrollDown):
-		m.vp.ScrollDown(1)
-		m.autoScroll = m.vp.AtBottom()
-	case key.Matches(msg, m.keys.PageUp):
-		m.vp.PageUp()
-		m.autoScroll = m.vp.AtBottom()
-	case key.Matches(msg, m.keys.PageDown):
-		m.vp.PageDown()
-		m.autoScroll = m.vp.AtBottom()
-	case key.Matches(msg, m.keys.GotoTop):
-		m.vp.GotoTop()
-		m.autoScroll = false
-	case key.Matches(msg, m.keys.GotoBottom):
-		m.vp.GotoBottom()
-		m.autoScroll = true
-	case key.Matches(msg, m.keys.Restart):
-		return m.restartCmd()
-	case key.Matches(msg, m.keys.Quit):
-		return m.shutdownCmd()
-	}
-
-	return nil
-}
-
-// historyHeight returns the number of lines the viewport should occupy.
-func (m *uncorsApp) historyHeight() int {
-	viewportHeight := m.termHeight - m.footerHeight()
-	if viewportHeight < 1 {
-		return 1
-	}
-
-	return viewportHeight
-}
-
-// footerHeight returns the total number of lines rendered below the viewport.
-func (m *uncorsApp) footerHeight() int {
-	footerHeight := 1 // help bar
-	if m.hist.LineCount() > 0 {
-		footerHeight++ // status bar — only when there is something to scroll
-	}
-
-	if len(m.pending) > 0 {
-		footerHeight += 1 + len(m.pending) // "In progress:" header + N request lines
-	}
-
-	if m.help.ShowAll {
-		footerHeight += 2 // FullHelp has 3 rows; +2 beyond the base row
-	}
-
-	return footerHeight
-}
-
-func (m *uncorsApp) renderStatusBar() string {
-	pct := int(m.vp.ScrollPercent() * 100) //nolint:mnd
-
-	scrollStr := fmt.Sprintf("%d%%", pct)
-	if m.autoScroll {
-		scrollStr += " [auto]"
-	}
-
-	left := scrollBarStyle.Render(fmt.Sprintf("─ %s (%d lines) ", scrollStr, m.hist.LineCount()))
-	fill := scrollBarStyle.Render(strings.Repeat("─", max(0, m.termWidth-lipgloss.Width(left))))
-
-	return left + fill
-}
-
-func (m *uncorsApp) renderHelpBar() string {
-	helpStr := m.help.View(m.keys)
-	memStr := memWidgetStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
-
-	gap := m.termWidth - lipgloss.Width(helpStr) - lipgloss.Width(memStr)
-	if gap > 0 {
-		return helpStr + strings.Repeat(" ", gap) + memStr
-	}
-
-	return helpStr
 }
 
 func (m *uncorsApp) startServerCmd() tea.Cmd {
@@ -444,21 +322,6 @@ func (m *uncorsApp) watchEventsCmd() tea.Cmd {
 			return nil
 		}
 	}
-}
-
-func (m *uncorsApp) tickCmd() tea.Cmd {
-	return tea.Tick(tickInterval, func(_ time.Time) tea.Msg {
-		return tickMsg{}
-	})
-}
-
-func memTickCmd() tea.Cmd {
-	return tea.Tick(memTickInterval, func(_ time.Time) tea.Msg {
-		var memStats runtime.MemStats
-		runtime.ReadMemStats(&memStats)
-
-		return memUpdateMsg{mb: float64(memStats.HeapAlloc) / bytesPerMegabyte}
-	})
 }
 
 func (m *uncorsApp) shutdownCmd() tea.Cmd {
@@ -504,13 +367,4 @@ func (m *uncorsApp) versionCheckCmd() tea.Cmd {
 
 		return nil
 	}
-}
-
-func formatElapsed(duration time.Duration) string {
-	duration = duration.Truncate(time.Millisecond)
-	if duration < time.Second {
-		return fmt.Sprintf("%dms", duration.Milliseconds())
-	}
-
-	return fmt.Sprintf("%.1fs", duration.Seconds())
 }
