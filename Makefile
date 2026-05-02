@@ -13,8 +13,7 @@ BINARY_NAME := uncors
 BINARY_WINDOWS := $(BINARY_NAME).exe
 
 # Directories and files to clean
-CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE) \
-	./tools/fakedata/docs.md ./tools/fakedata/scheme.json
+CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE)
 
 # Default target
 .DEFAULT_GOAL := all

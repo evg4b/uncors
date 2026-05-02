@@ -25,20 +25,17 @@ func makeWriter() contracts.ResponseWriter {
 }
 
 func TestRequestTracker_Wrap(t *testing.T) {
-	t.Run("sends start event before handler runs", func(t *testing.T) {
+	t.Run("sends start event with request metadata", func(t *testing.T) {
 		tracker := newRequestTracker()
-
-		var order []string
+		handlerDone := make(chan struct{})
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
-			order = append(order, "handler")
+			close(handlerDone)
 		}))
 
 		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
 
 		ev := <-tracker.events
-
-		order = append([]string{"event"}, order...)
 
 		assert.False(t, ev.done)
 		assert.Equal(t, http.MethodGet, ev.method)
@@ -46,6 +43,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		assert.NotZero(t, ev.id)
 		assert.NotZero(t, ev.startedAt)
 
+		<-handlerDone
 		<-tracker.events // drain done event
 	})
 

@@ -6,26 +6,31 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
 )
 
 func GetFreePort(t *testing.T) int {
 	t.Helper()
 
-	port, err := freeport.GetFreePort()
+	listener, err := net.Listen("tcp4", hosts.Loopback.Port(0)) //nolint:noctx
 	require.NoError(t, err)
+	defer listener.Close()
 
-	return port
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	require.True(t, ok)
+
+	return addr.Port
 }
 
 func GetFreePorts(t *testing.T, count int) []int {
 	t.Helper()
 
-	port, err := freeport.GetFreePorts(count)
-	require.NoError(t, err)
+	ports := make([]int, 0, count)
+	for i := 0; i < count; i++ {
+		ports = append(ports, GetFreePort(t))
+	}
 
-	return port
+	return ports
 }
 
 func IsPortFree(port int) bool {
