@@ -1,6 +1,8 @@
 package uncorsapp
 
 import (
+	"log"
+
 	key "charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
@@ -17,6 +19,8 @@ type HistoryWidget struct {
 }
 
 func NewHistoryWidget(keys keyMap) *HistoryWidget {
+	log.Println("Creating HistoryWidget")
+
 	hist := newHistory()
 
 	return &HistoryWidget{
@@ -51,8 +55,8 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 		}
 
 	case restartMsg:
-		// Reset state if needed, but history probably stays or clears?
-		// In previous implementation, handleRestart() didn't clear history, it just recalculated height.
+		log.Println("HistoryWidget: handling restartMsg")
+
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -63,6 +67,7 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 }
 
 func (m *HistoryWidget) SetHeight(height int) {
+	log.Printf("HistoryWidget: setting height to %d", height)
 	m.vp.SetHeight(height)
 }
 
@@ -71,6 +76,8 @@ func (m *HistoryWidget) HasLines() bool {
 }
 
 func (m *HistoryWidget) Close() error {
+	log.Println("HistoryWidget: closing")
+
 	return m.hist.Close()
 }
 

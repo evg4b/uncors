@@ -2,6 +2,7 @@ package uncorsapp
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"time"
 
@@ -19,6 +20,8 @@ type MemoryWidget struct {
 }
 
 func NewMemoryWidget() *MemoryWidget {
+	log.Println("Creating MemoryWidget")
+
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -33,6 +36,7 @@ func (m *MemoryWidget) Init() tea.Cmd {
 
 func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 	if typedMsg, ok := msg.(memUpdateMsg); ok {
+		log.Printf("MemoryWidget: updated to %.1f MB", typedMsg.mb)
 		m.memMB = typedMsg.mb
 
 		return m, memTickCmd()

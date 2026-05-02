@@ -2,6 +2,7 @@ package uncorsapp
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -101,6 +102,8 @@ func NewUncorsApp(
 }
 
 func (m *uncorsApp) Init() tea.Cmd {
+	log.Println("Initializing UncorsApp")
+
 	return tea.Batch(
 		m.startServerCmd(),
 		m.waitOutputCmd(),
@@ -117,11 +120,13 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
+		log.Printf("Window resized to %dx%d", typedMsg.Width, typedMsg.Height)
 		m.termHeight = typedMsg.Height
 		m.termWidth = typedMsg.Width
 		m.updateHistoryHeight()
 
 	case restartMsg:
+		log.Println("Restart message received")
 		m.handleRestart()
 
 	case outputLineMsg:
@@ -131,6 +136,8 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:
+		log.Printf("Key pressed: %s", typedMsg.String())
+
 		if cmd := m.handleKeyPress(typedMsg); cmd != nil {
 			return m, cmd
 		}
@@ -219,8 +226,15 @@ func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 }
 
 func (m *uncorsApp) updateHistoryHeight() {
-	viewportHeight := max(m.termHeight-m.footerHeight(), 1)
+	footerHeight := m.footerHeight()
+	viewportHeight := max(m.termHeight-footerHeight, 1)
 
+	log.Printf(
+		"Updating layout: termHeight=%d, footerHeight=%d => viewportHeight=%d",
+		m.termHeight,
+		footerHeight,
+		viewportHeight,
+	)
 	m.historyWidget.SetHeight(viewportHeight)
 }
 
@@ -271,10 +285,13 @@ func (m *uncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
 }
 
 func (m *uncorsApp) handleRestart() {
+	log.Println("Handling restart")
 	m.updateHistoryHeight()
 }
 
 func (m *uncorsApp) handleShutdown() tea.Cmd {
+	log.Println("Handling shutdown")
+
 	_ = m.historyWidget.Close()
 
 	return tea.Quit

@@ -2,6 +2,7 @@ package uncorsapp
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -25,6 +26,8 @@ type TrackerWidget struct {
 }
 
 func NewTrackerWidget() *TrackerWidget {
+	log.Println("Creating TrackerWidget")
+
 	return &TrackerWidget{
 		pending: make(map[uint64]requestEvent),
 	}
@@ -38,14 +41,18 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
 	case requestEventMsg:
 		if typedMsg.done {
+			log.Printf("TrackerWidget: request done: %d", typedMsg.id)
 			delete(m.pending, typedMsg.id)
 		} else {
+			log.Printf("TrackerWidget: request started: %d %s %s", typedMsg.id, typedMsg.method, typedMsg.url.String())
 			m.pending[typedMsg.id] = requestEvent(typedMsg)
 		}
 
 		var cmd tea.Cmd
 
 		if len(m.pending) > 0 && !m.ticking {
+			log.Println("TrackerWidget: starting tick")
+
 			m.ticking = true
 			cmd = m.tickCmd()
 		}
@@ -57,11 +64,15 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 			return m, m.tickCmd()
 		}
 
+		log.Println("TrackerWidget: stopping tick")
+
 		m.ticking = false
 
 		return m, nil
 
 	case restartMsg:
+		log.Println("TrackerWidget: handling restartMsg")
+
 		m.pending = make(map[uint64]requestEvent)
 		m.ticking = false
 

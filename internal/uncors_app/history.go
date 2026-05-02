@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"log"
 	"strings"
 	"sync"
 )
@@ -16,6 +17,8 @@ type history struct {
 }
 
 func newHistory() *history {
+	log.Println("Initializing new history")
+
 	return &history{
 		lines: make([]string, 0, historyInitialCapacity),
 	}
@@ -28,7 +31,10 @@ func (h *history) AppendLine(line string) {
 	defer h.mu.Unlock()
 
 	line = strings.TrimRight(line, "\n")
-	h.lines = append(h.lines, strings.Split(line, "\n")...)
+	newLines := strings.Split(line, "\n")
+	h.lines = append(h.lines, newLines...)
+
+	log.Printf("Appended %d lines to history (total lines: %d)", len(newLines), len(h.lines))
 }
 
 // Lines returns a copy of the slice of all stored lines.
@@ -55,6 +61,7 @@ func (h *history) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	log.Printf("Closing history with %d lines", len(h.lines))
 	h.lines = nil
 
 	return nil
