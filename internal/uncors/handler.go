@@ -115,13 +115,13 @@ func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 }
 
 func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
-	return func(s config.Script) contracts.Handler {
+	return func(scriptConfig config.Script) contracts.Handler {
 		prefix := styles.RewriteStyle.Render("SCRIPT")
 
 		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
 			return script.NewHandler(
 				script.WithOutput(app.output.NewPrefixOutput(prefix)),
-				script.WithScript(s),
+				script.WithScript(scriptConfig),
 				script.WithFileSystem(app.fs),
 			)
 		}))

@@ -43,40 +43,13 @@ func NewTrackerWidget() *TrackerWidget {
 }
 
 func (m *TrackerWidget) Init() tea.Cmd {
-	return m.spinner.Tick
+	return nil
 }
 
 func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
 	case requestEventMsg:
-		if typedMsg.done {
-			log.Printf("TrackerWidget: request done: %d", typedMsg.id)
-			delete(m.pending, typedMsg.id)
-		} else {
-			existing, ok := m.pending[typedMsg.id]
-			if ok {
-				if typedMsg.prefix != "" {
-					existing.prefix = typedMsg.prefix
-				}
-
-				m.pending[typedMsg.id] = existing
-			} else {
-				log.Printf("TrackerWidget: request started: %d %s %s", typedMsg.id, typedMsg.method, typedMsg.url.String())
-				m.pending[typedMsg.id] = requestEvent(typedMsg)
-			}
-		}
-
-		var cmd tea.Cmd
-
-		if len(m.pending) > 0 && !m.ticking {
-			log.Println("TrackerWidget: starting tick")
-
-			m.ticking = true
-			cmd = m.spinner.Tick
-		}
-
-		return m, cmd
-
+		return m.requestEventMsg(typedMsg)
 	case spinner.TickMsg:
 		if len(m.pending) > 0 {
 			var cmd tea.Cmd
@@ -143,4 +116,25 @@ func (m *TrackerWidget) View() tea.View {
 	}
 
 	return tea.NewView(viewBuilder.String())
+}
+
+func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, tea.Cmd) {
+	if msg.done {
+		log.Printf("TrackerWidget: request done: %d", msg.id)
+		delete(m.pending, msg.id)
+	} else {
+		log.Printf("TrackerWidget: request started: %d %s %s", msg.id, msg.method, msg.url.String())
+		m.pending[msg.id] = requestEvent(msg)
+	}
+
+	var cmd tea.Cmd
+
+	if len(m.pending) > 0 && !m.ticking {
+		log.Println("TrackerWidget: starting tick")
+
+		m.ticking = true
+		cmd = m.spinner.Tick
+	}
+
+	return m, cmd
 }
