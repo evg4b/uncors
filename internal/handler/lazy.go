@@ -6,6 +6,12 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
+type MiddlewareFunc func(contracts.Handler) contracts.Handler
+
+func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {
+	return f(next)
+}
+
 // LazyHandler wraps an init function and defers handler creation to the first
 // ServeHTTP call. Subsequent calls reuse the same handler instance.
 func LazyHandler(factory func() contracts.Handler) contracts.Handler {

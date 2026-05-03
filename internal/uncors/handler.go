@@ -1,6 +1,7 @@
 package uncors
 
 import (
+	"context"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -37,82 +38,115 @@ func (app *Uncors) buildHandlerForMappings(
 }
 
 func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings config.Mappings) contracts.Handler {
-	return handler.LazyHandler(func() contracts.Handler {
+	prefix := styles.ProxyStyle.Render("PROXY")
+
+	return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
 		return proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 			proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-			proxy.WithOutput(app.output.NewPrefixOutput(styles.ProxyStyle.Render("PROXY"))),
+			proxy.WithOutput(app.output.NewPrefixOutput(prefix)),
 		)
-	})
+	}))
 }
 
 func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
-		return handler.LazyMiddleware(func() contracts.Middleware {
-			return cache.NewMiddleware(
-				cache.WithOutput(app.output.NewPrefixOutput(styles.CacheStyle.Render("CACHE"))),
-				cache.WithMethods(cfg.Methods),
-				cache.WithCacheStorage(app.getCacheStorage(cfg)),
-				cache.WithGlobs(globs),
-			)
+		prefix := styles.CacheStyle.Render("CACHE")
+
+		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
+				return cache.NewMiddleware(
+					cache.WithOutput(app.output.NewPrefixOutput(prefix)),
+					cache.WithMethods(cfg.Methods),
+					cache.WithCacheStorage(app.getCacheStorage(cfg)),
+					cache.WithGlobs(globs),
+				)
+			}).Wrap(next))
 		})
 	}
 }
 
 func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFactory {
 	return func(cfg config.OptionsHandling) contracts.Middleware {
-		return handler.LazyMiddleware(func() contracts.Middleware {
-			return options.NewMiddleware(
-				options.WithOutput(app.output.NewPrefixOutput(styles.OptionsStyle.Render("OPTIONS"))),
-				options.WithHeaders(cfg.Headers),
-				options.WithCode(cfg.Code),
-			)
+		prefix := styles.OptionsStyle.Render("OPTIONS")
+
+		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
+				return options.NewMiddleware(
+					options.WithOutput(app.output.NewPrefixOutput(prefix)),
+					options.WithHeaders(cfg.Headers),
+					options.WithCode(cfg.Code),
+				)
+			}).Wrap(next))
 		})
 	}
 }
 
 func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactory {
 	return func(path string, dir config.StaticDirectory) contracts.Middleware {
-		return handler.LazyMiddleware(func() contracts.Middleware {
-			return static.NewStaticMiddleware(
-				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
-				static.WithIndex(dir.Index),
-				static.WithOutput(mocks.NoopOutput()),
-				static.WithPrefix(path),
-			)
+		prefix := styles.StaticStyle.Render("STATIC")
+
+		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
+				return static.NewStaticMiddleware(
+					static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
+					static.WithIndex(dir.Index),
+					static.WithOutput(mocks.NoopOutput()),
+					static.WithPrefix(path),
+				)
+			}).Wrap(next))
 		})
 	}
 }
 
 func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 	return func(response config.Response) contracts.Handler {
-		return handler.LazyHandler(func() contracts.Handler {
+		prefix := styles.MockStyle.Render("MOCK")
+
+		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
 			return mock.NewMockHandler(
-				mock.WithOutput(app.output.NewPrefixOutput(styles.MockStyle.Render("MOCK"))),
+				mock.WithOutput(app.output.NewPrefixOutput(prefix)),
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),
 			)
-		})
+		}))
 	}
 }
 
 func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
-	return func(s config.Script) contracts.Handler {
-		return handler.LazyHandler(func() contracts.Handler {
+	return func(scriptConfig config.Script) contracts.Handler {
+		prefix := styles.RewriteStyle.Render("SCRIPT")
+
+		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
 			return script.NewHandler(
-				script.WithOutput(app.output.NewPrefixOutput(styles.RewriteStyle.Render("SCRIPT"))),
-				script.WithScript(s),
+				script.WithOutput(app.output.NewPrefixOutput(prefix)),
+				script.WithScript(scriptConfig),
 				script.WithFileSystem(app.fs),
 			)
-		})
+		}))
 	}
 }
 
 func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFactory {
 	return func(rewriting config.RewritingOption) contracts.Middleware {
-		return handler.LazyMiddleware(func() contracts.Middleware {
-			return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+		prefix := styles.RewriteStyle.Render("REWRITE")
+
+		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
+				return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+			}).Wrap(next))
 		})
 	}
+}
+
+func withPrefix(prefix string, next contracts.Handler) contracts.Handler {
+	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) {
+		if updater, ok := req.Context().Value(contracts.PrefixUpdaterKey).(func(string)); ok {
+			updater(prefix)
+		}
+
+		ctx := context.WithValue(req.Context(), contracts.PrefixKey, prefix)
+		next.ServeHTTP(resp, req.WithContext(ctx))
+	})
 }
