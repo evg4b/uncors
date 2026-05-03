@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
 	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
@@ -292,5 +292,4 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app.cancel()
 		_ = app.app.Close()
 	})
-
 }

@@ -1,20 +1,19 @@
 package uncorsapp
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"charm.land/bubbles/v2/spinner"
 )
-
-const prefixWidth = 13
 
 var pendingMethodStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#FFFFFF")).
 	Background(lipgloss.Color("#8C8C8C")).
+	PaddingLeft(1).
+	PaddingRight(1).
 	Bold(true)
 
 var pendingTextStyle = lipgloss.NewStyle().
@@ -33,18 +32,18 @@ type TrackerWidget struct {
 func NewTrackerWidget() *TrackerWidget {
 	log.Println("Creating TrackerWidget")
 
-	s := spinner.New()
-	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
+	loader := spinner.New()
+	loader.Spinner = spinner.Meter
+	loader.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
 
 	return &TrackerWidget{
 		pending: make(map[uint64]requestEvent),
-		spinner: s,
+		spinner: loader,
 	}
 }
 
 func (m *TrackerWidget) Init() tea.Cmd {
-	return nil
+	return m.spinner.Tick
 }
 
 func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
@@ -59,6 +58,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 				if typedMsg.prefix != "" {
 					existing.prefix = typedMsg.prefix
 				}
+
 				m.pending[typedMsg.id] = existing
 			} else {
 				log.Printf("TrackerWidget: request started: %d %s %s", typedMsg.id, typedMsg.method, typedMsg.url.String())
@@ -72,7 +72,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 			log.Println("TrackerWidget: starting tick")
 
 			m.ticking = true
-			cmd = m.tickCmd()
+			cmd = m.spinner.Tick
 		}
 
 		return m, cmd
@@ -80,6 +80,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	case spinner.TickMsg:
 		if len(m.pending) > 0 {
 			var cmd tea.Cmd
+
 			m.spinner, cmd = m.spinner.Update(msg)
 
 			return m, cmd
@@ -120,32 +121,26 @@ func (m *TrackerWidget) View() tea.View {
 
 	var viewBuilder strings.Builder
 
+	index := 0
+
 	for _, req := range m.pending {
-		content := fmt.Sprintf("%s %s", m.spinner.View(), req.method)
-		prefix := pendingMethodStyle.Width(prefixWidth).Render(content)
 		url := pendingTextStyle.Render(req.url.String())
 
 		if len(req.prefix) > 0 {
-			fmt.Fprintf(&viewBuilder, "%s %s %s\n",
-				req.prefix,
-				prefix,
-				url,
-			)
-		} else {
-			fmt.Fprintf(&viewBuilder, "%s %s\n",
-				prefix,
-				url,
-			)
+			viewBuilder.WriteString(req.prefix)
 		}
+
+		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View()))
+		viewBuilder.WriteString(pendingMethodStyle.Render(req.method))
+		viewBuilder.WriteRune(' ')
+		viewBuilder.WriteString(url)
+
+		if index != 0 {
+			viewBuilder.WriteRune('\n')
+		}
+
+		index++
 	}
 
-	// Trim trailing newline for cleaner composition
-	res := strings.TrimSuffix(viewBuilder.String(), "\n")
-
-	return tea.NewView(res)
+	return tea.NewView(viewBuilder.String())
 }
-
-func (m *TrackerWidget) tickCmd() tea.Cmd {
-	return m.spinner.Tick
-}
-
