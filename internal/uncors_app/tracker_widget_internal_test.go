@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"charm.land/bubbles/v2/spinner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +59,7 @@ func TestTrackerWidget(t *testing.T) {
 		widget.pending[1] = requestEvent{id: 1}
 		widget.ticking = true
 
-		newWidget, cmd := widget.Update(tickMsg{})
+		newWidget, cmd := widget.Update(spinner.TickMsg{})
 		assert.Same(t, widget, newWidget)
 		assert.NotNil(t, cmd) // Continues ticking
 		assert.True(t, widget.ticking)
@@ -68,7 +69,7 @@ func TestTrackerWidget(t *testing.T) {
 		widget := NewTrackerWidget()
 		widget.ticking = true // E.g., just removed last item
 
-		newWidget, cmd := widget.Update(tickMsg{})
+		newWidget, cmd := widget.Update(spinner.TickMsg{})
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd) // Stops ticking
 		assert.False(t, widget.ticking)
@@ -99,7 +100,6 @@ func TestTrackerWidget(t *testing.T) {
 		view := widget.View()
 		assert.Contains(t, view.Content, "POST")
 		assert.Contains(t, view.Content, "localhost/test")
-		assert.Contains(t, view.Content, "5.0s")
 	})
 
 	t.Run("View renders empty string when no requests", func(t *testing.T) {

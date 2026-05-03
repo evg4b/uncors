@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"context"
 	"net/url"
 	"sync/atomic"
 	"time"
@@ -15,6 +16,7 @@ type requestEvent struct {
 	method    string
 	url       *url.URL
 	startedAt time.Time
+	prefix    string
 	done      bool
 }
 
@@ -42,7 +44,14 @@ func (t *requestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 		default:
 		}
 
-		handler.ServeHTTP(writer, request)
+		ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(p string) {
+			select {
+			case t.events <- requestEvent{id: requestID, prefix: p}:
+			default:
+			}
+		})
+
+		handler.ServeHTTP(writer, request.WithContext(ctx))
 
 		select {
 		case t.events <- requestEvent{id: requestID, done: true}:

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/spinner"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
@@ -122,7 +123,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
 
-	model, cmd = app.Update(tickMsg{})
+	model, cmd = app.Update(spinner.TickMsg{})
 	require.Same(t, app, model)
 	assert.Nil(t, cmd)
 	assert.False(t, app.trackerWidget.ticking)
@@ -292,8 +293,4 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		_ = app.app.Close()
 	})
 
-	t.Run("formatElapsed renders milliseconds and seconds", func(t *testing.T) {
-		assert.Equal(t, "999ms", formatElapsed(999*time.Millisecond))
-		assert.Equal(t, "1.5s", formatElapsed(1500*time.Millisecond))
-	})
 }
