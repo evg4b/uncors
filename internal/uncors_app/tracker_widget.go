@@ -97,7 +97,12 @@ func (m *TrackerWidget) View() tea.View {
 	index := 0
 
 	for _, req := range m.pending {
-		url := pendingTextStyle.Render(req.url.String())
+		urlStr := ""
+		if req.url != nil {
+			urlStr = req.url.String()
+		}
+
+		url := pendingTextStyle.Render(urlStr)
 
 		if len(req.prefix) > 0 {
 			viewBuilder.WriteString(req.prefix)
@@ -122,9 +127,12 @@ func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, te
 	if msg.done {
 		log.Printf("TrackerWidget: request done: %d", msg.id)
 		delete(m.pending, msg.id)
-	} else {
+	} else if msg.url != nil {
 		log.Printf("TrackerWidget: request started: %d %s %s", msg.id, msg.method, msg.url.String())
 		m.pending[msg.id] = requestEvent(msg)
+	} else if event, ok := m.pending[msg.id]; ok {
+		event.prefix = msg.prefix
+		m.pending[msg.id] = event
 	}
 
 	var cmd tea.Cmd

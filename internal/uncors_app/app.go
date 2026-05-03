@@ -23,7 +23,6 @@ const (
 	outputChannelSize = 1000
 	shutdownTimeout   = 5 * time.Second
 	versionCheckDelay = 50 * time.Second
-	tickInterval      = 200 * time.Millisecond
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
