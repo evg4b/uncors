@@ -56,7 +56,7 @@ func newKeyMap() keyMap {
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.ScrollUp, k.ScrollDown, k.GotoBottom, k.Restart, k.Quit}
+	return []key.Binding{k.Help, k.Restart, k.Quit}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {

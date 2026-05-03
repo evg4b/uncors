@@ -3,7 +3,7 @@ package uncorsapp
 import (
 	"log"
 
-	key "charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 )

@@ -15,23 +15,29 @@ var memWidgetStyle = lipgloss.NewStyle().
 
 type memUpdateMsg struct{ mb float64 }
 
+func getMemUsage() float64 {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	return float64(memStats.Sys) / bytesPerMegabyte
+}
+
 type MemoryWidget struct {
-	memMB float64
+	memMB       float64
+	getMemUsage func() float64
 }
 
 func NewMemoryWidget() *MemoryWidget {
 	log.Println("Creating MemoryWidget")
 
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
 	return &MemoryWidget{
-		memMB: float64(memStats.HeapAlloc) / bytesPerMegabyte,
+		memMB:       getMemUsage(),
+		getMemUsage: getMemUsage,
 	}
 }
 
 func (m *MemoryWidget) Init() tea.Cmd {
-	return memTickCmd()
+	return m.memTickCmd()
 }
 
 func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
@@ -39,7 +45,7 @@ func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 		log.Printf("MemoryWidget: updated to %.1f MB", typedMsg.mb)
 		m.memMB = typedMsg.mb
 
-		return m, memTickCmd()
+		return m, m.memTickCmd()
 	}
 
 	return m, nil
@@ -51,11 +57,10 @@ func (m *MemoryWidget) View() tea.View {
 	return tea.NewView(content)
 }
 
-func memTickCmd() tea.Cmd {
+func (m *MemoryWidget) memTickCmd() tea.Cmd {
 	return tea.Tick(memTickInterval, func(_ time.Time) tea.Msg {
-		var memStats runtime.MemStats
-		runtime.ReadMemStats(&memStats)
-
-		return memUpdateMsg{mb: float64(memStats.HeapAlloc) / bytesPerMegabyte}
+		return memUpdateMsg{
+			mb: m.getMemUsage(),
+		}
 	})
 }

@@ -57,7 +57,7 @@ func TestMemoryWidget(t *testing.T) {
 	})
 
 	t.Run("memTickCmd produces memUpdateMsg", func(t *testing.T) {
-		cmd := memTickCmd()
+		cmd := NewMemoryWidget().memTickCmd()
 		msg := cmd()
 
 		// In tests, tea.Tick returns a function that produces a Msg, but bubbletea handles the timing.

@@ -100,7 +100,6 @@ func (m *TrackerWidget) View() tea.View {
 	}
 
 	var viewBuilder strings.Builder
-	fmt.Fprintf(&viewBuilder, "In progress (%d):\n", len(m.pending))
 
 	for _, req := range m.pending {
 		elapsed := formatElapsed(time.Since(req.startedAt))

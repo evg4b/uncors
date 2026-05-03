@@ -72,7 +72,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	require.NotNil(t, app.Init())
 
 	keys := newKeyMap()
-	assert.Len(t, keys.ShortHelp(), 6)
+	assert.Len(t, keys.ShortHelp(), 3)
 	fullHelp := keys.FullHelp()
 	require.Len(t, fullHelp, 3)
 	assert.Len(t, fullHelp[0], 4)
@@ -114,7 +114,6 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.True(t, view.AltScreen)
 	assert.Contains(t, view.Content, "hello")
 	assert.Contains(t, view.Content, "world")
-	assert.Contains(t, view.Content, "In progress (1):")
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
 

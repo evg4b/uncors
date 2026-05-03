@@ -97,7 +97,6 @@ func TestTrackerWidget(t *testing.T) {
 		}
 
 		view := widget.View()
-		assert.Contains(t, view.Content, "In progress (1):")
 		assert.Contains(t, view.Content, "POST")
 		assert.Contains(t, view.Content, "localhost/test")
 		assert.Contains(t, view.Content, "5.0s")

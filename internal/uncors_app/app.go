@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	key "charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	lipgloss "charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"

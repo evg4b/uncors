@@ -1,12 +1,10 @@
 package uncorsapp
 
 import (
-	"log"
-
-	help "charm.land/bubbles/v2/help"
-	key "charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	lipgloss "charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type HelpWidget struct {
@@ -15,8 +13,6 @@ type HelpWidget struct {
 }
 
 func NewHelpWidget(keys keyMap) *HelpWidget {
-	log.Println("Creating HelpWidget")
-
 	return &HelpWidget{
 		help: help.New(),
 		keys: keys,
@@ -34,7 +30,6 @@ func (m *HelpWidget) Update(msg tea.Msg) (*HelpWidget, tea.Cmd) {
 	case tea.KeyPressMsg:
 		if key.Matches(typedMsg, m.keys.Help) {
 			m.help.ShowAll = !m.help.ShowAll
-			log.Printf("HelpWidget: toggled ShowAll to %v", m.help.ShowAll)
 		}
 	}
 
