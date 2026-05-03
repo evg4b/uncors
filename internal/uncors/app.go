@@ -62,8 +62,6 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	app.output.Info("Restarting server....")
-
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
 		return err
@@ -74,7 +72,10 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 		return err
 	}
 
-	app.output.InfoBox(uncorsConfig.Mappings.String())
+	app.output.InfoBox(
+		"Server restarted",
+		uncorsConfig.Mappings.String(),
+	)
 
 	return nil
 }
