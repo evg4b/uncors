@@ -39,6 +39,7 @@ Routes requests and builds middleware chains based on configuration.
 - **Cache** - In-memory response caching with TTL
 - **Rewrite** - URL/header/query parameter manipulation
 - **Options** - Handles CORS preflight requests
+- **HAR Collector** - Records all request/response pairs to an HTTP Archive (HAR 1.2) file
 
 ### Infrastructure (`internal/infra`)
 
@@ -52,10 +53,10 @@ Colored logging and request/response formatting.
 
 1. **Client sends request** → UNCORS server
 2. **Route matching** - Find mapping by host/port
-3. **Middleware pipeline** - Apply options, rewrite, cache, static
+3. **Middleware pipeline** - Apply HAR capture → options → cache → static
 4. **Handler selection** - Choose mock, script, or proxy handler
 5. **CORS modification** - Add/modify CORS headers
-6. **Response** - Return to client
+6. **Response** - Return to client (HAR entry is enqueued asynchronously)
 
 Example CORS headers added:
 
@@ -76,6 +77,7 @@ uncors/
 │   ├── contracts/        # Interfaces (handler, logger, http client)
 │   ├── handler/          # Request handlers & middleware
 │   │   ├── cache/
+│   │   ├── har/          # HAR collector middleware & async writer
 │   │   ├── mock/
 │   │   ├── proxy/
 │   │   ├── script/
@@ -88,6 +90,65 @@ uncors/
 ├── testing/              # Mocks & test helpers
 └── tests/                # Integration tests
 ```
+
+## HAR Collector
+
+The HAR (HTTP Archive) collector records every proxied request/response pair to
+a [HAR 1.2](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file.
+It is enabled per-mapping via the `har.file` config key and is implemented as a
+standalone middleware (`internal/handler/har`).
+
+**Design goals:**
+- **Non-blocking** — the middleware never blocks the request goroutine. Entries
+  are sent over a buffered channel (capacity 4096). If the channel is full the
+  entry is silently dropped rather than stalling the request.
+- **High throughput writes** — a single background goroutine serialises all
+  disk I/O. After every new entry it atomically replaces the HAR file using a
+  write-to-tmp-then-rename strategy so the file is always in a valid state.
+- **Per-mapping isolation** — each mapping creates its own `Writer` instance and
+  its own output file, so traffic from different mappings can be captured
+  independently.
+- **Lifecycle management** — `Writer` implements `io.Closer`. The app registers
+  each writer via `registerCloser`; on shutdown or config reload it calls
+  `Close()` which drains the channel and flushes outstanding entries before
+  stopping the background goroutine.
+
+**Configuration:**
+
+The simplest form uses a string shorthand — the value is treated as the output file path:
+
+```yaml
+mappings:
+  - from: http://localhost:3000
+    to: https://api.example.com
+    har: ./recordings/api.har
+```
+
+For full control, use the object form:
+
+```yaml
+mappings:
+  - from: http://localhost:3000
+    to: https://api.example.com
+    har:
+      file: ./recordings/api.har
+      capture-secure-headers: true   # default: false
+```
+
+**Security-sensitive headers:**
+
+By default the following headers are **excluded** from HAR entries to avoid
+persisting credentials on disk. Set `capture-secure-headers: true` to include
+them.
+
+| Header                | Why it is sensitive                        |
+|-----------------------|--------------------------------------------|
+| `Cookie`              | Session identifiers                        |
+| `Set-Cookie`          | Session identifiers set by the server      |
+| `Authorization`       | Bearer tokens, Basic credentials           |
+| `WWW-Authenticate`    | Server auth challenges (reveals scheme)    |
+| `Proxy-Authorization` | Proxy credentials                          |
+| `Proxy-Authenticate`  | Proxy auth challenges                      |
 
 ## Key Design Patterns
 
