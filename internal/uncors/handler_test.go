@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,7 +26,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Hello from target: %s %s", r.Method, r.URL.Path) //nolint:gosec // G705: test handler
@@ -104,7 +103,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "HTTPS response: %s %s", r.Method, r.URL.Path) //nolint:gosec // G705: test handler
@@ -325,7 +324,7 @@ func TestHandlerWithCache(t *testing.T) {
 
 	callCount := 0
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		callCount++
 
 		w.WriteHeader(http.StatusOK)
@@ -413,12 +412,12 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
 	}))
 	defer server1.Close()
 
-	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server2 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 2")
 	}))
 	defer server2.Close()
@@ -479,7 +478,7 @@ func TestHandlerWithRewrite(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Path: %s, Host: %s", r.URL.Path, r.Host) //nolint:gosec // G705: test handler
 	}))
@@ -527,7 +526,7 @@ func TestHandlerWithRewritePath(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Path: %s", r.URL.Path) //nolint:gosec // G705: test handler
 	}))
@@ -577,7 +576,7 @@ func TestHandlerWithOptions(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer targetServer.Close()

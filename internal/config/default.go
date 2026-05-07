@@ -18,4 +18,5 @@ func setDefaultValues(instance *viper.Viper) {
 	instance.SetDefault("cache-config.expiration-time", DefaultExpirationTime)
 	instance.SetDefault("cache-config.max-size", DefaultMaxSize)
 	instance.SetDefault("cache-config.methods", []string{http.MethodGet})
+	instance.SetDefault("interactive", true)
 }

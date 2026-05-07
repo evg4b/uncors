@@ -102,6 +102,7 @@ func TestLoadConfiguration(t *testing.T) {
 						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
+					Interactive: true,
 				},
 			},
 			{
@@ -116,6 +117,7 @@ func TestLoadConfiguration(t *testing.T) {
 						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
+					Interactive: true,
 				},
 			},
 			{
@@ -161,6 +163,7 @@ func TestLoadConfiguration(t *testing.T) {
 							http.MethodPost,
 						},
 					},
+					Interactive: true,
 				},
 			},
 			{
@@ -179,6 +182,25 @@ func TestLoadConfiguration(t *testing.T) {
 						MaxSize:        config.DefaultMaxSize,
 						Methods:        []string{http.MethodGet},
 					},
+					Interactive: true,
+				},
+			},
+			{
+				name: "interactive mode can be disabled with CLI flag",
+				args: []string{
+					params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host(),
+					"--interactive=false",
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost1.HTTP(), To: hosts.Github.Host()},
+					},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						MaxSize:        config.DefaultMaxSize,
+						Methods:        []string{http.MethodGet},
+					},
+					Interactive: false,
 				},
 			},
 		}

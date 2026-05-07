@@ -19,6 +19,8 @@ const (
 	serialNumberBits    = 128
 	dirPermissions      = 0o755
 	keyFilePermissions  = 0o600
+	pemBlockCertificate = "CERTIFICATE"
+	pemBlockRSAPrivate  = "RSA PRIVATE KEY"
 	defaultOrganization = "UNCORS Development CA"
 	defaultCommonName   = "UNCORS Local Development Root CA"
 	defaultCountry      = "US"
@@ -105,7 +107,7 @@ func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string
 	}
 	defer certFile.Close()
 
-	err = pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	err = pem.Encode(certFile, &pem.Block{Type: pemBlockCertificate, Bytes: certDER})
 	if err != nil {
 		return "", fmt.Errorf("failed to write certificate: %w", err)
 	}
@@ -130,7 +132,7 @@ func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateK
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 
-	err = pem.Encode(keyFile, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes})
+	err = pem.Encode(keyFile, &pem.Block{Type: pemBlockRSAPrivate, Bytes: privateKeyBytes})
 	if err != nil {
 		return "", fmt.Errorf("failed to write private key: %w", err)
 	}
@@ -146,7 +148,7 @@ func LoadCA(fs afero.Fs, certPath, keyPath string) (*x509.Certificate, *rsa.Priv
 	}
 
 	certBlock, _ := pem.Decode(certPEM)
-	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
+	if certBlock == nil || certBlock.Type != pemBlockCertificate {
 		return nil, nil, ErrInvalidCertificatePEM
 	}
 

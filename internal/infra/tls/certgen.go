@@ -74,13 +74,13 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 
 	// Encode certificate to PEM
 	certPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  pemBlockCertificate,
 		Bytes: certDER,
 	})
 
 	// Encode private key to PEM
 	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  pemBlockRSAPrivate,
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -24,6 +24,52 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUncorsWithHandlerWrapper(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
+
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "target")
+	}))
+	defer targetServer.Close()
+
+	wrapperCalled := 0
+
+	app.WithHandlerWrapper(func(h contracts.Handler) contracts.Handler {
+		return contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
+			wrapperCalled++
+
+			h.ServeHTTP(w, r)
+		})
+	})
+
+	port := testutils.GetFreePort(t)
+	err := app.Start(context.Background(), &config.UncorsConfig{
+		Mappings: []config.Mapping{
+			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+		},
+	})
+	require.NoError(t, err)
+
+	defer app.Close()
+
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		hosts.Loopback.HTTPPort(port),
+		nil,
+	)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, wrapperCalled)
+}
 
 func TestCreateUncors(t *testing.T) {
 	fs := afero.NewMemMapFs()
@@ -42,7 +88,7 @@ func TestUncorsApp(t *testing.T) {
 	methodFmt := func(method string) string { return fmt.Sprintf("\tMethod: %v", method) }
 	urlFmt := func(method string) string { return fmt.Sprintf("\tURL: %v", method) }
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, testResponceHeader)
 		fmt.Fprintln(w, methodFmt(r.Method))
@@ -118,7 +164,7 @@ func TestUncorsStart(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "OK")
 	}))
@@ -158,12 +204,12 @@ func TestUncorsRestart(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
 	}))
 	defer server1.Close()
 
-	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server2 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 2")
 	}))
 	defer server2.Close()
@@ -220,7 +266,7 @@ func TestUncorsClose(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer targetServer.Close()
@@ -251,7 +297,7 @@ func TestUncorsShutdown(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -276,7 +322,7 @@ func TestUncorsWait(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer targetServer.Close()
@@ -312,7 +358,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "HTTPS OK")
 	}))
@@ -372,12 +418,12 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
-	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	httpServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTP")
 	}))
 	defer httpServer.Close()
 
-	httpsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	httpsServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTPS")
 	}))
 	defer httpsServer.Close()
@@ -457,7 +503,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 	require.NoError(t, afero.WriteFile(fs, "/static/index.html", []byte("Static"), 0o644))
 	require.NoError(t, afero.WriteFile(fs, "/mock.json", []byte(`{"mocked":true}`), 0o644))
 
-	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Proxied")
 	}))

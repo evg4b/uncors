@@ -16,6 +16,7 @@ type UncorsConfig struct {
 	Proxy       string      `mapstructure:"proxy"`
 	Debug       bool        `mapstructure:"debug"`
 	CacheConfig CacheConfig `mapstructure:"cache-config"`
+	Interactive bool        `mapstructure:"interactive"`
 }
 
 func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
@@ -76,4 +77,5 @@ func defineFlags() {
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.Bool("debug", false, "Show debug output")
 	flags.StringP("config", "c", "", "Path to the configuration file")
+	flags.Bool("interactive", true, "")
 }
