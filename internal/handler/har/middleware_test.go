@@ -138,13 +138,13 @@ func TestMiddleware_Wrap(t *testing.T) {
 		mdlw, harWriter, path := newMiddleware(t) // captureSecureHeaders defaults to false
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
-			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
+			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
 			rw.Header().Set("Www-Authenticate", `Bearer realm="api"`)
 			rw.WriteHeader(http.StatusOK)
 		})
 
 		req := makeRequest(http.MethodGet, "http://example.com/")
-		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
+		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
@@ -179,12 +179,12 @@ func TestMiddleware_Wrap(t *testing.T) {
 		mdlw, harWriter, path := newMiddleware(t, har.WithCaptureSecureHeaders(true))
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
-			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
+			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
 			rw.WriteHeader(http.StatusOK)
 		})
 
 		req := makeRequest(http.MethodGet, "http://example.com/")
-		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
+		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
