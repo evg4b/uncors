@@ -1,16 +1,16 @@
 package styles
 
 var (
-	DebugBlockStyle = paddedStyle.
-			Background(debugColor).
-			Foreground(contrastColor)
-	WarningBlockStyle = paddedStyle.
-				Background(warningColor).
-				Foreground(contrastColor)
-	InfoBlockStyle = paddedStyle.
-			Background(infoColor).
-			Foreground(contrastColor)
-	ErrorBlockStyle = paddedStyle.
-			Background(errorColor).
-			Foreground(contrastColor)
+	DebugBlockStyle = PaddedStyle.
+			Background(DebugColor).
+			Foreground(ContrastColor)
+	WarningBlockStyle = PaddedStyle.
+				Background(WarningColor).
+				Foreground(ContrastColor)
+	InfoBlockStyle = PaddedStyle.
+			Background(InfoColor).
+			Foreground(ContrastColor)
+	ErrorBlockStyle = PaddedStyle.
+			Background(ErrorColor).
+			Foreground(ContrastColor)
 )

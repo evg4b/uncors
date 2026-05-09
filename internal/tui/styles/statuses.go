@@ -2,27 +2,27 @@ package styles
 
 var (
 	HTTPStatus1xxTextStyle  = underlineStyle
-	HTTPStatus1xxBlockStyle = paddedStyle.
+	HTTPStatus1xxBlockStyle = PaddedStyle.
 				Background(httpStatus1xxColor).
-				Foreground(contrastColor)
+				Foreground(ContrastColor)
 
 	HTTPStatus2xxTextStyle  = underlineStyle
-	HTTPStatus2xxBlockStyle = paddedStyle.
+	HTTPStatus2xxBlockStyle = PaddedStyle.
 				Background(httpStatus2xxColor).
-				Foreground(contrastColor)
+				Foreground(ContrastColor)
 
 	HTTPStatus3xxTextStyle  = underlineStyle
-	HTTPStatus3xxBlockStyle = paddedStyle.
+	HTTPStatus3xxBlockStyle = PaddedStyle.
 				Background(httpStatus3xxColor).
-				Foreground(contrastColor)
+				Foreground(ContrastColor)
 
 	HTTPStatus4xxTextStyle  = underlineStyle
-	HTTPStatus4xxBlockStyle = paddedStyle.
+	HTTPStatus4xxBlockStyle = PaddedStyle.
 				Background(httpStatus4xxColor).
-				Foreground(contrastColor)
+				Foreground(ContrastColor)
 
 	HTTPStatus5xxTextStyle  = underlineStyle
-	HTTPStatus5xxBlockStyle = paddedStyle.
+	HTTPStatus5xxBlockStyle = PaddedStyle.
 				Background(httpStatus5xxColor).
-				Foreground(contrastColor)
+				Foreground(ContrastColor)
 )
