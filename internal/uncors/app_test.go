@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -25,25 +25,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUncorsWithHandlerWrapper(t *testing.T) {
+func TestUncorsWithTracker(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
+	tracker := server.NewRequestTracker(mocks.NoopOutput())
+	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test").WithTracker(tracker)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "target")
 	}))
 	defer targetServer.Close()
-
-	wrapperCalled := 0
-
-	app.WithHandlerWrapper(func(h contracts.Handler) contracts.Handler {
-		return contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) {
-			wrapperCalled++
-
-			h.ServeHTTP(w, r)
-		})
-	})
 
 	port := testutils.GetFreePort(t)
 	err := app.Start(context.Background(), &config.UncorsConfig{
@@ -68,7 +59,10 @@ func TestUncorsWithHandlerWrapper(t *testing.T) {
 	resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 1, wrapperCalled)
+
+	event := <-tracker.Events()
+	assert.Equal(t, http.MethodGet, event.Method)
+	assert.False(t, event.Done)
 }
 
 func TestCreateUncors(t *testing.T) {

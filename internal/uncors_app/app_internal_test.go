@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -101,10 +102,10 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	require.NoError(t, err)
 
 	model, cmd = app.Update(requestEventMsg{
-		id:        7,
-		method:    "GET",
-		url:       requestURL,
-		startedAt: time.Now().Add(-1500 * time.Millisecond),
+		ID:        7,
+		Method:    "GET",
+		URL:       requestURL,
+		StartedAt: time.Now().Add(-1500 * time.Millisecond),
 	})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
@@ -118,7 +119,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
 
-	model, cmd = app.Update(requestEventMsg{id: 7, done: true})
+	model, cmd = app.Update(requestEventMsg{ID: 7, Done: true})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
@@ -134,7 +135,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
 	app.helpWidget.help.ShowAll = true
-	app.trackerWidget.pending[1] = requestEvent{method: "POST", url: requestURL, startedAt: time.Now()}
+	app.trackerWidget.pending[1] = server.RequestEvent{Method: "POST", URL: requestURL, StartedAt: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
 	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
 	// Since we mock manual property setting here, let's call updateHistoryHeight
@@ -199,11 +200,11 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		requestURL, err := url.Parse("https://example.com/watch")
 		require.NoError(t, err)
 
-		app.tracker.events <- requestEvent{id: 9, method: "GET", url: requestURL}
+		app.tracker.Emit(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL})
 
 		assert.Equal(
 			t,
-			requestEventMsg(requestEvent{id: 9, method: "GET", url: requestURL}),
+			requestEventMsg(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}),
 			app.watchEventsCmd()(),
 		)
 
@@ -215,7 +216,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		close(app.tracker.events)
+		app.tracker.Close()
 		assert.Nil(t, app.watchEventsCmd()())
 	})
 }
@@ -265,7 +266,7 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		app.trackerWidget.pending[1] = requestEvent{method: "GET", startedAt: time.Now()}
+		app.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
 		app.trackerWidget.ticking = true
 
 		model, cmd := app.Update(serverErrMsg{err: errBoom})

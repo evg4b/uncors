@@ -14,11 +14,12 @@ const (
 )
 
 type ReqestData struct {
-	Method string
-	URL    *url.URL
-	Header http.Header
-	Body   []byte
-	Code   int
+	Method    string
+	URL       *url.URL
+	Header    http.Header
+	Body      []byte
+	Code      int
+	Cancelled bool
 }
 
 type Request = http.Request

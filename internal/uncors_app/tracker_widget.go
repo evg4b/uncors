@@ -7,6 +7,7 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/evg4b/uncors/internal/server"
 )
 
 var pendingMethodStyle = lipgloss.NewStyle().
@@ -20,11 +21,11 @@ var pendingTextStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#8C8C8C"))
 
 type (
-	requestEventMsg requestEvent
+	requestEventMsg server.RequestEvent
 )
 
 type TrackerWidget struct {
-	pending map[uint64]requestEvent
+	pending map[uint64]server.RequestEvent
 	ticking bool
 	spinner spinner.Model
 }
@@ -37,7 +38,7 @@ func NewTrackerWidget() *TrackerWidget {
 	loader.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
 
 	return &TrackerWidget{
-		pending: make(map[uint64]requestEvent),
+		pending: make(map[uint64]server.RequestEvent),
 		spinner: loader,
 	}
 }
@@ -66,7 +67,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	case restartMsg:
 		log.Println("TrackerWidget: handling restartMsg")
 
-		m.pending = make(map[uint64]requestEvent)
+		m.pending = make(map[uint64]server.RequestEvent)
 		m.ticking = false
 
 		return m, nil
@@ -98,18 +99,18 @@ func (m *TrackerWidget) View() tea.View {
 
 	for _, req := range m.pending {
 		urlStr := ""
-		if req.url != nil {
-			urlStr = req.url.String()
+		if req.URL != nil {
+			urlStr = req.URL.String()
 		}
 
 		url := pendingTextStyle.Render(urlStr)
 
-		if len(req.prefix) > 0 {
-			viewBuilder.WriteString(req.prefix)
+		if len(req.Prefix) > 0 {
+			viewBuilder.WriteString(req.Prefix)
 		}
 
 		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View()))
-		viewBuilder.WriteString(pendingMethodStyle.Render(req.method))
+		viewBuilder.WriteString(pendingMethodStyle.Render(req.Method))
 		viewBuilder.WriteRune(' ')
 		viewBuilder.WriteString(url)
 
@@ -124,15 +125,15 @@ func (m *TrackerWidget) View() tea.View {
 }
 
 func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, tea.Cmd) {
-	if msg.done {
-		log.Printf("TrackerWidget: request done: %d", msg.id)
-		delete(m.pending, msg.id)
-	} else if msg.url != nil {
-		log.Printf("TrackerWidget: request started: %d %s %s", msg.id, msg.method, msg.url.String())
-		m.pending[msg.id] = requestEvent(msg)
-	} else if event, ok := m.pending[msg.id]; ok {
-		event.prefix = msg.prefix
-		m.pending[msg.id] = event
+	if msg.Done {
+		log.Printf("TrackerWidget: request done: %d", msg.ID)
+		delete(m.pending, msg.ID)
+	} else if msg.URL != nil {
+		log.Printf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, msg.URL.String())
+		m.pending[msg.ID] = server.RequestEvent(msg)
+	} else if event, ok := m.pending[msg.ID]; ok {
+		event.Prefix = msg.Prefix
+		m.pending[msg.ID] = event
 	}
 
 	var cmd tea.Cmd

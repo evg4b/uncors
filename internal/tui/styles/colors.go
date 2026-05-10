@@ -33,9 +33,10 @@ var (
 
 	// Http status colors.
 
-	httpStatus1xxColor = lightDark(lipgloss.Color("#005BA5"), lipgloss.Color("#0072CE"))
-	httpStatus2xxColor = lightDark(lipgloss.Color("#01833B"), lipgloss.Color("#00AF4F"))
-	httpStatus3xxColor = lightDark(lipgloss.Color("#E2A600"), lipgloss.Color("#FFD400"))
-	httpStatus4xxColor = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
-	httpStatus5xxColor = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
+	httpStatus1xxColor       = lightDark(lipgloss.Color("#005BA5"), lipgloss.Color("#0072CE"))
+	httpStatus2xxColor       = lightDark(lipgloss.Color("#01833B"), lipgloss.Color("#00AF4F"))
+	httpStatus3xxColor       = lightDark(lipgloss.Color("#E2A600"), lipgloss.Color("#FFD400"))
+	httpStatus4xxColor       = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
+	httpStatus5xxColor       = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
+	httpStatusCancelledColor = lipgloss.Color("#8C8C8C")
 )

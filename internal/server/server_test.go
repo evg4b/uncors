@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -26,10 +25,10 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	assertResponse := func(t *testing.T, url string, pool *x509.CertPool) {
@@ -277,12 +276,12 @@ func TestServer(t *testing.T) {
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
-				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+				Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
 					_, err := fmt.Fprint(w, expectedContent)
-					require.NoError(t, err)
+					assert.NoError(t, err)
 				}),
 			},
 		}))
