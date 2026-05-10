@@ -17,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 )
 
@@ -56,7 +55,6 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
 				return cache.NewMiddleware(
-					cache.WithOutput(app.output.NewPrefixOutput(prefix)),
 					cache.WithMethods(cfg.Methods),
 					cache.WithCacheStorage(app.getCacheStorage(cfg)),
 					cache.WithGlobs(globs),
@@ -73,7 +71,6 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
 				return options.NewMiddleware(
-					options.WithOutput(app.output.NewPrefixOutput(prefix)),
 					options.WithHeaders(cfg.Headers),
 					options.WithCode(cfg.Code),
 				)
@@ -91,7 +88,6 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 				return static.NewStaticMiddleware(
 					static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 					static.WithIndex(dir.Index),
-					static.WithOutput(mocks.NoopOutput()),
 					static.WithPrefix(path),
 				)
 			}).Wrap(next))
@@ -105,7 +101,6 @@ func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 
 		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
 			return mock.NewMockHandler(
-				mock.WithOutput(app.output.NewPrefixOutput(prefix)),
 				mock.WithResponse(response),
 				mock.WithFileSystem(app.fs),
 				mock.WithAfter(time.After),

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 const requestEventsBufferSize = 1000
@@ -20,18 +21,20 @@ type requestEvent struct {
 	done      bool
 }
 
-type requestTracker struct {
+type RequestTracker struct {
 	events chan requestEvent
 	nextID atomic.Uint64
+	output contracts.Output
 }
 
-func newRequestTracker() *requestTracker {
-	return &requestTracker{
+func NewRequestTracker(output contracts.Output) *RequestTracker {
+	return &RequestTracker{
 		events: make(chan requestEvent, requestEventsBufferSize),
+		output: output,
 	}
 }
 
-func (t *requestTracker) Wrap(handler contracts.Handler) contracts.Handler {
+func (t *RequestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
 		requestID := t.nextID.Add(1)
 		select {
@@ -44,7 +47,9 @@ func (t *requestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 		default:
 		}
 
+		var lastPrefix string
 		ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(p string) {
+			lastPrefix = p
 			select {
 			case t.events <- requestEvent{id: requestID, prefix: p}:
 			default:
@@ -52,6 +57,12 @@ func (t *requestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 		})
 
 		handler.ServeHTTP(writer, request.WithContext(ctx))
+
+		output := t.output
+		if lastPrefix != "" {
+			output = t.output.NewPrefixOutput(lastPrefix)
+		}
+		output.Request(helpers.ToRequestData(request, helpers.NormaliseStatusCode(writer.StatusCode())))
 
 		select {
 		case t.events <- requestEvent{id: requestID, done: true}:

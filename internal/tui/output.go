@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	lipgloss "charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
@@ -141,12 +141,17 @@ func (o *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
 }
 
 func (o *CliOutput) print(msg string, outputType ouputType) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	o.renderPrefix()
 	o.renderLevel(outputType)
 	o.renderMessage(msg)
 	o.buffer.WriteByte('\n')
 
-	err := o.flushBuffer()
+	defer o.buffer.Reset()
+
+	_, err := o.output.Write(o.buffer.Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -170,18 +175,4 @@ func (o *CliOutput) renderPrefix() {
 	if len(o.prefix) > 0 {
 		o.buffer.WriteString(o.prefix)
 	}
-}
-
-func (o *CliOutput) flushBuffer() error {
-	if o.buffer.Len() == 0 {
-		return nil
-	}
-
-	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	defer o.buffer.Reset()
-
-	_, err := o.output.Write(o.buffer.Bytes())
-
-	return err
 }

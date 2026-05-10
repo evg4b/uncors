@@ -1,6 +1,6 @@
 package styles
 
-import lipgloss "charm.land/lipgloss/v2"
+import "charm.land/lipgloss/v2"
 
 var (
 	LogoYellow = lipgloss.NewStyle().

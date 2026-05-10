@@ -10,7 +10,6 @@ import (
 )
 
 type Middleware struct {
-	output  contracts.Output
 	headers map[string]string
 	code    int
 }
@@ -36,19 +35,10 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Set(key, value)
 	}
 
-	statucCode := helpers.NormaliseStatusCode(m.code)
-	resp.WriteHeader(statucCode)
-
-	m.output.Request(helpers.ToRequestData(req, statucCode))
+	resp.WriteHeader(helpers.NormaliseStatusCode(m.code))
 }
 
 type MiddlewareOption = func(*Middleware)
-
-func WithOutput(output contracts.Output) MiddlewareOption {
-	return func(m *Middleware) {
-		m.output = output
-	}
-}
 
 func WithHeaders(headers map[string]string) MiddlewareOption {
 	return func(m *Middleware) {

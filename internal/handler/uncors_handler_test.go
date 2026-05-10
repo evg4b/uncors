@@ -52,7 +52,6 @@ func cacheFactory() handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithOutput(mocks.NoopOutput()),
 			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
 		)
 	}
@@ -81,7 +80,6 @@ func proxyFactory(
 func optionsFactory() handler.OptionsMiddlewareFactory {
 	return func(config config.OptionsHandling) contracts.Middleware {
 		return options.NewMiddleware(
-			options.WithOutput(mocks.NoopOutput()),
 			options.WithHeaders(config.Headers),
 			options.WithCode(config.Code),
 		)
@@ -93,7 +91,6 @@ func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
 		return static.NewStaticMiddleware(
 			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
 			static.WithIndex(dir.Index),
-			static.WithOutput(mocks.NoopOutput()),
 			static.WithPrefix(path),
 		)
 	}
@@ -106,7 +103,6 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 	return func(response config.Response) contracts.Handler {
 		return mock.NewMockHandler(
-			mock.WithOutput(mocks.NoopOutput()),
 			mock.WithResponse(response),
 			mock.WithFileSystem(fs),
 			mock.WithAfter(time.After),

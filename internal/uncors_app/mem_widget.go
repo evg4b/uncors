@@ -7,7 +7,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	lipgloss "charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2"
 )
 
 var memWidgetStyle = lipgloss.NewStyle().

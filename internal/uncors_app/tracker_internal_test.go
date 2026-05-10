@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +28,7 @@ func makeWriter() contracts.ResponseWriter {
 
 func TestRequestTracker_Wrap(t *testing.T) {
 	t.Run("sends start event with request metadata", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 		handlerDone := make(chan struct{})
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
@@ -49,7 +50,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("sends done event after handler returns", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 		handlerDone := make(chan struct{})
 		blocker := make(chan struct{})
 
@@ -79,7 +80,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("start event carries correct method and URL", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodDelete, "http://host.local/resource?q=1"))
@@ -93,7 +94,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("underlying handler is called exactly once", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 		calls := 0
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
@@ -108,7 +109,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("concurrent requests get unique IDs", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 
 		const requestCount = 10
 
@@ -140,7 +141,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("IDs are monotonically increasing", func(t *testing.T) {
-		tracker := newRequestTracker()
+		tracker := NewRequestTracker(mocks.NoopOutput())
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 

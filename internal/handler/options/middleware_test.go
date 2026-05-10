@@ -175,7 +175,6 @@ func TestMiddleware(t *testing.T) {
 		for _, testCase := range cases {
 			t.Run(testCase.name, func(t *testing.T) {
 				middleware := options.NewMiddleware(
-					options.WithOutput(mocks.NoopOutput()),
 					options.WithHeaders(testCase.args.headers),
 					options.WithCode(testCase.args.code),
 				)
@@ -203,9 +202,7 @@ func TestMiddleware(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
 
 		testOrigin := hosts.Example.HTTPS()
-		middleware := options.NewMiddleware(
-			options.WithOutput(mocks.NoopOutput()),
-		)
+		middleware := options.NewMiddleware()
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
@@ -231,9 +228,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("for OPTIONS request with empty origin", func(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
 
-		middleware := options.NewMiddleware(
-			options.WithOutput(mocks.NoopOutput()),
-		)
+		middleware := options.NewMiddleware()
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
@@ -254,9 +249,7 @@ func TestMiddleware(t *testing.T) {
 
 		testOrigin := "https://api.example.com"
 		testHeaders := "X-Custom-Header, X-Another-Header"
-		middleware := options.NewMiddleware(
-			options.WithOutput(mocks.NoopOutput()),
-		)
+		middleware := options.NewMiddleware()
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
@@ -280,9 +273,7 @@ func TestMiddleware(t *testing.T) {
 		testOrigin := "https://test.example.com"
 		testHeaders := "Content-Type, Authorization, X-Api-Key"
 		testMethod := "DELETE"
-		middleware := options.NewMiddleware(
-			options.WithOutput(mocks.NoopOutput()),
-		)
+		middleware := options.NewMiddleware()
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
@@ -320,9 +311,7 @@ func TestMiddleware(t *testing.T) {
 			t.Run(method, func(t *testing.T) {
 				mockedNextHandler := mocks.NewHandlerMock(t)
 
-				middleware := options.NewMiddleware(
-					options.WithOutput(mocks.NoopOutput()),
-				)
+				middleware := options.NewMiddleware()
 
 				recorder := httptest.NewRecorder()
 				response := contracts.WrapResponseWriter(recorder)

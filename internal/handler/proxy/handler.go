@@ -155,8 +155,6 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
-	h.output.Request(helpers.ToRequestData(originalResponse.Request, originalResponse.StatusCode))
-
 	return originalResponse, nil
 }
 

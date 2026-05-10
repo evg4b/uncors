@@ -14,7 +14,6 @@ import (
 )
 
 type Middleware struct {
-	output    contracts.Output
 	cache     contracts.Cache
 	methods   []string
 	pathGlobs config.CacheGlobs
@@ -45,7 +44,6 @@ func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *cont
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 		m.writeCachedResponse(writer, cachedResponse)
-		m.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 
 		return
 	}
@@ -110,12 +108,6 @@ func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedRespons
 }
 
 type MiddlewareOption = func(*Middleware)
-
-func WithOutput(output contracts.Output) MiddlewareOption {
-	return func(m *Middleware) {
-		m.output = output
-	}
-}
 
 func WithMethods(methods []string) MiddlewareOption {
 	return func(m *Middleware) {

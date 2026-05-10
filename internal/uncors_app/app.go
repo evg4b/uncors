@@ -33,7 +33,7 @@ type uncorsApp struct {
 
 	app     *uncors.Uncors
 	output  *tuiOutput
-	tracker *requestTracker
+	tracker *RequestTracker
 
 	outputCh   chan string
 	appContext func() context.Context
@@ -73,7 +73,7 @@ func NewUncorsApp(
 ) tea.Model {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
-	tracker := newRequestTracker()
+	tracker := NewRequestTracker(output)
 	appCtx, cancel := context.WithCancel(context.Background())
 
 	keys := newKeyMap()
