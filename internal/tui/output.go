@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"charm.land/lipgloss/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"

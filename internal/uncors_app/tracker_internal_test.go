@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -159,5 +161,38 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		for i := 1; i < len(ids); i++ {
 			assert.Greater(t, ids[i], ids[i-1])
 		}
+	})
+
+	t.Run("logs request with module prefix from PrefixUpdaterKey", func(t *testing.T) {
+		var buf strings.Builder
+
+		tracker := NewRequestTracker(tui.NewCliOutput(&buf))
+
+		const modulePrefix = "PROXY"
+
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, req *contracts.Request) {
+			if updater, ok := req.Context().Value(contracts.PrefixUpdaterKey).(func(string)); ok {
+				updater(modulePrefix)
+			}
+		}))
+
+		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
+
+		assert.Contains(t, buf.String(), modulePrefix)
+		assert.Contains(t, buf.String(), "200")
+		assert.Contains(t, buf.String(), "GET")
+	})
+
+	t.Run("logs request without prefix when no module is identified", func(t *testing.T) {
+		var buf strings.Builder
+
+		tracker := NewRequestTracker(tui.NewCliOutput(&buf))
+
+		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
+
+		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
+
+		assert.Contains(t, buf.String(), "200")
+		assert.Contains(t, buf.String(), "GET")
 	})
 }

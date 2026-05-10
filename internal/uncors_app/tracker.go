@@ -48,6 +48,7 @@ func (t *RequestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 		}
 
 		var lastPrefix string
+
 		ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(p string) {
 			lastPrefix = p
 			select {
@@ -62,6 +63,7 @@ func (t *RequestTracker) Wrap(handler contracts.Handler) contracts.Handler {
 		if lastPrefix != "" {
 			output = t.output.NewPrefixOutput(lastPrefix)
 		}
+
 		output.Request(helpers.ToRequestData(request, helpers.NormaliseStatusCode(writer.StatusCode())))
 
 		select {
