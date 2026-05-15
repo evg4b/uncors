@@ -1,9 +1,10 @@
-Configure UNCORS to serve static files from local directories. This feature is useful for:
+Configure UNCORS to serve static files from local directories. This feature is
+useful for:
 
-- Running local Single-Page Applications (SPAs)
-- Overriding specific assets from remote servers
-- Testing UI changes without deploying
-- Serving custom resources during development
+ - Running local Single-Page Applications (SPAs)
+ - Overriding specific assets from remote servers
+ - Testing UI changes without deploying
+ - Serving custom resources during development
 
 Static file configuration is defined per mapping:
 
@@ -27,23 +28,27 @@ mappings:
 | `dir`    | string | Yes      | Local directory path containing files to serve                  |
 | `index`  | string | No       | Fallback file when requested file not found (relative to `dir`) |
 
-**Behavior:**
+**Request handling behavior:**
 
-- Requests matching the `path` prefix are served from the local `dir`
-- If a file exists locally, it's served immediately
-- If a file doesn't exist and `index` is set, the index file is served (SPA mode)
-- If a file doesn't exist and `index` is not set, the request is forwarded upstream (proxy mode)
+ - Requests matching the `path` prefix are served from the local `dir`
+ - If a file exists locally, it is served immediately
+ - If a file does not exist and `index` is set, the index file is served (SPA
+   mode)
+ - If a file does not exist and `index` is not set, the request is forwarded
+   upstream (proxy mode)
 
-# SPA Mode
+## SPA Mode
 
-Single-Page Application (SPA) mode serves a fallback file for all unmatched requests. This is essential for client-side routing frameworks like React Router, Vue Router, or Angular Router.
+Single-Page Application (SPA) mode serves a fallback file for all unmatched
+requests. This is essential for client-side routing frameworks like React
+Router, Vue Router, or Angular Router.
 
 **How it works:**
 
-1. Requests matching the `path` prefix are checked against local files
-2. If a file exists (e.g., `/app/bundle.js`), it's served directly
-3. If no file exists (e.g., `/app/users/123`), the `index` file is returned
-4. The SPA's JavaScript router handles the URL and renders the appropriate view
+ 1. Requests matching the `path` prefix are checked against local files
+ 2. If a file exists (e.g., `/app/bundle.js`), it is served directly
+ 3. If no file exists (e.g., `/app/users/123`), the `index` file is returned
+ 4. The SPA's JavaScript router handles the URL and renders the appropriate view
 
 **Configuration:**
 
@@ -59,19 +64,20 @@ mappings:
 
 **Use cases:**
 
-- Serving a built React/Vue/Angular application
-- Local development with client-side routing
-- Testing production builds locally
+ - Serving a built React, Vue, or Angular application
+ - Local development with client-side routing
+ - Testing production builds locally
 
-# Proxy Mode
+## Proxy Mode
 
-Proxy mode serves local files when they exist, but forwards unmatched requests to the upstream server or mock handlers.
+Proxy mode serves local files when they exist, but forwards unmatched requests
+to the upstream server or mock handlers.
 
 **How it works:**
 
-1. Requests matching the `path` prefix are checked against local files
-2. If a file exists locally, it's served from the `dir`
-3. If no file exists, the request passes to the next handler (mock or upstream server)
+ 1. Requests matching the `path` prefix are checked against local files
+ 2. If a file exists locally, it is served from `dir`
+ 3. If no file exists, the request passes to the next handler (mock or upstream)
 
 **Configuration:**
 
@@ -86,9 +92,9 @@ mappings:
 
 **Use cases:**
 
-- Overriding specific assets (stylesheets, images, JavaScript)
-- Testing local modifications without deploying
-- Mixing local and remote resources
+ - Overriding specific assets (stylesheets, images, JavaScript)
+ - Testing local modifications without deploying
+ - Mixing local and remote resources
 
 ## Examples
 
@@ -127,6 +133,6 @@ mappings:
 
 In this configuration:
 
-- SPA files are served from `/`
-- API health endpoint is mocked
-- Other `/api/*` requests are proxied to `https://api.example.com`
+ - SPA files are served from the root path `/`
+ - The `/api/health` endpoint is mocked
+ - All other `/api/*` requests are proxied to `https://api.example.com`

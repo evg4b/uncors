@@ -1,15 +1,34 @@
-The script handler allows you to implement custom request handling logic using scripts. This provides maximum flexibility for generating dynamic responses, implementing custom business logic, or creating complex API simulations during development and testing.
+The script handler allows you to implement custom request handling logic using
+Lua scripts. This provides maximum flexibility for generating dynamic responses,
+implementing custom business logic, or creating complex API simulations during
+development and testing.
 
-**Key features:**
+## Table of Contents
 
-- **Inline or file-based scripts**: Define script code directly in configuration or load from external files
-- **Request access**: Full access to request properties (method, URL, headers, body, query parameters)
-- **Response control**: Set status codes, headers, and body content from script
-- **Standard libraries**: Use math, string, table, OS, and JSON libraries
-- **Path-based matching**: Define which URLs to handle with scripts
-- **Method-specific**: Target specific HTTP methods (GET, POST, etc.)
-- **Query parameter filtering**: Match requests with specific query strings
-- **Header matching**: Filter by HTTP headers
+ - [Key Features](#key-features)
+ - [Request Matching](#request-matching)
+ - [Script Configuration](#script-configuration)
+ - [Request Object](#request-object)
+ - [Response Object](#response-object)
+ - [Available Libraries](#available-libraries)
+ - [Complete Examples](#complete-examples)
+ - [CORS Headers](#cors-headers)
+ - [Error Handling](#error-handling)
+ - [Tips and Best Practices](#tips-and-best-practices)
+ - [Comparison with Mock Handler](#comparison-with-mock-handler)
+
+## Key Features
+
+ - **Inline or file-based scripts**: Define script code directly in
+   configuration or load from external files
+ - **Request access**: Full access to request properties (method, URL, headers,
+   body, query parameters)
+ - **Response control**: Set status codes, headers, and body content from script
+ - **Standard libraries**: Use math, string, table, OS, and JSON libraries
+ - **Path-based matching**: Define which URLs to handle with scripts
+ - **Method-specific**: Target specific HTTP methods (GET, POST, etc.)
+ - **Query parameter filtering**: Match requests with specific query strings
+ - **Header matching**: Filter by HTTP headers
 
 **Configuration structure:**
 
@@ -31,11 +50,11 @@ mappings:
         file: /path/to/script.lua # Alternative to inline script
 ```
 
-# Request Matching
+## Request Matching
 
 Configure which requests should be handled by the script:
 
-## Path (Required)
+### Path (Required)
 
 Defines the URL path to handle. Supports static paths and variable segments.
 
@@ -47,9 +66,10 @@ path: /users/{id}             # Variable segment
 path: /posts/{postId}/data    # Multiple variables
 ```
 
-Variable segments (e.g., `{id}`) match any value in that position. A request to `/users/123` matches `/users/{id}`.
+Variable segments (e.g., `{id}`) match any value in that position. A request to
+`/users/123` matches `/users/{id}`.
 
-## Method (Optional)
+### Method (Optional)
 
 Specifies the HTTP method to match.
 
@@ -59,7 +79,7 @@ Specifies the HTTP method to match.
 
 If omitted, the script matches all HTTP methods.
 
-## Query Parameters (Optional)
+### Query Parameters (Optional)
 
 Match requests with specific query string parameters.
 
@@ -71,7 +91,7 @@ queries:
 
 If omitted, all query parameter combinations are matched.
 
-## Headers (Optional)
+### Headers (Optional)
 
 Match requests with specific HTTP headers.
 
@@ -83,20 +103,20 @@ headers:
 
 If omitted, all header combinations are matched.
 
-# Script Configuration
+## Script Configuration
 
 Define the script to execute when a request is matched.
 
-## Script Properties
+### Script Properties
 
 | Property | Type   | Required      | Description                    |
 | -------- | ------ | ------------- | ------------------------------ |
 | `script` | string | Conditional\* | Inline script code             |
 | `file`   | string | Conditional\* | Path to file containing script |
 
-**\*Either `script` or `file` must be specified, but not both.**
+***Either `script` or `file` must be specified, but not both.**
 
-## Inline Script
+### Inline Script
 
 Define script code directly in the configuration:
 
@@ -111,7 +131,7 @@ scripts:
       response:WriteString('{"message": "Hello, ' .. name .. '"}')
 ```
 
-## File-based Script
+### File-based Script
 
 Load script code from an external file:
 
@@ -137,11 +157,11 @@ response:WriteHeader(200)
 response:WriteString('{"result": ' .. result .. '}')
 ```
 
-# Request Object
+## Request Object
 
 The `request` object provides access to incoming HTTP request properties.
 
-## Request Properties
+### Request Properties
 
 | Property       | Type   | Description                                     | Example                             |
 | -------------- | ------ | ----------------------------------------------- | ----------------------------------- |
@@ -156,9 +176,9 @@ The `request` object provides access to incoming HTTP request properties.
 | `query_params` | table  | Parsed query parameters                         | `request.query_params["id"]`        |
 | `path_params`  | table  | Path parameters from route                      | `request.path_params["id"]`         |
 
-## Accessing Request Data
+### Accessing Request Data
 
-### HTTP Method
+#### HTTP Method
 
 ```lua
 if request.method == "GET" then
@@ -166,13 +186,13 @@ if request.method == "GET" then
 end
 ```
 
-### URL and Path
+#### URL and Path
 
 ```lua
 response:WriteString("You accessed: " .. request.path)
 ```
 
-### Headers
+#### Headers
 
 ```lua
 local contentType = request.headers["Content-Type"]
@@ -181,7 +201,7 @@ local userAgent = request.headers["User-Agent"]
 response:WriteString("Content-Type: " .. (contentType or "not set"))
 ```
 
-### Query Parameters
+#### Query Parameters
 
 ```lua
 local id = request.query_params["id"]
@@ -195,9 +215,11 @@ else
 end
 ```
 
-### Path Parameters
+#### Path Parameters
 
-Path parameters are extracted from the URL route pattern using wildcards (`{param}`). For example, if your route is `/users/{id}/posts/{postId}`, you can access these parameters:
+Path parameters are extracted from the URL route pattern using wildcards
+(`{param}`). For example, if your route is `/users/{id}/posts/{postId}`, you can
+access these parameters:
 
 ```lua
 local userId = request.path_params["id"]
@@ -225,7 +247,7 @@ scripts:
       response:WriteString('{"user": "' .. userId .. '", "post": "' .. postId .. '"}')
 ```
 
-### Request Body
+#### Request Body
 
 ```lua
 local body = request.body
@@ -241,7 +263,7 @@ else
 end
 ```
 
-### Host Information
+#### Host Information
 
 ```lua
 if request.host == "api.example.com" then
@@ -251,24 +273,26 @@ else
 end
 ```
 
-# Response Object
+## Response Object
 
 The `response` object controls the HTTP response returned to the client.
 
-## Response Properties
+### Response Properties
 
 | Property  | Type  | Access     | Description                                      |
 | --------- | ----- | ---------- | ------------------------------------------------ |
 | `headers` | table | Read/Write | Response headers (table with string keys/values) |
 
-**Note:** `response.status` and `response.body` are not accessible as properties. Use methods instead:
+**Note:** `response.status` and `response.body` are not accessible as
+properties. Use methods instead:
 
-- Use `response:WriteHeader(code)` to set status
-- Use `response:Write(data)` or `response:WriteString(str)` to write body
+ - Use `response:WriteHeader(code)` to set status
+ - Use `response:Write(data)` or `response:WriteString(str)` to write body
 
-## Response API
+### Response API
 
-The script handler provides a method-based API that mirrors Go's `http.ResponseWriter` interface:
+The script handler provides a method-based API that mirrors Go's
+`http.ResponseWriter` interface:
 
 ```lua
 -- Set headers (table access)
@@ -283,23 +307,29 @@ response:WriteString('{"message": "Hello"}')
 
 **Key points:**
 
-- **Headers**: Direct table access (`response.headers["Name"] = "value"`)
-- **Status & Body**: Method-based only (`response:WriteHeader()`, `response:Write()`, `response:WriteString()`)
-- **Cannot read**: `response.status` and `response.body` return `nil` if read
+ - **Headers**: Direct table access (`response.headers["Name"] = "value"`)
+ - **Status & Body**: Method-based only (`response:WriteHeader()`,
+   `response:Write()`, `response:WriteString()`)
+ - **Cannot read**: `response.status` and `response.body` return `nil` if read
 
-### Internal Architecture
+#### Internal Architecture
 
 **ZERO BUFFERING - Direct Write to HTTP Connection:**
 
-All Lua operations write **directly** to Go's `http.ResponseWriter` without any intermediate buffering:
+All Lua operations write **directly** to Go's `http.ResponseWriter` without any
+intermediate buffering:
 
-- **True streaming**: Data flows immediately to the HTTP connection during script execution
-- **No buffering**: No intermediate storage - what you write in Lua goes straight to the network
-- **Go semantics**: Same rules as Go's `http.ResponseWriter`:
-  - Headers must be set before first write
-  - `WriteHeader()` can only be called once
-  - Headers cannot be modified after first write to body
-- **User responsibility**: You must call methods in correct order (headers → WriteHeader → Write)
+ - **True streaming**: Data flows immediately to the HTTP connection during
+   script execution
+ - **No buffering**: No intermediate storage - what you write in Lua goes
+   straight to the network
+ - **Go semantics**: Same rules as Go's `http.ResponseWriter`:
+   
+    - Headers must be set before first write
+    - `WriteHeader()` can only be called once
+    - Headers cannot be modified after first write to body
+ - **User responsibility**: You must call methods in correct order (headers →
+   WriteHeader → Write)
 
 ```
 Lua Script                   Go Runtime              Network
@@ -309,14 +339,15 @@ response:Write("data")    → writer.Write(...) → HTTP Connection
 response:WriteHeader(200) → writer.WriteHeader() → HTTP Headers Sent
 ```
 
-### Important Notes
+#### Important Notes
 
-⚠️ **No direct assignment**: Cannot assign to `response.status` or `response.body` (silently ignored)
-⚠️ **Cannot read**: `response.status` and `response.body` return `nil` if read
-⚠️ **Order matters**: Call methods in correct HTTP order or behavior is undefined
-⚠️ **Auto-header**: If you write body without calling `WriteHeader()`, status 200 is sent automatically
+⚠️ **No direct assignment**: Cannot assign to `response.status` or
+`response.body` (silently ignored) ⚠️ **Cannot read**: `response.status` and
+`response.body` return `nil` if read ⚠️ **Order matters**: Call methods in
+correct HTTP order or behavior is undefined ⚠️ **Auto-header**: If you write
+body without calling `WriteHeader()`, status 200 is sent automatically
 
-## Go-style Methods
+### Go-style Methods
 
 | Method                       | Description                    | Example                                      |
 | ---------------------------- | ------------------------------ | -------------------------------------------- |
@@ -325,7 +356,7 @@ response:WriteHeader(200) → writer.WriteHeader() → HTTP Headers Sent
 | `response:WriteString(str)`  | Append string to response body | `response:WriteString("World")`              |
 | `response:Header()`          | Get headers object             | `response:Header():Set("X-Custom", "value")` |
 
-### Header Methods
+#### Header Methods
 
 The `response:Header()` method returns a headers object with these methods:
 
@@ -334,7 +365,7 @@ The `response:Header()` method returns a headers object with these methods:
 | `Set(key, value)` | Set a header value | `response:Header():Set("Content-Type", "application/json")` |
 | `Get(key)`        | Get a header value | `local ct = response:Header():Get("Content-Type")`          |
 
-### Go-style Examples
+#### Go-style Examples
 
 **Basic response:**
 
@@ -412,9 +443,9 @@ response:Header():Set("X-Custom", "value")  -- Headers already sent!
 response:WriteHeader(404)  -- Ignored! Header already sent
 ```
 
-## Setting Response Properties
+### Setting Response Properties
 
-### Status Code
+#### Status Code
 
 ```lua
 response:WriteHeader(201)  -- Created
@@ -422,7 +453,7 @@ response:WriteHeader(404)  -- Not Found
 response:WriteHeader(500)  -- Internal Server Error
 ```
 
-### Response Body
+#### Response Body
 
 ```lua
 -- Simple text
@@ -436,7 +467,7 @@ local name = "Alice"
 response:WriteString('{"name": "' .. name .. '"}')
 ```
 
-### Response Headers
+#### Response Headers
 
 ```lua
 -- Set Content-Type
@@ -450,7 +481,7 @@ response.headers["X-Request-ID"] = "12345"
 response.headers["Cache-Control"] = "no-cache"
 ```
 
-### Complete Example
+#### Complete Example
 
 ```lua
 local math = require("math")
@@ -471,11 +502,11 @@ response:WriteHeader(200)
 response:WriteString('{"random": ' .. random .. ', "min": ' .. min .. ', "max": ' .. max .. '}')
 ```
 
-# Available Libraries
+## Available Libraries
 
 The script handler provides access to standard libraries:
 
-## Math Library
+### Math Library
 
 Mathematical functions for calculations.
 
@@ -499,7 +530,7 @@ local pi = math.pi
 local huge = math.huge
 ```
 
-## String Library
+### String Library
 
 String manipulation and formatting.
 
@@ -524,7 +555,7 @@ local len = string.len("Hello")         -- 5
 local formatted = string.format("Value: %d", 42)
 ```
 
-## Table Library
+### Table Library
 
 Table (array/dictionary) operations.
 
@@ -543,7 +574,7 @@ local joined = table.concat(items, ", ") -- "banana, cherry, date"
 table.sort(items)
 ```
 
-## OS Library
+### OS Library
 
 Limited OS and time functions.
 
@@ -560,7 +591,7 @@ local components = os.date("*t")
 -- components.year, components.month, components.day, etc.
 ```
 
-## JSON Library
+### JSON Library
 
 JSON encoding and decoding for working with JSON data.
 
@@ -626,9 +657,9 @@ response:WriteHeader(200)
 response:WriteString(json.encode({received = result}))
 ```
 
-# Complete Examples
+## Complete Examples
 
-## Simple API Endpoint
+### Simple API Endpoint
 
 ```yaml
 scripts:
@@ -640,7 +671,7 @@ scripts:
       response:WriteString('{"status": "healthy", "timestamp": "' .. os.date("%Y-%m-%d %H:%M:%S") .. '"}')
 ```
 
-## Dynamic User API
+### Dynamic User API
 
 ```yaml
 scripts:
@@ -658,7 +689,7 @@ scripts:
       '}')
 ```
 
-## Calculator API
+### Calculator API
 
 ```yaml
 scripts:
@@ -692,7 +723,7 @@ scripts:
       end
 ```
 
-## Request Echo Service
+### Request Echo Service
 
 ```yaml
 scripts:
@@ -709,7 +740,7 @@ scripts:
       '}')
 ```
 
-## Conditional Response Based on Headers
+### Conditional Response Based on Headers
 
 ```yaml
 scripts:
@@ -730,7 +761,7 @@ scripts:
       end
 ```
 
-## JSON API with Request Body Processing
+### JSON API with Request Body Processing
 
 ```yaml
 scripts:
@@ -774,9 +805,10 @@ scripts:
       response:WriteString(json.encode(responseData))
 ```
 
-# CORS Headers
+## CORS Headers
 
-CORS headers are automatically added to all script responses. You can override them by setting custom header values in your script:
+CORS headers are automatically added to all script responses. You can override
+them by setting custom header values in your script:
 
 ```lua
 -- CORS headers are added automatically, but you can override them
@@ -785,15 +817,17 @@ response.headers["Access-Control-Allow-Methods"] = "GET, POST"
 response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
 ```
 
-# Error Handling
+## Error Handling
 
-If your script encounters an error, the handler will return a 500 Internal Server Error response automatically. Common errors include:
+If your script encounters an error, the handler will return a 500 Internal
+Server Error response automatically. Common errors include:
 
-- **Script not defined**: Neither `script` nor `file` is specified
-- **Both script and file defined**: Only one should be specified
-- **File not found**: The specified script file doesn't exist
-- **Script syntax error**: Invalid script syntax in your script
-- **Script runtime error**: Error during script execution (e.g., accessing nil values)
+ - **Script not defined**: Neither `script` nor `file` is specified
+ - **Both script and file defined**: Only one should be specified
+ - **File not found**: The specified script file doesn't exist
+ - **Script syntax error**: Invalid script syntax in your script
+ - **Script runtime error**: Error during script execution (e.g., accessing nil
+   values)
 
 **Best practices:**
 
@@ -819,23 +853,35 @@ if not success then
 end
 ```
 
-# Tips and Best Practices
+## Tips and Best Practices
 
-1. **Keep scripts simple**: scripts are executed for each request, so keep logic lightweight
-2. **Use file-based scripts for complex logic**: Easier to test and maintain
-3. **Validate input**: Always validate query parameters and headers before using them
-4. **Set Content-Type**: Always set the appropriate Content-Type header for your response
-5. **Handle errors gracefully**: Check for nil values and provide meaningful error messages
-6. **Use libraries**: Leverage math, string, and table libraries for common operations
-7. **Test scripts separately**: scripts can be tested independently before integration
-8. **Escape JSON strings**: Be careful with quotes when building JSON strings dynamically
-9. **⚠️ CRITICAL: Follow HTTP order**: Set headers → WriteHeader → Write body. Headers cannot be modified after first write!
-10. **Use methods for status/body**: Cannot assign to `response.status` or `response.body` directly - use methods
-11. **Cannot read status/body**: `response.status` and `response.body` return `nil` if read
-12. **Streaming-ready**: Every write goes directly to network - perfect for streaming responses
-13. **Performance**: Zero buffering means minimal memory usage and immediate data transmission
+ 1. **Keep scripts simple**: scripts are executed for each request, so keep
+     logic lightweight
+ 2. **Use file-based scripts for complex logic**: Easier to test and maintain
+ 3. **Validate input**: Always validate query parameters and headers before
+     using them
+ 4. **Set Content-Type**: Always set the appropriate Content-Type header for
+     your response
+ 5. **Handle errors gracefully**: Check for nil values and provide meaningful
+     error messages
+ 6. **Use libraries**: Leverage math, string, and table libraries for common
+     operations
+ 7. **Test scripts separately**: scripts can be tested independently before
+     integration
+ 8. **Escape JSON strings**: Be careful with quotes when building JSON strings
+     dynamically
+ 9. **⚠️ CRITICAL: Follow HTTP order**: Set headers → WriteHeader → Write body.
+     Headers cannot be modified after first write!
+ 10. **Use methods for status/body**: Cannot assign to `response.status` or
+     `response.body` directly - use methods
+ 11. **Cannot read status/body**: `response.status` and `response.body` return
+     `nil` if read
+ 12. **Streaming-ready**: Every write goes directly to network - perfect for
+     streaming responses
+ 13. **Performance**: Zero buffering means minimal memory usage and immediate
+     data transmission
 
-# Comparison with Mock Handler
+## Comparison with Mock Handler
 
 | Feature             | Script Handler                                | Mock Handler                         |
 | ------------------- | --------------------------------------------- | ------------------------------------ |
@@ -848,13 +894,13 @@ end
 
 Choose the **Script Handler** when you need:
 
-- Custom business logic
-- Request-dependent responses
-- Complex data transformations
-- Conditional responses based on request data
+ - Custom business logic
+ - Request-dependent responses
+ - Complex data transformations
+ - Conditional responses based on request data
 
 Choose the **Mock Handler** when you need:
 
-- Simple static responses
-- Quick fake data generation
-- No custom logic required
+ - Simple static responses
+ - Quick fake data generation
+ - No custom logic required

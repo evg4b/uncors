@@ -1,9 +1,10 @@
-Request rewriting allows you to transform request paths and hosts before they're forwarded to the upstream server. This is useful for:
+Request rewriting allows you to transform request paths and hosts before they
+are forwarded to the upstream server. This is useful for:
 
-- Adapting client URLs to match server API structure
-- Routing requests to different backend services
-- Versioning API endpoints
-- Migrating between API versions
+ - Adapting client URLs to match server API structure
+ - Routing requests to different backend services
+ - Versioning API endpoints
+ - Migrating between API versions
 
 **Configuration:**
 
@@ -29,9 +30,8 @@ mappings:
 
 ## Wildcard Support
 
-Capture parts of the URL using `{variable}` syntax and reference them in the target path:
-
-**Example:**
+Capture parts of the URL using `{variable}` syntax and reference them in the
+target path:
 
 ```yaml
 mappings:
@@ -42,11 +42,8 @@ mappings:
         to: /api/v1/{resource}/list
 ```
 
-**How it works:**
-
-The `{resource}` placeholder captures part of the incoming path and inserts it into the rewritten path.
-
-**Request transformations:**
+The `{resource}` placeholder captures part of the incoming path and inserts it
+into the rewritten path:
 
 | Incoming Request | Rewritten Request       |
 | ---------------- | ----------------------- |
@@ -101,11 +98,15 @@ mappings:
 
 **Request flow:**
 
-- `GET /auth/login` → `GET https://auth-service.example.com/v1/login`
-- `POST /payment/process` → `POST https://payment-service.example.com/v2/process`
-- `GET /users` → `GET https://primary-api.example.com/users` (no rewrite)
+ - `GET /auth/login` → `GET https://auth-service.example.com/v1/login`
+ - `POST /payment/process` →
+   `POST https://payment-service.example.com/v2/process`
+ - `GET /users` → `GET https://primary-api.example.com/users` (no rewrite
+   applied)
 
 ### Combining Rewrites with Other Features
+
+Rewrites, mocks, and caching can be used together in a single mapping:
 
 ```yaml
 mappings:
