@@ -74,7 +74,7 @@ func NewUncorsApp(
 ) tea.Model {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
-	tracker := server.NewRequestTracker(output)
+	tracker := server.NewRequestTracker()
 	appCtx, cancel := context.WithCancel(context.Background())
 
 	keys := newKeyMap()
@@ -133,6 +133,13 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.waitOutputCmd())
 
 	case requestEventMsg:
+		if typedMsg.Done && typedMsg.Data != nil {
+			if typedMsg.Prefix != "" {
+				m.output.NewPrefixOutput(typedMsg.Prefix).Request(typedMsg.Data)
+			} else {
+				m.output.Request(typedMsg.Data)
+			}
+		}
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:

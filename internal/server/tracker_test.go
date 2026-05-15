@@ -5,14 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +28,7 @@ func makeWriter() *httptest.ResponseRecorder {
 
 func TestRequestTracker_Wrap(t *testing.T) {
 	t.Run("sends start event with request metadata", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 		handlerDone := make(chan struct{})
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
@@ -53,7 +50,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("sends done event after handler returns", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 		handlerDone := make(chan struct{})
 		blocker := make(chan struct{})
 
@@ -83,7 +80,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("start event carries correct method and URL", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodDelete, "http://host.local/resource?q=1"))
@@ -97,7 +94,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("underlying handler is called exactly once", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 		calls := 0
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {
@@ -112,7 +109,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("concurrent requests get unique IDs", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 
 		const requestCount = 10
 
@@ -144,7 +141,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 	})
 
 	t.Run("IDs are monotonically increasing", func(t *testing.T) {
-		tracker := server.NewRequestTracker(mocks.NoopOutput())
+		tracker := server.NewRequestTracker()
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 
@@ -164,10 +161,8 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		}
 	})
 
-	t.Run("logs request with module prefix from PrefixUpdaterKey", func(t *testing.T) {
-		var buf strings.Builder
-
-		tracker := server.NewRequestTracker(tui.NewCliOutput(&buf))
+	t.Run("done event carries data and prefix set by handler", func(t *testing.T) {
+		tracker := server.NewRequestTracker()
 
 		const modulePrefix = "PROXY"
 
@@ -179,21 +174,31 @@ func TestRequestTracker_Wrap(t *testing.T) {
 
 		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
 
-		assert.Contains(t, buf.String(), modulePrefix)
-		assert.Contains(t, buf.String(), "200")
-		assert.Contains(t, buf.String(), "GET")
+		<-tracker.Events() // start
+		<-tracker.Events() // prefix update
+		doneEv := <-tracker.Events()
+
+		require.True(t, doneEv.Done)
+		require.NotNil(t, doneEv.Data)
+		assert.Equal(t, modulePrefix, doneEv.Prefix)
+		assert.Equal(t, http.StatusOK, doneEv.Data.Code)
+		assert.Equal(t, http.MethodGet, doneEv.Data.Method)
 	})
 
-	t.Run("logs request without prefix when no module is identified", func(t *testing.T) {
-		var buf strings.Builder
-
-		tracker := server.NewRequestTracker(tui.NewCliOutput(&buf))
+	t.Run("done event carries data with no prefix when handler sets none", func(t *testing.T) {
+		tracker := server.NewRequestTracker()
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 
 		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
 
-		assert.Contains(t, buf.String(), "200")
-		assert.Contains(t, buf.String(), "GET")
+		<-tracker.Events() // start
+		doneEv := <-tracker.Events()
+
+		require.True(t, doneEv.Done)
+		require.NotNil(t, doneEv.Data)
+		assert.Empty(t, doneEv.Prefix)
+		assert.Equal(t, http.StatusOK, doneEv.Data.Code)
+		assert.Equal(t, http.MethodGet, doneEv.Data.Method)
 	})
 }

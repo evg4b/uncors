@@ -82,8 +82,10 @@ func run() int {
 	ctx := context.Background()
 
 	if !uncorsConfig.Interactive {
-		tracker := server.NewRequestTracker(output)
+		tracker := server.NewRequestTracker()
 		app := uncors.CreateUncors(fs, output, Version).WithTracker(tracker)
+
+		go server.RequestPrinter(tracker, output)
 
 		viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 			defer helpers.PanicInterceptor(func(value any) {

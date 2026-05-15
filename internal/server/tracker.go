@@ -20,18 +20,17 @@ type RequestEvent struct {
 	StartedAt time.Time
 	Prefix    string
 	Done      bool
+	Data      *contracts.ReqestData
 }
 
 type RequestTracker struct {
 	events chan RequestEvent
 	nextID atomic.Uint64
-	output contracts.Output
 }
 
-func NewRequestTracker(output contracts.Output) *RequestTracker {
+func NewRequestTracker() *RequestTracker {
 	return &RequestTracker{
 		events: make(chan RequestEvent, requestEventsBufferSize),
-		output: output,
 	}
 }
 
@@ -77,17 +76,11 @@ func (t *RequestTracker) Wrap(handler contracts.Handler) http.Handler {
 
 		handler.ServeHTTP(writer, req.WithContext(ctx))
 
-		output := t.output
-		if lastPrefix != "" {
-			output = t.output.NewPrefixOutput(lastPrefix)
-		}
-
 		data := helpers.ToRequestData(req, helpers.NormaliseStatusCode(writer.StatusCode()))
 		data.Cancelled = ctx.Err() != nil
-		output.Request(data)
 
 		select {
-		case t.events <- RequestEvent{ID: requestID, Done: true}:
+		case t.events <- RequestEvent{ID: requestID, Done: true, Prefix: lastPrefix, Data: data}:
 		default:
 		}
 	})

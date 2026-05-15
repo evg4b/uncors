@@ -27,7 +27,7 @@ import (
 
 func TestUncorsWithTracker(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	tracker := server.NewRequestTracker(mocks.NoopOutput())
+	tracker := server.NewRequestTracker()
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test").WithTracker(tracker)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
