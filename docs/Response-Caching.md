@@ -20,17 +20,17 @@ mappings:
       - /api/users/**
 ```
 
-# Pattern Syntax
+## Pattern Syntax
 
 Cache patterns use glob syntax to match URL paths. The following special characters are supported:
 
-| Special Terms | Meaning                                                                                                   |
+| Special Term  | Meaning                                                                                                   |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
-| `*`           | matches any sequence of non-path-separators                                                               |
-| `/**/`        | matches zero or more directories                                                                          |
-| `?`           | matches any single non-path-separator character                                                           |
-| `[class]`     | matches any single non-path-separator character against a class of characters ([see "character classes"]) |
-| `{alt1,...}`  | matches a sequence of characters if one of the comma-separated alternatives matches                       |
+| `*`           | Matches any sequence of non-path-separators                                                               |
+| `/**/`        | Matches zero or more directories                                                                          |
+| `?`           | Matches any single non-path-separator character                                                           |
+| `[class]`     | Matches any single non-path-separator character against a class of characters (see [Character Classes](#character-classes)) |
+| `{alt1,...}`  | Matches a sequence of characters if one of the comma-separated alternatives matches                       |
 
 **Important notes:**
 
@@ -39,18 +39,18 @@ Cache patterns use glob syntax to match URL paths. The following special charact
 - Incorrect: `path/to/**.txt` (acts like `path/to/*.txt`)
 - Correct: `path/to/**/*.txt` (matches files in subdirectories)
 
-## Character Classes
+### Character Classes
 
 Character classes match single characters against a set or range:
 
 | Class      | Meaning                                                       |
 | ---------- | ------------------------------------------------------------- |
-| `[abc]`    | matches any single character within the set                   |
-| `[a-z]`    | matches any single character in the range                     |
-| `[^class]` | matches any single character which does _not_ match the class |
-| `[!class]` | same as `^`: negates the class                                |
+| `[abc]`    | Matches any single character within the set                   |
+| `[a-z]`    | Matches any single character in the range                     |
+| `[^class]` | Matches any single character which does _not_ match the class |
+| `[!class]` | Same as `^`: negates the class                                |
 
-# Global Cache Configuration
+## Global Cache Configuration
 
 Configure caching behavior globally using the `cache-config` section:
 
@@ -61,13 +61,13 @@ cache-config:
   max-size: 104857600
 ```
 
-## Configuration Properties
+### Configuration Properties
 
-| Property          | Type     | Default      | Description                                        |
-| ----------------- | -------- | ------------ | -------------------------------------------------- |
-| `methods`         | array    | `[GET]`      | HTTP methods to cache (e.g., `GET`, `POST`, `PUT`) |
-| `expiration-time` | duration | `30m`        | Time until a cached response is evicted            |
-| `max-size`        | integer  | `104857600`  | Maximum total cache size in bytes (default 100 MB) |
+| Property          | Type     | Default     | Description                                        |
+| ----------------- | -------- | ----------- | -------------------------------------------------- |
+| `methods`         | array    | `[GET]`     | HTTP methods to cache (e.g., `GET`, `POST`, `PUT`) |
+| `expiration-time` | duration | `30m`       | Time until a cached response is evicted            |
+| `max-size`        | integer  | `104857600` | Maximum total cache size in bytes (default 100 MB) |
 
 **Duration format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours)
 
@@ -78,11 +78,11 @@ cache-config:
 - `2h` - 2 hours
 - `1h 30m` - 1 hour 30 minutes
 
-## Cache Lifecycle
+### Cache Lifecycle
 
-1. **Hit**: Response is returned immediately from cache
-2. **Miss**: Request is forwarded to the upstream server and the response is stored in cache
-3. **Evicted** (after `expiration-time` or when `max-size` is reached): Cache entry is removed; the next request fetches fresh data from upstream
+1. **Hit** - Response is returned immediately from cache
+2. **Miss** - Request is forwarded to the upstream server; response is stored in cache
+3. **Evicted** (after `expiration-time` or when `max-size` is reached) - Cache entry is removed; next request fetches fresh data from upstream
 
 ## Examples
 
@@ -103,7 +103,7 @@ cache-config:
   max-size: 52428800
 ```
 
-### Cache Multiple Methods
+### Cache Multiple HTTP Methods
 
 ```yaml
 cache-config:

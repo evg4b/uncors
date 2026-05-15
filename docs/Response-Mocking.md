@@ -2,11 +2,11 @@ The mocking system allows you to simulate API responses for specific endpoints d
 
 **Key features:**
 
-- **Path-based matching**: Define which URLs to intercept
-- **Method-specific**: Target specific HTTP methods (GET, POST, etc.)
-- **Query parameter filtering**: Match requests with specific query strings
-- **Header matching**: Filter by HTTP headers
-- **Configurable responses**: Control status codes, headers, delays, and content
+- **Path-based matching** - define which URLs to intercept
+- **Method-specific** - target specific HTTP methods (GET, POST, etc.)
+- **Query parameter filtering** - match requests with specific query strings
+- **Header matching** - filter by HTTP headers
+- **Configurable responses** - control status codes, headers, delays, and content
 
 **Configuration structure:**
 
@@ -27,15 +27,14 @@ mappings:
           headers:
             Content-Type: application/json
           delay: 10s
-          raw: `{ "ok": true }`
-          file: /path/to/file.json
+          raw: '{ "ok": true }'
 ```
 
-# Request Matching
+## Request Matching
 
-Configure which requests should be intercepted by the mock:
+Configure which requests should be intercepted by the mock.
 
-## Path (Required)
+### Path (Required)
 
 Defines the URL path to mock. Supports static paths and variable segments.
 
@@ -49,7 +48,7 @@ path: /posts/{postId}/comments/{commentId}  # Multiple variables
 
 Variable segments (e.g., `{id}`) match any value in that position. A request to `/users/123` matches `/users/{id}`.
 
-## Method (Optional)
+### Method (Optional)
 
 Specifies the HTTP method to match.
 
@@ -59,7 +58,7 @@ Specifies the HTTP method to match.
 
 If omitted, the mock matches all HTTP methods.
 
-## Query Parameters (Optional)
+### Query Parameters (Optional)
 
 Match requests with specific query string parameters.
 
@@ -71,7 +70,7 @@ queries:
 
 If omitted, all query parameter combinations are matched.
 
-## Headers (Optional)
+### Headers (Optional)
 
 Match requests with specific HTTP headers.
 
@@ -83,15 +82,15 @@ headers:
 
 If omitted, all header combinations are matched.
 
-# Response Configuration
+## Response Configuration
 
 Define the response returned when a mock is triggered.
 
-## Response Properties
+### Response Properties
 
 | Property  | Type    | Required      | Default | Description                                |
 | --------- | ------- | ------------- | ------- | ------------------------------------------ |
-| `code`    | integer | No            | 200     | HTTP status code (e.g., 200, 404, 500)     |
+| `code`    | integer | No            | `200`   | HTTP status code (e.g., 200, 404, 500)     |
 | `headers` | object  | No            | -       | Custom HTTP headers to include in response |
 | `delay`   | string  | No            | -       | Response delay (e.g., `1m 30s`, `500ms`)   |
 | `raw`     | string  | Conditional\* | -       | Raw response content                       |
@@ -99,14 +98,14 @@ Define the response returned when a mock is triggered.
 
 **\*One of `raw` or `file` must be specified.**
 
-## Status Code
+### Status Code
 
 ```yaml
 response:
   code: 201
 ```
 
-## Headers
+### Headers
 
 Add or override response headers:
 
@@ -117,18 +116,20 @@ response:
     X-Custom-Header: value
 ```
 
-## Delay
+### Delay
 
 Simulate network latency or slow endpoints. Format: `<number><unit> [<number><unit> ...]`
 
 **Supported units:**
 
-- `ns` - nanoseconds
-- `us` or `µs` - microseconds
-- `ms` - milliseconds
-- `s` - seconds
-- `m` - minutes
-- `h` - hours
+| Unit       | Meaning      |
+| ---------- | ------------ |
+| `ns`       | Nanoseconds  |
+| `us`/`µs`  | Microseconds |
+| `ms`       | Milliseconds |
+| `s`        | Seconds      |
+| `m`        | Minutes      |
+| `h`        | Hours        |
 
 **Examples:**
 
@@ -138,28 +139,24 @@ delay: 1m 30s         # 1 minute 30 seconds
 delay: 2s 500ms       # 2.5 seconds
 ```
 
-## Response Content
+### Response Content
 
 Choose one of two methods to provide response content:
 
-### Raw Content
-
-Inline text or JSON:
+**Raw content** - inline text or JSON:
 
 ```yaml
 response:
   raw: '{"message": "Success", "id": 123}'
 ```
 
-### File Content
-
-Load response from a file:
+**File content** - load response from a file:
 
 ```yaml
 response:
   file: ~/mocks/users-response.json
 ```
 
-## Script Handler
+## Dynamic Responses
 
-For dynamic responses including fake data generation, use the Script Handler feature (see [Script Handler documentation](./Script-Handler) for details).
+For dynamic responses including request-dependent data, use the Script Handler (see [Script Handler documentation](Script-Handler) for details).

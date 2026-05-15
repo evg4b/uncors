@@ -11,7 +11,7 @@
 
 UNCORS is a powerful development tool designed to simplify HTTP/HTTPS proxying and CORS header management during local development. It provides a comprehensive suite of features including HTTPS support, wildcard host mapping, request/response mocking, static file serving, response caching, and full proxy functionality. UNCORS streamlines your development workflow by eliminating common CORS-related obstacles without requiring backend modifications.
 
-## Quick Start (5 minutes)
+## Quick Start
 
 Get UNCORS running in 5 minutes:
 
@@ -72,9 +72,9 @@ That's it! UNCORS is now proxying requests from `api.local` to GitHub's API.
 
 **Next steps:**
 
-- Read [Configuration](./Configuration) for more options
-- Explore [Response Mocking](./Response-Mocking) to add fake endpoints
-- Learn about [Static File Serving](./Static-File-Serving) for local development
+- Read [Configuration](Configuration) for more options
+- Explore [Response Mocking](Response-Mocking) to add fake endpoints
+- Learn about [Static File Serving](Static-File-Serving) for local development
 
 ## Key Terminology
 
@@ -98,30 +98,38 @@ Understanding these terms will help you navigate the documentation more effectiv
 
 ## Documentation
 
-- [Installation](./Installation)
-- [Configuration](./Configuration)
-- [Response mocking](./Response-Mocking)
-- [Static file serving](./Static-File-Serving)
-- [Response caching](./Response-Caching)
-- [Request rewriting](./Request-Rewriting)
-- [Migration guide](./Migration-Guide)
-- [HAR recording](./HAR-Collector)
-- [Script handler](./Script-Handler)
-- [Troubleshooting](./Troubleshooting)
-- [Real-world examples](./Real-World-Examples)
+### Getting Started
 
-## List of core features
+- [Installation](Installation) - package managers, binaries, Docker, and hosts file setup
+- [Configuration](Configuration) - CLI options, YAML reference, HTTPS, and proxy settings
+
+### Features
+
+- [Response Mocking](Response-Mocking) - intercept requests and return predefined responses
+- [Static File Serving](Static-File-Serving) - serve local files, SPA mode
+- [Response Caching](Response-Caching) - cache upstream responses with glob patterns
+- [Request Rewriting](Request-Rewriting) - rewrite paths and hosts before proxying
+- [Script Handler](Script-Handler) - dynamic responses via Lua scripting
+- [HAR Recording](HAR-Collector) - record traffic to HAR files for debugging
+
+### Reference
+
+- [Real-World Examples](Real-World-Examples) - copy-paste ready configurations for common scenarios
+- [Migration Guide](Migration-Guide) - upgrading between versions
+- [Troubleshooting](Troubleshooting) - diagnosing and resolving common issues
+
+## Core Features
 
 - CORS header replacement
-- [HTTPS support](./Configuration#https-configuration)
-- [Wildcard host mapping](./Configuration#wildcard-mapping)
-- [HTTP/HTTPS proxy support](./Configuration#proxy-configuration)
-- [Response mocking](./Response-Mocking)
-- [Script handler](./Script-Handler) (Lua scripting with JSON support)
-- [Static file serving](./Static-File-Serving)
-- [Response caching](./Response-Caching)
-- [Request rewriting](./Request-Rewriting)
-- [HAR traffic recording](./HAR-Collector)
+- [HTTPS support](Configuration#https-configuration)
+- [Wildcard host mapping](Configuration#named-placeholder-mapping)
+- [HTTP/HTTPS proxy support](Configuration#proxy-configuration)
+- [Response mocking](Response-Mocking)
+- [Script handler](Script-Handler) (Lua scripting with JSON support)
+- [Static file serving](Static-File-Serving)
+- [Response caching](Response-Caching)
+- [Request rewriting](Request-Rewriting)
+- [HAR traffic recording](HAR-Collector)
 
 ## Overview
 

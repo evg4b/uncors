@@ -10,29 +10,22 @@ Before diving into specific issues, verify these basics:
 - [ ] Your browser/client is not using a proxy that bypasses localhost
 - [ ] CORS errors are actually UNCORS-related (check browser console)
 
-## Common Issues
+---
 
-### Connection Refused or Cannot Connect
+## Connection Refused or Cannot Connect
 
 **Symptoms:**
 
 - Browser shows "Connection refused" or "Cannot connect"
 - `curl` returns "Failed to connect to [domain]"
 
-**Causes and Solutions:**
-
 **1. UNCORS is not running**
-
-Check if UNCORS is running:
 
 ```bash
 # Check for UNCORS process
 ps aux | grep uncors
-```
 
-Start UNCORS if not running:
-
-```bash
+# Start UNCORS if not running
 uncors --config .uncors.yaml
 ```
 
@@ -41,13 +34,10 @@ uncors --config .uncors.yaml
 Verify the port matches your configuration:
 
 ```yaml
-# Configuration file
 mappings:
-  - from: http://api.local:3000 # Port 3000
+  - from: http://api.local:3000  # Port 3000
     to: https://api.example.com
 ```
-
-Access URL must match:
 
 ```bash
 curl http://api.local:3000/  # Correct
@@ -66,33 +56,28 @@ cat /etc/hosts | grep api.local
 Get-Content C:\Windows\System32\drivers\etc\hosts | Select-String api.local
 ```
 
-Should show:
-
-```
-127.0.0.1 api.local
-```
-
-If missing, add it (see [Installation](./Installation#post-installation-hosts-file-setup)).
+Expected output: `127.0.0.1 api.local`. If missing, see [Installation → Hosts File Setup](Installation#post-installation-hosts-file-setup).
 
 **4. DNS cache not flushed**
 
-Flush DNS cache after modifying hosts file:
+After modifying the hosts file, flush the DNS cache:
 
 ```bash
 # macOS
-sudo dscacheutil -flushcache
-sudo killall -HUP mDNSResponder
+sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
 
 # Linux (systemd)
 sudo systemctl restart systemd-resolved
+```
 
+```cmd
 # Windows
 ipconfig /flushdns
 ```
 
 ---
 
-### HTTPS Certificate Errors
+## HTTPS Certificate Errors
 
 **Symptoms:**
 
@@ -100,29 +85,19 @@ ipconfig /flushdns
 - "SSL certificate problem" in curl
 - "Unable to verify the first certificate"
 
-**Causes and Solutions:**
-
 **1. CA certificate not generated**
-
-Generate the local CA certificate:
 
 ```bash
 uncors generate-certs
 ```
 
-This creates CA files in `~/.config/uncors/`:
-
-- `ca.crt` - CA certificate
-- `ca.key` - CA private key
+This creates `~/.config/uncors/ca.crt` and `~/.config/uncors/ca.key`.
 
 **2. CA certificate not trusted**
-
-Add the CA certificate to your system's trusted certificates:
 
 **macOS:**
 
 ```bash
-# Open Keychain Access
 open ~/.config/uncors/ca.crt
 # Set to "Always Trust" in Keychain Access
 ```
@@ -137,85 +112,67 @@ sudo update-ca-certificates
 **Windows:**
 
 ```powershell
-# Import via Certificate Manager
 certutil -addstore -user "Root" %USERPROFILE%\.config\uncors\ca.crt
 ```
 
 **3. Browser not using system certificates**
 
-Some browsers maintain their own certificate stores. For Firefox:
+Firefox maintains its own certificate store:
 
 1. Settings → Privacy & Security → Certificates → View Certificates
-2. Import `~/.config/uncors/ca.crt` under "Authorities" tab
+2. Import `~/.config/uncors/ca.crt` under the "Authorities" tab
 
 **4. CA certificate expired**
 
-Check CA certificate validity:
-
 ```bash
+# Check expiry
 openssl x509 -in ~/.config/uncors/ca.crt -noout -dates
-```
 
-If expired, regenerate:
-
-```bash
+# Regenerate if expired
 uncors generate-certs --force
 ```
 
-Then re-trust the new CA certificate.
+Then re-trust the new certificate.
 
-**5. Development bypass (not recommended)**
-
-For quick testing only:
-
-**curl:** Use `-k` flag to ignore certificate errors:
+**5. Development bypass (not recommended for regular use)**
 
 ```bash
+# curl: ignore certificate errors
 curl -k https://api.local:8443/
 ```
 
-**Browser:** Accept the certificate warning (not recommended for regular development)
-
 ---
 
-### CORS Errors Still Appearing
+## CORS Errors Still Appearing
 
 **Symptoms:**
 
 - Browser console shows CORS errors despite using UNCORS
-- "Access-Control-Allow-Origin" errors
-
-**Causes and Solutions:**
+- "Access-Control-Allow-Origin" header errors
 
 **1. Request not going through UNCORS**
 
-Verify request is routed through UNCORS:
-
-Check UNCORS logs (use `--debug` flag):
+Enable debug logging and verify requests appear in the output:
 
 ```bash
 uncors --config .uncors.yaml --debug
 ```
 
-You should see log entries for each request.
-
 **2. OPTIONS request being forwarded instead of handled**
 
-By default, UNCORS handles OPTIONS requests locally. If disabled, upstream server must handle them.
-
-Check your configuration:
+By default, UNCORS handles OPTIONS requests locally. If disabled, the upstream server must handle them:
 
 ```yaml
 mappings:
   - from: http://api.local:3000
     to: https://api.example.com
     options-handling:
-      disabled: false # Should be false (default)
+      disabled: false  # Must be false (default) for UNCORS to handle preflight
 ```
 
 **3. Custom headers overriding CORS headers**
 
-If you've set custom CORS headers in mocks or scripts, ensure they're correct:
+If you've set custom CORS headers in mocks or scripts, verify they're correct:
 
 ```yaml
 mocks:
@@ -223,22 +180,18 @@ mocks:
     response:
       code: 200
       headers:
-        Access-Control-Allow-Origin: "*" # Must include this
+        Access-Control-Allow-Origin: "*"
         Access-Control-Allow-Methods: "GET, POST, OPTIONS"
       raw: "test"
 ```
 
 **4. Browser cache contains old CORS responses**
 
-Clear browser cache and reload:
-
-- Chrome: Ctrl+Shift+Delete (Windows/Linux) or Cmd+Shift+Delete (macOS)
-- Firefox: Ctrl+Shift+Delete (Windows/Linux) or Cmd+Shift+Delete (macOS)
-- Or use incognito/private mode
+Clear browser cache (Chrome: `Ctrl+Shift+Delete`, macOS: `Cmd+Shift+Delete`) or use an incognito/private window.
 
 ---
 
-### Configuration File Not Loading
+## Configuration File Not Loading
 
 **Symptoms:**
 
@@ -246,18 +199,14 @@ Clear browser cache and reload:
 - "No mappings configured" error
 - Configuration changes not taking effect
 
-**Causes and Solutions:**
-
 **1. Wrong configuration file path**
-
-Verify file path is correct:
 
 ```bash
 ls -l .uncors.yaml  # Should exist
 uncors --config .uncors.yaml --debug
 ```
 
-Use absolute path if relative path fails:
+Use an absolute path if a relative path fails:
 
 ```bash
 uncors --config /absolute/path/to/.uncors.yaml
@@ -268,11 +217,7 @@ uncors --config /absolute/path/to/.uncors.yaml
 Validate YAML syntax:
 
 ```bash
-# Using Python
-python -c "import yaml; yaml.safe_load(open('.uncors.yaml'))"
-
-# Using Ruby
-ruby -ryaml -e "YAML.load_file('.uncors.yaml')"
+python3 -c "import yaml; yaml.safe_load(open('.uncors.yaml'))"
 ```
 
 Common YAML mistakes:
@@ -283,42 +228,30 @@ Common YAML mistakes:
 
 **3. Configuration not reloaded after changes**
 
-UNCORS doesn't auto-reload configuration. Restart after changes:
+UNCORS does not auto-reload configuration. Restart after changes:
 
 ```bash
-# Stop UNCORS (Ctrl+C)
-# Then restart
+# Stop UNCORS with Ctrl+C, then restart
 uncors --config .uncors.yaml
 ```
 
 ---
 
-### Mocks Not Working
+## Mocks Not Working
 
 **Symptoms:**
 
 - Mock responses not returned
-- Requests still going to upstream server
+- Requests still going to the upstream server
 
-**Causes and Solutions:**
-
-**1. Path doesn't match**
-
-Verify path matches exactly:
+**1. Path doesn't match exactly**
 
 ```yaml
 mocks:
-  - path: /api/users # Must match request path exactly
+  - path: /api/users   # Matches /api/users but NOT /api/users/
     response:
       code: 200
       raw: "mock response"
-```
-
-Test:
-
-```bash
-curl http://api.local:3000/api/users   # Matches
-curl http://api.local:3000/api/users/  # Doesn't match (trailing slash)
 ```
 
 Use path variables for flexibility:
@@ -331,32 +264,25 @@ mocks:
       raw: '{"id": "123"}'
 ```
 
-**2. HTTP method doesn't match**
+**2. HTTP method filter too restrictive**
 
-Specify method if needed:
+If you specify a method, only that method is matched:
 
 ```yaml
 mocks:
   - path: /api/users
-    method: POST # Only matches POST requests
-    response:
-      code: 201
-      raw: "created"
+    method: POST   # Only matches POST requests; GET requests pass through
 ```
 
 **3. Mock file not found**
-
-For file-based mocks:
 
 ```yaml
 mocks:
   - path: /api/data
     response:
       code: 200
-      file: ./mock-data.json # Verify this file exists
+      file: ./mock-data.json   # Verify this file exists
 ```
-
-Check file exists:
 
 ```bash
 ls -l ./mock-data.json
@@ -364,34 +290,30 @@ ls -l ./mock-data.json
 
 ---
 
-### Static Files Not Serving
+## Static Files Not Serving
 
 **Symptoms:**
 
 - 404 errors when accessing static files
 - Files not loaded from local directory
 
-**Causes and Solutions:**
-
 **1. Directory path incorrect**
-
-Verify directory exists:
 
 ```bash
 ls -la ~/project/dist
 ```
 
-Use absolute path in configuration:
+Use an absolute path in the configuration if needed:
 
 ```yaml
 statics:
   - path: /assets
-    dir: /absolute/path/to/assets # Use absolute path
+    dir: /absolute/path/to/assets
 ```
 
 **2. Path prefix doesn't match**
 
-Configuration:
+With the configuration below, the URL must include the `/assets` prefix:
 
 ```yaml
 statics:
@@ -399,94 +321,73 @@ statics:
     dir: ~/project/dist
 ```
 
-File access must include prefix:
-
 ```bash
-curl http://api.local:3000/assets/style.css  # Correct
-curl http://api.local:3000/style.css         # Wrong - won't find file
+curl http://api.local:3000/assets/style.css   # Correct
+curl http://api.local:3000/style.css          # Wrong - prefix missing
 ```
 
-**3. Index file not configured for SPA**
-
-For Single-Page Applications:
+**3. Missing index file for SPA routing**
 
 ```yaml
 statics:
   - path: /
     dir: ~/project/build
-    index: index.html # Add this for client-side routing
+    index: index.html   # Required for client-side routing
 ```
 
 ---
 
-### High Memory or CPU Usage
+## High Memory or CPU Usage
 
 **Symptoms:**
 
 - UNCORS process consuming excessive resources
 - System slowdown when UNCORS is running
 
-**Causes and Solutions:**
-
 **1. Cache growing too large**
 
-Configure cache expiration:
+Configure a shorter expiration time or smaller max size:
 
 ```yaml
 cache-config:
   expiration-time: 5m
-  clear-time: 30m
+  max-size: 52428800   # 50 MB
 ```
 
-Or disable caching:
-
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    # Don't include 'cache:' section
-```
+Or disable caching for this mapping by omitting the `cache:` section entirely.
 
 **2. Debug logging enabled**
 
-Disable debug mode in production:
-
 ```yaml
-debug: false # Set to false
+debug: false
 ```
-
-Or remove `--debug` flag from command line.
 
 **3. Large response bodies being cached**
 
-Avoid caching large responses by excluding specific paths:
+Only cache paths that return small responses:
 
 ```yaml
 cache:
   - /api/small-responses/**
-  # Don't cache /api/large-files/**
+  # Avoid caching /api/large-files/**
 ```
 
 ---
 
-### Proxy Not Working
+## Proxy Not Working
 
 **Symptoms:**
 
 - Requests fail with proxy errors
 - "Proxy connection failed"
 
-**Causes and Solutions:**
-
-**1. Proxy configuration incorrect**
-
-Verify proxy URL format:
+**1. Proxy URL format incorrect**
 
 ```yaml
-proxy: http://proxy.example.com:8080 # Correct format
+proxy: http://proxy.example.com:8080   # Correct format
 ```
 
-Test proxy connectivity:
+Test connectivity:
 
 ```bash
 curl -x http://proxy.example.com:8080 https://google.com
@@ -494,24 +395,19 @@ curl -x http://proxy.example.com:8080 https://google.com
 
 **2. Environment variables conflicting**
 
-UNCORS uses system proxy environment variables by default. Unset if needed:
+UNCORS reads system proxy environment variables by default. Unset them if needed:
 
 ```bash
-unset HTTP_PROXY
-unset HTTPS_PROXY
-unset http_proxy
-unset https_proxy
+unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 ```
 
-Or override in configuration:
+Or override in the configuration:
 
 ```yaml
-proxy: "" # Disable proxy
+proxy: ""   # Disable proxy
 ```
 
-**3. Proxy authentication required**
-
-If proxy requires authentication:
+**3. Proxy requires authentication**
 
 ```yaml
 proxy: http://username:password@proxy.example.com:8080
@@ -521,18 +417,11 @@ proxy: http://username:password@proxy.example.com:8080
 
 ## Script Handler Issues
 
-### Script Not Executing
+**Script Not Executing**
 
-**Symptoms:**
+**Symptoms:** Script handler not running; default response returned instead.
 
-- Script handler not running
-- Default response instead of script response
-
-**Causes and Solutions:**
-
-**1. Path or method doesn't match**
-
-Verify path matches:
+**1. Path or method filter doesn't match**
 
 ```yaml
 scripts:
@@ -543,27 +432,23 @@ scripts:
       response:WriteString("Hello")
 ```
 
+Verify the path and method match your request exactly.
+
 **2. Script syntax error**
 
-Test Lua syntax separately:
+Enable debug logging to see script errors:
 
 ```bash
-lua -e 'print("test")'
+uncors --config .uncors.yaml --debug
 ```
 
-Check UNCORS logs with `--debug` for script errors.
-
 **3. File-based script not found**
-
-For file-based scripts:
 
 ```yaml
 scripts:
   - path: /api/custom
-    file: ~/scripts/handler.lua # Verify file exists
+    file: ~/scripts/handler.lua   # Verify file exists
 ```
-
-Check file exists:
 
 ```bash
 ls -l ~/scripts/handler.lua
@@ -573,11 +458,9 @@ ls -l ~/scripts/handler.lua
 
 ## Performance Issues
 
-### Slow Response Times
+**Slow response times:**
 
-**Causes and Solutions:**
-
-**1. Enable caching for frequently accessed resources**
+1. Enable caching for frequently accessed resources
 
 ```yaml
 cache-config:
@@ -591,25 +474,19 @@ mappings:
       - /api/**
 ```
 
-**2. Reduce upstream server latency**
-
-Check upstream server response time:
+2. Check upstream server response time directly
 
 ```bash
 time curl https://api.example.com/endpoint
 ```
 
-**3. Use compression**
-
-Ensure upstream server supports compression (gzip, br).
+3. Ensure the upstream server supports compression (gzip, br)
 
 ---
 
 ## Getting More Help
 
 ### Enable Debug Logging
-
-Run with debug flag for detailed logs:
 
 ```bash
 uncors --config .uncors.yaml --debug
@@ -623,58 +500,31 @@ uncors --version
 
 ### Report Issues
 
-If you've tried the above and still have issues:
+If you've tried the above and still have problems, create an issue at [GitHub Issues](https://github.com/evg4b/uncors/issues) with:
 
-1. Check [GitHub Issues](https://github.com/evg4b/uncors/issues) for similar problems
-2. Create a new issue with:
-   - UNCORS version
-   - Operating system
-   - Configuration file (sanitized)
-   - Debug logs
-   - Steps to reproduce
+- UNCORS version (`uncors --version`)
+- Operating system
+- Configuration file (with sensitive values removed)
+- Debug logs
+- Steps to reproduce
 
 ### Community Resources
 
 - [GitHub Repository](https://github.com/evg4b/uncors)
-- [Documentation](https://github.com/evg4b/uncors/wiki)
 - [Issue Tracker](https://github.com/evg4b/uncors/issues)
 
 ---
 
 ## Prevention Best Practices
 
-**1. Always use debug mode during development:**
+1. **Always use debug mode during initial setup** to see what requests are being handled
+2. **Validate your YAML** before starting - syntax errors produce confusing startup behavior
+3. **Keep UNCORS updated:**
 
 ```bash
-uncors --config .uncors.yaml --debug
+brew upgrade evg4b/tap/uncors   # Homebrew
+npm update -g uncors            # NPM
 ```
 
-**2. Validate configuration before deploying:**
-
-```bash
-# Test with minimal configuration first
-# Then gradually add features
-```
-
-**3. Keep UNCORS updated:**
-
-```bash
-# Homebrew
-brew upgrade evg4b/tap/uncors
-
-# NPM
-npm update -g uncors
-```
-
-**4. Document your setup:**
-
-- Keep notes on custom configurations
-- Document hosts file entries
-- Track certificate locations
-
-**5. Use version control for configuration:**
-
-```bash
-git add .uncors.yaml
-git commit -m "Add UNCORS configuration"
-```
+4. **Document your setup** - note hosts file entries, certificate locations, and config paths
+5. **Version control your configuration** - commit `.uncors.yaml` alongside your project

@@ -4,8 +4,6 @@ This guide provides practical, copy-paste ready examples for common UNCORS use c
 
 **Scenario:** You're developing a React/Vue/Angular app locally that needs to connect to a remote API, but CORS blocks requests.
 
-**Setup:**
-
 **1. Hosts file (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`):**
 
 ```
@@ -53,9 +51,7 @@ fetch("http://app.local:3000/api/users")
 
 ## Microservices Development
 
-**Scenario:** You're working on a microservices architecture with multiple services, and you want to route different paths to different services locally.
-
-**Setup:**
+**Scenario:** You're working on a microservices architecture and want to route different paths to different services locally.
 
 **Hosts file:**
 
@@ -104,6 +100,12 @@ curl http://gateway.local:8000/payments/process
 ## API Mocking for Testing
 
 **Scenario:** You need to test frontend behavior with different API responses without affecting the real backend.
+
+**Hosts file:**
+
+```
+127.0.0.1 api.test
+```
 
 **Configuration:**
 
@@ -172,12 +174,6 @@ mappings:
             }
 ```
 
-**Hosts file:**
-
-```
-127.0.0.1 api.test
-```
-
 **Test scenarios:**
 
 ```bash
@@ -199,6 +195,12 @@ curl "http://api.test:3000/api/posts?page=1"
 ## Local Development with Production APIs
 
 **Scenario:** You want to use production APIs but override specific endpoints with local data for testing.
+
+**Hosts file:**
+
+```
+127.0.0.1 dev.local
+```
 
 **Configuration:**
 
@@ -236,12 +238,6 @@ mappings:
         dir: ~/projects/my-app/local-assets
 ```
 
-**Hosts file:**
-
-```
-127.0.0.1 dev.local
-```
-
 **Usage:**
 
 ```bash
@@ -261,6 +257,12 @@ curl http://dev.local:4000/assets/logo.png
 
 **Scenario:** You're building a Single-Page Application and need both local file serving and API proxying.
 
+**Hosts file:**
+
+```
+127.0.0.1 app.local
+```
+
 **Configuration:**
 
 ```yaml
@@ -272,9 +274,9 @@ mappings:
     statics:
       - path: /
         dir: ~/projects/spa/dist
-        index: index.html # Fallback for client-side routing
+        index: index.html   # Fallback for client-side routing
 
-    # Proxy API requests to backend
+    # Mock health endpoint
     mocks:
       - path: /api/health
         method: GET
@@ -284,16 +286,10 @@ mappings:
             Content-Type: application/json
           raw: '{"status": "ok"}'
 
-    # Cache API responses
+    # Cache static API responses
     cache:
       - /api/config
       - /api/static-data/**
-```
-
-**Hosts file:**
-
-```
-127.0.0.1 app.local
 ```
 
 **Build and run:**
@@ -309,7 +305,7 @@ uncors --config .uncors.yaml
 open http://app.local:3000
 ```
 
-**How it works:**
+**Request routing:**
 
 - `http://app.local:3000/` → Serves `dist/index.html`
 - `http://app.local:3000/dashboard` → Serves `dist/index.html` (SPA routing)
@@ -323,10 +319,16 @@ open http://app.local:3000
 
 **Scenario:** You need to switch between dev, staging, and production APIs easily.
 
-**Configuration:**
+**Hosts file:**
+
+```
+127.0.0.1 api.local
+```
+
+**Configuration files:**
 
 ```yaml
-# .uncors.dev.yaml (Development)
+# .uncors.dev.yaml
 mappings:
   - from: http://api.local:3000
     to: https://api.dev.example.com
@@ -335,15 +337,19 @@ mappings:
         response:
           code: 200
           raw: '{"env": "development"}'
+```
 
-# .uncors.staging.yaml (Staging)
+```yaml
+# .uncors.staging.yaml
 mappings:
   - from: http://api.local:3000
     to: https://api.staging.example.com
     cache:
-      - /api/**  # Cache more aggressively in staging
+      - /api/**
+```
 
-# .uncors.prod.yaml (Production-like)
+```yaml
+# .uncors.prod.yaml
 mappings:
   - from: http://api.local:3000
     to: https://api.example.com
@@ -352,23 +358,12 @@ mappings:
       - /api/metadata/**
 ```
 
-**Hosts file:**
-
-```
-127.0.0.1 api.local
-```
-
 **Usage:**
 
 ```bash
-# Development
-uncors --config .uncors.dev.yaml
-
-# Staging
-uncors --config .uncors.staging.yaml
-
-# Production-like
-uncors --config .uncors.prod.yaml
+uncors --config .uncors.dev.yaml      # Development
+uncors --config .uncors.staging.yaml  # Staging
+uncors --config .uncors.prod.yaml     # Production-like
 ```
 
 **Shell aliases (optional):**
@@ -385,6 +380,12 @@ alias uncors-prod='uncors --config .uncors.prod.yaml'
 ## GraphQL API Development
 
 **Scenario:** You're developing a GraphQL client and need to mock GraphQL responses.
+
+**Hosts file:**
+
+```
+127.0.0.1 graphql.local
+```
 
 **Configuration:**
 
@@ -435,12 +436,6 @@ mappings:
           end
 ```
 
-**Hosts file:**
-
-```
-127.0.0.1 graphql.local
-```
-
 **Usage:**
 
 ```bash
@@ -461,18 +456,18 @@ curl -X POST http://graphql.local:4000/graphql \
 
 **Scenario:** You need to proxy WebSocket connections during development.
 
+**Hosts file:**
+
+```
+127.0.0.1 ws.local
+```
+
 **Configuration:**
 
 ```yaml
 mappings:
   - from: http://ws.local:8080
     to: https://websocket.production.com
-```
-
-**Hosts file:**
-
-```
-127.0.0.1 ws.local
 ```
 
 **Client code:**
@@ -491,7 +486,7 @@ ws.onmessage = (event) => {
 ```
 
 > [!NOTE]
-> UNCORS transparently proxies WebSocket upgrade requests. No special configuration needed beyond the standard HTTP mapping.
+> UNCORS transparently proxies WebSocket upgrade requests. No special configuration is needed beyond the standard HTTP mapping.
 
 ---
 
@@ -517,12 +512,12 @@ mappings:
     to: https://api.staging.company.com
 
     mocks:
-      # Mock slow endpoints for better DX
+      # Mock slow endpoints for better developer experience
       - path: /api/reports/generate
         method: POST
         response:
           code: 202
-          delay: 100ms # Instant instead of 30s
+          delay: 100ms
           headers:
             Content-Type: application/json
           raw: '{"job_id": "mock-job-123", "status": "processing"}'
@@ -568,19 +563,19 @@ cd my-project
 
 ---
 
-## Best Practices from Examples
+## Best Practices
 
-1. **Use descriptive domain names:** `app.local`, `api.local`, not `test1.local`
-2. **Document hosts file entries:** Keep a README with required entries
-3. **Version control configuration:** Commit `.uncors.yaml` to git
-4. **Environment-specific configs:** Use separate files for dev/staging/prod
-5. **Mock slow endpoints:** Improve developer experience with instant responses
-6. **Cache static data:** Reduce upstream load and improve speed
-7. **Use scripts for complex logic:** Keep configuration files simple
+1. **Use descriptive domain names** - `app.local`, `api.local`, not `test1.local`
+2. **Document hosts file entries** - keep a README with required entries
+3. **Version control configuration** - commit `.uncors.yaml` to git
+4. **Environment-specific configs** - use separate files for dev/staging/prod
+5. **Mock slow endpoints** - improve developer experience with instant responses
+6. **Cache static data** - reduce upstream load and improve speed
+7. **Use scripts for complex logic** - keep configuration files simple
 
 ---
 
-## Templates
+## Configuration Templates
 
 ### Basic Proxy
 
@@ -623,7 +618,6 @@ mappings:
 debug: false
 cache-config:
   expiration-time: 10m
-  clear-time: 1h
 
 mappings:
   - from: http://[YOUR-DOMAIN]:3000
@@ -654,7 +648,9 @@ mappings:
 
 For more details on any of these features, see:
 
-- [Configuration](./Configuration)
-- [Response Mocking](./Response-Mocking)
-- [Static File Serving](./Static-File-Serving)
-- [Script Handler](./Script-Handler)
+- [Configuration](Configuration)
+- [Response Mocking](Response-Mocking)
+- [Static File Serving](Static-File-Serving)
+- [Script Handler](Script-Handler)
+- [Request Rewriting](Request-Rewriting)
+- [Response Caching](Response-Caching)

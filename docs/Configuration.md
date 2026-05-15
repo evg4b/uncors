@@ -1,9 +1,24 @@
-UNCORS supports two configuration methods: command-line arguments and configuration files. When both are used, CLI arguments take precedence and will override settings defined in the configuration file.
+UNCORS supports two configuration methods: command-line arguments and configuration files. When both are used, CLI arguments take precedence and override settings defined in the configuration file.
 
-The configuration system is built around the concept of host mappings, which translate local domains (defined in your hosts file) to external domains. Configuration settings are organized into two levels:
+The configuration system is built around the concept of host mappings, which translate local domains (defined in your hosts file) to external domains. Settings are organized into two levels:
 
-- **Global Configuration**: Settings that apply to all mappings and control core server behavior
-- **Mapping Configuration**: Settings specific to individual host mappings that determine how requests are handled and responses are generated
+- **Global Configuration** - settings that apply to all mappings and control core server behavior
+- **Mapping Configuration** - settings specific to individual host mappings that determine how requests are handled
+
+## Table of Contents
+
+- [Quick Reference](#quick-reference)
+- [Command-Line Options](#command-line-options)
+- [Configuration File](#configuration-file)
+- [Global Configuration Properties](#global-configuration-properties)
+- [Mapping Configuration](#mapping-configuration)
+  - [OPTIONS Request Handling](#options-request-handling)
+  - [Protocol Scheme Mapping](#protocol-scheme-mapping)
+  - [Named Placeholder Mapping](#named-placeholder-mapping)
+  - [Simplified Syntax](#simplified-syntax)
+- [HAR Recording](#har-recording)
+- [HTTPS Configuration](#https-configuration)
+- [Proxy Configuration](#proxy-configuration)
 
 ## Quick Reference
 
@@ -46,13 +61,13 @@ mappings:
 ```
 
 > [!TIP]
-> For complete working examples, see [Real-World Examples](./Real-World-Examples)
+> For complete working examples, see [Real-World Examples](Real-World-Examples)
 
-# Command-Line Options
+## Command-Line Options
 
 Configure the UNCORS proxy server using the following command-line parameters:
 
-## Mapping Configuration
+### Mapping Configuration
 
 | Parameter | Short | Description                                                                                                                         |
 | --------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,7 +76,7 @@ Configure the UNCORS proxy server using the following command-line parameters:
 
 Multiple `--from`/`--to` pairs can be specified to define additional mappings. Each mapping can use a different port by specifying it in the URL.
 
-## Global Configuration
+### Global Configuration
 
 | Parameter  | Short | Description                                |
 | ---------- | ----- | ------------------------------------------ |
@@ -72,16 +87,16 @@ Multiple `--from`/`--to` pairs can be specified to define additional mappings. E
 > [!NOTE]
 > CLI parameters override configuration file settings.
 
-# Configuration File
+## Configuration File
 
 UNCORS uses YAML format for configuration files. Below is a comprehensive example demonstrating all available options:
 
 ```yaml
-# global configuration
+# Global configuration
 debug: false
 proxy: localhost:8080
 
-# mappings configuration
+# Mappings configuration
 mappings:
   - http://localhost:8080: https://github.com
   - from: http://other.domain.com:3000
@@ -112,17 +127,18 @@ mappings:
           response:WriteString(json.encode({status = "ok", received = data}))
 ```
 
-# Global Configuration Properties
+## Global Configuration Properties
 
-| Property   | Type    | Default | Description                                     |
-| ---------- | ------- | ------- | ----------------------------------------------- |
-| `proxy`    | string  | -       | HTTP/HTTPS proxy URL for upstream requests      |
-| `debug`    | boolean | false   | Enable debug logging output                     |
-| `mappings` | array   | []      | List of host mapping configurations (see below) |
+| Property       | Type    | Default | Description                                                               |
+| -------------- | ------- | ------- | ------------------------------------------------------------------------- |
+| `proxy`        | string  | -       | HTTP/HTTPS proxy URL for upstream requests                                |
+| `debug`        | boolean | `false` | Enable debug logging output                                               |
+| `mappings`     | array   | `[]`    | List of host mapping configurations (see below)                           |
+| `cache-config` | object  | -       | Global cache behavior settings (see [Response Caching](Response-Caching)) |
 
-# Mapping Configuration
+## Mapping Configuration
 
-The `mappings` section defines how UNCORS routes and handles requests. Each mapping entry specifies a source and destination host pair along with optional processing rules:
+The `mappings` section defines how UNCORS routes and handles requests. Each entry specifies a source and destination host pair along with optional processing rules:
 
 ```yaml
 mappings:
@@ -133,7 +149,7 @@ mappings:
     scripts: [...]
 ```
 
-This configuration forwards all requests from `http://localhost:8080` to `https://github.com`. The port is specified in the `from` URL and defaults to 80 for HTTP and 443 for HTTPS if omitted. Additional features like mocking, static file serving, and scripting can be configured per mapping. See [Response Mocking](./Response-Mocking), [Static File Serving](./Static-File-Serving), and [Script Handler](./Script-Handler) for details.
+This configuration forwards all requests from `http://localhost:8080` to `https://github.com`. The port is specified in the `from` URL and defaults to 80 for HTTP and 443 for HTTPS if omitted. Additional features like mocking, static file serving, and scripting can be configured per mapping. See [Response Mocking](Response-Mocking), [Static File Serving](Static-File-Serving), and [Script Handler](Script-Handler) for details.
 
 ### OPTIONS Request Handling
 
@@ -167,7 +183,7 @@ mappings:
 > [!NOTE]
 > UNCORS adds standard CORS headers to all responses. Custom headers specified here will override the defaults.
 
-## Protocol Scheme Mapping
+### Protocol Scheme Mapping
 
 UNCORS supports flexible protocol scheme mapping, allowing requests to be redirected between HTTP and HTTPS or to preserve the original scheme.
 
@@ -179,7 +195,7 @@ mappings:
     to: https://site.com
 ```
 
-or
+**HTTPS to HTTP mapping:**
 
 ```yaml
 mappings:
@@ -210,7 +226,7 @@ mappings:
 > [!NOTE]
 > HTTPS mappings require valid SSL/TLS certificates. See [HTTPS Configuration](#https-configuration) for setup instructions.
 
-## Named Placeholder Mapping
+### Named Placeholder Mapping
 
 UNCORS supports named placeholders in host mappings for flexible domain matching. A placeholder is written as `{name}` and matches any sequence of characters in that hostname segment (excluding `.` and `/`). Using explicit names makes multi-placeholder mappings self-documenting and allows each placeholder to be referenced by name in the target URL.
 
@@ -258,16 +274,16 @@ mappings:
 
 Each placeholder is matched and substituted **by name**, so the order in source and target can differ:
 
-| Local request                             | Target request                        |
-| ----------------------------------------- | ------------------------------------- |
-| `http://prod.auth.local.com`              | `https://auth.prod.api.com`           |
-| `http://prod.auth.local.com/login`        | `https://auth.prod.api.com/login`     |
-| `http://staging.users.local.com`          | `https://users.staging.api.com`       |
+| Local request                      | Target request                    |
+| ---------------------------------- | --------------------------------- |
+| `http://prod.auth.local.com`       | `https://auth.prod.api.com`       |
+| `http://prod.auth.local.com/login` | `https://auth.prod.api.com/login` |
+| `http://staging.users.local.com`   | `https://users.staging.api.com`   |
 
 > [!NOTE]
 > Every placeholder name in a `from` URL must be unique. Using the same name twice (e.g., `{client}.{client}.com`) is a configuration error.
 
-## Simplified Syntax
+### Simplified Syntax
 
 For basic mappings without mocking or static file serving, use the shorthand syntax:
 
@@ -290,13 +306,13 @@ mappings:
 ```
 
 > [!WARNING]
-> Domain mappings only work for hosts defined in your system's hosts file. A placeholder mapping like `http://{name}.local.com` will not intercept all internet traffic—only requests to domains explicitly configured in your hosts file.
+> Domain mappings only work for hosts defined in your system's hosts file. A placeholder mapping like `http://{name}.local.com` will not intercept all internet traffic - only requests to domains explicitly configured in your hosts file.
 
-# HAR Recording
+## HAR Recording
 
 UNCORS can record all proxied traffic to an [HTTP Archive (HAR 1.2)](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file per mapping. The file can be opened in browser DevTools, Postman, or any HAR viewer.
 
-**Shorthand** — pass the output file path as a string:
+**Shorthand** - pass the output file path as a string:
 
 ```yaml
 mappings:
@@ -305,7 +321,7 @@ mappings:
     har: ./recordings/api.har
 ```
 
-**Full form** — use an object for additional control:
+**Full form** - use an object for additional control:
 
 ```yaml
 mappings:
@@ -318,19 +334,19 @@ mappings:
 
 | Property                 | Type    | Default | Description                                                   |
 | ------------------------ | ------- | ------- | ------------------------------------------------------------- |
-| `file`                   | string  | —       | Output `.har` file path. Collector is disabled when empty.    |
-| `capture-secure-headers` | boolean | `false` | Include auth/cookie headers in the recording (see [HAR Collector](./HAR-Collector#secure-headers)). |
+| `file`                   | string  | -       | Output `.har` file path. Collector is disabled when empty.    |
+| `capture-secure-headers` | boolean | `false` | Include auth/cookie headers in the recording (see [HAR Collector](HAR-Collector#secure-headers)). |
 
 > [!WARNING]
 > Enabling `capture-secure-headers` writes tokens and cookies to disk in plain text. Never commit such files to version control.
 
-See [HAR Collector](./HAR-Collector) for the full reference.
+See [HAR Collector](HAR-Collector) for the full reference.
 
-# HTTPS Configuration
+## HTTPS Configuration
 
 UNCORS supports HTTPS for both incoming requests and upstream connections using auto-generated certificates.
 
-## Auto-Generated Certificates
+### Auto-Generated Certificates
 
 UNCORS automatically generates and signs TLS certificates on-the-fly using a local Certificate Authority (CA).
 
@@ -375,11 +391,11 @@ mappings:
 > [!NOTE]
 > HTTPS server functionality is only activated when at least one mapping uses the `https://` scheme. Each mapping specifies its own port in the `from` URL.
 
-# Proxy Configuration
+## Proxy Configuration
 
 UNCORS supports routing upstream requests through an HTTP/HTTPS proxy server.
 
-**Automatic proxy detection:**
+### Automatic Proxy Detection
 
 UNCORS automatically detects and uses system proxy settings from environment variables:
 
@@ -392,7 +408,7 @@ Environment variable values can be specified as:
 - Full URL: `http://proxy.example.com:8080`
 - Host and port: `proxy.example.com:8080` (assumes HTTP)
 
-**Explicit proxy configuration:**
+### Explicit Proxy Configuration
 
 Override system settings using CLI or configuration file:
 

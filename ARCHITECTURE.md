@@ -99,23 +99,23 @@ It is enabled per-mapping via the `har.file` config key and is implemented as a
 standalone middleware (`internal/handler/har`).
 
 **Design goals:**
-- **Non-blocking** — the middleware never blocks the request goroutine. Entries
+- **Non-blocking** - the middleware never blocks the request goroutine. Entries
   are sent over a buffered channel (capacity 4096). If the channel is full the
   entry is silently dropped rather than stalling the request.
-- **High throughput writes** — a single background goroutine serialises all
+- **High throughput writes** - a single background goroutine serialises all
   disk I/O. After every new entry it atomically replaces the HAR file using a
   write-to-tmp-then-rename strategy so the file is always in a valid state.
-- **Per-mapping isolation** — each mapping creates its own `Writer` instance and
+- **Per-mapping isolation** - each mapping creates its own `Writer` instance and
   its own output file, so traffic from different mappings can be captured
   independently.
-- **Lifecycle management** — `Writer` implements `io.Closer`. The app registers
+- **Lifecycle management** - `Writer` implements `io.Closer`. The app registers
   each writer via `registerCloser`; on shutdown or config reload it calls
   `Close()` which drains the channel and flushes outstanding entries before
   stopping the background goroutine.
 
 **Configuration:**
 
-The simplest form uses a string shorthand — the value is treated as the output file path:
+The simplest form uses a string shorthand - the value is treated as the output file path:
 
 ```yaml
 mappings:
