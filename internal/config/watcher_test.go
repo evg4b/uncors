@@ -43,6 +43,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			}
 		})
 		require.NoError(t, err)
+
 		defer watcher.Close()
 
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: localhost:8080"), 0o600))
@@ -80,14 +81,17 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		watcher, err := config.NewConfigWatcher(configFile, func() {
 			callCount++
+
 			called <- struct{}{}
 		})
 		require.NoError(t, err)
+
 		defer watcher.Close()
 
 		// Write multiple times in quick succession.
 		for i := range 5 {
 			require.NoError(t, os.WriteFile(configFile, []byte("proxy: change"), 0o600))
+
 			_ = i
 		}
 

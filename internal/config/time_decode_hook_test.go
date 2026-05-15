@@ -81,6 +81,7 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 
 		t.Run("number to duration", func(t *testing.T) {
 			const expected = 14 * time.Minute
+
 			out := time.Nanosecond
 			require.NoError(t, decodeValue(t, int(expected), &out, hook))
 			assert.Equal(t, expected, out)

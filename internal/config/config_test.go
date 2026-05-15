@@ -226,8 +226,8 @@ func TestLoadConfiguration(t *testing.T) {
 							Mocks: config.Mocks{
 								{
 									Matcher: config.RequestMatcher{
-										Path:   "/demo",
-										Method: "POST",
+										Path:    "/demo",
+										Method:  "POST",
 										Queries: map[string]string{"foo": "bar"},
 										Headers: map[string]string{acceptEncoding: "deflate"},
 									},
@@ -301,8 +301,8 @@ func TestLoadConfiguration(t *testing.T) {
 			expectedErr string
 		}{
 			{
-				name: "incorrect flag provided",
-				args: []string{"--incorrect-flag"},
+				name:        "incorrect flag provided",
+				args:        []string{"--incorrect-flag"},
 				expectedErr: "failed parsing flags: unknown flag: --incorrect-flag",
 			},
 			{

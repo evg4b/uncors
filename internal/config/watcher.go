@@ -77,6 +77,7 @@ func (cw *ConfigWatcher) run() {
 
 			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
 				stopDebounce()
+
 				debounce = time.AfterFunc(debounceDelay, cw.onChange)
 			}
 

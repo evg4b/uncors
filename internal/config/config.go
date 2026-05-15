@@ -24,7 +24,8 @@ type UncorsConfig struct {
 func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
 	flags := defineFlags()
 
-	if err := flags.Parse(args); err != nil {
+	err := flags.Parse(args)
+	if err != nil {
 		return nil, "", fmt.Errorf("failed parsing flags: %w", err)
 	}
 
