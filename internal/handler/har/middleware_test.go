@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -201,6 +202,30 @@ func TestMiddleware_Wrap(t *testing.T) {
 			assert.NotEqual(t, "Set-Cookie", nv.Name)
 			assert.NotEqual(t, "Www-Authenticate", nv.Name)
 		}
+	})
+
+	t.Run("uses https scheme for TLS requests", func(t *testing.T) {
+		mdlw, harWriter, path := newHARMiddleware(t)
+
+		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
+			rw.WriteHeader(http.StatusOK)
+		})
+
+		req := makeHARRequest(t, "https://example.com/")
+		req.TLS = &tls.ConnectionState{}
+
+		rec := httptest.NewRecorder()
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+
+		require.NoError(t, harWriter.Close())
+
+		archive := readHARFile(t, path)
+		require.Len(t, archive.Log.Entries, 1)
+
+		assert.True(t,
+			strings.HasPrefix(archive.Log.Entries[0].Request.URL, "https://"),
+			"URL must use https scheme for TLS requests",
+		)
 	})
 
 	t.Run("secure headers captured when WithCaptureSecureHeaders(true)", func(t *testing.T) {
