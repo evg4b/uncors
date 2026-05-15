@@ -21,43 +21,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// makeHARWriter wraps httptest.ResponseRecorder in a contracts.ResponseWriter.
+func makeHARWriter(rec *httptest.ResponseRecorder) contracts.ResponseWriter {
+	return contracts.WrapResponseWriter(rec)
+}
+
+// makeHARRequest creates a GET request with the given URL.
+func makeHARRequest(t *testing.T, rawURL string) *http.Request {
+	t.Helper()
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	require.NoError(t, err)
+
+	return req
+}
+
+// newHARMiddleware builds a Middleware backed by a temp-file Writer and returns
+// all three so callers can assert on the archive file.
+func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middleware, *har.Writer, string) {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "test.har")
+	harWriter := har.NewWriter(path)
+	opts = append([]har.MiddlewareOption{har.WithWriter(harWriter)}, opts...)
+	mdlw := har.NewMiddleware(opts...)
+
+	return mdlw, harWriter, path
+}
+
+// readHARFile reads and unmarshals a HAR file produced by Writer.
+func readHARFile(t *testing.T, path string) har.HAR {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	var archive har.HAR
+	require.NoError(t, json.Unmarshal(data, &archive))
+
+	return archive
+}
+
+// compressBody compresses data with the named algorithm ("gzip" or "deflate").
+func compressBody(t *testing.T, algo string, data []byte) []byte {
+	t.Helper()
+
+	var buf bytes.Buffer
+
+	switch algo {
+	case "gzip":
+		w := gzip.NewWriter(&buf)
+		_, _ = w.Write(data)
+		require.NoError(t, w.Close())
+	case "deflate":
+		w := zlib.NewWriter(&buf)
+		_, _ = w.Write(data)
+		require.NoError(t, w.Close())
+	}
+
+	return buf.Bytes()
+}
+
 func TestMiddleware_Wrap(t *testing.T) {
-	makeWriter := func(rec *httptest.ResponseRecorder) contracts.ResponseWriter {
-		return contracts.WrapResponseWriter(rec)
-	}
-
-	makeRequest := func(method, rawURL string) *http.Request {
-		req, err := http.NewRequestWithContext(context.Background(), method, rawURL, nil)
-		require.NoError(t, err)
-
-		return req
-	}
-
-	newMiddleware := func(t *testing.T, opts ...har.MiddlewareOption) (*har.Middleware, *har.Writer, string) {
-		t.Helper()
-
-		path := filepath.Join(t.TempDir(), "test.har")
-		harWriter := har.NewWriter(path)
-		opts = append([]har.MiddlewareOption{har.WithWriter(harWriter)}, opts...)
-		mdlw := har.NewMiddleware(opts...)
-
-		return mdlw, harWriter, path
-	}
-
-	readHAR := func(t *testing.T, path string) har.HAR {
-		t.Helper()
-
-		data, err := os.ReadFile(path)
-		require.NoError(t, err)
-
-		var archive har.HAR
-		require.NoError(t, json.Unmarshal(data, &archive))
-
-		return archive
-	}
-
 	t.Run("passes request to next handler", func(t *testing.T) {
-		mdlw, harWriter, _ := newMiddleware(t)
+		mdlw, harWriter, _ := newHARMiddleware(t)
 
 		defer harWriter.Close() //nolint:errcheck
 
@@ -69,14 +96,14 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), makeRequest(http.MethodGet, "http://example.com/path"))
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/path"))
 
 		assert.True(t, called)
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
 
 	t.Run("records response body correctly", func(t *testing.T) {
-		mdlw, harWriter, _ := newMiddleware(t)
+		mdlw, harWriter, _ := newHARMiddleware(t)
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			rw.Header().Set("Content-Type", "text/plain")
@@ -85,7 +112,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), makeRequest(http.MethodGet, "http://example.com/"))
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/"))
 
 		require.NoError(t, harWriter.Close())
 
@@ -93,15 +120,15 @@ func TestMiddleware_Wrap(t *testing.T) {
 	})
 
 	t.Run("records request with query string", func(t *testing.T) {
-		mdlw, harWriter, _ := newMiddleware(t)
+		mdlw, harWriter, _ := newHARMiddleware(t)
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			rw.WriteHeader(http.StatusNoContent)
 		})
 
-		req := makeRequest(http.MethodGet, "http://example.com/search?q=foo&page=2")
+		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
 
 		require.NoError(t, harWriter.Close())
 
@@ -109,7 +136,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	})
 
 	t.Run("restores request body for downstream handlers", func(t *testing.T) {
-		mdlw, harWriter, _ := newMiddleware(t)
+		mdlw, harWriter, _ := newHARMiddleware(t)
 
 		defer harWriter.Close() //nolint:errcheck
 
@@ -130,13 +157,13 @@ func TestMiddleware_Wrap(t *testing.T) {
 		require.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
 
 		assert.Equal(t, body, received)
 	})
 
 	t.Run("secure headers not captured by default", func(t *testing.T) {
-		mdlw, harWriter, path := newMiddleware(t) // captureSecureHeaders defaults to false
+		mdlw, harWriter, path := newHARMiddleware(t) // captureSecureHeaders defaults to false
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
@@ -144,16 +171,16 @@ func TestMiddleware_Wrap(t *testing.T) {
 			rw.WriteHeader(http.StatusOK)
 		})
 
-		req := makeRequest(http.MethodGet, "http://example.com/")
+		req := makeHARRequest(t, "http://example.com/")
 		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
 
 		require.NoError(t, harWriter.Close())
 
-		archive := readHAR(t, path)
+		archive := readHARFile(t, path)
 		require.Len(t, archive.Log.Entries, 1)
 
 		entry := archive.Log.Entries[0]
@@ -177,23 +204,23 @@ func TestMiddleware_Wrap(t *testing.T) {
 	})
 
 	t.Run("secure headers captured when WithCaptureSecureHeaders(true)", func(t *testing.T) {
-		mdlw, harWriter, path := newMiddleware(t, har.WithCaptureSecureHeaders(true))
+		mdlw, harWriter, path := newHARMiddleware(t, har.WithCaptureSecureHeaders(true))
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
 			rw.WriteHeader(http.StatusOK)
 		})
 
-		req := makeRequest(http.MethodGet, "http://example.com/")
+		req := makeHARRequest(t, "http://example.com/")
 		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
 
 		require.NoError(t, harWriter.Close())
 
-		archive := readHAR(t, path)
+		archive := readHARFile(t, path)
 		require.Len(t, archive.Log.Entries, 1)
 
 		entry := archive.Log.Entries[0]
@@ -213,63 +240,44 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		assert.True(t, hasAuth, "Authorization header must be present when captureSecureHeaders is true")
 	})
+}
 
-	t.Run("compressed response bodies are decoded in HAR", func(t *testing.T) {
-		compress := func(t *testing.T, algo string, data []byte) []byte {
-			t.Helper()
+func TestMiddleware_Wrap_Decompression(t *testing.T) {
+	tests := []struct {
+		encoding string
+	}{
+		{encoding: "gzip"},
+		{encoding: "deflate"},
+	}
 
-			var buf bytes.Buffer
+	for _, testCase := range tests {
+		t.Run(testCase.encoding, func(t *testing.T) {
+			mdlw, harWriter, path := newHARMiddleware(t)
 
-			switch algo {
-			case "gzip":
-				w := gzip.NewWriter(&buf)
-				_, _ = w.Write(data)
-				require.NoError(t, w.Close())
-			case "deflate":
-				w := zlib.NewWriter(&buf)
-				_, _ = w.Write(data)
-				require.NoError(t, w.Close())
-			}
+			const originalBody = `{"status":"ok"}`
 
-			return buf.Bytes()
-		}
+			compressed := compressBody(t, testCase.encoding, []byte(originalBody))
 
-		tests := []struct {
-			encoding string
-		}{
-			{encoding: "gzip"},
-			{encoding: "deflate"},
-		}
-
-		for _, testCase := range tests {
-			t.Run(testCase.encoding, func(t *testing.T) {
-				mdlw, harWriter, path := newMiddleware(t)
-
-				const originalBody = `{"status":"ok"}`
-
-				compressed := compress(t, testCase.encoding, []byte(originalBody))
-
-				next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
-					rw.Header().Set("Content-Type", "application/json")
-					rw.Header().Set("Content-Encoding", testCase.encoding)
-					rw.WriteHeader(http.StatusOK)
-					_, _ = rw.Write(compressed)
-				})
-
-				rec := httptest.NewRecorder()
-				mdlw.Wrap(next).ServeHTTP(makeWriter(rec), makeRequest(http.MethodGet, "http://example.com/api"))
-
-				require.NoError(t, harWriter.Close())
-
-				archive := readHAR(t, path)
-				require.Len(t, archive.Log.Entries, 1)
-
-				content := archive.Log.Entries[0].Response.Content
-				assert.JSONEq(t, originalBody, content.Text)
-				assert.Empty(t, content.Encoding, "encoding field should be empty for decoded text")
+			next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.Header().Set("Content-Encoding", testCase.encoding)
+				rw.WriteHeader(http.StatusOK)
+				_, _ = rw.Write(compressed)
 			})
-		}
-	})
+
+			rec := httptest.NewRecorder()
+			mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/api"))
+
+			require.NoError(t, harWriter.Close())
+
+			archive := readHARFile(t, path)
+			require.Len(t, archive.Log.Entries, 1)
+
+			content := archive.Log.Entries[0].Response.Content
+			assert.JSONEq(t, originalBody, content.Text)
+			assert.Empty(t, content.Encoding, "encoding field should be empty for decoded text")
+		})
+	}
 }
 
 func TestNewMiddleware_NilWriterPanic(t *testing.T) {
