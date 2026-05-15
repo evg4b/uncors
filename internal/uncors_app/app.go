@@ -133,13 +133,8 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.waitOutputCmd())
 
 	case requestEventMsg:
-		if typedMsg.Done && typedMsg.Data != nil {
-			if typedMsg.Prefix != "" {
-				m.output.NewPrefixOutput(typedMsg.Prefix).Request(typedMsg.Data)
-			} else {
-				m.output.Request(typedMsg.Data)
-			}
-		}
+		m.handleRequestEvent(typedMsg)
+
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:
@@ -289,6 +284,18 @@ func (m *uncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
 	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
 
 	return tea.Quit
+}
+
+func (m *uncorsApp) handleRequestEvent(event requestEventMsg) {
+	if !event.Done || event.Data == nil {
+		return
+	}
+
+	if event.Prefix != "" {
+		m.output.NewPrefixOutput(event.Prefix).Request(event.Data)
+	} else {
+		m.output.Request(event.Data)
+	}
 }
 
 func (m *uncorsApp) handleRestart() {
