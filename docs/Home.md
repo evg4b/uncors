@@ -105,6 +105,7 @@ Understanding these terms will help you navigate the documentation more effectiv
 - [Response caching](./Response-Caching)
 - [Request rewriting](./Request-Rewriting)
 - [Migration guide](./Migration-Guide)
+- [HAR recording](./HAR-Collector)
 - [Script handler](./Script-Handler)
 - [Troubleshooting](./Troubleshooting)
 - [Real-world examples](./Real-World-Examples)
@@ -120,6 +121,7 @@ Understanding these terms will help you navigate the documentation more effectiv
 - [Static file serving](./Static-File-Serving)
 - [Response caching](./Response-Caching)
 - [Request rewriting](./Request-Rewriting)
+- [HAR traffic recording](./HAR-Collector)
 
 ## Overview
 

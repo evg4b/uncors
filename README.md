@@ -59,6 +59,7 @@
 - [Static file serving](https://github.com/evg4b/uncors/wiki/Static-file-serving)
 - [Response caching](https://github.com/evg4b/uncors/wiki/Response-caching)
 - [Request rewriting](https://github.com/evg4b/uncors/wiki/Request-rewriting)
+- [HAR traffic recording](https://github.com/evg4b/uncors/wiki/HAR-Collector)
 
 Full documentation can be found on the [wiki pages](https://github.com/evg4b/uncors/wiki).
 
