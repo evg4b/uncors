@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"compress/zlib"
 	"encoding/base64"
 	"io"
 	"strings"
@@ -71,9 +72,25 @@ func decodeGzip(data []byte) ([]byte, error) {
 }
 
 func decodeDeflate(data []byte) ([]byte, error) {
-	// The deflate encoding used in HTTP can be raw DEFLATE or zlib-wrapped.
-	// Try zlib first; fall back to raw flate.
+	// HTTP "deflate" is technically zlib-wrapped DEFLATE (RFC 1950), but many
+	// servers incorrectly send raw DEFLATE (RFC 1951). Try zlib first, then
+	// fall back to raw flate so both variants are handled correctly.
+	decoded, err := decodeZlib(data)
+	if err == nil {
+		return decoded, nil
+	}
+
 	reader := flate.NewReader(bytes.NewReader(data))
+	defer reader.Close()
+
+	return io.ReadAll(reader)
+}
+
+func decodeZlib(data []byte) ([]byte, error) {
+	reader, err := zlib.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
 
 	defer reader.Close()
 

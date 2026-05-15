@@ -3,6 +3,7 @@ package har_test
 import (
 	"bytes"
 	"compress/gzip"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -213,37 +214,68 @@ func TestMiddleware_Wrap(t *testing.T) {
 		assert.True(t, hasAuth, "Authorization header must be present when captureSecureHeaders is true")
 	})
 
-	t.Run("gzip response body is decoded in HAR", func(t *testing.T) {
-		mdlw, harWriter, path := newMiddleware(t)
+	t.Run("compressed response bodies are decoded in HAR", func(t *testing.T) {
+		compress := func(t *testing.T, algo string, data []byte) []byte {
+			t.Helper()
 
-		const originalBody = `{"status":"ok"}`
+			var buf bytes.Buffer
 
-		var buf bytes.Buffer
+			switch algo {
+			case "gzip":
+				w := gzip.NewWriter(&buf)
+				_, _ = w.Write(data)
+				require.NoError(t, w.Close())
+			case "deflate":
+				w := zlib.NewWriter(&buf)
+				_, _ = w.Write(data)
+				require.NoError(t, w.Close())
+			}
 
-		gz := gzip.NewWriter(&buf)
-		_, err := gz.Write([]byte(originalBody))
-		require.NoError(t, err)
-		require.NoError(t, gz.Close())
+			return buf.Bytes()
+		}
 
-		compressed := buf.Bytes()
+		tests := []struct {
+			encoding string
+		}{
+			{encoding: "gzip"},
+			{encoding: "deflate"},
+		}
 
-		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
-			rw.Header().Set("Content-Type", "application/json")
-			rw.Header().Set("Content-Encoding", "gzip")
-			rw.WriteHeader(http.StatusOK)
-			_, _ = rw.Write(compressed)
-		})
+		for _, testCase := range tests {
+			t.Run(testCase.encoding, func(t *testing.T) {
+				mdlw, harWriter, path := newMiddleware(t)
 
-		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeWriter(rec), makeRequest(http.MethodGet, "http://example.com/api"))
+				const originalBody = `{"status":"ok"}`
 
-		require.NoError(t, harWriter.Close())
+				compressed := compress(t, testCase.encoding, []byte(originalBody))
 
-		archive := readHAR(t, path)
-		require.Len(t, archive.Log.Entries, 1)
+				next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
+					rw.Header().Set("Content-Type", "application/json")
+					rw.Header().Set("Content-Encoding", testCase.encoding)
+					rw.WriteHeader(http.StatusOK)
+					_, _ = rw.Write(compressed)
+				})
 
-		content := archive.Log.Entries[0].Response.Content
-		assert.JSONEq(t, originalBody, content.Text)
-		assert.Empty(t, content.Encoding, "encoding field should be empty for plain text")
+				rec := httptest.NewRecorder()
+				mdlw.Wrap(next).ServeHTTP(makeWriter(rec), makeRequest(http.MethodGet, "http://example.com/api"))
+
+				require.NoError(t, harWriter.Close())
+
+				archive := readHAR(t, path)
+				require.Len(t, archive.Log.Entries, 1)
+
+				content := archive.Log.Entries[0].Response.Content
+				assert.JSONEq(t, originalBody, content.Text)
+				assert.Empty(t, content.Encoding, "encoding field should be empty for decoded text")
+			})
+		}
 	})
+}
+
+func TestNewMiddleware_NilWriterPanic(t *testing.T) {
+	assert.PanicsWithValue(
+		t,
+		"har: NewMiddleware requires WithWriter option",
+		func() { har.NewMiddleware() },
+	)
 }

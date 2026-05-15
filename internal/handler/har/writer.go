@@ -2,7 +2,9 @@ package har
 
 import (
 	"encoding/json"
+	"log"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -15,6 +17,8 @@ const (
 	entryChanBuffer = 4096
 	// harFileMode is the permission bits used when writing the HAR file.
 	harFileMode = 0o600
+	// harDirMode is the permission bits used when creating parent directories.
+	harDirMode = 0o755
 )
 
 // Writer asynchronously appends HAR entries to a file.
@@ -123,12 +127,25 @@ func (w *Writer) flush() {
 		return
 	}
 
+	err = os.MkdirAll(filepath.Dir(w.path), harDirMode)
+	if err != nil {
+		log.Printf("har: cannot create directory for %q: %v", w.path, err)
+
+		return
+	}
+
 	tmp := w.path + ".tmp"
 
 	err = os.WriteFile(tmp, data, harFileMode)
 	if err != nil {
+		log.Printf("har: cannot write temp file %q: %v", tmp, err)
+
 		return
 	}
 
-	_ = os.Rename(tmp, w.path)
+	err = os.Rename(tmp, w.path)
+	if err != nil {
+		log.Printf("har: cannot rename %q to %q: %v", tmp, w.path, err)
+		_ = os.Remove(tmp)
+	}
 }

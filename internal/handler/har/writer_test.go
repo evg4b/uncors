@@ -71,4 +71,23 @@ func TestWriter(t *testing.T) {
 		require.NoError(t, json.Unmarshal(data, &archive))
 		assert.Empty(t, archive.Log.Entries)
 	})
+
+	t.Run("creates parent directories automatically", func(t *testing.T) {
+		// The directory does not exist yet — the writer must create it.
+		path := filepath.Join(t.TempDir(), "nested", "deep", "out.har")
+		harWriter := har.NewWriter(path)
+		harWriter.AddEntry(har.Entry{
+			Request:  har.Request{Method: "GET", URL: "http://example.com/"},
+			Response: har.Response{Status: 200},
+		})
+
+		require.NoError(t, harWriter.Close())
+
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+
+		var archive har.HAR
+		require.NoError(t, json.Unmarshal(data, &archive))
+		assert.Len(t, archive.Log.Entries, 1)
+	})
 }

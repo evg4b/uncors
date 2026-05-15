@@ -42,8 +42,15 @@ type Middleware struct {
 }
 
 // NewMiddleware creates a Middleware backed by the given Writer.
+// It panics if WithWriter is not provided, because a Middleware
+// without a Writer can never record anything.
 func NewMiddleware(opts ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{}, opts)
+	m := helpers.ApplyOptions(&Middleware{}, opts)
+	if m.writer == nil {
+		panic("har: NewMiddleware requires WithWriter option")
+	}
+
+	return m
 }
 
 // Wrap returns a Handler that records the transaction before passing
