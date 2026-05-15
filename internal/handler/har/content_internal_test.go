@@ -1,8 +1,5 @@
 package har
 
-// Internal tests for buildContent, decodeGzip, decodeDeflate, and decodeZlib.
-// Kept in package har so that unexported functions are directly accessible.
-
 import (
 	"bytes"
 	"compress/flate"
@@ -12,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// rawDeflate compresses data using raw DEFLATE (RFC 1951), without the zlib
-// wrapper. Many servers incorrectly send this instead of RFC 1950 zlib.
 func rawDeflate(t *testing.T, data []byte) []byte {
 	t.Helper()
 
@@ -66,7 +61,6 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("invalid deflate data falls back to base64", func(t *testing.T) {
-		// Bytes that are neither valid zlib nor valid raw DEFLATE.
 		c := buildContent([]byte{0x00, 0x01, 0x02}, "deflate", "application/octet-stream")
 
 		assert.Equal(t, "base64", c.Encoding)

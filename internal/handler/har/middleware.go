@@ -12,19 +12,8 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
-// nanosecondsPerMillisecond is used to convert nanoseconds to milliseconds.
 const nanosecondsPerMillisecond = 1e6
 
-// secureHeaderNames is the set of HTTP headers that may carry credentials or
-// session data. They are stripped from HAR entries by default and are only
-// included when captureSecureHeaders is true.
-//
-// The list covers RFC-defined authentication and cookie headers:
-//   - Cookie / Set-Cookie  — session identifiers
-//   - Authorization        — Bearer tokens, Basic credentials
-//   - WWW-Authenticate     — server auth challenges (reveals scheme/realm)
-//   - Proxy-Authorization  — proxy credentials
-//   - Proxy-Authenticate   — proxy auth challenges
 var secureHeaderNames = map[string]bool{
 	"Cookie":              true,
 	"Set-Cookie":          true,
@@ -34,16 +23,11 @@ var secureHeaderNames = map[string]bool{
 	"Proxy-Authenticate":  true,
 }
 
-// Middleware captures every request/response pair and enqueues a HAR
-// entry to the async Writer. The handler chain is never blocked.
 type Middleware struct {
 	writer               *Writer
 	captureSecureHeaders bool
 }
 
-// NewMiddleware creates a Middleware backed by the given Writer.
-// It panics if WithWriter is not provided, because a Middleware
-// without a Writer can never record anything.
 func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 	m := helpers.ApplyOptions(&Middleware{}, opts)
 	if m.writer == nil {
@@ -53,8 +37,6 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 	return m
 }
 
-// Wrap returns a Handler that records the transaction before passing
-// control to next.
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) {
 		start := time.Now()
@@ -160,9 +142,6 @@ func (m *Middleware) buildResponse(capture *captureWriter) Response {
 	}
 }
 
-// headersToNameValues converts an http.Header to a slice of NameValue pairs.
-// When captureSecureHeaders is false, all headers in secureHeaderNames are
-// excluded to avoid persisting credentials in the HAR file.
 func (m *Middleware) headersToNameValues(h http.Header) []NameValue {
 	result := make([]NameValue, 0, len(h))
 

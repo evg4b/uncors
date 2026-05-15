@@ -8,9 +8,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-// captureWriter wraps a ResponseWriter and tees the response body
-// into an internal buffer so the middleware can build a HAR entry
-// after the handler returns. It satisfies contracts.ResponseWriter.
 type captureWriter struct {
 	contracts.ResponseWriter
 

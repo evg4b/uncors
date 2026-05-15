@@ -22,8 +22,6 @@ const (
 )
 
 // Writer asynchronously appends HAR entries to a file.
-// All public methods are safe for concurrent use.
-// The internal goroutine serializes writes so the file is never corrupted.
 type Writer struct {
 	path    string
 	entries chan Entry
@@ -35,7 +33,6 @@ type Writer struct {
 }
 
 // NewWriter creates a Writer that records entries to path.
-// The background goroutine starts immediately.
 func NewWriter(path string) *Writer {
 	writer := &Writer{
 		path:    path,
@@ -50,8 +47,7 @@ func NewWriter(path string) *Writer {
 	return writer
 }
 
-// AddEntry enqueues an entry for writing. It never blocks the caller:
-// if the internal buffer is full the entry is silently dropped.
+// AddEntry enqueues an entry for writing.
 func (w *Writer) AddEntry(entry Entry) {
 	select {
 	case w.entries <- entry:
@@ -61,8 +57,6 @@ func (w *Writer) AddEntry(entry Entry) {
 }
 
 // Close flushes all pending entries to disk and stops the background goroutine.
-// Calling Close more than once is safe; subsequent calls are no-ops.
-// It implements io.Closer.
 func (w *Writer) Close() error {
 	w.once.Do(func() {
 		close(w.done)
@@ -72,9 +66,6 @@ func (w *Writer) Close() error {
 	return nil
 }
 
-// run is the single goroutine responsible for accumulating entries and
-// flushing them to disk. It exits when done is closed and the entry
-// channel has been fully drained.
 func (w *Writer) run() {
 	defer w.wg.Done()
 
@@ -106,8 +97,6 @@ func (w *Writer) append(entry Entry) {
 	w.mu.Unlock()
 }
 
-// flush serialises the full in-memory HAR to a temp file then atomically
-// renames it over the target path, so readers always see a valid file.
 func (w *Writer) flush() {
 	w.mu.Lock()
 	snapshot := make([]Entry, len(w.all))

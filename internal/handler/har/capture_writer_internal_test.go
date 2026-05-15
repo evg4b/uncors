@@ -1,8 +1,5 @@
 package har
 
-// Internal tests for captureWriter — kept in package har so that the
-// unexported type and constructor are directly accessible.
-
 import (
 	"net/http"
 	"net/http/httptest"

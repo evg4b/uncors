@@ -22,12 +22,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// makeHARWriter wraps httptest.ResponseRecorder in a contracts.ResponseWriter.
 func makeHARWriter(rec *httptest.ResponseRecorder) contracts.ResponseWriter {
 	return contracts.WrapResponseWriter(rec)
 }
 
-// makeHARRequest creates a GET request with the given URL.
 func makeHARRequest(t *testing.T, rawURL string) *http.Request {
 	t.Helper()
 
@@ -37,8 +35,6 @@ func makeHARRequest(t *testing.T, rawURL string) *http.Request {
 	return req
 }
 
-// newHARMiddleware builds a Middleware backed by a temp-file Writer and returns
-// all three so callers can assert on the archive file.
 func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middleware, *har.Writer, string) {
 	t.Helper()
 
@@ -50,7 +46,6 @@ func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middlewa
 	return mdlw, harWriter, path
 }
 
-// readHARFile reads and unmarshals a HAR file produced by Writer.
 func readHARFile(t *testing.T, path string) har.HAR {
 	t.Helper()
 
@@ -63,7 +58,6 @@ func readHARFile(t *testing.T, path string) har.HAR {
 	return archive
 }
 
-// compressBody compresses data with the named algorithm ("gzip" or "deflate").
 func compressBody(t *testing.T, algo string, data []byte) []byte {
 	t.Helper()
 
@@ -164,7 +158,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	})
 
 	t.Run("secure headers not captured by default", func(t *testing.T) {
-		mdlw, harWriter, path := newHARMiddleware(t) // captureSecureHeaders defaults to false
+		mdlw, harWriter, path := newHARMiddleware(t)
 
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec

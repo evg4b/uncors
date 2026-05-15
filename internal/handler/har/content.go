@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-// buildContent creates a HAR Content object from the raw (possibly encoded)
-// response body. It attempts to decode gzip and deflate-compressed bodies so
-// the HAR stores readable text. Unknown or undecipherable encodings are stored
-// as base64 per the HAR 1.2 spec.
 func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 	if len(raw) == 0 {
 		return Content{Size: 0, MimeType: mimeType}
