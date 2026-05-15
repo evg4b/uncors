@@ -33,17 +33,19 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	configPath, _ := flags.GetString("config")
 
 	if configPath != "" {
-		raw, err := readYAMLFile(fs, configPath)
-		if err != nil {
-			return nil, "", err
+		raw, readErr := readYAMLFile(fs, configPath)
+		if readErr != nil {
+			return nil, "", readErr
 		}
 
-		if err := applyRawConfig(raw, cfg); err != nil {
-			return nil, "", fmt.Errorf("failed parsing config: %w", err)
+		applyErr := applyRawConfig(raw, cfg)
+		if applyErr != nil {
+			return nil, "", fmt.Errorf("failed parsing config: %w", applyErr)
 		}
 	}
 
-	if err := applyFlagOverrides(cfg, flags); err != nil {
+	err = applyFlagOverrides(cfg, flags)
+	if err != nil {
 		return nil, "", err
 	}
 
@@ -54,14 +56,17 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 
 // readYAMLFile opens and decodes a YAML config file into a raw map.
 func readYAMLFile(fs afero.Fs, path string) (map[string]any, error) {
-	f, err := fs.Open(path)
+	file, err := fs.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file '%s': %w", path, err)
 	}
-	defer f.Close()
+
+	defer file.Close()
 
 	var raw map[string]any
-	if err := yaml.NewDecoder(f).Decode(&raw); err != nil {
+
+	err = yaml.NewDecoder(file).Decode(&raw)
+	if err != nil {
 		return nil, fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
 	}
 

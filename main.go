@@ -41,30 +41,7 @@ func run() int {
 	fs := afero.NewOsFs()
 
 	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(output),
-		)
-		flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
-		cmd.DefineFlags(flags)
-
-		err := flags.Parse(os.Args[2:])
-		if err != nil {
-			output.Error(err)
-			log.Printf("Error: %v", err)
-
-			return 1
-		}
-
-		err = cmd.Execute()
-		if err != nil {
-			output.Error(err)
-			log.Printf("Error: %v", err)
-
-			return 1
-		}
-
-		return 0
+		return runGenerateCerts(fs, output)
 	}
 
 	pflag.Usage = func() {
@@ -75,82 +52,147 @@ func run() int {
 
 	uncorsConfig, configPath := loadConfiguration(fs)
 
-	ctx := context.Background()
+	if uncorsConfig.Interactive {
+		return runInteractive(fs, configPath, uncorsConfig)
+	}
 
-	if !uncorsConfig.Interactive {
-		tracker := server.NewRequestTracker()
-		app := uncors.CreateUncors(fs, output, Version).WithTracker(tracker)
+	return runNonInteractive(context.Background(), fs, output, configPath, uncorsConfig)
+}
 
-		go server.RequestPrinter(tracker, output)
+// runGenerateCerts executes the generate-certs sub-command and returns an exit code.
+func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
+	cmd := commands.NewGenerateCertsCommand(
+		commands.WithFs(fs),
+		commands.WithOutput(output),
+	)
 
-		if configPath != "" {
-			watcher, err := config.NewConfigWatcher(configPath, func() {
-				defer helpers.PanicInterceptor(func(value any) {
-					log.Printf("Config reloading error: %v", value)
-					output.Errorf("Config reloading error: %v", value)
-				})
+	flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
+	cmd.DefineFlags(flags)
 
-				reloaded, _ := loadConfiguration(fs)
+	err := flags.Parse(os.Args[2:])
+	if err != nil {
+		output.Error(err)
+		log.Printf("Error: %v", err)
 
-				err := app.Restart(ctx, reloaded)
-				if err != nil {
-					log.Printf("Failed to restart server: %v", err)
-					output.Errorf("Failed to restart server: %v", err)
-				}
-			})
-			if err != nil {
-				log.Printf("Failed to start config watcher: %v", err)
-				output.Errorf("Failed to start config watcher: %v", err)
-			} else {
-				defer watcher.Close()
-			}
-		}
+		return 1
+	}
 
-		err := app.Start(ctx, uncorsConfig)
-		if err != nil {
-			panic(err)
-		}
+	err = cmd.Execute()
+	if err != nil {
+		output.Error(err)
+		log.Printf("Error: %v", err)
 
-		go func() {
-			const checkDelay = 50 * time.Second
+		return 1
+	}
 
-			versionChecker := version.NewVersionChecker(
-				version.WithOutput(output),
-				version.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-				version.WithCurrentVersion(Version),
-			)
+	return 0
+}
 
-			time.Sleep(checkDelay)
-			versionChecker.CheckNewVersion(ctx)
-		}()
+// runNonInteractive starts the proxy in non-interactive (headless) mode and
+// blocks until the server shuts down. The config file is watched for changes
+// when configPath is non-empty.
+func runNonInteractive(
+	ctx context.Context,
+	fs afero.Fs,
+	output *tui.CliOutput,
+	configPath string,
+	cfg *config.UncorsConfig,
+) int {
+	tracker := server.NewRequestTracker()
+	app := uncors.CreateUncors(fs, output, Version).WithTracker(tracker)
 
-		go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-			log.Println("shutdown signal received")
+	go server.RequestPrinter(tracker, output)
 
-			return app.Shutdown(shutdownCtx)
+	if configPath != "" {
+		startConfigWatcher(ctx, fs, output, configPath, app)
+	}
+
+	err := app.Start(ctx, cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	go startVersionChecker(ctx, output, cfg.Proxy)
+
+	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
+		log.Println("shutdown signal received")
+
+		return app.Shutdown(shutdownCtx)
+	})
+
+	app.Wait()
+	output.Info("Server was stopped")
+
+	return 0
+}
+
+// startConfigWatcher begins watching the config file and restarts the proxy on
+// every change. The watcher lives for the process lifetime (not closed explicitly).
+func startConfigWatcher(
+	ctx context.Context,
+	fs afero.Fs,
+	output *tui.CliOutput,
+	configPath string,
+	app *uncors.Uncors,
+) {
+	watcher, err := config.NewWatcher(configPath, func() {
+		defer helpers.PanicInterceptor(func(value any) {
+			log.Printf("Config reloading error: %v", value)
+			output.Errorf("Config reloading error: %v", value)
 		})
 
-		app.Wait()
-		output.Info("Server was stopped")
-	} else {
-		app := uncorsapp.NewUncorsApp(
-			Version,
-			fs,
-			configPath,
-			uncorsConfig,
-			func() *config.UncorsConfig {
-				cfg, _ := loadConfiguration(fs)
+		reloaded, _ := loadConfiguration(fs)
 
-				return cfg
-			},
-		)
-
-		p := tea.NewProgram(app)
-
-		_, err := p.Run()
-		if err != nil {
-			log.Fatal(err)
+		restartErr := app.Restart(ctx, reloaded)
+		if restartErr != nil {
+			log.Printf("Failed to restart server: %v", restartErr)
+			output.Errorf("Failed to restart server: %v", restartErr)
 		}
+	})
+	if err != nil {
+		log.Printf("Failed to start config watcher: %v", err)
+		output.Errorf("Failed to start config watcher: %v", err)
+
+		return
+	}
+
+	// The watcher goroutine owns its lifetime; it is intentionally not closed
+	// here because the proxy server (app.Wait) blocks the caller for the same
+	// duration. The OS reclaims resources when the process exits.
+	_ = watcher
+}
+
+// startVersionChecker waits for a short delay then checks for a newer release.
+func startVersionChecker(ctx context.Context, output *tui.CliOutput, proxy string) {
+	const checkDelay = 50 * time.Second
+
+	versionChecker := version.NewVersionChecker(
+		version.WithOutput(output),
+		version.WithHTTPClient(infra.MakeHTTPClient(proxy)),
+		version.WithCurrentVersion(Version),
+	)
+
+	time.Sleep(checkDelay)
+	versionChecker.CheckNewVersion(ctx)
+}
+
+// runInteractive starts the proxy in interactive TUI mode.
+func runInteractive(fs afero.Fs, configPath string, cfg *config.UncorsConfig) int {
+	app := uncorsapp.NewUncorsApp(
+		Version,
+		fs,
+		configPath,
+		cfg,
+		func() *config.UncorsConfig {
+			reloaded, _ := loadConfiguration(fs)
+
+			return reloaded
+		},
+	)
+
+	_, err := tea.NewProgram(app).Run()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	return 0
@@ -165,7 +207,8 @@ func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
 		panic(err)
 	}
 
-	if err := validators.ValidateConfig(uncorsConfig, fs); err != nil {
+	err = validators.ValidateConfig(uncorsConfig, fs)
+	if err != nil {
 		panic(err)
 	}
 

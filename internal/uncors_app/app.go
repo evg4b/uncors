@@ -43,7 +43,7 @@ type uncorsApp struct {
 	loadConfig func() *config.UncorsConfig
 	configPath string
 
-	watcher *config.ConfigWatcher
+	watcher *config.Watcher
 
 	termHeight int
 	termWidth  int
@@ -267,7 +267,7 @@ func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
 
 func (m *uncorsApp) handleServerStarted() tea.Cmd {
 	if m.configPath != "" {
-		watcher, err := config.NewConfigWatcher(m.configPath, func() {
+		watcher, err := config.NewWatcher(m.configPath, func() {
 			defer helpers.PanicInterceptor(func(value any) {
 				m.output.Errorf("Config reloading error: %v", value)
 			})

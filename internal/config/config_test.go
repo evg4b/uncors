@@ -241,9 +241,12 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy:       "newproxy:9999",
-					Debug:       false,
-					CacheConfig: config.CacheConfig{ExpirationTime: time.Hour, MaxSize: 52428800, Methods: []string{http.MethodGet, http.MethodPost}},
+					Proxy: "newproxy:9999",
+					Debug: false,
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: time.Hour, MaxSize: 52428800,
+						Methods: []string{http.MethodGet, http.MethodPost},
+					},
 					Interactive: true,
 				},
 			},
@@ -327,9 +330,10 @@ func TestLoadConfiguration(t *testing.T) {
 				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
-				name:        "config file doesn't exist",
-				args:        []string{params.Config, "/not-exist-config.yaml"},
-				expectedErr: "failed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
+				name: "config file doesn't exist",
+				args: []string{params.Config, "/not-exist-config.yaml"},
+				expectedErr: "failed to read config file '/not-exist-config.yaml': " +
+					"open /not-exist-config.yaml: file does not exist",
 			},
 			{
 				name: "config file is corrupted",

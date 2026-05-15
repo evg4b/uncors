@@ -25,7 +25,7 @@ func waitForCall(ch <-chan struct{}, timeout time.Duration) bool {
 
 func TestNewConfigWatcher(t *testing.T) {
 	t.Run("returns error for non-existent file", func(t *testing.T) {
-		_, err := config.NewConfigWatcher("/no/such/file.yaml", func() {})
+		_, err := config.NewWatcher("/no/such/file.yaml", func() {})
 		assert.Error(t, err)
 	})
 
@@ -36,7 +36,7 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		called := make(chan struct{}, 1)
 
-		watcher, err := config.NewConfigWatcher(configFile, func() {
+		watcher, err := config.NewWatcher(configFile, func() {
 			select {
 			case called <- struct{}{}:
 			default:
@@ -57,7 +57,7 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		called := make(chan struct{}, 1)
 
-		watcher, err := config.NewConfigWatcher(configFile, func() {
+		watcher, err := config.NewWatcher(configFile, func() {
 			select {
 			case called <- struct{}{}:
 			default:
@@ -79,7 +79,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		callCount := 0
 		called := make(chan struct{}, 10)
 
-		watcher, err := config.NewConfigWatcher(configFile, func() {
+		watcher, err := config.NewWatcher(configFile, func() {
 			callCount++
 
 			called <- struct{}{}
@@ -109,7 +109,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte(""), 0o600))
 
-		watcher, err := config.NewConfigWatcher(configFile, func() {})
+		watcher, err := config.NewWatcher(configFile, func() {})
 		require.NoError(t, err)
 
 		assert.NoError(t, watcher.Close())

@@ -12,49 +12,50 @@ import (
 // This prevents multiple rapid callbacks when editors write files in stages.
 const debounceDelay = 10 * time.Millisecond
 
-// ConfigWatcher watches a configuration file for changes and invokes a callback
+// Watcher monitors a configuration file for changes and invokes a callback
 // whenever the file is written or recreated. It uses a short debounce window to
 // coalesce bursts of filesystem events that editors typically produce on save.
-type ConfigWatcher struct {
-	watcher  *fsnotify.Watcher
-	onChange func()
-	done     chan struct{}
+type Watcher struct {
+	fsWatcher *fsnotify.Watcher
+	onChange  func()
+	done      chan struct{}
 }
 
-// NewConfigWatcher creates a ConfigWatcher that monitors the given file path.
+// NewWatcher creates a Watcher that monitors the given file path.
 // onChange is called (after debouncing) on every write or create event.
 // The returned watcher is already running; call Close to stop it.
-func NewConfigWatcher(filePath string, onChange func()) (*ConfigWatcher, error) {
-	w, err := fsnotify.NewWatcher()
+func NewWatcher(filePath string, onChange func()) (*Watcher, error) {
+	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file watcher: %w", err)
 	}
 
-	if err := w.Add(filePath); err != nil {
-		_ = w.Close()
+	err = fsWatcher.Add(filePath)
+	if err != nil {
+		_ = fsWatcher.Close()
 
 		return nil, fmt.Errorf("failed to watch config file '%s': %w", filePath, err)
 	}
 
-	cw := &ConfigWatcher{
-		watcher:  w,
-		onChange: onChange,
-		done:     make(chan struct{}),
+	watcher := &Watcher{
+		fsWatcher: fsWatcher,
+		onChange:  onChange,
+		done:      make(chan struct{}),
 	}
 
-	go cw.run()
+	go watcher.run()
 
-	return cw, nil
+	return watcher, nil
 }
 
 // Close stops the watcher and releases all associated resources.
-func (cw *ConfigWatcher) Close() error {
+func (cw *Watcher) Close() error {
 	close(cw.done)
 
-	return cw.watcher.Close()
+	return cw.fsWatcher.Close()
 }
 
-func (cw *ConfigWatcher) run() {
+func (cw *Watcher) run() {
 	var debounce *time.Timer
 
 	stopDebounce := func() {
@@ -70,7 +71,7 @@ func (cw *ConfigWatcher) run() {
 
 			return
 
-		case event, ok := <-cw.watcher.Events:
+		case event, ok := <-cw.fsWatcher.Events:
 			if !ok {
 				return
 			}
@@ -81,7 +82,7 @@ func (cw *ConfigWatcher) run() {
 				debounce = time.AfterFunc(debounceDelay, cw.onChange)
 			}
 
-		case err, ok := <-cw.watcher.Errors:
+		case err, ok := <-cw.fsWatcher.Errors:
 			if !ok {
 				return
 			}
