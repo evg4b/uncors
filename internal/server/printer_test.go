@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestPrinter(t *testing.T) {
@@ -20,7 +21,7 @@ func TestRequestPrinter(t *testing.T) {
 			Code:   200,
 		}
 
-		output.RequestMock.Set(func(d *contracts.ReqestData) {})
+		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -37,9 +38,7 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.RequestMock.Calls()) == 0 {
-			t.Error("Request not called")
-		}
+		assert.NotEmpty(t, output.RequestMock.Calls(), "Request not called")
 	})
 
 	t.Run("skips request when Done=false", func(t *testing.T) {
@@ -66,9 +65,7 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.RequestMock.Calls()) != 0 {
-			t.Error("Request should not be called when Done=false")
-		}
+		assert.Empty(t, output.RequestMock.Calls(), "Request should not be called when Done=false")
 	})
 
 	t.Run("skips request when Data is nil", func(t *testing.T) {
@@ -90,9 +87,7 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.RequestMock.Calls()) != 0 {
-			t.Error("Request should not be called when Data is nil")
-		}
+		assert.Empty(t, output.RequestMock.Calls(), "Request should not be called when Data is nil")
 	})
 
 	t.Run("uses NewPrefixOutput when Prefix is set", func(t *testing.T) {
@@ -101,15 +96,16 @@ func TestRequestPrinter(t *testing.T) {
 		prefixedOutput := mocks.NewOutputMock(t)
 
 		const prefix = "PROXY"
+
 		data := &contracts.ReqestData{
 			Method: "GET",
 			Code:   200,
 		}
 
-		output.NewPrefixOutputMock.Set(func(p string) contracts.Output {
+		output.NewPrefixOutputMock.Set(func(_ string) contracts.Output {
 			return prefixedOutput
 		})
-		prefixedOutput.RequestMock.Set(func(d *contracts.ReqestData) {})
+		prefixedOutput.RequestMock.Set(func(_ *contracts.ReqestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -127,12 +123,8 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.NewPrefixOutputMock.Calls()) == 0 {
-			t.Error("NewPrefixOutput not called")
-		}
-		if len(prefixedOutput.RequestMock.Calls()) == 0 {
-			t.Error("Request on prefixed output not called")
-		}
+		assert.NotEmpty(t, output.NewPrefixOutputMock.Calls(), "NewPrefixOutput not called")
+		assert.NotEmpty(t, prefixedOutput.RequestMock.Calls(), "Request on prefixed output not called")
 	})
 
 	t.Run("uses direct output when Prefix is empty", func(t *testing.T) {
@@ -144,7 +136,7 @@ func TestRequestPrinter(t *testing.T) {
 			Code:   200,
 		}
 
-		output.RequestMock.Set(func(d *contracts.ReqestData) {})
+		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -162,12 +154,8 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.RequestMock.Calls()) == 0 {
-			t.Error("Request not called on direct output")
-		}
-		if len(output.NewPrefixOutputMock.Calls()) != 0 {
-			t.Error("NewPrefixOutput should not be called")
-		}
+		assert.NotEmpty(t, output.RequestMock.Calls(), "Request not called on direct output")
+		assert.Empty(t, output.NewPrefixOutputMock.Calls(), "NewPrefixOutput should not be called")
 	})
 
 	t.Run("processes multiple events correctly", func(t *testing.T) {
@@ -179,11 +167,11 @@ func TestRequestPrinter(t *testing.T) {
 		data2 := &contracts.ReqestData{Method: "POST", Code: 201}
 		data3 := &contracts.ReqestData{Method: "DELETE", Code: 204}
 
-		output.RequestMock.Set(func(d *contracts.ReqestData) {})
-		output.NewPrefixOutputMock.Set(func(p string) contracts.Output {
+		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		output.NewPrefixOutputMock.Set(func(_ string) contracts.Output {
 			return prefixedOutput
 		})
-		prefixedOutput.RequestMock.Set(func(d *contracts.ReqestData) {})
+		prefixedOutput.RequestMock.Set(func(_ *contracts.ReqestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -196,15 +184,9 @@ func TestRequestPrinter(t *testing.T) {
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(output.RequestMock.Calls()) != 2 {
-			t.Errorf("expected 2 direct Request calls, got %d", len(output.RequestMock.Calls()))
-		}
-		if len(output.NewPrefixOutputMock.Calls()) != 1 {
-			t.Errorf("expected 1 NewPrefixOutput call, got %d", len(output.NewPrefixOutputMock.Calls()))
-		}
-		if len(prefixedOutput.RequestMock.Calls()) != 1 {
-			t.Errorf("expected 1 prefixed Request call, got %d", len(prefixedOutput.RequestMock.Calls()))
-		}
+		assert.Len(t, output.RequestMock.Calls(), 2, "expected 2 direct Request calls")
+		assert.Len(t, output.NewPrefixOutputMock.Calls(), 1, "expected 1 NewPrefixOutput call")
+		assert.Len(t, prefixedOutput.RequestMock.Calls(), 1, "expected 1 prefixed Request call")
 	})
 
 	t.Run("handles tracker closure gracefully", func(t *testing.T) {

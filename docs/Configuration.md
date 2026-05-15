@@ -292,6 +292,40 @@ mappings:
 > [!WARNING]
 > Domain mappings only work for hosts defined in your system's hosts file. A placeholder mapping like `http://{name}.local.com` will not intercept all internet traffic—only requests to domains explicitly configured in your hosts file.
 
+# HAR Recording
+
+UNCORS can record all proxied traffic to an [HTTP Archive (HAR 1.2)](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file per mapping. The file can be opened in browser DevTools, Postman, or any HAR viewer.
+
+**Shorthand** — pass the output file path as a string:
+
+```yaml
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+    har: ./recordings/api.har
+```
+
+**Full form** — use an object for additional control:
+
+```yaml
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+    har:
+      file: ./recordings/api.har
+      capture-secure-headers: false   # default: false
+```
+
+| Property                 | Type    | Default | Description                                                   |
+| ------------------------ | ------- | ------- | ------------------------------------------------------------- |
+| `file`                   | string  | —       | Output `.har` file path. Collector is disabled when empty.    |
+| `capture-secure-headers` | boolean | `false` | Include auth/cookie headers in the recording (see [HAR Collector](./HAR-Collector#secure-headers)). |
+
+> [!WARNING]
+> Enabling `capture-secure-headers` writes tokens and cookies to disk in plain text. Never commit such files to version control.
+
+See [HAR Collector](./HAR-Collector) for the full reference.
+
 # HTTPS Configuration
 
 UNCORS supports HTTPS for both incoming requests and upstream connections using auto-generated certificates.

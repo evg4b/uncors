@@ -3,8 +3,8 @@ package uncors
 import (
 	"context"
 	"crypto/tls"
+	"io"
 	"net"
-	"net/http"
 	"strconv"
 	"sync"
 
@@ -29,6 +29,7 @@ type Uncors struct {
 
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
+	closers          []io.Closer
 }
 
 func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
@@ -37,6 +38,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		version: version,
 		output:  output,
 		server:  server.New(),
+		tracker: server.NewRequestTracker(),
 	}
 }
 
@@ -63,6 +65,11 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+	app.output.Info("Restarting server....")
+
+	previous := app.closers
+	app.closers = nil
+
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
 		return err
@@ -71,6 +78,10 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	err = app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
+	}
+
+	for _, c := range previous {
+		_ = c.Close()
 	}
 
 	app.output.InfoBox(
@@ -82,6 +93,8 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *Uncors) Close() error {
+	app.closeAll()
+
 	return app.server.Close()
 }
 
@@ -99,6 +112,18 @@ func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
 	})
 
 	return app.cacheStorage
+}
+
+func (app *Uncors) registerCloser(c io.Closer) {
+	app.closers = append(app.closers, c)
+}
+
+func (app *Uncors) closeAll() {
+	for _, c := range app.closers {
+		_ = c.Close()
+	}
+
+	app.closers = nil
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
@@ -119,20 +144,9 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			}
 		}
 
-		innerHandler := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
-
-		var httpHandler http.Handler
-		if app.tracker != nil {
-			httpHandler = app.tracker.Wrap(innerHandler)
-		} else {
-			httpHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				innerHandler.ServeHTTP(contracts.WrapResponseWriter(w), r)
-			})
-		}
-
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   httpHandler,
+			Handler:   app.tracker.Wrap(app.buildHandlerForMappings(uncorsConfig, group.Mappings)),
 			TLSConfig: tlsConfig,
 		})
 	}

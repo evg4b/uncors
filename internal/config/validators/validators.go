@@ -146,6 +146,7 @@ func ValidateMapping(field string, value config.Mapping, fs afero.Fs, errs *Erro
 	ValidateHost(joinPath(field, "from"), value.From, errs)
 	ValidateHost(joinPath(field, "to"), value.To, errs)
 	ValidateOptionsHandling(joinPath(field, "options-handling"), value.OptionsHandling, errs)
+	ValidateHAR(joinPath(field, "har"), value.HAR, errs)
 	ValidateTLS(field, value, fs, errs)
 
 	for i, static := range value.Statics {
