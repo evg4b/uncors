@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"net/http"
 	"strconv"
 	"sync"
 
@@ -24,7 +25,7 @@ type Uncors struct {
 	output  contracts.Output
 	server  *server.Server
 
-	handlerWrapper func(contracts.Handler) contracts.Handler
+	tracker *server.RequestTracker
 
 	cacheStorageOnce sync.Once
 	cacheStorage     contracts.Cache
@@ -39,8 +40,8 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 	}
 }
 
-func (app *Uncors) WithHandlerWrapper(wrapper func(contracts.Handler) contracts.Handler) *Uncors {
-	app.handlerWrapper = wrapper
+func (app *Uncors) WithTracker(tracker *server.RequestTracker) *Uncors {
+	app.tracker = tracker
 
 	return app
 }
@@ -118,14 +119,20 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			}
 		}
 
-		handler := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
-		if app.handlerWrapper != nil {
-			handler = app.handlerWrapper(handler)
+		innerHandler := contracts.Handler(app.buildHandlerForMappings(uncorsConfig, group.Mappings))
+
+		var httpHandler http.Handler
+		if app.tracker != nil {
+			httpHandler = app.tracker.Wrap(innerHandler)
+		} else {
+			httpHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				innerHandler.ServeHTTP(contracts.WrapResponseWriter(w), r)
+			})
 		}
 
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   handler,
+			Handler:   httpHandler,
 			TLSConfig: tlsConfig,
 		})
 	}

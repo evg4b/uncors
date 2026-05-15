@@ -18,7 +18,6 @@ import (
 
 type Handler struct {
 	response config.Response
-	output   contracts.Output
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }
@@ -41,8 +40,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 		return
 	}
-
-	h.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {

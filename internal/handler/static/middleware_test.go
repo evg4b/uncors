@@ -29,8 +29,6 @@ const (
 )
 
 func TestStaticMiddleware(t *testing.T) {
-	outputMock := mocks.NoopOutput()
-
 	fs := testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
 		demoJS:    demoJSContent,
@@ -104,7 +102,6 @@ func TestStaticMiddleware(t *testing.T) {
 
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithOutput(outputMock),
 		)
 
 		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
@@ -152,7 +149,6 @@ func TestStaticMiddleware(t *testing.T) {
 	t.Run("index file is configured", func(t *testing.T) {
 		middleware := static.NewStaticMiddleware(
 			static.WithFileSystem(fs),
-			static.WithOutput(outputMock),
 			static.WithIndex(indexHTML),
 		)
 
@@ -197,7 +193,6 @@ func TestStaticMiddleware(t *testing.T) {
 		t.Run("index file doesn't exists", func(t *testing.T) {
 			middleware := static.NewStaticMiddleware(
 				static.WithFileSystem(fs),
-				static.WithOutput(outputMock),
 				static.WithIndex("/not-exists.html"),
 			)
 

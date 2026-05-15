@@ -21,7 +21,6 @@ var errNotHandled = errors.New("request is not handled")
 type Middleware struct {
 	fs     afero.Fs
 	index  string
-	output contracts.Output
 	prefix string
 }
 
@@ -50,7 +49,6 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
-		h.output.Request(helpers.ToRequestData(request, response.StatusCode()))
 	})
 }
 
@@ -125,12 +123,6 @@ func WithFileSystem(fs afero.Fs) MiddlewareOption {
 func WithIndex(index string) MiddlewareOption {
 	return func(h *Middleware) {
 		h.index = index
-	}
-}
-
-func WithOutput(output contracts.Output) MiddlewareOption {
-	return func(h *Middleware) {
-		h.output = output
 	}
 }
 

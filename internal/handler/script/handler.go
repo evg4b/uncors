@@ -30,8 +30,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 		return
 	}
-
-	h.output.Request(helpers.ToRequestData(request, writer.StatusCode()))
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {

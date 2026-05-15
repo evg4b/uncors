@@ -12,8 +12,20 @@ import (
 const prefixWidth = 13
 
 func printResponse(data *contracts.ReqestData) string {
-	prefix := fmt.Sprintf("%d %s", data.Code, data.Method)
-	prefixStyle, textStyle := getStyles(data.Code)
+	var (
+		prefix                 string
+		prefixStyle, textStyle lipgloss.Style
+	)
+
+	if data.Cancelled {
+		prefix = fmt.Sprintf("CXL %s", data.Method)
+		prefixStyle = styles.HTTPStatusCancelledBlockStyle
+		textStyle = styles.HTTPStatusCancelledTextStyle
+	} else {
+		prefix = fmt.Sprintf("%d %s", data.Code, data.Method)
+		prefixStyle, textStyle = getStyles(data.Code)
+	}
+
 	prefixStyle = prefixStyle.Width(prefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(data.URL.String()))

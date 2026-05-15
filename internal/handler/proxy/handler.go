@@ -32,6 +32,10 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
 	err := h.handle(response, request)
 	if err != nil {
+		if request.Context().Err() != nil {
+			return
+		}
+
 		h.output.Errorf("Proxy handler error: %v", err)
 		infra.HTTPError(response, err)
 	}
@@ -154,8 +158,6 @@ func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-
-	h.output.Request(helpers.ToRequestData(originalResponse.Request, originalResponse.StatusCode))
 
 	return originalResponse, nil
 }

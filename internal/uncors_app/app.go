@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/fsnotify/fsnotify"
@@ -33,7 +34,7 @@ type uncorsApp struct {
 
 	app     *uncors.Uncors
 	output  *tuiOutput
-	tracker *requestTracker
+	tracker *server.RequestTracker
 
 	outputCh   chan string
 	appContext func() context.Context
@@ -73,7 +74,7 @@ func NewUncorsApp(
 ) tea.Model {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
-	tracker := newRequestTracker()
+	tracker := server.NewRequestTracker()
 	appCtx, cancel := context.WithCancel(context.Background())
 
 	keys := newKeyMap()
@@ -83,7 +84,7 @@ func NewUncorsApp(
 	return &uncorsApp{
 		version:       ver,
 		keys:          keys,
-		app:           uncors.CreateUncors(fs, output, ver).WithHandlerWrapper(tracker.Wrap),
+		app:           uncors.CreateUncors(fs, output, ver).WithTracker(tracker),
 		output:        output,
 		tracker:       tracker,
 		outputCh:      outputCh,
@@ -132,6 +133,13 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.waitOutputCmd())
 
 	case requestEventMsg:
+		if typedMsg.Done && typedMsg.Data != nil {
+			if typedMsg.Prefix != "" {
+				m.output.NewPrefixOutput(typedMsg.Prefix).Request(typedMsg.Data)
+			} else {
+				m.output.Request(typedMsg.Data)
+			}
+		}
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:
@@ -325,7 +333,7 @@ func (m *uncorsApp) waitOutputCmd() tea.Cmd {
 func (m *uncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
-		case event, ok := <-m.tracker.events:
+		case event, ok := <-m.tracker.Events():
 			if !ok {
 				return nil
 			}

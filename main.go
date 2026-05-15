@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
@@ -81,7 +82,10 @@ func run() int {
 	ctx := context.Background()
 
 	if !uncorsConfig.Interactive {
-		app := uncors.CreateUncors(fs, output, Version)
+		tracker := server.NewRequestTracker()
+		app := uncors.CreateUncors(fs, output, Version).WithTracker(tracker)
+
+		go server.RequestPrinter(tracker, output)
 
 		viperInstance.OnConfigChange(func(_ fsnotify.Event) {
 			defer helpers.PanicInterceptor(func(value any) {
