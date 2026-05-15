@@ -210,6 +210,61 @@ func TestLoadConfiguration(t *testing.T) {
 					Interactive: false,
 				},
 			},
+			{
+				name: "CLI proxy and debug flags override config file values",
+				args: []string{
+					params.Config, fullConfigPath,
+					"--proxy", "newproxy:9999",
+					"--debug=false",
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
+						{
+							From: hosts.Localhost2.HTTPPort(8080),
+							To:   hosts.Stackoverflow.HTTPS(),
+							Mocks: config.Mocks{
+								{
+									Matcher: config.RequestMatcher{
+										Path:   "/demo",
+										Method: "POST",
+										Queries: map[string]string{"foo": "bar"},
+										Headers: map[string]string{acceptEncoding: "deflate"},
+									},
+									Response: config.Response{
+										Code:    201,
+										Headers: map[string]string{acceptEncoding: "deflate"},
+										Raw:     "demo",
+										File:    "/demo.txt",
+									},
+								},
+							},
+						},
+					},
+					Proxy:       "newproxy:9999",
+					Debug:       false,
+					CacheConfig: config.CacheConfig{ExpirationTime: time.Hour, MaxSize: 52428800, Methods: []string{http.MethodGet, http.MethodPost}},
+					Interactive: true,
+				},
+			},
+			{
+				name: "CLI from/to updates existing mapping from config file",
+				args: []string{
+					params.Config, minimalConfigPath,
+					params.From, hosts.Localhost.HTTPPort(8080), params.To, hosts.Stackoverflow.HTTPS(),
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Stackoverflow.HTTPS()},
+					},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						MaxSize:        config.DefaultMaxSize,
+						Methods:        []string{http.MethodGet},
+					},
+					Interactive: true,
+				},
+			},
 		}
 
 		for _, testCase := range tests {
