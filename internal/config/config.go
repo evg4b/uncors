@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
@@ -11,11 +10,11 @@ import (
 
 // UncorsConfig is the root configuration for the uncors proxy.
 type UncorsConfig struct {
-	Mappings    Mappings    `mapstructure:"mappings"`
-	Proxy       string      `mapstructure:"proxy"`
-	Debug       bool        `mapstructure:"debug"`
-	CacheConfig CacheConfig `mapstructure:"cache-config"`
-	Interactive bool        `mapstructure:"interactive"`
+	Mappings    Mappings    `yaml:"mappings"`
+	Proxy       string      `yaml:"proxy"`
+	Debug       bool        `yaml:"debug"`
+	CacheConfig CacheConfig `yaml:"cache-config"`
+	Interactive bool        `yaml:"-"`
 }
 
 // LoadConfiguration parses CLI arguments and optionally reads a YAML config file.
@@ -33,14 +32,9 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	configPath, _ := flags.GetString("config")
 
 	if configPath != "" {
-		raw, readErr := readYAMLFile(fs, configPath)
+		readErr := readYAMLFile(fs, cfg, configPath)
 		if readErr != nil {
 			return nil, "", readErr
-		}
-
-		applyErr := applyRawConfig(raw, cfg)
-		if applyErr != nil {
-			return nil, "", fmt.Errorf("failed parsing config: %w", applyErr)
 		}
 	}
 
@@ -54,42 +48,22 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	return cfg, configPath, nil
 }
 
-// readYAMLFile opens and decodes a YAML config file into a raw map.
-func readYAMLFile(fs afero.Fs, path string) (map[string]any, error) {
+// readYAMLFile opens a YAML config file and decodes it directly into cfg,
+// preserving any existing default values for keys absent in the file.
+func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	file, err := fs.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file '%s': %w", path, err)
+		return fmt.Errorf("failed to read config file '%s': %w", path, err)
 	}
 
 	defer file.Close()
 
-	var raw map[string]any
-
-	err = yaml.NewDecoder(file).Decode(&raw)
+	err = yaml.NewDecoder(file).Decode(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
+		return fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
 	}
 
-	return raw, nil
-}
-
-// applyRawConfig decodes the raw YAML map into cfg, preserving any existing
-// default values for keys absent in the raw map.
-func applyRawConfig(raw map[string]any, cfg *UncorsConfig) error {
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:           cfg,
-		WeaklyTypedInput: true,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			StringToTimeDurationHookFunc(),
-			URLMappingHookFunc(),
-		),
-	})
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(raw)
+	return nil
 }
 
 // applyFlagOverrides applies CLI flag values to cfg, overriding any config file values.

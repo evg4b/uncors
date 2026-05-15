@@ -3,9 +3,9 @@ package config
 import "github.com/evg4b/uncors/internal/helpers"
 
 type OptionsHandling struct {
-	Disabled bool              `mapstructure:"disabled"`
-	Headers  map[string]string `mapstructure:"headers"`
-	Code     int               `mapstructure:"code"`
+	Disabled bool              `yaml:"disabled"`
+	Headers  map[string]string `yaml:"headers"`
+	Code     int               `yaml:"code"`
 }
 
 func (o *OptionsHandling) Clone() OptionsHandling {

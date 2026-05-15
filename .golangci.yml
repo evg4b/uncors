@@ -29,6 +29,10 @@ linters:
         - ok
         - fs
         - ca
+    tagliatelle:
+      case:
+        rules:
+          yaml: kebab
   exclusions:
     generated: lax
     presets:

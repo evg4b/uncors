@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 var (
@@ -49,28 +47,6 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	}
 
 	return nil
-}
-
-func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.DecodeHookFunc) error {
-	hook := mapstructure.ComposeDecodeHookFunc(
-		StringToTimeDurationHookFunc(),
-		mapstructure.StringToSliceHookFunc(","),
-		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
-	)
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:               mapping,
-		DecodeHook:           hook,
-		ErrorUnused:          true,
-		IgnoreUntaggedFields: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	err = decoder.Decode(data)
-
-	return err
 }
 
 const (

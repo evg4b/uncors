@@ -1,9 +1,9 @@
 package config
 
 type RewritingOption struct {
-	From string `mapstructure:"from"`
-	To   string `mapstructure:"to"`
-	Host string `mapstructure:"host"`
+	From string `yaml:"from"`
+	To   string `yaml:"to"`
+	Host string `yaml:"host"`
 }
 
 func (r RewritingOption) Clone() RewritingOption {

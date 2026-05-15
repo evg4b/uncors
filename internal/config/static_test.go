@@ -5,6 +5,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -18,31 +20,31 @@ const (
 	indexHTML = "index.html"
 )
 
-func TestStaticDirMappingHookFunc(t *testing.T) {
+func TestStaticDirectoriesUnmarshalYAML(t *testing.T) {
 	type testType struct {
-		Statics config.StaticDirectories `mapstructure:"statics"`
+		Statics config.StaticDirectories `yaml:"statics"`
 	}
 
 	tests := []struct {
 		name     string
-		yaml     string
+		input    string
 		expected config.StaticDirectories
 	}{
 		{
-			name: "decode plan mapping",
-			yaml: `
+			name: "plain map shorthand",
+			input: `
 statics:
   /path: /static-dir
   /another-path: /another-static-dir
 `,
 			expected: config.StaticDirectories{
-				{Path: anotherPath, Dir: anotherStaticDir},
 				{Path: path, Dir: staticDir},
+				{Path: anotherPath, Dir: anotherStaticDir},
 			},
 		},
 		{
-			name: "decode object mappings",
-			yaml: `
+			name: "object map without index",
+			input: `
 statics:
   /path: { dir: /static-dir }
   /another-path: { dir: /another-static-dir }
@@ -53,8 +55,8 @@ statics:
 			},
 		},
 		{
-			name: "decode object mappings with index",
-			yaml: `
+			name: "object map with index",
+			input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: { dir: /another-static-dir, index: default.html }
@@ -65,8 +67,8 @@ statics:
 			},
 		},
 		{
-			name: "decode mixed mappings with index",
-			yaml: `
+			name: "mixed map",
+			input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
@@ -80,10 +82,9 @@ statics:
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			actual := testType{}
-			decodeYAMLInto(t, testCase.yaml, &actual, config.StaticDirMappingHookFunc())
-
-			assert.ElementsMatch(t, actual.Statics, testCase.expected)
+			var actual testType
+			require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &actual))
+			assert.ElementsMatch(t, testCase.expected, actual.Statics)
 		})
 	}
 }

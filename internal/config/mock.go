@@ -7,8 +7,8 @@ import (
 )
 
 type Mock struct {
-	Matcher  RequestMatcher `mapstructure:",squash"`
-	Response Response       `mapstructure:"response"`
+	Matcher  RequestMatcher `yaml:",inline"`
+	Response Response       `yaml:"response"`
 }
 
 func (m *Mock) Clone() Mock {

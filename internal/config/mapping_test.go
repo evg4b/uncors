@@ -5,7 +5,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -13,55 +12,60 @@ import (
 
 var localhostSecure = "https://localhost:9090"
 
-// decodeYAMLInto decodes a YAML string into out using mapstructure with the given hooks.
-func decodeYAMLInto(t *testing.T, yamlStr string, out any, hooks ...mapstructure.DecodeHookFunc) {
-	t.Helper()
-
-	var raw any
-	require.NoError(t, yaml.Unmarshal([]byte(yamlStr), &raw))
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:           out,
-		WeaklyTypedInput: true,
-		DecodeHook:       mapstructure.ComposeDecodeHookFunc(hooks...),
-	})
-	require.NoError(t, err)
-	require.NoError(t, decoder.Decode(raw))
-}
-
-func TestURLMappingHookFunc(t *testing.T) {
+func TestMappingUnmarshalYAML(t *testing.T) {
 	t.Run("positive cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			yaml     string
+			input    string
 			expected config.Mapping
 		}{
 			{
-				name: "simple key-value mapping",
-				yaml: "http://localhost:4200: https://github.com",
+				name:  "simple key-value shorthand",
+				input: "http://localhost:4200: https://github.com",
 				expected: config.Mapping{
 					From: hosts.Localhost.HTTPPort(4200),
 					To:   hosts.Github.HTTPS(),
 				},
 			},
 			{
-				name: "full object mapping",
-				yaml: "{ from: http://localhost:3000, to: https://api.github.com }",
+				name:  "full object mapping",
+				input: "{ from: http://localhost:3000, to: https://api.github.com }",
 				expected: config.Mapping{
 					From: hosts.Localhost.HTTPPort(3000),
 					To:   hosts.APIGithub.HTTPS(),
+				},
+			},
+			{
+				name: "mapping with HAR shorthand",
+				input: `
+from: http://localhost:3000
+to: https://api.example.com
+har: ./recordings/api.har
+`,
+				expected: config.Mapping{
+					From: hosts.Localhost.HTTPPort(3000),
+					To:   "https://api.example.com",
+					HAR:  config.HARConfig{File: "./recordings/api.har"},
 				},
 			},
 		}
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual := config.Mapping{}
-				decodeYAMLInto(t, testCase.yaml, &actual, config.URLMappingHookFunc())
-
+				var actual config.Mapping
+				require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &actual))
 				assert.Equal(t, testCase.expected, actual)
 			})
 		}
+	})
+
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("shorthand with non-string value", func(t *testing.T) {
+			var actual config.Mapping
+
+			err := yaml.Unmarshal([]byte("http://localhost: 123"), &actual)
+			assert.Error(t, err)
+		})
 	})
 }
 

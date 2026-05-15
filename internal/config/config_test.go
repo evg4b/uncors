@@ -344,8 +344,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "incorrect type in config file",
 				args: []string{params.Config, incorrectConfigPath},
-				expectedErr: "failed parsing config: 1 error(s) decoding:\n" +
-					"\n* error decoding 'mappings[0]': unsupported operation",
+				expectedErr: "failed to read config file '/incorrect-config.yaml': " +
+					"While parsing config: mapping shorthand value must be a string URL",
 			},
 		}
 

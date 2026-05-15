@@ -3,10 +3,10 @@ package config
 import "github.com/evg4b/uncors/internal/helpers"
 
 type RequestMatcher struct {
-	Path    string            `mapstructure:"path"`
-	Method  string            `mapstructure:"method"`
-	Queries map[string]string `mapstructure:"queries"`
-	Headers map[string]string `mapstructure:"headers"`
+	Path    string            `yaml:"path"`
+	Method  string            `yaml:"method"`
+	Queries map[string]string `yaml:"queries"`
+	Headers map[string]string `yaml:"headers"`
 }
 
 func (r *RequestMatcher) Clone() RequestMatcher {

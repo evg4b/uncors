@@ -4,37 +4,26 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
-func TestHARConfigHookFunc(t *testing.T) {
-	decode := func(t *testing.T, raw any) config.HARConfig {
-		t.Helper()
-
-		var out config.HARConfig
-
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-			Result:     &out,
-			DecodeHook: config.HARConfigHookFunc(),
-		})
-		require.NoError(t, err)
-		require.NoError(t, decoder.Decode(raw))
-
-		return out
-	}
-
+func TestHARConfigUnmarshalYAML(t *testing.T) {
 	t.Run("string shorthand sets File", func(t *testing.T) {
-		cfg := decode(t, "./recordings/api.har")
+		var cfg config.HARConfig
+		require.NoError(t, yaml.Unmarshal([]byte(`"./recordings/api.har"`), &cfg))
 		assert.Equal(t, config.HARConfig{File: "./recordings/api.har"}, cfg)
 	})
 
 	t.Run("map form decoded normally", func(t *testing.T) {
-		cfg := decode(t, map[string]any{
-			"file":                   "./out.har",
-			"capture-secure-headers": true,
-		})
+		const input = `
+file: ./out.har
+capture-secure-headers: true
+`
+
+		var cfg config.HARConfig
+		require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 		assert.Equal(t, config.HARConfig{
 			File:                 "./out.har",
 			CaptureSecureHeaders: true,
@@ -43,14 +32,14 @@ func TestHARConfigHookFunc(t *testing.T) {
 }
 
 func TestHARShorthandInMapping(t *testing.T) {
-	const yaml = `
+	const input = `
 from: http://localhost:3000
 to: https://api.example.com
 har: ./recordings/api.har
 `
 
-	actual := config.Mapping{}
-	decodeYAMLInto(t, yaml, &actual, config.URLMappingHookFunc(), config.HARConfigHookFunc())
+	var actual config.Mapping
+	require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
 
 	assert.Equal(t, "./recordings/api.har", actual.HAR.File)
 	assert.False(t, actual.HAR.CaptureSecureHeaders)
