@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,20 +19,18 @@ const (
 )
 
 func TestStaticDirMappingHookFunc(t *testing.T) {
-	const configFile = "config.yaml"
-
 	type testType struct {
 		Statics config.StaticDirectories `mapstructure:"statics"`
 	}
 
 	tests := []struct {
 		name     string
-		config   string
+		yaml     string
 		expected config.StaticDirectories
 	}{
 		{
 			name: "decode plan mapping",
-			config: `
+			yaml: `
 statics:
   /path: /static-dir
   /another-path: /another-static-dir
@@ -46,7 +42,7 @@ statics:
 		},
 		{
 			name: "decode object mappings",
-			config: `
+			yaml: `
 statics:
   /path: { dir: /static-dir }
   /another-path: { dir: /another-static-dir }
@@ -58,7 +54,7 @@ statics:
 		},
 		{
 			name: "decode object mappings with index",
-			config: `
+			yaml: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: { dir: /another-static-dir, index: default.html }
@@ -70,7 +66,7 @@ statics:
 		},
 		{
 			name: "decode mixed mappings with index",
-			config: `
+			yaml: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
@@ -81,22 +77,11 @@ statics:
 			},
 		},
 	}
+
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			viperInstance := viper.GetViper()
-			viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
-				configFile: testCase.config,
-			}))
-			viperInstance.SetConfigFile(configFile)
-			err := viperInstance.ReadInConfig()
-			testutils.CheckNoError(t, err)
-
 			actual := testType{}
-
-			err = viperInstance.Unmarshal(&actual, viper.DecodeHook(
-				config.StaticDirMappingHookFunc(),
-			))
-			testutils.CheckNoError(t, err)
+			decodeYAMLInto(t, testCase.yaml, &actual, config.StaticDirMappingHookFunc())
 
 			assert.ElementsMatch(t, actual.Statics, testCase.expected)
 		})
@@ -134,6 +119,7 @@ func TestStaticDirMappingClone(t *testing.T) {
 			},
 		},
 	}
+
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := testCase.expected.Clone()

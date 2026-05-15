@@ -5,55 +5,59 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/spf13/viper"
+	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 var localhostSecure = "https://localhost:9090"
 
-func TestURLMappingHookFunc(t *testing.T) {
-	const configFile = "config.yaml"
+// decodeYAMLInto decodes a YAML string into out using mapstructure with the given hooks.
+func decodeYAMLInto(t *testing.T, yamlStr string, out any, hooks ...mapstructure.DecodeHookFunc) {
+	t.Helper()
 
+	var raw any
+	require.NoError(t, yaml.Unmarshal([]byte(yamlStr), &raw))
+
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:           out,
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(hooks...),
+	})
+	require.NoError(t, err)
+	require.NoError(t, decoder.Decode(raw))
+}
+
+func TestURLMappingHookFunc(t *testing.T) {
 	t.Run("positive cases", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			config   string
+			yaml     string
 			expected config.Mapping
 		}{
 			{
-				name:   "simple key-value mapping",
-				config: "http://localhost:4200: https://github.com",
+				name: "simple key-value mapping",
+				yaml: "http://localhost:4200: https://github.com",
 				expected: config.Mapping{
 					From: hosts.Localhost.HTTPPort(4200),
 					To:   hosts.Github.HTTPS(),
 				},
 			},
 			{
-				name:   "full object mapping",
-				config: "{ from: http://localhost:3000, to: https://api.github.com }",
+				name: "full object mapping",
+				yaml: "{ from: http://localhost:3000, to: https://api.github.com }",
 				expected: config.Mapping{
 					From: hosts.Localhost.HTTPPort(3000),
 					To:   hosts.APIGithub.HTTPS(),
 				},
 			},
 		}
+
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				viperInstance := viper.GetViper()
-				viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
-					configFile: testCase.config,
-				}))
-				viperInstance.SetConfigFile(configFile)
-				err := viperInstance.ReadInConfig()
-				testutils.CheckNoError(t, err)
-
 				actual := config.Mapping{}
-
-				err = viperInstance.Unmarshal(&actual, viper.DecodeHook(
-					config.URLMappingHookFunc(),
-				))
-				testutils.CheckNoError(t, err)
+				decodeYAMLInto(t, testCase.yaml, &actual, config.URLMappingHookFunc())
 
 				assert.Equal(t, testCase.expected, actual)
 			})
@@ -94,6 +98,7 @@ func TestURLMappingClone(t *testing.T) {
 			},
 		},
 	}
+
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := testCase.expected.Clone()

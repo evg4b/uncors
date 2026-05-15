@@ -5,23 +5,28 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestStringToTimeDurationHookFunc(t *testing.T) {
-	const key = "duration"
+// decodeValue uses mapstructure with the given hooks to decode src into dst.
+func decodeValue(t *testing.T, src, dst any, hooks ...mapstructure.DecodeHookFunc) error {
+	t.Helper()
 
-	viperInstance := viper.New()
-	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
-		config.StringToTimeDurationHookFunc(),
-		mapstructure.OrComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.StringToSliceHookFunc(", "),
-		),
-	))
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:           dst,
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(hooks...),
+	})
+	require.NoError(t, err)
+
+	return decoder.Decode(src)
+}
+
+func TestStringToTimeDurationHookFunc(t *testing.T) {
+	hook := config.StringToTimeDurationHookFunc()
+	sliceHook := mapstructure.StringToSliceHookFunc(",")
 
 	t.Run("correct parse different formats", func(t *testing.T) {
 		tests := []struct {
@@ -48,58 +53,37 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				viperInstance.Set(key, testCase.value)
-
-				durationValue := time.Duration(0)
-				err := viperInstance.UnmarshalKey(key, &durationValue, configOption)
-				testutils.CheckNoError(t, err)
-
-				assert.Equal(t, testCase.expected, durationValue)
+				var out time.Duration
+				require.NoError(t, decodeValue(t, testCase.value, &out, hook))
+				assert.Equal(t, testCase.expected, out)
 			})
 		}
 	})
 
 	t.Run("doesnt not affected other type parses", func(t *testing.T) {
 		t.Run("string to string", func(t *testing.T) {
-			viperInstance.Set(key, "value")
-
-			stringValue := ""
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
-
-			assert.Equal(t, "value", stringValue)
+			var out string
+			require.NoError(t, decodeValue(t, "value", &out, hook))
+			assert.Equal(t, "value", out)
 		})
 
 		t.Run("string to []string", func(t *testing.T) {
-			viperInstance.Set(key, "value,value2")
-
-			var stringValue []string
-
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
-
-			assert.Equal(t, []string{"value", "value2"}, stringValue)
+			var out []string
+			require.NoError(t, decodeValue(t, "value,value2", &out, sliceHook))
+			assert.Equal(t, []string{"value", "value2"}, out)
 		})
 
 		t.Run("number to string", func(t *testing.T) {
-			viperInstance.Set(key, 11)
-
-			stringValue := ""
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
-
-			assert.Equal(t, "11", stringValue)
+			var out string
+			require.NoError(t, decodeValue(t, 11, &out, hook))
+			assert.Equal(t, "11", out)
 		})
 
 		t.Run("number to duration", func(t *testing.T) {
 			const expected = 14 * time.Minute
-			viperInstance.Set(key, int(expected))
-
-			durationValue := time.Nanosecond
-			err := viperInstance.UnmarshalKey(key, &durationValue, configOption)
-			testutils.CheckNoError(t, err)
-
-			assert.Equal(t, expected, durationValue)
+			out := time.Nanosecond
+			require.NoError(t, decodeValue(t, int(expected), &out, hook))
+			assert.Equal(t, expected, out)
 		})
 	})
 }
