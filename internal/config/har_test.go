@@ -4,9 +4,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,23 +43,14 @@ func TestHARConfigHookFunc(t *testing.T) {
 }
 
 func TestHARShorthandInMapping(t *testing.T) {
-	const configFile = "config.yaml"
-
 	const yaml = `
 from: http://localhost:3000
 to: https://api.example.com
 har: ./recordings/api.har
 `
 
-	viperCfg := viper.New()
-	viperCfg.SetFs(testutils.FsFromMap(t, map[string]string{configFile: yaml}))
-	viperCfg.SetConfigFile(configFile)
-	require.NoError(t, viperCfg.ReadInConfig())
-
 	actual := config.Mapping{}
-	require.NoError(t, viperCfg.Unmarshal(&actual, viper.DecodeHook(
-		config.URLMappingHookFunc(),
-	)))
+	decodeYAMLInto(t, yaml, &actual, config.URLMappingHookFunc(), config.HARConfigHookFunc())
 
 	assert.Equal(t, "./recordings/api.har", actual.HAR.File)
 	assert.False(t, actual.HAR.CaptureSecureHeaders)
