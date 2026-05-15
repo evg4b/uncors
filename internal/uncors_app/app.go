@@ -15,9 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/internal/version"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -43,7 +41,9 @@ type uncorsApp struct {
 
 	cfg        *config.UncorsConfig
 	loadConfig func() *config.UncorsConfig
-	viper      *viper.Viper
+	configPath string
+
+	watcher *config.ConfigWatcher
 
 	termHeight int
 	termWidth  int
@@ -65,10 +65,13 @@ type appUpdateMsg interface {
 	update(app *uncorsApp) tea.Cmd
 }
 
+// NewUncorsApp creates the interactive TUI model. configPath is the active
+// config file path (empty string if no config file is used); when non-empty
+// the app watches it for changes and auto-restarts the proxy on every save.
 func NewUncorsApp(
 	ver string,
 	fs afero.Fs,
-	viperInstance *viper.Viper,
+	configPath string,
 	cfg *config.UncorsConfig,
 	loadConfig func() *config.UncorsConfig,
 ) tea.Model {
@@ -93,7 +96,7 @@ func NewUncorsApp(
 		cancel:        cancel,
 		cfg:           cfg,
 		loadConfig:    loadConfig,
-		viper:         viperInstance,
+		configPath:    configPath,
 		historyWidget: historyWidget,
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
@@ -263,19 +266,25 @@ func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
 }
 
 func (m *uncorsApp) handleServerStarted() tea.Cmd {
-	m.viper.OnConfigChange(func(_ fsnotify.Event) {
-		defer helpers.PanicInterceptor(func(value any) {
-			m.output.Errorf("Config reloading error: %v", value)
+	if m.configPath != "" {
+		watcher, err := config.NewConfigWatcher(m.configPath, func() {
+			defer helpers.PanicInterceptor(func(value any) {
+				m.output.Errorf("Config reloading error: %v", value)
+			})
+
+			newCfg := m.loadConfig()
+
+			err := m.app.Restart(m.appContext(), newCfg)
+			if err != nil {
+				m.output.Errorf("Failed to restart server: %v", err)
+			}
 		})
-
-		newCfg := m.loadConfig()
-
-		err := m.app.Restart(m.appContext(), newCfg)
 		if err != nil {
-			m.output.Errorf("Failed to restart server: %v", err)
+			m.output.Errorf("Failed to watch config file: %v", err)
+		} else {
+			m.watcher = watcher
 		}
-	})
-	m.viper.WatchConfig()
+	}
 
 	return m.versionCheckCmd()
 }
@@ -305,6 +314,10 @@ func (m *uncorsApp) handleRestart() {
 
 func (m *uncorsApp) handleShutdown() tea.Cmd {
 	log.Println("Handling shutdown")
+
+	if m.watcher != nil {
+		_ = m.watcher.Close()
+	}
 
 	_ = m.historyWidget.Close()
 

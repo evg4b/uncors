@@ -10,9 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +21,6 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 	t.Helper()
 
 	fs := afero.NewMemMapFs()
-	viperInstance := viper.New()
 	uncorsConfig := &config.UncorsConfig{
 		Mappings: config.Mappings{},
 	}
@@ -32,7 +29,7 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 	model := NewUncorsApp(
 		"test-version",
 		fs,
-		viperInstance,
+		"", // no config file — watcher is not created
 		uncorsConfig,
 		func() *config.UncorsConfig {
 			loadCalls++
@@ -163,7 +160,6 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 
 		cmd := app.handleServerStarted()
 		require.NotNil(t, cmd)
-		app.viper.OnConfigChange(func(_ fsnotify.Event) {})
 
 		msg = app.restartCmd()()
 		assert.Equal(t, restartMsg{}, msg)

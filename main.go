@@ -19,10 +19,8 @@ import (
 	"github.com/evg4b/uncors/internal/uncors"
 	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
 	"github.com/evg4b/uncors/internal/version"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var Version = "X.X.X"
@@ -75,9 +73,7 @@ func run() int {
 		pflag.PrintDefaults()
 	}
 
-	viperInstance := viper.GetViper()
-
-	uncorsConfig := loadConfiguration(viperInstance, fs)
+	uncorsConfig, configPath := loadConfiguration(fs)
 
 	ctx := context.Background()
 
@@ -87,19 +83,28 @@ func run() int {
 
 		go server.RequestPrinter(tracker, output)
 
-		viperInstance.OnConfigChange(func(_ fsnotify.Event) {
-			defer helpers.PanicInterceptor(func(value any) {
-				log.Printf("Config reloading error: %v", value)
-				output.Errorf("Config reloading error: %v", value)
-			})
+		if configPath != "" {
+			watcher, err := config.NewConfigWatcher(configPath, func() {
+				defer helpers.PanicInterceptor(func(value any) {
+					log.Printf("Config reloading error: %v", value)
+					output.Errorf("Config reloading error: %v", value)
+				})
 
-			err := app.Restart(ctx, loadConfiguration(viperInstance, fs))
+				reloaded, _ := loadConfiguration(fs)
+
+				err := app.Restart(ctx, reloaded)
+				if err != nil {
+					log.Printf("Failed to restart server: %v", err)
+					output.Errorf("Failed to restart server: %v", err)
+				}
+			})
 			if err != nil {
-				log.Printf("Failed to restart server: %v", err)
-				output.Errorf("Failed to restart server: %v", err)
+				log.Printf("Failed to start config watcher: %v", err)
+				output.Errorf("Failed to start config watcher: %v", err)
+			} else {
+				defer watcher.Close()
 			}
-		})
-		viperInstance.WatchConfig()
+		}
 
 		err := app.Start(ctx, uncorsConfig)
 		if err != nil {
@@ -131,9 +136,13 @@ func run() int {
 		app := uncorsapp.NewUncorsApp(
 			Version,
 			fs,
-			viperInstance,
+			configPath,
 			uncorsConfig,
-			func() *config.UncorsConfig { return loadConfiguration(viperInstance, fs) },
+			func() *config.UncorsConfig {
+				cfg, _ := loadConfiguration(fs)
+
+				return cfg
+			},
 		)
 
 		p := tea.NewProgram(app)
@@ -147,11 +156,16 @@ func run() int {
 	return 0
 }
 
-func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsConfig {
-	uncorsConfig := config.LoadConfiguration(viperInstance, os.Args)
-
-	err := validators.ValidateConfig(uncorsConfig, fs)
+// loadConfiguration loads and validates the configuration from CLI args and the
+// config file. It panics on any error so that the PanicInterceptor in run() can
+// display a human-readable message and exit cleanly.
+func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
+	uncorsConfig, configPath, err := config.LoadConfiguration(fs, os.Args)
 	if err != nil {
+		panic(err)
+	}
+
+	if err := validators.ValidateConfig(uncorsConfig, fs); err != nil {
 		panic(err)
 	}
 
@@ -167,5 +181,5 @@ func loadConfiguration(viperInstance *viper.Viper, fs afero.Fs) *config.UncorsCo
 		log.SetOutput(io.Discard)
 	}
 
-	return uncorsConfig
+	return uncorsConfig, configPath
 }
