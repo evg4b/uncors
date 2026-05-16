@@ -8,7 +8,63 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
+
+func TestResponseUnmarshalYAML(t *testing.T) {
+	t.Run("decodes all fields", func(t *testing.T) {
+		const input = `
+code: 200
+headers:
+  Content-Type: application/json
+  X-Custom: value
+delay: 200ms
+raw: '{"ok":true}'
+file: ./body.json
+`
+
+		var actual config.Response
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Equal(t, config.Response{
+			Code: 200,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+				"X-Custom":     "value",
+			},
+			Delay: 200 * time.Millisecond,
+			Raw:   `{"ok":true}`,
+			File:  "./body.json",
+		}, actual)
+	})
+
+	t.Run("zero delay when field is absent", func(t *testing.T) {
+		const input = `code: 204`
+
+		var actual config.Response
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Zero(t, actual.Delay)
+	})
+
+	t.Run("parses delay with embedded spaces", func(t *testing.T) {
+		const input = `delay: "1s 500ms"`
+
+		var actual config.Response
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Equal(t, 1500*time.Millisecond, actual.Delay)
+	})
+
+	t.Run("returns error for invalid delay", func(t *testing.T) {
+		const input = `delay: not-a-duration`
+
+		var actual config.Response
+
+		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
+	})
+}
 
 func TestResponseClone(t *testing.T) {
 	response := config.Response{
