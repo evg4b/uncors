@@ -379,6 +379,54 @@ func TestHandleRequestEventWithData(t *testing.T) {
 	})
 }
 
+func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
+	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+	require.NoError(t, err)
+
+	_ = tmpFile.Close()
+
+	fs := afero.NewMemMapFs()
+	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+	called := make(chan struct{}, 1)
+
+	model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+		select {
+		case called <- struct{}{}:
+		default:
+		}
+
+		return cfg
+	})
+
+	app, ok := model.(*uncorsApp)
+	require.True(t, ok)
+
+	defer func() {
+		app.cancel()
+		_ = app.app.Close()
+
+		if app.historyWidget != nil && app.historyWidget.hist != nil {
+			_ = app.historyWidget.hist.Close()
+		}
+	}()
+
+	cmd := app.handleServerStarted()
+
+	require.NotNil(t, cmd)
+	require.NotNil(t, app.watcher)
+
+	defer app.watcher.Close()
+
+	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
+
+	select {
+	case <-called:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("onChange callback was not invoked within timeout")
+	}
+}
+
 func TestHandleShutdownWithWatcher(t *testing.T) {
 	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
 	require.NoError(t, err)
