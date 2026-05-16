@@ -78,6 +78,28 @@ func TestWatcherRunEventsNotOk(t *testing.T) {
 	_ = watcher.fsWatcher.Close()
 }
 
+// TestWatcherRunErrorsNotOk covers the return in run() when the Errors channel
+// is closed with ok=false (lines 86-88 in watcher.go).
+func TestWatcherRunErrorsNotOk(t *testing.T) {
+	watcher, _, errs := newIsolatedWatcher(t)
+
+	exited := runAndWait(watcher)
+
+	// Closing the channel makes the Errors select case fire with ok=false,
+	// which triggers the return on lines 86-88.
+	close(errs)
+
+	select {
+	case <-exited:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("run goroutine did not exit after Errors channel was closed")
+	}
+
+	// Close the underlying fsnotify watcher so its backend goroutine can exit.
+	// It closes its own (original) Events and Errors channels, not ours.
+	_ = watcher.fsWatcher.Close()
+}
+
 // TestWatcherRunErrorPath covers the log.Printf branch in run() when an error
 // arrives from the backend with ok=true (line 90 in watcher.go).
 func TestWatcherRunErrorPath(t *testing.T) {
