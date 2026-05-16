@@ -2,14 +2,16 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/urlparser"
+	multierror "github.com/hashicorp/go-multierror"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
-// ErrMappingShorthandValue is returned when a URL shorthand mapping has a
-// non-string value (e.g. "http://localhost: 123" instead of a URL string).
 var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
 
 type Mapping struct {
@@ -23,28 +25,17 @@ type Mapping struct {
 	OptionsHandling OptionsHandling   `yaml:"options-handling"`
 	HAR             HARConfig         `yaml:"har"`
 
-	// Cached parsed URL and its components (not serialized)
 	fromURL  *url.URL `yaml:"-"`
 	fromHost string   `yaml:"-"`
 	fromPort string   `yaml:"-"`
 }
 
-// knownMappingFields is the set of yaml keys that belong to a full Mapping
-// object. Any single-key YAML map whose key is NOT in this set is interpreted
-// as the shorthand "from: to" form.
 var knownMappingFields = map[string]bool{
 	"from": true, "to": true, "statics": true, "mocks": true,
 	"scripts": true, "cache": true, "rewrites": true,
 	"options-handling": true, "har": true,
 }
 
-// UnmarshalYAML decodes a Mapping from YAML. It recognises two forms:
-//
-// Shorthand — a single-key mapping whose key is not a known field name:
-//
-//	http://localhost:8080: https://example.com
-//
-// Full form — a standard YAML mapping with "from", "to", and optional fields.
 func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.MappingNode && len(value.Content) == 2 {
 		key := value.Content[0].Value
@@ -82,7 +73,6 @@ func (m *Mapping) Clone() Mapping {
 	}
 }
 
-// GetFromURL returns the parsed URL, caching it on first access.
 func (m *Mapping) GetFromURL() (*url.URL, error) {
 	if m.fromURL == nil {
 		parsedURL, err := urlparser.Parse(m.From)
@@ -96,7 +86,6 @@ func (m *Mapping) GetFromURL() (*url.URL, error) {
 	return m.fromURL, nil
 }
 
-// GetFromHostPort returns the host and port from the From URL, caching them on first access.
 func (m *Mapping) GetFromHostPort() (string, string, error) {
 	if m.fromHost == "" && m.fromPort == "" {
 		uri, err := m.GetFromURL()
@@ -113,9 +102,70 @@ func (m *Mapping) GetFromHostPort() (string, string, error) {
 	return m.fromHost, m.fromPort, nil
 }
 
-// ClearCache clears the cached URL and its components. This is primarily used for testing.
 func (m *Mapping) ClearCache() {
 	m.fromURL = nil
 	m.fromHost = ""
 	m.fromPort = ""
+}
+
+func ValidateProxy(field, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	_, err := urlparser.Parse(value)
+	if err != nil {
+		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
+	}
+
+	return nil
+}
+
+func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
+	fromURL, err := mapping.GetFromURL()
+	if err != nil {
+		return nil //nolint:nilerr
+	}
+
+	if fromURL.Scheme != httpsScheme {
+		return nil
+	}
+
+	if !infratls.CAExists(fs) {
+		return &TLSError{fromURL.Host}
+	}
+
+	return nil
+}
+
+func (m *Mapping) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, ValidateHost(joinPath(field, "from"), m.From))
+	errs = multierror.Append(errs, ValidateHost(joinPath(field, "to"), m.To))
+	errs = multierror.Append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
+	errs = multierror.Append(errs, m.HAR.Validate(joinPath(field, "har")))
+	errs = multierror.Append(errs, ValidateTLS(field, *m, fs))
+
+	for i, static := range m.Statics {
+		errs = multierror.Append(errs, static.Validate(joinPath(field, "statics", index(i)), fs))
+	}
+
+	for i, mock := range m.Mocks {
+		errs = multierror.Append(errs, mock.Validate(joinPath(field, "mocks", index(i)), fs))
+	}
+
+	for i, glob := range m.Cache {
+		errs = multierror.Append(errs, ValidateGlobPattern(joinPath(field, "cache", index(i)), glob))
+	}
+
+	for i, rewrite := range m.Rewrites {
+		errs = multierror.Append(errs, rewrite.Validate(joinPath(field, "rewrite", index(i))))
+	}
+
+	for i, script := range m.Scripts {
+		errs = multierror.Append(errs, script.Validate(joinPath(field, "scripts", index(i)), fs))
+	}
+
+	return joinErrors(errs)
 }

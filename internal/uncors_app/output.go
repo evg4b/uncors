@@ -67,7 +67,7 @@ func (o *tuiOutput) Printf(msg string, args ...any) {
 	o.capture(func(out *tui.CliOutput) { out.Printf(msg, args...) })
 }
 
-func (o *tuiOutput) Request(data *contracts.ReqestData) {
+func (o *tuiOutput) Request(data *contracts.RequestData) {
 	o.capture(func(out *tui.CliOutput) { out.Request(data) })
 }
 

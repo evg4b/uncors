@@ -59,3 +59,37 @@ har: ./recordings/api.har
 	assert.Equal(t, "./recordings/api.har", actual.HAR.File)
 	assert.False(t, actual.HAR.CaptureSecureHeaders)
 }
+
+func TestHARValidator(t *testing.T) {
+	t.Run("valid cases", func(t *testing.T) {
+		cases := []struct {
+			name  string
+			value config.HARConfig
+		}{
+			{
+				name:  "disabled (empty file)",
+				value: config.HARConfig{},
+			},
+			{
+				name:  "valid file path with extension",
+				value: config.HARConfig{File: "output.har"},
+			},
+			{
+				name:  "path with directory and extension",
+				value: config.HARConfig{File: "/tmp/trace.har"},
+			},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.NoError(t, tc.value.Validate("mappings[0].har"))
+			})
+		}
+	})
+
+	t.Run("invalid cases", func(t *testing.T) {
+		t.Run("file path without extension", func(t *testing.T) {
+			assert.Error(t, (&config.HARConfig{File: "outputfile"}).Validate("mappings[0].har"))
+		})
+	})
+}

@@ -20,7 +20,7 @@ type RequestEvent struct {
 	StartedAt time.Time
 	Prefix    string
 	Done      bool
-	Data      *contracts.ReqestData
+	Data      *contracts.RequestData
 }
 
 type RequestTracker struct {

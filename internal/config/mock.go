@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 )
 
 type Mock struct {
@@ -37,4 +39,13 @@ func (m Mocks) Clone() Mocks {
 	return lo.Map(m, func(item Mock, _ int) Mock {
 		return item.Clone()
 	})
+}
+
+func (m *Mock) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, m.Matcher.Validate(field))
+	errs = multierror.Append(errs, m.Response.Validate(joinPath(field, "response"), fs))
+
+	return joinErrors(errs)
 }

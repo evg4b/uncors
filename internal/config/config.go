@@ -3,12 +3,12 @@ package config
 import (
 	"fmt"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
-// UncorsConfig is the root configuration for the uncors proxy.
 type UncorsConfig struct {
 	Mappings    Mappings    `yaml:"mappings"`
 	Proxy       string      `yaml:"proxy"`
@@ -17,9 +17,6 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-// LoadConfiguration parses CLI arguments and optionally reads a YAML config file.
-// CLI flags take precedence over config file values.
-// Returns the loaded config, the active config file path (empty if none), and any error.
 func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
 	flags := defineFlags()
 
@@ -32,9 +29,9 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	configPath, _ := flags.GetString("config")
 
 	if configPath != "" {
-		readErr := readYAMLFile(fs, cfg, configPath)
-		if readErr != nil {
-			return nil, "", readErr
+		err := readYAMLFile(fs, cfg, configPath)
+		if err != nil {
+			return nil, "", err
 		}
 	}
 
@@ -45,11 +42,14 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 
 	cfg.Mappings = NormaliseMappings(cfg.Mappings)
 
+	err = cfg.Validate(fs)
+	if err != nil {
+		return nil, "", err
+	}
+
 	return cfg, configPath, nil
 }
 
-// readYAMLFile opens a YAML config file and decodes it directly into cfg,
-// preserving any existing default values for keys absent in the file.
 func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	file, err := fs.Open(path)
 	if err != nil {
@@ -66,8 +66,6 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	return nil
 }
 
-// applyFlagOverrides applies CLI flag values to cfg, overriding any config file values.
-// Only flags explicitly set on the command line are applied.
 func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	if flags.Changed("proxy") {
 		cfg.Proxy, _ = flags.GetString("proxy")
@@ -85,4 +83,21 @@ func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	to, _ := flags.GetStringSlice("to")
 
 	return mergeURLMappings(cfg, from, to)
+}
+
+func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
+	if len(cfg.Mappings) == 0 {
+		return &ValidationError{"mappings must not be empty"}
+	}
+
+	var errs *multierror.Error
+
+	for i, mapping := range cfg.Mappings {
+		errs = multierror.Append(errs, mapping.Validate(joinPath("mappings", index(i)), fs))
+	}
+
+	errs = multierror.Append(errs, ValidateProxy("proxy", cfg.Proxy))
+	errs = multierror.Append(errs, cfg.CacheConfig.Validate("cache-config"))
+
+	return joinErrors(errs)
 }

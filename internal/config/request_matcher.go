@@ -1,6 +1,10 @@
 package config
 
-import "github.com/evg4b/uncors/internal/helpers"
+import (
+	multierror "github.com/hashicorp/go-multierror"
+
+	"github.com/evg4b/uncors/internal/helpers"
+)
 
 type RequestMatcher struct {
 	Path    string            `yaml:"path"`
@@ -20,4 +24,13 @@ func (r *RequestMatcher) Clone() RequestMatcher {
 
 func (r *RequestMatcher) IsPathOnly() bool {
 	return r.Method == "" && len(r.Queries) == 0 && len(r.Headers) == 0
+}
+
+func (r *RequestMatcher) Validate(field string) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, ValidatePath(joinPath(field, "path"), r.Path, false))
+	errs = multierror.Append(errs, ValidateMethod(joinPath(field, "method"), r.Method, true))
+
+	return joinErrors(errs)
 }

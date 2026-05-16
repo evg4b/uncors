@@ -24,10 +24,11 @@ var (
 type hook = func(string) string
 
 type Replacer struct {
-	regexp  *regexp.Regexp
-	pattern string
-	hooks   map[string]hook
-	scheme  string // target scheme (http or https), or empty
+	regexp      *regexp.Regexp
+	pattern     string
+	hooks       map[string]hook
+	scheme      string
+	subexpIndex map[string]int // precomputed name→index, built once at construction
 }
 
 func NewReplacer(source, target string) (*Replacer, error) {
@@ -44,7 +45,6 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, fmt.Errorf("%w: {%s}", ErrDuplicateSourceKey, dup)
 	}
 
-	// Validate raw URLs before any processing
 	err := validateRawURL(source)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidSourceURL, err)
@@ -65,11 +65,18 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	}
 
 	replacer.pattern = wildCardToReplacePattern(target)
-
-	// Extract and store target scheme
 	replacer.scheme = extractScheme(target)
+
 	if len(replacer.scheme) > 0 {
 		replacer.hooks["scheme"] = schemeHookFactory(replacer.scheme)
+	}
+
+	// Build name→index map once so Replace doesn't call SubexpIndex (O(n)) per group per call.
+	replacer.subexpIndex = make(map[string]int, len(replacer.regexp.SubexpNames()))
+	for i, name := range replacer.regexp.SubexpNames() {
+		if name != "" {
+			replacer.subexpIndex[name] = i
+		}
 	}
 
 	return replacer, nil
@@ -83,18 +90,13 @@ func (r *Replacer) Replace(source string) (string, error) {
 
 	replaced := strings.Clone(r.pattern)
 
-	for _, subExpName := range r.regexp.SubexpNames() {
-		if len(subExpName) > 0 {
-			partPattern := fmt.Sprintf("${%s}", subExpName)
-			partIndex := r.regexp.SubexpIndex(subExpName)
-
-			partValue := matches[partIndex]
-			if hook, ok := r.hooks[subExpName]; ok {
-				partValue = hook(partValue)
-			}
-
-			replaced = strings.ReplaceAll(replaced, partPattern, partValue)
+	for name, idx := range r.subexpIndex {
+		partValue := matches[idx]
+		if hook, ok := r.hooks[name]; ok {
+			partValue = hook(partValue)
 		}
+
+		replaced = strings.ReplaceAll(replaced, "${"+name+"}", partValue)
 	}
 
 	return replaced, nil

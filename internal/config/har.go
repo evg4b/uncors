@@ -1,10 +1,12 @@
 package config
 
-import "gopkg.in/yaml.v3"
+import (
+	"fmt"
+	"path/filepath"
 
-// HARConfig defines settings for the HAR (HTTP Archive) collector middleware.
-// When File is non-empty, all requests/responses passing through the proxy
-// for this mapping will be recorded to the specified HAR file.
+	"gopkg.in/yaml.v3"
+)
+
 type HARConfig struct {
 	File                 string `yaml:"file"`
 	CaptureSecureHeaders bool   `yaml:"capture-secure-headers"`
@@ -21,11 +23,6 @@ func (h *HARConfig) Clone() HARConfig {
 	}
 }
 
-// UnmarshalYAML allows HARConfig to be specified as a plain string (file path)
-// or as a full mapping.
-//
-// Short form:  har: ./recordings/api.har
-// Full form:   har: { file: ./recordings/api.har, capture-secure-headers: true }.
 func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.ScalarNode {
 		h.File = value.Value
@@ -36,4 +33,16 @@ func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	type harConfigAlias HARConfig
 
 	return value.Decode((*harConfigAlias)(h))
+}
+
+func (h *HARConfig) Validate(field string) error {
+	if !h.Enabled() {
+		return nil
+	}
+
+	if filepath.Ext(h.File) == "" {
+		return &ValidationError{fmt.Sprintf("%s: HAR file path %q must have a file extension (e.g. .har)", field, h.File)}
+	}
+
+	return nil
 }

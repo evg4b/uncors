@@ -14,9 +14,6 @@ var (
 	ErrNoFromPair = errors.New("`from` values are not set for every `to`")
 )
 
-// mergeURLMappings merges from/to CLI pairs into cfg.Mappings.
-// If a from URL already exists in the mappings, its to value is updated.
-// Otherwise a new mapping entry is appended.
 func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	if len(from) > len(to) {
 		return ErrNoToPair
@@ -54,8 +51,6 @@ const (
 	httpsScheme = "https"
 )
 
-// NormaliseMappings normalises the From URL in each mapping: adds the default
-// scheme (http) if absent and removes the port when it equals the scheme default.
 func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := make(Mappings, 0, len(mappings))
 

@@ -11,7 +11,7 @@ import (
 
 const prefixWidth = 13
 
-func printResponse(data *contracts.ReqestData) string {
+func printResponse(data *contracts.RequestData) string {
 	var (
 		prefix                 string
 		prefixStyle, textStyle lipgloss.Style

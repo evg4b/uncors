@@ -16,12 +16,12 @@ func TestRequestPrinter(t *testing.T) {
 		tracker := server.NewRequestTracker()
 		output := mocks.NewOutputMock(t)
 
-		data := &contracts.ReqestData{
+		data := &contracts.RequestData{
 			Method: "GET",
 			Code:   200,
 		}
 
-		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		output.RequestMock.Set(func(_ *contracts.RequestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -45,7 +45,7 @@ func TestRequestPrinter(t *testing.T) {
 		tracker := server.NewRequestTracker()
 		output := mocks.NewOutputMock(t)
 
-		data := &contracts.ReqestData{
+		data := &contracts.RequestData{
 			Method: "GET",
 			Code:   200,
 		}
@@ -97,7 +97,7 @@ func TestRequestPrinter(t *testing.T) {
 
 		const prefix = "PROXY"
 
-		data := &contracts.ReqestData{
+		data := &contracts.RequestData{
 			Method: "GET",
 			Code:   200,
 		}
@@ -105,7 +105,7 @@ func TestRequestPrinter(t *testing.T) {
 		output.NewPrefixOutputMock.Set(func(_ string) contracts.Output {
 			return prefixedOutput
 		})
-		prefixedOutput.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		prefixedOutput.RequestMock.Set(func(_ *contracts.RequestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -131,12 +131,12 @@ func TestRequestPrinter(t *testing.T) {
 		tracker := server.NewRequestTracker()
 		output := mocks.NewOutputMock(t)
 
-		data := &contracts.ReqestData{
+		data := &contracts.RequestData{
 			Method: "GET",
 			Code:   200,
 		}
 
-		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		output.RequestMock.Set(func(_ *contracts.RequestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
@@ -163,21 +163,21 @@ func TestRequestPrinter(t *testing.T) {
 		output := mocks.NewOutputMock(t)
 		prefixedOutput := mocks.NewOutputMock(t)
 
-		data1 := &contracts.ReqestData{Method: "GET", Code: 200}
-		data2 := &contracts.ReqestData{Method: "POST", Code: 201}
-		data3 := &contracts.ReqestData{Method: "DELETE", Code: 204}
+		data1 := &contracts.RequestData{Method: "GET", Code: 200}
+		data2 := &contracts.RequestData{Method: "POST", Code: 201}
+		data3 := &contracts.RequestData{Method: "DELETE", Code: 204}
 
-		output.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		output.RequestMock.Set(func(_ *contracts.RequestData) {})
 		output.NewPrefixOutputMock.Set(func(_ string) contracts.Output {
 			return prefixedOutput
 		})
-		prefixedOutput.RequestMock.Set(func(_ *contracts.ReqestData) {})
+		prefixedOutput.RequestMock.Set(func(_ *contracts.RequestData) {})
 
 		go server.RequestPrinter(tracker, output)
 
 		tracker.Emit(server.RequestEvent{ID: 1, Done: true, Data: data1})
 		tracker.Emit(server.RequestEvent{ID: 2, Prefix: "MOD1", Done: true, Data: data2})
-		tracker.Emit(server.RequestEvent{ID: 3, Done: false, Data: &contracts.ReqestData{Method: "PATCH", Code: 200}})
+		tracker.Emit(server.RequestEvent{ID: 3, Done: false, Data: &contracts.RequestData{Method: "PATCH", Code: 200}})
 		tracker.Emit(server.RequestEvent{ID: 4, Done: true, Data: data3})
 
 		tracker.Close()

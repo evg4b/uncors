@@ -10,10 +10,8 @@ var ErrInvalidHost = errors.New("rewrite host has invalid type")
 
 type rewriteKeyType string
 
-var RewriteHostKey rewriteKeyType = "__uncors_rewrite_host"
+const RewriteHostKey rewriteKeyType = "__uncors_rewrite_host"
 
-// GetRewriteHost extracts the rewrite host from the request context.
-// Returns ErrInvalidHost if the value exists but is not a string.
 func GetRewriteHost(request *contracts.Request) (string, error) {
 	value := request.Context().Value(RewriteHostKey)
 
