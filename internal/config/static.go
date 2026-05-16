@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
@@ -80,4 +82,13 @@ func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 	type staticDirectoriesAlias StaticDirectories
 
 	return value.Decode((*staticDirectoriesAlias)(s))
+}
+
+func (s StaticDirectory) Validate(field string, fs afero.Fs, errs *Errors) {
+	ValidatePath(joinPath(field, "path"), s.Path, false, errs)
+	ValidateDirectory(joinPath(field, "directory"), s.Dir, fs, errs)
+
+	if s.Index != "" {
+		ValidateFile(joinPath(field, "index"), path.Join(s.Dir, s.Index), fs, errs)
+	}
 }

@@ -49,7 +49,6 @@ mappings:
           headers:
             Accept-Encoding: deflate
           raw: demo
-          file: /demo.txt
 proxy: localhost:8080
 debug: true
 https-port: 8081
@@ -100,19 +99,6 @@ func TestLoadConfiguration(t *testing.T) {
 			expected *config.UncorsConfig
 		}{
 			{
-				name: "return default config",
-				args: []string{},
-				expected: &config.UncorsConfig{
-					Mappings: config.Mappings{},
-					CacheConfig: config.CacheConfig{
-						ExpirationTime: config.DefaultExpirationTime,
-						MaxSize:        config.DefaultMaxSize,
-						Methods:        []string{http.MethodGet},
-					},
-					Interactive: true,
-				},
-			},
-			{
 				name: "minimal config is set",
 				args: []string{params.Config, minimalConfigPath},
 				expected: &config.UncorsConfig{
@@ -153,8 +139,7 @@ func TestLoadConfiguration(t *testing.T) {
 										Headers: map[string]string{
 											acceptEncoding: "deflate",
 										},
-										Raw:  "demo",
-										File: "/demo.txt",
+										Raw: "demo",
 									},
 								},
 							},
@@ -235,7 +220,6 @@ func TestLoadConfiguration(t *testing.T) {
 										Code:    201,
 										Headers: map[string]string{acceptEncoding: "deflate"},
 										Raw:     "demo",
-										File:    "/demo.txt",
 									},
 								},
 							},
@@ -285,7 +269,8 @@ func TestLoadConfiguration(t *testing.T) {
 
 	t.Run("returns config file path", func(t *testing.T) {
 		t.Run("empty when no config file flag", func(t *testing.T) {
-			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), []string{})
+			args := []string{params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host()}
+			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), args)
 			require.NoError(t, err)
 			assert.Empty(t, configPath)
 		})
@@ -303,6 +288,11 @@ func TestLoadConfiguration(t *testing.T) {
 			args        []string
 			expectedErr string
 		}{
+			{
+				name:        "no args produces validation error",
+				args:        []string{},
+				expectedErr: "mappings must not be empty",
+			},
 			{
 				name:        "incorrect flag provided",
 				args:        []string{"--incorrect-flag"},
@@ -355,5 +345,85 @@ func TestLoadConfiguration(t *testing.T) {
 				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
+	})
+}
+
+func TestUncorsConfigValidator(t *testing.T) {
+	mapFs := testutils.FsFromMap(t, map[string]string{})
+
+	t.Run("should not register errors for", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			value *config.UncorsConfig
+		}{
+			{
+				name: "minimal config",
+				value: &config.UncorsConfig{
+					Mappings: []config.Mapping{
+						{From: hosts.Localhost.Port(8080), To: hosts.Localhost.HTTPSPort(8443)},
+					},
+					CacheConfig: config.CacheConfig{
+						MaxSize:        100 * 1024 * 1024,
+						ExpirationTime: 10 * time.Minute,
+						Methods:        []string{http.MethodGet},
+					},
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				errors := test.value.Validate(mapFs)
+
+				require.NoError(t, errors)
+			})
+		}
+	})
+
+	t.Run("should register errors for invalid config", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			value *config.UncorsConfig
+			error string
+		}{
+			{
+				name: "invalid mapping",
+				value: &config.UncorsConfig{
+					Mappings: []config.Mapping{},
+					CacheConfig: config.CacheConfig{
+						MaxSize:        100 * 1024 * 1024,
+						ExpirationTime: 10 * time.Minute,
+						Methods:        []string{http.MethodGet},
+					},
+				},
+				error: "mappings must not be empty",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				errors := test.value.Validate(mapFs)
+
+				require.EqualError(t, errors, test.error)
+			})
+		}
+	})
+}
+
+func TestProxyValidatorIsValid(t *testing.T) {
+	t.Run("valid url", func(t *testing.T) {
+		var errs config.Errors
+		config.ValidateProxy("testField", "http://valid-url.com", &errs)
+		assert.False(t, errs.HasAny())
+	})
+
+	t.Run("invalid url", func(t *testing.T) {
+		var errs config.Errors
+		config.ValidateProxy("testField", "invalid:::url", &errs)
+		require.EqualError(t, errs, "testField is not a valid URL")
+	})
+
+	t.Run("empty url", func(t *testing.T) {
+		var errs config.Errors
+		config.ValidateProxy("testField", "", &errs)
+		assert.False(t, errs.HasAny())
 	})
 }

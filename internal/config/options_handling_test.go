@@ -6,6 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptionsClone(t *testing.T) {
@@ -72,4 +73,32 @@ func TestOptionsClone(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestOptionsValidator(t *testing.T) {
+	t.Run("should return true", func(t *testing.T) {
+		t.Run("for default options", func(t *testing.T) {
+			var errs config.Errors
+			config.OptionsHandling{}.Validate("options", &errs)
+			assert.False(t, errs.HasAny())
+		})
+
+		t.Run("for correct status code", func(t *testing.T) {
+			var errs config.Errors
+			config.OptionsHandling{
+				Headers: map[string]string{headers.ContentType: "application/json"},
+				Code:    200,
+			}.Validate("options", &errs)
+			assert.False(t, errs.HasAny())
+		})
+	})
+
+	t.Run("should return false for invalid status code", func(t *testing.T) {
+		var errs config.Errors
+		config.OptionsHandling{
+			Headers: map[string]string{headers.ContentType: "application/json"},
+			Code:    -10,
+		}.Validate("options", &errs)
+		require.EqualError(t, errs, "options.code code must be in range 100-599")
+	})
 }

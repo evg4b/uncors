@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 )
 
 type Mock struct {
@@ -37,4 +38,9 @@ func (m Mocks) Clone() Mocks {
 	return lo.Map(m, func(item Mock, _ int) Mock {
 		return item.Clone()
 	})
+}
+
+func (m Mock) Validate(field string, fs afero.Fs, errs *Errors) {
+	m.Matcher.Validate(field, errs)
+	m.Response.Validate(joinPath(field, "response"), fs, errs)
 }

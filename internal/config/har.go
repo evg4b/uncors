@@ -1,6 +1,11 @@
 package config
 
-import "gopkg.in/yaml.v3"
+import (
+	"fmt"
+	"path/filepath"
+
+	"gopkg.in/yaml.v3"
+)
 
 // HARConfig defines settings for the HAR (HTTP Archive) collector middleware.
 // When File is non-empty, all requests/responses passing through the proxy
@@ -36,4 +41,14 @@ func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	type harConfigAlias HARConfig
 
 	return value.Decode((*harConfigAlias)(h))
+}
+
+func (h HARConfig) Validate(field string, errs *Errors) {
+	if !h.Enabled() {
+		return
+	}
+
+	if filepath.Ext(h.File) == "" {
+		errs.add(fmt.Sprintf("%s: HAR file path %q must have a file extension (e.g. .har)", field, h.File))
+	}
 }

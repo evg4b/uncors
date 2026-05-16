@@ -11,7 +11,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/config/validators"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -205,11 +204,6 @@ func runInteractive(fs afero.Fs, configPath string, cfg *config.UncorsConfig) in
 // display a human-readable message and exit cleanly.
 func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
 	uncorsConfig, configPath, err := config.LoadConfiguration(fs, os.Args)
-	if err != nil {
-		panic(err)
-	}
-
-	err = validators.ValidateConfig(uncorsConfig, fs)
 	if err != nil {
 		panic(err)
 	}

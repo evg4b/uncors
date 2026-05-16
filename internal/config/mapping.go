@@ -2,9 +2,13 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
+	"strings"
 
+	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
@@ -118,4 +122,68 @@ func (m *Mapping) ClearCache() {
 	m.fromURL = nil
 	m.fromHost = ""
 	m.fromPort = ""
+}
+
+func ValidateProxy(field, value string, errs *Errors) {
+	if value == "" {
+		return
+	}
+
+	_, err := urlparser.Parse(value)
+	if err != nil {
+		errs.add(fmt.Sprintf("%s is not a valid URL", field))
+	}
+}
+
+func ValidateCacheGlob(field, value string, errs *Errors) {
+	ValidateGlobPattern(field, value, errs)
+}
+
+func ValidateTLS(_ string, mapping Mapping, fs afero.Fs, errs *Errors) {
+	fromURL, err := mapping.GetFromURL()
+	if err != nil || fromURL.Scheme != "https" {
+		return
+	}
+
+	if !infratls.CAExists(fs) {
+		errs.add(formatTLSError(fromURL.Host))
+	}
+}
+
+func formatTLSError(host string) string {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "HTTPS mapping '%s' requires a local CA certificate for automatic TLS.\n\n", host)
+	builder.WriteString("Generate a local CA certificate:\n")
+	builder.WriteString("  uncors generate-certs\n\n")
+	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
+
+	return builder.String()
+}
+
+func (m Mapping) Validate(field string, fs afero.Fs, errs *Errors) {
+	ValidateHost(joinPath(field, "from"), m.From, errs)
+	ValidateHost(joinPath(field, "to"), m.To, errs)
+	m.OptionsHandling.Validate(joinPath(field, "options-handling"), errs)
+	m.HAR.Validate(joinPath(field, "har"), errs)
+	ValidateTLS(field, m, fs, errs)
+
+	for i, static := range m.Statics {
+		static.Validate(joinPath(field, "statics", index(i)), fs, errs)
+	}
+
+	for i, mock := range m.Mocks {
+		mock.Validate(joinPath(field, "mocks", index(i)), fs, errs)
+	}
+
+	for i, glob := range m.Cache {
+		ValidateCacheGlob(joinPath(field, "cache", index(i)), glob, errs)
+	}
+
+	for i, rewrite := range m.Rewrites {
+		rewrite.Validate(joinPath(field, "rewrite", index(i)), errs)
+	}
+
+	for i, script := range m.Scripts {
+		script.Validate(joinPath(field, "scripts", index(i)), fs, errs)
+	}
 }

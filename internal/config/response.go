@@ -1,9 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/spf13/afero"
 )
 
 type Response struct {
@@ -30,4 +32,26 @@ func (r *Response) IsRaw() bool {
 
 func (r *Response) IsFile() bool {
 	return len(r.File) > 0
+}
+
+func (r Response) Validate(field string, fs afero.Fs, errs *Errors) {
+	ValidateStatus(joinPath(field, "code"), r.Code, errs)
+	ValidateDuration(joinPath(field, "delay"), r.Delay, true, errs)
+
+	switch {
+	case r.Raw == "" && r.File == "":
+		errs.add(fmt.Sprintf(
+			"%s or %s must be set",
+			joinPath(field, "raw"),
+			joinPath(field, "file"),
+		))
+	case r.Raw != "" && r.File != "":
+		errs.add(fmt.Sprintf(
+			"only one of %s or %s must be set",
+			joinPath(field, "raw"),
+			joinPath(field, "file"),
+		))
+	case r.File != "":
+		ValidateFile(joinPath(field, "file"), r.File, fs, errs)
+	}
 }

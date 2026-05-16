@@ -3,9 +3,11 @@ package config_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,5 +63,24 @@ func TestMockClone(t *testing.T) {
 
 	t.Run("equals Response values", func(t *testing.T) {
 		assert.Equal(t, mock.Response, clonedMock.Response)
+	})
+}
+
+func TestMockValidator(t *testing.T) {
+	t.Run("should return true", func(t *testing.T) {
+		var errs config.Errors
+		config.Mock{
+			Matcher: config.RequestMatcher{
+				Path:   "/api/info",
+				Method: "",
+			},
+			Response: config.Response{
+				Code:  200,
+				Raw:   "test",
+				Delay: 1 * time.Second,
+			},
+		}.Validate("mock", afero.NewMemMapFs(), &errs)
+
+		assert.False(t, errs.HasAny())
 	})
 }

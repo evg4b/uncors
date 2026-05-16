@@ -28,3 +28,12 @@ func (r RewriteOptions) Clone() RewriteOptions {
 
 	return clone
 }
+
+func (r RewritingOption) Validate(field string, errs *Errors) {
+	ValidatePath(joinPath(field, "from"), r.From, true, errs)
+	ValidatePath(joinPath(field, "to"), r.To, true, errs)
+
+	if r.Host != "" {
+		ValidateHost(joinPath(field, "host"), r.Host, errs)
+	}
+}

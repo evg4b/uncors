@@ -21,3 +21,8 @@ func (r *RequestMatcher) Clone() RequestMatcher {
 func (r *RequestMatcher) IsPathOnly() bool {
 	return r.Method == "" && len(r.Queries) == 0 && len(r.Headers) == 0
 }
+
+func (rm RequestMatcher) Validate(field string, errs *Errors) {
+	ValidatePath(joinPath(field, "path"), rm.Path, false, errs)
+	ValidateMethod(joinPath(field, "method"), rm.Method, true, errs)
+}

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -33,5 +34,21 @@ func (c *CacheConfig) Clone() *CacheConfig {
 		ExpirationTime: c.ExpirationTime,
 		MaxSize:        c.MaxSize,
 		Methods:        methods,
+	}
+}
+
+func (c CacheConfig) Validate(field string, errs *Errors) {
+	ValidateDuration(joinPath(field, "expiration-time"), c.ExpirationTime, false, errs)
+
+	if c.MaxSize <= 0 {
+		errs.add(fmt.Sprintf("%s must be greater than 0", joinPath(field, "max-size")))
+	}
+
+	if len(c.Methods) == 0 {
+		errs.add("methods must not be empty")
+	}
+
+	for i, method := range c.Methods {
+		ValidateMethod(joinPath(field, "methods", index(i)), method, false, errs)
 	}
 }

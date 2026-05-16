@@ -32,9 +32,9 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	configPath, _ := flags.GetString("config")
 
 	if configPath != "" {
-		readErr := readYAMLFile(fs, cfg, configPath)
-		if readErr != nil {
-			return nil, "", readErr
+		err := readYAMLFile(fs, cfg, configPath)
+		if err != nil {
+			return nil, "", err
 		}
 	}
 
@@ -44,6 +44,10 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 	}
 
 	cfg.Mappings = NormaliseMappings(cfg.Mappings)
+
+	if err := cfg.Validate(fs); err != nil {
+		return nil, "", err
+	}
 
 	return cfg, configPath, nil
 }
@@ -85,4 +89,29 @@ func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	to, _ := flags.GetStringSlice("to")
 
 	return mergeURLMappings(cfg, from, to)
+}
+
+// Validate validates the full uncors configuration and returns a combined
+// error listing all validation failures. Returns nil if the config is valid.
+func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
+	var errs Errors
+
+	if len(cfg.Mappings) == 0 {
+		errs.add("mappings must not be empty")
+
+		return errs
+	}
+
+	for i, mapping := range cfg.Mappings {
+		mapping.Validate(joinPath("mappings", index(i)), fs, &errs)
+	}
+
+	ValidateProxy("proxy", cfg.Proxy, &errs)
+	cfg.CacheConfig.Validate("cache-config", &errs)
+
+	if errs.HasAny() {
+		return errs
+	}
+
+	return nil
 }
