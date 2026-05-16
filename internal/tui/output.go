@@ -13,10 +13,10 @@ import (
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
-type ouputType int8
+type outputType int8
 
 const (
-	defaultOutput ouputType = iota
+	defaultOutput outputType = iota
 	infoOutput
 	warnOutput
 	errorOutput
@@ -24,14 +24,14 @@ const (
 
 var boxLength = 8
 
-var levelStyles = map[ouputType]lipgloss.Style{
+var levelStyles = map[outputType]lipgloss.Style{
 	infoOutput:    styles.InfoBlockStyle.Width(boxLength).Bold(true),
 	warnOutput:    styles.WarningBlockStyle.Width(boxLength).Bold(true),
 	errorOutput:   styles.ErrorBlockStyle.Width(boxLength).Bold(true),
 	defaultOutput: lipgloss.NewStyle(),
 }
 
-var messageMap = map[ouputType]string{
+var messageMap = map[outputType]string{
 	infoOutput:  InfoLabel,
 	warnOutput:  WarningLabel,
 	errorOutput: ErrorLabel,
@@ -62,117 +62,113 @@ func NewCliOutput(output io.Writer, options ...Option) *CliOutput {
 	return helpers.ApplyOptions(&CliOutput{
 		mutex:  &sync.RWMutex{},
 		output: output,
-		buffer: bytes.Buffer{},
 	}, options)
 }
 
-func (o *CliOutput) Write(p []byte) (int, error) {
-	o.mutex.RLock()
-	defer o.mutex.RUnlock()
+func (output *CliOutput) Write(p []byte) (int, error) {
+	output.mutex.RLock()
+	defer output.mutex.RUnlock()
 
-	return o.output.Write(p)
+	return output.output.Write(p)
 }
 
-func (o *CliOutput) Info(msg any) {
-	o.print(fmt.Sprint(msg), infoOutput)
+func (output *CliOutput) Info(msg any) {
+	output.print(fmt.Sprint(msg), infoOutput)
 }
 
-func (o *CliOutput) Infof(msg string, args ...any) {
-	o.print(fmt.Sprintf(msg, args...), infoOutput)
+func (output *CliOutput) Infof(msg string, args ...any) {
+	output.print(fmt.Sprintf(msg, args...), infoOutput)
 }
 
-func (o *CliOutput) InfoBox(messages ...string) {
-	printMessageBox(
-		o.output,
-		strings.Join(messages, "\n"),
-		InfoLabel,
-		styles.InfoBlockStyle,
-	)
+func (output *CliOutput) InfoBox(messages ...string) {
+	output.mutex.Lock()
+	defer output.mutex.Unlock()
+
+	output.printMessageBox(strings.Join(messages, "\n"), InfoLabel, styles.InfoBlockStyle)
 }
 
-func (o *CliOutput) Error(msg any) {
-	o.print(fmt.Sprint(msg), errorOutput)
+func (output *CliOutput) Error(msg any) {
+	output.print(fmt.Sprint(msg), errorOutput)
 }
 
-func (o *CliOutput) Errorf(msg string, args ...any) {
-	o.print(fmt.Sprintf(msg, args...), errorOutput)
+func (output *CliOutput) Errorf(msg string, args ...any) {
+	output.print(fmt.Sprintf(msg, args...), errorOutput)
 }
 
-func (o *CliOutput) ErrorBox(messages ...string) {
-	printMessageBox(
-		o.output,
-		strings.Join(messages, "\n"),
-		ErrorLabel,
-		styles.ErrorBlockStyle,
-	)
+func (output *CliOutput) ErrorBox(messages ...string) {
+	output.mutex.Lock()
+	defer output.mutex.Unlock()
+
+	output.printMessageBox(strings.Join(messages, "\n"), ErrorLabel, styles.ErrorBlockStyle)
 }
 
-func (o *CliOutput) Warn(msg any) {
-	o.print(fmt.Sprint(msg), warnOutput)
+func (output *CliOutput) Warn(msg any) {
+	output.print(fmt.Sprint(msg), warnOutput)
 }
 
-func (o *CliOutput) Warnf(msg string, args ...any) {
-	o.print(fmt.Sprintf(msg, args...), warnOutput)
+func (output *CliOutput) Warnf(msg string, args ...any) {
+	output.print(fmt.Sprintf(msg, args...), warnOutput)
 }
 
-func (o *CliOutput) WarnBox(messages ...string) {
-	printMessageBox(
-		o.output,
-		strings.Join(messages, "\n"),
-		WarningLabel,
-		styles.WarningBlockStyle,
-	)
+func (output *CliOutput) WarnBox(messages ...string) {
+	output.mutex.Lock()
+	defer output.mutex.Unlock()
+
+	output.printMessageBox(strings.Join(messages, "\n"), WarningLabel, styles.WarningBlockStyle)
 }
 
-func (o *CliOutput) Print(msg any) {
-	o.print(fmt.Sprint(msg), defaultOutput)
+func (output *CliOutput) Print(msg any) {
+	output.print(fmt.Sprint(msg), defaultOutput)
 }
 
-func (o *CliOutput) Printf(msg string, args ...any) {
-	o.print(fmt.Sprintf(msg, args...), defaultOutput)
+func (output *CliOutput) Printf(msg string, args ...any) {
+	output.print(fmt.Sprintf(msg, args...), defaultOutput)
 }
 
-func (o *CliOutput) Request(data *contracts.ReqestData) {
-	o.print(printResponse(data), defaultOutput)
+func (output *CliOutput) Request(data *contracts.RequestData) {
+	output.print(printResponse(data), defaultOutput)
 }
 
-func (o *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
-	return NewCliOutput(o.output, WithPrefix(prefix), withMutex(o.mutex))
+func (output *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
+	return NewCliOutput(output.output, WithPrefix(prefix), withMutex(output.mutex))
 }
 
-func (o *CliOutput) print(msg string, outputType ouputType) {
-	o.mutex.Lock()
-	defer o.mutex.Unlock()
+// print holds the exclusive write lock for the full render+write cycle so that
+// the shared buffer and the underlying writer are never accessed concurrently.
+// Write() uses RLock only, which is blocked while print() owns the write lock.
+func (output *CliOutput) print(msg string, level outputType) {
+	output.mutex.Lock()
+	defer output.mutex.Unlock()
 
-	o.renderPrefix()
-	o.renderLevel(outputType)
-	o.renderMessage(msg)
-	o.buffer.WriteByte('\n')
+	output.renderPrefix()
+	output.renderLevel(level)
+	output.renderMessage(msg)
+	output.buffer.WriteByte('\n')
 
-	defer o.buffer.Reset()
+	_, err := output.output.Write(output.buffer.Bytes())
+	output.buffer.Reset()
 
-	_, err := o.output.Write(o.buffer.Bytes())
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (o *CliOutput) renderLevel(level ouputType) {
+func (output *CliOutput) renderLevel(level outputType) {
 	renderer := levelStyles[level]
 	if levelMessage, ok := messageMap[level]; ok {
-		o.buffer.WriteString(renderer.Render(levelMessage))
+		output.buffer.WriteString(renderer.Render(levelMessage))
 	}
 
-	o.buffer.WriteByte(' ')
+	output.buffer.WriteByte(' ')
 }
 
-func (o *CliOutput) renderMessage(msg string) {
+func (output *CliOutput) renderMessage(msg string) {
 	msg = strings.TrimSuffix(msg, "\n")
-	fmt.Fprint(&o.buffer, msg)
+	fmt.Fprint(&output.buffer, msg)
 }
 
-func (o *CliOutput) renderPrefix() {
-	if len(o.prefix) > 0 {
-		o.buffer.WriteString(o.prefix)
+func (output *CliOutput) renderPrefix() {
+	if len(output.prefix) > 0 {
+		output.buffer.WriteString(output.prefix)
 	}
 }

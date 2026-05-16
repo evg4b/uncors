@@ -146,7 +146,7 @@ func TestTuiOutput_Request(t *testing.T) {
 	t.Run("Request sends formatted request data", func(t *testing.T) {
 		out, outputCh := newTestOutput()
 		u, _ := url.Parse("http://example.com/api/resource")
-		out.Request(&contracts.ReqestData{
+		out.Request(&contracts.RequestData{
 			Method: "GET",
 			URL:    u,
 			Code:   200,

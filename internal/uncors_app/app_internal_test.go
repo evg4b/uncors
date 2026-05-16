@@ -362,7 +362,7 @@ func TestHandleRequestEventWithData(t *testing.T) {
 	requestURL, err := url.Parse("https://example.com/api")
 	require.NoError(t, err)
 
-	data := &contracts.ReqestData{Method: "GET", URL: requestURL, Code: 200}
+	data := &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200}
 
 	t.Run("outputs request without prefix", func(t *testing.T) {
 		app, _ := newTestApp(t)

@@ -13,7 +13,7 @@ const (
 	PrefixUpdaterKey contextKey = "uncors-prefix-updater"
 )
 
-type ReqestData struct {
+type RequestData struct {
 	Method    string
 	URL       *url.URL
 	Header    http.Header

@@ -129,7 +129,7 @@ func TestCliOutput_Request(t *testing.T) {
 		var buf strings.Builder
 
 		out := tui.NewCliOutput(&buf)
-		out.NewPrefixOutput("PROXY").Request(&contracts.ReqestData{
+		out.NewPrefixOutput("PROXY").Request(&contracts.RequestData{
 			Method: "GET",
 			URL:    mustParseURL("http://example.com/path"),
 			Code:   200,

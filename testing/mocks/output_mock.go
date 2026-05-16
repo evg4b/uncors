@@ -81,9 +81,9 @@ type OutputMock struct {
 	beforePrintfCounter uint64
 	PrintfMock          mOutputMockPrintf
 
-	funcRequest          func(data *mm_contracts.ReqestData)
+	funcRequest          func(data *mm_contracts.RequestData)
 	funcRequestOrigin    string
-	inspectFuncRequest   func(data *mm_contracts.ReqestData)
+	inspectFuncRequest   func(data *mm_contracts.RequestData)
 	afterRequestCounter  uint64
 	beforeRequestCounter uint64
 	RequestMock          mOutputMockRequest
@@ -3034,12 +3034,12 @@ type OutputMockRequestExpectation struct {
 
 // OutputMockRequestParams contains parameters of the Output.Request
 type OutputMockRequestParams struct {
-	data *mm_contracts.ReqestData
+	data *mm_contracts.RequestData
 }
 
 // OutputMockRequestParamPtrs contains pointers to parameters of the Output.Request
 type OutputMockRequestParamPtrs struct {
-	data **mm_contracts.ReqestData
+	data **mm_contracts.RequestData
 }
 
 // OutputMockRequestOrigins contains origins of expectations of the Output.Request
@@ -3059,7 +3059,7 @@ func (mmRequest *mOutputMockRequest) Optional() *mOutputMockRequest {
 }
 
 // Expect sets up expected params for Output.Request
-func (mmRequest *mOutputMockRequest) Expect(data *mm_contracts.ReqestData) *mOutputMockRequest {
+func (mmRequest *mOutputMockRequest) Expect(data *mm_contracts.RequestData) *mOutputMockRequest {
 	if mmRequest.mock.funcRequest != nil {
 		mmRequest.mock.t.Fatalf("OutputMock.Request mock is already set by Set")
 	}
@@ -3084,7 +3084,7 @@ func (mmRequest *mOutputMockRequest) Expect(data *mm_contracts.ReqestData) *mOut
 }
 
 // ExpectDataParam1 sets up expected param data for Output.Request
-func (mmRequest *mOutputMockRequest) ExpectDataParam1(data *mm_contracts.ReqestData) *mOutputMockRequest {
+func (mmRequest *mOutputMockRequest) ExpectDataParam1(data *mm_contracts.RequestData) *mOutputMockRequest {
 	if mmRequest.mock.funcRequest != nil {
 		mmRequest.mock.t.Fatalf("OutputMock.Request mock is already set by Set")
 	}
@@ -3107,7 +3107,7 @@ func (mmRequest *mOutputMockRequest) ExpectDataParam1(data *mm_contracts.ReqestD
 }
 
 // Inspect accepts an inspector function that has same arguments as the Output.Request
-func (mmRequest *mOutputMockRequest) Inspect(f func(data *mm_contracts.ReqestData)) *mOutputMockRequest {
+func (mmRequest *mOutputMockRequest) Inspect(f func(data *mm_contracts.RequestData)) *mOutputMockRequest {
 	if mmRequest.mock.inspectFuncRequest != nil {
 		mmRequest.mock.t.Fatalf("Inspect function is already set for OutputMock.Request")
 	}
@@ -3132,7 +3132,7 @@ func (mmRequest *mOutputMockRequest) Return() *OutputMock {
 }
 
 // Set uses given function f to mock the Output.Request method
-func (mmRequest *mOutputMockRequest) Set(f func(data *mm_contracts.ReqestData)) *OutputMock {
+func (mmRequest *mOutputMockRequest) Set(f func(data *mm_contracts.RequestData)) *OutputMock {
 	if mmRequest.defaultExpectation != nil {
 		mmRequest.mock.t.Fatalf("Default expectation is already set for the Output.Request method")
 	}
@@ -3148,7 +3148,7 @@ func (mmRequest *mOutputMockRequest) Set(f func(data *mm_contracts.ReqestData)) 
 
 // When sets expectation for the Output.Request which will trigger the result defined by the following
 // Then helper
-func (mmRequest *mOutputMockRequest) When(data *mm_contracts.ReqestData) *OutputMockRequestExpectation {
+func (mmRequest *mOutputMockRequest) When(data *mm_contracts.RequestData) *OutputMockRequestExpectation {
 	if mmRequest.mock.funcRequest != nil {
 		mmRequest.mock.t.Fatalf("OutputMock.Request mock is already set by Set")
 	}
@@ -3190,7 +3190,7 @@ func (mmRequest *mOutputMockRequest) invocationsDone() bool {
 }
 
 // Request implements mm_contracts.Output
-func (mmRequest *OutputMock) Request(data *mm_contracts.ReqestData) {
+func (mmRequest *OutputMock) Request(data *mm_contracts.RequestData) {
 	mm_atomic.AddUint64(&mmRequest.beforeRequestCounter, 1)
 	defer mm_atomic.AddUint64(&mmRequest.afterRequestCounter, 1)
 

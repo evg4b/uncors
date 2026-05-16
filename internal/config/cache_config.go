@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -10,14 +11,7 @@ import (
 type CacheGlobs []string
 
 func (g CacheGlobs) Clone() CacheGlobs {
-	if g == nil {
-		return nil
-	}
-
-	cacheGlobs := make(CacheGlobs, 0, len(g))
-	cacheGlobs = append(cacheGlobs, g...)
-
-	return cacheGlobs
+	return slices.Clone(g)
 }
 
 type CacheConfig struct {
@@ -27,15 +21,10 @@ type CacheConfig struct {
 }
 
 func (c *CacheConfig) Clone() *CacheConfig {
-	var methods []string
-	if c.Methods != nil {
-		methods = append(methods, c.Methods...)
-	}
-
 	return &CacheConfig{
 		ExpirationTime: c.ExpirationTime,
 		MaxSize:        c.MaxSize,
-		Methods:        methods,
+		Methods:        slices.Clone(c.Methods),
 	}
 }
 

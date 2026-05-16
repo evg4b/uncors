@@ -2,13 +2,12 @@ package tui
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 )
 
-func printMessageBox(out io.Writer, message, prefix string, blockStyles lipgloss.Style) {
+func (output *CliOutput) printMessageBox(message, prefix string, blockStyles lipgloss.Style) {
 	height := lipgloss.Height(message)
 	space := strings.Repeat("\n", height-1)
 
@@ -19,7 +18,7 @@ func printMessageBox(out io.Writer, message, prefix string, blockStyles lipgloss
 		message,
 	)
 
-	_, err := fmt.Fprintln(out, block)
+	_, err := fmt.Fprintln(output.output, block)
 	if err != nil {
 		panic(err)
 	}

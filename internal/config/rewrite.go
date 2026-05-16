@@ -1,6 +1,10 @@
 package config
 
-import multierror "github.com/hashicorp/go-multierror"
+import (
+	"slices"
+
+	multierror "github.com/hashicorp/go-multierror"
+)
 
 type RewritingOption struct {
 	From string `yaml:"from"`
@@ -9,26 +13,13 @@ type RewritingOption struct {
 }
 
 func (r RewritingOption) Clone() RewritingOption {
-	return RewritingOption{
-		From: r.From,
-		To:   r.To,
-		Host: r.Host,
-	}
+	return r
 }
 
 type RewriteOptions []RewritingOption
 
 func (r RewriteOptions) Clone() RewriteOptions {
-	if r == nil {
-		return nil
-	}
-
-	clone := make(RewriteOptions, len(r))
-	for i, rewrite := range r {
-		clone[i] = rewrite.Clone()
-	}
-
-	return clone
+	return slices.Clone(r)
 }
 
 func (r RewritingOption) Validate(field string) error {

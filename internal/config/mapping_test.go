@@ -334,7 +334,7 @@ func TestValidateTLS(t *testing.T) {
 	})
 }
 
-func TestCacheValidator(t *testing.T) {
+func TestValidateGlobPatternForCache(t *testing.T) {
 	const field = "cache"
 
 	t.Run("should not register errors for", func(t *testing.T) {
@@ -342,7 +342,7 @@ func TestCacheValidator(t *testing.T) {
 		for _, pattern := range patterns {
 			p := pattern
 			t.Run(fmt.Sprintf("%s pattern", p), func(t *testing.T) {
-				assert.NoError(t, config.ValidateCacheGlob(field, p))
+				assert.NoError(t, config.ValidateGlobPattern(field, p))
 			})
 		}
 	})
@@ -354,7 +354,7 @@ func TestCacheValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(fmt.Sprintf("%s test", test.pattern), func(t *testing.T) {
-				require.EqualError(t, config.ValidateCacheGlob(field, test.pattern), test.error)
+				require.EqualError(t, config.ValidateGlobPattern(field, test.pattern), test.error)
 			})
 		}
 	})

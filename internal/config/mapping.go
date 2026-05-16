@@ -121,10 +121,6 @@ func ValidateProxy(field, value string) error {
 	return nil
 }
 
-func ValidateCacheGlob(field, value string) error {
-	return ValidateGlobPattern(field, value)
-}
-
 func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
 	fromURL, err := mapping.GetFromURL()
 	if err != nil {
@@ -160,7 +156,7 @@ func (m *Mapping) Validate(field string, fs afero.Fs) error {
 	}
 
 	for i, glob := range m.Cache {
-		errs = multierror.Append(errs, ValidateCacheGlob(joinPath(field, "cache", index(i)), glob))
+		errs = multierror.Append(errs, ValidateGlobPattern(joinPath(field, "cache", index(i)), glob))
 	}
 
 	for i, rewrite := range m.Rewrites {

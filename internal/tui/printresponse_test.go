@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeRequestData(method, rawURL string, code int) *contracts.ReqestData {
+func makeRequestData(method, rawURL string, code int) *contracts.RequestData {
 	u, _ := url.Parse(rawURL)
 
-	return &contracts.ReqestData{
+	return &contracts.RequestData{
 		Method: method,
 		URL:    u,
 		Code:   code,
@@ -27,7 +27,7 @@ func makeRequestData(method, rawURL string, code int) *contracts.ReqestData {
 func TestPrintResponse(t *testing.T) {
 	tests := []struct {
 		name string
-		data *contracts.ReqestData
+		data *contracts.RequestData
 	}{
 		{
 			name: "1xx informational",

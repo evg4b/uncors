@@ -22,6 +22,8 @@ type Handler struct {
 	after    func(duration time.Duration) <-chan time.Time
 }
 
+const contentTypeSniffLen = 512
+
 var ErrResponseIsNotDefined = errors.New("response is not defined")
 
 func NewMockHandler(options ...HandlerOption) *Handler {
@@ -29,7 +31,7 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
-	if h.waiteDelay(writer, request) {
+	if h.waitDelay(writer, request) {
 		return
 	}
 
@@ -37,8 +39,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	if err != nil {
 		log.Printf("ERROR: Mock handler error: %s (URL: %s)", err.Error(), request.URL.String())
 		infra.HTTPError(writer, err)
-
-		return
 	}
 }
 
@@ -55,20 +55,12 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 
 	switch {
 	case response.IsFile():
-		err := h.serveFileContent(writer, request)
-		if err != nil {
-			return err
-		}
+		return h.serveFileContent(writer, request)
 	case response.IsRaw():
-		err := h.serveRawContent(writer)
-		if err != nil {
-			return err
-		}
+		return h.serveRawContent(writer)
 	default:
 		return ErrResponseIsNotDefined
 	}
-
-	return nil
 }
 
 func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
@@ -76,7 +68,12 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 
 	header := writer.Header()
 	if len(header.Get(headers.ContentType)) == 0 {
-		contentType := http.DetectContentType([]byte(response.Raw))
+		sniff := response.Raw
+		if len(sniff) > contentTypeSniffLen {
+			sniff = sniff[:contentTypeSniffLen]
+		}
+
+		contentType := http.DetectContentType([]byte(sniff))
 		header.Set(headers.ContentType, contentType)
 	}
 
@@ -104,29 +101,17 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 	return nil
 }
 
-func (h *Handler) waiteDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
-	response := h.response
-
-	if response.Delay > 0 {
-		log.Printf("Delay %s for %s", response.Delay, request.URL.RequestURI())
-		ctx := request.Context()
-		url := request.URL.RequestURI()
-
-	waitingLoop:
-		for {
-			select {
-			case <-ctx.Done():
-				writer.WriteHeader(http.StatusServiceUnavailable)
-				log.Printf("Delay is canceled (url: %s)", url)
-
-				return true
-			case <-h.after(response.Delay):
-				log.Printf("Delay is complete (url: %s)", url)
-
-				break waitingLoop
-			}
-		}
+func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
+	if h.response.Delay <= 0 {
+		return false
 	}
 
-	return false
+	select {
+	case <-request.Context().Done():
+		writer.WriteHeader(http.StatusServiceUnavailable)
+
+		return true
+	case <-h.after(h.response.Delay):
+		return false
+	}
 }

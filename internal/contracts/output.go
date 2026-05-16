@@ -29,7 +29,7 @@ type Output interface {
 	Print(msg any)
 	Printf(msg string, args ...any)
 
-	Request(data *ReqestData)
+	Request(data *RequestData)
 
 	NewPrefixOutput(prefix string) Output
 }
