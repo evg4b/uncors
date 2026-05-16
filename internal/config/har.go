@@ -35,12 +35,14 @@ func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	return value.Decode((*harConfigAlias)(h))
 }
 
-func (h *HARConfig) Validate(field string, errs *Errors) {
+func (h *HARConfig) Validate(field string) error {
 	if !h.Enabled() {
-		return
+		return nil
 	}
 
 	if filepath.Ext(h.File) == "" {
-		errs.add(fmt.Sprintf("%s: HAR file path %q must have a file extension (e.g. .har)", field, h.File))
+		return &ValidationError{fmt.Sprintf("%s: HAR file path %q must have a file extension (e.g. .har)", field, h.File)}
 	}
+
+	return nil
 }

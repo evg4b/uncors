@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequestMatcher_Clone(t *testing.T) {
@@ -184,123 +185,111 @@ func TestScriptValidator(t *testing.T) {
 	noFS := testutils.FsFromMap(t, map[string]string{})
 
 	t.Run("valid inline script", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath, Method: "GET"},
 			Script:  testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.False(t, errs.HasAny())
+		}).Validate("script", noFS)
+		assert.NoError(t, err)
 	})
 
 	t.Run("valid file script", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{testScriptFilePath: testScriptContent})
 
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath, Method: "POST"},
 			File:    testScriptFilePath,
-		}).Validate("script", fs, &errs)
-		assert.False(t, errs.HasAny())
+		}).Validate("script", fs)
+		assert.NoError(t, err)
 	})
 
 	t.Run("empty method is allowed", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath},
 			Script:  testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.False(t, errs.HasAny())
+		}).Validate("script", noFS)
+		assert.NoError(t, err)
 	})
 
 	t.Run("valid queries and headers", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{
 				Path:    "/api/test",
 				Queries: map[string]string{"filter": "active"},
 				Headers: map[string]string{headers.Authorization: "Bearer token"},
 			},
 			Script: testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.False(t, errs.HasAny())
+		}).Validate("script", noFS)
+		assert.NoError(t, err)
 	})
 
 	t.Run("empty path", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: ""},
 			Script:  testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), scriptPathField)
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), scriptPathField)
 	})
 
 	t.Run("invalid path", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: "invalid-path"},
 			Script:  testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), scriptPathField)
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), scriptPathField)
 	})
 
 	t.Run("invalid method", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath, Method: "INVALID"},
 			Script:  testScriptContent,
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), "script.method")
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "script.method")
 	})
 
 	t.Run("neither script nor file provided", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: testAPIPath, Method: "GET"},
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), scriptScriptField)
-		assert.Contains(t, errs.Error(), scriptFileField)
-		assert.Contains(t, errs.Error(), "either 'script' or 'file' must be provided")
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), scriptScriptField)
+		assert.Contains(t, err.Error(), scriptFileField)
+		assert.Contains(t, err.Error(), "either 'script' or 'file' must be provided")
 	})
 
 	t.Run("both script and file provided", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{testScriptFilePath: testScriptContent})
 
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: "/api/test"},
 			Script:  testScriptContent,
 			File:    "/scripts/test.lua",
-		}).Validate("script", fs, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), scriptScriptField)
-		assert.Contains(t, errs.Error(), scriptFileField)
-		assert.Contains(t, errs.Error(), "only one of 'script' or 'file' can be provided")
+		}).Validate("script", fs)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), scriptScriptField)
+		assert.Contains(t, err.Error(), scriptFileField)
+		assert.Contains(t, err.Error(), "only one of 'script' or 'file' can be provided")
 	})
 
 	t.Run("file does not exist", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: "/api/test"},
 			File:    "/scripts/nonexistent.lua",
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), scriptFileField)
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), scriptFileField)
 	})
 
 	t.Run("multiple errors", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Script{
+		err := (&config.Script{
 			Matcher: config.RequestMatcher{Path: "", Method: "INVALID"},
-		}).Validate("script", noFS, &errs)
-		assert.True(t, errs.HasAny())
-		errStr := errs.Error()
-		assert.Contains(t, errStr, "script.path")
-		assert.Contains(t, errStr, "script.method")
-		assert.Contains(t, errStr, "script.script")
-		assert.Contains(t, errStr, "script.file")
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "script.path")
+		assert.Contains(t, err.Error(), "script.method")
+		assert.Contains(t, err.Error(), "script.script")
+		assert.Contains(t, err.Error(), "script.file")
 	})
 }

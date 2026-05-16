@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
+
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/spf13/afero"
@@ -15,126 +17,122 @@ import (
 
 const maxHostLength = 255
 
-func ValidateHost(field, value string, errs *Errors) {
+func ValidateHost(field, value string) error {
 	if value == "" {
-		errs.add(fmt.Sprintf("%s must not be empty", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
 
 	if len(value) > maxHostLength {
-		errs.add(fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value)))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value))}
 	}
 
 	uri, err := urlparser.Parse(value)
 	if err != nil {
-		errs.add(fmt.Sprintf("%s is not a valid host", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
 	}
 
+	var errs *multierror.Error
+
 	if uri.Path != "" {
-		errs.add(fmt.Sprintf("%s must not contain a path", field))
+		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s must not contain a path", field)})
 	}
 
 	if uri.RawQuery != "" {
-		errs.add(fmt.Sprintf("%s must not contain a query", field))
+		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s must not contain a query", field)})
 	}
 
 	if uri.Scheme != "http" && uri.Scheme != httpsScheme && uri.Scheme != "" {
-		errs.add(fmt.Sprintf("%s scheme must be http or https", field))
+		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)})
 	}
+
+	return joinErrors(errs)
 }
 
-func ValidatePath(field, value string, relative bool, errs *Errors) {
+func ValidatePath(field, value string, relative bool) error {
 	if value == "" {
-		errs.add(fmt.Sprintf("%s must not be empty", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
 
 	if !relative && !strings.HasPrefix(value, "/") {
-		errs.add(fmt.Sprintf("%s must be absolute and start with /", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
 	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
-		errs.add(fmt.Sprintf("%s is not a valid path", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}
 
 	if uri.RawQuery != "" {
-		errs.add(fmt.Sprintf("%s must not contain a query", field))
+		return &ValidationError{fmt.Sprintf("%s must not contain a query", field)}
 	}
+
+	return nil
 }
 
-func ValidateFile(field, value string, fs afero.Fs, errs *Errors) {
+func ValidateFile(field, value string, fs afero.Fs) error {
 	stat, err := fs.Stat(value)
 	if err != nil {
 		switch {
 		case os.IsNotExist(err):
-			errs.add(fmt.Sprintf("%s %s does not exist", field, value))
+			return &ValidationError{fmt.Sprintf("%s %s does not exist", field, value)}
 		case os.IsPermission(err):
-			errs.add(fmt.Sprintf("%s %s is not accessible", field, value))
+			return &ValidationError{fmt.Sprintf("%s %s is not accessible", field, value)}
 		default:
-			errs.add(fmt.Sprintf("%s %s is not a file", field, value))
+			return &ValidationError{fmt.Sprintf("%s %s is not a file", field, value)}
 		}
-
-		return
 	}
 
 	if stat.IsDir() {
-		errs.add(fmt.Sprintf("%s %s is a directory", field, value))
+		return &ValidationError{fmt.Sprintf("%s %s is a directory", field, value)}
 	}
+
+	return nil
 }
 
-func ValidateDirectory(field, value string, fs afero.Fs, errs *Errors) {
+func ValidateDirectory(field, value string, fs afero.Fs) error {
 	if value == "" {
-		errs.add(fmt.Sprintf("%s must not be empty", field))
-
-		return
+		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
 
 	stat, err := fs.Stat(value)
 	if err != nil {
 		switch {
 		case os.IsNotExist(err):
-			errs.add(fmt.Sprintf("%s directory does not exist", field))
+			return &ValidationError{fmt.Sprintf("%s directory does not exist", field)}
 		case os.IsPermission(err):
-			errs.add(fmt.Sprintf("%s directory is not accessible", field))
+			return &ValidationError{fmt.Sprintf("%s directory is not accessible", field)}
 		default:
-			errs.add(fmt.Sprintf("%s is not a directory", field))
+			return &ValidationError{fmt.Sprintf("%s is not a directory", field)}
 		}
-
-		return
 	}
 
 	if !stat.IsDir() {
-		errs.add(fmt.Sprintf("%s is not a directory", field))
+		return &ValidationError{fmt.Sprintf("%s is not a directory", field)}
 	}
+
+	return nil
 }
 
-func ValidateStatus(field string, value int, errs *Errors) {
+func ValidateStatus(field string, value int) error {
 	if value < 100 || value > 599 {
-		errs.add(fmt.Sprintf("%s code must be in range 100-599", field))
+		return &ValidationError{fmt.Sprintf("%s code must be in range 100-599", field)}
 	}
+
+	return nil
 }
 
-func ValidateDuration(field string, value time.Duration, allowZero bool, errs *Errors) {
+func ValidateDuration(field string, value time.Duration, allowZero bool) error {
 	if allowZero {
 		if value < 0 {
-			errs.add(fmt.Sprintf("%s must be greater than or equal to 0", field))
+			return &ValidationError{fmt.Sprintf("%s must be greater than or equal to 0", field)}
 		}
 	} else {
 		if value <= 0 {
-			errs.add(fmt.Sprintf("%s must be greater than 0", field))
+			return &ValidationError{fmt.Sprintf("%s must be greater than 0", field)}
 		}
 	}
+
+	return nil
 }
 
 var allowedMethods = []string{
@@ -149,30 +147,38 @@ var allowedMethods = []string{
 	http.MethodTrace,
 }
 
-func ValidateMethod(field, value string, allowEmpty bool, errs *Errors) {
+func ValidateMethod(field, value string, allowEmpty bool) error {
 	if allowEmpty && value == "" {
-		return
+		return nil
 	}
 
 	if !slices.Contains(allowedMethods, value) {
-		errs.add(fmt.Sprintf("%s must be one of %s", field, strings.Join(allowedMethods, ", ")))
+		return &ValidationError{fmt.Sprintf("%s must be one of %s", field, strings.Join(allowedMethods, ", "))}
 	}
+
+	return nil
 }
 
-func ValidatePort(field string, value int, errs *Errors) {
+func ValidatePort(field string, value int) error {
 	if value < 1 || value > 65535 {
-		errs.add(fmt.Sprintf("%s must be between 1 and 65535", field))
+		return &ValidationError{fmt.Sprintf("%s must be between 1 and 65535", field)}
 	}
+
+	return nil
 }
 
-func ValidateGlobPattern(field, value string, errs *Errors) {
+func ValidateGlobPattern(field, value string) error {
 	if !doublestar.ValidatePathPattern(value) {
-		errs.add(fmt.Sprintf("%s is not a valid glob pattern", field))
+		return &ValidationError{fmt.Sprintf("%s is not a valid glob pattern", field)}
 	}
+
+	return nil
 }
 
-func ValidateStringEnum(_ string, value string, options []string, errs *Errors) {
+func ValidateStringEnum(_ string, value string, options []string) error {
 	if !slices.Contains(options, value) {
-		errs.add(fmt.Sprintf("'%s' is not a valid option", value))
+		return &ValidationError{fmt.Sprintf("'%s' is not a valid option", value)}
 	}
+
+	return nil
 }

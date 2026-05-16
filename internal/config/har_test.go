@@ -82,20 +82,14 @@ func TestHARValidator(t *testing.T) {
 
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
-				errs := &config.Errors{}
-				tc.value.Validate("mappings[0].har", errs)
-
-				assert.False(t, errs.HasAny())
+				assert.NoError(t, tc.value.Validate("mappings[0].har"))
 			})
 		}
 	})
 
 	t.Run("invalid cases", func(t *testing.T) {
 		t.Run("file path without extension", func(t *testing.T) {
-			errs := &config.Errors{}
-			(&config.HARConfig{File: "outputfile"}).Validate("mappings[0].har", errs)
-
-			assert.True(t, errs.HasAny())
+			assert.Error(t, (&config.HARConfig{File: "outputfile"}).Validate("mappings[0].har"))
 		})
 	})
 }

@@ -410,20 +410,14 @@ func TestUncorsConfigValidator(t *testing.T) {
 
 func TestProxyValidatorIsValid(t *testing.T) {
 	t.Run("valid url", func(t *testing.T) {
-		var errs config.Errors
-		config.ValidateProxy("testField", "http://valid-url.com", &errs)
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, config.ValidateProxy("testField", "http://valid-url.com"))
 	})
 
 	t.Run("invalid url", func(t *testing.T) {
-		var errs config.Errors
-		config.ValidateProxy("testField", "invalid:::url", &errs)
-		require.EqualError(t, errs, "testField is not a valid URL")
+		require.EqualError(t, config.ValidateProxy("testField", "invalid:::url"), "testField is not a valid URL")
 	})
 
 	t.Run("empty url", func(t *testing.T) {
-		var errs config.Errors
-		config.ValidateProxy("testField", "", &errs)
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, config.ValidateProxy("testField", ""))
 	})
 }

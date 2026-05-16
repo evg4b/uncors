@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 )
@@ -47,23 +48,31 @@ func (s Scripts) Clone() Scripts {
 	})
 }
 
-func (s *Script) Validate(field string, fs afero.Fs, errs *Errors) {
-	s.Matcher.Validate(field, errs)
+func (s *Script) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, s.Matcher.Validate(field))
 
 	switch {
 	case s.Script == "" && s.File == "":
 		scriptField := joinPath(field, "script")
 		fileField := joinPath(field, "file")
 
-		errs.add(fmt.Sprintf("%s: either 'script' or 'file' must be provided", scriptField))
-		errs.add(fmt.Sprintf("%s: either 'script' or 'file' must be provided", fileField))
+		const neitherMsg = ": either 'script' or 'file' must be provided"
+
+		errs = multierror.Append(errs, &ValidationError{scriptField + neitherMsg})
+		errs = multierror.Append(errs, &ValidationError{fileField + neitherMsg})
 	case s.Script != "" && s.File != "":
 		scriptField := joinPath(field, "script")
 		fileField := joinPath(field, "file")
 
-		errs.add(fmt.Sprintf("%s: only one of 'script' or 'file' can be provided", scriptField))
-		errs.add(fmt.Sprintf("%s: only one of 'script' or 'file' can be provided", fileField))
+		const bothMsg = ": only one of 'script' or 'file' can be provided"
+
+		errs = multierror.Append(errs, &ValidationError{scriptField + bothMsg})
+		errs = multierror.Append(errs, &ValidationError{fileField + bothMsg})
 	case s.File != "":
-		ValidateFile(joinPath(field, "file"), s.File, fs, errs)
+		errs = multierror.Append(errs, ValidateFile(joinPath(field, "file"), s.File, fs))
 	}
+
+	return joinErrors(errs)
 }

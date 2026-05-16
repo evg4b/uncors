@@ -68,8 +68,7 @@ func TestMockClone(t *testing.T) {
 
 func TestMockValidator(t *testing.T) {
 	t.Run("should return true", func(t *testing.T) {
-		var errs config.Errors
-		(&config.Mock{
+		err := (&config.Mock{
 			Matcher: config.RequestMatcher{
 				Path:   "/api/info",
 				Method: "",
@@ -79,8 +78,8 @@ func TestMockValidator(t *testing.T) {
 				Raw:   "test",
 				Delay: 1 * time.Second,
 			},
-		}).Validate("mock", afero.NewMemMapFs(), &errs)
+		}).Validate("mock", afero.NewMemMapFs())
 
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, err)
 	})
 }

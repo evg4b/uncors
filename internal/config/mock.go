@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 )
@@ -40,7 +41,11 @@ func (m Mocks) Clone() Mocks {
 	})
 }
 
-func (m *Mock) Validate(field string, fs afero.Fs, errs *Errors) {
-	m.Matcher.Validate(field, errs)
-	m.Response.Validate(joinPath(field, "response"), fs, errs)
+func (m *Mock) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, m.Matcher.Validate(field))
+	errs = multierror.Append(errs, m.Response.Validate(joinPath(field, "response"), fs))
+
+	return joinErrors(errs)
 }

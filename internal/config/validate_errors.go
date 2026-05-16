@@ -1,18 +1,47 @@
 package config
 
-import "strings"
+import (
+	"fmt"
+	"strings"
 
-//nolint:recvcheck // Error/HasAny need value receivers so Errors satisfies the error interface as a value type
-type Errors []string
+	multierror "github.com/hashicorp/go-multierror"
+)
 
-func (e Errors) Error() string {
-	return strings.Join(e, "\n")
+type ValidationError struct {
+	Message string
 }
 
-func (e Errors) HasAny() bool {
-	return len(e) > 0
+func (e *ValidationError) Error() string {
+	return e.Message
 }
 
-func (e *Errors) add(msg string) {
-	*e = append(*e, msg)
+type TLSError struct {
+	Host string
+}
+
+func (e *TLSError) Error() string {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "HTTPS mapping '%s' requires a local CA certificate for automatic TLS.\n\n", e.Host)
+	builder.WriteString("Generate a local CA certificate:\n")
+	builder.WriteString("  uncors generate-certs\n\n")
+	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
+
+	return builder.String()
+}
+
+func joinErrors(errs *multierror.Error) error {
+	if errs == nil {
+		return nil
+	}
+
+	errs.ErrorFormat = func(errs []error) string {
+		msgs := make([]string, len(errs))
+		for i, e := range errs {
+			msgs[i] = e.Error()
+		}
+
+		return strings.Join(msgs, "\n")
+	}
+
+	return errs.ErrorOrNil()
 }

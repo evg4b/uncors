@@ -186,9 +186,7 @@ func TestMappingValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				var errs config.Errors
-				test.value.Validate(field, fs, &errs)
-				assert.False(t, errs.HasAny())
+				assert.NoError(t, test.value.Validate(field, fs))
 			})
 		}
 	})
@@ -277,9 +275,7 @@ func TestMappingValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				var errs config.Errors
-				test.value.Validate(field, fs, &errs)
-				require.EqualError(t, errs, test.error)
+				require.EqualError(t, test.value.Validate(field, fs), test.error)
 			})
 		}
 	})
@@ -287,25 +283,21 @@ func TestMappingValidator(t *testing.T) {
 
 func TestValidateTLS(t *testing.T) {
 	t.Run("skip validation for invalid URL", func(t *testing.T) {
-		var errs config.Errors
-		config.ValidateTLS(
+		err := config.ValidateTLS(
 			"test",
 			config.Mapping{From: "://invalid-url", To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
-			&errs,
 		)
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, err)
 	})
 
 	t.Run("skip validation for non-HTTPS", func(t *testing.T) {
-		var errs config.Errors
-		config.ValidateTLS(
+		err := config.ValidateTLS(
 			"test",
 			config.Mapping{From: "http://localhost:8080", To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
-			&errs,
 		)
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, err)
 	})
 
 	t.Run("error when CA does not exist", func(t *testing.T) {
@@ -314,14 +306,13 @@ func TestValidateTLS(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		var errs config.Errors
-		config.ValidateTLS("test",
+		err := config.ValidateTLS("test",
 			config.Mapping{From: "https://localhost:8443", To: hosts.Example.HTTP()},
-			afero.NewOsFs(), &errs)
+			afero.NewOsFs())
 
-		assert.True(t, errs.HasAny())
-		assert.Contains(t, errs.Error(), "HTTPS mapping 'localhost:8443' requires a local CA certificate")
-		assert.Contains(t, errs.Error(), "uncors generate-certs")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "HTTPS mapping 'localhost:8443' requires a local CA certificate")
+		assert.Contains(t, err.Error(), "uncors generate-certs")
 	})
 
 	t.Run("pass when CA exists", func(t *testing.T) {
@@ -335,12 +326,11 @@ func TestValidateTLS(t *testing.T) {
 		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		var errs config.Errors
-		config.ValidateTLS("test",
+		err = config.ValidateTLS("test",
 			config.Mapping{From: "https://localhost:8443", To: hosts.Example.HTTP()},
-			fs, &errs)
+			fs)
 
-		assert.False(t, errs.HasAny())
+		assert.NoError(t, err)
 	})
 }
 
@@ -352,9 +342,7 @@ func TestCacheValidator(t *testing.T) {
 		for _, pattern := range patterns {
 			p := pattern
 			t.Run(fmt.Sprintf("%s pattern", p), func(t *testing.T) {
-				var errs config.Errors
-				config.ValidateCacheGlob(field, p, &errs)
-				assert.False(t, errs.HasAny())
+				assert.NoError(t, config.ValidateCacheGlob(field, p))
 			})
 		}
 	})
@@ -366,9 +354,7 @@ func TestCacheValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(fmt.Sprintf("%s test", test.pattern), func(t *testing.T) {
-				var errs config.Errors
-				config.ValidateCacheGlob(field, test.pattern, &errs)
-				require.EqualError(t, errs, test.error)
+				require.EqualError(t, config.ValidateCacheGlob(field, test.pattern), test.error)
 			})
 		}
 	})

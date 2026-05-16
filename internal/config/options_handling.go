@@ -16,8 +16,10 @@ func (o *OptionsHandling) Clone() OptionsHandling {
 	}
 }
 
-func (o *OptionsHandling) Validate(field string, errs *Errors) {
+func (o *OptionsHandling) Validate(field string) error {
 	if o.Code != 0 {
-		ValidateStatus(joinPath(field, "code"), o.Code, errs)
+		return ValidateStatus(joinPath(field, "code"), o.Code)
 	}
+
+	return nil
 }

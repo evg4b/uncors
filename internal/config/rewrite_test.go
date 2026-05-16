@@ -107,9 +107,7 @@ func TestRewritingOptionValidatorIsValidNoError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var errs config.Errors
-			tt.value.Validate("testField", &errs)
-			assert.False(t, errs.HasAny())
+			assert.NoError(t, tt.value.Validate("testField"))
 		})
 	}
 }
@@ -139,9 +137,7 @@ func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			var errs config.Errors
-			testCase.value.Validate("testField", &errs)
-			require.EqualError(t, errs, testCase.error)
+			require.EqualError(t, testCase.value.Validate("testField"), testCase.error)
 		})
 	}
 }

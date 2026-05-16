@@ -55,13 +55,12 @@ func TestCacheConfigValidator(t *testing.T) {
 	const field = "test"
 
 	t.Run("should not register errors for", func(t *testing.T) {
-		var errs config.Errors
-		(&config.CacheConfig{
+		err := (&config.CacheConfig{
 			ExpirationTime: 5 * time.Minute,
 			MaxSize:        100 * 1024 * 1024,
 			Methods:        []string{http.MethodGet, http.MethodPost},
-		}).Validate(field, &errs)
-		assert.False(t, errs.HasAny())
+		}).Validate(field)
+		assert.NoError(t, err)
 	})
 
 	t.Run("should register errors for", func(t *testing.T) {
@@ -111,9 +110,7 @@ func TestCacheConfigValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				var errs config.Errors
-				test.value.Validate(field, &errs)
-				require.EqualError(t, errs, test.error)
+				require.EqualError(t, test.value.Validate(field), test.error)
 			})
 		}
 	})

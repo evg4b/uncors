@@ -142,9 +142,7 @@ func TestResponseValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				var errs config.Errors
-				test.value.Validate("test", fs, &errs)
-				assert.False(t, errs.HasAny())
+				assert.NoError(t, test.value.Validate("test", fs))
 			})
 		}
 	})
@@ -183,9 +181,7 @@ func TestResponseValidator(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				var errs config.Errors
-				test.value.Validate("test", fs, &errs)
-				require.EqualError(t, errs, test.error)
+				require.EqualError(t, test.value.Validate("test", fs), test.error)
 			})
 		}
 	})

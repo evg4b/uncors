@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 )
 
@@ -34,24 +35,28 @@ func (r *Response) IsFile() bool {
 	return len(r.File) > 0
 }
 
-func (r *Response) Validate(field string, fs afero.Fs, errs *Errors) {
-	ValidateStatus(joinPath(field, "code"), r.Code, errs)
-	ValidateDuration(joinPath(field, "delay"), r.Delay, true, errs)
+func (r *Response) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, ValidateStatus(joinPath(field, "code"), r.Code))
+	errs = multierror.Append(errs, ValidateDuration(joinPath(field, "delay"), r.Delay, true))
 
 	switch {
 	case r.Raw == "" && r.File == "":
-		errs.add(fmt.Sprintf(
+		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf(
 			"%s or %s must be set",
 			joinPath(field, "raw"),
 			joinPath(field, "file"),
-		))
+		)})
 	case r.Raw != "" && r.File != "":
-		errs.add(fmt.Sprintf(
+		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf(
 			"only one of %s or %s must be set",
 			joinPath(field, "raw"),
 			joinPath(field, "file"),
-		))
+		)})
 	case r.File != "":
-		ValidateFile(joinPath(field, "file"), r.File, fs, errs)
+		errs = multierror.Append(errs, ValidateFile(joinPath(field, "file"), r.File, fs))
 	}
+
+	return joinErrors(errs)
 }

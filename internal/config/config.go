@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
@@ -85,24 +86,18 @@ func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 }
 
 func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
-	var errs Errors
-
 	if len(cfg.Mappings) == 0 {
-		errs.add("mappings must not be empty")
-
-		return errs
+		return &ValidationError{"mappings must not be empty"}
 	}
+
+	var errs *multierror.Error
 
 	for i, mapping := range cfg.Mappings {
-		mapping.Validate(joinPath("mappings", index(i)), fs, &errs)
+		errs = multierror.Append(errs, mapping.Validate(joinPath("mappings", index(i)), fs))
 	}
 
-	ValidateProxy("proxy", cfg.Proxy, &errs)
-	cfg.CacheConfig.Validate("cache-config", &errs)
+	errs = multierror.Append(errs, ValidateProxy("proxy", cfg.Proxy))
+	errs = multierror.Append(errs, cfg.CacheConfig.Validate("cache-config"))
 
-	if errs.HasAny() {
-		return errs
-	}
-
-	return nil
+	return joinErrors(errs)
 }

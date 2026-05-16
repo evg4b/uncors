@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/urlparser"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -108,66 +108,68 @@ func (m *Mapping) ClearCache() {
 	m.fromPort = ""
 }
 
-func ValidateProxy(field, value string, errs *Errors) {
+func ValidateProxy(field, value string) error {
 	if value == "" {
-		return
+		return nil
 	}
 
 	_, err := urlparser.Parse(value)
 	if err != nil {
-		errs.add(fmt.Sprintf("%s is not a valid URL", field))
+		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
 	}
+
+	return nil
 }
 
-func ValidateCacheGlob(field, value string, errs *Errors) {
-	ValidateGlobPattern(field, value, errs)
+func ValidateCacheGlob(field, value string) error {
+	return ValidateGlobPattern(field, value)
 }
 
-func ValidateTLS(_ string, mapping Mapping, fs afero.Fs, errs *Errors) {
+func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
 	fromURL, err := mapping.GetFromURL()
-	if err != nil || fromURL.Scheme != httpsScheme {
-		return
+	if err != nil {
+		return nil //nolint:nilerr
+	}
+
+	if fromURL.Scheme != httpsScheme {
+		return nil
 	}
 
 	if !infratls.CAExists(fs) {
-		errs.add(formatTLSError(fromURL.Host))
+		return &TLSError{fromURL.Host}
 	}
+
+	return nil
 }
 
-func formatTLSError(host string) string {
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "HTTPS mapping '%s' requires a local CA certificate for automatic TLS.\n\n", host)
-	builder.WriteString("Generate a local CA certificate:\n")
-	builder.WriteString("  uncors generate-certs\n\n")
-	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
+func (m *Mapping) Validate(field string, fs afero.Fs) error {
+	var errs *multierror.Error
 
-	return builder.String()
-}
-
-func (m *Mapping) Validate(field string, fs afero.Fs, errs *Errors) {
-	ValidateHost(joinPath(field, "from"), m.From, errs)
-	ValidateHost(joinPath(field, "to"), m.To, errs)
-	m.OptionsHandling.Validate(joinPath(field, "options-handling"), errs)
-	m.HAR.Validate(joinPath(field, "har"), errs)
-	ValidateTLS(field, *m, fs, errs)
+	errs = multierror.Append(errs, ValidateHost(joinPath(field, "from"), m.From))
+	errs = multierror.Append(errs, ValidateHost(joinPath(field, "to"), m.To))
+	errs = multierror.Append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
+	errs = multierror.Append(errs, m.HAR.Validate(joinPath(field, "har")))
+	errs = multierror.Append(errs, ValidateTLS(field, *m, fs))
 
 	for i, static := range m.Statics {
-		static.Validate(joinPath(field, "statics", index(i)), fs, errs)
+		errs = multierror.Append(errs, static.Validate(joinPath(field, "statics", index(i)), fs))
 	}
 
 	for i, mock := range m.Mocks {
-		mock.Validate(joinPath(field, "mocks", index(i)), fs, errs)
+		errs = multierror.Append(errs, mock.Validate(joinPath(field, "mocks", index(i)), fs))
 	}
 
 	for i, glob := range m.Cache {
-		ValidateCacheGlob(joinPath(field, "cache", index(i)), glob, errs)
+		errs = multierror.Append(errs, ValidateCacheGlob(joinPath(field, "cache", index(i)), glob))
 	}
 
 	for i, rewrite := range m.Rewrites {
-		rewrite.Validate(joinPath(field, "rewrite", index(i)), errs)
+		errs = multierror.Append(errs, rewrite.Validate(joinPath(field, "rewrite", index(i))))
 	}
 
 	for i, script := range m.Scripts {
-		script.Validate(joinPath(field, "scripts", index(i)), fs, errs)
+		errs = multierror.Append(errs, script.Validate(joinPath(field, "scripts", index(i)), fs))
 	}
+
+	return joinErrors(errs)
 }

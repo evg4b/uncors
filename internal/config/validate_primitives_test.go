@@ -15,19 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func runOK(t *testing.T, name string, fn func(*config.Errors)) {
+func runOK(t *testing.T, name string, fn func() error) {
+	t.Helper()
 	t.Run(name, func(t *testing.T) {
-		var errs config.Errors
-		fn(&errs)
-		assert.False(t, errs.HasAny(), "expected no errors, got: %v", errs)
+		assert.NoError(t, fn())
 	})
 }
 
-func runErr(t *testing.T, name, expected string, fn func(*config.Errors)) {
+func runErr(t *testing.T, name, expected string, fn func() error) {
+	t.Helper()
 	t.Run(name, func(t *testing.T) {
-		var errs config.Errors
-		fn(&errs)
-		require.EqualError(t, errs, expected)
+		require.EqualError(t, fn(), expected)
 	})
 }
 
@@ -37,25 +35,25 @@ func TestValidateHost(t *testing.T) {
 	const field = "field"
 
 	t.Run("valid", func(t *testing.T) {
-		runOK(t, "bare host", func(e *config.Errors) { config.ValidateHost(field, hosts.Localhost.Host(), e) })
-		runOK(t, "http scheme", func(e *config.Errors) { config.ValidateHost(field, hosts.Github.HTTP(), e) })
-		runOK(t, "https scheme", func(e *config.Errors) { config.ValidateHost(field, hosts.Github.HTTPS(), e) })
-		runOK(t, "ip address", func(e *config.Errors) { config.ValidateHost(field, hosts.Loopback.Host(), e) })
+		runOK(t, "bare host", func() error { return config.ValidateHost(field, hosts.Localhost.Host()) })
+		runOK(t, "http scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTP()) })
+		runOK(t, "https scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTPS()) })
+		runOK(t, "ip address", func() error { return config.ValidateHost(field, hosts.Loopback.Host()) })
 	})
 
 	t.Run("invalid", func(t *testing.T) {
 		runErr(t, "empty", "field must not be empty",
-			func(e *config.Errors) { config.ValidateHost(field, "", e) })
+			func() error { return config.ValidateHost(field, "") })
 		runErr(t, "too long", "field must not be longer than 255 characters, but got 256",
-			func(e *config.Errors) { config.ValidateHost(field, strings.Repeat("a", 256), e) })
+			func() error { return config.ValidateHost(field, strings.Repeat("a", 256)) })
 		runErr(t, "with path", "field must not contain a path",
-			func(e *config.Errors) { config.ValidateHost(field, "example.com/path", e) })
+			func() error { return config.ValidateHost(field, "example.com/path") })
 		runErr(t, "with query", "field must not contain a query",
-			func(e *config.Errors) { config.ValidateHost(field, "example.com?query=1", e) })
+			func() error { return config.ValidateHost(field, "example.com?query=1") })
 		runErr(t, "unsupported scheme", "field scheme must be http or https",
-			func(e *config.Errors) { config.ValidateHost(field, hosts.Localhost.Scheme("ftp"), e) })
+			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp")) })
 		runErr(t, "invalid host", "field is not a valid host",
-			func(e *config.Errors) { config.ValidateHost(field, "loca:::lhost", e) })
+			func() error { return config.ValidateHost(field, "loca:::lhost") })
 	})
 }
 
@@ -65,8 +63,8 @@ func TestValidatePath(t *testing.T) {
 	const field = "field"
 
 	t.Run("valid absolute", func(t *testing.T) {
-		runOK(t, "root", func(e *config.Errors) { config.ValidatePath(field, "/", false, e) })
-		runOK(t, "api path", func(e *config.Errors) { config.ValidatePath(field, "/api/info", false, e) })
+		runOK(t, "root", func() error { return config.ValidatePath(field, "/", false) })
+		runOK(t, "api path", func() error { return config.ValidatePath(field, "/api/info", false) })
 	})
 }
 
@@ -78,16 +76,16 @@ func TestValidateFile(t *testing.T) {
 	t.Run("valid file", func(t *testing.T) {
 		path := "/demo/file.go"
 		fs := testutils.FsFromMap(t, map[string]string{path: "package validators"})
-		runOK(t, "existing file", func(e *config.Errors) { config.ValidateFile(field, path, fs, e) })
+		runOK(t, "existing file", func() error { return config.ValidateFile(field, path, fs) })
 	})
 
 	fs := testutils.FsFromMap(t, map[string]string{"file.go": "package validators"})
 	testutils.CheckNoError(t, fs.Mkdir("/demo", 0o755))
 
 	runErr(t, "does not exist", "test file_does_not_exist.go does not exist",
-		func(e *config.Errors) { config.ValidateFile(field, "file_does_not_exist.go", fs, e) })
+		func() error { return config.ValidateFile(field, "file_does_not_exist.go", fs) })
 	runErr(t, "is a directory", "test /demo is a directory",
-		func(e *config.Errors) { config.ValidateFile(field, "/demo", fs, e) })
+		func() error { return config.ValidateFile(field, "/demo", fs) })
 }
 
 // ---- ValidateDirectory ---------------------------------------------------
@@ -101,14 +99,14 @@ func TestValidateDirectory(t *testing.T) {
 	fs := testutils.FsFromMap(t, map[string]string{"file.go": "package validators"})
 	testutils.CheckNoError(t, fs.Mkdir(dir, 0o755))
 
-	runOK(t, "existing directory", func(e *config.Errors) { config.ValidateDirectory(field, dir, fs, e) })
+	runOK(t, "existing directory", func() error { return config.ValidateDirectory(field, dir, fs) })
 
 	runErr(t, "empty path", "test must not be empty",
-		func(e *config.Errors) { config.ValidateDirectory(field, "", fs, e) })
+		func() error { return config.ValidateDirectory(field, "", fs) })
 	runErr(t, "does not exist", "test directory does not exist",
-		func(e *config.Errors) { config.ValidateDirectory(field, "does_not_exist", fs, e) })
+		func() error { return config.ValidateDirectory(field, "does_not_exist", fs) })
 	runErr(t, "is a file", "test is not a directory",
-		func(e *config.Errors) { config.ValidateDirectory(field, "file.go", fs, e) })
+		func() error { return config.ValidateDirectory(field, "file.go", fs) })
 }
 
 // ---- ValidateStatus ------------------------------------------------------
@@ -117,12 +115,12 @@ func TestValidateStatus(t *testing.T) {
 	const field = "status"
 
 	for _, code := range []int{100, 200, 300, 400, 404, 500, 503, 599} {
-		runOK(t, strconv.Itoa(code), func(e *config.Errors) { config.ValidateStatus(field, code, e) })
+		runOK(t, strconv.Itoa(code), func() error { return config.ValidateStatus(field, code) })
 	}
 
 	for _, code := range []int{-200, 0, 99, 600} {
 		runErr(t, strconv.Itoa(code), "status code must be in range 100-599",
-			func(e *config.Errors) { config.ValidateStatus(field, code, e) })
+			func() error { return config.ValidateStatus(field, code) })
 	}
 }
 
@@ -131,19 +129,19 @@ func TestValidateStatus(t *testing.T) {
 func TestValidateDuration(t *testing.T) {
 	const field = "test-field"
 
-	runOK(t, "positive without allowZero", func(e *config.Errors) {
-		config.ValidateDuration(field, time.Second, false, e)
+	runOK(t, "positive without allowZero", func() error {
+		return config.ValidateDuration(field, time.Second, false)
 	})
-	runOK(t, "zero with allowZero", func(e *config.Errors) {
-		config.ValidateDuration(field, 0, true, e)
+	runOK(t, "zero with allowZero", func() error {
+		return config.ValidateDuration(field, 0, true)
 	})
 
 	runErr(t, "negative without allowZero", "test-field must be greater than 0",
-		func(e *config.Errors) { config.ValidateDuration(field, -time.Second, false, e) })
+		func() error { return config.ValidateDuration(field, -time.Second, false) })
 	runErr(t, "zero without allowZero", "test-field must be greater than 0",
-		func(e *config.Errors) { config.ValidateDuration(field, 0, false, e) })
+		func() error { return config.ValidateDuration(field, 0, false) })
 	runErr(t, "negative with allowZero", "test-field must be greater than or equal to 0",
-		func(e *config.Errors) { config.ValidateDuration(field, -time.Second, true, e) })
+		func() error { return config.ValidateDuration(field, -time.Second, true) })
 }
 
 // ---- ValidateMethod ------------------------------------------------------
@@ -156,20 +154,20 @@ func TestValidateMethod(t *testing.T) {
 		http.MethodPatch, http.MethodDelete, http.MethodConnect, http.MethodOptions, http.MethodTrace,
 	} {
 		m := method
-		runOK(t, fmt.Sprintf("http method %s", m), func(e *config.Errors) {
-			config.ValidateMethod(field, m, false, e)
+		runOK(t, fmt.Sprintf("http method %s", m), func() error {
+			return config.ValidateMethod(field, m, false)
 		})
 	}
 
-	runOK(t, "empty when allowEmpty", func(e *config.Errors) {
-		config.ValidateMethod(field, "", true, e)
+	runOK(t, "empty when allowEmpty", func() error {
+		return config.ValidateMethod(field, "", true)
 	})
 
 	expected := "test-field must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE"
 	runErr(t, "empty when not allowEmpty", expected,
-		func(e *config.Errors) { config.ValidateMethod(field, "", false, e) })
+		func() error { return config.ValidateMethod(field, "", false) })
 	runErr(t, "invalid method", expected,
-		func(e *config.Errors) { config.ValidateMethod(field, "invalid", false, e) })
+		func() error { return config.ValidateMethod(field, "invalid", false) })
 }
 
 // ---- ValidatePort --------------------------------------------------------
@@ -179,24 +177,24 @@ func TestValidatePort(t *testing.T) {
 
 	for _, port := range []int{1, 443, 65535} {
 		p := port
-		runOK(t, fmt.Sprintf("port %d", p), func(e *config.Errors) { config.ValidatePort(field, p, e) })
+		runOK(t, fmt.Sprintf("port %d", p), func() error { return config.ValidatePort(field, p) })
 	}
 
 	for _, port := range []int{-5, 0, 70000} {
 		p := port
 		runErr(t, fmt.Sprintf("port %d", p), "port-field must be between 1 and 65535",
-			func(e *config.Errors) { config.ValidatePort(field, p, e) })
+			func() error { return config.ValidatePort(field, p) })
 	}
 }
 
 // ---- ValidateGlobPattern -------------------------------------------------
 
 func TestValidateGlobPattern(t *testing.T) {
-	runOK(t, "valid glob", func(e *config.Errors) {
-		config.ValidateGlobPattern("field", "/api/**", e)
+	runOK(t, "valid glob", func() error {
+		return config.ValidateGlobPattern("field", "/api/**")
 	})
 	runErr(t, "invalid glob", "field is not a valid glob pattern",
-		func(e *config.Errors) { config.ValidateGlobPattern("field", "[invalid", e) })
+		func() error { return config.ValidateGlobPattern("field", "[invalid") })
 }
 
 // ---- ValidateStringEnum --------------------------------------------------
@@ -204,9 +202,9 @@ func TestValidateGlobPattern(t *testing.T) {
 func TestValidateStringEnum(t *testing.T) {
 	options := []string{"option-1", "option-2"}
 
-	runOK(t, "valid option", func(e *config.Errors) {
-		config.ValidateStringEnum("field", "option-1", options, e)
+	runOK(t, "valid option", func() error {
+		return config.ValidateStringEnum("field", "option-1", options)
 	})
 	runErr(t, "invalid option", "'option-x' is not a valid option",
-		func(e *config.Errors) { config.ValidateStringEnum("field", "option-x", options, e) })
+		func() error { return config.ValidateStringEnum("field", "option-x", options) })
 }

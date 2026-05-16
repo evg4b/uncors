@@ -1,5 +1,7 @@
 package config
 
+import multierror "github.com/hashicorp/go-multierror"
+
 type RewritingOption struct {
 	From string `yaml:"from"`
 	To   string `yaml:"to"`
@@ -29,11 +31,15 @@ func (r RewriteOptions) Clone() RewriteOptions {
 	return clone
 }
 
-func (r RewritingOption) Validate(field string, errs *Errors) {
-	ValidatePath(joinPath(field, "from"), r.From, true, errs)
-	ValidatePath(joinPath(field, "to"), r.To, true, errs)
+func (r RewritingOption) Validate(field string) error {
+	var errs *multierror.Error
+
+	errs = multierror.Append(errs, ValidatePath(joinPath(field, "from"), r.From, true))
+	errs = multierror.Append(errs, ValidatePath(joinPath(field, "to"), r.To, true))
 
 	if r.Host != "" {
-		ValidateHost(joinPath(field, "host"), r.Host, errs)
+		errs = multierror.Append(errs, ValidateHost(joinPath(field, "host"), r.Host))
 	}
+
+	return joinErrors(errs)
 }
