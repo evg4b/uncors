@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: [ v*.*.* ]
+
+jobs:
+  ci:
+    uses: ./.github/workflows/go.yml
+
+  release:
+    name: Release UNCORS application
+    runs-on: ubuntu-latest
+    needs: [ ci ]
+    steps:
+      - &fast-clone
+        name: Clone repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACCOUNT_GITHUB_TOKEN: ${{ secrets.ACCOUNT_GITHUB_TOKEN }}
+
+      - name: Build and publish NPM packages
+        uses: evg4b/goreleaser-npm-publisher-action@v1.3.0
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          description: A simple dev HTTP/HTTPS reverse proxy for replacing CORS headers.
+          license: MIT
+          files: |-
+            LICENSE
+            README.md
+          keywords: |-
+            cors
+            proxy
+            reverse-proxy
+            http
+            https
+            cli
+            devtool
+
+  publish-wiki:
+    name: Publish wiki documentation
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    steps:
+      - *fast-clone
+      - uses: spenserblack/actions-wiki@v0.3.0
+        with:
+          path: docs
