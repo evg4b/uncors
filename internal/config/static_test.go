@@ -25,68 +25,101 @@ func TestStaticDirectoriesUnmarshalYAML(t *testing.T) {
 		Statics config.StaticDirectories `yaml:"statics"`
 	}
 
-	tests := []struct {
-		name     string
-		input    string
-		expected config.StaticDirectories
-	}{
-		{
-			name: "plain map shorthand",
-			input: `
+	t.Run("map form", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    string
+			expected config.StaticDirectories
+		}{
+			{
+				name: "plain map shorthand",
+				input: `
 statics:
   /path: /static-dir
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir},
-				{Path: anotherPath, Dir: anotherStaticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-		{
-			name: "object map without index",
-			input: `
+			{
+				name: "object map without index",
+				input: `
 statics:
   /path: { dir: /static-dir }
   /another-path: { dir: /another-static-dir }
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir},
-				{Path: anotherPath, Dir: anotherStaticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-		{
-			name: "object map with index",
-			input: `
+			{
+				name: "object map with index",
+				input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: { dir: /another-static-dir, index: default.html }
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: indexHTML},
-				{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir, Index: indexHTML},
+					{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
+				},
 			},
-		},
-		{
-			name: "mixed map",
-			input: `
+			{
+				name: "mixed map",
+				input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: indexHTML},
-				{Path: anotherPath, Dir: anotherStaticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir, Index: indexHTML},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-	}
+		}
 
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			var actual testType
-			require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &actual))
-			assert.ElementsMatch(t, testCase.expected, actual.Statics)
-		})
-	}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				var actual testType
+
+				require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &actual))
+				assert.ElementsMatch(t, testCase.expected, actual.Statics)
+			})
+		}
+	})
+
+	t.Run("object map with invalid field type returns error", func(t *testing.T) {
+		const input = `
+statics:
+  /path: [a, b, c]
+`
+
+		var actual testType
+
+		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
+	})
+
+	t.Run("sequence form", func(t *testing.T) {
+		const input = `
+statics:
+  - path: /path
+    dir: /static-dir
+  - path: /another-path
+    dir: /another-static-dir
+    index: index.html
+`
+
+		var actual testType
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Equal(t, config.StaticDirectories{
+			{Path: path, Dir: staticDir},
+			{Path: anotherPath, Dir: anotherStaticDir, Index: indexHTML},
+		}, actual.Statics)
+	})
 }
 
 func TestStaticDirMappingClone(t *testing.T) {
