@@ -68,7 +68,7 @@ func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
 		commands.WithOutput(output),
 	)
 
-	flags := pflag.NewFlagSet(generateCertsCmd, pflag.ExitOnError)
+	flags := pflag.NewFlagSet(generateCertsCmd, pflag.ContinueOnError)
 	cmd.DefineFlags(flags)
 
 	err := flags.Parse(os.Args[2:])

@@ -77,6 +77,14 @@ func TestRunGenerateCerts(t *testing.T) {
 
 		assert.Equal(t, 1, result)
 	})
+
+	t.Run("returns 1 when flags parse fails", func(t *testing.T) {
+		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
+
+		result := runGenerateCerts(afero.NewMemMapFs(), newTestOutput())
+
+		assert.Equal(t, 1, result)
+	})
 }
 
 func TestLoadConfigurationWithDebug(t *testing.T) {
