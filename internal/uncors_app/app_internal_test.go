@@ -438,7 +438,10 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 
 	_ = tmpFile.Close()
 
-	watcher, err := config.NewWatcher(tmpFile.Name(), func() {})
+	ctx := t.Context()
+
+	watcher := config.NewWatcher(tmpFile.Name())
+	err = watcher.Watch(ctx, func() {})
 	require.NoError(t, err)
 
 	app, _ := newTestApp(t)

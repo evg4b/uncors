@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -34,23 +35,23 @@ func newIsolatedWatcher(t *testing.T) (*Watcher, chan fsnotify.Event, chan error
 	fsW.Errors = errsCh
 
 	watcher := &Watcher{
+		filePath:  "test",
 		fsWatcher: fsW,
-		onChange:  func() {},
-		done:      make(chan struct{}),
 	}
+	watcher.isWatching.Store(true)
 
 	return watcher, eventsCh, errsCh
 }
 
 // runAndWait starts watcher.run in a goroutine and returns a channel that is
 // closed when run returns.
-func runAndWait(watcher *Watcher) <-chan struct{} {
+func runAndWait(ctx context.Context, watcher *Watcher, onChange func()) <-chan struct{} {
 	exited := make(chan struct{})
 
 	go func() {
 		defer close(exited)
 
-		watcher.run()
+		watcher.run(ctx, onChange)
 	}()
 
 	return exited
@@ -61,7 +62,9 @@ func runAndWait(watcher *Watcher) <-chan struct{} {
 func TestWatcherRunEventsNotOk(t *testing.T) {
 	watcher, events, _ := newIsolatedWatcher(t)
 
-	exited := runAndWait(watcher)
+	ctx := t.Context()
+
+	exited := runAndWait(ctx, watcher, func() {})
 
 	// Closing the channel makes the Events select case fire with ok=false,
 	// which triggers the return on lines 75-77.
@@ -83,7 +86,9 @@ func TestWatcherRunEventsNotOk(t *testing.T) {
 func TestWatcherRunErrorsNotOk(t *testing.T) {
 	watcher, _, errs := newIsolatedWatcher(t)
 
-	exited := runAndWait(watcher)
+	ctx := t.Context()
+
+	exited := runAndWait(ctx, watcher, func() {})
 
 	// Closing the channel makes the Errors select case fire with ok=false,
 	// which triggers the return on lines 86-88.
@@ -105,19 +110,21 @@ func TestWatcherRunErrorsNotOk(t *testing.T) {
 func TestWatcherRunErrorPath(t *testing.T) {
 	watcher, _, errs := newIsolatedWatcher(t)
 
-	exited := runAndWait(watcher)
+	ctx, cancel := context.WithCancel(t.Context())
+
+	exited := runAndWait(ctx, watcher, func() {})
 
 	// Sending to the unbuffered errs channel blocks until run's select receives
-	// it. Because the channel is open, ok=true and the error is logged (line 90).
+	// it. Because the channel is open, ok=true and the error is logged.
 	errs <- errSyntheticWatcher
 
-	// Signal run to stop and wait for it to exit cleanly.
-	close(watcher.done)
+	// Cancel context to signal run to stop.
+	cancel()
 
 	select {
 	case <-exited:
 	case <-time.After(200 * time.Millisecond):
-		t.Fatal("run goroutine did not exit after done was closed")
+		t.Fatal("run goroutine did not exit after context was cancelled")
 	}
 
 	// Close the underlying fsnotify watcher so its backend goroutine can exit.

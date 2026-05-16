@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var Version = "X.X.X"
+var Version = "v0.7.0"
 
 const generateCertsCmd = "generate-certs"
 
@@ -136,7 +136,9 @@ func startConfigWatcher(
 	configPath string,
 	app *uncors.Uncors,
 ) {
-	watcher, err := config.NewWatcher(configPath, func() {
+	watcher := config.NewWatcher(configPath)
+
+	err := watcher.Watch(ctx, func() {
 		defer helpers.PanicInterceptor(func(value any) {
 			log.Printf("Config reloading error: %v", value)
 			output.Errorf("Config reloading error: %v", value)
@@ -156,11 +158,6 @@ func startConfigWatcher(
 
 		return
 	}
-
-	// The watcher goroutine owns its lifetime; it is intentionally not closed
-	// here because the proxy server (app.Wait) blocks the caller for the same
-	// duration. The OS reclaims resources when the process exits.
-	_ = watcher
 }
 
 // startVersionChecker waits for a short delay then checks for a newer release.

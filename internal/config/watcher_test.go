@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,8 +25,12 @@ func waitForCall(ch <-chan struct{}, timeout time.Duration) bool {
 }
 
 func TestNewConfigWatcher(t *testing.T) {
-	t.Run("returns error for non-existent file", func(t *testing.T) {
-		_, err := config.NewWatcher("/no/such/file.yaml", func() {})
+	t.Run("returns error for non-existent file on Watch", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
+		watcher := config.NewWatcher("/no/such/file.yaml")
+		err := watcher.Watch(ctx, func() {})
 		assert.Error(t, err)
 	})
 
@@ -36,7 +41,10 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		called := make(chan struct{}, 1)
 
-		watcher, err := config.NewWatcher(configFile, func() {
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {
 			select {
 			case called <- struct{}{}:
 			default:
@@ -57,7 +65,10 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		called := make(chan struct{}, 1)
 
-		watcher, err := config.NewWatcher(configFile, func() {
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {
 			select {
 			case called <- struct{}{}:
 			default:
@@ -79,7 +90,10 @@ func TestNewConfigWatcher(t *testing.T) {
 		callCount := 0
 		called := make(chan struct{}, 10)
 
-		watcher, err := config.NewWatcher(configFile, func() {
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {
 			callCount++
 
 			called <- struct{}{}
@@ -109,9 +123,40 @@ func TestNewConfigWatcher(t *testing.T) {
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte(""), 0o600))
 
-		watcher, err := config.NewWatcher(configFile, func() {})
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {})
 		require.NoError(t, err)
 
 		assert.NoError(t, watcher.Close())
+	})
+
+	t.Run("stops watching when context is cancelled", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configFile := filepath.Join(tmpDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
+
+		called := make(chan struct{}, 1)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {
+			select {
+			case called <- struct{}{}:
+			default:
+			}
+		})
+		require.NoError(t, err)
+
+		defer watcher.Close()
+
+		// Cancel the context
+		cancel()
+		time.Sleep(50 * time.Millisecond)
+
+		// Write to file after context is cancelled
+		require.NoError(t, os.WriteFile(configFile, []byte("proxy: changed"), 0o600))
+		assert.False(t, waitForCall(called, 100*time.Millisecond), "onChange was called after context cancelled")
 	})
 }

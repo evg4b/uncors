@@ -267,7 +267,9 @@ func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
 
 func (m *uncorsApp) handleServerStarted() tea.Cmd {
 	if m.configPath != "" {
-		watcher, err := config.NewWatcher(m.configPath, func() {
+		watcher := config.NewWatcher(m.configPath)
+
+		err := watcher.Watch(m.appContext(), func() {
 			defer helpers.PanicInterceptor(func(value any) {
 				m.output.Errorf("Config reloading error: %v", value)
 			})
