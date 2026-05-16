@@ -3,12 +3,14 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -289,4 +291,114 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app.cancel()
 		_ = app.app.Close()
 	})
+}
+
+func TestServerStartedMsgUpdate(t *testing.T) {
+	app, _ := newTestApp(t)
+	defer cleanupTestApp(t, app)
+
+	model, cmd := app.Update(serverStartedMsg{})
+
+	require.Same(t, app, model)
+	require.NotNil(t, cmd)
+}
+
+func TestHandleServerStartedWithConfigPath(t *testing.T) {
+	t.Run("creates watcher when config file exists", func(t *testing.T) {
+		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+		require.NoError(t, err)
+
+		_ = tmpFile.Close()
+
+		fs := afero.NewMemMapFs()
+		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+		model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app, ok := model.(*uncorsApp)
+		require.True(t, ok)
+
+		defer func() {
+			app.cancel()
+			_ = app.app.Close()
+
+			if app.historyWidget != nil && app.historyWidget.hist != nil {
+				_ = app.historyWidget.hist.Close()
+			}
+		}()
+
+		cmd := app.handleServerStarted()
+
+		require.NotNil(t, cmd)
+		require.NotNil(t, app.watcher)
+
+		_ = app.watcher.Close()
+	})
+
+	t.Run("logs error when config file does not exist", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+		model := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		app, ok := model.(*uncorsApp)
+		require.True(t, ok)
+
+		defer func() {
+			app.cancel()
+			_ = app.app.Close()
+
+			if app.historyWidget != nil && app.historyWidget.hist != nil {
+				_ = app.historyWidget.hist.Close()
+			}
+		}()
+
+		cmd := app.handleServerStarted()
+
+		require.NotNil(t, cmd)
+		assert.Nil(t, app.watcher)
+	})
+}
+
+func TestHandleRequestEventWithData(t *testing.T) {
+	requestURL, err := url.Parse("https://example.com/api")
+	require.NoError(t, err)
+
+	data := &contracts.ReqestData{Method: "GET", URL: requestURL, Code: 200}
+
+	t.Run("outputs request without prefix", func(t *testing.T) {
+		app, _ := newTestApp(t)
+		defer cleanupTestApp(t, app)
+
+		app.handleRequestEvent(requestEventMsg{Done: true, Data: data})
+	})
+
+	t.Run("outputs request with prefix", func(t *testing.T) {
+		app, _ := newTestApp(t)
+		defer cleanupTestApp(t, app)
+
+		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
+	})
+}
+
+func TestHandleShutdownWithWatcher(t *testing.T) {
+	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+	require.NoError(t, err)
+
+	_ = tmpFile.Close()
+
+	watcher, err := config.NewWatcher(tmpFile.Name(), func() {})
+	require.NoError(t, err)
+
+	app, _ := newTestApp(t)
+	app.watcher = watcher
+
+	cmd := app.handleShutdown()
+	require.NotNil(t, cmd)
+	assert.Equal(t, tea.Quit(), cmd())
+
+	app.cancel()
+	_ = app.app.Close()
+
+	if app.historyWidget != nil && app.historyWidget.hist != nil {
+		_ = app.historyWidget.hist.Close()
+	}
 }

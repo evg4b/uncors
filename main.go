@@ -25,6 +25,8 @@ import (
 
 var Version = "X.X.X"
 
+const generateCertsCmd = "generate-certs"
+
 func main() {
 	exitCode := run()
 	os.Exit(exitCode)
@@ -40,7 +42,7 @@ func run() int {
 
 	fs := afero.NewOsFs()
 
-	if len(os.Args) > 1 && os.Args[1] == "generate-certs" {
+	if len(os.Args) > 1 && os.Args[1] == generateCertsCmd {
 		return runGenerateCerts(fs, output)
 	}
 
@@ -66,7 +68,7 @@ func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
 		commands.WithOutput(output),
 	)
 
-	flags := pflag.NewFlagSet("generate-certs", pflag.ExitOnError)
+	flags := pflag.NewFlagSet(generateCertsCmd, pflag.ExitOnError)
 	cmd.DefineFlags(flags)
 
 	err := flags.Parse(os.Args[2:])
