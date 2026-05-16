@@ -37,7 +37,7 @@ func (c *CacheConfig) Clone() *CacheConfig {
 	}
 }
 
-func (c CacheConfig) Validate(field string, errs *Errors) {
+func (c *CacheConfig) Validate(field string, errs *Errors) {
 	ValidateDuration(joinPath(field, "expiration-time"), c.ExpirationTime, false, errs)
 
 	if c.MaxSize <= 0 {

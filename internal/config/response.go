@@ -34,7 +34,7 @@ func (r *Response) IsFile() bool {
 	return len(r.File) > 0
 }
 
-func (r Response) Validate(field string, fs afero.Fs, errs *Errors) {
+func (r *Response) Validate(field string, fs afero.Fs, errs *Errors) {
 	ValidateStatus(joinPath(field, "code"), r.Code, errs)
 	ValidateDuration(joinPath(field, "delay"), r.Delay, true, errs)
 

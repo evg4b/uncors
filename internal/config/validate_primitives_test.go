@@ -16,7 +16,6 @@ import (
 )
 
 func runOK(t *testing.T, name string, fn func(*config.Errors)) {
-	t.Helper()
 	t.Run(name, func(t *testing.T) {
 		var errs config.Errors
 		fn(&errs)
@@ -25,7 +24,6 @@ func runOK(t *testing.T, name string, fn func(*config.Errors)) {
 }
 
 func runErr(t *testing.T, name, expected string, fn func(*config.Errors)) {
-	t.Helper()
 	t.Run(name, func(t *testing.T) {
 		var errs config.Errors
 		fn(&errs)

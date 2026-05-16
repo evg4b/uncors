@@ -43,7 +43,7 @@ func ValidateHost(field, value string, errs *Errors) {
 		errs.add(fmt.Sprintf("%s must not contain a query", field))
 	}
 
-	if uri.Scheme != "http" && uri.Scheme != "https" && uri.Scheme != "" {
+	if uri.Scheme != "http" && uri.Scheme != httpsScheme && uri.Scheme != "" {
 		errs.add(fmt.Sprintf("%s scheme must be http or https", field))
 	}
 }

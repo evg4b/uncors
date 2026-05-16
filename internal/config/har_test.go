@@ -93,7 +93,7 @@ func TestHARValidator(t *testing.T) {
 	t.Run("invalid cases", func(t *testing.T) {
 		t.Run("file path without extension", func(t *testing.T) {
 			errs := &config.Errors{}
-			config.HARConfig{File: "outputfile"}.Validate("mappings[0].har", errs)
+			(&config.HARConfig{File: "outputfile"}).Validate("mappings[0].har", errs)
 
 			assert.True(t, errs.HasAny())
 		})

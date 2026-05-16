@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// UncorsConfig is the root configuration for the uncors proxy.
 type UncorsConfig struct {
 	Mappings    Mappings    `yaml:"mappings"`
 	Proxy       string      `yaml:"proxy"`
@@ -17,9 +16,6 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-// LoadConfiguration parses CLI arguments and optionally reads a YAML config file.
-// CLI flags take precedence over config file values.
-// Returns the loaded config, the active config file path (empty if none), and any error.
 func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
 	flags := defineFlags()
 
@@ -45,15 +41,14 @@ func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error
 
 	cfg.Mappings = NormaliseMappings(cfg.Mappings)
 
-	if err := cfg.Validate(fs); err != nil {
+	err = cfg.Validate(fs)
+	if err != nil {
 		return nil, "", err
 	}
 
 	return cfg, configPath, nil
 }
 
-// readYAMLFile opens a YAML config file and decodes it directly into cfg,
-// preserving any existing default values for keys absent in the file.
 func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	file, err := fs.Open(path)
 	if err != nil {
@@ -70,8 +65,6 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	return nil
 }
 
-// applyFlagOverrides applies CLI flag values to cfg, overriding any config file values.
-// Only flags explicitly set on the command line are applied.
 func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	if flags.Changed("proxy") {
 		cfg.Proxy, _ = flags.GetString("proxy")
@@ -91,8 +84,6 @@ func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	return mergeURLMappings(cfg, from, to)
 }
 
-// Validate validates the full uncors configuration and returns a combined
-// error listing all validation failures. Returns nil if the config is valid.
 func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
 	var errs Errors
 

@@ -56,11 +56,11 @@ func TestCacheConfigValidator(t *testing.T) {
 
 	t.Run("should not register errors for", func(t *testing.T) {
 		var errs config.Errors
-		config.CacheConfig{
+		(&config.CacheConfig{
 			ExpirationTime: 5 * time.Minute,
 			MaxSize:        100 * 1024 * 1024,
 			Methods:        []string{http.MethodGet, http.MethodPost},
-		}.Validate(field, &errs)
+		}).Validate(field, &errs)
 		assert.False(t, errs.HasAny())
 	})
 

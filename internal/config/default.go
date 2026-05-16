@@ -12,7 +12,6 @@ const (
 	DefaultMaxSize        = 100 * 1024 * 1024 // 100 MB
 )
 
-// defaultConfig returns a new UncorsConfig with all default values applied.
 func defaultConfig() *UncorsConfig {
 	return &UncorsConfig{
 		Mappings: Mappings{},

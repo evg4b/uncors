@@ -12,8 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ErrMappingShorthandValue is returned when a URL shorthand mapping has a
-// non-string value (e.g. "http://localhost: 123" instead of a URL string).
 var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
 
 type Mapping struct {
@@ -27,28 +25,17 @@ type Mapping struct {
 	OptionsHandling OptionsHandling   `yaml:"options-handling"`
 	HAR             HARConfig         `yaml:"har"`
 
-	// Cached parsed URL and its components (not serialized)
 	fromURL  *url.URL `yaml:"-"`
 	fromHost string   `yaml:"-"`
 	fromPort string   `yaml:"-"`
 }
 
-// knownMappingFields is the set of yaml keys that belong to a full Mapping
-// object. Any single-key YAML map whose key is NOT in this set is interpreted
-// as the shorthand "from: to" form.
 var knownMappingFields = map[string]bool{
 	"from": true, "to": true, "statics": true, "mocks": true,
 	"scripts": true, "cache": true, "rewrites": true,
 	"options-handling": true, "har": true,
 }
 
-// UnmarshalYAML decodes a Mapping from YAML. It recognises two forms:
-//
-// Shorthand — a single-key mapping whose key is not a known field name:
-//
-//	http://localhost:8080: https://example.com
-//
-// Full form — a standard YAML mapping with "from", "to", and optional fields.
 func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.MappingNode && len(value.Content) == 2 {
 		key := value.Content[0].Value
@@ -86,7 +73,6 @@ func (m *Mapping) Clone() Mapping {
 	}
 }
 
-// GetFromURL returns the parsed URL, caching it on first access.
 func (m *Mapping) GetFromURL() (*url.URL, error) {
 	if m.fromURL == nil {
 		parsedURL, err := urlparser.Parse(m.From)
@@ -100,7 +86,6 @@ func (m *Mapping) GetFromURL() (*url.URL, error) {
 	return m.fromURL, nil
 }
 
-// GetFromHostPort returns the host and port from the From URL, caching them on first access.
 func (m *Mapping) GetFromHostPort() (string, string, error) {
 	if m.fromHost == "" && m.fromPort == "" {
 		uri, err := m.GetFromURL()
@@ -117,7 +102,6 @@ func (m *Mapping) GetFromHostPort() (string, string, error) {
 	return m.fromHost, m.fromPort, nil
 }
 
-// ClearCache clears the cached URL and its components. This is primarily used for testing.
 func (m *Mapping) ClearCache() {
 	m.fromURL = nil
 	m.fromHost = ""
@@ -141,7 +125,7 @@ func ValidateCacheGlob(field, value string, errs *Errors) {
 
 func ValidateTLS(_ string, mapping Mapping, fs afero.Fs, errs *Errors) {
 	fromURL, err := mapping.GetFromURL()
-	if err != nil || fromURL.Scheme != "https" {
+	if err != nil || fromURL.Scheme != httpsScheme {
 		return
 	}
 
@@ -160,12 +144,12 @@ func formatTLSError(host string) string {
 	return builder.String()
 }
 
-func (m Mapping) Validate(field string, fs afero.Fs, errs *Errors) {
+func (m *Mapping) Validate(field string, fs afero.Fs, errs *Errors) {
 	ValidateHost(joinPath(field, "from"), m.From, errs)
 	ValidateHost(joinPath(field, "to"), m.To, errs)
 	m.OptionsHandling.Validate(joinPath(field, "options-handling"), errs)
 	m.HAR.Validate(joinPath(field, "har"), errs)
-	ValidateTLS(field, m, fs, errs)
+	ValidateTLS(field, *m, fs, errs)
 
 	for i, static := range m.Statics {
 		static.Validate(joinPath(field, "statics", index(i)), fs, errs)

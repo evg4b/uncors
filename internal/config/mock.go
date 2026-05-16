@@ -40,7 +40,7 @@ func (m Mocks) Clone() Mocks {
 	})
 }
 
-func (m Mock) Validate(field string, fs afero.Fs, errs *Errors) {
+func (m *Mock) Validate(field string, fs afero.Fs, errs *Errors) {
 	m.Matcher.Validate(field, errs)
 	m.Response.Validate(joinPath(field, "response"), fs, errs)
 }

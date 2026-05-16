@@ -39,21 +39,6 @@ func (s *StaticDirectories) Clone() StaticDirectories {
 	})
 }
 
-// UnmarshalYAML allows StaticDirectories to be specified as a YAML mapping
-// (shorthand: path → dir or path → {dir, index}) as well as a sequence of
-// full StaticDirectory objects.
-//
-// Map form:
-//
-//	statics:
-//	  /path: /static-dir
-//	  /other: { dir: /other-dir, index: index.html }
-//
-// Sequence form:
-//
-//	statics:
-//	  - path: /path
-//	    dir:  /static-dir
 func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.MappingNode {
 		for i := 0; i+1 < len(value.Content); i += 2 {
@@ -84,7 +69,7 @@ func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 	return value.Decode((*staticDirectoriesAlias)(s))
 }
 
-func (s StaticDirectory) Validate(field string, fs afero.Fs, errs *Errors) {
+func (s *StaticDirectory) Validate(field string, fs afero.Fs, errs *Errors) {
 	ValidatePath(joinPath(field, "path"), s.Path, false, errs)
 	ValidateDirectory(joinPath(field, "directory"), s.Dir, fs, errs)
 

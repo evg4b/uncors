@@ -72,14 +72,14 @@ func (m Mappings) GroupByPort() PortGroups {
 			panic(fmt.Errorf("failed to parse mapping from URL: %w", err))
 		}
 
-		port := 80 // default HTTP port
+		port := 80
 		if portStr != "" {
 			port, err = strconv.Atoi(portStr)
 			if err != nil {
 				panic(fmt.Errorf("invalid port number: %w", err))
 			}
 		} else if uri.Scheme == "https" {
-			port = 443 // default HTTPS port
+			port = 443
 		}
 
 		key := portKey{port: port, scheme: uri.Scheme}
@@ -95,7 +95,6 @@ func (m Mappings) GroupByPort() PortGroups {
 		})
 	}
 
-	// Sort by port for consistent ordering
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].Port != result[j].Port {
 			return result[i].Port < result[j].Port

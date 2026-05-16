@@ -8,22 +8,14 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// debounceDelay is the wait time after the last file event before calling onChange.
-// This prevents multiple rapid callbacks when editors write files in stages.
 const debounceDelay = 10 * time.Millisecond
 
-// Watcher monitors a configuration file for changes and invokes a callback
-// whenever the file is written or recreated. It uses a short debounce window to
-// coalesce bursts of filesystem events that editors typically produce on save.
 type Watcher struct {
 	fsWatcher *fsnotify.Watcher
 	onChange  func()
 	done      chan struct{}
 }
 
-// NewWatcher creates a Watcher that monitors the given file path.
-// onChange is called (after debouncing) on every write or create event.
-// The returned watcher is already running; call Close to stop it.
 func NewWatcher(filePath string, onChange func()) (*Watcher, error) {
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -48,7 +40,6 @@ func NewWatcher(filePath string, onChange func()) (*Watcher, error) {
 	return watcher, nil
 }
 
-// Close stops the watcher and releases all associated resources.
 func (cw *Watcher) Close() error {
 	close(cw.done)
 

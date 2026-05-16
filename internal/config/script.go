@@ -47,7 +47,7 @@ func (s Scripts) Clone() Scripts {
 	})
 }
 
-func (s Script) Validate(field string, fs afero.Fs, errs *Errors) {
+func (s *Script) Validate(field string, fs afero.Fs, errs *Errors) {
 	s.Matcher.Validate(field, errs)
 
 	switch {
