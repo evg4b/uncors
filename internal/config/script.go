@@ -7,9 +7,9 @@ import (
 )
 
 type Script struct {
-	Matcher RequestMatcher `mapstructure:",squash"`
-	Script  string         `mapstructure:"script"`
-	File    string         `mapstructure:"file"`
+	Matcher RequestMatcher `yaml:",inline"`
+	Script  string         `yaml:"script"`
+	File    string         `yaml:"file"`
 }
 
 func (s *Script) Clone() Script {

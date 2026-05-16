@@ -2,16 +2,15 @@ package config
 
 import (
 	"fmt"
-	"reflect"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
+	"gopkg.in/yaml.v3"
 )
 
 type StaticDirectory struct {
-	Path  string `mapstructure:"path"`
-	Dir   string `mapstructure:"dir"`
-	Index string `mapstructure:"index"`
+	Path  string `yaml:"path"`
+	Dir   string `yaml:"dir"`
+	Index string `yaml:"index"`
 }
 
 func (s *StaticDirectory) Clone() StaticDirectory {
@@ -28,52 +27,57 @@ func (s *StaticDirectory) String() string {
 
 type StaticDirectories []StaticDirectory
 
-func (s StaticDirectories) Clone() StaticDirectories {
-	if s == nil {
+func (s *StaticDirectories) Clone() StaticDirectories {
+	if s == nil || *s == nil {
 		return nil
 	}
 
-	return lo.Map(s, func(item StaticDirectory, _ int) StaticDirectory {
+	return lo.Map(*s, func(item StaticDirectory, _ int) StaticDirectory {
 		return item.Clone()
 	})
 }
 
-var staticDirMappingsType = reflect.TypeFor[StaticDirectories]()
+// UnmarshalYAML allows StaticDirectories to be specified as a YAML mapping
+// (shorthand: path → dir or path → {dir, index}) as well as a sequence of
+// full StaticDirectory objects.
+//
+// Map form:
+//
+//	statics:
+//	  /path: /static-dir
+//	  /other: { dir: /other-dir, index: index.html }
+//
+// Sequence form:
+//
+//	statics:
+//	  - path: /path
+//	    dir:  /static-dir
+func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.MappingNode {
+		for i := 0; i+1 < len(value.Content); i += 2 {
+			path := value.Content[i].Value
+			valNode := value.Content[i+1]
 
-func StaticDirMappingHookFunc() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
-		if t != staticDirMappingsType || f.Kind() != reflect.Map {
-			return rawData, nil
-		}
+			var staticDir StaticDirectory
 
-		mappingsDefs, ok := rawData.(map[string]any)
-		if !ok {
-			return rawData, nil
-		}
+			if valNode.Kind == yaml.ScalarNode {
+				staticDir = StaticDirectory{Path: path, Dir: valNode.Value}
+			} else {
+				err := valNode.Decode(&staticDir)
+				if err != nil {
+					return err
+				}
 
-		var mappings StaticDirectories
-
-		for path, mappingDef := range mappingsDefs {
-			if def, ok := mappingDef.(string); ok {
-				mappings = append(mappings, StaticDirectory{
-					Path: path,
-					Dir:  def,
-				})
-
-				continue
+				staticDir.Path = path // map key always wins over any inline path field
 			}
 
-			mapping := StaticDirectory{}
-
-			err := decodeConfig(mappingDef, &mapping)
-			if err != nil {
-				return nil, err
-			}
-
-			mapping.Path = path
-			mappings = append(mappings, mapping)
+			*s = append(*s, staticDir)
 		}
 
-		return mappings, nil
+		return nil
 	}
+
+	type staticDirectoriesAlias StaticDirectories
+
+	return value.Decode((*staticDirectoriesAlias)(s))
 }

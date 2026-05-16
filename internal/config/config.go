@@ -3,79 +3,86 @@ package config
 import (
 	"fmt"
 
-	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
-var flags *pflag.FlagSet
-
+// UncorsConfig is the root configuration for the uncors proxy.
 type UncorsConfig struct {
-	Mappings    Mappings    `mapstructure:"mappings"`
-	Proxy       string      `mapstructure:"proxy"`
-	Debug       bool        `mapstructure:"debug"`
-	CacheConfig CacheConfig `mapstructure:"cache-config"`
-	Interactive bool        `mapstructure:"interactive"`
+	Mappings    Mappings    `yaml:"mappings"`
+	Proxy       string      `yaml:"proxy"`
+	Debug       bool        `yaml:"debug"`
+	CacheConfig CacheConfig `yaml:"cache-config"`
+	Interactive bool        `yaml:"-"`
 }
 
-func LoadConfiguration(viperInstance *viper.Viper, args []string) *UncorsConfig {
-	defineFlags()
-	helpers.AssertIsDefined(flags)
+// LoadConfiguration parses CLI arguments and optionally reads a YAML config file.
+// CLI flags take precedence over config file values.
+// Returns the loaded config, the active config file path (empty if none), and any error.
+func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
+	flags := defineFlags()
 
 	err := flags.Parse(args)
 	if err != nil {
-		panic(fmt.Errorf("failed parsing flags: %w", err))
+		return nil, "", fmt.Errorf("failed parsing flags: %w", err)
 	}
 
-	err = viperInstance.BindPFlags(flags)
-	if err != nil {
-		panic(fmt.Errorf("failed binding flags: %w", err))
-	}
+	cfg := defaultConfig()
+	configPath, _ := flags.GetString("config")
 
-	configuration := &UncorsConfig{
-		Mappings: []Mapping{},
-	}
-
-	if configPath := viperInstance.GetString("config"); len(configPath) > 0 {
-		viperInstance.SetConfigFile(configPath)
-
-		err := viperInstance.ReadInConfig()
-		if err != nil {
-			panic(fmt.Errorf("failed to read config file '%s': %w", configPath, err))
+	if configPath != "" {
+		readErr := readYAMLFile(fs, cfg, configPath)
+		if readErr != nil {
+			return nil, "", readErr
 		}
 	}
 
-	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
-		mapstructure.StringToSliceHookFunc(","),
-		StringToTimeDurationHookFunc(),
-		URLMappingHookFunc(),
-	))
-
-	setDefaultValues(viperInstance)
-
-	err = viperInstance.Unmarshal(configuration, configOption)
+	err = applyFlagOverrides(cfg, flags)
 	if err != nil {
-		panic(fmt.Errorf("failed parsing config: %w", err))
+		return nil, "", err
 	}
 
-	err = readURLMapping(viperInstance, configuration)
-	if err != nil {
-		panic(err)
-	}
+	cfg.Mappings = NormaliseMappings(cfg.Mappings)
 
-	configuration.Mappings = NormaliseMappings(configuration.Mappings)
-
-	return configuration
+	return cfg, configPath, nil
 }
 
-func defineFlags() {
-	flags = pflag.NewFlagSet("uncors", pflag.ContinueOnError)
-	flags.Usage = pflag.Usage
-	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
-	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
-	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
-	flags.Bool("debug", false, "Show debug output")
-	flags.StringP("config", "c", "", "Path to the configuration file")
-	flags.Bool("interactive", true, "")
+// readYAMLFile opens a YAML config file and decodes it directly into cfg,
+// preserving any existing default values for keys absent in the file.
+func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
+	file, err := fs.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to read config file '%s': %w", path, err)
+	}
+
+	defer file.Close()
+
+	err = yaml.NewDecoder(file).Decode(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
+	}
+
+	return nil
+}
+
+// applyFlagOverrides applies CLI flag values to cfg, overriding any config file values.
+// Only flags explicitly set on the command line are applied.
+func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
+	if flags.Changed("proxy") {
+		cfg.Proxy, _ = flags.GetString("proxy")
+	}
+
+	if flags.Changed("debug") {
+		cfg.Debug, _ = flags.GetBool("debug")
+	}
+
+	if flags.Changed("interactive") {
+		cfg.Interactive, _ = flags.GetBool("interactive")
+	}
+
+	from, _ := flags.GetStringSlice("from")
+	to, _ := flags.GetStringSlice("to")
+
+	return mergeURLMappings(cfg, from, to)
 }

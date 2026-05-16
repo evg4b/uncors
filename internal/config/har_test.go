@@ -4,39 +4,40 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
-func TestHARConfigHookFunc(t *testing.T) {
-	decode := func(t *testing.T, raw any) config.HARConfig {
-		t.Helper()
+func TestHARConfigEnabled(t *testing.T) {
+	t.Run("returns true when File is set", func(t *testing.T) {
+		cfg := config.HARConfig{File: "./recordings/api.har"}
+		assert.True(t, cfg.Enabled())
+	})
 
-		var out config.HARConfig
+	t.Run("returns false when File is empty", func(t *testing.T) {
+		cfg := config.HARConfig{}
+		assert.False(t, cfg.Enabled())
+	})
+}
 
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-			Result:     &out,
-			DecodeHook: config.HARConfigHookFunc(),
-		})
-		require.NoError(t, err)
-		require.NoError(t, decoder.Decode(raw))
-
-		return out
-	}
-
+func TestHARConfigUnmarshalYAML(t *testing.T) {
 	t.Run("string shorthand sets File", func(t *testing.T) {
-		cfg := decode(t, "./recordings/api.har")
+		var cfg config.HARConfig
+
+		require.NoError(t, yaml.Unmarshal([]byte(`"./recordings/api.har"`), &cfg))
 		assert.Equal(t, config.HARConfig{File: "./recordings/api.har"}, cfg)
 	})
 
 	t.Run("map form decoded normally", func(t *testing.T) {
-		cfg := decode(t, map[string]any{
-			"file":                   "./out.har",
-			"capture-secure-headers": true,
-		})
+		const input = `
+file: ./out.har
+capture-secure-headers: true
+`
+
+		var cfg config.HARConfig
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 		assert.Equal(t, config.HARConfig{
 			File:                 "./out.har",
 			CaptureSecureHeaders: true,
@@ -45,23 +46,15 @@ func TestHARConfigHookFunc(t *testing.T) {
 }
 
 func TestHARShorthandInMapping(t *testing.T) {
-	const configFile = "config.yaml"
-
-	const yaml = `
+	const input = `
 from: http://localhost:3000
 to: https://api.example.com
 har: ./recordings/api.har
 `
 
-	viperCfg := viper.New()
-	viperCfg.SetFs(testutils.FsFromMap(t, map[string]string{configFile: yaml}))
-	viperCfg.SetConfigFile(configFile)
-	require.NoError(t, viperCfg.ReadInConfig())
+	var actual config.Mapping
 
-	actual := config.Mapping{}
-	require.NoError(t, viperCfg.Unmarshal(&actual, viper.DecodeHook(
-		config.URLMappingHookFunc(),
-	)))
+	require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
 
 	assert.Equal(t, "./recordings/api.har", actual.HAR.File)
 	assert.False(t, actual.HAR.CaptureSecureHeaders)

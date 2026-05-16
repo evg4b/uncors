@@ -9,8 +9,9 @@ import (
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/evg4b/uncors/testing/testutils/params"
-	"github.com/spf13/viper"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // clearMappingsCache clears the URL cache in all mappings for testing purposes.
@@ -20,7 +21,7 @@ func clearMappingsCache(cfg *config.UncorsConfig) {
 	}
 }
 
-const acceptEncoding = "accept-encoding"
+const acceptEncoding = "Accept-Encoding"
 
 const (
 	corruptedConfigPath = "/corrupted-config.yaml"
@@ -78,13 +79,19 @@ mappings:
 `
 )
 
-func TestLoadConfiguration(t *testing.T) {
-	fs := testutils.FsFromMap(t, map[string]string{
+func makeTestFs(t *testing.T) afero.Fs {
+	t.Helper()
+
+	return testutils.FsFromMap(t, map[string]string{
 		corruptedConfigPath: corruptedConfig,
 		fullConfigPath:      fullConfig,
 		incorrectConfigPath: incorrectConfig,
 		minimalConfigPath:   minimalConfig,
 	})
+}
+
+func TestLoadConfiguration(t *testing.T) {
+	fs := makeTestFs(t)
 
 	t.Run("correctly parse config", func(t *testing.T) {
 		tests := []struct {
@@ -203,110 +210,149 @@ func TestLoadConfiguration(t *testing.T) {
 					Interactive: false,
 				},
 			},
+			{
+				name: "CLI proxy and debug flags override config file values",
+				args: []string{
+					params.Config, fullConfigPath,
+					"--proxy", "newproxy:9999",
+					"--debug=false",
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
+						{
+							From: hosts.Localhost2.HTTPPort(8080),
+							To:   hosts.Stackoverflow.HTTPS(),
+							Mocks: config.Mocks{
+								{
+									Matcher: config.RequestMatcher{
+										Path:    "/demo",
+										Method:  "POST",
+										Queries: map[string]string{"foo": "bar"},
+										Headers: map[string]string{acceptEncoding: "deflate"},
+									},
+									Response: config.Response{
+										Code:    201,
+										Headers: map[string]string{acceptEncoding: "deflate"},
+										Raw:     "demo",
+										File:    "/demo.txt",
+									},
+								},
+							},
+						},
+					},
+					Proxy: "newproxy:9999",
+					Debug: false,
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: time.Hour, MaxSize: 52428800,
+						Methods: []string{http.MethodGet, http.MethodPost},
+					},
+					Interactive: true,
+				},
+			},
+			{
+				name: "CLI from/to updates existing mapping from config file",
+				args: []string{
+					params.Config, minimalConfigPath,
+					params.From, hosts.Localhost.HTTPPort(8080), params.To, hosts.Stackoverflow.HTTPS(),
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Stackoverflow.HTTPS()},
+					},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						MaxSize:        config.DefaultMaxSize,
+						Methods:        []string{http.MethodGet},
+					},
+					Interactive: true,
+				},
+			},
 		}
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				viper.Reset()
+				actual, _, err := config.LoadConfiguration(fs, testCase.args)
+				require.NoError(t, err)
 
-				viperInstance := viper.New()
-				viperInstance.SetFs(fs)
-
-				uncorsConfig := config.LoadConfiguration(viperInstance, testCase.args)
-				clearMappingsCache(uncorsConfig)
+				clearMappingsCache(actual)
 				clearMappingsCache(testCase.expected)
 
-				assert.Equal(t, testCase.expected, uncorsConfig)
+				assert.Equal(t, testCase.expected, actual)
 			})
 		}
 	})
 
+	t.Run("returns config file path", func(t *testing.T) {
+		t.Run("empty when no config file flag", func(t *testing.T) {
+			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), []string{})
+			require.NoError(t, err)
+			assert.Empty(t, configPath)
+		})
+
+		t.Run("returns the given config path", func(t *testing.T) {
+			_, configPath, err := config.LoadConfiguration(fs, []string{params.Config, minimalConfigPath})
+			require.NoError(t, err)
+			assert.Equal(t, minimalConfigPath, configPath)
+		})
+	})
+
 	t.Run("parse config with error", func(t *testing.T) {
 		tests := []struct {
-			name     string
-			args     []string
-			expected []string
+			name        string
+			args        []string
+			expectedErr string
 		}{
 			{
-				name: "incorrect flag provided",
-				args: []string{
-					"--incorrect-flag",
-				},
-				expected: []string{
-					"failed parsing flags: unknown flag: --incorrect-flag",
-				},
+				name:        "incorrect flag provided",
+				args:        []string{"--incorrect-flag"},
+				expectedErr: "failed parsing flags: unknown flag: --incorrect-flag",
 			},
 			{
-				name: "return default config",
-				args: []string{
-					params.To, hosts.Github.Host(),
-				},
-				expected: []string{
-					"`from` values are not set for every `to`",
-				},
+				name:        "to without matching from",
+				args:        []string{params.To, hosts.Github.Host()},
+				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
-				name: "count of from values great then count of to",
+				name: "from count exceeds to count",
 				args: []string{
 					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
 					params.From, hosts.Localhost2.Host(),
 				},
-				expected: []string{
-					"`to` values are not set for every `from`",
-				},
+				expectedErr: "`to` values are not set for every `from`",
 			},
 			{
-				name: "count of to values great then count of from",
+				name: "to count exceeds from count",
 				args: []string{
 					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
 					params.To, hosts.Stackoverflow.Host(),
 				},
-				expected: []string{
-					"`from` values are not set for every `to`",
-				},
+				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
 				name: "config file doesn't exist",
-				args: []string{
-					params.Config, "/not-exist-config.yaml",
-				},
-				expected: []string{
-					"failed to read config file '/not-exist-config.yaml': open /not-exist-config.yaml: file does not exist",
-				},
+				args: []string{params.Config, "/not-exist-config.yaml"},
+				expectedErr: "failed to read config file '/not-exist-config.yaml': " +
+					"open /not-exist-config.yaml: file does not exist",
 			},
 			{
 				name: "config file is corrupted",
-				args: []string{
-					params.Config, corruptedConfigPath,
-				},
-				expected: []string{
-					"failed to read config file '/corrupted-config.yaml': " +
-						"While parsing config: yaml: line 2: mapping values are not allowed in this context",
-				},
+				args: []string{params.Config, corruptedConfigPath},
+				expectedErr: "failed to read config file '/corrupted-config.yaml': " +
+					"While parsing config: yaml: line 2: mapping values are not allowed in this context",
 			},
 			{
 				name: "incorrect type in config file",
-				args: []string{
-					params.Config, incorrectConfigPath,
-				},
-				expected: []string{
-					"failed parsing config: decoding failed due to the following error(s):\n" +
-						"\n'mappings[0]' unsupported operation",
-				},
+				args: []string{params.Config, incorrectConfigPath},
+				expectedErr: "failed to read config file '/incorrect-config.yaml': " +
+					"While parsing config: mapping shorthand value must be a string URL",
 			},
 		}
+
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				for _, expected := range testCase.expected {
-					viper.Reset()
-
-					viperInstance := viper.New()
-					viperInstance.SetFs(fs)
-
-					assert.PanicsWithError(t, expected, func() {
-						config.LoadConfiguration(viperInstance, testCase.args)
-					})
-				}
+				_, _, err := config.LoadConfiguration(fs, testCase.args)
+				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
 	})

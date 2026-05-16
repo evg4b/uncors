@@ -3,28 +3,66 @@ package config
 import (
 	"errors"
 	"net/url"
-	"reflect"
 
 	"github.com/evg4b/uncors/internal/urlparser"
-	"github.com/mitchellh/mapstructure"
-	"github.com/samber/lo"
+	"gopkg.in/yaml.v3"
 )
 
+// ErrMappingShorthandValue is returned when a URL shorthand mapping has a
+// non-string value (e.g. "http://localhost: 123" instead of a URL string).
+var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
+
 type Mapping struct {
-	From            string            `mapstructure:"from"`
-	To              string            `mapstructure:"to"`
-	Statics         StaticDirectories `mapstructure:"statics"`
-	Mocks           Mocks             `mapstructure:"mocks"`
-	Scripts         Scripts           `mapstructure:"scripts"`
-	Cache           CacheGlobs        `mapstructure:"cache"`
-	Rewrites        RewriteOptions    `mapstructure:"rewrites"`
-	OptionsHandling OptionsHandling   `mapstructure:"options-handling"`
-	HAR             HARConfig         `mapstructure:"har"`
+	From            string            `yaml:"from"`
+	To              string            `yaml:"to"`
+	Statics         StaticDirectories `yaml:"statics"`
+	Mocks           Mocks             `yaml:"mocks"`
+	Scripts         Scripts           `yaml:"scripts"`
+	Cache           CacheGlobs        `yaml:"cache"`
+	Rewrites        RewriteOptions    `yaml:"rewrites"`
+	OptionsHandling OptionsHandling   `yaml:"options-handling"`
+	HAR             HARConfig         `yaml:"har"`
 
 	// Cached parsed URL and its components (not serialized)
-	fromURL  *url.URL `json:"-" mapstructure:"-" yaml:"-"`
-	fromHost string   `json:"-" mapstructure:"-" yaml:"-"`
-	fromPort string   `json:"-" mapstructure:"-" yaml:"-"`
+	fromURL  *url.URL `yaml:"-"`
+	fromHost string   `yaml:"-"`
+	fromPort string   `yaml:"-"`
+}
+
+// knownMappingFields is the set of yaml keys that belong to a full Mapping
+// object. Any single-key YAML map whose key is NOT in this set is interpreted
+// as the shorthand "from: to" form.
+var knownMappingFields = map[string]bool{
+	"from": true, "to": true, "statics": true, "mocks": true,
+	"scripts": true, "cache": true, "rewrites": true,
+	"options-handling": true, "har": true,
+}
+
+// UnmarshalYAML decodes a Mapping from YAML. It recognises two forms:
+//
+// Shorthand — a single-key mapping whose key is not a known field name:
+//
+//	http://localhost:8080: https://example.com
+//
+// Full form — a standard YAML mapping with "from", "to", and optional fields.
+func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.MappingNode && len(value.Content) == 2 {
+		key := value.Content[0].Value
+		if !knownMappingFields[key] {
+			if value.Content[1].Tag != "!!str" {
+				return ErrMappingShorthandValue
+			}
+
+			m.From = key
+			m.To = value.Content[1].Value
+
+			return nil
+		}
+	}
+
+	type mappingAlias Mapping
+
+	return value.Decode((*mappingAlias)(m))
 }
 
 func (m *Mapping) Clone() Mapping {
@@ -38,14 +76,13 @@ func (m *Mapping) Clone() Mapping {
 		Rewrites:        m.Rewrites.Clone(),
 		OptionsHandling: m.OptionsHandling.Clone(),
 		HAR:             m.HAR.Clone(),
-		fromURL:         m.fromURL, // Share cached URL
+		fromURL:         m.fromURL,
 		fromHost:        m.fromHost,
 		fromPort:        m.fromPort,
 	}
 }
 
 // GetFromURL returns the parsed URL, caching it on first access.
-// This method performs lazy parsing to avoid redundant URL parsing operations.
 func (m *Mapping) GetFromURL() (*url.URL, error) {
 	if m.fromURL == nil {
 		parsedURL, err := urlparser.Parse(m.From)
@@ -60,7 +97,6 @@ func (m *Mapping) GetFromURL() (*url.URL, error) {
 }
 
 // GetFromHostPort returns the host and port from the From URL, caching them on first access.
-// This method combines URL parsing and host/port splitting to avoid redundant operations.
 func (m *Mapping) GetFromHostPort() (string, string, error) {
 	if m.fromHost == "" && m.fromPort == "" {
 		uri, err := m.GetFromURL()
@@ -82,53 +118,4 @@ func (m *Mapping) ClearCache() {
 	m.fromURL = nil
 	m.fromHost = ""
 	m.fromPort = ""
-}
-
-var (
-	mappingType   = reflect.TypeFor[Mapping]()
-	mappingFields = getTagValues(mappingType, "mapstructure")
-)
-
-func URLMappingHookFunc() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, rawData any) (any, error) {
-		if t != mappingType || f.Kind() != reflect.Map {
-			return rawData, nil
-		}
-
-		if data, ok := rawData.(map[string]any); ok {
-			availableFields, _ := lo.Difference(lo.Keys(data), mappingFields)
-
-			if len(data) == 1 && len(availableFields) == 1 {
-				from := lo.FirstOrEmpty(availableFields)
-				if to, ok := data[from].(string); ok {
-					return Mapping{
-						From: from,
-						To:   to,
-					}, nil
-				}
-
-				return nil, errors.ErrUnsupported
-			}
-
-			mapping := Mapping{}
-			err := decodeConfig(
-				data,
-				&mapping,
-				StaticDirMappingHookFunc(),
-				HARConfigHookFunc(),
-			)
-
-			return mapping, err
-		}
-
-		return rawData, nil
-	}
-}
-
-func getTagValues(typeValue reflect.Type, tag string) []string {
-	fields := reflect.VisibleFields(typeValue)
-
-	return lo.FilterMap(fields, func(field reflect.StructField, _ int) (string, bool) {
-		return field.Tag.Lookup(tag)
-	})
 }

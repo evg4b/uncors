@@ -5,101 +5,133 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
-func TestStringToTimeDurationHookFunc(t *testing.T) {
-	const key = "duration"
-
-	viperInstance := viper.New()
-	configOption := viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
-		config.StringToTimeDurationHookFunc(),
-		mapstructure.OrComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.StringToSliceHookFunc(", "),
-		),
-	))
-
-	t.Run("correct parse different formats", func(t *testing.T) {
+func TestCacheConfigDurationUnmarshal(t *testing.T) {
+	t.Run("parses valid duration strings", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			value    string
+			input    string
 			expected time.Duration
 		}{
 			{
-				name:     "duration with spaces",
-				value:    "1m 4s",
-				expected: 1*time.Minute + 4*time.Second,
-			},
-			{
 				name:     "duration without spaces",
-				value:    "3h6m13s",
+				input:    "expiration-time: 3h6m13s",
 				expected: 3*time.Hour + 6*time.Minute + 13*time.Second,
 			},
 			{
+				name:     "duration with spaces",
+				input:    "expiration-time: \"1m 4s\"",
+				expected: 1*time.Minute + 4*time.Second,
+			},
+			{
 				name:     "duration with mixed spaces",
-				value:    "1h 3m59s 40ms",
+				input:    "expiration-time: \"1h 3m59s 40ms\"",
 				expected: 1*time.Hour + 3*time.Minute + 59*time.Second + 40*time.Millisecond,
 			},
 		}
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				viperInstance.Set(key, testCase.value)
-
-				durationValue := time.Duration(0)
-				err := viperInstance.UnmarshalKey(key, &durationValue, configOption)
-				testutils.CheckNoError(t, err)
-
-				assert.Equal(t, testCase.expected, durationValue)
+				cfg := config.CacheConfig{ExpirationTime: config.DefaultExpirationTime}
+				require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &cfg))
+				assert.Equal(t, testCase.expected, cfg.ExpirationTime)
 			})
 		}
 	})
 
-	t.Run("doesnt not affected other type parses", func(t *testing.T) {
-		t.Run("string to string", func(t *testing.T) {
-			viperInstance.Set(key, "value")
+	t.Run("preserves defaults for absent fields", func(t *testing.T) {
+		cfg := config.CacheConfig{
+			ExpirationTime: config.DefaultExpirationTime,
+			MaxSize:        config.DefaultMaxSize,
+			Methods:        []string{"GET"},
+		}
 
-			stringValue := ""
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
+		require.NoError(t, yaml.Unmarshal([]byte("max-size: 1048576"), &cfg))
+		assert.Equal(t, config.DefaultExpirationTime, cfg.ExpirationTime)
+		assert.Equal(t, int64(1048576), cfg.MaxSize)
+	})
 
-			assert.Equal(t, "value", stringValue)
-		})
+	t.Run("returns error for non-mapping input", func(t *testing.T) {
+		var cfg config.CacheConfig
 
-		t.Run("string to []string", func(t *testing.T) {
-			viperInstance.Set(key, "value,value2")
+		err := yaml.Unmarshal([]byte("just-a-string"), &cfg)
+		assert.ErrorIs(t, err, config.ErrInvalidCacheConfig)
+	})
 
-			var stringValue []string
+	t.Run("returns error for invalid duration string", func(t *testing.T) {
+		var cfg config.CacheConfig
 
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
+		err := yaml.Unmarshal([]byte("expiration-time: notaduration"), &cfg)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid expiration-time")
+	})
 
-			assert.Equal(t, []string{"value", "value2"}, stringValue)
-		})
+	t.Run("returns error when max-size is not a number", func(t *testing.T) {
+		var cfg config.CacheConfig
 
-		t.Run("number to string", func(t *testing.T) {
-			viperInstance.Set(key, 11)
+		err := yaml.Unmarshal([]byte("max-size: [a, b, c]"), &cfg)
+		require.Error(t, err)
+	})
 
-			stringValue := ""
-			err := viperInstance.UnmarshalKey(key, &stringValue, configOption)
-			testutils.CheckNoError(t, err)
+	t.Run("returns error when methods is not a sequence", func(t *testing.T) {
+		var cfg config.CacheConfig
 
-			assert.Equal(t, "11", stringValue)
-		})
+		err := yaml.Unmarshal([]byte("methods: {key: value}"), &cfg)
+		require.Error(t, err)
+	})
+}
 
-		t.Run("number to duration", func(t *testing.T) {
-			const expected = 14 * time.Minute
-			viperInstance.Set(key, int(expected))
+func TestResponseDelayUnmarshal(t *testing.T) {
+	t.Run("parses valid delay strings", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    string
+			expected time.Duration
+		}{
+			{
+				name:     "millisecond delay",
+				input:    "delay: 200ms",
+				expected: 200 * time.Millisecond,
+			},
+			{
+				name:     "delay with spaces",
+				input:    "delay: \"1s 500ms\"",
+				expected: 1*time.Second + 500*time.Millisecond,
+			},
+		}
 
-			durationValue := time.Nanosecond
-			err := viperInstance.UnmarshalKey(key, &durationValue, configOption)
-			testutils.CheckNoError(t, err)
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				var resp config.Response
+				require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &resp))
+				assert.Equal(t, testCase.expected, resp.Delay)
+			})
+		}
+	})
 
-			assert.Equal(t, expected, durationValue)
-		})
+	t.Run("returns error for invalid delay string", func(t *testing.T) {
+		var resp config.Response
+
+		err := yaml.Unmarshal([]byte("delay: notaduration"), &resp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid delay")
+	})
+
+	t.Run("zero delay when field absent", func(t *testing.T) {
+		var resp config.Response
+
+		require.NoError(t, yaml.Unmarshal([]byte("code: 200"), &resp))
+		assert.Zero(t, resp.Delay)
+	})
+
+	t.Run("returns error when response is not a mapping", func(t *testing.T) {
+		var resp config.Response
+
+		err := yaml.Unmarshal([]byte("[200, 404]"), &resp)
+		require.Error(t, err)
 	})
 }

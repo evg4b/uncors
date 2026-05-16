@@ -7,9 +7,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -17,9 +14,10 @@ var (
 	ErrNoFromPair = errors.New("`from` values are not set for every `to`")
 )
 
-func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
-	from, to := config.GetStringSlice("from"), config.GetStringSlice("to")
-
+// mergeURLMappings merges from/to CLI pairs into cfg.Mappings.
+// If a from URL already exists in the mappings, its to value is updated.
+// Otherwise a new mapping entry is appended.
+func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	if len(from) > len(to) {
 		return ErrNoToPair
 	}
@@ -31,9 +29,9 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	for index, key := range from {
 		found := false
 
-		for i := range configuration.Mappings {
-			if strings.EqualFold(configuration.Mappings[i].From, key) {
-				configuration.Mappings[i].To = to[index]
+		for i := range cfg.Mappings {
+			if strings.EqualFold(cfg.Mappings[i].From, key) {
+				cfg.Mappings[i].To = to[index]
 				found = true
 
 				break
@@ -41,7 +39,7 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 		}
 
 		if !found {
-			configuration.Mappings = append(configuration.Mappings, Mapping{
+			cfg.Mappings = append(cfg.Mappings, Mapping{
 				From: key,
 				To:   to[index],
 			})
@@ -51,33 +49,13 @@ func readURLMapping(config *viper.Viper, configuration *UncorsConfig) error {
 	return nil
 }
 
-func decodeConfig[T any](data any, mapping *T, decodeFuncs ...mapstructure.DecodeHookFunc) error {
-	hook := mapstructure.ComposeDecodeHookFunc(
-		StringToTimeDurationHookFunc(),
-		mapstructure.StringToSliceHookFunc(","),
-		mapstructure.ComposeDecodeHookFunc(decodeFuncs...),
-	)
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:               mapping,
-		DecodeHook:           hook,
-		ErrorUnused:          true,
-		IgnoreUntaggedFields: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	err = decoder.Decode(data)
-
-	return err
-}
-
 const (
 	httpScheme  = "http"
 	httpsScheme = "https"
 )
 
+// NormaliseMappings normalises the From URL in each mapping: adds the default
+// scheme (http) if absent and removes the port when it equals the scheme default.
 func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := make(Mappings, 0, len(mappings))
 
@@ -92,7 +70,6 @@ func NormaliseMappings(mappings Mappings) Mappings {
 			panic(fmt.Errorf("failed to parse source url: %w", err))
 		}
 
-		// Normalize the mapping with port from URL
 		normalizedMapping := mapping.Clone()
 		normalizedMapping.From = normalizeURL(*sourceURL, host, portStr)
 		processedMappings = append(processedMappings, normalizedMapping)
@@ -117,7 +94,6 @@ func normalizeURL(parsedURL url.URL, host, portStr string) string {
 			panic(fmt.Errorf("invalid port number: %w", err))
 		}
 	} else {
-		// Use default port based on scheme
 		if scheme == httpsScheme {
 			port = defaultHTTPSPort
 		} else {
@@ -127,7 +103,6 @@ func normalizeURL(parsedURL url.URL, host, portStr string) string {
 
 	parsedURL.Scheme = scheme
 
-	// Only include port in host if it's not the default port for the scheme
 	if !isDefaultPort(scheme, port) {
 		parsedURL.Host = net.JoinHostPort(host, strconv.Itoa(port))
 	} else {

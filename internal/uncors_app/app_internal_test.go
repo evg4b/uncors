@@ -3,16 +3,16 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +23,6 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 	t.Helper()
 
 	fs := afero.NewMemMapFs()
-	viperInstance := viper.New()
 	uncorsConfig := &config.UncorsConfig{
 		Mappings: config.Mappings{},
 	}
@@ -32,7 +31,7 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 	model := NewUncorsApp(
 		"test-version",
 		fs,
-		viperInstance,
+		"", // no config file — watcher is not created
 		uncorsConfig,
 		func() *config.UncorsConfig {
 			loadCalls++
@@ -163,7 +162,6 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 
 		cmd := app.handleServerStarted()
 		require.NotNil(t, cmd)
-		app.viper.OnConfigChange(func(_ fsnotify.Event) {})
 
 		msg = app.restartCmd()()
 		assert.Equal(t, restartMsg{}, msg)
@@ -293,4 +291,167 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app.cancel()
 		_ = app.app.Close()
 	})
+}
+
+func TestServerStartedMsgUpdate(t *testing.T) {
+	app, _ := newTestApp(t)
+	defer cleanupTestApp(t, app)
+
+	model, cmd := app.Update(serverStartedMsg{})
+
+	require.Same(t, app, model)
+	require.NotNil(t, cmd)
+}
+
+func TestHandleServerStartedWithConfigPath(t *testing.T) {
+	t.Run("creates watcher when config file exists", func(t *testing.T) {
+		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+		require.NoError(t, err)
+
+		_ = tmpFile.Close()
+
+		fs := afero.NewMemMapFs()
+		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+		model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app, ok := model.(*uncorsApp)
+		require.True(t, ok)
+
+		defer func() {
+			app.cancel()
+			_ = app.app.Close()
+
+			if app.historyWidget != nil && app.historyWidget.hist != nil {
+				_ = app.historyWidget.hist.Close()
+			}
+		}()
+
+		cmd := app.handleServerStarted()
+
+		require.NotNil(t, cmd)
+		require.NotNil(t, app.watcher)
+
+		_ = app.watcher.Close()
+	})
+
+	t.Run("logs error when config file does not exist", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+		model := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		app, ok := model.(*uncorsApp)
+		require.True(t, ok)
+
+		defer func() {
+			app.cancel()
+			_ = app.app.Close()
+
+			if app.historyWidget != nil && app.historyWidget.hist != nil {
+				_ = app.historyWidget.hist.Close()
+			}
+		}()
+
+		cmd := app.handleServerStarted()
+
+		require.NotNil(t, cmd)
+		assert.Nil(t, app.watcher)
+	})
+}
+
+func TestHandleRequestEventWithData(t *testing.T) {
+	requestURL, err := url.Parse("https://example.com/api")
+	require.NoError(t, err)
+
+	data := &contracts.ReqestData{Method: "GET", URL: requestURL, Code: 200}
+
+	t.Run("outputs request without prefix", func(t *testing.T) {
+		app, _ := newTestApp(t)
+		defer cleanupTestApp(t, app)
+
+		app.handleRequestEvent(requestEventMsg{Done: true, Data: data})
+	})
+
+	t.Run("outputs request with prefix", func(t *testing.T) {
+		app, _ := newTestApp(t)
+		defer cleanupTestApp(t, app)
+
+		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
+	})
+}
+
+func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
+	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+	require.NoError(t, err)
+
+	_ = tmpFile.Close()
+
+	fs := afero.NewMemMapFs()
+	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+
+	called := make(chan struct{}, 1)
+
+	model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+		select {
+		case called <- struct{}{}:
+		default:
+		}
+
+		return cfg
+	})
+
+	app, ok := model.(*uncorsApp)
+	require.True(t, ok)
+
+	defer func() {
+		// Cancel context first so any in-flight Restart fails fast.
+		// We deliberately skip app.app.Close() here: closeAll() writes
+		// app.closers concurrently with the Restart goroutine's read of
+		// app.closers, which would be a data race.
+		app.cancel()
+
+		if app.watcher != nil {
+			_ = app.watcher.Close()
+		}
+
+		if app.historyWidget != nil && app.historyWidget.hist != nil {
+			_ = app.historyWidget.hist.Close()
+		}
+	}()
+
+	cmd := app.handleServerStarted()
+
+	require.NotNil(t, cmd)
+	require.NotNil(t, app.watcher)
+
+	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
+
+	select {
+	case <-called:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("onChange callback was not invoked within timeout")
+	}
+}
+
+func TestHandleShutdownWithWatcher(t *testing.T) {
+	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
+	require.NoError(t, err)
+
+	_ = tmpFile.Close()
+
+	watcher, err := config.NewWatcher(tmpFile.Name(), func() {})
+	require.NoError(t, err)
+
+	app, _ := newTestApp(t)
+	app.watcher = watcher
+
+	cmd := app.handleShutdown()
+	require.NotNil(t, cmd)
+	assert.Equal(t, tea.Quit(), cmd())
+
+	app.cancel()
+	_ = app.app.Close()
+
+	if app.historyWidget != nil && app.historyWidget.hist != nil {
+		_ = app.historyWidget.hist.Close()
+	}
 }

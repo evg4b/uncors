@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -20,87 +20,106 @@ const (
 	indexHTML = "index.html"
 )
 
-func TestStaticDirMappingHookFunc(t *testing.T) {
-	const configFile = "config.yaml"
-
+func TestStaticDirectoriesUnmarshalYAML(t *testing.T) {
 	type testType struct {
-		Statics config.StaticDirectories `mapstructure:"statics"`
+		Statics config.StaticDirectories `yaml:"statics"`
 	}
 
-	tests := []struct {
-		name     string
-		config   string
-		expected config.StaticDirectories
-	}{
-		{
-			name: "decode plan mapping",
-			config: `
+	t.Run("map form", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    string
+			expected config.StaticDirectories
+		}{
+			{
+				name: "plain map shorthand",
+				input: `
 statics:
   /path: /static-dir
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirectories{
-				{Path: anotherPath, Dir: anotherStaticDir},
-				{Path: path, Dir: staticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-		{
-			name: "decode object mappings",
-			config: `
+			{
+				name: "object map without index",
+				input: `
 statics:
   /path: { dir: /static-dir }
   /another-path: { dir: /another-static-dir }
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir},
-				{Path: anotherPath, Dir: anotherStaticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-		{
-			name: "decode object mappings with index",
-			config: `
+			{
+				name: "object map with index",
+				input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: { dir: /another-static-dir, index: default.html }
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: indexHTML},
-				{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir, Index: indexHTML},
+					{Path: anotherPath, Dir: anotherStaticDir, Index: "default.html"},
+				},
 			},
-		},
-		{
-			name: "decode mixed mappings with index",
-			config: `
+			{
+				name: "mixed map",
+				input: `
 statics:
   /path: { dir: /static-dir, index: index.html }
   /another-path: /another-static-dir
 `,
-			expected: config.StaticDirectories{
-				{Path: path, Dir: staticDir, Index: indexHTML},
-				{Path: anotherPath, Dir: anotherStaticDir},
+				expected: config.StaticDirectories{
+					{Path: path, Dir: staticDir, Index: indexHTML},
+					{Path: anotherPath, Dir: anotherStaticDir},
+				},
 			},
-		},
-	}
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			viperInstance := viper.GetViper()
-			viperInstance.SetFs(testutils.FsFromMap(t, map[string]string{
-				configFile: testCase.config,
-			}))
-			viperInstance.SetConfigFile(configFile)
-			err := viperInstance.ReadInConfig()
-			testutils.CheckNoError(t, err)
+		}
 
-			actual := testType{}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				var actual testType
 
-			err = viperInstance.Unmarshal(&actual, viper.DecodeHook(
-				config.StaticDirMappingHookFunc(),
-			))
-			testutils.CheckNoError(t, err)
+				require.NoError(t, yaml.Unmarshal([]byte(testCase.input), &actual))
+				assert.ElementsMatch(t, testCase.expected, actual.Statics)
+			})
+		}
+	})
 
-			assert.ElementsMatch(t, actual.Statics, testCase.expected)
-		})
-	}
+	t.Run("object map with invalid field type returns error", func(t *testing.T) {
+		const input = `
+statics:
+  /path: [a, b, c]
+`
+
+		var actual testType
+
+		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
+	})
+
+	t.Run("sequence form", func(t *testing.T) {
+		const input = `
+statics:
+  - path: /path
+    dir: /static-dir
+  - path: /another-path
+    dir: /another-static-dir
+    index: index.html
+`
+
+		var actual testType
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Equal(t, config.StaticDirectories{
+			{Path: path, Dir: staticDir},
+			{Path: anotherPath, Dir: anotherStaticDir, Index: indexHTML},
+		}, actual.Statics)
+	})
 }
 
 func TestStaticDirMappingClone(t *testing.T) {
@@ -134,6 +153,7 @@ func TestStaticDirMappingClone(t *testing.T) {
 			},
 		},
 	}
+
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			actual := testCase.expected.Clone()
