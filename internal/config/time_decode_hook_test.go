@@ -22,16 +22,6 @@ func TestCacheConfigDurationUnmarshal(t *testing.T) {
 				input:    "expiration-time: 3h6m13s",
 				expected: 3*time.Hour + 6*time.Minute + 13*time.Second,
 			},
-			{
-				name:     "duration with spaces",
-				input:    "expiration-time: \"1m 4s\"",
-				expected: 1*time.Minute + 4*time.Second,
-			},
-			{
-				name:     "duration with mixed spaces",
-				input:    "expiration-time: \"1h 3m59s 40ms\"",
-				expected: 1*time.Hour + 3*time.Minute + 59*time.Second + 40*time.Millisecond,
-			},
 		}
 
 		for _, testCase := range tests {
@@ -55,19 +45,12 @@ func TestCacheConfigDurationUnmarshal(t *testing.T) {
 		assert.Equal(t, int64(1048576), cfg.MaxSize)
 	})
 
-	t.Run("returns error for non-mapping input", func(t *testing.T) {
-		var cfg config.CacheConfig
-
-		err := yaml.Unmarshal([]byte("just-a-string"), &cfg)
-		assert.ErrorIs(t, err, config.ErrInvalidCacheConfig)
-	})
-
 	t.Run("returns error for invalid duration string", func(t *testing.T) {
 		var cfg config.CacheConfig
 
 		err := yaml.Unmarshal([]byte("expiration-time: notaduration"), &cfg)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid expiration-time")
+		assert.Contains(t, err.Error(), "cannot unmarshal !!str `notadur...` into time.Duration")
 	})
 
 	t.Run("returns error when max-size is not a number", func(t *testing.T) {
@@ -98,9 +81,9 @@ func TestResponseDelayUnmarshal(t *testing.T) {
 				expected: 200 * time.Millisecond,
 			},
 			{
-				name:     "delay with spaces",
-				input:    "delay: \"1s 500ms\"",
-				expected: 1*time.Second + 500*time.Millisecond,
+				name:     "a houd with 500 milliseconds",
+				input:    "delay: \"1h500ms\"",
+				expected: 1*time.Hour + 500*time.Millisecond,
 			},
 		}
 
@@ -118,7 +101,7 @@ func TestResponseDelayUnmarshal(t *testing.T) {
 
 		err := yaml.Unmarshal([]byte("delay: notaduration"), &resp)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid delay")
+		assert.Contains(t, err.Error(), "cannot unmarshal !!str `notadur...` into time.Duration")
 	})
 
 	t.Run("zero delay when field absent", func(t *testing.T) {

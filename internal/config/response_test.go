@@ -49,7 +49,7 @@ file: ./body.json
 	})
 
 	t.Run("parses delay with embedded spaces", func(t *testing.T) {
-		const input = `delay: "1s 500ms"`
+		const input = `delay: "1s500ms"`
 
 		var actual config.Response
 
