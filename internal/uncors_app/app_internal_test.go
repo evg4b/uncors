@@ -403,8 +403,15 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	require.True(t, ok)
 
 	defer func() {
+		// Cancel context first so any in-flight Restart fails fast.
+		// We deliberately skip app.app.Close() here: closeAll() writes
+		// app.closers concurrently with the Restart goroutine's read of
+		// app.closers, which would be a data race.
 		app.cancel()
-		_ = app.app.Close()
+
+		if app.watcher != nil {
+			_ = app.watcher.Close()
+		}
 
 		if app.historyWidget != nil && app.historyWidget.hist != nil {
 			_ = app.historyWidget.hist.Close()
@@ -415,8 +422,6 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 	require.NotNil(t, cmd)
 	require.NotNil(t, app.watcher)
-
-	defer app.watcher.Close()
 
 	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
 
