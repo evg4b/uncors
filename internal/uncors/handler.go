@@ -41,13 +41,11 @@ func (app *Uncors) buildHandlerForMappings(
 func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings config.Mappings) contracts.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
 
-	return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
-		return proxy.NewProxyHandler(
-			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-			proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
-			proxy.WithOutput(app.output.NewPrefixOutput(prefix)),
-		)
-	}))
+	return withPrefix(prefix, proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
+		proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+		proxy.WithOutput(app.output.NewPrefixOutput(prefix)),
+	))
 }
 
 func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.CacheMiddlewareFactory {
@@ -55,13 +53,13 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 		prefix := styles.CacheStyle.Render("CACHE")
 
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
-				return cache.NewMiddleware(
-					cache.WithMethods(cfg.Methods),
-					cache.WithCacheStorage(app.getCacheStorage(cfg)),
-					cache.WithGlobs(globs),
-				)
-			}).Wrap(next))
+			middleware := cache.NewMiddleware(
+				cache.WithMethods(cfg.Methods),
+				cache.WithCacheStorage(app.getCacheStorage(cfg)),
+				cache.WithGlobs(globs),
+			)
+
+			return withPrefix(prefix, middleware.Wrap(next))
 		})
 	}
 }
@@ -71,27 +69,25 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 		prefix := styles.OptionsStyle.Render("OPTIONS")
 
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
-				return options.NewMiddleware(
-					options.WithHeaders(cfg.Headers),
-					options.WithCode(cfg.Code),
-				)
-			}).Wrap(next))
+			middleware := options.NewMiddleware(
+				options.WithHeaders(cfg.Headers),
+				options.WithCode(cfg.Code),
+			)
+
+			return withPrefix(prefix, middleware.Wrap(next))
 		})
 	}
 }
 
 func (app *Uncors) buildHARMiddlewareFactory() handler.HARMiddlewareFactory {
 	return func(harConfig config.HARConfig) contracts.Middleware {
-		return handler.LazyMiddleware(func() contracts.Middleware {
-			w := har.NewWriter(harConfig.File)
-			app.registerCloser(w)
+		w := har.NewWriter(harConfig.File)
+		app.registerCloser(w)
 
-			return har.NewMiddleware(
-				har.WithWriter(w),
-				har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
-			)
-		})
+		return har.NewMiddleware(
+			har.WithWriter(w),
+			har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
+		)
 	}
 }
 
@@ -100,13 +96,13 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 		prefix := styles.StaticStyle.Render("STATIC")
 
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
-				return static.NewStaticMiddleware(
-					static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
-					static.WithIndex(dir.Index),
-					static.WithPrefix(path),
-				)
-			}).Wrap(next))
+			middleware := static.NewStaticMiddleware(
+				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
+				static.WithIndex(dir.Index),
+				static.WithPrefix(path),
+			)
+
+			return withPrefix(prefix, middleware.Wrap(next))
 		})
 	}
 }
@@ -115,13 +111,11 @@ func (app *Uncors) buildMockHandlerFactory() handler.MockHandlerFactory {
 	return func(response config.Response) contracts.Handler {
 		prefix := styles.MockStyle.Render("MOCK")
 
-		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
-			return mock.NewMockHandler(
-				mock.WithResponse(response),
-				mock.WithFileSystem(app.fs),
-				mock.WithAfter(time.After),
-			)
-		}))
+		return withPrefix(prefix, mock.NewMockHandler(
+			mock.WithResponse(response),
+			mock.WithFileSystem(app.fs),
+			mock.WithAfter(time.After),
+		))
 	}
 }
 
@@ -129,13 +123,11 @@ func (app *Uncors) buildScriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(scriptConfig config.Script) contracts.Handler {
 		prefix := styles.RewriteStyle.Render("SCRIPT")
 
-		return withPrefix(prefix, handler.LazyHandler(func() contracts.Handler {
-			return script.NewHandler(
-				script.WithOutput(app.output.NewPrefixOutput(prefix)),
-				script.WithScript(scriptConfig),
-				script.WithFileSystem(app.fs),
-			)
-		}))
+		return withPrefix(prefix, script.NewHandler(
+			script.WithOutput(app.output.NewPrefixOutput(prefix)),
+			script.WithScript(scriptConfig),
+			script.WithFileSystem(app.fs),
+		))
 	}
 }
 
@@ -144,9 +136,9 @@ func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFact
 		prefix := styles.RewriteStyle.Render("REWRITE")
 
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			return withPrefix(prefix, handler.LazyMiddleware(func() contracts.Middleware {
-				return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
-			}).Wrap(next))
+			middleware := rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+
+			return withPrefix(prefix, middleware.Wrap(next))
 		})
 	}
 }

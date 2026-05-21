@@ -57,3 +57,11 @@ func (cs *RistrettoCache) Set(key string, value contracts.CachedResponse) {
 func (cs *RistrettoCache) Wait() {
 	cs.storage.Wait()
 }
+
+// Close releases the underlying cache. It satisfies io.Closer so the app can
+// free the previous cache on config reload/shutdown.
+func (cs *RistrettoCache) Close() error {
+	cs.storage.Close()
+
+	return nil
+}

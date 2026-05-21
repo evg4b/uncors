@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-	"sync"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
@@ -27,9 +26,8 @@ type Uncors struct {
 
 	tracker *server.RequestTracker
 
-	cacheStorageOnce sync.Once
-	cacheStorage     contracts.Cache
-	closers          []io.Closer
+	cacheStorage contracts.Cache
+	closers      []io.Closer
 }
 
 func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
@@ -69,6 +67,9 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 	previous := app.closers
 	app.closers = nil
+	// Drop the cache so the reloaded cache-config (size/TTL) takes effect; the
+	// old instance is in `previous` and is closed below.
+	app.cacheStorage = nil
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -106,10 +107,17 @@ func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
+// getCacheStorage lazily builds a single cache shared by every cache-enabled
+// mapping in the current build. It is called only during Start/Restart (a single
+// goroutine), so the nil check needs no synchronisation. The cache is registered
+// as a closer so the previous instance is released on the next Restart, which is
+// also what lets a changed cache-config take effect on reload.
 func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
-	app.cacheStorageOnce.Do(func() {
-		app.cacheStorage = cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
-	})
+	if app.cacheStorage == nil {
+		storage := cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
+		app.cacheStorage = storage
+		app.registerCloser(storage)
+	}
 
 	return app.cacheStorage
 }
