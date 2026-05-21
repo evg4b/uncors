@@ -162,7 +162,7 @@ func startConfigWatcher(
 
 // startVersionChecker waits for a short delay then checks for a newer release.
 func startVersionChecker(ctx context.Context, output *tui.CliOutput, proxy string) {
-	const checkDelay = 50 * time.Second
+	const checkDelay = 50 * time.Millisecond
 
 	versionChecker := version.NewVersionChecker(
 		version.WithOutput(output),
