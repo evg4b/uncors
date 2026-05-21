@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -32,16 +34,27 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 		return errAlreadyWatching
 	}
 
+	_, err := os.Stat(w.filePath)
+	if err != nil {
+		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
+	}
+
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("failed to create file watcher: %w", err)
 	}
 
-	err = fsWatcher.Add(w.filePath)
+	// Watch the parent directory rather than the file itself. Many editors save
+	// via write-to-temp + rename, which replaces the file's inode; a watch bound
+	// to the inode goes silent after the first save. Watching the directory and
+	// filtering by file name survives atomic replaces.
+	dir := filepath.Dir(w.filePath)
+
+	err = fsWatcher.Add(dir)
 	if err != nil {
 		_ = fsWatcher.Close()
 
-		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
+		return fmt.Errorf("failed to watch config directory '%s': %w", dir, err)
 	}
 
 	w.fsWatcher = fsWatcher
@@ -92,7 +105,11 @@ func (w *Watcher) run(ctx context.Context, onChange func()) {
 }
 
 func (w *Watcher) handleEvent(event fsnotify.Event, debounce **time.Timer, onChange func()) {
-	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
+	if filepath.Base(event.Name) != filepath.Base(w.filePath) {
+		return
+	}
+
+	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Rename) {
 		if *debounce != nil {
 			(*debounce).Stop()
 		}

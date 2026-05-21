@@ -39,6 +39,13 @@ type RequestHandler struct {
 	harMiddlewareFactory     HARMiddlewareFactory
 }
 
+// MiddlewareFunc adapts an ordinary func into a contracts.Middleware.
+type MiddlewareFunc func(contracts.Handler) contracts.Handler
+
+func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {
+	return f(next)
+}
+
 var errHostNotMapped = errors.New("host not mapped")
 
 func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {

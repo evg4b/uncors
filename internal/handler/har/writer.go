@@ -72,21 +72,29 @@ func (w *Writer) run() {
 	for {
 		select {
 		case entry := <-w.entries:
+			// Batch: append the triggering entry plus everything else already
+			// queued, then rewrite the file once instead of once per entry.
 			w.append(entry)
+			w.drain()
 			w.flush()
 
 		case <-w.done:
-			// Drain any entries that arrived before the channel was closed.
-			for {
-				select {
-				case entry := <-w.entries:
-					w.append(entry)
-				default:
-					w.flush()
+			w.drain()
+			w.flush()
 
-					return
-				}
-			}
+			return
+		}
+	}
+}
+
+// drain appends every entry currently queued without blocking.
+func (w *Writer) drain() {
+	for {
+		select {
+		case entry := <-w.entries:
+			w.append(entry)
+		default:
+			return
 		}
 	}
 }

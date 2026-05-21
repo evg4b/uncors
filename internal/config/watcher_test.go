@@ -132,6 +132,43 @@ func TestNewConfigWatcher(t *testing.T) {
 		assert.NoError(t, watcher.Close())
 	})
 
+	t.Run("invokes onChange on atomic save (write-temp + rename)", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configFile := filepath.Join(tmpDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
+
+		called := make(chan struct{}, 4)
+
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {
+			select {
+			case called <- struct{}{}:
+			default:
+			}
+		})
+		require.NoError(t, err)
+
+		defer watcher.Close()
+
+		// Simulate the atomic-save pattern used by vim/IntelliJ/VS Code: write a
+		// sibling temp file, then rename it over the target. This replaces the
+		// target's inode, which a file-level watch would miss. Repeat to confirm
+		// the watch keeps firing across multiple saves.
+		atomicSave := func(content string) {
+			tmp := filepath.Join(tmpDir, "config.yaml.tmp")
+			require.NoError(t, os.WriteFile(tmp, []byte(content), 0o600))
+			require.NoError(t, os.Rename(tmp, configFile))
+		}
+
+		atomicSave("proxy: localhost:8080")
+		assert.True(t, waitForCall(called, watcherTimeout), "onChange not called after first atomic save")
+
+		atomicSave("proxy: localhost:9090")
+		assert.True(t, waitForCall(called, watcherTimeout), "onChange not called after second atomic save")
+	})
+
 	t.Run("stops watching when context is cancelled", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")

@@ -21,7 +21,7 @@ import (
 const (
 	outputChannelSize = 1000
 	shutdownTimeout   = 5 * time.Second
-	versionCheckDelay = 50 * time.Microsecond
+	versionCheckDelay = 50 * time.Millisecond
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
