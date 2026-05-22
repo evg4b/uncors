@@ -193,42 +193,8 @@ func TestBuildTLSConfig(t *testing.T) {
 	})
 }
 
-func TestGetFallbackHost(t *testing.T) {
-	t.Run("returns error when no mappings", func(t *testing.T) {
-		manager := &hostCertManager{mappings: config.Mappings{}}
-
-		host, err := manager.getFallbackHost()
-
-		assert.Empty(t, host)
-		assert.ErrorIs(t, err, infratls.ErrNoSNIAndNoFallback)
-	})
-
-	t.Run("returns first host when mappings exist", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		fakeHome := filepath.Join(tmpDir, "home")
-		t.Setenv("HOME", fakeHome)
-
-		fs := afero.NewOsFs()
-		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
-
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
-		require.NoError(t, err)
-
-		manager, err := newHostCertManager(fs, config.Mappings{
-			{From: "https://api.local:8443", To: "http://api.example.com"},
-		})
-		require.NoError(t, err)
-
-		host, err := manager.getFallbackHost()
-
-		require.NoError(t, err)
-		assert.Equal(t, "api.local", host)
-	})
-}
-
 func TestGetCertificate_EmptySNI(t *testing.T) {
-	t.Run("uses fallback host when SNI is empty", func(t *testing.T) {
+	t.Run("returns error when SNI is empty", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		fakeHome := filepath.Join(tmpDir, "home")
 		t.Setenv("HOME", fakeHome)
@@ -247,12 +213,9 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 
 		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
-		require.NoError(t, err)
-		require.NotNil(t, cert)
-
-		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
-		require.NoError(t, err)
-		assert.Contains(t, x509Cert.DNSNames, "fallback.local")
+		require.Error(t, err)
+		assert.Nil(t, cert)
+		assert.ErrorIs(t, err, infratls.ErrNoSNIProvided)
 	})
 
 	t.Run("returns error when SNI is empty and no fallback", func(t *testing.T) {
@@ -278,6 +241,6 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
 		assert.Nil(t, cert)
-		assert.ErrorIs(t, err, infratls.ErrNoSNIAndNoFallback)
+		assert.ErrorIs(t, err, infratls.ErrNoSNIProvided)
 	})
 }

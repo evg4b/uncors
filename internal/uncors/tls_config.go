@@ -3,7 +3,6 @@ package uncors
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
@@ -37,32 +36,13 @@ func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager
 	}, nil
 }
 
-// getFallbackHost returns the first available host when no SNI is provided.
-func (m *hostCertManager) getFallbackHost() (string, error) {
-	if len(m.mappings) > 0 {
-		firstHost, _, err := m.mappings[0].GetFromHostPort()
-		if err == nil {
-			log.Printf("No SNI provided, using fallback host from mappings: %s", firstHost)
-
-			return firstHost, nil
-		}
-	}
-
-	return "", infratls.ErrNoSNIAndNoFallback
-}
-
 // getCertificate implements SNI by auto-generating certificates based on the requested host.
 func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	host := clientHello.ServerName
 
 	// If no SNI host provided, try to use fallback
 	if host == "" {
-		var err error
-
-		host, err = m.getFallbackHost()
-		if err != nil {
-			return nil, err
-		}
+		return nil, infratls.ErrNoSNIProvided
 	}
 
 	// Auto-generate certificate for this host

@@ -15,8 +15,8 @@ var (
 	// ErrNoMappingsProvided is returned when no mappings are provided for TLS config.
 	ErrNoMappingsProvided = errors.New("no mappings provided for TLS config")
 
-	// ErrNoSNIAndNoFallback is returned when no SNI is provided and no fallback host is available.
-	ErrNoSNIAndNoFallback = errors.New("no SNI provided and no fallback host available")
+	// ErrNoSNIProvided is returned when no SNI is provided in the client hello.
+	ErrNoSNIProvided = errors.New("no SNI provided in client hello")
 
 	// ErrNoCertificateForHost is returned when no certificate is available for the requested host.
 	ErrNoCertificateForHost = errors.New("no certificate available for host")
