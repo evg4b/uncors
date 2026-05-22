@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	infraTls "github.com/evg4b/uncors/internal/infra/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -100,7 +99,12 @@ func TestHandlerWithHTTP(t *testing.T) {
 }
 
 func TestHandlerWithHTTPS(t *testing.T) {
-	fs := afero.NewMemMapFs()
+	fakeHome := t.TempDir()
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewOsFs()
+	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -110,17 +114,15 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	homeDir, err := os.UserHomeDir()
-	require.NoError(t, err)
-
-	certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
+	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
 		Fs:           fs,
 		ValidityDays: 10,
-		OutputDir:    filepath.Join(homeDir, ".config", "uncors"),
+		OutputDir:    caDir,
 	})
 	require.NoError(t, err)
 
-	caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	pool := x509.NewCertPool()

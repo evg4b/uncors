@@ -2,7 +2,6 @@ package uncors
 
 import (
 	"context"
-	"crypto/tls"
 	"io"
 	"net"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/spf13/afero"
@@ -35,7 +35,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		fs:      fs,
 		version: version,
 		output:  output,
-		server:  server.New(),
+		server:  server.New(server.NewHostCertManager(fs)),
 		tracker: server.NewRequestTracker(),
 	}
 }
@@ -54,10 +54,7 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")
 
-	targets, err := app.mappingsToTarget(uncorsConfig)
-	if err != nil {
-		return err
-	}
+	targets := app.mappingsToTarget(uncorsConfig)
 
 	return app.server.Start(ctx, targets)
 }
@@ -71,12 +68,9 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	// old instance is in `previous` and is closed below.
 	app.cacheStorage = nil
 
-	targets, err := app.mappingsToTarget(uncorsConfig)
-	if err != nil {
-		return err
-	}
+	targets := app.mappingsToTarget(uncorsConfig)
 
-	err = app.server.Restart(ctx, targets)
+	err := app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
 	}
@@ -134,30 +128,12 @@ func (app *Uncors) closeAll() {
 	app.closers = nil
 }
 
-func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
-	groupedMappings := uncorsConfig.Mappings.GroupByPort()
-
-	targets := make([]server.Target, 0, len(groupedMappings))
-
-	for _, group := range groupedMappings {
-		var (
-			tlsConfig *tls.Config
-			err       error
-		)
-
-		if group.Scheme == "https" {
-			tlsConfig, err = buildTLSConfig(app.fs, app.output, group.Mappings)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		targets = append(targets, server.Target{
+func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.Target {
+	return lo.Map(uncorsConfig.Mappings.GroupByPort(), func(group config.PortGroup, _ int) server.Target {
+		return server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
 			Handler:   app.tracker.Wrap(app.buildHandlerForMappings(uncorsConfig, group.Mappings)),
-			TLSConfig: tlsConfig,
-		})
-	}
-
-	return targets, nil
+			EnableTLS: group.Scheme == "https",
+		}
+	})
 }

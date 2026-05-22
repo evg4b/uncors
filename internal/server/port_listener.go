@@ -10,7 +10,8 @@ import (
 type PortListener struct {
 	http.Server
 
-	target *Target
+	target  *Target
+	manager *HostCertManager
 }
 
 func (ps *PortListener) Listen(ctx context.Context, onReady func(error)) error {
@@ -23,8 +24,11 @@ func (ps *PortListener) Listen(ctx context.Context, onReady func(error)) error {
 		return err
 	}
 
-	if ps.target.TLSConfig != nil {
-		listener = tls.NewListener(listener, ps.target.TLSConfig)
+	if ps.target.EnableTLS {
+		listener = tls.NewListener(listener, &tls.Config{
+			MinVersion:     tls.VersionTLS12,
+			GetCertificate: ps.manager.getCertificate,
+		})
 	}
 
 	onReady(nil)
