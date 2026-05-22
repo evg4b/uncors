@@ -349,7 +349,12 @@ func TestUncorsWait(t *testing.T) {
 }
 
 func TestUncorsWithHTTPSMapping(t *testing.T) {
-	fs := afero.NewMemMapFs()
+	fakeHome := t.TempDir()
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewOsFs()
+	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -358,12 +363,11 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	}))
 	defer targetServer.Close()
 
-	homeDir, err := os.UserHomeDir()
-	require.NoError(t, err)
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
 	certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
 		Fs:           fs,
 		ValidityDays: 10,
-		OutputDir:    filepath.Join(homeDir, ".config", "uncors"),
+		OutputDir:    caDir,
 	})
 	require.NoError(t, err)
 	caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
@@ -409,7 +413,12 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 }
 
 func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
-	fs := afero.NewMemMapFs()
+	fakeHome := t.TempDir()
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewOsFs()
+	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
 	app := uncors.CreateUncors(fs, mocks.NoopOutput(), "test")
 
 	httpServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -422,10 +431,9 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	}))
 	defer httpsServer.Close()
 
-	homeDir, err := os.UserHomeDir()
-	require.NoError(t, err)
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
 	certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
-		Fs: fs, ValidityDays: 10, OutputDir: filepath.Join(homeDir, ".config", "uncors"),
+		Fs: fs, ValidityDays: 10, OutputDir: caDir,
 	})
 	require.NoError(t, err)
 	caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)

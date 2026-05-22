@@ -129,9 +129,7 @@ func (app *Uncors) closeAll() {
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.Target {
-	groupedMappings := uncorsConfig.Mappings.GroupByPort()
-
-	return lo.Map(groupedMappings, func(group config.PortGroup, index int) server.Target {
+	return lo.Map(uncorsConfig.Mappings.GroupByPort(), func(group config.PortGroup, _ int) server.Target {
 		return server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
 			Handler:   app.tracker.Wrap(app.buildHandlerForMappings(uncorsConfig, group.Mappings)),

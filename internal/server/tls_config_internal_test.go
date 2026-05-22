@@ -47,15 +47,11 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := infratls.GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		tlsConfig, err := buildTLSConfig(fs)
-
-		require.NoError(t, err)
-		require.NotNil(t, tlsConfig)
-		assert.NotNil(t, tlsConfig.GetCertificate)
-		assert.Equal(t, uint16(0x0303), tlsConfig.MinVersion) // TLS 1.2
+		manager := NewHostCertManager(fs)
+		require.NotNil(t, manager)
 
 		// Test SNI by requesting certificate for localhost
-		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
 
@@ -73,10 +69,12 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		tlsConfig, err := buildTLSConfig(fs)
+		manager := NewHostCertManager(fs)
+
+		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "test"})
 
 		require.Error(t, err)
-		assert.Nil(t, tlsConfig)
+		assert.Nil(t, cert)
 		assert.Contains(t, err.Error(), "failed to load CA certificate")
 	})
 
@@ -100,13 +98,10 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		testHost := "example.local"
 
-		tlsConfig, err := buildTLSConfig(fs)
-
-		require.NoError(t, err)
-		require.NotNil(t, tlsConfig)
+		manager := NewHostCertManager(fs)
 
 		// Test SNI by requesting certificate for the specific host
-		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: testHost})
+		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: testHost})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
 
@@ -134,14 +129,11 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := infratls.GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		tlsConfig, err := buildTLSConfig(fs)
-
-		require.NoError(t, err)
-		require.NotNil(t, tlsConfig)
-		assert.NotNil(t, tlsConfig.GetCertificate)
+		manager := NewHostCertManager(fs)
+		require.NotNil(t, manager)
 
 		// Test SNI for api.local - should auto-generate cert for this host
-		apiCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
+		apiCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
 		require.NoError(t, err)
 		require.NotNil(t, apiCert)
 
@@ -150,7 +142,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		assert.Contains(t, apiX509Cert.DNSNames, "api.local")
 
 		// Test SNI for app.local - should auto-generate cert for this host
-		appCert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
+		appCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
 		require.NoError(t, err)
 		require.NotNil(t, appCert)
 

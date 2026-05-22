@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -72,7 +73,8 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -89,15 +91,21 @@ func TestServer(t *testing.T) {
 	t.Run("multiple https ports", func(t *testing.T) {
 		freePorts := testutils.GetFreePorts(t, porstCount)
 
-		fs := afero.NewMemMapFs()
+		fakeHome := t.TempDir()
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
 			ValidityDays: 10,
 			Fs:           fs,
-			OutputDir:    ".",
+			OutputDir:    caDir,
 		})
 		require.NoError(t, err)
 
-		caCert, caKey, err := infraTls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -105,18 +113,14 @@ func TestServer(t *testing.T) {
 
 		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address: hosts.Loopback.Port(port),
-				Handler: handler,
-				TLSConfig: &tls.Config{
-					MinVersion: tls.VersionTLS13,
-					Certificates: []tls.Certificate{
-						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),
-					},
-				},
+				Address:   hosts.Loopback.Port(port),
+				Handler:   handler,
+				EnableTLS: true,
 			}
 		})
 
-		instance := server.New()
+		manager := server.NewHostCertManager(fs)
+		instance := server.New(manager)
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -135,15 +139,21 @@ func TestServer(t *testing.T) {
 
 		freeHTTPSPorts := testutils.GetFreePorts(t, porstCount)
 
-		fs := afero.NewMemMapFs()
+		fakeHome := t.TempDir()
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
 			ValidityDays: 10,
 			Fs:           fs,
-			OutputDir:    ".",
+			OutputDir:    caDir,
 		})
 		require.NoError(t, err)
 
-		caCert, caKey, err := infraTls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -158,18 +168,14 @@ func TestServer(t *testing.T) {
 
 		httpsTargets := lo.Map(freeHTTPSPorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address: hosts.Loopback.Port(port),
-				Handler: handler,
-				TLSConfig: &tls.Config{
-					MinVersion: tls.VersionTLS13,
-					Certificates: []tls.Certificate{
-						testutils.CreateServerCert(t, caCert, caKey, hosts.Loopback.Host()),
-					},
-				},
+				Address:   hosts.Loopback.Port(port),
+				Handler:   handler,
+				EnableTLS: true,
 			}
 		})
 
-		instance := server.New()
+		manager := server.NewHostCertManager(fs)
+		instance := server.New(manager)
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
 		defer func() {
@@ -192,7 +198,8 @@ func TestServer(t *testing.T) {
 	t.Run("shutdown", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -217,7 +224,8 @@ func TestServer(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -240,7 +248,8 @@ func TestServer(t *testing.T) {
 	t.Run("Restart", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -269,7 +278,8 @@ func TestServer(t *testing.T) {
 
 		port := testutils.GetFreePort(t)
 
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 
 		queue.Track("server started")
 
@@ -327,7 +337,8 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
-		instance := server.New()
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager)
 		err = instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),

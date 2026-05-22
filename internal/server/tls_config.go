@@ -86,12 +86,3 @@ func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
 
 	return host, true
 }
-
-func buildTLSConfig(fs afero.Fs) (*tls.Config, error) {
-	manager := NewHostCertManager(fs)
-
-	return &tls.Config{
-		MinVersion:     tls.VersionTLS12,
-		GetCertificate: manager.getCertificate,
-	}, nil
-}
