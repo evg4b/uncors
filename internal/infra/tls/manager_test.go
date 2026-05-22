@@ -7,7 +7,6 @@ import (
 
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,15 +29,12 @@ func TestNewCertManager(t *testing.T) {
 
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 		assert.NotNil(t, manager)
 	})
 
 	t.Run("should create cert manager without CA", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithOutput(mocks.NoopOutput()),
-		)
+		manager := infratls.NewCertManager()
 		assert.NotNil(t, manager)
 	})
 }
@@ -60,7 +56,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should generate and cache certificate", func(t *testing.T) {
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 
 		cert1, err := manager.GetCertificate(hosts.Example.Host())
@@ -79,7 +74,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should generate different certificates for different hosts", func(t *testing.T) {
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 
 		cert1, err := manager.GetCertificate("host1.local")
@@ -92,9 +86,7 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should return error when no CA and no cached certificate", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithOutput(mocks.NoopOutput()),
-		)
+		manager := infratls.NewCertManager()
 
 		_, err := manager.GetCertificate(hosts.Example.Host())
 		require.Error(t, err)
@@ -103,7 +95,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should handle concurrent requests for same host", func(t *testing.T) {
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 
 		const numGoroutines = 10
@@ -127,7 +118,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should handle concurrent requests for different hosts", func(t *testing.T) {
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 
 		const numGoroutines = 5
@@ -152,7 +142,6 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	t.Run("should cache certificates correctly", func(t *testing.T) {
 		manager := infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(mocks.NoopOutput()),
 		)
 
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}

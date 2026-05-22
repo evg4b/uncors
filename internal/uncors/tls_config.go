@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/spf13/afero"
 )
@@ -15,11 +14,10 @@ import (
 type hostCertManager struct {
 	mappings    config.Mappings
 	certManager *infratls.CertManager // for auto-generated certificates
-	output      contracts.Output
 }
 
 // newHostCertManager creates a new host-based certificate manager.
-func newHostCertManager(fs afero.Fs, output contracts.Output, mappings config.Mappings) (*hostCertManager, error) {
+func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager, error) {
 	// Load CA for auto-generation
 	caCert, caKey, err := infratls.LoadDefaultCA(fs)
 	if err != nil {
@@ -35,9 +33,7 @@ func newHostCertManager(fs afero.Fs, output contracts.Output, mappings config.Ma
 		mappings: mappings,
 		certManager: infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
-			infratls.WithOutput(output),
 		),
-		output: output,
 	}, nil
 }
 
@@ -80,12 +76,12 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 
 // buildTLSConfig creates a TLS configuration for the given HTTPS mappings.
 // It uses auto-generated certificates with SNI support.
-func buildTLSConfig(fs afero.Fs, output contracts.Output, mappings config.Mappings) (*tls.Config, error) {
+func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) {
 	if len(mappings) == 0 {
 		return nil, infratls.ErrNoMappingsProvided
 	}
 
-	manager, err := newHostCertManager(fs, output, mappings)
+	manager, err := newHostCertManager(fs, mappings)
 	if err != nil {
 		return nil, err
 	}

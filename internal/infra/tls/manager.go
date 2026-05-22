@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
@@ -23,16 +22,9 @@ type CertManager struct {
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
 	mutex     sync.RWMutex
-	output    contracts.Output
 }
 
 type CertManagerOptions = func(*CertManager)
-
-func WithOutput(output contracts.Output) CertManagerOptions {
-	return func(m *CertManager) {
-		m.output = output
-	}
-}
 
 func WithCert(caCert *x509.Certificate, caKey *rsa.PrivateKey) CertManagerOptions {
 	return func(m *CertManager) {
