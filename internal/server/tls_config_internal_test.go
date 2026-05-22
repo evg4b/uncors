@@ -1,4 +1,4 @@
-package uncors
+package server
 
 import (
 	"crypto/tls"
@@ -177,8 +177,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager, err := newHostCertManager(fs)
-		require.NoError(t, err)
+		manager := NewHostCertManager(fs)
 
 		// Mock connection with IP address
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
@@ -206,8 +205,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager, err := newHostCertManager(fs)
-		require.NoError(t, err)
+		manager := NewHostCertManager(fs)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
 

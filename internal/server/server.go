@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
@@ -21,19 +20,21 @@ const (
 
 type Target struct {
 	Address   string
-	TLSConfig *tls.Config
 	Handler   http.Handler
+	EnableTLS bool
 }
 
 type Server struct {
 	sync.WaitGroup
 
 	listeners []*PortListener
+	manager   *HostCertManager
 }
 
-func New() *Server {
+func New(manager *HostCertManager) *Server {
 	return &Server{
 		listeners: []*PortListener{},
+		manager:   manager,
 	}
 }
 
@@ -52,7 +53,8 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 					target.Handler.ServeHTTP(writer, request)
 				}),
 			},
-			target: &target,
+			target:  &target,
+			manager: s.manager,
 		}
 
 		portListener.RegisterOnShutdown(portCtxCancel)

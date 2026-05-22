@@ -1,4 +1,4 @@
-package uncors
+package server
 
 import (
 	"crypto/tls"
@@ -9,30 +9,24 @@ import (
 	"github.com/spf13/afero"
 )
 
-type hostCertManager struct {
-	certManager *infratls.CertManager // for auto-generated certificates
+type HostCertManager struct {
+	fs          afero.Fs
+	certManager *infratls.CertManager
 }
 
-func newHostCertManager(fs afero.Fs) (*hostCertManager, error) {
-	// Load CA for auto-generation
-	caCert, caKey, err := infratls.LoadDefaultCA(fs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
+func NewHostCertManager(fs afero.Fs) *HostCertManager {
+	return &HostCertManager{
+		fs:          fs,
+		certManager: nil,
 	}
-
-	err = infratls.CheckCAExpiration(caCert)
-	if err != nil {
-		return nil, fmt.Errorf("CA certificate validation failed: %w", err)
-	}
-
-	return &hostCertManager{
-		certManager: infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
-		),
-	}, nil
 }
 
-func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	err := m.loadCaCertificate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CA certificate: %w", err)
+	}
+
 	host, ok := extractServerHost(clientHello)
 	if !ok {
 		return nil, infratls.ErrNoSNIProvided
@@ -44,6 +38,28 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 	}
 
 	return cert, nil
+}
+
+func (m *HostCertManager) loadCaCertificate() error {
+	if m.certManager != nil {
+		return nil
+	}
+
+	caCert, caKey, err := infratls.LoadDefaultCA(afero.NewOsFs())
+	if err != nil {
+		return fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
+	}
+
+	err = infratls.CheckCAExpiration(caCert)
+	if err != nil {
+		return fmt.Errorf("CA certificate validation failed: %w", err)
+	}
+
+	m.certManager = infratls.NewCertManager(
+		infratls.WithCert(caCert, caKey),
+	)
+
+	return nil
 }
 
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
@@ -72,10 +88,7 @@ func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
 }
 
 func buildTLSConfig(fs afero.Fs) (*tls.Config, error) {
-	manager, err := newHostCertManager(fs)
-	if err != nil {
-		return nil, err
-	}
+	manager := NewHostCertManager(fs)
 
 	return &tls.Config{
 		MinVersion:     tls.VersionTLS12,
