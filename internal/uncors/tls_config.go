@@ -5,17 +5,15 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/spf13/afero"
 )
 
 type hostCertManager struct {
-	mappings    config.Mappings
 	certManager *infratls.CertManager // for auto-generated certificates
 }
 
-func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager, error) {
+func newHostCertManager(fs afero.Fs) (*hostCertManager, error) {
 	// Load CA for auto-generation
 	caCert, caKey, err := infratls.LoadDefaultCA(fs)
 	if err != nil {
@@ -28,7 +26,6 @@ func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager
 	}
 
 	return &hostCertManager{
-		mappings: mappings,
 		certManager: infratls.NewCertManager(
 			infratls.WithCert(caCert, caKey),
 		),
@@ -74,12 +71,8 @@ func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
 	return host, true
 }
 
-func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) {
-	if len(mappings) == 0 {
-		return nil, infratls.ErrNoMappingsProvided
-	}
-
-	manager, err := newHostCertManager(fs, mappings)
+func buildTLSConfig(fs afero.Fs) (*tls.Config, error) {
+	manager, err := newHostCertManager(fs)
 	if err != nil {
 		return nil, err
 	}

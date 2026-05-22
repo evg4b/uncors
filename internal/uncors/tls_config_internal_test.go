@@ -8,9 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
-	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,17 +29,6 @@ func (m *mockConn) SetReadDeadline(time.Time) error  { return nil }
 func (m *mockConn) SetWriteDeadline(time.Time) error { return nil }
 
 func TestBuildTLSConfig(t *testing.T) {
-	t.Run("should return error when no mappings provided", func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		mappings := config.Mappings{}
-
-		tlsConfig, err := buildTLSConfig(fs, mappings)
-
-		require.Error(t, err)
-		assert.Nil(t, tlsConfig)
-		assert.Equal(t, infratls.ErrNoMappingsProvided, err)
-	})
-
 	t.Run("should auto-generate certificate when CA exists", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
@@ -60,14 +47,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := infratls.GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		mappings := config.Mappings{
-			{
-				From: "https://localhost:8443",
-				To:   hosts.Example.HTTP(),
-			},
-		}
-
-		tlsConfig, err := buildTLSConfig(fs, mappings)
+		tlsConfig, err := buildTLSConfig(fs)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -93,14 +73,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		mappings := config.Mappings{
-			{
-				From: "https://localhost:8443",
-				To:   hosts.Example.HTTP(),
-			},
-		}
-
-		tlsConfig, err := buildTLSConfig(fs, mappings)
+		tlsConfig, err := buildTLSConfig(fs)
 
 		require.Error(t, err)
 		assert.Nil(t, tlsConfig)
@@ -126,14 +99,8 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		testHost := "example.local"
-		mappings := config.Mappings{
-			{
-				From: "https://" + testHost + ":8443",
-				To:   hosts.Example.HTTP(),
-			},
-		}
 
-		tlsConfig, err := buildTLSConfig(fs, mappings)
+		tlsConfig, err := buildTLSConfig(fs)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -167,19 +134,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := infratls.GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		// Create two mappings on the same port but different hosts
-		mappings := config.Mappings{
-			{
-				From: "https://api.local:8443",
-				To:   "http://api.example.com",
-			},
-			{
-				From: "https://app.local:8443",
-				To:   "http://app.example.com",
-			},
-		}
-
-		tlsConfig, err := buildTLSConfig(fs, mappings)
+		tlsConfig, err := buildTLSConfig(fs)
 
 		require.NoError(t, err)
 		require.NotNil(t, tlsConfig)
@@ -222,9 +177,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager, err := newHostCertManager(fs, config.Mappings{
-			{From: "https://api.local:8443", To: "http://example.com"},
-		})
+		manager, err := newHostCertManager(fs)
 		require.NoError(t, err)
 
 		// Mock connection with IP address
@@ -253,9 +206,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager, err := newHostCertManager(fs, config.Mappings{
-			{From: "https://api.local:8443", To: "http://example.com"},
-		})
+		manager, err := newHostCertManager(fs)
 		require.NoError(t, err)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
