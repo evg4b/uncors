@@ -7,7 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -46,8 +46,8 @@ func (c *GenerateCertsCommand) Execute() error {
 
 	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
 
-	certPath := filepath.Join(c.outputDir, serverTls.CACertFileName)
-	keyPath := filepath.Join(c.outputDir, serverTls.CAKeyFileName)
+	certPath := filepath.Join(c.outputDir, server.CACertFileName)
+	keyPath := filepath.Join(c.outputDir, server.CAKeyFileName)
 
 	if !c.force {
 		_, err := c.fs.Stat(certPath)
@@ -73,7 +73,7 @@ func (c *GenerateCertsCommand) Execute() error {
 
 	c.output.Info("Generating CA certificate...")
 
-	certPath, keyPath, err = serverTls.GenerateCA(serverTls.CAConfig{
+	certPath, keyPath, err = server.GenerateCA(server.CAConfig{
 		ValidityDays: c.validityDays,
 		OutputDir:    c.outputDir,
 		Fs:           c.fs,

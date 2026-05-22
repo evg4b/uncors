@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -115,14 +115,14 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	defer targetServer.Close()
 
 	caDir := filepath.Join(fakeHome, ".config", "uncors")
-	certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
+	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
 		Fs:           fs,
 		ValidityDays: 10,
 		OutputDir:    caDir,
 	})
 	require.NoError(t, err)
 
-	caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	pool := x509.NewCertPool()

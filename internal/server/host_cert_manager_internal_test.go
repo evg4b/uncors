@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,12 +38,12 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := serverTls.CAConfig{
+		caConfig := CAConfig{
 			ValidityDays: 365,
 			OutputDir:    caDir,
 			Fs:           fs,
 		}
-		_, _, err := serverTls.GenerateCA(caConfig)
+		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
 		manager := NewHostCertManager(fs)
@@ -88,12 +87,12 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := serverTls.CAConfig{
+		caConfig := CAConfig{
 			ValidityDays: 365,
 			OutputDir:    caDir,
 			Fs:           fs,
 		}
-		_, _, err := serverTls.GenerateCA(caConfig)
+		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
 		testHost := "example.local"
@@ -121,12 +120,12 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		// Generate CA for auto-generated certificates
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := serverTls.CAConfig{
+		caConfig := CAConfig{
 			ValidityDays: 365,
 			OutputDir:    caDir,
 			Fs:           fs,
 		}
-		_, _, err := serverTls.GenerateCA(caConfig)
+		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
 		manager := NewHostCertManager(fs)
@@ -166,7 +165,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := serverTls.GenerateCA(serverTls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
 		manager := NewHostCertManager(fs)
@@ -194,7 +193,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := serverTls.GenerateCA(serverTls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
 		manager := NewHostCertManager(fs)
@@ -203,6 +202,87 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, cert)
-		assert.ErrorIs(t, err, serverTls.ErrNoSNIProvided)
+		assert.ErrorIs(t, err, ErrNoSNIProvided)
+	})
+}
+
+func newManagerWithCA(t *testing.T) *HostCertManager {
+	t.Helper()
+
+	fakeHome := filepath.Join(t.TempDir(), "home")
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewOsFs()
+	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+	caDir := filepath.Join(fakeHome, ".config", "uncors")
+	_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+	require.NoError(t, err)
+
+	return NewHostCertManager(fs)
+}
+
+func TestHostCertManager_Caching(t *testing.T) {
+	t.Run("should reuse the cached certificate for the same host", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+
+		first, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
+		require.NoError(t, err)
+
+		second, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
+		require.NoError(t, err)
+
+		assert.Same(t, first, second)
+	})
+
+	t.Run("should generate distinct certificates for different hosts", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+
+		first, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "host1.local"})
+		require.NoError(t, err)
+
+		second, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "host2.local"})
+		require.NoError(t, err)
+
+		assert.NotSame(t, first, second)
+	})
+}
+
+func TestHostCertManager_Concurrent(t *testing.T) {
+	t.Run("should handle concurrent requests for the same host", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+
+		const numGoroutines = 10
+
+		results := make(chan error, numGoroutines)
+		for range numGoroutines {
+			go func() {
+				_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "concurrent.local"})
+				results <- err
+			}()
+		}
+
+		for range numGoroutines {
+			assert.NoError(t, <-results)
+		}
+	})
+
+	t.Run("should handle concurrent requests for different hosts", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+
+		const numGoroutines = 5
+
+		results := make(chan error, numGoroutines)
+		for i := range numGoroutines {
+			host := "host" + string(rune('0'+i)) + ".local"
+			go func(h string) {
+				_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: h})
+				results <- err
+			}(host)
+		}
+
+		for range numGoroutines {
+			assert.NoError(t, <-results)
+		}
 	})
 }

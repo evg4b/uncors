@@ -15,7 +15,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/server"
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -94,14 +93,14 @@ func TestUncorsApp(t *testing.T) {
 	homeDir, err := os.UserHomeDir()
 	require.NoError(t, err)
 
-	certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
+	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
 		Fs:           fs,
 		ValidityDays: 10,
 		OutputDir:    filepath.Join(homeDir, ".config", "uncors"),
 	})
 	require.NoError(t, err)
 
-	caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	pool := x509.NewCertPool()
@@ -364,13 +363,13 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	defer targetServer.Close()
 
 	caDir := filepath.Join(fakeHome, ".config", "uncors")
-	certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
+	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
 		Fs:           fs,
 		ValidityDays: 10,
 		OutputDir:    caDir,
 	})
 	require.NoError(t, err)
-	caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	pool := x509.NewCertPool()
@@ -432,11 +431,11 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	defer httpsServer.Close()
 
 	caDir := filepath.Join(fakeHome, ".config", "uncors")
-	certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
+	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
 		Fs: fs, ValidityDays: 10, OutputDir: caDir,
 	})
 	require.NoError(t, err)
-	caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	pool := x509.NewCertPool()

@@ -1,4 +1,4 @@
-package tls_test
+package server_test
 
 import (
 	"crypto/tls"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,18 +19,18 @@ func TestNewCertGenerator(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		tmpDir := testTmpDir
 
-		config := serverTls.CAConfig{
+		config := server.CAConfig{
 			ValidityDays: 365,
 			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
-		certPath, keyPath, err := serverTls.GenerateCA(config)
+		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := serverTls.LoadCA(fs, certPath, keyPath)
+		caCert, caKey, err := server.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		generator := serverTls.NewCertGenerator(caCert, caKey)
+		generator := server.NewCertGenerator(caCert, caKey)
 		assert.NotNil(t, generator)
 	})
 }
@@ -38,18 +38,18 @@ func TestNewCertGenerator(t *testing.T) {
 func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	tmpDir := testTmpDir
-	config := serverTls.CAConfig{
+	config := server.CAConfig{
 		ValidityDays: 365,
 		Fs:           fs,
 		OutputDir:    tmpDir,
 	}
-	certPath, keyPath, err := serverTls.GenerateCA(config)
+	certPath, keyPath, err := server.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := serverTls.LoadCA(fs, certPath, keyPath)
+	caCert, caKey, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
-	generator := serverTls.NewCertGenerator(caCert, caKey)
+	generator := server.NewCertGenerator(caCert, caKey)
 
 	t.Run("should generate certificate for localhost", func(t *testing.T) {
 		cert, err := generator.GenerateCertificate("localhost")

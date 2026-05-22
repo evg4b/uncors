@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlparser"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
@@ -131,7 +131,7 @@ func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
 		return nil
 	}
 
-	if !serverTls.CAExists(fs) {
+	if !server.CAExists(fs) {
 		return &TLSError{fromURL.Host}
 	}
 

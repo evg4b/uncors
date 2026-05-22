@@ -1,4 +1,4 @@
-package tls
+package server
 
 import (
 	"crypto/rand"
@@ -24,6 +24,9 @@ const (
 	defaultOrganization = "UNCORS Development CA"
 	defaultCommonName   = "UNCORS Local Development Root CA"
 	defaultCountry      = "US"
+
+	expirationWarningThreshold = 7 * 24 * time.Hour // 7 days
+	hoursInDay                 = 24
 )
 
 // CAConfig represents configuration for CA certificate generation.
@@ -182,4 +185,25 @@ func CheckExpiration(cert *x509.Certificate, threshold time.Duration) (bool, tim
 	expiresSoon := timeLeft < threshold
 
 	return expiresSoon, timeLeft
+}
+
+// CheckCAExpiration checks if the CA certificate is expiring soon and logs a warning.
+func CheckCAExpiration(cert *x509.Certificate) error {
+	expiresSoon, timeLeft := CheckExpiration(cert, expirationWarningThreshold)
+	if !expiresSoon {
+		return nil
+	}
+
+	switch {
+	case timeLeft < 0:
+		return ErrCACertExpired
+	case timeLeft < 24*time.Hour:
+		hours := int(timeLeft.Hours())
+
+		return fmt.Errorf("CA certificate expires in less than %d hours! %w", hours, ErrCACertExpiringSoon)
+	default:
+		days := int(timeLeft.Hours() / hoursInDay)
+
+		return fmt.Errorf("CA certificate expires in %d days! %w", days, ErrCACertExpiringSoon)
+	}
 }

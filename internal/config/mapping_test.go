@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	serverTls "github.com/evg4b/uncors/internal/server/tls"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -323,7 +323,7 @@ func TestValidateTLS(t *testing.T) {
 
 		fs := afero.NewOsFs()
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := serverTls.GenerateCA(serverTls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := server.GenerateCA(server.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
 		err = config.ValidateTLS("test",

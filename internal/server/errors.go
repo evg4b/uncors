@@ -1,4 +1,4 @@
-package tls
+package server
 
 import "errors"
 
@@ -8,12 +8,6 @@ var (
 
 	// ErrInvalidPrivateKeyPEM is returned when private key PEM cannot be decoded.
 	ErrInvalidPrivateKeyPEM = errors.New("failed to decode private key PEM")
-
-	// ErrNoCertificateAvailable is returned when no certificate is available and auto-generation is disabled.
-	ErrNoCertificateAvailable = errors.New("no certificate available and auto-generation is disabled")
-
-	// ErrNoMappingsProvided is returned when no mappings are provided for TLS config.
-	ErrNoMappingsProvided = errors.New("no mappings provided for TLS config")
 
 	// ErrNoSNIProvided is returned when no SNI is provided in the client hello.
 	ErrNoSNIProvided = errors.New("no SNI provided in client hello")
