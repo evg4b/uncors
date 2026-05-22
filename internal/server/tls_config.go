@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net"
 
-	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	serverTls "github.com/evg4b/uncors/internal/server/tls"
 	"github.com/spf13/afero"
 )
 
 type HostCertManager struct {
 	fs          afero.Fs
-	certManager *infratls.CertManager
+	certManager *serverTls.CertManager
 }
 
 func NewHostCertManager(fs afero.Fs) *HostCertManager {
@@ -29,7 +29,7 @@ func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 
 	host, ok := extractServerHost(clientHello)
 	if !ok {
-		return nil, infratls.ErrNoSNIProvided
+		return nil, serverTls.ErrNoSNIProvided
 	}
 
 	cert, err := m.certManager.GetCertificate(host)
@@ -45,18 +45,18 @@ func (m *HostCertManager) loadCaCertificate() error {
 		return nil
 	}
 
-	caCert, caKey, err := infratls.LoadDefaultCA(afero.NewOsFs())
+	caCert, caKey, err := serverTls.LoadDefaultCA(afero.NewOsFs())
 	if err != nil {
 		return fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}
 
-	err = infratls.CheckCAExpiration(caCert)
+	err = serverTls.CheckCAExpiration(caCert)
 	if err != nil {
 		return fmt.Errorf("CA certificate validation failed: %w", err)
 	}
 
-	m.certManager = infratls.NewCertManager(
-		infratls.WithCert(caCert, caKey),
+	m.certManager = serverTls.NewCertManager(
+		serverTls.WithCert(caCert, caKey),
 	)
 
 	return nil

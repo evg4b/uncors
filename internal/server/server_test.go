@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	infraTls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/evg4b/uncors/internal/server"
+	serverTls "github.com/evg4b/uncors/internal/server/tls"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/samber/lo"
@@ -98,14 +98,14 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
+		certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
 			ValidityDays: 10,
 			Fs:           fs,
 			OutputDir:    caDir,
 		})
 		require.NoError(t, err)
 
-		caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -146,14 +146,14 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := infraTls.GenerateCA(infraTls.CAConfig{
+		certPath, keyPath, err := serverTls.GenerateCA(serverTls.CAConfig{
 			ValidityDays: 10,
 			Fs:           fs,
 			OutputDir:    caDir,
 		})
 		require.NoError(t, err)
 
-		caCert, _, err := infraTls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()

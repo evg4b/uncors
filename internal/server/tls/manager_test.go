@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	infratls "github.com/evg4b/uncors/internal/infra/tls"
+	serverTls "github.com/evg4b/uncors/internal/server/tls"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -16,25 +16,25 @@ func TestNewCertManager(t *testing.T) {
 	t.Run("should create cert manager with CA", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		tmpDir := testTmpDir
-		config := infratls.CAConfig{
+		config := serverTls.CAConfig{
 			ValidityDays: 365,
 			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
-		certPath, keyPath, err := infratls.GenerateCA(config)
+		certPath, keyPath, err := serverTls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
+		caCert, caKey, err := serverTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 		assert.NotNil(t, manager)
 	})
 
 	t.Run("should create cert manager without CA", func(t *testing.T) {
-		manager := infratls.NewCertManager()
+		manager := serverTls.NewCertManager()
 		assert.NotNil(t, manager)
 	})
 }
@@ -42,20 +42,20 @@ func TestNewCertManager(t *testing.T) {
 func TestCertManager_GetCertificate(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	tmpDir := testTmpDir
-	config := infratls.CAConfig{
+	config := serverTls.CAConfig{
 		ValidityDays: 365,
 		Fs:           fs,
 		OutputDir:    tmpDir,
 	}
-	certPath, keyPath, err := infratls.GenerateCA(config)
+	certPath, keyPath, err := serverTls.GenerateCA(config)
 	require.NoError(t, err)
 
-	caCert, caKey, err := infratls.LoadCA(fs, certPath, keyPath)
+	caCert, caKey, err := serverTls.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	t.Run("should generate and cache certificate", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 
 		cert1, err := manager.GetCertificate(hosts.Example.Host())
@@ -72,8 +72,8 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate different certificates for different hosts", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 
 		cert1, err := manager.GetCertificate("host1.local")
@@ -86,15 +86,15 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should return error when no CA and no cached certificate", func(t *testing.T) {
-		manager := infratls.NewCertManager()
+		manager := serverTls.NewCertManager()
 
 		_, err := manager.GetCertificate(hosts.Example.Host())
 		require.Error(t, err)
 	})
 
 	t.Run("should handle concurrent requests for same host", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 
 		const numGoroutines = 10
@@ -116,8 +116,8 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should handle concurrent requests for different hosts", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 
 		const numGoroutines = 5
@@ -140,8 +140,8 @@ func TestCertManager_GetCertificate(t *testing.T) {
 	})
 
 	t.Run("should cache certificates correctly", func(t *testing.T) {
-		manager := infratls.NewCertManager(
-			infratls.WithCert(caCert, caKey),
+		manager := serverTls.NewCertManager(
+			serverTls.WithCert(caCert, caKey),
 		)
 
 		hosts := []string{"cache1.local", "cache2.local", "cache3.local"}
@@ -167,35 +167,35 @@ func TestCheckCAExpiration(t *testing.T) {
 	t.Run("should not panic with valid certificate", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		tmpDir := testTmpDir
-		config := infratls.CAConfig{
+		config := serverTls.CAConfig{
 			ValidityDays: 365,
 			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
-		certPath, keyPath, err := infratls.GenerateCA(config)
+		certPath, keyPath, err := serverTls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		require.NoError(t, infratls.CheckCAExpiration(caCert))
+		require.NoError(t, serverTls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should handle expiring certificate", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		tmpDir := testTmpDir
-		config := infratls.CAConfig{
+		config := serverTls.CAConfig{
 			ValidityDays: 5, // Will expire soon
 			Fs:           fs,
 			OutputDir:    tmpDir,
 		}
-		certPath, keyPath, err := infratls.GenerateCA(config)
+		certPath, keyPath, err := serverTls.GenerateCA(config)
 		require.NoError(t, err)
 
-		caCert, _, err := infratls.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := serverTls.LoadCA(fs, certPath, keyPath)
 		require.NoError(t, err)
 
-		require.Error(t, infratls.CheckCAExpiration(caCert))
+		require.Error(t, serverTls.CheckCAExpiration(caCert))
 	})
 
 	t.Run("should show correct message for expired certificate", func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestCheckCAExpiration(t *testing.T) {
 			NotAfter: time.Now().Add(-24 * time.Hour), // Expired yesterday
 		}
 
-		require.Error(t, infratls.CheckCAExpiration(cert))
+		require.Error(t, serverTls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should show correct message for certificate expiring in hours", func(t *testing.T) {
@@ -211,7 +211,7 @@ func TestCheckCAExpiration(t *testing.T) {
 			NotAfter: time.Now().Add(12 * time.Hour), // Expires in 12 hours
 		}
 
-		require.Error(t, infratls.CheckCAExpiration(cert))
+		require.Error(t, serverTls.CheckCAExpiration(cert))
 	})
 
 	t.Run("should not show warning for certificate valid for more than 7 days", func(t *testing.T) {
@@ -220,6 +220,6 @@ func TestCheckCAExpiration(t *testing.T) {
 			NotAfter: time.Now().Add(10 * 24 * time.Hour), // Expires in 10 days
 		}
 
-		require.NoError(t, infratls.CheckCAExpiration(cert))
+		require.NoError(t, serverTls.CheckCAExpiration(cert))
 	})
 }
