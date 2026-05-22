@@ -3,19 +3,18 @@ package uncors
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
 	"github.com/spf13/afero"
 )
 
-// hostCertManager manages auto-generated certificates for different hosts using SNI.
 type hostCertManager struct {
 	mappings    config.Mappings
 	certManager *infratls.CertManager // for auto-generated certificates
 }
 
-// newHostCertManager creates a new host-based certificate manager.
 func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager, error) {
 	// Load CA for auto-generation
 	caCert, caKey, err := infratls.LoadDefaultCA(fs)
@@ -36,16 +35,12 @@ func newHostCertManager(fs afero.Fs, mappings config.Mappings) (*hostCertManager
 	}, nil
 }
 
-// getCertificate implements SNI by auto-generating certificates based on the requested host.
 func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	host := clientHello.ServerName
-
-	// If no SNI host provided, try to use fallback
-	if host == "" {
+	host, ok := extractServerHost(clientHello)
+	if !ok {
 		return nil, infratls.ErrNoSNIProvided
 	}
 
-	// Auto-generate certificate for this host
 	cert, err := m.certManager.GetCertificate(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get certificate for %s: %w", host, err)
@@ -54,8 +49,31 @@ func (m *hostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 	return cert, nil
 }
 
-// buildTLSConfig creates a TLS configuration for the given HTTPS mappings.
-// It uses auto-generated certificates with SNI support.
+func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
+	if clientHello == nil {
+		return "", false
+	}
+
+	if clientHello.ServerName != "" {
+		return clientHello.ServerName, true
+	}
+
+	if clientHello.Conn == nil || clientHello.Conn.LocalAddr() == nil {
+		return "", false
+	}
+
+	host, _, err := net.SplitHostPort(clientHello.Conn.LocalAddr().String())
+	if err != nil {
+		return "", false
+	}
+
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		return "", false
+	}
+
+	return host, true
+}
+
 func buildTLSConfig(fs afero.Fs, mappings config.Mappings) (*tls.Config, error) {
 	if len(mappings) == 0 {
 		return nil, infratls.ErrNoMappingsProvided

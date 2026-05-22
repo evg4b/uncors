@@ -3,8 +3,10 @@ package uncors
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"net"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	infratls "github.com/evg4b/uncors/internal/infra/tls"
@@ -13,6 +15,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockConn is a minimal net.Conn implementation for testing.
+type mockConn struct {
+	localAddr net.Addr
+}
+
+func (m *mockConn) Read(_ []byte) (int, error)       { return 0, nil }
+func (m *mockConn) Write(_ []byte) (int, error)      { return 0, nil }
+func (m *mockConn) Close() error                     { return nil }
+func (m *mockConn) LocalAddr() net.Addr              { return m.localAddr }
+func (m *mockConn) RemoteAddr() net.Addr             { return nil }
+func (m *mockConn) SetDeadline(time.Time) error      { return nil }
+func (m *mockConn) SetReadDeadline(time.Time) error  { return nil }
+func (m *mockConn) SetWriteDeadline(time.Time) error { return nil }
 
 func TestBuildTLSConfig(t *testing.T) {
 	t.Run("should return error when no mappings provided", func(t *testing.T) {
@@ -194,31 +210,7 @@ func TestBuildTLSConfig(t *testing.T) {
 }
 
 func TestGetCertificate_EmptySNI(t *testing.T) {
-	t.Run("returns error when SNI is empty", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		fakeHome := filepath.Join(tmpDir, "home")
-		t.Setenv("HOME", fakeHome)
-
-		fs := afero.NewOsFs()
-		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
-
-		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
-		require.NoError(t, err)
-
-		tlsConfig, err := buildTLSConfig(fs, config.Mappings{
-			{From: "https://fallback.local:8443", To: "http://example.com"},
-		})
-		require.NoError(t, err)
-
-		cert, err := tlsConfig.GetCertificate(&tls.ClientHelloInfo{ServerName: ""})
-
-		require.Error(t, err)
-		assert.Nil(t, cert)
-		assert.ErrorIs(t, err, infratls.ErrNoSNIProvided)
-	})
-
-	t.Run("returns error when SNI is empty and no fallback", func(t *testing.T) {
+	t.Run("extracts IP from connection when SNI is empty", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		fakeHome := filepath.Join(tmpDir, "home")
 		t.Setenv("HOME", fakeHome)
@@ -235,11 +227,40 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// Drain the mappings so fallback also fails
-		manager.mappings = config.Mappings{}
+		// Mock connection with IP address
+		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
+
+		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "", Conn: mockConn})
+
+		require.NoError(t, err)
+		require.NotNil(t, cert)
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		require.NoError(t, err)
+		require.Len(t, x509Cert.IPAddresses, 1)
+		assert.Equal(t, "192.168.1.100", x509Cert.IPAddresses[0].String())
+	})
+
+	t.Run("returns error when SNI is empty and no connection", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		fakeHome := filepath.Join(tmpDir, "home")
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
+
+		caDir := filepath.Join(fakeHome, ".config", "uncors")
+		_, _, err := infratls.GenerateCA(infratls.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		require.NoError(t, err)
+
+		manager, err := newHostCertManager(fs, config.Mappings{
+			{From: "https://api.local:8443", To: "http://example.com"},
+		})
+		require.NoError(t, err)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
+		require.Error(t, err)
 		assert.Nil(t, cert)
 		assert.ErrorIs(t, err, infratls.ErrNoSNIProvided)
 	})
