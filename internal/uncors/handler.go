@@ -127,12 +127,13 @@ func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFact
 }
 
 func withPrefix(prefix string, next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) {
+	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) error {
 		if updater, ok := req.Context().Value(contracts.PrefixUpdaterKey).(func(string)); ok {
 			updater(prefix)
 		}
 
 		ctx := context.WithValue(req.Context(), contracts.PrefixKey, prefix)
-		next.ServeHTTP(resp, req.WithContext(ctx))
+
+		return next.ServeHTTP(resp, req.WithContext(ctx))
 	})
 }

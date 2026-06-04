@@ -317,7 +317,7 @@ func TestMiddleware(t *testing.T) {
 				response := contracts.WrapResponseWriter(recorder)
 				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
-				mockedNextHandler.ServeHTTPMock.Expect(response, request)
+				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil) //nolint: errcheck
 
 				middleware.Wrap(mockedNextHandler).
 					ServeHTTP(response, request)

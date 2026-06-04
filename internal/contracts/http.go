@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+
+	"github.com/evg4b/uncors/internal/infra"
 )
 
 type contextKey string
@@ -25,17 +27,17 @@ type RequestData struct {
 type Request = http.Request
 
 type Handler interface {
-	ServeHTTP(writer ResponseWriter, request *Request)
+	ServeHTTP(writer ResponseWriter, request *Request) error
 }
 
 type Middleware interface {
 	Wrap(next Handler) Handler
 }
 
-type HandlerFunc func(ResponseWriter, *Request)
+type HandlerFunc func(ResponseWriter, *Request) error
 
-func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
-	f(w, r)
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) error {
+	return f(w, r)
 }
 
 var ErrResponseNotCasted = errors.New("received incorrect response writer type")
@@ -47,12 +49,17 @@ func CastToHTTPHandler(handler Handler) http.Handler {
 			panic(ErrResponseNotCasted)
 		}
 
-		handler.ServeHTTP(writer, request)
+		err := handler.ServeHTTP(writer, request)
+		if err != nil {
+			infra.HTTPError(writer, err)
+		}
 	})
 }
 
 func CastToContractsHandler(handler http.Handler) Handler {
-	return HandlerFunc(func(writer ResponseWriter, request *Request) {
+	return HandlerFunc(func(writer ResponseWriter, request *Request) error {
 		handler.ServeHTTP(writer, request)
+
+		return nil
 	})
 }

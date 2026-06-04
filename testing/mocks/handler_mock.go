@@ -18,7 +18,7 @@ type HandlerMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcServeHTTP          func(writer mm_contracts.ResponseWriter, request *mm_contracts.Request)
+	funcServeHTTP          func(writer mm_contracts.ResponseWriter, request *mm_contracts.Request) (err error)
 	funcServeHTTPOrigin    string
 	inspectFuncServeHTTP   func(writer mm_contracts.ResponseWriter, request *mm_contracts.Request)
 	afterServeHTTPCounter  uint64
@@ -61,9 +61,9 @@ type HandlerMockServeHTTPExpectation struct {
 	params             *HandlerMockServeHTTPParams
 	paramPtrs          *HandlerMockServeHTTPParamPtrs
 	expectationOrigins HandlerMockServeHTTPExpectationOrigins
-
-	returnOrigin string
-	Counter      uint64
+	results            *HandlerMockServeHTTPResults
+	returnOrigin       string
+	Counter            uint64
 }
 
 // HandlerMockServeHTTPParams contains parameters of the Handler.ServeHTTP
@@ -76,6 +76,11 @@ type HandlerMockServeHTTPParams struct {
 type HandlerMockServeHTTPParamPtrs struct {
 	writer  *mm_contracts.ResponseWriter
 	request **mm_contracts.Request
+}
+
+// HandlerMockServeHTTPResults contains results of the Handler.ServeHTTP
+type HandlerMockServeHTTPResults struct {
+	err error
 }
 
 // HandlerMockServeHTTPOrigins contains origins of expectations of the Handler.ServeHTTP
@@ -178,7 +183,7 @@ func (mmServeHTTP *mHandlerMockServeHTTP) Inspect(f func(writer mm_contracts.Res
 }
 
 // Return sets up results that will be returned by Handler.ServeHTTP
-func (mmServeHTTP *mHandlerMockServeHTTP) Return() *HandlerMock {
+func (mmServeHTTP *mHandlerMockServeHTTP) Return(err error) *HandlerMock {
 	if mmServeHTTP.mock.funcServeHTTP != nil {
 		mmServeHTTP.mock.t.Fatalf("HandlerMock.ServeHTTP mock is already set by Set")
 	}
@@ -186,13 +191,13 @@ func (mmServeHTTP *mHandlerMockServeHTTP) Return() *HandlerMock {
 	if mmServeHTTP.defaultExpectation == nil {
 		mmServeHTTP.defaultExpectation = &HandlerMockServeHTTPExpectation{mock: mmServeHTTP.mock}
 	}
-
+	mmServeHTTP.defaultExpectation.results = &HandlerMockServeHTTPResults{err}
 	mmServeHTTP.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
 	return mmServeHTTP.mock
 }
 
 // Set uses given function f to mock the Handler.ServeHTTP method
-func (mmServeHTTP *mHandlerMockServeHTTP) Set(f func(writer mm_contracts.ResponseWriter, request *mm_contracts.Request)) *HandlerMock {
+func (mmServeHTTP *mHandlerMockServeHTTP) Set(f func(writer mm_contracts.ResponseWriter, request *mm_contracts.Request) (err error)) *HandlerMock {
 	if mmServeHTTP.defaultExpectation != nil {
 		mmServeHTTP.mock.t.Fatalf("Default expectation is already set for the Handler.ServeHTTP method")
 	}
@@ -223,8 +228,8 @@ func (mmServeHTTP *mHandlerMockServeHTTP) When(writer mm_contracts.ResponseWrite
 }
 
 // Then sets up Handler.ServeHTTP return parameters for the expectation previously defined by the When method
-
-func (e *HandlerMockServeHTTPExpectation) Then() *HandlerMock {
+func (e *HandlerMockServeHTTPExpectation) Then(err error) *HandlerMock {
+	e.results = &HandlerMockServeHTTPResults{err}
 	return e.mock
 }
 
@@ -250,7 +255,7 @@ func (mmServeHTTP *mHandlerMockServeHTTP) invocationsDone() bool {
 }
 
 // ServeHTTP implements mm_contracts.Handler
-func (mmServeHTTP *HandlerMock) ServeHTTP(writer mm_contracts.ResponseWriter, request *mm_contracts.Request) {
+func (mmServeHTTP *HandlerMock) ServeHTTP(writer mm_contracts.ResponseWriter, request *mm_contracts.Request) (err error) {
 	mm_atomic.AddUint64(&mmServeHTTP.beforeServeHTTPCounter, 1)
 	defer mm_atomic.AddUint64(&mmServeHTTP.afterServeHTTPCounter, 1)
 
@@ -270,7 +275,7 @@ func (mmServeHTTP *HandlerMock) ServeHTTP(writer mm_contracts.ResponseWriter, re
 	for _, e := range mmServeHTTP.ServeHTTPMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return
+			return e.results.err
 		}
 	}
 
@@ -298,15 +303,17 @@ func (mmServeHTTP *HandlerMock) ServeHTTP(writer mm_contracts.ResponseWriter, re
 				mmServeHTTP.ServeHTTPMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		return
-
+		mm_results := mmServeHTTP.ServeHTTPMock.defaultExpectation.results
+		if mm_results == nil {
+			mmServeHTTP.t.Fatal("No results are set for the HandlerMock.ServeHTTP")
+		}
+		return (*mm_results).err
 	}
 	if mmServeHTTP.funcServeHTTP != nil {
-		mmServeHTTP.funcServeHTTP(writer, request)
-		return
+		return mmServeHTTP.funcServeHTTP(writer, request)
 	}
 	mmServeHTTP.t.Fatalf("Unexpected call to HandlerMock.ServeHTTP. %v %v", writer, request)
-
+	return
 }
 
 // ServeHTTPAfterCounter returns a count of finished HandlerMock.ServeHTTP invocations

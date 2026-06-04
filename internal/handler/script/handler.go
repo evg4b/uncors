@@ -22,14 +22,14 @@ func NewHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
-func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
 	err := h.executeScript(writer, request)
 	if err != nil {
 		h.output.Errorf("Script handler error: %v", err)
-		infra.HTTPError(writer, err)
-
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {

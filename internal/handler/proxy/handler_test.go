@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -347,7 +348,11 @@ func TestProxyHandler(t *testing.T) {
 		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		responseWriter := contracts.WrapResponseWriter(recorder)
+		handlerErr := handler.ServeHTTP(responseWriter, req)
+		if handlerErr != nil {
+			infra.HTTPError(responseWriter, handlerErr)
+		}
 
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	})

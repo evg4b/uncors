@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 )
@@ -179,7 +181,11 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 		}
 	})
 
-	handler.ServeHTTP(responseWriter, request.WithContext(ctx))
+	err := handler.ServeHTTP(responseWriter, request.WithContext(ctx))
+	if err != nil {
+		log.Printf("Handler error: %v", err)
+		infra.HTTPError(responseWriter, err)
+	}
 
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(responseWriter.StatusCode()))
 	data.Cancelled = ctx.Err() != nil

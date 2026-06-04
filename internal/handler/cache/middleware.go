@@ -28,30 +28,28 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 		if !m.isCacheableRequest(request) {
-			next.ServeHTTP(writer, request)
-
-			return
+			return next.ServeHTTP(writer, request)
 		}
 
-		m.cacheRequest(writer, request, next)
+		return m.cacheRequest(writer, request, next)
 	})
 }
 
-func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) {
+func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) error {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 		m.writeCachedResponse(writer, cachedResponse)
 
-		return
+		return nil
 	}
 
 	cacheableWriter := NewCacheableResponseWriter(m.cache, writer, cacheKey)
 	defer cacheableWriter.Close()
 
-	next.ServeHTTP(cacheableWriter, request)
+	return next.ServeHTTP(cacheableWriter, request)
 }
 
 func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *contracts.CachedResponse) {

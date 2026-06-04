@@ -29,16 +29,18 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) error {
 	err := h.handle(response, request)
 	if err != nil {
 		if request.Context().Err() != nil {
-			return
+			return nil
 		}
 
 		h.output.Errorf("Proxy handler error: %v", err)
-		infra.HTTPError(response, err)
+		return err
 	}
+
+	return nil
 }
 
 func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {

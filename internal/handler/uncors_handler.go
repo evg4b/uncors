@@ -10,7 +10,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/gorilla/mux"
 )
 
@@ -74,17 +73,20 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		setDefaultHandler(router, defaultHandler)
 	}
 
-	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, r *http.Request) {
-		infra.HTTPError(writer, errHostNotMapped)
+	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, r *http.Request) error {
 		handler.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
 		log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
+
+		return errHostNotMapped
 	}))
 
 	return handler
 }
 
-func (h *RequestHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
+func (h *RequestHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
 	h.Router.ServeHTTP(writer, request)
+
+	return nil
 }
 
 func (h *RequestHandler) createHandler(response config.Response) http.Handler {

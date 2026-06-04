@@ -10,6 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -104,9 +105,11 @@ func TestStaticMiddleware(t *testing.T) {
 			static.WithFileSystem(fs),
 		)
 
-		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) {
+		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 			writer.WriteHeader(testHTTPStatusCode)
 			fmt.Fprint(writer, testHTTPBody)
+
+			return nil
 		}))
 
 		t.Run("return static content", func(t *testing.T) {
@@ -202,10 +205,14 @@ func TestStaticMiddleware(t *testing.T) {
 			requestURI, err := url.Parse("/options/")
 			testutils.CheckNoError(t, err)
 
-			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+			responseWriter := contracts.WrapResponseWriter(recorder)
+			handlerErr := handler.ServeHTTP(responseWriter, &http.Request{
 				Method: http.MethodGet,
 				URL:    requestURI,
 			})
+			if handlerErr != nil {
+				infra.HTTPError(responseWriter, handlerErr)
+			}
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 		})

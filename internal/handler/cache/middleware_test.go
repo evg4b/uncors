@@ -36,10 +36,12 @@ func TestCacheMiddleware(t *testing.T) {
 		}),
 	)
 
-	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
+	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
 		fmt.Fprint(writer, expectedBody)
+
+		return nil
 	})
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
@@ -153,10 +155,12 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) {
+				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					fmt.Fprint(writer, expectedBody)
+
+					return nil
 				})
 
 				wrappedHandler := middleware.Wrap(handler)
@@ -215,10 +219,12 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) {
+		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
 			fmt.Fprint(writer, request.Method)
+
+			return nil
 		})
 
 		wrappedHandler := middleware.Wrap(handler)

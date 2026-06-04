@@ -26,10 +26,12 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+	handler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
 		assert.NoError(t, err)
+
+		return nil
 	})
 
 	assertResponse := func(t *testing.T, url string, pool *x509.CertPool) {
@@ -286,12 +288,14 @@ func TestServer(t *testing.T) {
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
-				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
 					_, err := fmt.Fprint(w, expectedContent)
 					assert.NoError(t, err)
+
+					return nil
 				}),
 			},
 		}))

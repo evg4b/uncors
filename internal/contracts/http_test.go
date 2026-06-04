@@ -14,9 +14,11 @@ import (
 func TestCastToHTTPHandler(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 
-	handlerStub := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+	handlerStub := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, expectedBody)
+
+		return nil
 	})
 
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
@@ -44,9 +46,11 @@ func TestCastToHTTPHandler(t *testing.T) {
 func TestHandlerFunc(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 
-	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, expectedBody)
+
+		return nil
 	})
 
 	recorder := httptest.NewRecorder()

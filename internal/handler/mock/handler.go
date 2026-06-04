@@ -30,16 +30,18 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
-func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
+func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
 	if h.waitDelay(writer, request) {
-		return
+		return nil
 	}
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
 		log.Printf("ERROR: Mock handler error: %s (URL: %s)", err.Error(), request.URL.String())
-		infra.HTTPError(writer, err)
+		return err
 	}
+
+	return nil
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {

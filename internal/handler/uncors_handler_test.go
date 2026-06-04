@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -253,7 +254,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				responseWriter := contracts.WrapResponseWriter(recorder)
+				err := uncorsHandler.ServeHTTP(responseWriter, request)
+				if err != nil {
+					infra.HTTPError(responseWriter, err)
+				}
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 
@@ -353,7 +358,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
-			uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+			responseWriter := contracts.WrapResponseWriter(recorder)
+			err := uncorsHandler.ServeHTTP(responseWriter, request)
+			if err != nil {
+				infra.HTTPError(responseWriter, err)
+			}
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 

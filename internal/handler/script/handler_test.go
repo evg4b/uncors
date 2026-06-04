@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/script"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -425,7 +426,11 @@ response:WriteString(x.field)  -- This will cause an error
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				responseWriter := contracts.WrapResponseWriter(recorder)
+				handlerErr := handler.ServeHTTP(responseWriter, req)
+				if handlerErr != nil {
+					infra.HTTPError(responseWriter, handlerErr)
+				}
 
 				assert.Equal(t, testCase.expectedCode, recorder.Code)
 			})

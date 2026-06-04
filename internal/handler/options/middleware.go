@@ -19,12 +19,14 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) {
+	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) error {
 		if strings.EqualFold(req.Method, http.MethodOptions) {
 			m.handle(resp, req)
-		} else {
-			next.ServeHTTP(resp, req)
+
+			return nil
 		}
+
+		return next.ServeHTTP(resp, req)
 	})
 }
 

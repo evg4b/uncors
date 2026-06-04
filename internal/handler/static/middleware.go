@@ -12,7 +12,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 )
 
@@ -29,7 +28,7 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 		response := contracts.WrapResponseWriter(writer)
 
 		filePath := h.extractFilePath(request)
@@ -39,16 +38,16 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 		if err != nil {
 			if errors.Is(err, errNotHandled) {
-				next.ServeHTTP(response, request)
-			} else {
-				log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
-				infra.HTTPError(response, err)
+				return next.ServeHTTP(response, request)
 			}
 
-			return
+			log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
+			return err
 		}
 
 		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
+
+		return nil
 	})
 }
 

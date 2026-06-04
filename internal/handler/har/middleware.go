@@ -38,7 +38,7 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) {
+	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) error {
 		start := time.Now()
 
 		capture := newCaptureWriter(w)
@@ -56,13 +56,15 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			req.Body = io.NopCloser(strings.NewReader(buf.String()))
 		}
 
-		next.ServeHTTP(capture, req)
+		err := next.ServeHTTP(capture, req)
 
 		elapsed := time.Since(start)
 
 		entry := m.buildEntry(req, capture, start, elapsed, reqBodySize)
 
 		m.writer.AddEntry(entry)
+
+		return err
 	})
 }
 

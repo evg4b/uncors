@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -24,8 +25,10 @@ func rewriteFactory() handler.RewriteMiddlewareFactory {
 
 func scriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(_ config.Script) contracts.Handler {
-		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
+		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 			w.WriteHeader(http.StatusAccepted)
+
+			return nil
 		})
 	}
 }
@@ -50,7 +53,11 @@ func TestHandlerWithOutput(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://unmapped.host/api", nil)
 		helpers.NormaliseRequest(request)
 
-		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+		responseWriter := contracts.WrapResponseWriter(recorder)
+		err := requestHandler.ServeHTTP(responseWriter, request)
+		if err != nil {
+			infra.HTTPError(responseWriter, err)
+		}
 
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	})

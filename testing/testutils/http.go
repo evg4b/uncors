@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handlerFunc = func(writer contracts.ResponseWriter, request *contracts.Request)
+type handlerFunc = func(writer contracts.ResponseWriter, request *contracts.Request) error
 
 type CountableHandler struct {
 	handler handlerFunc
@@ -18,9 +18,10 @@ func NewCounter(handler handlerFunc) *CountableHandler {
 	return &CountableHandler{handler, 0}
 }
 
-func (t *CountableHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) {
+func (t *CountableHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
 	t.count++
-	t.handler(writer, request)
+
+	return t.handler(writer, request)
 }
 
 func (t *CountableHandler) Count() int {
