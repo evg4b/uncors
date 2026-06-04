@@ -101,7 +101,7 @@ func runNonInteractive(
 ) int {
 	app := uncors.CreateUncors(fs, output, Version)
 
-	go server.RequestPrinter(app.Server.Tracker, output)
+	go server.RequestPrinter(app.Tracker(), output)
 
 	if configPath != "" {
 		startConfigWatcher(ctx, fs, output, configPath, app)

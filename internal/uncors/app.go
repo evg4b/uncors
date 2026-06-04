@@ -23,7 +23,7 @@ type Uncors struct {
 	fs      afero.Fs
 	version string
 	output  contracts.Output
-	Server  *server.Server
+	server  *server.Server
 
 	cacheStorage contracts.Cache
 	closers      []io.Closer
@@ -34,14 +34,18 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		fs:      fs,
 		version: version,
 		output:  output,
-		Server:  server.New(server.NewHostCertManager(fs)),
+		server:  server.New(server.NewHostCertManager(fs)),
 	}
 }
 
 func (app *Uncors) WithTracker(tracker *server.RequestTracker) *Uncors {
-	app.Server.Tracker = tracker
+	app.server.SetTracker(tracker)
 
 	return app
+}
+
+func (app *Uncors) Tracker() *server.RequestTracker {
+	return app.server.Tracker()
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
@@ -54,7 +58,7 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 
 	targets := app.mappingsToTarget(uncorsConfig)
 
-	return app.Server.Start(ctx, targets)
+	return app.server.Start(ctx, targets)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
@@ -68,7 +72,7 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 	targets := app.mappingsToTarget(uncorsConfig)
 
-	err := app.Server.Restart(ctx, targets)
+	err := app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
 	}
@@ -88,15 +92,15 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 func (app *Uncors) Close() error {
 	app.closeAll()
 
-	return app.Server.Close()
+	return app.server.Close()
 }
 
 func (app *Uncors) Wait() {
-	app.Server.Wait()
+	app.server.Wait()
 }
 
 func (app *Uncors) Shutdown(ctx context.Context) error {
-	return app.Server.Shutdown(ctx)
+	return app.server.Shutdown(ctx)
 }
 
 // getCacheStorage lazily builds a single cache shared by every cache-enabled
@@ -140,7 +144,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.
 			handler.WithOutput(app.output),
 			handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
 		)
-		trackedHandler := app.Server.Tracker.Wrap(handler)
+		trackedHandler := app.server.Tracker().Wrap(handler)
 
 		return server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),

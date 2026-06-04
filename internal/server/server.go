@@ -30,15 +30,23 @@ type Server struct {
 
 	listeners []*PortListener
 	manager   *HostCertManager
-	Tracker   *RequestTracker
+	tracker   *RequestTracker
 }
 
 func New(manager *HostCertManager) *Server {
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
-		Tracker:   NewRequestTracker(),
+		tracker:   NewRequestTracker(),
 	}
+}
+
+func (s *Server) Tracker() *RequestTracker {
+	return s.tracker
+}
+
+func (s *Server) SetTracker(tracker *RequestTracker) {
+	s.tracker = tracker
 }
 
 func (s *Server) Start(ctx context.Context, targets []Target) error {
