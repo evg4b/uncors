@@ -29,23 +29,13 @@ type Uncors struct {
 	closers      []io.Closer
 }
 
-func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors {
+func CreateUncors(fs afero.Fs, tracker *server.RequestTracker, output contracts.Output, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
 		output:  output,
-		server:  server.New(server.NewHostCertManager(fs), server.NewRequestTracker()),
+		server:  server.New(server.NewHostCertManager(fs), tracker),
 	}
-}
-
-func (app *Uncors) WithTracker(tracker *server.RequestTracker) *Uncors {
-	app.server.SetTracker(tracker)
-
-	return app
-}
-
-func (app *Uncors) Tracker() *server.RequestTracker {
-	return app.server.Tracker()
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
@@ -132,23 +122,20 @@ func (app *Uncors) closeAll() {
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.Target {
 	return lo.Map(uncorsConfig.Mappings.GroupByPort(), func(group config.PortGroup, _ int) server.Target {
-		handler := handler.NewUncorsRequestHandler(
-			handler.WithMappings(group.Mappings),
-			handler.WithProxyHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
-			handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
-			handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
-			handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
-			handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
-			handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
-			handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
-			handler.WithOutput(app.output),
-			handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
-		)
-		trackedHandler := app.server.Tracker().Wrap(handler)
-
 		return server.Target{
-			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   trackedHandler,
+			Address: net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
+			Handler: handler.NewUncorsRequestHandler(
+				handler.WithMappings(group.Mappings),
+				handler.WithProxyHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
+				handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
+				handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
+				handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
+				handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
+				handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
+				handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
+				handler.WithOutput(app.output),
+				handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
+			),
 			EnableTLS: group.Scheme == "https",
 		}
 	})

@@ -41,14 +41,6 @@ func New(manager *HostCertManager, tracker *RequestTracker) *Server {
 	}
 }
 
-func (s *Server) Tracker() *RequestTracker {
-	return s.tracker
-}
-
-func (s *Server) SetTracker(tracker *RequestTracker) {
-	s.tracker = tracker
-}
-
 func (s *Server) Start(ctx context.Context, targets []Target) error {
 	s.listeners = lo.Map(targets, func(target Target, _ int) *PortListener {
 		portCtx, portCtxCancel := context.WithCancel(ctx)

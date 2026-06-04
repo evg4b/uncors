@@ -87,7 +87,7 @@ func NewUncorsApp(
 	return &uncorsApp{
 		version:       ver,
 		keys:          keys,
-		app:           uncors.CreateUncors(fs, output, ver).WithTracker(tracker),
+		app:           uncors.CreateUncors(fs, tracker, output, ver),
 		output:        output,
 		tracker:       tracker,
 		outputCh:      outputCh,
