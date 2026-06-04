@@ -80,10 +80,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 					startupFailed = true
 
 					errMu.Lock()
+					defer errMu.Unlock()
 
 					launchErrors = multierror.Append(launchErrors, listenErr)
-
-					errMu.Unlock()
 				}
 
 				launchWaitGroup.Done()
@@ -91,10 +90,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 
 			if !startupFailed && err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errMu.Lock()
+				defer errMu.Unlock()
 
 				launchErrors = multierror.Append(launchErrors, err)
-
-				errMu.Unlock()
 			}
 		})
 	}

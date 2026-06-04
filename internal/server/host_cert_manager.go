@@ -50,7 +50,7 @@ func (m *HostCertManager) ensureCA() error {
 	m.mutex.RLock()
 
 	if m.generator != nil {
-		m.mutex.RUnlock()
+		defer m.mutex.RUnlock()
 
 		return nil
 	}
@@ -85,7 +85,7 @@ func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, err
 	m.mutex.RLock()
 
 	if cert, exists := m.cache[host]; exists {
-		m.mutex.RUnlock()
+		defer m.mutex.RUnlock()
 
 		return cert, nil
 	}

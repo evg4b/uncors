@@ -101,8 +101,9 @@ func (w *Writer) drain() {
 
 func (w *Writer) append(entry Entry) {
 	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	w.all = append(w.all, entry)
-	w.mu.Unlock()
 }
 
 func (w *Writer) flush() {
