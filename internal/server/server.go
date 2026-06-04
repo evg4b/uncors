@@ -79,13 +79,20 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 		go func(srv *PortListener) {
 			defer s.Done()
 
-			err := srv.Listen(ctx, launchWaitGroup.Done)
+			var once sync.Once
+
+			err := srv.Listen(ctx, func() { once.Do(launchWaitGroup.Done) })
+
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				launchErrorsMu.Lock()
 
 				launchErrs = append(launchErrs, err)
 				launchErrorsMu.Unlock()
 			}
+			// On bind failure onReady is never called, so we must release the
+			// wait group here (after recording the error). On a clean shutdown
+			// onReady already fired, so this is a no-op.
+			once.Do(launchWaitGroup.Done)
 		}(server)
 	}
 
