@@ -1,10 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
@@ -71,14 +71,14 @@ func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (s *StaticDirectory) Validate(field string, fs afero.Fs) error {
-	var errs *multierror.Error
+	var errs []error
 
-	errs = multierror.Append(errs, ValidatePath(joinPath(field, "path"), s.Path, false))
-	errs = multierror.Append(errs, ValidateDirectory(joinPath(field, "directory"), s.Dir, fs))
+	errs = append(errs, ValidatePath(joinPath(field, "path"), s.Path, false))
+	errs = append(errs, ValidateDirectory(joinPath(field, "directory"), s.Dir, fs))
 
 	if s.Index != "" {
-		errs = multierror.Append(errs, ValidateFile(joinPath(field, "index"), path.Join(s.Dir, s.Index), fs))
+		errs = append(errs, ValidateFile(joinPath(field, "index"), path.Join(s.Dir, s.Index), fs))
 	}
 
-	return joinErrors(errs)
+	return errors.Join(errs...)
 }

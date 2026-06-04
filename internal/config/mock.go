@@ -1,9 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 )
@@ -42,10 +42,8 @@ func (m Mocks) Clone() Mocks {
 }
 
 func (m *Mock) Validate(field string, fs afero.Fs) error {
-	var errs *multierror.Error
-
-	errs = multierror.Append(errs, m.Matcher.Validate(field))
-	errs = multierror.Append(errs, m.Response.Validate(joinPath(field, "response"), fs))
-
-	return joinErrors(errs)
+	return errors.Join(
+		m.Matcher.Validate(field),
+		m.Response.Validate(joinPath(field, "response"), fs),
+	)
 }

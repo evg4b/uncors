@@ -1,14 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"slices"
 	"strings"
 	"time"
-
-	multierror "github.com/hashicorp/go-multierror"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/urlparser"
@@ -31,21 +30,21 @@ func ValidateHost(field, value string) error {
 		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
 	}
 
-	var errs *multierror.Error
+	var errs []error
 
 	if uri.Path != "" {
-		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s must not contain a path", field)})
+		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a path", field)})
 	}
 
 	if uri.RawQuery != "" {
-		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s must not contain a query", field)})
+		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a query", field)})
 	}
 
 	if uri.Scheme != "http" && uri.Scheme != httpsScheme && uri.Scheme != "" {
-		errs = multierror.Append(errs, &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)})
+		errs = append(errs, &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)})
 	}
 
-	return joinErrors(errs)
+	return errors.Join(errs...)
 }
 
 func ValidatePath(field, value string, relative bool) error {

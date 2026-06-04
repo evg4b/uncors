@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"strings"
-
-	multierror "github.com/hashicorp/go-multierror"
 )
 
 type ValidationError struct {
@@ -27,21 +25,4 @@ func (e *TLSError) Error() string {
 	builder.WriteString("After generating CA, you can add it to your system's trusted certificates.")
 
 	return builder.String()
-}
-
-func joinErrors(errs *multierror.Error) error {
-	if errs == nil {
-		return nil
-	}
-
-	errs.ErrorFormat = func(errs []error) string {
-		msgs := make([]string, len(errs))
-		for i, e := range errs {
-			msgs[i] = e.Error()
-		}
-
-		return strings.Join(msgs, "\n")
-	}
-
-	return errs.ErrorOrNil()
 }

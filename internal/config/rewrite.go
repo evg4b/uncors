@@ -1,9 +1,8 @@
 package config
 
 import (
+	"errors"
 	"slices"
-
-	multierror "github.com/hashicorp/go-multierror"
 )
 
 type RewritingOption struct {
@@ -23,14 +22,14 @@ func (r RewriteOptions) Clone() RewriteOptions {
 }
 
 func (r RewritingOption) Validate(field string) error {
-	var errs *multierror.Error
+	var errs []error
 
-	errs = multierror.Append(errs, ValidatePath(joinPath(field, "from"), r.From, true))
-	errs = multierror.Append(errs, ValidatePath(joinPath(field, "to"), r.To, true))
+	errs = append(errs, ValidatePath(joinPath(field, "from"), r.From, true))
+	errs = append(errs, ValidatePath(joinPath(field, "to"), r.To, true))
 
 	if r.Host != "" {
-		errs = multierror.Append(errs, ValidateHost(joinPath(field, "host"), r.Host))
+		errs = append(errs, ValidateHost(joinPath(field, "host"), r.Host))
 	}
 
-	return joinErrors(errs)
+	return errors.Join(errs...)
 }

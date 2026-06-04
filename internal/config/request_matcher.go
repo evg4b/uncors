@@ -1,7 +1,7 @@
 package config
 
 import (
-	multierror "github.com/hashicorp/go-multierror"
+	"errors"
 
 	"github.com/evg4b/uncors/internal/helpers"
 )
@@ -27,10 +27,8 @@ func (r *RequestMatcher) IsPathOnly() bool {
 }
 
 func (r *RequestMatcher) Validate(field string) error {
-	var errs *multierror.Error
-
-	errs = multierror.Append(errs, ValidatePath(joinPath(field, "path"), r.Path, false))
-	errs = multierror.Append(errs, ValidateMethod(joinPath(field, "method"), r.Method, true))
-
-	return joinErrors(errs)
+	return errors.Join(
+		ValidatePath(joinPath(field, "path"), r.Path, false),
+		ValidateMethod(joinPath(field, "method"), r.Method, true),
+	)
 }

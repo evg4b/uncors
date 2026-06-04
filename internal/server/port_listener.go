@@ -14,13 +14,11 @@ type PortListener struct {
 	manager *HostCertManager
 }
 
-func (ps *PortListener) Listen(ctx context.Context, onReady func(error)) error {
+func (ps *PortListener) Listen(ctx context.Context, onReady func()) error {
 	var listenConfig net.ListenConfig
 
 	listener, err := listenConfig.Listen(ctx, "tcp", ps.target.Address)
 	if err != nil {
-		onReady(err)
-
 		return err
 	}
 
@@ -31,7 +29,7 @@ func (ps *PortListener) Listen(ctx context.Context, onReady func(error)) error {
 		})
 	}
 
-	onReady(nil)
+	onReady()
 
 	return ps.Serve(listener)
 }

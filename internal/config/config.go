@@ -1,9 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
@@ -90,14 +90,14 @@ func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
 		return &ValidationError{"mappings must not be empty"}
 	}
 
-	var errs *multierror.Error
+	var errs []error
 
 	for i, mapping := range cfg.Mappings {
-		errs = multierror.Append(errs, mapping.Validate(joinPath("mappings", index(i)), fs))
+		errs = append(errs, mapping.Validate(joinPath("mappings", index(i)), fs))
 	}
 
-	errs = multierror.Append(errs, ValidateProxy("proxy", cfg.Proxy))
-	errs = multierror.Append(errs, cfg.CacheConfig.Validate("cache-config"))
+	errs = append(errs, ValidateProxy("proxy", cfg.Proxy))
+	errs = append(errs, cfg.CacheConfig.Validate("cache-config"))
 
-	return joinErrors(errs)
+	return errors.Join(errs...)
 }

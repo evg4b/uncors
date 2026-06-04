@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -13,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
 )
 
@@ -72,61 +70,62 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 	launchWaitGroup.Add(len(s.listeners))
 
 	var (
-		errMu        sync.Mutex
-		launchErrors *multierror.Error
+		launchErrorsMu sync.Mutex
+		launchErrs     []error
 	)
 
 	for _, server := range s.listeners {
-		s.Go(func() {
-			var startupFailed bool
+		s.Add(1)
+		go func(srv *PortListener) {
+			defer s.Done()
 
-			err := server.Listen(ctx, func(listenErr error) {
-				if listenErr != nil {
-					startupFailed = true
+			err := srv.Listen(ctx, launchWaitGroup.Done)
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				launchErrorsMu.Lock()
 
-					errMu.Lock()
-					defer errMu.Unlock()
-
-					launchErrors = multierror.Append(launchErrors, listenErr)
-				}
-
-				launchWaitGroup.Done()
-			})
-
-			if !startupFailed && err != nil && !errors.Is(err, http.ErrServerClosed) {
-				errMu.Lock()
-				defer errMu.Unlock()
-
-				launchErrors = multierror.Append(launchErrors, err)
+				launchErrs = append(launchErrs, err)
+				launchErrorsMu.Unlock()
 			}
-		})
+		}(server)
 	}
 
 	launchWaitGroup.Wait()
 
-	return launchErrors.ErrorOrNil()
+	launchErrorsMu.Lock()
+	err := errors.Join(launchErrs...)
+	launchErrorsMu.Unlock()
+
+	return err
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
-	var waitGroup sync.WaitGroup
-
-	var errors *multierror.Error
+	var (
+		waitGroup sync.WaitGroup
+		errsMu    sync.Mutex
+		errs      []error
+	)
 
 	for _, server := range s.listeners {
-		waitGroup.Go(func() {
-			err := server.Shutdown(ctx)
+		waitGroup.Add(1)
+		go func(srv *PortListener) {
+			defer waitGroup.Done()
+
+			err := srv.Shutdown(ctx)
 			if err != nil {
-				errors = multierror.Append(errors, err)
+				errsMu.Lock()
+
+				errs = append(errs, err)
+				errsMu.Unlock()
 			}
-		})
+		}(server)
 	}
 
 	waitGroup.Wait()
 
-	return errors.ErrorOrNil()
+	return errors.Join(errs...)
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
@@ -143,16 +142,16 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) Close() error {
-	var errors *multierror.Error
+	var errs []error
 
 	for _, pl := range s.listeners {
 		err := pl.Close()
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			errs = append(errs, err)
 		}
 	}
 
-	return errors.ErrorOrNil()
+	return errors.Join(errs...)
 }
 
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
@@ -183,7 +182,6 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 
 	err := handler.ServeHTTP(responseWriter, request.WithContext(ctx))
 	if err != nil {
-		log.Printf("Handler error: %v", err)
 		infra.HTTPError(responseWriter, err)
 	}
 

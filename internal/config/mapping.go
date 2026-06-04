@@ -7,7 +7,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlparser"
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -139,33 +138,33 @@ func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
 }
 
 func (m *Mapping) Validate(field string, fs afero.Fs) error {
-	var errs *multierror.Error
+	errs := make([]error, 0, 5+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
 
-	errs = multierror.Append(errs, ValidateHost(joinPath(field, "from"), m.From))
-	errs = multierror.Append(errs, ValidateHost(joinPath(field, "to"), m.To))
-	errs = multierror.Append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
-	errs = multierror.Append(errs, m.HAR.Validate(joinPath(field, "har")))
-	errs = multierror.Append(errs, ValidateTLS(field, *m, fs))
+	errs = append(errs, ValidateHost(joinPath(field, "from"), m.From))
+	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To))
+	errs = append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
+	errs = append(errs, m.HAR.Validate(joinPath(field, "har")))
+	errs = append(errs, ValidateTLS(field, *m, fs))
 
 	for i, static := range m.Statics {
-		errs = multierror.Append(errs, static.Validate(joinPath(field, "statics", index(i)), fs))
+		errs = append(errs, static.Validate(joinPath(field, "statics", index(i)), fs))
 	}
 
 	for i, mock := range m.Mocks {
-		errs = multierror.Append(errs, mock.Validate(joinPath(field, "mocks", index(i)), fs))
+		errs = append(errs, mock.Validate(joinPath(field, "mocks", index(i)), fs))
 	}
 
 	for i, glob := range m.Cache {
-		errs = multierror.Append(errs, ValidateGlobPattern(joinPath(field, "cache", index(i)), glob))
+		errs = append(errs, ValidateGlobPattern(joinPath(field, "cache", index(i)), glob))
 	}
 
 	for i, rewrite := range m.Rewrites {
-		errs = multierror.Append(errs, rewrite.Validate(joinPath(field, "rewrite", index(i))))
+		errs = append(errs, rewrite.Validate(joinPath(field, "rewrite", index(i))))
 	}
 
 	for i, script := range m.Scripts {
-		errs = multierror.Append(errs, script.Validate(joinPath(field, "scripts", index(i)), fs))
+		errs = append(errs, script.Validate(joinPath(field, "scripts", index(i)), fs))
 	}
 
-	return joinErrors(errs)
+	return errors.Join(errs...)
 }
