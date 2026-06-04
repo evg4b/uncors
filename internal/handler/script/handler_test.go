@@ -47,7 +47,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 
 			recorder := httptest.NewRecorder()
 
-			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+			handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 			assert.Equal(t, testCase.expectedStatus, recorder.Code)
 			assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
@@ -234,7 +234,7 @@ response:WriteString("Error response")
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, testCase.expectedStatus, recorder.Code)
 				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
@@ -323,7 +323,7 @@ response:WriteString("Body: " .. request.body)
 				)
 
 				recorder := httptest.NewRecorder()
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
 			})
@@ -351,7 +351,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 		})
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "id: 123, action: edit", testutils.ReadBody(t, recorder))
@@ -374,7 +374,7 @@ response:WriteString("OK")
 
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		// Check CORS headers are set (when Origin is set, it should be returned)
 		assert.Equal(t, hosts.Example.HTTP(), recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -427,7 +427,8 @@ response:WriteString(x.field)  -- This will cause an error
 				recorder := httptest.NewRecorder()
 
 				responseWriter := contracts.WrapResponseWriter(recorder)
-				handlerErr := handler.ServeHTTP(responseWriter, req)
+
+				handlerErr := handler.ServeHTTP(responseWriter, req) //nolint:errcheck
 				if handlerErr != nil {
 					infra.HTTPError(responseWriter, handlerErr)
 				}
@@ -452,7 +453,7 @@ response:WriteString("Default status")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Default status", testutils.ReadBody(t, recorder))
@@ -473,7 +474,7 @@ response:WriteHeader(204)
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusNoContent, recorder.Code)
 		assert.Empty(t, testutils.ReadBody(t, recorder))
@@ -497,7 +498,7 @@ response:WriteString(result)
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "apple, banana, cherry", testutils.ReadBody(t, recorder))
@@ -598,7 +599,7 @@ response:WriteString("old and new")
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, testCase.expectedStatus, recorder.Code)
 				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
@@ -646,7 +647,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
@@ -723,7 +724,7 @@ end
 				req.URL.RawQuery = parsedQuery.Encode()
 
 				recorder := httptest.NewRecorder()
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
@@ -798,7 +799,7 @@ end
 				}
 
 				recorder := httptest.NewRecorder()
-				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+				handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, testCase.expectedBody, testutils.ReadBody(t, recorder))
@@ -823,7 +824,7 @@ response:WriteString("Status not writable")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Status not writable", testutils.ReadBody(t, recorder))
@@ -844,7 +845,7 @@ response:WriteString("Actual body")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Actual body", testutils.ReadBody(t, recorder))
@@ -865,7 +866,7 @@ response:WriteString("Custom: " .. response.custom_field)
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Custom: custom_value", testutils.ReadBody(t, recorder))
@@ -886,7 +887,7 @@ response:WriteString("First status wins")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "First status wins", testutils.ReadBody(t, recorder))
@@ -905,7 +906,7 @@ response:Write("Auto status")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Auto status", testutils.ReadBody(t, recorder))
@@ -924,7 +925,7 @@ response:WriteString("Auto status with string")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Auto status with string", testutils.ReadBody(t, recorder))
@@ -946,7 +947,7 @@ response:WriteString("Value: " .. value)
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "Value: TestValue", testutils.ReadBody(t, recorder))
@@ -967,7 +968,7 @@ response:WriteString("Header set")
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "CustomValue", recorder.Header().Get("X-Custom"))
@@ -989,7 +990,7 @@ response:WriteString("CT: " .. ct)
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req)
+		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "CT: text/plain", testutils.ReadBody(t, recorder))

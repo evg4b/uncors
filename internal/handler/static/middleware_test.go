@@ -119,7 +119,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -137,7 +137,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -164,7 +164,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -182,7 +182,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{
+					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -206,6 +206,7 @@ func TestStaticMiddleware(t *testing.T) {
 			testutils.CheckNoError(t, err)
 
 			responseWriter := contracts.WrapResponseWriter(recorder)
+
 			handlerErr := handler.ServeHTTP(responseWriter, &http.Request{
 				Method: http.MethodGet,
 				URL:    requestURI,

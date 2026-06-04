@@ -186,8 +186,8 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				middleware.Wrap(mockedNextHandler).
-					ServeHTTP(
+				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+									ServeHTTP(
 						contracts.WrapResponseWriter(recorder),
 						request,
 					)
@@ -208,8 +208,8 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		middleware.Wrap(mockedNextHandler).
-			ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+							ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,
 			)
@@ -234,8 +234,8 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		middleware.Wrap(mockedNextHandler).
-			ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+							ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,
 			)
@@ -256,8 +256,8 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		middleware.Wrap(mockedNextHandler).
-			ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+							ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,
 			)
@@ -281,8 +281,8 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		middleware.Wrap(mockedNextHandler).
-			ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+							ServeHTTP(
 				contracts.WrapResponseWriter(recorder),
 				request,
 			)
@@ -319,8 +319,8 @@ func TestMiddleware(t *testing.T) {
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil) //nolint: errcheck
 
-				middleware.Wrap(mockedNextHandler).
-					ServeHTTP(response, request)
+				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
+									ServeHTTP(response, request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Empty(t, recorder.Header())

@@ -230,7 +230,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 						assert.Equal(t, 200, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -243,7 +243,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
@@ -255,6 +255,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				helpers.NormaliseRequest(request)
 
 				responseWriter := contracts.WrapResponseWriter(recorder)
+
 				err := uncorsHandler.ServeHTTP(responseWriter, request)
 				if err != nil {
 					infra.HTTPError(responseWriter, err)
@@ -291,7 +292,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 						assert.Equal(t, http.StatusOK, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -304,7 +305,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
-				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
@@ -345,7 +346,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
-					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 					assert.Equal(t, testCase.expectedCode, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -359,6 +360,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			helpers.NormaliseRequest(request)
 
 			responseWriter := contracts.WrapResponseWriter(recorder)
+
 			err := uncorsHandler.ServeHTTP(responseWriter, request)
 			if err != nil {
 				infra.HTTPError(responseWriter, err)
@@ -414,7 +416,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 					recorder := httptest.NewRecorder()
 
-					requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+					requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 					body := testutils.ReadBody(t, recorder)
 					assert.Equal(t, http.StatusOK, recorder.Code)
@@ -470,7 +472,7 @@ func TestMockMiddleware(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 						recorder := httptest.NewRecorder()
 
-						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 						assert.Equal(t, expectedCode, recorder.Code)
 						assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
@@ -481,7 +483,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Empty(t, testutils.ReadBody(t, recorder))
@@ -492,7 +494,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -609,7 +611,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -712,7 +714,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -838,7 +840,7 @@ func TestMockMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)

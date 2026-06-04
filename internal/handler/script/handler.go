@@ -26,6 +26,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	err := h.executeScript(writer, request)
 	if err != nil {
 		h.output.Errorf("Script handler error: %v", err)
+
 		return err
 	}
 

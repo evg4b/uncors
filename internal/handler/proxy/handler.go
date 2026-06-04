@@ -33,10 +33,11 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 	err := h.handle(response, request)
 	if err != nil {
 		if request.Context().Err() != nil {
-			return nil
+			return err
 		}
 
 		h.output.Errorf("Proxy handler error: %v", err)
+
 		return err
 	}
 

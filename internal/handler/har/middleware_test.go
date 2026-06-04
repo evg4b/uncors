@@ -93,7 +93,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/path"))
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/path")) //nolint:errcheck
 
 		assert.True(t, called)
 		assert.Equal(t, http.StatusOK, rec.Code)
@@ -111,7 +111,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/"))
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/")) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -129,7 +129,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -160,7 +160,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		require.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
 
 		assert.Equal(t, body, received)
 	})
@@ -181,7 +181,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -221,7 +221,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.TLS = &tls.ConnectionState{}
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -249,7 +249,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req)
+		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -301,7 +301,7 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 			})
 
 			rec := httptest.NewRecorder()
-			mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/api"))
+			mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/api")) //nolint:errcheck
 
 			require.NoError(t, harWriter.Close())
 

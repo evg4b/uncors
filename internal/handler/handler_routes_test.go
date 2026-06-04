@@ -54,6 +54,7 @@ func TestHandlerWithOutput(t *testing.T) {
 		helpers.NormaliseRequest(request)
 
 		responseWriter := contracts.WrapResponseWriter(recorder)
+
 		err := requestHandler.ServeHTTP(responseWriter, request)
 		if err != nil {
 			infra.HTTPError(responseWriter, err)
@@ -89,7 +90,7 @@ func TestHandlerWithScripts(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/script", nil)
 
-		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 		assert.Equal(t, http.StatusAccepted, recorder.Code)
 	})
@@ -137,7 +138,7 @@ func TestHandlerWithRewrites(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/v1/resource", nil)
 		helpers.NormaliseRequest(request)
 
-		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
@@ -174,7 +175,7 @@ func TestHandlerWithCache(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/data", nil)
 		helpers.NormaliseRequest(request)
-		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
@@ -212,7 +213,7 @@ func TestHandlerWithOptionsDisabled(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "http://localhost/api", nil)
 		helpers.NormaliseRequest(request)
 
-		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request)
+		requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
 
 		assert.Equal(t, http.StatusNoContent, recorder.Code)
 	})

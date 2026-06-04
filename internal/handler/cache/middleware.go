@@ -37,7 +37,11 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	})
 }
 
-func (m *Middleware) cacheRequest(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Handler) error {
+func (m *Middleware) cacheRequest(
+	writer contracts.ResponseWriter,
+	request *contracts.Request,
+	next contracts.Handler,
+) error {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {

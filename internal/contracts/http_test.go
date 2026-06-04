@@ -29,7 +29,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 		responseWriter := contracts.WrapResponseWriter(recorder)
 
 		assert.NotPanics(t, func() {
-			handler.ServeHTTP(responseWriter, request)
+			handler.ServeHTTP(responseWriter, request) //nolint:errcheck
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
 	})
@@ -38,7 +38,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		assert.PanicsWithValue(t, contracts.ErrResponseNotCasted, func() {
-			handler.ServeHTTP(recorder, request)
+			handler.ServeHTTP(recorder, request) //nolint:errcheck
 		})
 	})
 }
@@ -57,7 +57,7 @@ func TestHandlerFunc(t *testing.T) {
 	responseWriter := contracts.WrapResponseWriter(recorder)
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
 
-	uncorsHandler.ServeHTTP(responseWriter, request)
+	uncorsHandler.ServeHTTP(responseWriter, request) //nolint:errcheck
 
 	assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 }

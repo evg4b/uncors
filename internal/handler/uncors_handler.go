@@ -73,7 +73,7 @@ func NewUncorsRequestHandler(options ...RequestHandlerOption) *RequestHandler {
 		setDefaultHandler(router, defaultHandler)
 	}
 
-	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(writer contracts.ResponseWriter, r *http.Request) error {
+	setDefaultHandler(handler.Router, contracts.HandlerFunc(func(_ contracts.ResponseWriter, r *http.Request) error {
 		handler.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
 		log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
 

@@ -42,6 +42,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			}
 
 			log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
+
 			return err
 		}
 
