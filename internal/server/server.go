@@ -30,12 +30,14 @@ type Server struct {
 
 	listeners []*PortListener
 	manager   *HostCertManager
+	Tracker   *RequestTracker
 }
 
 func New(manager *HostCertManager) *Server {
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
+		Tracker:   NewRequestTracker(),
 	}
 }
 

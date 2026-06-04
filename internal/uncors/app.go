@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
@@ -22,9 +23,7 @@ type Uncors struct {
 	fs      afero.Fs
 	version string
 	output  contracts.Output
-	server  *server.Server
-
-	tracker *server.RequestTracker
+	Server  *server.Server
 
 	cacheStorage contracts.Cache
 	closers      []io.Closer
@@ -35,13 +34,12 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		fs:      fs,
 		version: version,
 		output:  output,
-		server:  server.New(server.NewHostCertManager(fs)),
-		tracker: server.NewRequestTracker(),
+		Server:  server.New(server.NewHostCertManager(fs)),
 	}
 }
 
 func (app *Uncors) WithTracker(tracker *server.RequestTracker) *Uncors {
-	app.tracker = tracker
+	app.Server.Tracker = tracker
 
 	return app
 }
@@ -56,7 +54,7 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 
 	targets := app.mappingsToTarget(uncorsConfig)
 
-	return app.server.Start(ctx, targets)
+	return app.Server.Start(ctx, targets)
 }
 
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
@@ -70,7 +68,7 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 	targets := app.mappingsToTarget(uncorsConfig)
 
-	err := app.server.Restart(ctx, targets)
+	err := app.Server.Restart(ctx, targets)
 	if err != nil {
 		return err
 	}
@@ -90,15 +88,15 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 func (app *Uncors) Close() error {
 	app.closeAll()
 
-	return app.server.Close()
+	return app.Server.Close()
 }
 
 func (app *Uncors) Wait() {
-	app.server.Wait()
+	app.Server.Wait()
 }
 
 func (app *Uncors) Shutdown(ctx context.Context) error {
-	return app.server.Shutdown(ctx)
+	return app.Server.Shutdown(ctx)
 }
 
 // getCacheStorage lazily builds a single cache shared by every cache-enabled
@@ -130,8 +128,19 @@ func (app *Uncors) closeAll() {
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.Target {
 	return lo.Map(uncorsConfig.Mappings.GroupByPort(), func(group config.PortGroup, _ int) server.Target {
-		handler := app.buildHandlerForMappings(uncorsConfig, group.Mappings)
-		trackedHandler := app.tracker.Wrap(handler)
+		handler := handler.NewUncorsRequestHandler(
+			handler.WithMappings(group.Mappings),
+			handler.WithProxyHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
+			handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
+			handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
+			handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
+			handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
+			handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
+			handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
+			handler.WithOutput(app.output),
+			handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
+		)
+		trackedHandler := app.Server.Tracker.Wrap(handler)
 
 		return server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),

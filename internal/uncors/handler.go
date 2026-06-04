@@ -21,23 +21,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (app *Uncors) buildHandlerForMappings(
-	config *config.UncorsConfig, mappings config.Mappings,
-) *handler.RequestHandler {
-	return handler.NewUncorsRequestHandler(
-		handler.WithMappings(mappings),
-		handler.WithProxyHandler(app.buildProxyHandler(config, mappings)),
-		handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(config.CacheConfig)),
-		handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
-		handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
-		handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
-		handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
-		handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
-		handler.WithOutput(app.output),
-		handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
-	)
-}
-
 func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings config.Mappings) contracts.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
 
