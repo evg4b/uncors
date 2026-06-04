@@ -34,7 +34,7 @@ func CreateUncors(fs afero.Fs, output contracts.Output, version string) *Uncors 
 		fs:      fs,
 		version: version,
 		output:  output,
-		server:  server.New(server.NewHostCertManager(fs)),
+		server:  server.New(server.NewHostCertManager(fs), server.NewRequestTracker()),
 	}
 }
 

@@ -33,11 +33,11 @@ type Server struct {
 	tracker   *RequestTracker
 }
 
-func New(manager *HostCertManager) *Server {
+func New(manager *HostCertManager, tracker *RequestTracker) *Server {
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
-		tracker:   NewRequestTracker(),
+		tracker:   tracker,
 	}
 }
 

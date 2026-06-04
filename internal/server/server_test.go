@@ -74,7 +74,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -120,7 +120,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(fs)
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -175,7 +175,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(fs)
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
 		defer func() {
@@ -199,7 +199,7 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -225,7 +225,7 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -249,7 +249,7 @@ func TestServer(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -279,7 +279,7 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 
 		queue.Track("server started")
 
@@ -338,7 +338,7 @@ func TestServer(t *testing.T) {
 		t.Cleanup(func() { ln.Close() })
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		err = instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
