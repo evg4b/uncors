@@ -35,7 +35,10 @@ func TestRequestTracker_Wrap(t *testing.T) {
 			close(handlerDone)
 		}))
 
-		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
+		go wrapped.ServeHTTP(
+			contracts.WrapResponseWriter(makeWriter()),
+			makeRequest(http.MethodGet, "http://example.com/path"),
+		)
 
 		event := <-tracker.Events()
 
@@ -59,7 +62,10 @@ func TestRequestTracker_Wrap(t *testing.T) {
 			close(handlerDone)
 		}))
 
-		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodPost, "http://example.com/api"))
+		go wrapped.ServeHTTP(
+			contracts.WrapResponseWriter(makeWriter()),
+			makeRequest(http.MethodPost, "http://example.com/api"),
+		)
 
 		startEv := <-tracker.Events()
 		require.False(t, startEv.Done)
@@ -83,7 +89,10 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		tracker := server.NewRequestTracker()
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
-		go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodDelete, "http://host.local/resource?q=1"))
+		go wrapped.ServeHTTP(
+			contracts.WrapResponseWriter(makeWriter()),
+			makeRequest(http.MethodDelete, "http://host.local/resource?q=1"),
+		)
 
 		event := <-tracker.Events()
 		<-tracker.Events() // done
@@ -101,7 +110,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 			calls++
 		}))
 
-		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/"))
+		wrapped.ServeHTTP(contracts.WrapResponseWriter(makeWriter()), makeRequest(http.MethodGet, "http://example.com/"))
 		<-tracker.Events()
 		<-tracker.Events()
 
@@ -122,7 +131,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		}))
 
 		for range requestCount {
-			go wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/"))
+			go wrapped.ServeHTTP(contracts.WrapResponseWriter(makeWriter()), makeRequest(http.MethodGet, "http://example.com/"))
 		}
 
 		seen := make(map[uint64]bool)
@@ -148,7 +157,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 		ids := make([]uint64, 0, 5)
 
 		for range 5 {
-			wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/"))
+			wrapped.ServeHTTP(contracts.WrapResponseWriter(makeWriter()), makeRequest(http.MethodGet, "http://example.com/"))
 
 			ev := <-tracker.Events()
 			ids = append(ids, ev.ID)
@@ -172,7 +181,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 			}
 		}))
 
-		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
+		wrapped.ServeHTTP(contracts.WrapResponseWriter(makeWriter()), makeRequest(http.MethodGet, "http://example.com/path"))
 
 		<-tracker.Events() // start
 		<-tracker.Events() // prefix update
@@ -190,7 +199,7 @@ func TestRequestTracker_Wrap(t *testing.T) {
 
 		wrapped := tracker.Wrap(contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) {}))
 
-		wrapped.ServeHTTP(makeWriter(), makeRequest(http.MethodGet, "http://example.com/path"))
+		wrapped.ServeHTTP(contracts.WrapResponseWriter(makeWriter()), makeRequest(http.MethodGet, "http://example.com/path"))
 
 		<-tracker.Events() // start
 		doneEv := <-tracker.Events()

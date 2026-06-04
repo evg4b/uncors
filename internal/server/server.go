@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
@@ -20,7 +21,7 @@ const (
 
 type Target struct {
 	Address   string
-	Handler   http.Handler
+	Handler   contracts.Handler
 	EnableTLS bool
 }
 
@@ -50,7 +51,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 				ReadHeaderTimeout: readHeaderTimeout,
 				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 					helpers.NormaliseRequest(request)
-					target.Handler.ServeHTTP(writer, request)
+					target.Handler.ServeHTTP(contracts.WrapResponseWriter(writer), request)
 				}),
 			},
 			target:  &target,

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"net/http"
 	"net/url"
 	"sync/atomic"
 	"time"
@@ -49,10 +48,8 @@ func (t *RequestTracker) Emit(event RequestEvent) {
 	}
 }
 
-func (t *RequestTracker) Wrap(handler contracts.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		writer := contracts.WrapResponseWriter(w)
-
+func (t *RequestTracker) Wrap(handler contracts.Handler) contracts.Handler {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, req *contracts.Request) {
 		requestID := t.nextID.Add(1)
 		select {
 		case t.events <- RequestEvent{

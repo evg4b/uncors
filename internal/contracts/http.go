@@ -50,3 +50,9 @@ func CastToHTTPHandler(handler Handler) http.Handler {
 		handler.ServeHTTP(writer, request)
 	})
 }
+
+func CastToContractsHandler(handler http.Handler) Handler {
+	return HandlerFunc(func(writer ResponseWriter, request *Request) {
+		handler.ServeHTTP(writer, request)
+	})
+}
