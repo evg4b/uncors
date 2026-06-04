@@ -1,14 +1,10 @@
 package server
 
 import (
-	"context"
-	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 const requestEventsBufferSize = 1000
@@ -25,7 +21,6 @@ type RequestEvent struct {
 
 type RequestTracker struct {
 	events chan RequestEvent
-	nextID atomic.Uint64
 }
 
 func NewRequestTracker() *RequestTracker {
@@ -47,41 +42,4 @@ func (t *RequestTracker) Emit(event RequestEvent) {
 	case t.events <- event:
 	default:
 	}
-}
-
-func (t *RequestTracker) Wrap(handler contracts.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		writer := contracts.WrapResponseWriter(w)
-
-		requestID := t.nextID.Add(1)
-		select {
-		case t.events <- RequestEvent{
-			ID:        requestID,
-			Method:    req.Method,
-			URL:       req.URL,
-			StartedAt: time.Now(),
-		}:
-		default:
-		}
-
-		var lastPrefix string
-
-		ctx := context.WithValue(req.Context(), contracts.PrefixUpdaterKey, func(p string) {
-			lastPrefix = p
-			select {
-			case t.events <- RequestEvent{ID: requestID, Prefix: p}:
-			default:
-			}
-		})
-
-		handler.ServeHTTP(writer, req.WithContext(ctx))
-
-		data := helpers.ToRequestData(req, helpers.NormaliseStatusCode(writer.StatusCode()))
-		data.Cancelled = ctx.Err() != nil
-
-		select {
-		case t.events <- RequestEvent{ID: requestID, Done: true, Prefix: lastPrefix, Data: data}:
-		default:
-		}
-	})
 }

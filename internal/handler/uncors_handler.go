@@ -93,9 +93,14 @@ func (h *RequestHandler) createHandler(response config.Response) http.Handler {
 	)
 }
 
+func (h *RequestHandler) registerRoute(route *mux.Route, handler contracts.Handler) {
+	route.Handler(contracts.CastToHTTPHandler(handler))
+}
+
 func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
-	router.NotFoundHandler = contracts.CastToHTTPHandler(handler)
-	router.MethodNotAllowedHandler = contracts.CastToHTTPHandler(handler)
+	httpHandler := contracts.CastToHTTPHandler(handler)
+	router.NotFoundHandler = httpHandler
+	router.MethodNotAllowedHandler = httpHandler
 }
 
 const wildcard = "*"

@@ -6,8 +6,10 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/hashicorp/go-multierror"
 	"github.com/samber/lo"
@@ -20,7 +22,7 @@ const (
 
 type Target struct {
 	Address   string
-	Handler   http.Handler
+	Handler   contracts.Handler
 	EnableTLS bool
 }
 
@@ -29,12 +31,15 @@ type Server struct {
 
 	listeners []*PortListener
 	manager   *HostCertManager
+	tracker   *RequestTracker
+	nextID    atomic.Uint64
 }
 
-func New(manager *HostCertManager) *Server {
+func New(manager *HostCertManager, tracker *RequestTracker) *Server {
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
+		tracker:   tracker,
 	}
 }
 
@@ -49,8 +54,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 				},
 				ReadHeaderTimeout: readHeaderTimeout,
 				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-					helpers.NormaliseRequest(request)
-					target.Handler.ServeHTTP(writer, request)
+					s.handleRequest(target.Handler, writer, request)
 				}),
 			},
 			target:  &target,
@@ -79,10 +83,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 					startupFailed = true
 
 					errMu.Lock()
+					defer errMu.Unlock()
 
 					launchErrors = multierror.Append(launchErrors, listenErr)
-
-					errMu.Unlock()
 				}
 
 				launchWaitGroup.Done()
@@ -90,10 +93,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 
 			if !startupFailed && err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errMu.Lock()
+				defer errMu.Unlock()
 
 				launchErrors = multierror.Append(launchErrors, err)
-
-				errMu.Unlock()
 			}
 		})
 	}
@@ -149,4 +151,41 @@ func (s *Server) Close() error {
 	}
 
 	return errors.ErrorOrNil()
+}
+
+func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
+	helpers.NormaliseRequest(request)
+
+	responseWriter := contracts.WrapResponseWriter(writer)
+
+	requestID := s.nextID.Add(1)
+	select {
+	case s.tracker.events <- RequestEvent{
+		ID:        requestID,
+		Method:    request.Method,
+		URL:       request.URL,
+		StartedAt: time.Now(),
+	}:
+	default:
+	}
+
+	var lastPrefix string
+
+	ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(p string) {
+		lastPrefix = p
+		select {
+		case s.tracker.events <- RequestEvent{ID: requestID, Prefix: p}:
+		default:
+		}
+	})
+
+	handler.ServeHTTP(responseWriter, request.WithContext(ctx))
+
+	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(responseWriter.StatusCode()))
+	data.Cancelled = ctx.Err() != nil
+
+	select {
+	case s.tracker.events <- RequestEvent{ID: requestID, Done: true, Prefix: lastPrefix, Data: data}:
+	default:
+	}
 }

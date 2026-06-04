@@ -117,6 +117,7 @@ func TestGracefulShutdown(t *testing.T) {
 
 				<-time.After(50 * time.Millisecond)
 				env.Lock()
+				defer env.Unlock()
 
 				systemSig <- testCase.signal
 
@@ -154,12 +155,12 @@ func TestGracefulShutdown(t *testing.T) {
 
 		<-time.After(50 * time.Millisecond)
 		env.Lock()
+		defer env.Unlock()
 
 		systemSig <- syscall.SIGINT
 
 		env.CheckAfterAll(func() {
 			assert.True(t, called)
 		})
-		env.Unlock()
 	}))
 }

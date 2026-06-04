@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -25,7 +26,7 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
 		assert.NoError(t, err)
@@ -73,7 +74,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -119,7 +120,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(fs)
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -174,7 +175,7 @@ func TestServer(t *testing.T) {
 		})
 
 		manager := server.NewHostCertManager(fs)
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
 		defer func() {
@@ -198,7 +199,7 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -224,7 +225,7 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
@@ -248,7 +249,7 @@ func TestServer(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -278,14 +279,14 @@ func TestServer(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 
 		queue.Track("server started")
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),
-				Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
@@ -337,7 +338,7 @@ func TestServer(t *testing.T) {
 		t.Cleanup(func() { ln.Close() })
 
 		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager)
+		instance := server.New(manager, server.NewRequestTracker())
 		err = instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port),

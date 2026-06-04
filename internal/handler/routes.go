@@ -23,9 +23,7 @@ func (h *RequestHandler) makeStaticRoutes(
 			Handler(http.RedirectHandler(path, http.StatusTemporaryRedirect))
 
 		middleware := h.staticMiddlewareFactory(path, staticDir)
-		router.NewRoute().
-			PathPrefix(path).
-			Handler(contracts.CastToHTTPHandler(middleware.Wrap(next)))
+		h.registerRoute(router.NewRoute().PathPrefix(path), middleware.Wrap(next))
 	}
 }
 
@@ -40,7 +38,7 @@ func (h *RequestHandler) makeMockedRoutes(router *mux.Router, mocks config.Mocks
 func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scripts) {
 	matcher := func(def config.Script) *config.RequestMatcher { return &def.Matcher }
 	register := func(def config.Script) {
-		h.createRoute(router, def.Matcher).Handler(contracts.CastToHTTPHandler(h.scriptHandlerFactory(def)))
+		h.registerRoute(h.createRoute(router, def.Matcher), h.scriptHandlerFactory(def))
 	}
 	registerMatchedRoutes(scripts, matcher, register)
 }
@@ -73,10 +71,10 @@ func (h *RequestHandler) makeRewrittenRoutes(
 		path := clearPath + "/"
 
 		middleware := h.rewriteMiddlewareFactory(rewrite)
-		handler := contracts.CastToHTTPHandler(middleware.Wrap(next))
+		wrappedHandler := middleware.Wrap(next)
 
-		router.NewRoute().Path(clearPath).Handler(handler)
-		router.NewRoute().PathPrefix(path).Handler(handler)
+		h.registerRoute(router.NewRoute().Path(clearPath), wrappedHandler)
+		h.registerRoute(router.NewRoute().PathPrefix(path), wrappedHandler)
 	}
 }
 
