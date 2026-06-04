@@ -196,6 +196,12 @@ func runInteractive(fs afero.Fs, configPath string, cfg *config.UncorsConfig) in
 	return 0
 }
 
+const (
+	logFileName  = "uncors.log"
+	logFileFlags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
+	logFilePerm  = 0o644
+)
+
 // loadConfiguration loads and validates the configuration from CLI args and the
 // config file. It panics on any error so that the PanicInterceptor in run() can
 // display a human-readable message and exit cleanly.
@@ -206,7 +212,7 @@ func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
 	}
 
 	if uncorsConfig.Debug {
-		logFile, err := os.OpenFile("uncors.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+		logFile, err := os.OpenFile(logFileName, logFileFlags, logFilePerm)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to open log file: %v", err))
 		}
