@@ -13,3 +13,4 @@ tools/fakedata/scheme.json
 tools/fakedata/docs.md
 .vscode
 cover.out
+*.log
