@@ -14,10 +14,3 @@ type (
 	OptionsMiddlewareFactory = func(options config.OptionsHandling) contracts.Middleware
 	HARMiddlewareFactory     = func(harConfig config.HARConfig) contracts.Middleware
 )
-
-// MiddlewareFunc adapts an ordinary func into a contracts.Middleware.
-type MiddlewareFunc func(contracts.Handler) contracts.Handler
-
-func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {
-	return f(next)
-}

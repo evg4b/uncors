@@ -123,7 +123,7 @@ func scriptHandlerFactory() handler.ScriptHandlerFactory {
 
 func rewriteFactory() handler.RewriteMiddlewareFactory {
 	return func(_ config.RewritingOption) contracts.Middleware {
-		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			return next
 		})
 	}
