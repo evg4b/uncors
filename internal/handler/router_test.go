@@ -115,13 +115,14 @@ func scriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(_ config.Script) contracts.Handler {
 		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 			w.WriteHeader(http.StatusAccepted)
+
 			return nil
 		})
 	}
 }
 
 func rewriteFactory() handler.RewriteMiddlewareFactory {
-	return func(rewriting config.RewritingOption) contracts.Middleware {
+	return func(_ config.RewritingOption) contracts.Middleware {
 		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			return next
 		})
@@ -135,7 +136,7 @@ func (m *noopMiddleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func noopHARFactory() handler.HARMiddlewareFactory {
-	return func(har config.HARConfig) contracts.Middleware {
+	return func(_ config.HARConfig) contracts.Middleware {
 		return &noopMiddleware{}
 	}
 }
