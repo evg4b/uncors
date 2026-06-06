@@ -7,19 +7,126 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
+	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var (
+	mock1Body = `{"mock": "mock number 1"}`
+	mock2Body = `{"mock": "mock number 2"}`
+	mock3Body = `{"mock": "mock number 3"}`
+	mock4Body = `{"mock": "mock number 4"}`
+
+	backgroundPng = "background.png"
+	iconsSvg      = "icons.svg"
+	indexJS       = "index.js"
+	styleCSS      = "styles.css"
+	indexHTML     = "index.html"
+	mockJSON      = "mock.json"
+
+	api     = "http://localhost/api"
+	apiUser = "https://localhost/api/user"
+
+	userPath = "/api/user"
+
+	userIDHeader = "User-Id"
+)
+
+func cacheFactory() handler.CacheMiddlewareFactory {
+	return func(globs config.CacheGlobs) contracts.Middleware {
+		return cache.NewMiddleware(
+			cache.WithGlobs(globs),
+			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
+		)
+	}
+}
+
+func proxyFactory(
+	t *testing.T,
+	replacerFactory urlreplacer.ReplacerFactory,
+	httpClient contracts.HTTPClient,
+) contracts.Handler {
+	if replacerFactory == nil {
+		replacerFactory = mocks.NewReplacerFactoryMock(t)
+	}
+
+	if httpClient == nil {
+		httpClient = mocks.NewHTTPClientMock(t)
+	}
+
+	return proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(replacerFactory),
+		proxy.WithHTTPClient(httpClient),
+		proxy.WithOutput(mocks.NoopOutput()),
+	)
+}
+
+func optionsFactory() handler.OptionsMiddlewareFactory {
+	return func(config config.OptionsHandling) contracts.Middleware {
+		return options.NewMiddleware(
+			options.WithHeaders(config.Headers),
+			options.WithCode(config.Code),
+		)
+	}
+}
+
+func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
+	return func(path string, dir config.StaticDirectory) contracts.Middleware {
+		return static.NewStaticMiddleware(
+			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
+			static.WithIndex(dir.Index),
+			static.WithPrefix(path),
+		)
+	}
+}
+
+func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
+	if fs == nil {
+		fs = afero.NewMemMapFs()
+	}
+
+	return func(response config.Response) contracts.Handler {
+		return mock.NewMockHandler(
+			mock.WithResponse(response),
+			mock.WithFileSystem(fs),
+			mock.WithAfter(time.After),
+		)
+	}
+}
+
+func scriptHandlerFactory() handler.ScriptHandlerFactory {
+	return func(_ config.Script) contracts.Handler {
+		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+			w.WriteHeader(http.StatusAccepted)
+			return nil
+		})
+	}
+}
+
+func rewriteFactory() handler.RewriteMiddlewareFactory {
+	return func(rewriting config.RewritingOption) contracts.Middleware {
+		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return next
+		})
+	}
+}
 
 type noopMiddleware struct{}
 

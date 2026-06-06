@@ -1,12 +1,21 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/gorilla/mux"
 )
+
+var errHostNotMapped = errors.New("host not mapped")
+
+func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
+	httpHandler := contracts.CastToHTTPHandler(handler)
+	router.NotFoundHandler = httpHandler
+	router.MethodNotAllowedHandler = httpHandler
+}
 
 type Router struct {
 	*mux.Router
