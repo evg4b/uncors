@@ -35,7 +35,7 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		prefix := styles.CacheStyle.Render("CACHE")
 
-		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			middleware := cache.NewMiddleware(
 				cache.WithMethods(cfg.Methods),
 				cache.WithCacheStorage(app.getCacheStorage(cfg)),
@@ -51,7 +51,7 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 	return func(cfg config.OptionsHandling) contracts.Middleware {
 		prefix := styles.OptionsStyle.Render("OPTIONS")
 
-		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			middleware := options.NewMiddleware(
 				options.WithHeaders(cfg.Headers),
 				options.WithCode(cfg.Code),
@@ -78,7 +78,7 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 	return func(path string, dir config.StaticDirectory) contracts.Middleware {
 		prefix := styles.StaticStyle.Render("STATIC")
 
-		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			middleware := static.NewStaticMiddleware(
 				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
 				static.WithIndex(dir.Index),
@@ -118,7 +118,7 @@ func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFact
 	return func(rewriting config.RewritingOption) contracts.Middleware {
 		prefix := styles.RewriteStyle.Render("REWRITE")
 
-		return handler.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
 			middleware := rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
 
 			return withPrefix(prefix, middleware.Wrap(next))

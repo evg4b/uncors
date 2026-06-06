@@ -34,6 +34,13 @@ type Middleware interface {
 	Wrap(next Handler) Handler
 }
 
+// MiddlewareFunc adapts an ordinary func into a Middleware.
+type MiddlewareFunc func(Handler) Handler
+
+func (f MiddlewareFunc) Wrap(next Handler) Handler {
+	return f(next)
+}
+
 type HandlerFunc func(ResponseWriter, *Request) error
 
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) error {

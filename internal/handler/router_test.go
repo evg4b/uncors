@@ -18,7 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -26,6 +25,7 @@ import (
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -111,7 +111,44 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 	}
 }
 
-func TestUncorsRequestHandler(t *testing.T) {
+func scriptHandlerFactory() handler.ScriptHandlerFactory {
+	return func(_ config.Script) contracts.Handler {
+		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+			w.WriteHeader(http.StatusAccepted)
+
+			return nil
+		})
+	}
+}
+
+func rewriteFactory() handler.RewriteMiddlewareFactory {
+	return func(_ config.RewritingOption) contracts.Middleware {
+		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
+			return next
+		})
+	}
+}
+
+type noopMiddleware struct{}
+
+func (m *noopMiddleware) Wrap(next contracts.Handler) contracts.Handler {
+	return next
+}
+
+func noopHARFactory() handler.HARMiddlewareFactory {
+	return func(_ config.HARConfig) contracts.Middleware {
+		return &noopMiddleware{}
+	}
+}
+
+func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
+	wrappedWriter := contracts.WrapResponseWriter(recorder)
+	contractsRouter := contracts.CastToContractsHandler(router)
+	httpRouterHandler := contracts.CastToHTTPHandler(contractsRouter)
+	httpRouterHandler.ServeHTTP(wrappedWriter, request)
+}
+
+func TestRouter(t *testing.T) {
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
 		"/images/svg/icons.svg":  iconsSvg,
@@ -191,14 +228,18 @@ func TestUncorsRequestHandler(t *testing.T) {
 		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
-	uncorsHandler := handler.NewUncorsRequestHandler(
-		handler.WithMappings(mappings),
-		handler.WithCacheMiddlewareFactory(cacheFactory()),
-		handler.WithProxyHandler(proxyFactory(t, factory, httpMock)),
-		handler.WithStaticHandlerFactory(staticFactory(fs)),
-		handler.WithMockHandlerFactory(mockFactory(fs)),
-		handler.WithOptionsHandlerFactory(optionsFactory()),
+	router, err := handler.NewRouter(
+		mappings,
+		handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
+		handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+		handler.ForRouterWithStaticMiddlewareFactory(staticFactory(fs)),
+		handler.ForRouterWithMockHandlerFactory(mockFactory(fs)),
+		handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+		handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+		handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+		handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 	)
+	require.NoError(t, err)
 
 	t.Run("statics directory", func(t *testing.T) {
 		t.Run("with index file", func(t *testing.T) {
@@ -230,7 +271,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+						serveHTTP(t, router, recorder, request)
 
 						assert.Equal(t, 200, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -243,7 +284,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, router, recorder, request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
@@ -254,12 +295,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
 				helpers.NormaliseRequest(request)
 
-				responseWriter := contracts.WrapResponseWriter(recorder)
-
-				err := uncorsHandler.ServeHTTP(responseWriter, request)
-				if err != nil {
-					infra.HTTPError(responseWriter, err)
-				}
+				serveHTTP(t, router, recorder, request)
 
 				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 
@@ -292,7 +328,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 						helpers.NormaliseRequest(request)
 
-						uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+						serveHTTP(t, router, recorder, request)
 
 						assert.Equal(t, http.StatusOK, recorder.Code)
 						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -305,7 +341,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
 				helpers.NormaliseRequest(request)
 
-				uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, router, recorder, request)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
@@ -346,7 +382,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 					helpers.NormaliseRequest(request)
 
-					uncorsHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+					serveHTTP(t, router, recorder, request)
 
 					assert.Equal(t, testCase.expectedCode, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -359,12 +395,7 @@ func TestUncorsRequestHandler(t *testing.T) {
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
 			helpers.NormaliseRequest(request)
 
-			responseWriter := contracts.WrapResponseWriter(recorder)
-
-			err := uncorsHandler.ServeHTTP(responseWriter, request)
-			if err != nil {
-				infra.HTTPError(responseWriter, err)
-			}
+			serveHTTP(t, router, recorder, request)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 
@@ -374,12 +405,11 @@ func TestUncorsRequestHandler(t *testing.T) {
 	})
 }
 
-func TestMockMiddleware(t *testing.T) {
+func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
-			requestHandler := handler.NewUncorsRequestHandler(
-				handler.WithProxyHandler(proxyFactory(t, nil, nil)),
-				handler.WithMappings(config.Mappings{
+			routerInstance, err := handler.NewRouter(
+				config.Mappings{
 					{
 						From: "{host}",
 						To:   "{host}",
@@ -395,11 +425,17 @@ func TestMockMiddleware(t *testing.T) {
 							},
 						},
 					},
-				}),
-				handler.WithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithMockHandlerFactory(mockFactory(nil)),
-				handler.WithOptionsHandlerFactory(optionsFactory()),
+				},
+				handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
+				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
+				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 			)
+			require.NoError(t, err)
 
 			methods := []string{
 				http.MethodGet,
@@ -416,7 +452,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 					recorder := httptest.NewRecorder()
 
-					requestHandler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+					serveHTTP(t, routerInstance, recorder, request)
 
 					body := testutils.ReadBody(t, recorder)
 					assert.Equal(t, http.StatusOK, recorder.Code)
@@ -442,10 +478,9 @@ func TestMockMiddleware(t *testing.T) {
 			}
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-			middleware := handler.NewUncorsRequestHandler(
-				handler.WithMappings(mappings),
-				handler.WithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+			routerInstance, err := handler.NewRouter(
+				mappings,
+				handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
 							Request:    req,
@@ -453,9 +488,15 @@ func TestMockMiddleware(t *testing.T) {
 							Body:       io.NopCloser(strings.NewReader(expectedBody)),
 						}, nil
 					}))),
-				handler.WithMockHandlerFactory(mockFactory(nil)),
-				handler.WithOptionsHandlerFactory(optionsFactory()),
+				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
+				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
+				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 			)
+			require.NoError(t, err)
 
 			t.Run("method is not matched", func(t *testing.T) {
 				methods := []string{
@@ -472,7 +513,7 @@ func TestMockMiddleware(t *testing.T) {
 						request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
 						recorder := httptest.NewRecorder()
 
-						middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+						serveHTTP(t, routerInstance, recorder, request)
 
 						assert.Equal(t, expectedCode, recorder.Code)
 						assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
@@ -483,7 +524,7 @@ func TestMockMiddleware(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, api, nil)
 					recorder := httptest.NewRecorder()
 
-					middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+					serveHTTP(t, routerInstance, recorder, request)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Empty(t, testutils.ReadBody(t, recorder))
@@ -494,7 +535,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodPut, api, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, routerInstance, recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -548,10 +589,9 @@ func TestMockMiddleware(t *testing.T) {
 		}
 		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-		middleware := handler.NewUncorsRequestHandler(
-			handler.WithMappings(mappings),
-			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+		routerInstance, err := handler.NewRouter(
+			mappings,
+			handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    req,
@@ -559,9 +599,15 @@ func TestMockMiddleware(t *testing.T) {
 						Body:       io.NopCloser(strings.NewReader(expectedBody)),
 					}, nil
 				}))),
-			handler.WithMockHandlerFactory(mockFactory(nil)),
-			handler.WithOptionsHandlerFactory(optionsFactory()),
+			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
+			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
+			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 		)
+		require.NoError(t, err)
 
 		tests := []struct {
 			name       string
@@ -611,7 +657,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, routerInstance, recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -621,8 +667,8 @@ func TestMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("query handling", func(t *testing.T) {
-		middleware := handler.NewUncorsRequestHandler(
-			handler.WithMappings(config.Mappings{
+		routerInstance, err := handler.NewRouter(
+			config.Mappings{
 				{From: "{host}", To: "{host}", Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
@@ -659,12 +705,17 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 				}},
-			}),
-			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
-			handler.WithMockHandlerFactory(mockFactory(nil)),
-			handler.WithOptionsHandlerFactory(optionsFactory()),
+			},
+			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
+			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
+			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 		)
+		require.NoError(t, err)
 
 		tests := []struct {
 			name       string
@@ -714,7 +765,7 @@ func TestMockMiddleware(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, routerInstance, recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
@@ -724,8 +775,8 @@ func TestMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("header handling", func(t *testing.T) {
-		middleware := handler.NewUncorsRequestHandler(
-			handler.WithMappings(config.Mappings{
+		routerInstance, err := handler.NewRouter(
+			config.Mappings{
 				{From: "{host}", To: "{host}", Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
@@ -762,12 +813,17 @@ func TestMockMiddleware(t *testing.T) {
 						},
 					},
 				}},
-			}),
-			handler.WithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithProxyHandler(proxyFactory(t, nil, nil)),
-			handler.WithMockHandlerFactory(mockFactory(nil)),
-			handler.WithOptionsHandlerFactory(optionsFactory()),
+			},
+			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
+			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
+			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
+			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
+			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
+			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
 		)
+		require.NoError(t, err)
 
 		tests := []struct {
 			name       string
@@ -840,7 +896,7 @@ func TestMockMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				middleware.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+				serveHTTP(t, routerInstance, recorder, request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.statusCode, recorder.Code)
