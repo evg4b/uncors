@@ -28,27 +28,32 @@ func (h *RequestHandler) makeStaticRoutes(
 }
 
 func (h *RequestHandler) makeMockedRoutes(router *mux.Router, mocks config.Mocks) {
-	matcher := func(def config.Mock) *config.RequestMatcher { return &def.Matcher }
-	register := func(def config.Mock) {
-		h.createRoute(router, def.Matcher).Handler(h.createHandler(def.Response))
-	}
-	registerMatchedRoutes(mocks, matcher, register)
+	registerMatchedRoutes(mocks,
+		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
+		func(def *config.Mock) {
+			h.createRoute(router, def.Matcher).Handler(h.createHandler(def.Response))
+		})
 }
 
 func (h *RequestHandler) makeScriptRoutes(router *mux.Router, scripts config.Scripts) {
-	matcher := func(def config.Script) *config.RequestMatcher { return &def.Matcher }
-	register := func(def config.Script) {
-		h.registerRoute(h.createRoute(router, def.Matcher), h.scriptHandlerFactory(def))
-	}
-	registerMatchedRoutes(scripts, matcher, register)
+	registerMatchedRoutes(scripts,
+		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
+		func(def *config.Script) {
+			h.registerRoute(h.createRoute(router, def.Matcher), h.scriptHandlerFactory(*def))
+		})
 }
 
 // registerMatchedRoutes registers routes in two passes: specific matchers first, path-only matchers second.
 // This ensures specific routes take priority over catch-all path routes in gorilla/mux.
-func registerMatchedRoutes[T any](items []T, matcher func(T) *config.RequestMatcher, register func(T)) {
-	var defaults []T
+func registerMatchedRoutes[T any](
+	items []T,
+	matcher func(*T) *config.RequestMatcher,
+	register func(*T),
+) {
+	var defaults []*T
 
-	for _, item := range items {
+	for i := range items {
+		item := &items[i]
 		if !matcher(item).IsPathOnly() {
 			register(item)
 		} else {

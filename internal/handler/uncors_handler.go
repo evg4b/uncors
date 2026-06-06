@@ -2,10 +2,8 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -26,11 +24,13 @@ type (
 type RequestHandler struct {
 	*mux.Router
 
-	mappings                 config.Mappings
-	output                   contracts.Output
+	mappings config.Mappings
+	output   contracts.Output
+
+	proxyHandler contracts.Handler
+
 	cacheMiddlewareFactory   CacheMiddlewareFactory
 	staticMiddlewareFactory  StaticMiddlewareFactory
-	proxyHandler             contracts.Handler
 	mockHandlerFactory       MockHandlerFactory
 	scriptHandlerFactory     ScriptHandlerFactory
 	rewriteMiddlewareFactory RewriteMiddlewareFactory
@@ -103,17 +103,6 @@ func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
 	httpHandler := contracts.CastToHTTPHandler(handler)
 	router.NotFoundHandler = httpHandler
 	router.MethodNotAllowedHandler = httpHandler
-}
-
-const wildcard = "*"
-
-func replaceWildcards(host string) string {
-	count := strings.Count(host, wildcard)
-	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
-	}
-
-	return host
 }
 
 type RequestHandlerOption = func(*RequestHandler)
