@@ -11,7 +11,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/samber/lo"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/spf13/afero"
@@ -46,7 +45,10 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")
 
-	targets := app.mappingsToTarget(uncorsConfig)
+	targets, err := app.mappingsToTarget(uncorsConfig)
+	if err != nil {
+		return err
+	}
 
 	return app.server.Start(ctx, targets)
 }
@@ -60,9 +62,12 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	// old instance is in `previous` and is closed below.
 	app.cacheStorage = nil
 
-	targets := app.mappingsToTarget(uncorsConfig)
+	targets, err := app.mappingsToTarget(uncorsConfig)
+	if err != nil {
+		return err
+	}
 
-	err := app.server.Restart(ctx, targets)
+	err = app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
 	}
@@ -120,23 +125,31 @@ func (app *Uncors) closeAll() {
 	app.closers = nil
 }
 
-func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) []server.Target {
-	return lo.Map(uncorsConfig.Mappings.GroupByPort(), func(group config.PortGroup, _ int) server.Target {
-		return server.Target{
-			Address: net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler: handler.NewUncorsRequestHandler(
-				handler.WithMappings(group.Mappings),
-				handler.WithProxyHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
-				handler.WithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
-				handler.WithOptionsHandlerFactory(app.buildOptionsMiddlewareFactory()),
-				handler.WithStaticHandlerFactory(app.buildStaticMiddlewareFactory()),
-				handler.WithMockHandlerFactory(app.buildMockHandlerFactory()),
-				handler.WithScriptHandlerFactory(app.buildScriptHandlerFactory()),
-				handler.WithRewriteHandlerFactory(app.buildRewriteMiddlewareFactory()),
-				handler.WithOutput(app.output),
-				handler.WithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
-			),
-			EnableTLS: group.Scheme == "https",
+func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
+	targets := make([]server.Target, 0, len(uncorsConfig.Mappings.GroupByPort()))
+
+	for _, group := range uncorsConfig.Mappings.GroupByPort() {
+		router, err := handler.NewRouter(
+			group.Mappings,
+			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
+			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
+			handler.ForRouterWithOptionsMiddlewareFactory(app.buildOptionsMiddlewareFactory()),
+			handler.ForRouterWithStaticMiddlewareFactory(app.buildStaticMiddlewareFactory()),
+			handler.ForRouterWithMockHandlerFactory(app.buildMockHandlerFactory()),
+			handler.ForRouterWithScriptHandlerFactory(app.buildScriptHandlerFactory()),
+			handler.ForRouterWithRewriteMiddlewareFactory(app.buildRewriteMiddlewareFactory()),
+			handler.ForRouterWithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
+		)
+		if err != nil {
+			return nil, err
 		}
-	})
+
+		targets = append(targets, server.Target{
+			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
+			Handler:   contracts.CastToContractsHandler(router),
+			EnableTLS: group.Scheme == "https",
+		})
+	}
+
+	return targets, nil
 }
