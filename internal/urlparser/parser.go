@@ -41,9 +41,6 @@ func Parse(rawURL string) (*base_url.URL, error) {
 // If the URL doesn't have a scheme, the provided scheme will be used.
 // If scheme is empty, the URL will be parsed without a default scheme.
 func ParseWithDefaultScheme(rawURL string, scheme string) (*base_url.URL, error) {
-	// Replace {key} placeholders with * to allow parsing by net/url
-	// This preserves the placeholder intent while working with Go's URL parser
-	rawURL = placeholderRegexp.ReplaceAllString(rawURL, "*")
 	rawURL = defaultScheme(rawURL, scheme)
 
 	parsedURL, err := url.Parse(rawURL)
