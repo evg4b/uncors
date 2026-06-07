@@ -47,7 +47,7 @@ func main() {
 		log.Fatal("format:", err)
 	}
 
-	err = os.WriteFile(filename, formatted, 0644)
+	err = os.WriteFile(filename, formatted, 0o644)
 	if err != nil {
 		log.Fatal("WriteFile:", err)
 	}
