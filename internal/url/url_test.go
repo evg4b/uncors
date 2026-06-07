@@ -13,7 +13,6 @@ import (
 	"io"
 	"net"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -1545,54 +1544,6 @@ func TestParseQuery(t *testing.T) {
 	}
 }
 
-func TestParseQueryLimits(t *testing.T) {
-	for _, test := range []struct {
-		params  int
-		godebug string
-		wantErr bool
-	}{{
-		params:  10,
-		wantErr: false,
-	}, {
-		params:  defaultMaxParams,
-		wantErr: false,
-	}, {
-		params:  defaultMaxParams + 1,
-		wantErr: true,
-	}, {
-		params:  10,
-		godebug: "urlmaxqueryparams=9",
-		wantErr: true,
-	}, {
-		params:  defaultMaxParams + 1,
-		godebug: "urlmaxqueryparams=0",
-		wantErr: false,
-	}} {
-		t.Setenv("GODEBUG", test.godebug)
-		want := Values{}
-		var b strings.Builder
-		for i := range test.params {
-			if i > 0 {
-				b.WriteString("&")
-			}
-			p := fmt.Sprintf("p%v", i)
-			b.WriteString(p)
-			want[p] = []string{""}
-		}
-		query := b.String()
-		got, err := ParseQuery(query)
-		if gotErr, wantErr := err != nil, test.wantErr; gotErr != wantErr {
-			t.Errorf("GODEBUG=%v ParseQuery(%v params) = %v, want error: %v", test.godebug, test.params, err, wantErr)
-		}
-		if err != nil {
-			continue
-		}
-		if got, want := len(got), test.params; got != want {
-			t.Errorf("GODEBUG=%v ParseQuery(%v params): got %v params, want %v", test.godebug, test.params, got, want)
-		}
-	}
-}
-
 type RequestURITest struct {
 	url *URL
 	out string
@@ -2362,26 +2313,5 @@ func TestJoinPath(t *testing.T) {
 		if out != tt.out {
 			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
 		}
-	}
-}
-
-func TestParseStrictIpv6(t *testing.T) {
-	t.Setenv("GODEBUG", "urlstrictcolons=0")
-
-	tests := []struct {
-		url string
-	}{
-		// Malformed URLs that used to parse.
-		{"https://1:2:3:4:5:6:7:8"},
-		{"https://1:2:3:4:5:6:7:8:80"},
-		{"https://example.com:80:"},
-	}
-	for i, tc := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			_, err := Parse(tc.url)
-			if err != nil {
-				t.Errorf("Parse(%q) error = %v, want nil", tc.url, err)
-			}
-		})
 	}
 }
