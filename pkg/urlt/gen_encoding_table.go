@@ -158,16 +158,17 @@ func shouldEscape(c byte, mode encoding) bool {
 
 	if mode == encodeHost || mode == encodeZone {
 		// §3.2.2 Host allows
-		//	sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+		//	sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "=" / "{" / "}"
 		// as part of reg-name.
 		// We add : because we include :port as part of host.
 		// We add [ ] because we include [ipv6]:port as part of host.
 		// We add < > because they're the only characters left that
+		// We add { } to support named URL placeholders like {client} or {region}
 		// we could possibly allow, and Parse will reject them if we
 		// escape them (because hosts can't use %-encoding for
 		// ASCII bytes).
 		switch c {
-		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '[', ']', '<', '>', '"':
+		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '[', ']', '<', '>', '"', '{', '}':
 			return false
 		}
 	}
