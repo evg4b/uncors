@@ -3,6 +3,10 @@
 // Copyright 2025 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+//
+// Portions of this code have been modified by Evgeny Abramovich.
+// These modifications are provided under the MIT License.
+// See the LICENSE file in this directory for details.
 
 package urlt
 
