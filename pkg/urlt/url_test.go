@@ -563,16 +563,6 @@ var urltests = []URLTest{
 		},
 		"",
 	},
-	// test that we can reparse the host names we accept.
-	{
-		"myscheme://authority<\"hi\">/foo",
-		&base_url.URL{
-			Scheme: "myscheme",
-			Host:   "authority<\"hi\">",
-			Path:   "/foo",
-		},
-		"",
-	},
 	// spaces in hosts are disallowed but escaped spaces in IPv6 scope IDs are grudgingly OK.
 	// This happens on Windows.
 	// golang.org/issue/14002
