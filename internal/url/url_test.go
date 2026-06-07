@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	base_url "net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -71,7 +72,7 @@ var urltests = []URLTest{
 		"ftp://webmaster@www.google.com/",
 		&URL{
 			Scheme: "ftp",
-			User:   User("webmaster"),
+			User:   base_url.User("webmaster"),
 			Host:   "www.google.com",
 			Path:   "/",
 		},
@@ -82,7 +83,7 @@ var urltests = []URLTest{
 		"ftp://john%20doe@www.google.com/",
 		&URL{
 			Scheme: "ftp",
-			User:   User("john doe"),
+			User:   base_url.User("john doe"),
 			Host:   "www.google.com",
 			Path:   "/",
 		},
@@ -203,7 +204,7 @@ var urltests = []URLTest{
 	{
 		"//user@foo/path?a=b",
 		&URL{
-			User:     User("user"),
+			User:     base_url.User("user"),
 			Host:     "foo",
 			Path:     "/path",
 			RawQuery: "a=b",
@@ -226,7 +227,7 @@ var urltests = []URLTest{
 		"http://user:password@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "google.com",
 		},
 		"http://user:password@google.com",
@@ -236,7 +237,7 @@ var urltests = []URLTest{
 		"http://j@ne:password@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("j@ne", "password"),
+			User:   base_url.UserPassword("j@ne", "password"),
 			Host:   "google.com",
 		},
 		"http://j%40ne:password@google.com",
@@ -246,7 +247,7 @@ var urltests = []URLTest{
 		"http://jane:p@ssword@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("jane", "p@ssword"),
+			User:   base_url.UserPassword("jane", "p@ssword"),
 			Host:   "google.com",
 		},
 		"http://jane:p%40ssword@google.com",
@@ -255,7 +256,7 @@ var urltests = []URLTest{
 		"http://j@ne:password@google.com/p@th?q=@go",
 		&URL{
 			Scheme:   "http",
-			User:     UserPassword("j@ne", "password"),
+			User:     base_url.UserPassword("j@ne", "password"),
 			Host:     "google.com",
 			Path:     "/p@th",
 			RawQuery: "q=@go",
@@ -338,7 +339,7 @@ var urltests = []URLTest{
 		"http://%3Fam:pa%3Fsword@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("?am", "pa?sword"),
+			User:   base_url.UserPassword("?am", "pa?sword"),
 			Host:   "google.com",
 		},
 		"",
@@ -630,7 +631,7 @@ var urltests = []URLTest{
 		"mongodb://user:password@host1:1,host2:2,host3:3",
 		&URL{
 			Scheme: "mongodb",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
 		},
@@ -640,7 +641,7 @@ var urltests = []URLTest{
 		"mongodb+srv://user:password@host1:1,host2:2,host3:3",
 		&URL{
 			Scheme: "mongodb+srv",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
 		},
@@ -854,7 +855,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   UserPassword("user", "password"),
+				User:   base_url.UserPassword("user", "password"),
 			},
 			want: "http://user:xxxxx@host.tld/this:that",
 		},
@@ -864,7 +865,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   User("user"),
+				User:   base_url.User("user"),
 			},
 			want: "http://user@host.tld/this:that",
 		},
@@ -874,7 +875,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   UserPassword("", "password"),
+				User:   base_url.UserPassword("", "password"),
 			},
 			want: "http://:xxxxx@host.tld/this:that",
 		},
@@ -1859,39 +1860,39 @@ var netErrorTests = []struct {
 	timeout   bool
 	temporary bool
 }{{
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: true}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutError{timeout: true}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: false}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutError{timeout: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: true}},
+	err:       &base_url.Error{"Get", "http://google.com/", &temporaryError{temporary: true}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: false}},
+	err:       &base_url.Error{"Get", "http://google.com/", &temporaryError{temporary: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
 	timeout:   true,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", io.EOF},
+	err:       &base_url.Error{"Get", "http://google.com/", io.EOF},
 	timeout:   false,
 	temporary: false,
 }}

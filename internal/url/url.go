@@ -18,35 +18,12 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	base_url "net/url"
 	"path"
 	"slices"
 	"strconv"
 	"strings"
 )
-
-// Error reports an error and the operation and URL that caused it.
-type Error struct {
-	Op  string
-	URL string
-	Err error
-}
-
-func (e *Error) Unwrap() error { return e.Err }
-func (e *Error) Error() string { return fmt.Sprintf("%s %q: %s", e.Op, e.URL, e.Err) }
-
-func (e *Error) Timeout() bool {
-	t, ok := e.Err.(interface {
-		Timeout() bool
-	})
-	return ok && t.Timeout()
-}
-
-func (e *Error) Temporary() bool {
-	t, ok := e.Err.(interface {
-		Temporary() bool
-	})
-	return ok && t.Temporary()
-}
 
 const upperhex = "0123456789ABCDEF"
 
@@ -270,11 +247,11 @@ func escape(s string, mode encoding) string {
 // The [URL.String] method uses the [URL.EscapedPath] method to obtain the path.
 type URL struct {
 	Scheme   string
-	Opaque   string    // encoded opaque data
-	User     *Userinfo // username and password information
-	Host     string    // "host" or "host:port" (see Hostname and Port methods)
-	Path     string    // path (relative paths may omit leading slash)
-	Fragment string    // fragment for references (without '#')
+	Opaque   string             // encoded opaque data
+	User     *base_url.Userinfo // username and password information
+	Host     string             // "host" or "host:port" (see Hostname and Port methods)
+	Path     string             // path (relative paths may omit leading slash)
+	Fragment string             // fragment for references (without '#')
 
 	// RawQuery contains the encoded query values, without the initial '?'.
 	// Use URL.Query to decode the query.
@@ -299,63 +276,6 @@ type URL struct {
 	// OmitHost indicates the URL has an empty host (authority).
 	// When set, the String method will not include the host when it is empty.
 	OmitHost bool
-}
-
-// User returns a [Userinfo] containing the provided username
-// and no password set.
-func User(username string) *Userinfo {
-	return &Userinfo{username, "", false}
-}
-
-// UserPassword returns a [Userinfo] containing the provided username
-// and password.
-//
-// This functionality should only be used with legacy web sites.
-// RFC 2396 warns that interpreting Userinfo this way
-// “is NOT RECOMMENDED, because the passing of authentication
-// information in clear text (such as URI) has proven to be a
-// security risk in almost every case where it has been used.”
-func UserPassword(username, password string) *Userinfo {
-	return &Userinfo{username, password, true}
-}
-
-// The Userinfo type is an immutable encapsulation of username and
-// password details for a [URL]. An existing Userinfo value is guaranteed
-// to have a username set (potentially empty, as allowed by RFC 2396),
-// and optionally a password.
-type Userinfo struct {
-	username    string
-	password    string
-	passwordSet bool
-}
-
-// Username returns the username.
-func (u *Userinfo) Username() string {
-	if u == nil {
-		return ""
-	}
-	return u.username
-}
-
-// Password returns the password in case it is set, and whether it is set.
-func (u *Userinfo) Password() (string, bool) {
-	if u == nil {
-		return "", false
-	}
-	return u.password, u.passwordSet
-}
-
-// String returns the encoded userinfo information in the standard form
-// of "username[:password]".
-func (u *Userinfo) String() string {
-	if u == nil {
-		return ""
-	}
-	s := escape(u.username, encodeUserPassword)
-	if u.passwordSet {
-		s += ":" + escape(u.password, encodeUserPassword)
-	}
-	return s
 }
 
 // Maybe rawURL is of the form scheme:path.
@@ -396,13 +316,13 @@ func Parse(rawURL string) (*URL, error) {
 	u, frag, _ := strings.Cut(rawURL, "#")
 	url, err := parse(u, false)
 	if err != nil {
-		return nil, &Error{"parse", u, err}
+		return nil, &base_url.Error{"parse", u, err}
 	}
 	if frag == "" {
 		return url, nil
 	}
 	if err = url.setFragment(frag); err != nil {
-		return nil, &Error{"parse", rawURL, err}
+		return nil, &base_url.Error{"parse", rawURL, err}
 	}
 	return url, nil
 }
@@ -415,7 +335,7 @@ func Parse(rawURL string) (*URL, error) {
 func ParseRequestURI(rawURL string) (*URL, error) {
 	url, err := parse(rawURL, true)
 	if err != nil {
-		return nil, &Error{"parse", rawURL, err}
+		return nil, &base_url.Error{"parse", rawURL, err}
 	}
 	return url, nil
 }
@@ -504,7 +424,7 @@ func parse(rawURL string, viaRequest bool) (*URL, error) {
 	return url, nil
 }
 
-func parseAuthority(scheme, authority string) (user *Userinfo, host string, err error) {
+func parseAuthority(scheme, authority string) (user *base_url.Userinfo, host string, err error) {
 	i := strings.LastIndex(authority, "@")
 	if i < 0 {
 		host, err = parseHost(scheme, authority)
@@ -525,7 +445,7 @@ func parseAuthority(scheme, authority string) (user *Userinfo, host string, err 
 		if userinfo, err = unescape(userinfo, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
-		user = User(userinfo)
+		user = base_url.User(userinfo)
 	} else {
 		username, password, _ := strings.Cut(userinfo, ":")
 		if username, err = unescape(username, encodeUserPassword); err != nil {
@@ -534,7 +454,7 @@ func parseAuthority(scheme, authority string) (user *Userinfo, host string, err 
 		if password, err = unescape(password, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
-		user = UserPassword(username, password)
+		user = base_url.UserPassword(username, password)
 	}
 	return user, host, nil
 }
@@ -853,7 +773,7 @@ func (u *URL) Redacted() string {
 
 	ru := *u
 	if _, has := ru.User.Password(); has {
-		ru.User = UserPassword(ru.User.Username(), "xxxxx")
+		ru.User = base_url.UserPassword(ru.User.Username(), "xxxxx")
 	}
 	return ru.String()
 }
