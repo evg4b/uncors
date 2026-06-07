@@ -9,7 +9,7 @@
 // See RFC 3986. This package generally follows RFC 3986, except where
 // it deviates for compatibility reasons.
 // RFC 6874 followed for IPv6 zone literals.
-package url
+package urlt
 
 // When sending changes, first  search old issues for history on decisions.
 // Unit tests should also contain references to issue numbers with details.
@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
-	base_url "net/url"
+	baseUrl "net/url"
 	"path"
 	"slices"
 	"strconv"
@@ -253,18 +253,18 @@ func getScheme(rawURL string) (scheme, path string, err error) {
 // (starting with a scheme). Trying to parse a hostname and path
 // without a scheme is invalid but may not necessarily return an
 // error, due to parsing ambiguities.
-func Parse(rawURL string) (*base_url.URL, error) {
+func Parse(rawURL string) (*baseUrl.URL, error) {
 	// Cut off #frag
 	u, frag, _ := strings.Cut(rawURL, "#")
 	url, err := parse(u, false)
 	if err != nil {
-		return nil, &base_url.Error{"parse", u, err}
+		return nil, &baseUrl.Error{"parse", u, err}
 	}
 	if frag == "" {
 		return url, nil
 	}
 	if err = setFragment(url, frag); err != nil {
-		return nil, &base_url.Error{"parse", rawURL, err}
+		return nil, &baseUrl.Error{"parse", rawURL, err}
 	}
 	return url, nil
 }
@@ -274,10 +274,10 @@ func Parse(rawURL string) (*base_url.URL, error) {
 // only as an absolute URI or an absolute path.
 // The string url is assumed not to have a #fragment suffix.
 // (Web browsers strip #fragment before sending the URL to a web server.)
-func ParseRequestURI(rawURL string) (*base_url.URL, error) {
+func ParseRequestURI(rawURL string) (*baseUrl.URL, error) {
 	url, err := parse(rawURL, true)
 	if err != nil {
-		return nil, &base_url.Error{"parse", rawURL, err}
+		return nil, &baseUrl.Error{"parse", rawURL, err}
 	}
 	return url, nil
 }
@@ -286,7 +286,7 @@ func ParseRequestURI(rawURL string) (*base_url.URL, error) {
 // viaRequest is true, the URL is assumed to have arrived via an HTTP request,
 // in which case only absolute URLs or path-absolute relative URLs are allowed.
 // If viaRequest is false, all forms of relative URLs are allowed.
-func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
+func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
 	var rest string
 	var err error
 
@@ -297,7 +297,7 @@ func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 	if rawURL == "" && viaRequest {
 		return nil, errors.New("empty url")
 	}
-	url := new(base_url.URL)
+	url := new(baseUrl.URL)
 
 	if rawURL == "*" {
 		url.Path = "*"
@@ -366,7 +366,7 @@ func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 	return url, nil
 }
 
-func parseAuthority(scheme, authority string) (user *base_url.Userinfo, host string, err error) {
+func parseAuthority(scheme, authority string) (user *baseUrl.Userinfo, host string, err error) {
 	i := strings.LastIndex(authority, "@")
 	if i < 0 {
 		host, err = parseHost(scheme, authority)
@@ -387,7 +387,7 @@ func parseAuthority(scheme, authority string) (user *base_url.Userinfo, host str
 		if userinfo, err = unescape(userinfo, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
-		user = base_url.User(userinfo)
+		user = baseUrl.User(userinfo)
 	} else {
 		username, password, _ := strings.Cut(userinfo, ":")
 		if username, err = unescape(username, encodeUserPassword); err != nil {
@@ -396,7 +396,7 @@ func parseAuthority(scheme, authority string) (user *base_url.Userinfo, host str
 		if password, err = unescape(password, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
-		user = base_url.UserPassword(username, password)
+		user = baseUrl.UserPassword(username, password)
 	}
 	return user, host, nil
 }
@@ -502,7 +502,7 @@ func parseHost(scheme, host string) (string, error) {
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
-func setPath(u *base_url.URL, p string) error {
+func setPath(u *baseUrl.URL, p string) error {
 	path, err := unescape(p, encodePath)
 	if err != nil {
 		return err
@@ -544,7 +544,7 @@ func validEncoded(s string, mode encoding) bool {
 }
 
 // setFragment is like setPath but for Fragment/RawFragment.
-func setFragment(u *base_url.URL, f string) error {
+func setFragment(u *baseUrl.URL, f string) error {
 	frag, err := unescape(f, encodeFragment)
 	if err != nil {
 		return err
@@ -782,7 +782,7 @@ func splitHostPort(hostPort string) (host, port string) {
 	return
 }
 
-func joinPath(u *base_url.URL, elem ...string) (*base_url.URL, error) {
+func joinPath(u *baseUrl.URL, elem ...string) (*baseUrl.URL, error) {
 	elem = append([]string{u.EscapedPath()}, elem...)
 	var p string
 	if !strings.HasPrefix(elem[0], "/") {

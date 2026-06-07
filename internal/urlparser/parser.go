@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/url"
+	"github.com/evg4b/uncors/pkg/urlt"
 
 	"golang.org/x/net/idna"
 )
@@ -43,7 +43,7 @@ func Parse(rawURL string) (*base_url.URL, error) {
 func ParseWithDefaultScheme(rawURL string, scheme string) (*base_url.URL, error) {
 	rawURL = defaultScheme(rawURL, scheme)
 
-	parsedURL, err := url.Parse(rawURL)
+	parsedURL, err := urlt.Parse(rawURL)
 	if err != nil {
 		return nil, err
 	}

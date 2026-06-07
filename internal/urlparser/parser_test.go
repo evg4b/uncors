@@ -17,6 +17,7 @@ func TestParse(t *testing.T) {
 		out string
 		err bool
 	}{
+		{in: "http://{client}.local.com", out: "http://{client}.local.com"},
 		// Error out on missing host:
 		{in: "", err: true},
 		{in: "/", err: true},
