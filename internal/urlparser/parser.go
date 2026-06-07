@@ -4,10 +4,12 @@ package urlparser
 
 import (
 	"errors"
-	"net/url"
+	base_url "net/url"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/evg4b/uncors/internal/url"
 
 	"golang.org/x/net/idna"
 )
@@ -31,20 +33,19 @@ const (
 //  2. It favors absolute paths over relative ones, thus "example.com"
 //     is parsed into url.Host instead of url.Path.
 //  3. It lowercase's the Host (not only the Scheme).
-func Parse(rawURL string) (*url.URL, error) {
+func Parse(rawURL string) (*base_url.URL, error) {
 	return ParseWithDefaultScheme(rawURL, "")
 }
 
 // ParseWithDefaultScheme parses raw URL string with a custom default scheme.
 // If the URL doesn't have a scheme, the provided scheme will be used.
 // If scheme is empty, the URL will be parsed without a default scheme.
-func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
+func ParseWithDefaultScheme(rawURL string, scheme string) (*base_url.URL, error) {
 	// Replace {key} placeholders with * to allow parsing by net/url
 	// This preserves the placeholder intent while working with Go's URL parser
 	rawURL = placeholderRegexp.ReplaceAllString(rawURL, "*")
 	rawURL = defaultScheme(rawURL, scheme)
 
-	// Use net/url.Parse() now.
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -102,7 +103,7 @@ var (
 
 func checkHost(host string) error {
 	if host == "" {
-		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
+		return &base_url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
 	}
 
 	host = strings.ToLower(host)
@@ -122,15 +123,15 @@ func checkHost(host string) error {
 		return nil
 	}
 
-	return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
+	return &base_url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
 }
 
 // SplitHostPort splits network address of the form "host:port" into
 // host and port. Unlike net.SplitHostPort(), it doesn't remove brackets
 // from [IPv6] host, and it accepts net/url.URL struct instead of a string.
-func SplitHostPort(parsedURL *url.URL) (string, string, error) {
+func SplitHostPort(parsedURL *base_url.URL) (string, string, error) {
 	if parsedURL == nil {
-		return "", "", &url.Error{Op: hostOperation, URL: "", Err: ErrEmptyURL}
+		return "", "", &base_url.Error{Op: hostOperation, URL: "", Err: ErrEmptyURL}
 	}
 
 	host := parsedURL.Host
@@ -149,7 +150,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	}
 
 	if index == len(host)-1 {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: ErrEmptyPort}
+		return "", "", &base_url.Error{Op: portOperation, URL: parsedURL.String(), Err: ErrEmptyPort}
 	}
 
 	port := host[index+1:]
@@ -157,7 +158,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 
 	_, err := strconv.Atoi(port)
 	if err != nil {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: err}
+		return "", "", &base_url.Error{Op: portOperation, URL: parsedURL.String(), Err: err}
 	}
 
 	return host, port, nil
