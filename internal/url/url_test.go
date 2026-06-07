@@ -20,15 +20,15 @@ import (
 
 type URLTest struct {
 	in        string
-	out       *URL   // expected parse
-	roundtrip string // expected result of reserializing the URL; empty means same as "in".
+	out       *base_url.URL // expected parse
+	roundtrip string        // expected result of reserializing the URL; empty means same as "in".
 }
 
 var urltests = []URLTest{
 	// no path
 	{
 		"http://www.google.com",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "www.google.com",
 		},
@@ -37,7 +37,7 @@ var urltests = []URLTest{
 	// path
 	{
 		"http://www.google.com/",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "www.google.com",
 			Path:   "/",
@@ -47,7 +47,7 @@ var urltests = []URLTest{
 	// path with hex escaping
 	{
 		"http://www.google.com/file%20one%26two",
-		&URL{
+		&base_url.URL{
 			Scheme:  "http",
 			Host:    "www.google.com",
 			Path:    "/file one&two",
@@ -58,7 +58,7 @@ var urltests = []URLTest{
 	// fragment with hex escaping
 	{
 		"http://www.google.com/#file%20one%26two",
-		&URL{
+		&base_url.URL{
 			Scheme:      "http",
 			Host:        "www.google.com",
 			Path:        "/",
@@ -70,7 +70,7 @@ var urltests = []URLTest{
 	// user
 	{
 		"ftp://webmaster@www.google.com/",
-		&URL{
+		&base_url.URL{
 			Scheme: "ftp",
 			User:   base_url.User("webmaster"),
 			Host:   "www.google.com",
@@ -81,7 +81,7 @@ var urltests = []URLTest{
 	// escape sequence in username
 	{
 		"ftp://john%20doe@www.google.com/",
-		&URL{
+		&base_url.URL{
 			Scheme: "ftp",
 			User:   base_url.User("john doe"),
 			Host:   "www.google.com",
@@ -92,7 +92,7 @@ var urltests = []URLTest{
 	// empty query
 	{
 		"http://www.google.com/?",
-		&URL{
+		&base_url.URL{
 			Scheme:     "http",
 			Host:       "www.google.com",
 			Path:       "/",
@@ -103,7 +103,7 @@ var urltests = []URLTest{
 	// query ending in question mark (Issue 14573)
 	{
 		"http://www.google.com/?foo=bar?",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/",
@@ -114,7 +114,7 @@ var urltests = []URLTest{
 	// query
 	{
 		"http://www.google.com/?q=go+language",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/",
@@ -125,7 +125,7 @@ var urltests = []URLTest{
 	// query with hex escaping: NOT parsed
 	{
 		"http://www.google.com/?q=go%20language",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/",
@@ -136,7 +136,7 @@ var urltests = []URLTest{
 	// %20 outside query
 	{
 		"http://www.google.com/a%20b?q=c+d",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/a b",
@@ -147,7 +147,7 @@ var urltests = []URLTest{
 	// path without leading /, so no parsing
 	{
 		"http:www.google.com/?q=go+language",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Opaque:   "www.google.com/",
 			RawQuery: "q=go+language",
@@ -157,7 +157,7 @@ var urltests = []URLTest{
 	// path without leading /, so no parsing
 	{
 		"http:%2f%2fwww.google.com/?q=go+language",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Opaque:   "%2f%2fwww.google.com/",
 			RawQuery: "q=go+language",
@@ -167,7 +167,7 @@ var urltests = []URLTest{
 	// non-authority with path; see golang.org/issue/46059
 	{
 		"mailto:/webmaster@golang.org",
-		&URL{
+		&base_url.URL{
 			Scheme:   "mailto",
 			Path:     "/webmaster@golang.org",
 			OmitHost: true,
@@ -177,7 +177,7 @@ var urltests = []URLTest{
 	// non-authority
 	{
 		"mailto:webmaster@golang.org",
-		&URL{
+		&base_url.URL{
 			Scheme: "mailto",
 			Opaque: "webmaster@golang.org",
 		},
@@ -186,7 +186,7 @@ var urltests = []URLTest{
 	// unescaped :// in query should not create a scheme
 	{
 		"/foo?query=http://bad",
-		&URL{
+		&base_url.URL{
 			Path:     "/foo",
 			RawQuery: "query=http://bad",
 		},
@@ -195,7 +195,7 @@ var urltests = []URLTest{
 	// leading // without scheme should create an authority
 	{
 		"//foo",
-		&URL{
+		&base_url.URL{
 			Host: "foo",
 		},
 		"",
@@ -203,7 +203,7 @@ var urltests = []URLTest{
 	// leading // without scheme, with userinfo, path, and query
 	{
 		"//user@foo/path?a=b",
-		&URL{
+		&base_url.URL{
 			User:     base_url.User("user"),
 			Host:     "foo",
 			Path:     "/path",
@@ -218,14 +218,14 @@ var urltests = []URLTest{
 	// same codepath)
 	{
 		"///threeslashes",
-		&URL{
+		&base_url.URL{
 			Path: "///threeslashes",
 		},
 		"",
 	},
 	{
 		"http://user:password@google.com",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			User:   base_url.UserPassword("user", "password"),
 			Host:   "google.com",
@@ -235,7 +235,7 @@ var urltests = []URLTest{
 	// unescaped @ in username should not confuse host
 	{
 		"http://j@ne:password@google.com",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			User:   base_url.UserPassword("j@ne", "password"),
 			Host:   "google.com",
@@ -245,7 +245,7 @@ var urltests = []URLTest{
 	// unescaped @ in password should not confuse host
 	{
 		"http://jane:p@ssword@google.com",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			User:   base_url.UserPassword("jane", "p@ssword"),
 			Host:   "google.com",
@@ -254,7 +254,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://j@ne:password@google.com/p@th?q=@go",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			User:     base_url.UserPassword("j@ne", "password"),
 			Host:     "google.com",
@@ -265,7 +265,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://www.google.com/?q=go+language#foo",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/",
@@ -276,7 +276,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://www.google.com/?q=go+language#foo&bar",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "www.google.com",
 			Path:     "/",
@@ -287,7 +287,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://www.google.com/?q=go+language#foo%26bar",
-		&URL{
+		&base_url.URL{
 			Scheme:      "http",
 			Host:        "www.google.com",
 			Path:        "/",
@@ -299,7 +299,7 @@ var urltests = []URLTest{
 	},
 	{
 		"file:///home/adg/rabbits",
-		&URL{
+		&base_url.URL{
 			Scheme: "file",
 			Host:   "",
 			Path:   "/home/adg/rabbits",
@@ -310,7 +310,7 @@ var urltests = []URLTest{
 	// See golang.org/issue/6027, especially comment #9.
 	{
 		"file:///C:/FooBar/Baz.txt",
-		&URL{
+		&base_url.URL{
 			Scheme: "file",
 			Host:   "",
 			Path:   "/C:/FooBar/Baz.txt",
@@ -320,7 +320,7 @@ var urltests = []URLTest{
 	// case-insensitive scheme
 	{
 		"MaIlTo:webmaster@golang.org",
-		&URL{
+		&base_url.URL{
 			Scheme: "mailto",
 			Opaque: "webmaster@golang.org",
 		},
@@ -329,7 +329,7 @@ var urltests = []URLTest{
 	// Relative path
 	{
 		"a/b/c",
-		&URL{
+		&base_url.URL{
 			Path: "a/b/c",
 		},
 		"a/b/c",
@@ -337,7 +337,7 @@ var urltests = []URLTest{
 	// escaped '?' in username and password
 	{
 		"http://%3Fam:pa%3Fsword@google.com",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			User:   base_url.UserPassword("?am", "pa?sword"),
 			Host:   "google.com",
@@ -347,7 +347,7 @@ var urltests = []URLTest{
 	// host subcomponent; IPv4 address in RFC 3986
 	{
 		"http://192.168.0.1/",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "192.168.0.1",
 			Path:   "/",
@@ -357,7 +357,7 @@ var urltests = []URLTest{
 	// host and port subcomponents; IPv4 address in RFC 3986
 	{
 		"http://192.168.0.1:8080/",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "192.168.0.1:8080",
 			Path:   "/",
@@ -367,7 +367,7 @@ var urltests = []URLTest{
 	// host subcomponent; IPv6 address in RFC 3986
 	{
 		"http://[fe80::1]/",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1]",
 			Path:   "/",
@@ -377,7 +377,7 @@ var urltests = []URLTest{
 	// host and port subcomponents; IPv6 address in RFC 3986
 	{
 		"http://[fe80::1]:8080/",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1]:8080",
 			Path:   "/",
@@ -387,7 +387,7 @@ var urltests = []URLTest{
 	// valid IPv6 host with port and path
 	{
 		"https://[2001:db8::1]:8443/test/path",
-		&URL{
+		&base_url.URL{
 			Scheme: "https",
 			Host:   "[2001:db8::1]:8443",
 			Path:   "/test/path",
@@ -397,7 +397,7 @@ var urltests = []URLTest{
 	// host subcomponent; IPv6 address with zone identifier in RFC 6874
 	{
 		"http://[fe80::1%25en0]/", // alphanum zone identifier
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1%en0]",
 			Path:   "/",
@@ -407,7 +407,7 @@ var urltests = []URLTest{
 	// host and port subcomponents; IPv6 address with zone identifier in RFC 6874
 	{
 		"http://[fe80::1%25en0]:8080/", // alphanum zone identifier
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1%en0]:8080",
 			Path:   "/",
@@ -417,7 +417,7 @@ var urltests = []URLTest{
 	// host subcomponent; IPv6 address with zone identifier in RFC 6874
 	{
 		"http://[fe80::1%25%65%6e%301-._~]/", // percent-encoded+unreserved zone identifier
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1%en01-._~]",
 			Path:   "/",
@@ -427,7 +427,7 @@ var urltests = []URLTest{
 	// host and port subcomponents; IPv6 address with zone identifier in RFC 6874
 	{
 		"http://[fe80::1%25%65%6e%301-._~]:8080/", // percent-encoded+unreserved zone identifier
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[fe80::1%en01-._~]:8080",
 			Path:   "/",
@@ -437,7 +437,7 @@ var urltests = []URLTest{
 	// alternate escapings of path survive round trip
 	{
 		"http://rest.rsc.io/foo%2fbar/baz%2Fquux?alt=media",
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "rest.rsc.io",
 			Path:     "/foo/bar/baz/quux",
@@ -449,7 +449,7 @@ var urltests = []URLTest{
 	// issue 12036
 	{
 		"mysql://a,b,c/bar",
-		&URL{
+		&base_url.URL{
 			Scheme: "mysql",
 			Host:   "a,b,c",
 			Path:   "/bar",
@@ -459,7 +459,7 @@ var urltests = []URLTest{
 	// worst case host, still round trips
 	{
 		"scheme://!$&'()*+,;=hello!:1/path",
-		&URL{
+		&base_url.URL{
 			Scheme: "scheme",
 			Host:   "!$&'()*+,;=hello!:1",
 			Path:   "/path",
@@ -469,7 +469,7 @@ var urltests = []URLTest{
 	// worst case path, still round trips
 	{
 		"http://host/!$&'()*+,;=:@[hello]",
-		&URL{
+		&base_url.URL{
 			Scheme:  "http",
 			Host:    "host",
 			Path:    "/!$&'()*+,;=:@[hello]",
@@ -480,7 +480,7 @@ var urltests = []URLTest{
 	// golang.org/issue/5684
 	{
 		"http://example.com/oid/[order_id]",
-		&URL{
+		&base_url.URL{
 			Scheme:  "http",
 			Host:    "example.com",
 			Path:    "/oid/[order_id]",
@@ -491,7 +491,7 @@ var urltests = []URLTest{
 	// golang.org/issue/12200 (colon with empty port)
 	{
 		"http://192.168.0.2:8080/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "192.168.0.2:8080",
 			Path:   "/foo",
@@ -500,7 +500,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://192.168.0.2:/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "192.168.0.2:",
 			Path:   "/foo",
@@ -509,7 +509,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://[2b01:e34:ef40:7730:8e70:5aff:fefe:edac]:8080/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[2b01:e34:ef40:7730:8e70:5aff:fefe:edac]:8080",
 			Path:   "/foo",
@@ -518,7 +518,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://[2b01:e34:ef40:7730:8e70:5aff:fefe:edac]:/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "[2b01:e34:ef40:7730:8e70:5aff:fefe:edac]:",
 			Path:   "/foo",
@@ -528,7 +528,7 @@ var urltests = []URLTest{
 	// golang.org/issue/7991 and golang.org/issue/12719 (non-ascii %-encoded in host)
 	{
 		"http://hello.世界.com/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "hello.世界.com",
 			Path:   "/foo",
@@ -537,7 +537,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://hello.%e4%b8%96%e7%95%8c.com/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "hello.世界.com",
 			Path:   "/foo",
@@ -546,7 +546,7 @@ var urltests = []URLTest{
 	},
 	{
 		"http://hello.%E4%B8%96%E7%95%8C.com/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "hello.世界.com",
 			Path:   "/foo",
@@ -556,7 +556,7 @@ var urltests = []URLTest{
 	// golang.org/issue/10433 (path beginning with //)
 	{
 		"http://example.com//foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Path:   "//foo",
@@ -566,7 +566,7 @@ var urltests = []URLTest{
 	// test that we can reparse the host names we accept.
 	{
 		"myscheme://authority<\"hi\">/foo",
-		&URL{
+		&base_url.URL{
 			Scheme: "myscheme",
 			Host:   "authority<\"hi\">",
 			Path:   "/foo",
@@ -578,7 +578,7 @@ var urltests = []URLTest{
 	// golang.org/issue/14002
 	{
 		"tcp://[2020::2020:20:2020:2020%25Windows%20Loves%20Spaces]:2020",
-		&URL{
+		&base_url.URL{
 			Scheme: "tcp",
 			Host:   "[2020::2020:20:2020:2020%Windows Loves Spaces]:2020",
 		},
@@ -588,7 +588,7 @@ var urltests = []URLTest{
 	// fix issue https://golang.org/issue/20054
 	{
 		"magnet:?xt=urn:btih:c12fe1c06bba254a9dc9f519b335aa7c1367a88a&dn",
-		&URL{
+		&base_url.URL{
 			Scheme:   "magnet",
 			Host:     "",
 			Path:     "",
@@ -598,7 +598,7 @@ var urltests = []URLTest{
 	},
 	{
 		"mailto:?subject=hi",
-		&URL{
+		&base_url.URL{
 			Scheme:   "mailto",
 			Host:     "",
 			Path:     "",
@@ -610,7 +610,7 @@ var urltests = []URLTest{
 	// https://go.dev/issue/75859
 	{
 		"postgres://host1:1,host2:2,host3:3",
-		&URL{
+		&base_url.URL{
 			Scheme: "postgres",
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
@@ -619,7 +619,7 @@ var urltests = []URLTest{
 	},
 	{
 		"postgresql://host1:1,host2:2,host3:3",
-		&URL{
+		&base_url.URL{
 			Scheme: "postgresql",
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
@@ -629,7 +629,7 @@ var urltests = []URLTest{
 	// Mongodb URLs can include a comma-separated list of host:post hosts.
 	{
 		"mongodb://user:password@host1:1,host2:2,host3:3",
-		&URL{
+		&base_url.URL{
 			Scheme: "mongodb",
 			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
@@ -639,7 +639,7 @@ var urltests = []URLTest{
 	},
 	{
 		"mongodb+srv://user:password@host1:1,host2:2,host3:3",
-		&URL{
+		&base_url.URL{
 			Scheme: "mongodb+srv",
 			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
@@ -650,7 +650,7 @@ var urltests = []URLTest{
 }
 
 // more useful string for debugging than fmt's struct printer
-func ufmt(u *URL) string {
+func ufmt(u *base_url.URL) string {
 	var user, pass any
 	if u.User != nil {
 		user = u.User.Username()
@@ -782,12 +782,12 @@ func TestParseRequestURI(t *testing.T) {
 }
 
 var stringURLTests = []struct {
-	url  URL
+	url  base_url.URL
 	want string
 }{
 	// No leading slash on path should prepend slash on String() call
 	{
-		url: URL{
+		url: base_url.URL{
 			Scheme: "http",
 			Host:   "www.google.com",
 			Path:   "search",
@@ -796,21 +796,21 @@ var stringURLTests = []struct {
 	},
 	// Relative path with first element containing ":" should be prepended with "./", golang.org/issue/17184
 	{
-		url: URL{
+		url: base_url.URL{
 			Path: "this:that",
 		},
 		want: "./this:that",
 	},
 	// Relative path with second element containing ":" should not be prepended with "./"
 	{
-		url: URL{
+		url: base_url.URL{
 			Path: "here/this:that",
 		},
 		want: "here/this:that",
 	},
 	// Non-relative path with first element containing ":" should not be prepended with "./"
 	{
-		url: URL{
+		url: base_url.URL{
 			Scheme: "http",
 			Host:   "www.google.com",
 			Path:   "this:that",
@@ -846,12 +846,12 @@ func TestURLString(t *testing.T) {
 func TestURLRedacted(t *testing.T) {
 	cases := []struct {
 		name string
-		url  *URL
+		url  *base_url.URL
 		want string
 	}{
 		{
 			name: "non-blank Password",
-			url: &URL{
+			url: &base_url.URL{
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
@@ -861,7 +861,7 @@ func TestURLRedacted(t *testing.T) {
 		},
 		{
 			name: "blank Password",
-			url: &URL{
+			url: &base_url.URL{
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
@@ -871,7 +871,7 @@ func TestURLRedacted(t *testing.T) {
 		},
 		{
 			name: "nil User",
-			url: &URL{
+			url: &base_url.URL{
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
@@ -881,7 +881,7 @@ func TestURLRedacted(t *testing.T) {
 		},
 		{
 			name: "blank Username, blank Password",
-			url: &URL{
+			url: &base_url.URL{
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
@@ -890,7 +890,7 @@ func TestURLRedacted(t *testing.T) {
 		},
 		{
 			name: "empty URL",
-			url:  &URL{},
+			url:  &base_url.URL{},
 			want: "",
 		},
 		{
@@ -1333,14 +1333,14 @@ var resolveReferenceTests = []struct {
 }
 
 func TestResolveReference(t *testing.T) {
-	mustParse := func(url string) *URL {
+	mustParse := func(url string) *base_url.URL {
 		u, err := Parse(url)
 		if err != nil {
 			t.Fatalf("Parse(%q) got err %v", url, err)
 		}
 		return u
 	}
-	opaque := &URL{Scheme: "scheme", Opaque: "opaque"}
+	opaque := &base_url.URL{Scheme: "scheme", Opaque: "opaque"}
 	for _, test := range resolveReferenceTests {
 		base := mustParse(test.base)
 		rel := mustParse(test.rel)
@@ -1546,13 +1546,13 @@ func TestParseQuery(t *testing.T) {
 }
 
 type RequestURITest struct {
-	url *URL
+	url *base_url.URL
 	out string
 }
 
 var requritests = []RequestURITest{
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Path:   "",
@@ -1560,7 +1560,7 @@ var requritests = []RequestURITest{
 		"/",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Path:   "/a b",
@@ -1569,7 +1569,7 @@ var requritests = []RequestURITest{
 	},
 	// golang.org/issue/4860 variant 1
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Opaque: "/%2F/%2F/",
@@ -1578,7 +1578,7 @@ var requritests = []RequestURITest{
 	},
 	// golang.org/issue/4860 variant 2
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Opaque: "//other.example.com/%2F/%2F/",
@@ -1587,7 +1587,7 @@ var requritests = []RequestURITest{
 	},
 	// better fix for issue 4860
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:  "http",
 			Host:    "example.com",
 			Path:    "/////",
@@ -1596,7 +1596,7 @@ var requritests = []RequestURITest{
 		"/%2F/%2F/",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:  "http",
 			Host:    "example.com",
 			Path:    "/////",
@@ -1605,7 +1605,7 @@ var requritests = []RequestURITest{
 		"/////",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "example.com",
 			Path:     "/a b",
@@ -1614,7 +1614,7 @@ var requritests = []RequestURITest{
 		"/a%20b?q=go+language",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "example.com",
 			Path:     "/a b",
@@ -1624,7 +1624,7 @@ var requritests = []RequestURITest{
 		"/a%20b?q=go+language",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:   "http",
 			Host:     "example.com",
 			Path:     "/a?b",
@@ -1634,14 +1634,14 @@ var requritests = []RequestURITest{
 		"/a%3Fb?q=go+language",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "myschema",
 			Opaque: "opaque",
 		},
 		"opaque",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:   "myschema",
 			Opaque:   "opaque",
 			RawQuery: "q=go+language",
@@ -1649,7 +1649,7 @@ var requritests = []RequestURITest{
 		"opaque?q=go+language",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme: "http",
 			Host:   "example.com",
 			Path:   "//foo",
@@ -1657,7 +1657,7 @@ var requritests = []RequestURITest{
 		"//foo",
 	},
 	{
-		&URL{
+		&base_url.URL{
 			Scheme:     "http",
 			Host:       "example.com",
 			Path:       "/foo",
@@ -1948,7 +1948,7 @@ func TestURLHostnameAndPort(t *testing.T) {
 		{"google.com]extra:extra", "google.com]extra:extra", ""},
 	}
 	for _, tt := range tests {
-		u := &URL{Host: tt.in}
+		u := &base_url.URL{Host: tt.in}
 		host, port := u.Hostname(), u.Port()
 		if host != tt.host {
 			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
@@ -1960,9 +1960,9 @@ func TestURLHostnameAndPort(t *testing.T) {
 }
 
 var (
-	_ encodingPkg.BinaryMarshaler   = (*URL)(nil)
-	_ encodingPkg.BinaryUnmarshaler = (*URL)(nil)
-	_ encodingPkg.BinaryAppender    = (*URL)(nil)
+	_ encodingPkg.BinaryMarshaler   = (*base_url.URL)(nil)
+	_ encodingPkg.BinaryUnmarshaler = (*base_url.URL)(nil)
+	_ encodingPkg.BinaryAppender    = (*base_url.URL)(nil)
 )
 
 func TestJSON(t *testing.T) {
@@ -1982,7 +1982,7 @@ func TestJSON(t *testing.T) {
 	// 	t.Errorf("json encoding: %s\nwant: %s\n", js, strconv.Quote(u.String()))
 	// }
 
-	u1 := new(URL)
+	u1 := new(base_url.URL)
 	err = json.Unmarshal(js, u1)
 	if err != nil {
 		t.Fatal(err)
@@ -2003,7 +2003,7 @@ func TestGob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u1 := new(URL)
+	u1 := new(base_url.URL)
 	err = gob.NewDecoder(&w).Decode(u1)
 	if err != nil {
 		t.Fatal(err)
