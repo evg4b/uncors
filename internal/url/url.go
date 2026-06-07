@@ -321,7 +321,7 @@ func Parse(rawURL string) (*URL, error) {
 	if frag == "" {
 		return url, nil
 	}
-	if err = url.setFragment(frag); err != nil {
+	if err = setFragment(url, frag); err != nil {
 		return nil, &base_url.Error{"parse", rawURL, err}
 	}
 	return url, nil
@@ -624,7 +624,7 @@ func validEncoded(s string, mode encoding) bool {
 }
 
 // setFragment is like setPath but for Fragment/RawFragment.
-func (u *URL) setFragment(f string) error {
+func setFragment(u *URL, f string) error {
 	frag, err := unescape(f, encodeFragment)
 	if err != nil {
 		return err
