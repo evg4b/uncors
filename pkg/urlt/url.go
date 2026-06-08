@@ -22,10 +22,9 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"net/url"
 	baseUrl "net/url"
 	"path"
-	"slices"
-	"strconv"
 	"strings"
 )
 
@@ -38,18 +37,6 @@ func ishex(c byte) bool {
 // Precondition: ishex(c) is true.
 func unhex(c byte) byte {
 	return 9*(c>>6) + (c & 15)
-}
-
-type EscapeError string
-
-func (e EscapeError) Error() string {
-	return "invalid URL escape " + strconv.Quote(string(e))
-}
-
-type InvalidHostError string
-
-func (e InvalidHostError) Error() string {
-	return "invalid character " + strconv.Quote(string(e)) + " in host name"
 }
 
 // See the reference implementation in gen_encoding_table.go.
@@ -92,7 +79,7 @@ func unescape(s string, mode encoding) (string, error) {
 				if len(s) > 3 {
 					s = s[:3]
 				}
-				return "", EscapeError(s)
+				return "", url.EscapeError(s)
 			}
 			// Per https://tools.ietf.org/html/rfc3986#page-21
 			// in the host component %-encoding can only be used
@@ -101,7 +88,7 @@ func unescape(s string, mode encoding) (string, error) {
 			// introduces %25 being allowed to escape a percent sign
 			// in IPv6 scoped-address literals. Yay.
 			if mode == encodeHost && unhex(s[i+1]) < 8 && s[i:i+3] != "%25" {
-				return "", EscapeError(s[i : i+3])
+				return "", url.EscapeError(s[i : i+3])
 			}
 			if mode == encodeZone {
 				// RFC 6874 says basically "anything goes" for zone identifiers
@@ -113,7 +100,7 @@ func unescape(s string, mode encoding) (string, error) {
 				// But Windows puts spaces here! Yay.
 				v := unhex(s[i+1])<<4 | unhex(s[i+2])
 				if s[i:i+3] != "%25" && v != ' ' && shouldEscape(v, encodeHost) {
-					return "", EscapeError(s[i : i+3])
+					return "", url.EscapeError(s[i : i+3])
 				}
 			}
 			i += 3
@@ -122,7 +109,7 @@ func unescape(s string, mode encoding) (string, error) {
 			i++
 		default:
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
-				return "", InvalidHostError(s[i : i+1])
+				return "", url.InvalidHostError(s[i : i+1])
 			}
 			i++
 		}
@@ -580,47 +567,6 @@ func validOptionalPort(port string) bool {
 	return true
 }
 
-// Values maps a string key to a list of values.
-// It is typically used for query parameters and form values.
-// Unlike in the http.Header map, the keys in a Values map
-// are case-sensitive.
-type Values map[string][]string
-
-// Get gets the first value associated with the given key.
-// If there are no values associated with the key, Get returns
-// the empty string. To access multiple values, use the map
-// directly.
-func (v Values) Get(key string) string {
-	vs := v[key]
-	if len(vs) == 0 {
-		return ""
-	}
-	return vs[0]
-}
-
-// Set sets the key to value. It replaces any existing
-// values.
-func (v Values) Set(key, value string) {
-	v[key] = []string{value}
-}
-
-// Add adds the value to key. It appends to any existing
-// values associated with key.
-func (v Values) Add(key, value string) {
-	v[key] = append(v[key], value)
-}
-
-// Del deletes the values associated with key.
-func (v Values) Del(key string) {
-	delete(v, key)
-}
-
-// Has checks whether a given key is set.
-func (v Values) Has(key string) bool {
-	_, ok := v[key]
-	return ok
-}
-
 // ParseQuery parses the URL-encoded query string and returns
 // a map listing the values specified for each key.
 // ParseQuery always returns a non-nil map containing all the
@@ -631,8 +577,8 @@ func (v Values) Has(key string) bool {
 // A setting without an equals sign is interpreted as a key set to an empty
 // value.
 // Settings containing a non-URL-encoded semicolon are considered invalid.
-func ParseQuery(query string) (Values, error) {
-	m := make(Values)
+func ParseQuery(query string) (url.Values, error) {
+	m := make(url.Values)
 	err := parseQuery(m, query)
 	return m, err
 }
@@ -640,7 +586,7 @@ func ParseQuery(query string) (Values, error) {
 // Keep this in sync with net/http/httputil.
 const defaultMaxParams = 10000
 
-func parseQuery(m Values, query string) (err error) {
+func parseQuery(m url.Values, query string) (err error) {
 	for query != "" {
 		var key string
 		key, query, _ = strings.Cut(query, "&")
@@ -669,37 +615,6 @@ func parseQuery(m Values, query string) (err error) {
 		m[key] = append(m[key], value)
 	}
 	return err
-}
-
-// Encode encodes the values into “URL encoded” form
-// ("bar=baz&foo=quux") sorted by key.
-func (v Values) Encode() string {
-	if len(v) == 0 {
-		return ""
-	}
-	var buf strings.Builder
-	// To minimize allocations, we eschew iterators and pre-size the slice in
-	// which we collect v's keys.
-	keys := make([]string, len(v))
-	var i int
-	for k := range v {
-		keys[i] = k
-		i++
-	}
-	slices.Sort(keys)
-	for _, k := range keys {
-		vs := v[k]
-		keyEscaped := QueryEscape(k)
-		for _, v := range vs {
-			if buf.Len() > 0 {
-				buf.WriteByte('&')
-			}
-			buf.WriteString(keyEscaped)
-			buf.WriteByte('=')
-			buf.WriteString(QueryEscape(v))
-		}
-	}
-	return buf.String()
 }
 
 // resolvePath applies special path segments from refs and applies

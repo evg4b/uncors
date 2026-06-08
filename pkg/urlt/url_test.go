@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	base_url "net/url"
 	"reflect"
 	"strings"
@@ -943,27 +944,27 @@ var unescapeTests = []EscapeTest{
 	{
 		"%", // not enough characters after %
 		"",
-		EscapeError("%"),
+		url.EscapeError("%"),
 	},
 	{
 		"%a", // not enough characters after %
 		"",
-		EscapeError("%a"),
+		url.EscapeError("%a"),
 	},
 	{
 		"%1", // not enough characters after %
 		"",
-		EscapeError("%1"),
+		url.EscapeError("%1"),
 	},
 	{
 		"123%45%6", // not enough characters after %
 		"",
-		EscapeError("%6"),
+		url.EscapeError("%6"),
 	},
 	{
 		"%zzzzz", // invalid hex digits
 		"",
-		EscapeError("%zz"),
+		url.EscapeError("%zz"),
 	},
 	{
 		"a+b",
@@ -1112,21 +1113,21 @@ func TestPathEscape(t *testing.T) {
 //}
 
 type EncodeQueryTest struct {
-	m        Values
+	m        url.Values
 	expected string
 }
 
 var encodeQueryTests = []EncodeQueryTest{
 	{nil, ""},
-	{Values{}, ""},
-	{Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
-	{Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
-	{Values{
+	{url.Values{}, ""},
+	{url.Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
+	{url.Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
+	{url.Values{
 		"a": {"a1", "a2", "a3"},
 		"b": {"b1", "b2", "b3"},
 		"c": {"c1", "c2", "c3"},
 	}, "a=a1&a=a2&a=a3&b=b1&b=b2&b=b3&c=c1&c=c2&c=c3"},
-	{Values{
+	{url.Values{
 		"a": {"a"},
 		"b": {"b"},
 		"c": {"c"},
@@ -1413,94 +1414,94 @@ func TestQueryValues(t *testing.T) {
 
 type parseTest struct {
 	query string
-	out   Values
+	out   url.Values
 	ok    bool
 }
 
 var parseTests = []parseTest{
 	{
 		query: "a=1",
-		out:   Values{"a": []string{"1"}},
+		out:   url.Values{"a": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&b=2",
-		out:   Values{"a": []string{"1"}, "b": []string{"2"}},
+		out:   url.Values{"a": []string{"1"}, "b": []string{"2"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2&a=banana",
-		out:   Values{"a": []string{"1", "2", "banana"}},
+		out:   url.Values{"a": []string{"1", "2", "banana"}},
 		ok:    true,
 	},
 	{
 		query: "ascii=%3Ckey%3A+0x90%3E",
-		out:   Values{"ascii": []string{"<key: 0x90>"}},
+		out:   url.Values{"ascii": []string{"<key: 0x90>"}},
 		ok:    true,
 	},
 	{
 		query: "a=1;b=2",
-		out:   Values{},
+		out:   url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a;b=1",
-		out:   Values{},
+		out:   url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=%3B", // hex encoding for semicolon
-		out:   Values{"a": []string{";"}},
+		out:   url.Values{"a": []string{";"}},
 		ok:    true,
 	},
 	{
 		query: "a%3Bb=1",
-		out:   Values{"a;b": []string{"1"}},
+		out:   url.Values{"a;b": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2;a=banana",
-		out:   Values{"a": []string{"1"}},
+		out:   url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a;b&c=1",
-		out:   Values{"c": []string{"1"}},
+		out:   url.Values{"c": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;a=3&c=4",
-		out:   Values{"a": []string{"1"}, "c": []string{"4"}},
+		out:   url.Values{"a": []string{"1"}, "c": []string{"4"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;c=3",
-		out:   Values{"a": []string{"1"}},
+		out:   url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";",
-		out:   Values{},
+		out:   url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1;",
-		out:   Values{},
+		out:   url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1&;",
-		out:   Values{"a": []string{"1"}},
+		out:   url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";a=1&b=2",
-		out:   Values{"b": []string{"2"}},
+		out:   url.Values{"b": []string{"2"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;",
-		out:   Values{"a": []string{"1"}},
+		out:   url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 }
