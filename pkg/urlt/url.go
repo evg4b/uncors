@@ -70,15 +70,18 @@ func unescape(s string, mode encoding) (string, error) {
 	// Count %, check that they're well-formed.
 	n := 0
 	hasPlus := false
+
 	for i := 0; i < len(s); {
 		switch s[i] {
 		case '%':
 			n++
+
 			if i+2 >= len(s) || !ishex(s[i+1]) || !ishex(s[i+2]) {
 				s = s[i:]
 				if len(s) > 3 {
 					s = s[:3]
 				}
+
 				return "", url.EscapeError(s)
 			}
 			// Per https://tools.ietf.org/html/rfc3986#page-21
@@ -90,6 +93,7 @@ func unescape(s string, mode encoding) (string, error) {
 			if mode == encodeHost && unhex(s[i+1]) < 8 && s[i:i+3] != "%25" {
 				return "", url.EscapeError(s[i : i+3])
 			}
+
 			if mode == encodeZone {
 				// RFC 6874 says basically "anything goes" for zone identifiers
 				// and that even non-ASCII can be redundantly escaped,
@@ -103,6 +107,7 @@ func unescape(s string, mode encoding) (string, error) {
 					return "", url.EscapeError(s[i : i+3])
 				}
 			}
+
 			i += 3
 		case '+':
 			hasPlus = mode == encodeQueryComponent
@@ -111,6 +116,7 @@ func unescape(s string, mode encoding) (string, error) {
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
 				return "", url.InvalidHostError(s[i : i+1])
 			}
+
 			i++
 		}
 	}
@@ -120,14 +126,17 @@ func unescape(s string, mode encoding) (string, error) {
 	}
 
 	var unescapedPlusSign byte
+
 	switch mode {
 	case encodeQueryComponent:
 		unescapedPlusSign = ' '
 	default:
 		unescapedPlusSign = '+'
 	}
+
 	var t strings.Builder
 	t.Grow(len(s) - 2*n)
+
 	for i := 0; i < len(s); i++ {
 		switch s[i] {
 		case '%':
@@ -141,6 +150,7 @@ func unescape(s string, mode encoding) (string, error) {
 			t.WriteByte(s[i])
 		}
 	}
+
 	return t.String(), nil
 }
 
@@ -158,6 +168,7 @@ func PathEscape(s string) string {
 
 func escape(s string, mode encoding) string {
 	spaceCount, hexCount := 0, 0
+
 	for _, c := range []byte(s) {
 		if shouldEscape(c, mode) {
 			if c == ' ' && mode == encodeQueryComponent {
@@ -172,8 +183,10 @@ func escape(s string, mode encoding) string {
 		return s
 	}
 
-	var buf [64]byte
-	var t []byte
+	var (
+		buf [64]byte
+		t   []byte
+	)
 
 	required := len(s) + 2*hexCount
 	if required <= len(buf) {
@@ -184,15 +197,18 @@ func escape(s string, mode encoding) string {
 
 	if hexCount == 0 {
 		copy(t, s)
-		for i := 0; i < len(s); i++ {
+
+		for i := range len(s) {
 			if s[i] == ' ' {
 				t[i] = '+'
 			}
 		}
+
 		return string(t)
 	}
 
 	j := 0
+
 	for _, c := range []byte(s) {
 		switch {
 		case c == ' ' && mode == encodeQueryComponent:
@@ -208,34 +224,37 @@ func escape(s string, mode encoding) string {
 			j++
 		}
 	}
+
 	return string(t)
 }
 
 // Maybe rawURL is of the form scheme:path.
 // (Scheme must be [a-zA-Z][a-zA-Z0-9+.-]*)
 // If so, return scheme, path; else return "", rawURL.
-func getScheme(rawURL string) (scheme, path string, err error) {
-	for i := 0; i < len(rawURL); i++ {
+func getScheme(rawURL, defaultScheme string) (scheme, path string, err error) {
+	for i := range len(rawURL) {
 		c := rawURL[i]
 		switch {
 		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z':
 		// do nothing
 		case '0' <= c && c <= '9' || c == '+' || c == '-' || c == '.':
 			if i == 0 {
-				return "", rawURL, nil
+				return defaultScheme, rawURL, nil
 			}
 		case c == ':':
 			if i == 0 {
 				return "", "", errors.New("missing protocol scheme")
 			}
+
 			return rawURL[:i], rawURL[i+1:], nil
 		default:
 			// we have encountered an invalid character,
 			// so there is no valid scheme
-			return "", rawURL, nil
+			return defaultScheme, rawURL, nil
 		}
 	}
-	return "", rawURL, nil
+
+	return defaultScheme, rawURL, nil
 }
 
 // Parse parses a raw url into a [URL] structure.
@@ -245,18 +264,26 @@ func getScheme(rawURL string) (scheme, path string, err error) {
 // without a scheme is invalid but may not necessarily return an
 // error, due to parsing ambiguities.
 func Parse(rawURL string) (*baseUrl.URL, error) {
+	return ParseWithDefaultScheme(rawURL, "")
+}
+
+func ParseWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, error) {
 	// Cut off #frag
 	u, frag, _ := strings.Cut(rawURL, "#")
-	url, err := parse(u, false)
+
+	url, err := parse(u, defaultScheme, false)
 	if err != nil {
-		return nil, &baseUrl.Error{"parse", u, err}
+		return nil, &baseUrl.Error{Op: "parse", URL: u, Err: err}
 	}
+
 	if frag == "" {
 		return url, nil
 	}
+
 	if err = setFragment(url, frag); err != nil {
-		return nil, &baseUrl.Error{"parse", rawURL, err}
+		return nil, &baseUrl.Error{Op: "parse", URL: rawURL, Err: err}
 	}
+
 	return url, nil
 }
 
@@ -266,10 +293,15 @@ func Parse(rawURL string) (*baseUrl.URL, error) {
 // The string url is assumed not to have a #fragment suffix.
 // (Web browsers strip #fragment before sending the URL to a web server.)
 func ParseRequestURI(rawURL string) (*baseUrl.URL, error) {
-	url, err := parse(rawURL, true)
+	return ParseRequestURIWithDefaultScheme(rawURL, "")
+}
+
+func ParseRequestURIWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, error) {
+	url, err := parse(rawURL, defaultScheme, true)
 	if err != nil {
-		return nil, &baseUrl.Error{"parse", rawURL, err}
+		return nil, &baseUrl.Error{Op: "parse", URL: rawURL, Err: err}
 	}
+
 	return url, nil
 }
 
@@ -277,9 +309,11 @@ func ParseRequestURI(rawURL string) (*baseUrl.URL, error) {
 // viaRequest is true, the URL is assumed to have arrived via an HTTP request,
 // in which case only absolute URLs or path-absolute relative URLs are allowed.
 // If viaRequest is false, all forms of relative URLs are allowed.
-func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
-	var rest string
-	var err error
+func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) {
+	var (
+		rest string
+		err  error
+	)
 
 	if stringContainsCTLByte(rawURL) {
 		return nil, errors.New("net/url: invalid control character in URL")
@@ -288,18 +322,21 @@ func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
 	if rawURL == "" && viaRequest {
 		return nil, errors.New("empty url")
 	}
+
 	url := new(baseUrl.URL)
 
 	if rawURL == "*" {
 		url.Path = "*"
+
 		return url, nil
 	}
 
 	// Split off possible leading "http:", "mailto:", etc.
 	// Cannot contain escaped characters.
-	if url.Scheme, rest, err = getScheme(rawURL); err != nil {
+	if url.Scheme, rest, err = getScheme(rawURL, defaultScheme); err != nil {
 		return nil, err
 	}
+
 	url.Scheme = strings.ToLower(url.Scheme)
 
 	if strings.HasSuffix(rest, "?") && strings.Count(rest, "?") == 1 {
@@ -313,8 +350,10 @@ func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
 		if url.Scheme != "" {
 			// We consider rootless paths per RFC 3986 as opaque.
 			url.Opaque = rest
+
 			return url, nil
 		}
+
 		if viaRequest {
 			return nil, errors.New("invalid URI for request")
 		}
@@ -333,10 +372,12 @@ func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
 
 	if (url.Scheme != "" || !viaRequest && !strings.HasPrefix(rest, "///")) && strings.HasPrefix(rest, "//") {
 		var authority string
+
 		authority, rest = rest[2:], ""
 		if i := strings.Index(authority, "/"); i >= 0 {
 			authority, rest = authority[:i], authority[i:]
 		}
+
 		url.User, url.Host, err = parseAuthority(url.Scheme, authority)
 		if err != nil {
 			return nil, err
@@ -354,6 +395,7 @@ func parse(rawURL string, viaRequest bool) (*baseUrl.URL, error) {
 	if err := setPath(url, rest); err != nil {
 		return nil, err
 	}
+
 	return url, nil
 }
 
@@ -364,31 +406,39 @@ func parseAuthority(scheme, authority string) (user *baseUrl.Userinfo, host stri
 	} else {
 		host, err = parseHost(scheme, authority[i+1:])
 	}
+
 	if err != nil {
 		return nil, "", err
 	}
+
 	if i < 0 {
 		return nil, host, nil
 	}
+
 	userinfo := authority[:i]
 	if !validUserinfo(userinfo) {
 		return nil, "", errors.New("net/url: invalid userinfo")
 	}
+
 	if !strings.Contains(userinfo, ":") {
 		if userinfo, err = unescape(userinfo, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
+
 		user = baseUrl.User(userinfo)
 	} else {
 		username, password, _ := strings.Cut(userinfo, ":")
 		if username, err = unescape(username, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
+
 		if password, err = unescape(password, encodeUserPassword); err != nil {
 			return nil, "", err
 		}
+
 		user = baseUrl.UserPassword(username, password)
 	}
+
 	return user, host, nil
 }
 
@@ -409,12 +459,14 @@ func parseHost(scheme, host string) (string, error) {
 		if !validOptionalPort(colonPort) {
 			return "", fmt.Errorf("invalid port %q after host", colonPort)
 		}
+
 		unescapedColonPort, err := unescape(colonPort, encodeHost)
 		if err != nil {
 			return "", err
 		}
 
 		hostname := host[openBracketIdx+1 : closeBracketIdx]
+
 		var unescapedHostname string
 		// RFC 6874 defines that %25 (%-encoded percent) introduces
 		// the zone identifier, and the zone identifier can use basically
@@ -428,13 +480,16 @@ func parseHost(scheme, host string) (string, error) {
 			if err != nil {
 				return "", err
 			}
+
 			zonePart, err := unescape(hostname[zoneIdx:], encodeZone)
 			if err != nil {
 				return "", err
 			}
+
 			unescapedHostname = hostPart + zonePart
 		} else {
 			var err error
+
 			unescapedHostname, err = unescape(hostname, encodeHost)
 			if err != nil {
 				return "", err
@@ -448,9 +503,11 @@ func parseHost(scheme, host string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("invalid host: %w", err)
 		}
+
 		if addr.Is4() {
 			return "", errors.New("invalid IP-literal")
 		}
+
 		return "[" + unescapedHostname + "]" + unescapedColonPort, nil
 	} else if i := strings.Index(host, ":"); i != -1 {
 		lastColon := strings.LastIndex(host, ":")
@@ -469,6 +526,7 @@ func parseHost(scheme, host string) (string, error) {
 				i = lastColon
 			}
 		}
+
 		colonPort := host[i:]
 		if !validOptionalPort(colonPort) {
 			return "", fmt.Errorf("invalid port %q after host", colonPort)
@@ -479,6 +537,7 @@ func parseHost(scheme, host string) (string, error) {
 	if host, err = unescape(host, encodeHost); err != nil {
 		return "", err
 	}
+
 	return host, nil
 }
 
@@ -498,6 +557,7 @@ func setPath(u *baseUrl.URL, p string) error {
 	if err != nil {
 		return err
 	}
+
 	u.Path = path
 	if escp := escape(path, encodePath); p == escp {
 		// Default encoding is fine.
@@ -505,6 +565,7 @@ func setPath(u *baseUrl.URL, p string) error {
 	} else {
 		u.RawPath = p
 	}
+
 	return nil
 }
 
@@ -512,7 +573,7 @@ func setPath(u *baseUrl.URL, p string) error {
 // according to mode.
 // It must not contain any bytes that require escaping during encoding.
 func validEncoded(s string, mode encoding) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		// RFC 3986, Appendix A.
 		// pchar = unreserved / pct-encoded / sub-delims / ":" / "@".
 		// shouldEscape is not quite compliant with the RFC,
@@ -531,6 +592,7 @@ func validEncoded(s string, mode encoding) bool {
 			}
 		}
 	}
+
 	return true
 }
 
@@ -540,6 +602,7 @@ func setFragment(u *baseUrl.URL, f string) error {
 	if err != nil {
 		return err
 	}
+
 	u.Fragment = frag
 	if escf := escape(frag, encodeFragment); f == escf {
 		// Default encoding is fine.
@@ -547,23 +610,27 @@ func setFragment(u *baseUrl.URL, f string) error {
 	} else {
 		u.RawFragment = f
 	}
+
 	return nil
 }
 
 // validOptionalPort reports whether port is either an empty string
-// or matches /^:\d*$/
+// or matches /^:\d*$/.
 func validOptionalPort(port string) bool {
 	if port == "" {
 		return true
 	}
+
 	if port[0] != ':' {
 		return false
 	}
+
 	for _, b := range port[1:] {
 		if b < '0' || b > '9' {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -580,6 +647,7 @@ func validOptionalPort(port string) bool {
 func ParseQuery(query string) (url.Values, error) {
 	m := make(url.Values)
 	err := parseQuery(m, query)
+
 	return m, err
 }
 
@@ -589,31 +657,41 @@ const defaultMaxParams = 10000
 func parseQuery(m url.Values, query string) (err error) {
 	for query != "" {
 		var key string
+
 		key, query, _ = strings.Cut(query, "&")
 		if strings.Contains(key, ";") {
 			err = fmt.Errorf("invalid semicolon separator in query")
+
 			continue
 		}
+
 		if key == "" {
 			continue
 		}
+
 		key, value, _ := strings.Cut(key, "=")
+
 		key, err1 := QueryUnescape(key)
 		if err1 != nil {
 			if err == nil {
 				err = err1
 			}
+
 			continue
 		}
+
 		value, err1 = QueryUnescape(value)
 		if err1 != nil {
 			if err == nil {
 				err = err1
 			}
+
 			continue
 		}
+
 		m[key] = append(m[key], value)
 	}
+
 	return err
 }
 
@@ -629,6 +707,7 @@ func resolvePath(base, ref string) string {
 	} else {
 		full = ref
 	}
+
 	if full == "" {
 		return ""
 	}
@@ -637,10 +716,12 @@ func resolvePath(base, ref string) string {
 		elem string
 		dst  strings.Builder
 	)
+
 	first := true
 	remaining := full
 	// We want to return a leading '/', so write it now.
 	dst.WriteByte('/')
+
 	found := true
 	for found {
 		elem, remaining, found = strings.Cut(remaining, "/")
@@ -657,6 +738,7 @@ func resolvePath(base, ref string) string {
 
 			dst.Reset()
 			dst.WriteByte('/')
+
 			if index == -1 {
 				first = true
 			} else {
@@ -666,7 +748,9 @@ func resolvePath(base, ref string) string {
 			if !first {
 				dst.WriteByte('/')
 			}
+
 			dst.WriteString(elem)
+
 			first = false
 		}
 	}
@@ -680,6 +764,7 @@ func resolvePath(base, ref string) string {
 	if len(r) > 1 && r[1] == '/' {
 		r = r[1:]
 	}
+
 	return r
 }
 
@@ -703,7 +788,9 @@ func splitHostPort(hostPort string) (host, port string) {
 
 func joinPath(u *baseUrl.URL, elem ...string) (*baseUrl.URL, error) {
 	elem = append([]string{u.EscapedPath()}, elem...)
+
 	var p string
+
 	if !strings.HasPrefix(elem[0], "/") {
 		// Return a relative path if u is relative,
 		// but ensure that it contains no ../ elements.
@@ -717,8 +804,10 @@ func joinPath(u *baseUrl.URL, elem ...string) (*baseUrl.URL, error) {
 	if strings.HasSuffix(elem[len(elem)-1], "/") && !strings.HasSuffix(p, "/") {
 		p += "/"
 	}
+
 	url := *u
 	err := setPath(&url, p)
+
 	return &url, err
 }
 
@@ -736,12 +825,15 @@ func validUserinfo(s string) bool {
 		if 'A' <= r && r <= 'Z' {
 			continue
 		}
+
 		if 'a' <= r && r <= 'z' {
 			continue
 		}
+
 		if '0' <= r && r <= '9' {
 			continue
 		}
+
 		switch r {
 		case '-', '.', '_', ':', '~', '!', '$', '&', '\'',
 			'(', ')', '*', '+', ',', ';', '=', '%':
@@ -761,17 +853,19 @@ func validUserinfo(s string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
 // stringContainsCTLByte reports whether s contains any ASCII control character.
 func stringContainsCTLByte(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		b := s[i]
 		if b < ' ' || b == 0x7f {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -783,9 +877,11 @@ func JoinPath(base string, elem ...string) (result string, err error) {
 	if err != nil {
 		return
 	}
+
 	res, err := joinPath(url, elem...)
 	if err != nil {
 		return "", err
 	}
+
 	return res.String(), nil
 }

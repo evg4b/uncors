@@ -87,15 +87,19 @@ func TestParse(t *testing.T) {
 
 			if !testCase.err {
 				require.NoError(t, err)
+
 				if testCase.out != nil {
 					assert.Equal(t, testCase.out.Scheme, url.Scheme)
 					assert.Equal(t, testCase.out.Host, url.Host)
+
 					if testCase.out.Path != "" {
 						assert.Equal(t, testCase.out.Path, url.Path)
 					}
+
 					if testCase.out.RawQuery != "" {
 						assert.Equal(t, testCase.out.RawQuery, url.RawQuery)
 					}
+
 					if testCase.out.Fragment != "" {
 						assert.Equal(t, testCase.out.Fragment, url.Fragment)
 					}

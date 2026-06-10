@@ -13,6 +13,7 @@ import (
 	encodingPkg "encoding"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -644,7 +645,7 @@ var urltests = []URLTest{
 	},
 }
 
-// more useful string for debugging than fmt's struct printer
+// more useful string for debugging than fmt's struct printer.
 func ufmt(u *base_url.URL) string {
 	var user, pass any
 	if u.User != nil {
@@ -653,6 +654,7 @@ func ufmt(u *base_url.URL) string {
 			pass = p
 		}
 	}
+
 	return fmt.Sprintf("opaque=%q, scheme=%q, user=%#v, pass=%#v, host=%q, path=%q, rawpath=%q, rawq=%q, frag=%q, rawfrag=%q, forcequery=%v, omithost=%t",
 		u.Opaque, u.Scheme, user, pass, u.Host, u.Path, u.RawPath, u.RawQuery, u.Fragment, u.RawFragment, u.ForceQuery, u.OmitHost)
 }
@@ -660,21 +662,28 @@ func ufmt(u *base_url.URL) string {
 func BenchmarkString(b *testing.B) {
 	b.StopTimer()
 	b.ReportAllocs()
+
 	for _, tt := range urltests {
 		u, err := Parse(tt.in)
 		if err != nil {
 			b.Errorf("Parse(%q) returned error %s", tt.in, err)
+
 			continue
 		}
+
 		if tt.roundtrip == "" {
 			continue
 		}
+
 		b.StartTimer()
+
 		var g string
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			g = u.String()
 		}
+
 		b.StopTimer()
+
 		if w := tt.roundtrip; b.N > 0 && g != w {
 			b.Errorf("Parse(%q).String() == %q, want %q", tt.in, g, w)
 		}
@@ -686,8 +695,10 @@ func TestParse(t *testing.T) {
 		u, err := Parse(tt.in)
 		if err != nil {
 			t.Errorf("Parse(%q) returned error %v", tt.in, err)
+
 			continue
 		}
+
 		if !reflect.DeepEqual(u, tt.out) {
 			t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
 		}
@@ -771,6 +782,7 @@ func TestParseRequestURI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
+
 	if url.Path != pathThatLooksSchemeRelative {
 		t.Errorf("ParseRequestURI path:\ngot  %q\nwant %q", url.Path, pathThatLooksSchemeRelative)
 	}
@@ -819,12 +831,15 @@ func TestURLString(t *testing.T) {
 		u, err := Parse(tt.in)
 		if err != nil {
 			t.Errorf("Parse(%q) returned error %s", tt.in, err)
+
 			continue
 		}
+
 		expected := tt.in
 		if tt.roundtrip != "" {
 			expected = tt.roundtrip
 		}
+
 		s := u.String()
 		if s != expected {
 			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
@@ -986,18 +1001,22 @@ func TestUnescape(t *testing.T) {
 		}
 
 		in := tt.in
+
 		out := tt.out
 		if strings.Contains(tt.in, "+") {
 			in = strings.ReplaceAll(tt.in, "+", "%20")
+
 			actual, err := PathUnescape(in)
 			if actual != tt.out || (err != nil) != (tt.err != nil) {
 				t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, tt.out, tt.err)
 			}
+
 			if tt.err == nil {
 				s, err := QueryUnescape(strings.ReplaceAll(tt.in, "+", "XXX"))
 				if err != nil {
 					continue
 				}
+
 				in = tt.in
 				out = strings.ReplaceAll(s, "XXX", "+")
 			}
@@ -1106,7 +1125,7 @@ func TestPathEscape(t *testing.T) {
 	}
 }
 
-//var userinfoTests = []UserinfoTest{
+// var userinfoTests = []UserinfoTest{
 //	{"user", "password", "user:password"},
 //	{"foo:bar", "~!@#$%^&*()_+{}|[]\\-=`:;'\"<>?,./",
 //		"foo%3Abar:~!%40%23$%25%5E&*()_+%7B%7D%7C%5B%5D%5C-=%60%3A;'%22%3C%3E?,.%2F"},
@@ -1152,6 +1171,7 @@ func BenchmarkEncodeQuery(b *testing.B) {
 	for _, tt := range encodeQueryTests {
 		b.Run(tt.expected, func(b *testing.B) {
 			b.ReportAllocs()
+
 			for b.Loop() {
 				tt.m.Encode()
 			}
@@ -1187,7 +1207,8 @@ func TestResolvePath(t *testing.T) {
 
 func BenchmarkResolvePath(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+
+	for range b.N {
 		resolvePath("a/b/c", ".././d")
 	}
 }
@@ -1333,12 +1354,15 @@ func TestResolveReference(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Parse(%q) got err %v", url, err)
 		}
+
 		return u
 	}
 	opaque := &base_url.URL{Scheme: "scheme", Opaque: "opaque"}
+
 	for _, test := range resolveReferenceTests {
 		base := mustParse(test.base)
 		rel := mustParse(test.rel)
+
 		url := base.ResolveReference(rel)
 		if got := url.String(); got != test.expected {
 			t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
@@ -1377,10 +1401,12 @@ func TestResolveReference(t *testing.T) {
 
 func TestQueryValues(t *testing.T) {
 	u, _ := Parse("http://x.com?foo=bar&bar=1&bar=2&baz")
+
 	v := u.Query()
 	if len(v) != 3 {
 		t.Errorf("got %d keys in Query values, want 3", len(v))
 	}
+
 	if g, e := v.Get("foo"), "bar"; g != e {
 		t.Errorf("Get(foo) = %q, want %q", g, e)
 	}
@@ -1388,25 +1414,33 @@ func TestQueryValues(t *testing.T) {
 	if g, e := v.Get("Foo"), ""; g != e {
 		t.Errorf("Get(Foo) = %q, want %q", g, e)
 	}
+
 	if g, e := v.Get("bar"), "1"; g != e {
 		t.Errorf("Get(bar) = %q, want %q", g, e)
 	}
+
 	if g, e := v.Get("baz"), ""; g != e {
 		t.Errorf("Get(baz) = %q, want %q", g, e)
 	}
+
 	if h, e := v.Has("foo"), true; h != e {
 		t.Errorf("Has(foo) = %t, want %t", h, e)
 	}
+
 	if h, e := v.Has("bar"), true; h != e {
 		t.Errorf("Has(bar) = %t, want %t", h, e)
 	}
+
 	if h, e := v.Has("baz"), true; h != e {
 		t.Errorf("Has(baz) = %t, want %t", h, e)
 	}
+
 	if h, e := v.Has("noexist"), false; h != e {
 		t.Errorf("Has(noexist) = %t, want %t", h, e)
 	}
+
 	v.Del("bar")
+
 	if g, e := v.Get("bar"), ""; g != e {
 		t.Errorf("second Get(bar) = %q, want %q", g, e)
 	}
@@ -1515,21 +1549,28 @@ func TestParseQuery(t *testing.T) {
 				if test.ok {
 					want = "<nil>"
 				}
+
 				t.Errorf("Unexpected error: %v, want %v", err, want)
 			}
+
 			if len(form) != len(test.out) {
 				t.Errorf("len(form) = %d, want %d", len(form), len(test.out))
 			}
+
 			for k, evs := range test.out {
 				vs, ok := form[k]
 				if !ok {
 					t.Errorf("Missing key %q", k)
+
 					continue
 				}
+
 				if len(vs) != len(evs) {
 					t.Errorf("len(form[%q]) = %d, want %d", k, len(vs), len(evs))
+
 					continue
 				}
+
 				for j, ev := range evs {
 					if v := vs[j]; v != ev {
 						t.Errorf("form[%q][%d] = %q, want %q", k, j, v, ev)
@@ -1674,7 +1715,9 @@ func TestRequestURI(t *testing.T) {
 func TestParseFailure(t *testing.T) {
 	// Test that the first parse error is returned.
 	const url = "%gh&%ij"
+
 	_, err := ParseQuery(url)
+
 	errStr := fmt.Sprint(err)
 	if !strings.Contains(errStr, "%gh") {
 		t.Errorf(`ParseQuery(%q) returned error %q, want something containing %q"`, url, errStr, "%gh")
@@ -1740,20 +1783,23 @@ func TestParseErrors(t *testing.T) {
 			if err == nil {
 				t.Errorf("Parse(%q) = %#v; want an error", tt.in, u)
 			}
+
 			continue
 		}
+
 		if err != nil {
 			t.Errorf("Parse(%q) = %v; want no error", tt.in, err)
 		}
 	}
 }
 
-// Issue 11202
+// Issue 11202.
 func TestStarRequest(t *testing.T) {
 	u, err := Parse("*")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got, want := u.RequestURI(), "*"; got != want {
 		t.Errorf("RequestURI = %q; want %q", got, want)
 	}
@@ -1855,55 +1901,61 @@ var netErrorTests = []struct {
 	timeout   bool
 	temporary bool
 }{{
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutError{timeout: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: true}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutError{timeout: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &temporaryError{temporary: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: true}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &temporaryError{temporary: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
 	timeout:   true,
 	temporary: true,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &base_url.Error{"Get", "http://google.com/", io.EOF},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: io.EOF},
 	timeout:   false,
 	temporary: false,
 }}
 
-// Test that url.Error implements net.Error and that it forwards
+// Test that url.Error implements net.Error and that it forwards.
 func TestURLErrorImplementsNetError(t *testing.T) {
 	for i, tt := range netErrorTests {
-		err, ok := tt.err.(net.Error)
+		var err net.Error
+
+		ok := errors.As(tt.err, &err)
 		if !ok {
 			t.Errorf("%d: %T does not implement net.Error", i+1, tt.err)
+
 			continue
 		}
+
 		if err.Timeout() != tt.timeout {
 			t.Errorf("%d: err.Timeout(): got %v, want %v", i+1, err.Timeout(), tt.timeout)
+
 			continue
 		}
+
 		if err.Temporary() != tt.temporary {
 			t.Errorf("%d: err.Temporary(): got %v, want %v", i+1, err.Temporary(), tt.temporary)
 		}
@@ -1944,10 +1996,12 @@ func TestURLHostnameAndPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		u := &base_url.URL{Host: tt.in}
+
 		host, port := u.Hostname(), u.Port()
 		if host != tt.host {
 			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
 		}
+
 		if port != tt.port {
 			t.Errorf("Port for Host %q = %q; want %q", tt.in, port, tt.port)
 		}
@@ -1965,6 +2019,7 @@ func TestJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	js, err := json.Marshal(u)
 	if err != nil {
 		t.Fatal(err)
@@ -1978,10 +2033,12 @@ func TestJSON(t *testing.T) {
 	// }
 
 	u1 := new(base_url.URL)
+
 	err = json.Unmarshal(js, u1)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if u1.String() != u.String() {
 		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
 	}
@@ -1992,17 +2049,21 @@ func TestGob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	var w bytes.Buffer
+
 	err = gob.NewEncoder(&w).Encode(u)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	u1 := new(base_url.URL)
+
 	err = gob.NewDecoder(&w).Decode(u1)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if u1.String() != u.String() {
 		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
 	}
@@ -2048,6 +2109,7 @@ func TestRejectControlCharacters(t *testing.T) {
 	}
 	for _, s := range tests {
 		_, err := Parse(s)
+
 		const wantSub = "net/url: invalid control character in URL"
 		if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
 			t.Errorf("Parse(%q) error = %q; want substring %q", s, got, wantSub)
@@ -2099,11 +2161,14 @@ func BenchmarkQueryEscape(b *testing.B) {
 	for _, tc := range escapeBenchmarks {
 		b.Run("", func(b *testing.B) {
 			b.ReportAllocs()
+
 			var g string
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				g = QueryEscape(tc.unescaped)
 			}
+
 			b.StopTimer()
+
 			if g != tc.query {
 				b.Errorf("QueryEscape(%q) == %q, want %q", tc.unescaped, g, tc.query)
 			}
@@ -2115,11 +2180,14 @@ func BenchmarkPathEscape(b *testing.B) {
 	for _, tc := range escapeBenchmarks {
 		b.Run("", func(b *testing.B) {
 			b.ReportAllocs()
+
 			var g string
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				g = PathEscape(tc.unescaped)
 			}
+
 			b.StopTimer()
+
 			if g != tc.path {
 				b.Errorf("PathEscape(%q) == %q, want %q", tc.unescaped, g, tc.path)
 			}
@@ -2131,11 +2199,14 @@ func BenchmarkQueryUnescape(b *testing.B) {
 	for _, tc := range escapeBenchmarks {
 		b.Run("", func(b *testing.B) {
 			b.ReportAllocs()
+
 			var g string
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				g, _ = QueryUnescape(tc.query)
 			}
+
 			b.StopTimer()
+
 			if g != tc.unescaped {
 				b.Errorf("QueryUnescape(%q) == %q, want %q", tc.query, g, tc.unescaped)
 			}
@@ -2147,11 +2218,14 @@ func BenchmarkPathUnescape(b *testing.B) {
 	for _, tc := range escapeBenchmarks {
 		b.Run("", func(b *testing.B) {
 			b.ReportAllocs()
+
 			var g string
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				g, _ = PathUnescape(tc.path)
 			}
+
 			b.StopTimer()
+
 			if g != tc.unescaped {
 				b.Errorf("PathUnescape(%q) == %q, want %q", tc.path, g, tc.unescaped)
 			}
@@ -2289,6 +2363,7 @@ func TestJoinPath(t *testing.T) {
 		if tt.out == "" {
 			wantErr = "non-nil error"
 		}
+
 		out, err := JoinPath(tt.base, tt.elem...)
 		if out != tt.out || (err == nil) != (tt.out != "") {
 			t.Errorf("JoinPath(%q, %q) = %q, %v, want %q, %v", tt.base, tt.elem, out, err, tt.out, wantErr)
@@ -2299,12 +2374,15 @@ func TestJoinPath(t *testing.T) {
 			if tt.out != "" {
 				t.Errorf("Parse(%q) = %v", tt.base, err)
 			}
+
 			continue
 		}
+
 		if tt.out == "" {
 			// URL.JoinPath doesn't return an error, so leave it unchanged
 			tt.out = tt.base
 		}
+
 		out = u.JoinPath(tt.elem...).String()
 		if out != tt.out {
 			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
