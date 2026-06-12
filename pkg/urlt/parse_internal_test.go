@@ -43,11 +43,11 @@ func TestApplyDefaultScheme(t *testing.T) {
 }
 
 func TestCheckHost(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
+	// checkHost only guards against an empty host; character validation is done
+	// by parseRaw via the encoding table (see TestParse for "<script>" etc).
+	t.Run("non-empty host is accepted", func(t *testing.T) {
 		for _, host := range []string{
 			"example.com",
-			"sub.example.com",
-			"subdomain_test.example.com",
 			"127.0.0.1",
 			"[2001:db8::1]",
 			"{tenant}.example.com",
@@ -56,9 +56,7 @@ func TestCheckHost(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		for _, host := range []string{"", "<script>", "ex ample.com"} {
-			assert.Error(t, checkHost(host), host)
-		}
+	t.Run("empty host is rejected", func(t *testing.T) {
+		assert.ErrorIs(t, checkHost(""), ErrEmptyHost)
 	})
 }

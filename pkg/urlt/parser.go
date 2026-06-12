@@ -9,18 +9,14 @@ package urlt
 import (
 	"errors"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/idna"
 )
 
 var (
-	ErrEmptyHost   = errors.New("empty host")
-	ErrEmptyPort   = errors.New("empty port")
-	ErrInvalidHost = errors.New("invalid host")
-	ErrEmptyURL    = errors.New("empty url")
+	ErrEmptyHost = errors.New("empty host")
+	ErrEmptyPort = errors.New("empty port")
+	ErrEmptyURL  = errors.New("empty url")
 )
 
 const (
@@ -28,17 +24,12 @@ const (
 	portOperation = "port"
 )
 
-// domainRegexp validates domain names, including "{key}" placeholders and the
-// "_" allowed in non-trailing labels. IPv4 addresses also match (their labels
-// are numeric). IPv6 literals arrive wrapped in "[...]" and are already
-// validated by parseRaw, so they are accepted without re-checking.
-var domainRegexp = regexp.MustCompile(`^([a-zA-Z0-9-_{}]{1,63}\.)*([a-zA-Z0-9-{}]{1,63})$`)
-
 // Parse parses rawURL into a net/url URL.
 //
 // Unlike [parseRaw] it favors absolute hosts over relative paths (so "demo.com"
-// becomes Host, not Path), lowercases the host, validates the host, and natively
-// accepts "{name}" placeholders in the host (e.g. "http://{client}.demo.com").
+// becomes Host, not Path), lowercases the host, requires a non-empty host, and
+// natively accepts "{name}" placeholders in the host (e.g.
+// "http://{client}.demo.com").
 func Parse(rawURL string) (*url.URL, error) {
 	return ParseWithDefaultScheme(rawURL, "")
 }
@@ -172,28 +163,16 @@ func applyDefaultScheme(rawURL, scheme string) string {
 	}
 }
 
+// checkHost rejects an empty host. Character-level validation of the host is
+// handled entirely by parseRaw via the package's encoding table, which already
+// rejects "<", ">", spaces and control characters while allowing the net/url
+// reg-name set plus "{name}" placeholders.
 func checkHost(host string) error {
 	if host == "" {
 		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
 	}
 
-	// IPv6 literals are wrapped in brackets and already validated by parseRaw.
-	if strings.HasPrefix(host, "[") {
-		return nil
-	}
-
-	host = strings.ToLower(host)
-	if domainRegexp.MatchString(host) {
-		return nil
-	}
-
-	// Internationalized domain names: validate via their ASCII (punycode) form.
-	punycode, err := idna.ToASCII(host)
-	if err == nil && domainRegexp.MatchString(punycode) {
-		return nil
-	}
-
-	return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
+	return nil
 }
 
 // SplitHostPort splits a URL's host into host and port. Unlike net.SplitHostPort
