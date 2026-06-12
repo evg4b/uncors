@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -127,6 +129,20 @@ func runNonInteractive(
 	return 0
 }
 
+// sanitizeErr returns err.Error() with any URL password replaced by [hidden],
+// preventing credentials from appearing in log output.
+func sanitizeErr(err error) string {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		parsed, parseErr := url.Parse(urlErr.URL)
+		if parseErr == nil && parsed.User != nil {
+			return (&url.Error{Op: urlErr.Op, URL: parsed.Redacted(), Err: urlErr.Err}).Error()
+		}
+	}
+
+	return err.Error()
+}
+
 // startConfigWatcher begins watching the config file and restarts the proxy on
 // every change. The watcher lives for the process lifetime (not closed explicitly).
 func startConfigWatcher(
@@ -148,8 +164,9 @@ func startConfigWatcher(
 
 		restartErr := app.Restart(ctx, reloaded)
 		if restartErr != nil {
-			log.Printf("Failed to restart server: %v", restartErr)
-			output.Errorf("Failed to restart server: %v", restartErr)
+			safe := sanitizeErr(restartErr)
+			log.Printf("Failed to restart server: %s", safe)
+			output.Errorf("Failed to restart server: %s", safe)
 		}
 	})
 	if err != nil {
