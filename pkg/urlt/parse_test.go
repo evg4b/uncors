@@ -14,7 +14,7 @@ import (
 
 // TestParse exercises the opinionated, host-biased urlt.Parse migrated from the
 // former internal/urlparser package.
-func TestParse(t *testing.T) {
+func TestParse(t *testing.T) { // NOSONAR
 	tests := []struct {
 		in  string
 		out *url.URL

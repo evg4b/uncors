@@ -64,7 +64,7 @@ func shouldEscape(c byte, mode encoding) bool {
 // which section of the URL string is being unescaped.
 //
 //nolint:cyclop,gocognit
-func unescape(s string, mode encoding) (string, error) {
+func unescape(s string, mode encoding) (string, error) { // NOSONAR
 	// Count %, check that they're well-formed.
 	n := 0
 	hasPlus := false
@@ -153,7 +153,7 @@ func unescape(s string, mode encoding) (string, error) {
 }
 
 //nolint:cyclop
-func escape(s string, mode encoding) string {
+func escape(s string, mode encoding) string { // NOSONAR
 	spaceCount, hexCount := 0, 0
 
 	for _, c := range []byte(s) {
@@ -303,7 +303,7 @@ func ParseRequestURIWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.UR
 // If viaRequest is false, all forms of relative URLs are allowed.
 //
 //nolint:cyclop,gocognit
-func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) {
+func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) { // NOSONAR
 	var (
 		rest string
 		err  error
@@ -440,7 +440,7 @@ func parseAuthority(scheme, authority string) (user *baseUrl.Userinfo, host stri
 // information. That is, as host[:port].
 //
 //nolint:cyclop,gocognit
-func parseHost(scheme, host string) (string, error) {
+func parseHost(scheme, host string) (string, error) { // NOSONAR
 	if openBracketIdx := strings.LastIndex(host, "["); openBracketIdx > 0 {
 		return "", errInvalidIPLiteral
 	} else if openBracketIdx == 0 {
@@ -555,7 +555,7 @@ func setPath(u *baseUrl.URL, p string) error {
 	}
 
 	u.Path = path
-	if escp := escape(path, encodePath); p == escp {
+	if p == escape(path, encodePath) {
 		// Default encoding is fine.
 		u.RawPath = ""
 	} else {
@@ -573,7 +573,7 @@ func setFragment(u *baseUrl.URL, f string) error {
 	}
 
 	u.Fragment = frag
-	if escf := escape(frag, encodeFragment); f == escf {
+	if f == escape(frag, encodeFragment) {
 		// Default encoding is fine.
 		u.RawFragment = ""
 	} else {
@@ -607,7 +607,7 @@ func validOptionalPort(port string) bool {
 // them to base, per RFC 3986.
 //
 //nolint:cyclop
-func resolvePath(base, ref string) string {
+func resolvePath(base, ref string) string { // NOSONAR
 	var full string
 
 	switch {

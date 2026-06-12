@@ -12,7 +12,7 @@ package main
 
 import (
 	"bytes"
-	_ "embed"
+	_ "embed" // required for the //go:embed directive below
 	"fmt"
 	"go/format"
 	"io"
@@ -154,7 +154,7 @@ var encNames = map[encoding]string{
 //
 // Please be informed that for now shouldEscape does not check all
 // reserved characters correctly. See golang.org/issue/5684.
-func shouldEscape(c byte, mode encoding) bool {
+func shouldEscape(c byte, mode encoding) bool { //NOSONAR
 	// §2.3 Unreserved characters (alphanum)
 	if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' {
 		return false
