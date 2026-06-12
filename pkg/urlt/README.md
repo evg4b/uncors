@@ -9,9 +9,6 @@ This package provides URL parsing and query escaping functionality based on RFC 
 ## Features
 
 - **URL Parsing**: Parse URLs using `Parse()` and `ParseRequestURI()`
-- **Query Encoding/Decoding**: `QueryEscape()` and `QueryUnescape()` for query parameters
-- **Path Encoding/Decoding**: `PathEscape()` and `PathUnescape()` for URL paths
-- **Query Parsing**: Parse URL query strings into `Values` (key-value pairs)
 - **Path Joining**: Safely join path segments with `JoinPath()`
 
 ## Main Functions
@@ -72,31 +69,6 @@ if err != nil {
 }
 ```
 
-### Query and Path Escaping
-
-```go
-// Query parameter escaping
-escaped := urlt.QueryEscape("hello world?")  // "hello+world%3F"
-unescaped, err := urlt.QueryUnescape("hello+world%3F")
-
-// Path segment escaping
-pathEscaped := urlt.PathEscape("path/to/resource")
-pathUnescaped, err := urlt.PathUnescape("path%2Fto%2Fresource")
-```
-
-### Query Parsing
-
-```go
-values, err := urlt.ParseQuery("name=John&age=30&hobby=reading")
-if err != nil {
-    log.Fatal(err)
-}
-
-// Access query values
-fmt.Println(values.Get("name"))        // "John"
-fmt.Println(values["hobby"])            // []string{"reading"}
-```
-
 ## Modifications from net/url
 
 This implementation includes several modifications from Go's standard `net/url`:
@@ -135,7 +107,3 @@ See the `LICENSE` file in this directory for full licensing details.
 ## RFC Compliance
 
 The package generally follows RFC 3986 (Uniform Resource Identifier) and RFC 6874 (IPv6 Zone Literals), except where modifications are needed for compatibility or specific use cases in the uncors project.
-
-
-Changes:
-- Dropper suppoer of <>

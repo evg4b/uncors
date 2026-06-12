@@ -44,7 +44,6 @@ var (
 	errInvalidUserinfo       = errors.New("net/url: invalid userinfo")
 	errInvalidIPLiteral      = errors.New("invalid IP-literal")
 	errMissingCloseBracket   = errors.New("missing ']' in host")
-	errInvalidSemicolon      = errors.New("invalid semicolon separator in query")
 )
 
 func ishex(c byte) bool {
@@ -59,26 +58,6 @@ func unhex(c byte) byte {
 // See the reference implementation in gen_encoding_table.go.
 func shouldEscape(c byte, mode encoding) bool {
 	return table[c]&mode == 0
-}
-
-// QueryUnescape does the inverse transformation of [QueryEscape],
-// converting each 3-byte encoded substring of the form "%AB" into the
-// hex-decoded byte 0xAB.
-// It returns an error if any % is not followed by two hexadecimal
-// digits.
-func QueryUnescape(s string) (string, error) {
-	return unescape(s, encodeQueryComponent)
-}
-
-// PathUnescape does the inverse transformation of [PathEscape],
-// converting each 3-byte encoded substring of the form "%AB" into the
-// hex-decoded byte 0xAB. It returns an error if any % is not followed
-// by two hexadecimal digits.
-//
-// PathUnescape is identical to [QueryUnescape] except that it does not
-// unescape '+' to ' ' (space).
-func PathUnescape(s string) (string, error) {
-	return unescape(s, encodePathSegment)
 }
 
 // unescape unescapes a string; the mode specifies
@@ -171,18 +150,6 @@ func unescape(s string, mode encoding) (string, error) {
 	}
 
 	return t.String(), nil
-}
-
-// QueryEscape escapes the string so it can be safely placed
-// inside a [URL] query.
-func QueryEscape(s string) string {
-	return escape(s, encodeQueryComponent)
-}
-
-// PathEscape escapes the string so it can be safely placed inside a [URL] path segment,
-// replacing special characters (including /) with %XX sequences as needed.
-func PathEscape(s string) string {
-	return escape(s, encodePathSegment)
 }
 
 //nolint:cyclop
@@ -634,64 +601,6 @@ func validOptionalPort(port string) bool {
 	}
 
 	return true
-}
-
-// ParseQuery parses the URL-encoded query string and returns
-// a map listing the values specified for each key.
-// ParseQuery always returns a non-nil map containing all the
-// valid query parameters found; err describes the first decoding error
-// encountered, if any.
-//
-// Query is expected to be a list of key=value settings separated by ampersands.
-// A setting without an equals sign is interpreted as a key set to an empty
-// value.
-// Settings containing a non-URL-encoded semicolon are considered invalid.
-func ParseQuery(query string) (baseUrl.Values, error) {
-	m := make(baseUrl.Values)
-	err := parseQuery(m, query)
-
-	return m, err
-}
-
-func parseQuery(m baseUrl.Values, query string) (err error) {
-	for query != "" {
-		var key string
-
-		key, query, _ = strings.Cut(query, "&")
-		if strings.Contains(key, ";") {
-			err = errInvalidSemicolon
-
-			continue
-		}
-
-		if key == "" {
-			continue
-		}
-
-		key, value, _ := strings.Cut(key, "=")
-
-		key, err1 := QueryUnescape(key)
-		if err1 != nil {
-			if err == nil {
-				err = err1
-			}
-
-			continue
-		}
-
-		value, err1 = QueryUnescape(value)
-		if err1 != nil {
-			if err == nil {
-				err = err1
-			}
-
-			continue
-		}
-
-		m[key] = append(m[key], value)
-	}
-
-	return err
 }
 
 // resolvePath applies special path segments from refs and applies
