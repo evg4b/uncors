@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -74,7 +74,7 @@ func (m *Mapping) Clone() Mapping {
 
 func (m *Mapping) GetFromURL() (*url.URL, error) {
 	if m.fromURL == nil {
-		parsedURL, err := urlparser.Parse(m.From)
+		parsedURL, err := urlt.Parse(m.From)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (m *Mapping) GetFromHostPort() (string, string, error) {
 			return "", "", err
 		}
 
-		m.fromHost, m.fromPort, err = urlparser.SplitHostPort(uri)
+		m.fromHost, m.fromPort, err = urlt.SplitHostPort(uri)
 		if err != nil {
 			return "", "", err
 		}
@@ -112,7 +112,7 @@ func ValidateProxy(field, value string) error {
 		return nil
 	}
 
-	_, err := urlparser.Parse(value)
+	_, err := urlt.Parse(value)
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
 	}

@@ -257,17 +257,20 @@ func getScheme(rawURL, defaultScheme string) (scheme, path string, err error) {
 	return defaultScheme, rawURL, nil
 }
 
-// Parse parses a raw url into a [URL] structure.
+// parseRaw parses a raw url into a [URL] structure.
 //
 // The url may be relative (a path, without a host) or absolute
 // (starting with a scheme). Trying to parse a hostname and path
 // without a scheme is invalid but may not necessarily return an
 // error, due to parsing ambiguities.
-func Parse(rawURL string) (*baseUrl.URL, error) {
-	return ParseWithDefaultScheme(rawURL, "")
+//
+// parseRaw is the faithful net/url-style parser. The opinionated, host-biased
+// [Parse]/[ParseWithDefaultScheme] in parser.go build on top of it.
+func parseRaw(rawURL string) (*baseUrl.URL, error) {
+	return parseRawWithDefaultScheme(rawURL, "")
 }
 
-func ParseWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, error) {
+func parseRawWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, error) {
 	// Cut off #frag
 	u, frag, _ := strings.Cut(rawURL, "#")
 
@@ -873,7 +876,7 @@ func stringContainsCTLByte(s string) bool {
 // the existing path of base and the resulting path cleaned of any ./ or ../ elements.
 // Path elements must already be in escaped form, as produced by [PathEscape].
 func JoinPath(base string, elem ...string) (result string, err error) {
-	url, err := Parse(base)
+	url, err := parseRaw(base)
 	if err != nil {
 		return
 	}

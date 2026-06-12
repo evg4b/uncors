@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 )
 
@@ -25,7 +25,7 @@ func ValidateHost(field, value string) error {
 		return &ValidationError{fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value))}
 	}
 
-	uri, err := urlparser.Parse(value)
+	uri, err := urlt.Parse(value)
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
 	}
@@ -56,7 +56,7 @@ func ValidatePath(field, value string, relative bool) error {
 		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
-	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
+	uri, err := urlt.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}

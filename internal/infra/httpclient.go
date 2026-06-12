@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 const defaultTimeout = 5 * time.Minute
@@ -16,7 +16,7 @@ func MakeHTTPClient(proxy string) *http.Client {
 	}
 
 	if proxy != "" {
-		parsedURL, err := urlparser.Parse(proxy)
+		parsedURL, err := urlt.Parse(proxy)
 		if err != nil {
 			panic(fmt.Errorf("failed to create http client: %w", err))
 		}

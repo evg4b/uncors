@@ -664,9 +664,9 @@ func BenchmarkString(b *testing.B) {
 	b.ReportAllocs()
 
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
+		u, err := parseRaw(tt.in)
 		if err != nil {
-			b.Errorf("Parse(%q) returned error %s", tt.in, err)
+			b.Errorf("parseRaw(%q) returned error %s", tt.in, err)
 
 			continue
 		}
@@ -685,22 +685,22 @@ func BenchmarkString(b *testing.B) {
 		b.StopTimer()
 
 		if w := tt.roundtrip; b.N > 0 && g != w {
-			b.Errorf("Parse(%q).String() == %q, want %q", tt.in, g, w)
+			b.Errorf("parseRaw(%q).String() == %q, want %q", tt.in, g, w)
 		}
 	}
 }
 
-func TestParse(t *testing.T) {
+func TestParseRaw(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
+		u, err := parseRaw(tt.in)
 		if err != nil {
-			t.Errorf("Parse(%q) returned error %v", tt.in, err)
+			t.Errorf("parseRaw(%q) returned error %v", tt.in, err)
 
 			continue
 		}
 
 		if !reflect.DeepEqual(u, tt.out) {
-			t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
+			t.Errorf("parseRaw(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
 		}
 	}
 }
@@ -828,9 +828,9 @@ var stringURLTests = []struct {
 
 func TestURLString(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
+		u, err := parseRaw(tt.in)
 		if err != nil {
-			t.Errorf("Parse(%q) returned error %s", tt.in, err)
+			t.Errorf("parseRaw(%q) returned error %s", tt.in, err)
 
 			continue
 		}
@@ -842,7 +842,7 @@ func TestURLString(t *testing.T) {
 
 		s := u.String()
 		if s != expected {
-			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
+			t.Errorf("parseRaw(%q).String() == %q (expected %q)", tt.in, s, expected)
 		}
 	}
 
@@ -1350,9 +1350,9 @@ var resolveReferenceTests = []struct {
 
 func TestResolveReference(t *testing.T) {
 	mustParse := func(url string) *base_url.URL {
-		u, err := Parse(url)
+		u, err := parseRaw(url)
 		if err != nil {
-			t.Fatalf("Parse(%q) got err %v", url, err)
+			t.Fatalf("parseRaw(%q) got err %v", url, err)
 		}
 
 		return u
@@ -1400,7 +1400,7 @@ func TestResolveReference(t *testing.T) {
 }
 
 func TestQueryValues(t *testing.T) {
-	u, _ := Parse("http://x.com?foo=bar&bar=1&bar=2&baz")
+	u, _ := parseRaw("http://x.com?foo=bar&bar=1&bar=2&baz")
 
 	v := u.Query()
 	if len(v) != 3 {
@@ -1778,24 +1778,24 @@ func TestParseErrors(t *testing.T) {
 		{"hxxp://mathepqo[.]serveftp(.)com:9059", true},
 	}
 	for _, tt := range tests {
-		u, err := Parse(tt.in)
+		u, err := parseRaw(tt.in)
 		if tt.wantErr {
 			if err == nil {
-				t.Errorf("Parse(%q) = %#v; want an error", tt.in, u)
+				t.Errorf("parseRaw(%q) = %#v; want an error", tt.in, u)
 			}
 
 			continue
 		}
 
 		if err != nil {
-			t.Errorf("Parse(%q) = %v; want no error", tt.in, err)
+			t.Errorf("parseRaw(%q) = %v; want no error", tt.in, err)
 		}
 	}
 }
 
 // Issue 11202.
 func TestStarRequest(t *testing.T) {
-	u, err := Parse("*")
+	u, err := parseRaw("*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2015,7 +2015,7 @@ var (
 )
 
 func TestJSON(t *testing.T) {
-	u, err := Parse("https://www.google.com/x?y=z")
+	u, err := parseRaw("https://www.google.com/x?y=z")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2045,7 +2045,7 @@ func TestJSON(t *testing.T) {
 }
 
 func TestGob(t *testing.T) {
-	u, err := Parse("https://www.google.com/x?y=z")
+	u, err := parseRaw("https://www.google.com/x?y=z")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2076,7 +2076,7 @@ func TestNilUser(t *testing.T) {
 		}
 	}()
 
-	u, err := Parse("http://foo.com/")
+	u, err := parseRaw("http://foo.com/")
 	if err != nil {
 		t.Fatalf("parse err: %v", err)
 	}
@@ -2095,7 +2095,7 @@ func TestNilUser(t *testing.T) {
 }
 
 func TestInvalidUserPassword(t *testing.T) {
-	_, err := Parse("http://user^:passwo^rd@foo.com/")
+	_, err := parseRaw("http://user^:passwo^rd@foo.com/")
 	if got, wantsub := fmt.Sprint(err), "net/url: invalid userinfo"; !strings.Contains(got, wantsub) {
 		t.Errorf("error = %q; want substring %q", got, wantsub)
 	}
@@ -2108,16 +2108,16 @@ func TestRejectControlCharacters(t *testing.T) {
 		"http://foo\x7f.com/",
 	}
 	for _, s := range tests {
-		_, err := Parse(s)
+		_, err := parseRaw(s)
 
 		const wantSub = "net/url: invalid control character in URL"
 		if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
-			t.Errorf("Parse(%q) error = %q; want substring %q", s, got, wantSub)
+			t.Errorf("parseRaw(%q) error = %q; want substring %q", s, got, wantSub)
 		}
 	}
 
 	// But don't reject non-ASCII CTLs, at least for now:
-	if _, err := Parse("http://foo.com/ctl\x80"); err != nil {
+	if _, err := parseRaw("http://foo.com/ctl\x80"); err != nil {
 		t.Errorf("error parsing URL with non-ASCII control byte: %v", err)
 	}
 }
@@ -2369,10 +2369,10 @@ func TestJoinPath(t *testing.T) {
 			t.Errorf("JoinPath(%q, %q) = %q, %v, want %q, %v", tt.base, tt.elem, out, err, tt.out, wantErr)
 		}
 
-		u, err := Parse(tt.base)
+		u, err := parseRaw(tt.base)
 		if err != nil {
 			if tt.out != "" {
-				t.Errorf("Parse(%q) = %v", tt.base, err)
+				t.Errorf("parseRaw(%q) = %v", tt.base, err)
 			}
 
 			continue
@@ -2385,7 +2385,7 @@ func TestJoinPath(t *testing.T) {
 
 		out = u.JoinPath(tt.elem...).String()
 		if out != tt.out {
-			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
+			t.Errorf("parseRaw(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
 		}
 	}
 }
