@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/url"
 	base_url "net/url"
 	"reflect"
 	"strings"
@@ -959,27 +958,27 @@ var unescapeTests = []EscapeTest{
 	{
 		"%", // not enough characters after %
 		"",
-		url.EscapeError("%"),
+		base_url.EscapeError("%"),
 	},
 	{
 		"%a", // not enough characters after %
 		"",
-		url.EscapeError("%a"),
+		base_url.EscapeError("%a"),
 	},
 	{
 		"%1", // not enough characters after %
 		"",
-		url.EscapeError("%1"),
+		base_url.EscapeError("%1"),
 	},
 	{
 		"123%45%6", // not enough characters after %
 		"",
-		url.EscapeError("%6"),
+		base_url.EscapeError("%6"),
 	},
 	{
 		"%zzzzz", // invalid hex digits
 		"",
-		url.EscapeError("%zz"),
+		base_url.EscapeError("%zz"),
 	},
 	{
 		"a+b",
@@ -993,6 +992,7 @@ var unescapeTests = []EscapeTest{
 	},
 }
 
+//nolint:cyclop
 func TestUnescape(t *testing.T) {
 	for _, tt := range unescapeTests {
 		actual, err := QueryUnescape(tt.in)
@@ -1132,21 +1132,21 @@ func TestPathEscape(t *testing.T) {
 //}
 
 type EncodeQueryTest struct {
-	m        url.Values
+	m        base_url.Values
 	expected string
 }
 
 var encodeQueryTests = []EncodeQueryTest{
 	{nil, ""},
-	{url.Values{}, ""},
-	{url.Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
-	{url.Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
-	{url.Values{
+	{base_url.Values{}, ""},
+	{base_url.Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
+	{base_url.Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
+	{base_url.Values{
 		"a": {"a1", "a2", "a3"},
 		"b": {"b1", "b2", "b3"},
 		"c": {"c1", "c2", "c3"},
 	}, "a=a1&a=a2&a=a3&b=b1&b=b2&b=b3&c=c1&c=c2&c=c3"},
-	{url.Values{
+	{base_url.Values{
 		"a": {"a"},
 		"b": {"b"},
 		"c": {"c"},
@@ -1348,6 +1348,7 @@ var resolveReferenceTests = []struct {
 	{"http:opaque?x=y#zzz", "?a=b#frag", "http:opaque?a=b#frag"},
 }
 
+//nolint:cyclop
 func TestResolveReference(t *testing.T) {
 	mustParse := func(url string) *base_url.URL {
 		u, err := parseRaw(url)
@@ -1388,17 +1389,19 @@ func TestResolveReference(t *testing.T) {
 		}
 		// Test the convenience wrapper with an opaque URL too.
 		url, err = base.Parse("scheme:opaque")
-		if err != nil {
+		switch {
+		case err != nil:
 			t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
-		} else if *url != *opaque {
+		case *url != *opaque:
 			t.Errorf("Parse failed to resolve opaque URL:\ngot  %#v\nwant %#v", opaque, url)
-		} else if base == url {
+		case base == url:
 			// Ensure that new instances are returned, again.
 			t.Errorf("Expected URL.Parse to return new URL instance.")
 		}
 	}
 }
 
+//nolint:cyclop
 func TestQueryValues(t *testing.T) {
 	u, _ := parseRaw("http://x.com?foo=bar&bar=1&bar=2&baz")
 
@@ -1448,98 +1451,99 @@ func TestQueryValues(t *testing.T) {
 
 type parseTest struct {
 	query string
-	out   url.Values
+	out   base_url.Values
 	ok    bool
 }
 
 var parseTests = []parseTest{
 	{
 		query: "a=1",
-		out:   url.Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&b=2",
-		out:   url.Values{"a": []string{"1"}, "b": []string{"2"}},
+		out:   base_url.Values{"a": []string{"1"}, "b": []string{"2"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2&a=banana",
-		out:   url.Values{"a": []string{"1", "2", "banana"}},
+		out:   base_url.Values{"a": []string{"1", "2", "banana"}},
 		ok:    true,
 	},
 	{
 		query: "ascii=%3Ckey%3A+0x90%3E",
-		out:   url.Values{"ascii": []string{"<key: 0x90>"}},
+		out:   base_url.Values{"ascii": []string{"<key: 0x90>"}},
 		ok:    true,
 	},
 	{
 		query: "a=1;b=2",
-		out:   url.Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a;b=1",
-		out:   url.Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=%3B", // hex encoding for semicolon
-		out:   url.Values{"a": []string{";"}},
+		out:   base_url.Values{"a": []string{";"}},
 		ok:    true,
 	},
 	{
 		query: "a%3Bb=1",
-		out:   url.Values{"a;b": []string{"1"}},
+		out:   base_url.Values{"a;b": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2;a=banana",
-		out:   url.Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a;b&c=1",
-		out:   url.Values{"c": []string{"1"}},
+		out:   base_url.Values{"c": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;a=3&c=4",
-		out:   url.Values{"a": []string{"1"}, "c": []string{"4"}},
+		out:   base_url.Values{"a": []string{"1"}, "c": []string{"4"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;c=3",
-		out:   url.Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";",
-		out:   url.Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1;",
-		out:   url.Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1&;",
-		out:   url.Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";a=1&b=2",
-		out:   url.Values{"b": []string{"2"}},
+		out:   base_url.Values{"b": []string{"2"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;",
-		out:   url.Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 }
 
+//nolint:cyclop,gocognit
 func TestParseQuery(t *testing.T) {
 	for _, test := range parseTests {
 		t.Run(test.query, func(t *testing.T) {

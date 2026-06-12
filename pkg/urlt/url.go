@@ -8,7 +8,7 @@
 
 //go:generate go run gen_encoding_table.go
 
-// Package url parses URLs and implements query escaping.
+// Package urlt parses URLs and implements query escaping.
 //
 // See RFC 3986. This package generally follows RFC 3986, except where
 // it deviates for compatibility reasons.
@@ -22,13 +22,30 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
-	"net/url"
 	baseUrl "net/url"
 	"path"
 	"strings"
 )
 
 const upperhex = "0123456789ABCDEF"
+
+const (
+	schemeHTTP  = "http"
+	schemeHTTPS = "https"
+	opParse     = "parse"
+)
+
+var (
+	errMissingProtocolScheme = errors.New("missing protocol scheme")
+	errInvalidControlChar    = errors.New("net/url: invalid control character in URL")
+	errEmptyURL              = errors.New("empty url")
+	errInvalidURIForRequest  = errors.New("invalid URI for request")
+	errFirstPathSegmentColon = errors.New("first path segment in URL cannot contain colon")
+	errInvalidUserinfo       = errors.New("net/url: invalid userinfo")
+	errInvalidIPLiteral      = errors.New("invalid IP-literal")
+	errMissingCloseBracket   = errors.New("missing ']' in host")
+	errInvalidSemicolon      = errors.New("invalid semicolon separator in query")
+)
 
 func ishex(c byte) bool {
 	return table[c]&hexChar != 0
@@ -66,6 +83,8 @@ func PathUnescape(s string) (string, error) {
 
 // unescape unescapes a string; the mode specifies
 // which section of the URL string is being unescaped.
+//
+//nolint:cyclop,gocognit
 func unescape(s string, mode encoding) (string, error) {
 	// Count %, check that they're well-formed.
 	n := 0
@@ -82,7 +101,7 @@ func unescape(s string, mode encoding) (string, error) {
 					s = s[:3]
 				}
 
-				return "", url.EscapeError(s)
+				return "", baseUrl.EscapeError(s)
 			}
 			// Per https://tools.ietf.org/html/rfc3986#page-21
 			// in the host component %-encoding can only be used
@@ -91,7 +110,7 @@ func unescape(s string, mode encoding) (string, error) {
 			// introduces %25 being allowed to escape a percent sign
 			// in IPv6 scoped-address literals. Yay.
 			if mode == encodeHost && unhex(s[i+1]) < 8 && s[i:i+3] != "%25" {
-				return "", url.EscapeError(s[i : i+3])
+				return "", baseUrl.EscapeError(s[i : i+3])
 			}
 
 			if mode == encodeZone {
@@ -104,7 +123,7 @@ func unescape(s string, mode encoding) (string, error) {
 				// But Windows puts spaces here! Yay.
 				v := unhex(s[i+1])<<4 | unhex(s[i+2])
 				if s[i:i+3] != "%25" && v != ' ' && shouldEscape(v, encodeHost) {
-					return "", url.EscapeError(s[i : i+3])
+					return "", baseUrl.EscapeError(s[i : i+3])
 				}
 			}
 
@@ -114,7 +133,7 @@ func unescape(s string, mode encoding) (string, error) {
 			i++
 		default:
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
-				return "", url.InvalidHostError(s[i : i+1])
+				return "", baseUrl.InvalidHostError(s[i : i+1])
 			}
 
 			i++
@@ -127,7 +146,7 @@ func unescape(s string, mode encoding) (string, error) {
 
 	var unescapedPlusSign byte
 
-	switch mode {
+	switch mode { //nolint:exhaustive
 	case encodeQueryComponent:
 		unescapedPlusSign = ' '
 	default:
@@ -166,6 +185,7 @@ func PathEscape(s string) string {
 	return escape(s, encodePathSegment)
 }
 
+//nolint:cyclop
 func escape(s string, mode encoding) string {
 	spaceCount, hexCount := 0, 0
 
@@ -231,6 +251,8 @@ func escape(s string, mode encoding) string {
 // Maybe rawURL is of the form scheme:path.
 // (Scheme must be [a-zA-Z][a-zA-Z0-9+.-]*)
 // If so, return scheme, path; else return "", rawURL.
+//
+//nolint:cyclop
 func getScheme(rawURL, defaultScheme string) (scheme, path string, err error) {
 	for i := range len(rawURL) {
 		c := rawURL[i]
@@ -243,7 +265,7 @@ func getScheme(rawURL, defaultScheme string) (scheme, path string, err error) {
 			}
 		case c == ':':
 			if i == 0 {
-				return "", "", errors.New("missing protocol scheme")
+				return "", "", errMissingProtocolScheme
 			}
 
 			return rawURL[:i], rawURL[i+1:], nil
@@ -276,7 +298,7 @@ func parseRawWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, erro
 
 	url, err := parse(u, defaultScheme, false)
 	if err != nil {
-		return nil, &baseUrl.Error{Op: "parse", URL: u, Err: err}
+		return nil, &baseUrl.Error{Op: opParse, URL: u, Err: err}
 	}
 
 	if frag == "" {
@@ -284,7 +306,7 @@ func parseRawWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, erro
 	}
 
 	if err = setFragment(url, frag); err != nil {
-		return nil, &baseUrl.Error{Op: "parse", URL: rawURL, Err: err}
+		return nil, &baseUrl.Error{Op: opParse, URL: rawURL, Err: err}
 	}
 
 	return url, nil
@@ -302,7 +324,7 @@ func ParseRequestURI(rawURL string) (*baseUrl.URL, error) {
 func ParseRequestURIWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.URL, error) {
 	url, err := parse(rawURL, defaultScheme, true)
 	if err != nil {
-		return nil, &baseUrl.Error{Op: "parse", URL: rawURL, Err: err}
+		return nil, &baseUrl.Error{Op: opParse, URL: rawURL, Err: err}
 	}
 
 	return url, nil
@@ -312,6 +334,8 @@ func ParseRequestURIWithDefaultScheme(rawURL, defaultScheme string) (*baseUrl.UR
 // viaRequest is true, the URL is assumed to have arrived via an HTTP request,
 // in which case only absolute URLs or path-absolute relative URLs are allowed.
 // If viaRequest is false, all forms of relative URLs are allowed.
+//
+//nolint:cyclop,gocognit
 func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) {
 	var (
 		rest string
@@ -319,11 +343,11 @@ func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) 
 	)
 
 	if stringContainsCTLByte(rawURL) {
-		return nil, errors.New("net/url: invalid control character in URL")
+		return nil, errInvalidControlChar
 	}
 
 	if rawURL == "" && viaRequest {
-		return nil, errors.New("empty url")
+		return nil, errEmptyURL
 	}
 
 	url := new(baseUrl.URL)
@@ -358,7 +382,7 @@ func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) 
 		}
 
 		if viaRequest {
-			return nil, errors.New("invalid URI for request")
+			return nil, errInvalidURIForRequest
 		}
 
 		// Avoid confusion with malformed schemes, like cache_object:foo/bar.
@@ -369,7 +393,7 @@ func parse(rawURL, defaultScheme string, viaRequest bool) (*baseUrl.URL, error) 
 		// in which case the first path segment cannot contain a colon (":") character.
 		if segment, _, _ := strings.Cut(rest, "/"); strings.Contains(segment, ":") {
 			// First path segment has colon. Not allowed in relative URL.
-			return nil, errors.New("first path segment in URL cannot contain colon")
+			return nil, errFirstPathSegmentColon
 		}
 	}
 
@@ -420,7 +444,7 @@ func parseAuthority(scheme, authority string) (user *baseUrl.Userinfo, host stri
 
 	userinfo := authority[:i]
 	if !validUserinfo(userinfo) {
-		return nil, "", errors.New("net/url: invalid userinfo")
+		return nil, "", errInvalidUserinfo
 	}
 
 	if !strings.Contains(userinfo, ":") {
@@ -447,20 +471,22 @@ func parseAuthority(scheme, authority string) (user *baseUrl.Userinfo, host stri
 
 // parseHost parses host as an authority without user
 // information. That is, as host[:port].
+//
+//nolint:cyclop,gocognit
 func parseHost(scheme, host string) (string, error) {
 	if openBracketIdx := strings.LastIndex(host, "["); openBracketIdx > 0 {
-		return "", errors.New("invalid IP-literal")
+		return "", errInvalidIPLiteral
 	} else if openBracketIdx == 0 {
 		// Parse an IP-Literal in RFC 3986 and RFC 6874.
 		// E.g., "[fe80::1]", "[fe80::1%25en0]", "[fe80::1]:80".
 		closeBracketIdx := strings.LastIndex(host, "]")
 		if closeBracketIdx < 0 {
-			return "", errors.New("missing ']' in host")
+			return "", errMissingCloseBracket
 		}
 
 		colonPort := host[closeBracketIdx+1:]
 		if !validOptionalPort(colonPort) {
-			return "", fmt.Errorf("invalid port %q after host", colonPort)
+			return "", fmt.Errorf("invalid port %q after host", colonPort) //nolint:err113
 		}
 
 		unescapedColonPort, err := unescape(colonPort, encodeHost)
@@ -504,11 +530,11 @@ func parseHost(scheme, host string) (string, error) {
 		// This excludes any IPv4, but notably not IPv4-mapped addresses.
 		addr, err := netip.ParseAddr(unescapedHostname)
 		if err != nil {
-			return "", fmt.Errorf("invalid host: %w", err)
+			return "", fmt.Errorf("invalid host: %w", err) //nolint:err113
 		}
 
 		if addr.Is4() {
-			return "", errors.New("invalid IP-literal")
+			return "", errInvalidIPLiteral
 		}
 
 		return "[" + unescapedHostname + "]" + unescapedColonPort, nil
@@ -525,14 +551,14 @@ func parseHost(scheme, host string) (string, error) {
 			// enforce strict colons only for http and https URLs.
 			//
 			// See https://go.dev/issue/75223 and https://go.dev/issue/78077.
-			if scheme != "http" && scheme != "https" {
+			if scheme != schemeHTTP && scheme != schemeHTTPS {
 				i = lastColon
 			}
 		}
 
 		colonPort := host[i:]
 		if !validOptionalPort(colonPort) {
-			return "", fmt.Errorf("invalid port %q after host", colonPort)
+			return "", fmt.Errorf("invalid port %q after host", colonPort) //nolint:err113
 		}
 	}
 
@@ -570,33 +596,6 @@ func setPath(u *baseUrl.URL, p string) error {
 	}
 
 	return nil
-}
-
-// validEncoded reports whether s is a valid encoded path or fragment,
-// according to mode.
-// It must not contain any bytes that require escaping during encoding.
-func validEncoded(s string, mode encoding) bool {
-	for i := range len(s) {
-		// RFC 3986, Appendix A.
-		// pchar = unreserved / pct-encoded / sub-delims / ":" / "@".
-		// shouldEscape is not quite compliant with the RFC,
-		// so we check the sub-delims ourselves and let
-		// shouldEscape handle the others.
-		switch s[i] {
-		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '@':
-			// ok
-		case '[', ']':
-			// ok - not specified in RFC 3986 but left alone by modern browsers
-		case '%':
-			// ok - percent encoded, will decode
-		default:
-			if shouldEscape(s[i], mode) {
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 // setFragment is like setPath but for Fragment/RawFragment.
@@ -647,23 +646,20 @@ func validOptionalPort(port string) bool {
 // A setting without an equals sign is interpreted as a key set to an empty
 // value.
 // Settings containing a non-URL-encoded semicolon are considered invalid.
-func ParseQuery(query string) (url.Values, error) {
-	m := make(url.Values)
+func ParseQuery(query string) (baseUrl.Values, error) {
+	m := make(baseUrl.Values)
 	err := parseQuery(m, query)
 
 	return m, err
 }
 
-// Keep this in sync with net/http/httputil.
-const defaultMaxParams = 10000
-
-func parseQuery(m url.Values, query string) (err error) {
+func parseQuery(m baseUrl.Values, query string) (err error) {
 	for query != "" {
 		var key string
 
 		key, query, _ = strings.Cut(query, "&")
 		if strings.Contains(key, ";") {
-			err = fmt.Errorf("invalid semicolon separator in query")
+			err = errInvalidSemicolon
 
 			continue
 		}
@@ -700,14 +696,18 @@ func parseQuery(m url.Values, query string) (err error) {
 
 // resolvePath applies special path segments from refs and applies
 // them to base, per RFC 3986.
+//
+//nolint:cyclop
 func resolvePath(base, ref string) string {
 	var full string
-	if ref == "" {
+
+	switch {
+	case ref == "":
 		full = base
-	} else if ref[0] != '/' {
+	case ref[0] != '/':
 		i := strings.LastIndex(base, "/")
 		full = base[:i+1] + ref
-	} else {
+	default:
 		full = ref
 	}
 
@@ -771,24 +771,6 @@ func resolvePath(base, ref string) string {
 	return r
 }
 
-// splitHostPort separates host and port. If the port is not valid, it returns
-// the entire input as host, and it doesn't check the validity of the host.
-// Unlike net.SplitHostPort, but per RFC 3986, it requires ports to be numeric.
-func splitHostPort(hostPort string) (host, port string) {
-	host = hostPort
-
-	colon := strings.LastIndexByte(host, ':')
-	if colon != -1 && validOptionalPort(host[colon:]) {
-		host, port = host[:colon], host[colon+1:]
-	}
-
-	if strings.HasPrefix(host, "[") && strings.HasSuffix(host, "]") {
-		host = host[1 : len(host)-1]
-	}
-
-	return
-}
-
 func joinPath(u *baseUrl.URL, elem ...string) (*baseUrl.URL, error) {
 	elem = append([]string{u.EscapedPath()}, elem...)
 
@@ -823,6 +805,8 @@ func joinPath(u *baseUrl.URL, elem ...string) (*baseUrl.URL, error) {
 //	              / "*" / "+" / "," / ";" / "="
 //
 // It doesn't validate pct-encoded. The caller does that via func unescape.
+//
+//nolint:cyclop
 func validUserinfo(s string) bool {
 	for _, r := range s {
 		if 'A' <= r && r <= 'Z' {

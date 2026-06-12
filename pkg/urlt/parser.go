@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	ErrEmptyHost = errors.New("empty host")
-	ErrEmptyPort = errors.New("empty port")
-	ErrEmptyURL  = errors.New("empty url")
+	ErrEmptyHost       = errors.New("empty host")
+	ErrEmptyPort       = errors.New("empty port")
+	ErrEmptyURL        = errors.New("empty url")
+	ErrInvalidHostChar = errors.New("invalid character in host")
 )
 
 const (
@@ -163,13 +164,47 @@ func applyDefaultScheme(rawURL, scheme string) string {
 	}
 }
 
-// checkHost rejects an empty host. Character-level validation of the host is
-// handled entirely by parseRaw via the package's encoding table, which already
-// rejects "<", ">", spaces and control characters while allowing the net/url
-// reg-name set plus "{name}" placeholders.
+// maxASCII is the largest ASCII code point.
+const maxASCII = 127
+
+// isValidHostRune reports whether r is allowed in a DNS name, IPv4 address,
+// or uncors {placeholder} pattern.  Non-ASCII runes (IDN labels) are always
+// accepted; the encoding table already rejects control characters.
+//
+//nolint:cyclop
+func isValidHostRune(char rune) bool {
+	return char > maxASCII ||
+		(char >= 'a' && char <= 'z') ||
+		(char >= 'A' && char <= 'Z') ||
+		(char >= '0' && char <= '9') ||
+		char == '-' || char == '.' || char == '_' ||
+		char == '{' || char == '}'
+}
+
+// checkHost rejects an empty host and hosts whose characters are not valid in
+// a DNS name, IPv4/IPv6 address, or uncors {placeholder} pattern.
+// The encoding table already handles control characters and special symbols
+// like "<" and ">"; this layer additionally rejects RFC 3986 sub-delimiters
+// (e.g. "&", "!") that are legal per the spec but meaningless in real hostnames.
 func checkHost(host string) error {
 	if host == "" {
 		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
+	}
+
+	// IPv6 bracket notation is already fully validated by parseHost.
+	if strings.HasPrefix(host, "[") {
+		return nil
+	}
+
+	// Strip the port (if any) so we only inspect the name/IP portion.
+	if i := strings.LastIndex(host, ":"); i > 0 {
+		host = host[:i]
+	}
+
+	for _, char := range host {
+		if !isValidHostRune(char) {
+			return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHostChar}
+		}
 	}
 
 	return nil

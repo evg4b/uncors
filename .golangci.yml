@@ -44,6 +44,29 @@ linters:
       - path: _test\.go
         linters:
           - goconst
+      - path: pkg/urlt/url\.go
+        linters:
+          - varnamelen
+          - lll
+          - mnd
+          - nestif
+          - nonamedreturns
+          - noinlineerr
+          - gosmopolitan
+          - staticcheck
+      - path: pkg/urlt/url_test\.go
+        linters:
+          - varnamelen
+          - lll
+          - gosec
+          - gosmopolitan
+          - testpackage
+          - staticcheck
+          - noinlineerr
+      - path: pkg/urlt/parser_test\.go
+        linters:
+          - lll
+          - nestif
     paths:
       - third_party$
       - builtin$
