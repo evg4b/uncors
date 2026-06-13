@@ -4,12 +4,15 @@ package harness
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 )
 
 // Env is a fully wired scenario: a recording backend, an in-process proxy
@@ -21,15 +24,18 @@ type Env struct {
 	Proxy   *ProxyHarness
 	Client  *http.Client
 	Hosts   *Hosts
+	FS      afero.Fs // the proxy's filesystem; seed it for static/mock-file/script
 
 	routes map[string]*Route
 }
 
 type options struct {
-	backendTLS bool
-	handler    http.HandlerFunc
-	decorate   func(*config.Mapping)
-	routes     []*RouteSpec
+	backendTLS  bool
+	handler     http.HandlerFunc
+	decorate    func(*config.Mapping)
+	routes      []*RouteSpec
+	cacheConfig config.CacheConfig
+	files       map[string]string
 }
 
 // Option customises an Env built by New.
@@ -45,6 +51,24 @@ func WithBackendHandler(handler http.HandlerFunc) Option {
 // mocks, rewrites or caching.
 func WithMapping(decorate func(*config.Mapping)) Option {
 	return func(o *options) { o.decorate = decorate }
+}
+
+// WithCacheConfig sets the proxy-wide cache configuration (methods, size, TTL).
+// Per-route cache globs are attached via WithMapping (mapping.Cache).
+func WithCacheConfig(cacheConfig config.CacheConfig) Option {
+	return func(o *options) { o.cacheConfig = cacheConfig }
+}
+
+// WithFile seeds the proxy filesystem (Env.FS) with a file, for static serving,
+// file-backed mocks or Lua scripts loaded from disk.
+func WithFile(path, content string) Option {
+	return func(o *options) {
+		if o.files == nil {
+			o.files = map[string]string{}
+		}
+
+		o.files[path] = content
+	}
 }
 
 // WithDomain adds a domain-based mapping: the local domain host (optionally with
@@ -77,6 +101,11 @@ func New(t *testing.T, opts ...Option) *Env {
 	backend := NewRecordingBackend(t, cfg.backendTLS, cfg.handler)
 	resolver := NewHosts()
 
+	fs := afero.NewMemMapFs()
+	for path, content := range cfg.files {
+		require.NoError(t, afero.WriteFile(fs, path, []byte(content), os.ModePerm))
+	}
+
 	httpPort := testutils.GetFreePort(t)
 	httpsPort := testutils.GetFreePort(t)
 
@@ -106,13 +135,14 @@ func New(t *testing.T, opts ...Option) *Env {
 		routes[spec.host] = &Route{pattern: spec.host, tls: spec.tls, port: spec.port}
 	}
 
-	caCert := bootProxy(t, mappings)
+	caCert, app := bootProxy(t, fs, &config.UncorsConfig{Mappings: mappings, CacheConfig: cfg.cacheConfig})
 
 	return &Env{
 		Backend: backend,
-		Proxy:   &ProxyHarness{caCert: caCert, HTTPPort: httpPort, HTTPSPort: httpsPort},
+		Proxy:   &ProxyHarness{caCert: caCert, app: app, HTTPPort: httpPort, HTTPSPort: httpsPort},
 		Client:  NewClient(caCert, resolver),
 		Hosts:   resolver,
+		FS:      fs,
 		routes:  routes,
 	}
 }
