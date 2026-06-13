@@ -4,7 +4,6 @@ package harness
 
 import (
 	"crypto/x509"
-	"sync"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -27,8 +26,6 @@ const caValidityDays = 30
 // directly by IP; domain-based routes are reached through the Hosts resolver.
 type ProxyHarness struct {
 	caCert    *x509.Certificate
-	app       *uncors.Uncors
-	closeOnce sync.Once
 	HTTPPort  int
 	HTTPSPort int
 }
@@ -48,17 +45,10 @@ func (p *ProxyHarness) HTTPURL(path string) string {
 	return testutils.JoinPath(hosts.Loopback.HTTPPort(p.HTTPPort), path)
 }
 
-// Shutdown stops the proxy early and idempotently, flushing closers such as the
-// HAR writer so their output can be inspected before the test ends. The harness
-// also closes the app on cleanup, so calling this is optional.
-func (p *ProxyHarness) Shutdown() {
-	p.closeOnce.Do(func() { _ = p.app.Close() })
-}
-
 // bootProxy generates a fresh dev CA into the given filesystem at the exact path
 // HostCertManager reads from, starts uncors with the given config, and registers
-// shutdown with t.Cleanup. It returns the CA the client must trust and the app.
-func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certificate, *uncors.Uncors) {
+// shutdown with t.Cleanup. It returns the CA the client must trust.
+func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certificate {
 	t.Helper()
 
 	caDir, err := server.GetCAPath()
@@ -81,5 +71,5 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certi
 
 	t.Cleanup(func() { _ = app.Close() })
 
-	return caCert, app
+	return caCert
 }

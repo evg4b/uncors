@@ -135,11 +135,11 @@ func New(t *testing.T, opts ...Option) *Env {
 		routes[spec.host] = &Route{pattern: spec.host, tls: spec.tls, port: spec.port}
 	}
 
-	caCert, app := bootProxy(t, fs, &config.UncorsConfig{Mappings: mappings, CacheConfig: cfg.cacheConfig})
+	caCert := bootProxy(t, fs, &config.UncorsConfig{Mappings: mappings, CacheConfig: cfg.cacheConfig})
 
 	return &Env{
 		Backend: backend,
-		Proxy:   &ProxyHarness{caCert: caCert, app: app, HTTPPort: httpPort, HTTPSPort: httpsPort},
+		Proxy:   &ProxyHarness{caCert: caCert, HTTPPort: httpPort, HTTPSPort: httpsPort},
 		Client:  NewClient(caCert, resolver),
 		Hosts:   resolver,
 		FS:      fs,

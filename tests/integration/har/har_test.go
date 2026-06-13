@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/tests/integration/harness"
@@ -52,16 +53,25 @@ func TestHARMiddleware(t *testing.T) {
 	require.NoError(t, response.Body.Close())
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
-	// Flush the HAR writer.
-	env.Proxy.Shutdown()
-
-	data, err := os.ReadFile(harPath)
-	require.NoError(t, err)
-
+	// The writer enqueues the entry asynchronously after the response is sent and
+	// rewrites the file (atomic temp+rename) on every entry, so poll until the
+	// entry lands rather than racing the writer goroutine.
 	var parsed harFile
-	require.NoError(t, json.Unmarshal(data, &parsed))
 
-	require.Len(t, parsed.Log.Entries, 1)
+	require.Eventually(t, func() bool {
+		data, err := os.ReadFile(harPath)
+		if err != nil {
+			return false
+		}
+
+		parsed = harFile{}
+		if json.Unmarshal(data, &parsed) != nil {
+			return false
+		}
+
+		return len(parsed.Log.Entries) == 1
+	}, 2*time.Second, 20*time.Millisecond)
+
 	entry := parsed.Log.Entries[0]
 	assert.Equal(t, http.MethodGet, entry.Request.Method)
 	assert.Contains(t, entry.Request.URL, "/recorded/path")
