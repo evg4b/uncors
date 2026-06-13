@@ -38,7 +38,9 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		log.Printf("ERROR: Mock handler error: %s (URL: %s)", err.Error(), urlt.URL_String(request.URL))
+		log.Printf("ERROR: Mock handler error: %s (URL: %s)",
+			helpers.SanitizeLogValue(err.Error()),
+			helpers.SanitizeLogValue(urlt.URL_String(request.URL)))
 
 		return err
 	}
