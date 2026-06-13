@@ -83,6 +83,8 @@ var table = [256]encoding{
 	'Z':  encodeFragment | encodeQueryComponent | encodeUserPassword | encodeZone | encodeHost | encodePathSegment | encodePath,
 	'[':  encodeZone | encodeHost,
 	']':  encodeZone | encodeHost,
+	'{':  encodeHost,
+	'}':  encodeHost,
 	'_':  encodeFragment | encodeQueryComponent | encodeUserPassword | encodeZone | encodeHost | encodePathSegment | encodePath,
 	'a':  hexChar | encodeFragment | encodeQueryComponent | encodeUserPassword | encodeZone | encodeHost | encodePathSegment | encodePath,
 	'b':  hexChar | encodeFragment | encodeQueryComponent | encodeUserPassword | encodeZone | encodeHost | encodePathSegment | encodePath,

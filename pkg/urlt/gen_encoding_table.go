@@ -167,7 +167,7 @@ func shouldEscape(c byte, mode encoding) bool {
 		// escape them (because hosts can't use %-encoding for
 		// ASCII bytes).
 		switch c {
-		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '[', ']', '<', '>', '"':
+		case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', ':', '[', ']', '<', '>', '"', '{', '}':
 			return false
 		}
 	}

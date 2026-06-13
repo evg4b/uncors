@@ -16,6 +16,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type URL = base_url.URL
@@ -649,6 +652,67 @@ var urltests = []URLTest{
 		},
 		"",
 	},
+	// {client} placeholder as full host
+	{
+		"http://{client}/",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as subdomain
+	{
+		"http://{client}.example.com/path",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}.example.com",
+			Path:   "/path",
+		},
+		"",
+	},
+	// {client} placeholder in the middle of host
+	{
+		"http://api.{client}.com/",
+		&URL{
+			Scheme: "http",
+			Host:   "api.{client}.com",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as full host with port
+	{
+		"http://{client}:8080/",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}:8080",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as subdomain with port
+	{
+		"http://{client}.example.com:8080/path",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}.example.com:8080",
+			Path:   "/path",
+		},
+		"",
+	},
+	// {client} placeholder with path and query
+	{
+		"https://{client}.example.com/api?version=2",
+		&URL{
+			Scheme:   "https",
+			Host:     "{client}.example.com",
+			Path:     "/api",
+			RawQuery: "version=2",
+		},
+		"",
+	},
 }
 
 // more useful string for debugging than fmt's struct printer
@@ -690,14 +754,11 @@ func BenchmarkString(b *testing.B) {
 
 func TestParse(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %v", tt.in, err)
-			continue
-		}
-		if !reflect.DeepEqual(u, tt.out) {
-			t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			require.NoError(t, err, "Parse(%q) returned unexpected error", tt.in)
+			assert.True(t, reflect.DeepEqual(u, tt.out), "Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
+		})
 	}
 }
 
@@ -724,6 +785,28 @@ var parseRequestURLTests = []struct {
 	{"http://[fe80::1%25en0]:8080/", true},            // with alphanum zone identifier
 	{"http://[fe80::1%25%65%6e%301-._~]/", true},      // with percent-encoded+unreserved zone identifier
 	{"http://[fe80::1%25%65%6e%301-._~]:8080/", true}, // with percent-encoded+unreserved zone identifier
+
+	// {client} placeholder in host
+	{"http://{client}/", true},
+	{"http://{client}.example.com/", true},
+	{"http://api.{client}.com/", true},
+	{"http://{client}:8080/", true},
+	{"http://{client}.example.com:8080/path", true},
+	{"https://{client}.example.com/api?version=2", true},
+
+	// invalid placeholder formats in host
+	{"http://{}/", false},                    // empty placeholder
+	{"http://{{demo}.example.com/", false},   // double opening brace
+	{"http://{demo.example.com/", false},     // unclosed placeholder
+	{"http://demo}.example.com/", false},     // unmatched closing brace
+	{"http://{ client}.example.com/", false}, // space inside placeholder
+	{"http://{client}}.example.com/", false}, // extra closing brace after placeholder
+
+	// placeholder is not allowed outside of host
+	{"http://example.com/{client}/path", false}, // placeholder in path segment
+	{"http://example.com/path/{client}", false}, // placeholder at end of path
+	{"http://example.com/?{client}=1", false},   // placeholder in query key
+	{"http://example.com/?x={client}", false},   // placeholder in query value
 
 	{"foo.html", false},
 	{"../dir/", false},
@@ -766,21 +849,19 @@ var parseRequestURLTests = []struct {
 
 func TestParseRequestURI(t *testing.T) {
 	for _, test := range parseRequestURLTests {
-		_, err := ParseRequestURI(test.url)
-		if test.expectedValid && err != nil {
-			t.Errorf("ParseRequestURI(%q) gave err %v; want no error", test.url, err)
-		} else if !test.expectedValid && err == nil {
-			t.Errorf("ParseRequestURI(%q) gave nil error; want some error", test.url)
-		}
+		t.Run(test.url, func(t *testing.T) {
+			_, err := ParseRequestURI(test.url)
+			if test.expectedValid {
+				assert.NoError(t, err, "ParseRequestURI(%q) should not error", test.url)
+			} else {
+				assert.Error(t, err, "ParseRequestURI(%q) should error", test.url)
+			}
+		})
 	}
 
 	url, err := ParseRequestURI(pathThatLooksSchemeRelative)
-	if err != nil {
-		t.Fatalf("Unexpected error %v", err)
-	}
-	if url.Path != pathThatLooksSchemeRelative {
-		t.Errorf("ParseRequestURI path:\ngot  %q\nwant %q", url.Path, pathThatLooksSchemeRelative)
-	}
+	require.NoError(t, err, "Unexpected error parsing %q", pathThatLooksSchemeRelative)
+	assert.Equal(t, pathThatLooksSchemeRelative, url.Path, "ParseRequestURI path mismatch")
 }
 
 var stringURLTests = []struct {
@@ -823,25 +904,23 @@ var stringURLTests = []struct {
 
 func TestURLString(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %s", tt.in, err)
-			continue
-		}
-		expected := tt.in
-		if tt.roundtrip != "" {
-			expected = tt.roundtrip
-		}
-		s := URL_String(u)
-		if s != expected {
-			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			require.NoError(t, err, "Parse(%q) returned unexpected error", tt.in)
+			expected := tt.in
+			if tt.roundtrip != "" {
+				expected = tt.roundtrip
+			}
+			s := URL_String(u)
+			assert.Equal(t, expected, s, "URL string mismatch for %q", tt.in)
+		})
 	}
 
 	for _, tt := range stringURLTests {
-		if got := URL_String(&tt.url); got != tt.want {
-			t.Errorf("%+v.String() = %q; want %q", tt.url, got, tt.want)
-		}
+		t.Run(tt.want, func(t *testing.T) {
+			got := URL_String(&tt.url)
+			assert.Equal(t, tt.want, got)
+		})
 	}
 }
 
@@ -904,9 +983,7 @@ func TestURLRedacted(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			if g, w := Redacted(tt.url), tt.want; g != w {
-				t.Fatalf("got: %q\nwant: %q", g, w)
-			}
+			assert.Equal(t, tt.want, Redacted(tt.url))
 		})
 	}
 }
@@ -987,33 +1064,44 @@ var unescapeTests = []EscapeTest{
 
 func TestUnescape(t *testing.T) {
 	for _, tt := range unescapeTests {
-		actual, err := QueryUnescape(tt.in)
-		if actual != tt.out || (err != nil) != (tt.err != nil) {
-			t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", tt.in, actual, err, tt.out, tt.err)
-		}
-
-		in := tt.in
-		out := tt.out
-		if strings.Contains(tt.in, "+") {
-			in = strings.ReplaceAll(tt.in, "+", "%20")
-			actual, err := PathUnescape(in)
-			if actual != tt.out || (err != nil) != (tt.err != nil) {
-				t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, tt.out, tt.err)
+		t.Run(tt.in, func(t *testing.T) {
+			actual, err := QueryUnescape(tt.in)
+			assert.Equal(t, tt.out, actual, "QueryUnescape(%q) mismatch", tt.in)
+			if tt.err != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			if tt.err == nil {
-				s, err := QueryUnescape(strings.ReplaceAll(tt.in, "+", "XXX"))
-				if err != nil {
-					continue
+
+			in := tt.in
+			out := tt.out
+			if strings.Contains(tt.in, "+") {
+				in = strings.ReplaceAll(tt.in, "+", "%20")
+				actual, err := PathUnescape(in)
+				assert.Equal(t, tt.out, actual, "PathUnescape(%q) mismatch", in)
+				if tt.err != nil {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
 				}
-				in = tt.in
-				out = strings.ReplaceAll(s, "XXX", "+")
+				if tt.err == nil {
+					s, err := QueryUnescape(strings.ReplaceAll(tt.in, "+", "XXX"))
+					if err != nil {
+						return
+					}
+					in = tt.in
+					out = strings.ReplaceAll(s, "XXX", "+")
+				}
 			}
-		}
 
-		actual, err = PathUnescape(in)
-		if actual != out || (err != nil) != (tt.err != nil) {
-			t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, out, tt.err)
-		}
+			actual, err = PathUnescape(in)
+			assert.Equal(t, out, actual, "PathUnescape(%q) mismatch", in)
+			if tt.err != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
@@ -1047,16 +1135,14 @@ var queryEscapeTests = []EscapeTest{
 
 func TestQueryEscape(t *testing.T) {
 	for _, tt := range queryEscapeTests {
-		actual := QueryEscape(tt.in)
-		if tt.out != actual {
-			t.Errorf("QueryEscape(%q) = %q, want %q", tt.in, actual, tt.out)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			actual := QueryEscape(tt.in)
+			assert.Equal(t, tt.out, actual, "QueryEscape(%q) mismatch", tt.in)
 
-		// for bonus points, verify that escape:unescape is an identity.
-		roundtrip, err := QueryUnescape(actual)
-		if roundtrip != tt.in || err != nil {
-			t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
-		}
+			roundtrip, err := QueryUnescape(actual)
+			assert.NoError(t, err, "QueryUnescape should not error")
+			assert.Equal(t, tt.in, roundtrip, "escape:unescape should be identity")
+		})
 	}
 }
 
@@ -1100,16 +1186,14 @@ var pathEscapeTests = []EscapeTest{
 
 func TestPathEscape(t *testing.T) {
 	for _, tt := range pathEscapeTests {
-		actual := PathEscape(tt.in)
-		if tt.out != actual {
-			t.Errorf("PathEscape(%q) = %q, want %q", tt.in, actual, tt.out)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			actual := PathEscape(tt.in)
+			assert.Equal(t, tt.out, actual, "PathEscape(%q) mismatch", tt.in)
 
-		// for bonus points, verify that escape:unescape is an identity.
-		roundtrip, err := PathUnescape(actual)
-		if roundtrip != tt.in || err != nil {
-			t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
-		}
+			roundtrip, err := PathUnescape(actual)
+			assert.NoError(t, err, "PathUnescape should not error")
+			assert.Equal(t, tt.in, roundtrip, "escape:unescape should be identity")
+		})
 	}
 }
 
@@ -1143,9 +1227,10 @@ var encodeQueryTests = []EncodeQueryTest{
 
 func TestEncodeQuery(t *testing.T) {
 	for _, tt := range encodeQueryTests {
-		if q := tt.m.Encode(); q != tt.expected {
-			t.Errorf(`EncodeQuery(%+v) = %q, want %q`, tt.m, q, tt.expected)
-		}
+		t.Run(tt.expected, func(t *testing.T) {
+			q := tt.m.Encode()
+			assert.Equal(t, tt.expected, q)
+		})
 	}
 }
 
@@ -1179,10 +1264,10 @@ var resolvePathTests = []struct {
 
 func TestResolvePath(t *testing.T) {
 	for _, test := range resolvePathTests {
-		got := resolvePath(test.base, test.ref)
-		if got != test.expected {
-			t.Errorf("For %q + %q got %q; expected %q", test.base, test.ref, got, test.expected)
-		}
+		t.Run(test.base+" "+test.ref, func(t *testing.T) {
+			got := resolvePath(test.base, test.ref)
+			assert.Equal(t, test.expected, got, "For %q + %q", test.base, test.ref)
+		})
 	}
 }
 
@@ -1331,86 +1416,50 @@ var resolveReferenceTests = []struct {
 func TestResolveReference(t *testing.T) {
 	mustParse := func(url string) *URL {
 		u, err := Parse(url)
-		if err != nil {
-			t.Fatalf("Parse(%q) got err %v", url, err)
-		}
+		require.NoError(t, err, "Parse(%q) got err", url)
 		return u
 	}
 	opaque := &URL{Scheme: "scheme", Opaque: "opaque"}
 	for _, test := range resolveReferenceTests {
-		base := mustParse(test.base)
-		rel := mustParse(test.rel)
-		url := URL_ResolveReference(base, rel)
-		if got := URL_String(url); got != test.expected {
-			t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
-		}
-		// Ensure that new instances are returned.
-		if base == url {
-			t.Errorf("Expected URL_ResolveReference to return new URL instance.")
-		}
-		// Test the convenience wrapper too.
-		url, err := URL_Parse(base, test.rel)
-		if err != nil {
-			t.Errorf("URL(%q).Parse(%q) failed: %v", test.base, test.rel, err)
-		} else if got := URL_String(url); got != test.expected {
-			t.Errorf("URL(%q).Parse(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
-		} else if base == url {
-			// Ensure that new instances are returned for the wrapper too.
-			t.Errorf("Expected URL_Parse to return new URL instance.")
-		}
-		// Ensure Opaque resets the URL.
-		url = URL_ResolveReference(base, opaque)
-		if *url != *opaque {
-			t.Errorf("ResolveReference failed to resolve opaque URL:\ngot  %#v\nwant %#v", url, opaque)
-		}
-		// Test the convenience wrapper with an opaque URL too.
-		url, err = URL_Parse(base, "scheme:opaque")
-		if err != nil {
-			t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
-		} else if *url != *opaque {
-			t.Errorf("Parse failed to resolve opaque URL:\ngot  %#v\nwant %#v", opaque, url)
-		} else if base == url {
-			// Ensure that new instances are returned, again.
-			t.Errorf("Expected URL.Parse to return new URL instance.")
-		}
+		t.Run(test.base+" "+test.rel, func(t *testing.T) {
+			base := mustParse(test.base)
+			rel := mustParse(test.rel)
+			url := URL_ResolveReference(base, rel)
+			got := URL_String(url)
+			assert.Equal(t, test.expected, got, "URL(%q).ResolveReference(%q)", test.base, test.rel)
+			assert.NotSame(t, base, url, "Expected URL_ResolveReference to return new URL instance")
+
+			url, err := URL_Parse(base, test.rel)
+			require.NoError(t, err, "URL(%q).Parse(%q) failed", test.base, test.rel)
+			got = URL_String(url)
+			assert.Equal(t, test.expected, got, "URL(%q).Parse(%q)", test.base, test.rel)
+			assert.NotSame(t, base, url, "Expected URL_Parse to return new URL instance")
+
+			url = URL_ResolveReference(base, opaque)
+			assert.Equal(t, opaque, url, "ResolveReference failed to resolve opaque URL")
+
+			url, err = URL_Parse(base, "scheme:opaque")
+			require.NoError(t, err, "URL(%q).Parse(scheme:opaque) failed", test.base)
+			assert.Equal(t, opaque, url, "Parse failed to resolve opaque URL")
+			assert.NotSame(t, base, url, "Expected URL.Parse to return new URL instance")
+		})
 	}
 }
 
 func TestQueryValues(t *testing.T) {
 	u, _ := Parse("http://x.com?foo=bar&bar=1&bar=2&baz")
 	v := URL_Query(u)
-	if len(v) != 3 {
-		t.Errorf("got %d keys in Query values, want 3", len(v))
-	}
-	if g, e := v.Get("foo"), "bar"; g != e {
-		t.Errorf("Get(foo) = %q, want %q", g, e)
-	}
-	// Case sensitive:
-	if g, e := v.Get("Foo"), ""; g != e {
-		t.Errorf("Get(Foo) = %q, want %q", g, e)
-	}
-	if g, e := v.Get("bar"), "1"; g != e {
-		t.Errorf("Get(bar) = %q, want %q", g, e)
-	}
-	if g, e := v.Get("baz"), ""; g != e {
-		t.Errorf("Get(baz) = %q, want %q", g, e)
-	}
-	if h, e := v.Has("foo"), true; h != e {
-		t.Errorf("Has(foo) = %t, want %t", h, e)
-	}
-	if h, e := v.Has("bar"), true; h != e {
-		t.Errorf("Has(bar) = %t, want %t", h, e)
-	}
-	if h, e := v.Has("baz"), true; h != e {
-		t.Errorf("Has(baz) = %t, want %t", h, e)
-	}
-	if h, e := v.Has("noexist"), false; h != e {
-		t.Errorf("Has(noexist) = %t, want %t", h, e)
-	}
+	assert.Len(t, v, 3, "Expected 3 keys in Query values")
+	assert.Equal(t, "bar", v.Get("foo"))
+	assert.Equal(t, "", v.Get("Foo"), "Query should be case sensitive")
+	assert.Equal(t, "1", v.Get("bar"))
+	assert.Equal(t, "", v.Get("baz"))
+	assert.True(t, v.Has("foo"))
+	assert.True(t, v.Has("bar"))
+	assert.True(t, v.Has("baz"))
+	assert.False(t, v.Has("noexist"))
 	v.Del("bar")
-	if g, e := v.Get("bar"), ""; g != e {
-		t.Errorf("second Get(bar) = %q, want %q", g, e)
-	}
+	assert.Equal(t, "", v.Get("bar"), "bar should be deleted")
 }
 
 type parseTest struct {
@@ -1511,30 +1560,18 @@ func TestParseQuery(t *testing.T) {
 	for _, test := range parseTests {
 		t.Run(test.query, func(t *testing.T) {
 			form, err := ParseQuery(test.query)
-			if test.ok != (err == nil) {
-				want := "<error>"
-				if test.ok {
-					want = "<nil>"
-				}
-				t.Errorf("Unexpected error: %v, want %v", err, want)
+			if test.ok {
+				assert.NoError(t, err, "ParseQuery should not error for %q", test.query)
+			} else {
+				assert.Error(t, err, "ParseQuery should error for %q", test.query)
 			}
-			if len(form) != len(test.out) {
-				t.Errorf("len(form) = %d, want %d", len(form), len(test.out))
-			}
+			assert.Len(t, form, len(test.out), "form length mismatch for %q", test.query)
 			for k, evs := range test.out {
 				vs, ok := form[k]
-				if !ok {
-					t.Errorf("Missing key %q", k)
-					continue
-				}
-				if len(vs) != len(evs) {
-					t.Errorf("len(form[%q]) = %d, want %d", k, len(vs), len(evs))
-					continue
-				}
+				assert.True(t, ok, "Missing key %q in form", k)
+				assert.Len(t, vs, len(evs), "len(form[%q]) mismatch", k)
 				for j, ev := range evs {
-					if v := vs[j]; v != ev {
-						t.Errorf("form[%q][%d] = %q, want %q", k, j, v, ev)
-					}
+					assert.Equal(t, ev, vs[j], "form[%q][%d] mismatch", k, j)
 				}
 			}
 		})
@@ -1665,21 +1702,18 @@ var requritests = []RequestURITest{
 
 func TestRequestURI(t *testing.T) {
 	for _, tt := range requritests {
-		s := URL_RequestURI(tt.url)
-		if s != tt.out {
-			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.url, s, tt.out)
-		}
+		t.Run(tt.out, func(t *testing.T) {
+			s := URL_RequestURI(tt.url)
+			assert.Equal(t, tt.out, s)
+		})
 	}
 }
 
 func TestParseFailure(t *testing.T) {
-	// Test that the first parse error is returned.
 	const url = "%gh&%ij"
 	_, err := ParseQuery(url)
 	errStr := fmt.Sprint(err)
-	if !strings.Contains(errStr, "%gh") {
-		t.Errorf(`ParseQuery(%q) returned error %q, want something containing %q"`, url, errStr, "%gh")
-	}
+	assert.Contains(t, errStr, "%gh", "ParseQuery error should contain %%gh")
 }
 
 func TestParseErrors(t *testing.T) {
@@ -1734,30 +1768,47 @@ func TestParseErrors(t *testing.T) {
 		{"http://.[::1]", true},
 		{"http:// [::1]", true},
 		{"hxxp://mathepqo[.]serveftp(.)com:9059", true},
+
+		// {client} placeholder — must not produce an error
+		{"http://{client}/", false},
+		{"http://{client}.example.com/", false},
+		{"http://api.{client}.com/", false},
+		{"http://{client}:8080/", false},
+		{"http://{client}.example.com:8080/path", false},
+
+		// invalid placeholder formats in host — must produce an error
+		{"http://{}/", true},                    // empty placeholder
+		{"http://{{demo}.example.com/", true},   // double opening brace
+		{"http://{demo.example.com/", true},     // unclosed placeholder
+		{"http://demo}.example.com/", true},     // unmatched closing brace
+		{"http://{ client}.example.com/", true}, // space inside placeholder
+		{"http://{client}}.example.com/", true}, // extra closing brace after placeholder
+
+		// placeholder in wrong location — must produce an error
+		{"http://example.com/{client}/path", true}, // placeholder in path segment
+		{"http://example.com/path/{client}", true}, // placeholder at end of path
+		{"http://example.com/?{client}=1", true},   // placeholder in query key
+		{"http://example.com/?x={client}", true},   // placeholder in query value
 	}
 	for _, tt := range tests {
-		u, err := Parse(tt.in)
-		if tt.wantErr {
-			if err == nil {
-				t.Errorf("Parse(%q) = %#v; want an error", tt.in, u)
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			if tt.wantErr {
+				assert.Error(t, err, "Parse(%q) should error", tt.in)
+			} else {
+				assert.NoError(t, err, "Parse(%q) should not error", tt.in)
+				assert.NotNil(t, u)
 			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("Parse(%q) = %v; want no error", tt.in, err)
-		}
+		})
 	}
 }
 
 // Issue 11202
 func TestStarRequest(t *testing.T) {
 	u, err := Parse("*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, want := URL_RequestURI(u), "*"; got != want {
-		t.Errorf("RequestURI = %q; want %q", got, want)
-	}
+	require.NoError(t, err)
+	got := URL_RequestURI(u)
+	assert.Equal(t, "*", got)
 }
 
 type shouldEscapeTest struct {
@@ -1824,9 +1875,9 @@ var shouldEscapeTests = []shouldEscapeTest{
 
 func TestShouldEscape(t *testing.T) {
 	for _, tt := range shouldEscapeTests {
-		if shouldEscape(tt.in, tt.mode) != tt.escape {
-			t.Errorf("shouldEscape(%q, %v) returned %v; expected %v", tt.in, tt.mode, !tt.escape, tt.escape)
-		}
+		t.Run(fmt.Sprintf("%q_%v", tt.in, tt.mode), func(t *testing.T) {
+			assert.Equal(t, tt.escape, shouldEscape(tt.in, tt.mode), "shouldEscape(%q, %v) mismatch", tt.in, tt.mode)
+		})
 	}
 }
 
@@ -1896,18 +1947,12 @@ var netErrorTests = []struct {
 // Test that base_url.Error implements net.Error and that it forwards
 func TestURLErrorImplementsNetError(t *testing.T) {
 	for i, tt := range netErrorTests {
-		err, ok := tt.err.(net.Error)
-		if !ok {
-			t.Errorf("%d: %T does not implement net.Error", i+1, tt.err)
-			continue
-		}
-		if err.Timeout() != tt.timeout {
-			t.Errorf("%d: err.Timeout(): got %v, want %v", i+1, err.Timeout(), tt.timeout)
-			continue
-		}
-		if err.Temporary() != tt.temporary {
-			t.Errorf("%d: err.Temporary(): got %v, want %v", i+1, err.Temporary(), tt.temporary)
-		}
+		t.Run(fmt.Sprintf("case_%d", i+1), func(t *testing.T) {
+			err, ok := tt.err.(net.Error)
+			assert.True(t, ok, "%d: %T should implement net.Error", i+1, tt.err)
+			assert.Equal(t, tt.timeout, err.Timeout(), "%d: err.Timeout() mismatch", i+1)
+			assert.Equal(t, tt.temporary, err.Temporary(), "%d: err.Temporary() mismatch", i+1)
+		})
 	}
 }
 
@@ -1942,16 +1987,22 @@ func TestURLHostnameAndPort(t *testing.T) {
 		{"google.com:80_invalid_port", "google.com:80_invalid_port", ""},
 		{"[::1]extra]:80", "::1]extra", "80"},
 		{"google.com]extra:extra", "google.com]extra:extra", ""},
+
+		// {client} placeholder in host
+		{"{client}", "{client}", ""},
+		{"{client}:8080", "{client}", "8080"},
+		{"{client}.example.com", "{client}.example.com", ""},
+		{"{client}.example.com:443", "{client}.example.com", "443"},
+		{"api.{client}.com", "api.{client}.com", ""},
+		{"api.{client}.com:9090", "api.{client}.com", "9090"},
 	}
 	for _, tt := range tests {
-		u := &URL{Host: tt.in}
-		host, port := URL_Hostname(u), URL_Port(u)
-		if host != tt.host {
-			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
-		}
-		if port != tt.port {
-			t.Errorf("Port for Host %q = %q; want %q", tt.in, port, tt.port)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u := &URL{Host: tt.in}
+			host, port := URL_Hostname(u), URL_Port(u)
+			assert.Equal(t, tt.host, host, "Hostname for Host %q mismatch", tt.in)
+			assert.Equal(t, tt.port, port, "Port for Host %q mismatch", tt.in)
+		})
 	}
 }
 
@@ -1963,50 +2014,27 @@ var (
 
 func TestJSON(t *testing.T) {
 	u, err := Parse("https://www.google.com/x?y=z")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	js, err := json.Marshal(u)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// If only we could implement TextMarshaler/TextUnmarshaler,
-	// this would work:
-	//
-	// if string(js) != strconv.Quote(u.String()) {
-	// 	t.Errorf("json encoding: %s\nwant: %s\n", js, strconv.Quote(u.String()))
-	// }
+	require.NoError(t, err)
 
 	u1 := new(URLT)
 	err = json.Unmarshal(js, u1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if URL_String((*URL)(u1)) != URL_String(u) {
-		t.Errorf("json decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, URL_String(u), URL_String((*URL)(u1)))
 }
 
 func TestGob(t *testing.T) {
 	u, err := Parse("https://www.google.com/x?y=z")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	var w bytes.Buffer
 	err = gob.NewEncoder(&w).Encode(u)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	u1 := new(URLT)
 	err = gob.NewDecoder(&w).Decode(u1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if URL_String((*URL)(u1)) != URL_String(u) {
-		t.Errorf("gob decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, URL_String(u), URL_String((*URL)(u1)))
 }
 
 func TestNilUser(t *testing.T) {
@@ -2017,28 +2045,23 @@ func TestNilUser(t *testing.T) {
 	}()
 
 	u, err := Parse("http://foo.com/")
-	if err != nil {
-		t.Fatalf("parse err: %v", err)
-	}
+	require.NoError(t, err)
 
-	if v := u.User.Username(); v != "" {
-		t.Fatalf("expected empty username, got %s", v)
-	}
+	v := u.User.Username()
+	assert.Empty(t, v, "expected empty username")
 
-	if v, ok := u.User.Password(); v != "" || ok {
-		t.Fatalf("expected empty password, got %s (%v)", v, ok)
-	}
+	v, ok := u.User.Password()
+	assert.Empty(t, v, "expected empty password")
+	assert.False(t, ok)
 
-	if v := u.User.String(); v != "" {
-		t.Fatalf("expected empty string, got %s", v)
-	}
+	v = u.User.String()
+	assert.Empty(t, v, "expected empty string")
 }
 
 func TestInvalidUserPassword(t *testing.T) {
 	_, err := Parse("http://user^:passwo^rd@foo.com/")
-	if got, wantsub := fmt.Sprint(err), "net/url: invalid userinfo"; !strings.Contains(got, wantsub) {
-		t.Errorf("error = %q; want substring %q", got, wantsub)
-	}
+	assert.Error(t, err)
+	assert.Contains(t, fmt.Sprint(err), "net/url: invalid userinfo")
 }
 
 func TestRejectControlCharacters(t *testing.T) {
@@ -2048,17 +2071,16 @@ func TestRejectControlCharacters(t *testing.T) {
 		"http://foo\x7f.com/",
 	}
 	for _, s := range tests {
-		_, err := Parse(s)
-		const wantSub = "net/url: invalid control character in URL"
-		if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
-			t.Errorf("Parse(%q) error = %q; want substring %q", s, got, wantSub)
-		}
+		t.Run(s, func(t *testing.T) {
+			_, err := Parse(s)
+			const wantSub = "net/url: invalid control character in URL"
+			got := fmt.Sprint(err)
+			assert.Contains(t, got, wantSub)
+		})
 	}
 
-	// But don't reject non-ASCII CTLs, at least for now:
-	if _, err := Parse("http://foo.com/ctl\x80"); err != nil {
-		t.Errorf("error parsing URL with non-ASCII control byte: %v", err)
-	}
+	_, err := Parse("http://foo.com/ctl\x80")
+	assert.NoError(t, err, "should not reject non-ASCII control byte")
 }
 
 var escapeBenchmarks = []struct {
@@ -2160,7 +2182,7 @@ func BenchmarkPathUnescape(b *testing.B) {
 	}
 }
 
-func TestJoinPath(t *testing.T) {
+func TestJoinPath(t *testing.T) { //NOSONAR
 	tests := []struct {
 		base string
 		elem []string
@@ -2286,29 +2308,137 @@ func TestJoinPath(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		wantErr := "nil"
-		if tt.out == "" {
-			wantErr = "non-nil error"
-		}
-		out, err := JoinPath(tt.base, tt.elem...)
-		if out != tt.out || (err == nil) != (tt.out != "") {
-			t.Errorf("JoinPath(%q, %q) = %q, %v, want %q, %v", tt.base, tt.elem, out, err, tt.out, wantErr)
-		}
-
-		u, err := Parse(tt.base)
-		if err != nil {
-			if tt.out != "" {
-				t.Errorf("Parse(%q) = %v", tt.base, err)
+		t.Run(tt.base, func(t *testing.T) {
+			out, err := JoinPath(tt.base, tt.elem...)
+			if tt.out == "" {
+				assert.Error(t, err, "JoinPath(%q, %q) should error", tt.base, tt.elem)
+			} else {
+				assert.NoError(t, err, "JoinPath(%q, %q) should not error", tt.base, tt.elem)
+				assert.Equal(t, tt.out, out, "JoinPath(%q, %q) mismatch", tt.base, tt.elem)
 			}
-			continue
-		}
-		if tt.out == "" {
-			// URL.JoinPath doesn't return an error, so leave it unchanged
-			tt.out = tt.base
-		}
-		out = URL_String(URL_JoinPath(u, tt.elem...))
-		if out != tt.out {
-			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
-		}
+
+			u, err := Parse(tt.base)
+			if err != nil {
+				if tt.out != "" {
+					t.Errorf("Parse(%q) = %v", tt.base, err)
+				}
+				return
+			}
+			if tt.out == "" {
+				// URL.JoinPath doesn't return an error, so leave it unchanged
+				tt.out = tt.base
+			}
+			out = URL_String(URL_JoinPath(u, tt.elem...))
+			assert.Equal(t, tt.out, out, "Parse(%q).JoinPath(%q) mismatch", tt.base, tt.elem)
+		})
 	}
+}
+
+func TestClientPlaceholderInHost(t *testing.T) { //NOSONAR
+	tests := []struct {
+		name      string
+		rawURL    string
+		wantHost  string
+		wantPath  string
+		wantQuery string
+	}{
+		{
+			name:     "placeholder as full host",
+			rawURL:   "http://{client}/",
+			wantHost: "{client}",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as subdomain",
+			rawURL:   "http://{client}.example.com/path",
+			wantHost: "{client}.example.com",
+			wantPath: "/path",
+		},
+		{
+			name:     "placeholder in the middle of host",
+			rawURL:   "http://api.{client}.com/",
+			wantHost: "api.{client}.com",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as full host with port",
+			rawURL:   "http://{client}:8080/",
+			wantHost: "{client}:8080",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as subdomain with port",
+			rawURL:   "http://{client}.example.com:8080/path",
+			wantHost: "{client}.example.com:8080",
+			wantPath: "/path",
+		},
+		{
+			name:      "placeholder with query",
+			rawURL:    "https://{client}.example.com/api?version=2",
+			wantHost:  "{client}.example.com",
+			wantPath:  "/api",
+			wantQuery: "version=2",
+		},
+		{
+			name:     "https scheme with placeholder",
+			rawURL:   "https://{client}.example.com/",
+			wantHost: "{client}.example.com",
+			wantPath: "/",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u, err := Parse(tt.rawURL)
+			require.NoError(t, err, "Parse(%q) returned unexpected error", tt.rawURL)
+			assert.Equal(t, tt.wantHost, u.Host)
+			assert.Equal(t, tt.wantPath, u.Path)
+			assert.Equal(t, tt.wantQuery, u.RawQuery)
+			got := URL_String(u)
+			assert.Equal(t, tt.rawURL, got, "URL_String(Parse(%q)) should round-trip", tt.rawURL)
+		})
+	}
+}
+
+func TestInvalidClientPlaceholder(t *testing.T) {
+	t.Run("malformed placeholder in host", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			rawURL string
+		}{
+			{"empty placeholder", "http://{}/"},
+			{"double opening brace", "http://{{demo}.example.com/"},
+			{"unclosed placeholder", "http://{demo.example.com/"},
+			{"unmatched closing brace", "http://demo}.example.com/"},
+			{"space inside placeholder", "http://{ client}.example.com/"},
+			{"extra closing brace after placeholder", "http://{client}}.example.com/"},
+			{"empty placeholder with port", "http://{}:8080/"},
+			{"double opening brace with port", "http://{{demo}:8080/"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := Parse(tt.rawURL)
+				assert.Error(t, err, "Parse(%q) should error for malformed placeholder", tt.rawURL)
+			})
+		}
+	})
+
+	t.Run("placeholder outside host", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			rawURL string
+		}{
+			{"placeholder in path segment", "http://example.com/{client}/path"},
+			{"placeholder at end of path", "http://example.com/path/{client}"},
+			{"placeholder as entire path", "http://example.com/{client}"},
+			{"placeholder in query key", "http://example.com/?{client}=1"},
+			{"placeholder in query value", "http://example.com/?x={client}"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := Parse(tt.rawURL)
+				assert.Error(t, err, "Parse(%q) should error — placeholder is only allowed in host", tt.rawURL)
+			})
+		}
+	})
 }

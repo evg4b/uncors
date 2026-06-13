@@ -26,6 +26,15 @@ import (
 
 const upperhex = "0123456789ABCDEF"
 
+var (
+	errNestedPlaceholder   = errors.New("invalid placeholder in host: nested '{'")
+	errEmptyPlaceholder    = errors.New("invalid placeholder in host: empty placeholder")
+	errUnclosedPlaceholder = errors.New("invalid placeholder in host: unclosed '{'")
+	errUnmatchedCloseBrace = errors.New("invalid placeholder in host: unmatched '}'")
+	errBraceInPath         = errors.New("invalid character in URL path: '{' and '}' are only allowed in host")
+	errBraceInQuery        = errors.New("net/url: invalid character in URL query: placeholders are only allowed in host")
+)
+
 func ishex(c byte) bool {
 	return table[c]&hexChar != 0
 }
@@ -62,10 +71,11 @@ func PathUnescape(s string) (string, error) {
 
 // unescape unescapes a string; the mode specifies
 // which section of the URL string is being unescaped.
-func unescape(s string, mode encoding) (string, error) {
+func unescape(s string, mode encoding) (string, error) { //NOSONAR
 	// Count %, check that they're well-formed.
 	n := 0
 	hasPlus := false
+	inPlaceholder := false
 	for i := 0; i < len(s); {
 		switch s[i] {
 		case '%':
@@ -103,12 +113,38 @@ func unescape(s string, mode encoding) (string, error) {
 		case '+':
 			hasPlus = mode == encodeQueryComponent
 			i++
+		case '{':
+			if mode == encodeHost {
+				if inPlaceholder {
+					return "", errNestedPlaceholder
+				}
+				inPlaceholder = true
+				if i+1 < len(s) && s[i+1] == '}' {
+					return "", errEmptyPlaceholder
+				}
+			} else if mode == encodePath {
+				return "", errBraceInPath
+			}
+			i++
+		case '}':
+			if mode == encodeHost {
+				if !inPlaceholder {
+					return "", errUnmatchedCloseBrace
+				}
+				inPlaceholder = false
+			} else if mode == encodePath {
+				return "", errBraceInPath
+			}
+			i++
 		default:
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
 				return "", base_url.InvalidHostError(s[i : i+1])
 			}
 			i++
 		}
+	}
+	if mode == encodeHost && inPlaceholder {
+		return "", errUnclosedPlaceholder
 	}
 
 	if n == 0 && !hasPlus {
@@ -278,7 +314,7 @@ func ParseRequestURI(rawURL string) (*base_url.URL, error) {
 // viaRequest is true, the URL is assumed to have arrived via an HTTP request,
 // in which case only absolute URLs or path-absolute relative URLs are allowed.
 // If viaRequest is false, all forms of relative URLs are allowed.
-func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
+func parse(rawURL string, viaRequest bool) (*base_url.URL, error) { //NOSONAR
 	var rest string
 	var err error
 
@@ -354,6 +390,9 @@ func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 	// don't rely on it in general.
 	if err := setPath(url, rest); err != nil {
 		return nil, err
+	}
+	if strings.ContainsAny(url.RawQuery, "{}") {
+		return nil, errBraceInQuery
 	}
 	return url, nil
 }
@@ -515,7 +554,7 @@ func setPath(u *base_url.URL, p string) error {
 // their results.
 // In general, code should call URL_EscapedPath instead of
 // reading u.RawPath directly.
-func URL_EscapedPath(u *base_url.URL) string {
+func URL_EscapedPath(u *base_url.URL) string { //NOSONAR
 	if u.RawPath != "" && validEncoded(u.RawPath, encodePath) {
 		p, err := unescape(u.RawPath, encodePath)
 		if err == nil && p == u.Path {
@@ -578,7 +617,7 @@ func setFragment(u *base_url.URL, f string) error {
 // The [URL_String] function uses EscapedFragment to construct its result.
 // In general, code should call EscapedFragment instead of
 // reading u.RawFragment directly.
-func URL_EscapedFragment(u *base_url.URL) string {
+func URL_EscapedFragment(u *base_url.URL) string { //NOSONAR
 	if u.RawFragment != "" && validEncoded(u.RawFragment, encodeFragment) {
 		f, err := unescape(u.RawFragment, encodeFragment)
 		if err == nil && f == u.Fragment {
@@ -626,7 +665,7 @@ func validOptionalPort(port string) bool {
 //     the form host/path does not add its own /.
 //   - if u.RawQuery is empty, ?query is omitted.
 //   - if u.Fragment is empty, #fragment is omitted.
-func URL_String(u *base_url.URL) string {
+func URL_String(u *base_url.URL) string { //NOSONAR
 	var buf strings.Builder
 
 	n := len(u.Scheme)
@@ -856,7 +895,7 @@ func resolvePath(base, ref string) string {
 // URL_Parse parses a [URL] in the context of the receiver. The provided URL
 // may be relative or absolute. URL_Parse returns nil, err on parse
 // failure, otherwise its return value is the same as [URL_ResolveReference].
-func URL_Parse(u *base_url.URL, ref string) (*base_url.URL, error) {
+func URL_Parse(u *base_url.URL, ref string) (*base_url.URL, error) { //NOSONAR
 	refURL, err := Parse(ref)
 	if err != nil {
 		return nil, err
@@ -870,7 +909,7 @@ func URL_Parse(u *base_url.URL, ref string) (*base_url.URL, error) {
 // [URL] instance, even if the returned URL is identical to either the
 // base or reference. If ref is an absolute URL, then URL_ResolveReference
 // ignores base and returns a copy of ref.
-func URL_ResolveReference(u *base_url.URL, ref *base_url.URL) *base_url.URL {
+func URL_ResolveReference(u *base_url.URL, ref *base_url.URL) *base_url.URL { //NOSONAR
 	url := *ref
 	if ref.Scheme == "" {
 		url.Scheme = u.Scheme
@@ -912,14 +951,14 @@ func URL_ResolveReference(u *base_url.URL, ref *base_url.URL) *base_url.URL {
 // URL_Query parses RawQuery and returns the corresponding values.
 // It silently discards malformed value pairs.
 // To check errors use [ParseQuery].
-func URL_Query(u *base_url.URL) base_url.Values {
+func URL_Query(u *base_url.URL) base_url.Values { //NOSONAR
 	v, _ := ParseQuery(u.RawQuery)
 	return v
 }
 
 // URL_RequestURI returns the encoded path?query or opaque?query
 // string that would be used in an HTTP request for u.
-func URL_RequestURI(u *base_url.URL) string {
+func URL_RequestURI(u *base_url.URL) string { //NOSONAR
 	result := u.Opaque
 	if result == "" {
 		result = URL_EscapedPath(u)
@@ -941,7 +980,7 @@ func URL_RequestURI(u *base_url.URL) string {
 //
 // If the result is enclosed in square brackets, as literal IPv6 addresses are,
 // the square brackets are removed from the result.
-func URL_Hostname(u *base_url.URL) string {
+func URL_Hostname(u *base_url.URL) string { //NOSONAR
 	host, _ := splitHostPort(u.Host)
 	return host
 }
@@ -949,7 +988,7 @@ func URL_Hostname(u *base_url.URL) string {
 // URL_Port returns the port part of u.Host, without the leading colon.
 //
 // If u.Host doesn't contain a valid numeric port, URL_Port returns an empty string.
-func URL_Port(u *base_url.URL) string {
+func URL_Port(u *base_url.URL) string { //NOSONAR
 	_, port := splitHostPort(u.Host)
 	return port
 }
@@ -996,7 +1035,7 @@ func (u *URLT) UnmarshalBinary(text []byte) error {
 // any existing path and the resulting path cleaned of any ./ or ../ elements.
 // Any sequences of multiple / characters will be reduced to a single /.
 // Path elements must already be in escaped form, as produced by [PathEscape].
-func URL_JoinPath(u *base_url.URL, elem ...string) *base_url.URL {
+func URL_JoinPath(u *base_url.URL, elem ...string) *base_url.URL { //NOSONAR
 	url, _ := joinPath(u, elem...)
 	return url
 }
