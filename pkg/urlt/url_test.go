@@ -649,6 +649,67 @@ var urltests = []URLTest{
 		},
 		"",
 	},
+	// {client} placeholder as full host
+	{
+		"http://{client}/",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as subdomain
+	{
+		"http://{client}.example.com/path",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}.example.com",
+			Path:   "/path",
+		},
+		"",
+	},
+	// {client} placeholder in the middle of host
+	{
+		"http://api.{client}.com/",
+		&URL{
+			Scheme: "http",
+			Host:   "api.{client}.com",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as full host with port
+	{
+		"http://{client}:8080/",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}:8080",
+			Path:   "/",
+		},
+		"",
+	},
+	// {client} placeholder as subdomain with port
+	{
+		"http://{client}.example.com:8080/path",
+		&URL{
+			Scheme: "http",
+			Host:   "{client}.example.com:8080",
+			Path:   "/path",
+		},
+		"",
+	},
+	// {client} placeholder with path and query
+	{
+		"https://{client}.example.com/api?version=2",
+		&URL{
+			Scheme:   "https",
+			Host:     "{client}.example.com",
+			Path:     "/api",
+			RawQuery: "version=2",
+		},
+		"",
+	},
 }
 
 // more useful string for debugging than fmt's struct printer
@@ -724,6 +785,14 @@ var parseRequestURLTests = []struct {
 	{"http://[fe80::1%25en0]:8080/", true},            // with alphanum zone identifier
 	{"http://[fe80::1%25%65%6e%301-._~]/", true},      // with percent-encoded+unreserved zone identifier
 	{"http://[fe80::1%25%65%6e%301-._~]:8080/", true}, // with percent-encoded+unreserved zone identifier
+
+	// {client} placeholder in host
+	{"http://{client}/", true},
+	{"http://{client}.example.com/", true},
+	{"http://api.{client}.com/", true},
+	{"http://{client}:8080/", true},
+	{"http://{client}.example.com:8080/path", true},
+	{"https://{client}.example.com/api?version=2", true},
 
 	{"foo.html", false},
 	{"../dir/", false},
@@ -1734,6 +1803,13 @@ func TestParseErrors(t *testing.T) {
 		{"http://.[::1]", true},
 		{"http:// [::1]", true},
 		{"hxxp://mathepqo[.]serveftp(.)com:9059", true},
+
+		// {client} placeholder — must not produce an error
+		{"http://{client}/", false},
+		{"http://{client}.example.com/", false},
+		{"http://api.{client}.com/", false},
+		{"http://{client}:8080/", false},
+		{"http://{client}.example.com:8080/path", false},
 	}
 	for _, tt := range tests {
 		u, err := Parse(tt.in)
@@ -1942,6 +2018,14 @@ func TestURLHostnameAndPort(t *testing.T) {
 		{"google.com:80_invalid_port", "google.com:80_invalid_port", ""},
 		{"[::1]extra]:80", "::1]extra", "80"},
 		{"google.com]extra:extra", "google.com]extra:extra", ""},
+
+		// {client} placeholder in host
+		{"{client}", "{client}", ""},
+		{"{client}:8080", "{client}", "8080"},
+		{"{client}.example.com", "{client}.example.com", ""},
+		{"{client}.example.com:443", "{client}.example.com", "443"},
+		{"api.{client}.com", "api.{client}.com", ""},
+		{"api.{client}.com:9090", "api.{client}.com", "9090"},
 	}
 	for _, tt := range tests {
 		u := &URL{Host: tt.in}
@@ -2310,5 +2394,81 @@ func TestJoinPath(t *testing.T) {
 		if out != tt.out {
 			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
 		}
+	}
+}
+
+func TestClientPlaceholderInHost(t *testing.T) {
+	tests := []struct {
+		name     string
+		rawURL   string
+		wantHost string
+		wantPath string
+		wantQuery string
+	}{
+		{
+			name:     "placeholder as full host",
+			rawURL:   "http://{client}/",
+			wantHost: "{client}",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as subdomain",
+			rawURL:   "http://{client}.example.com/path",
+			wantHost: "{client}.example.com",
+			wantPath: "/path",
+		},
+		{
+			name:     "placeholder in the middle of host",
+			rawURL:   "http://api.{client}.com/",
+			wantHost: "api.{client}.com",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as full host with port",
+			rawURL:   "http://{client}:8080/",
+			wantHost: "{client}:8080",
+			wantPath: "/",
+		},
+		{
+			name:     "placeholder as subdomain with port",
+			rawURL:   "http://{client}.example.com:8080/path",
+			wantHost: "{client}.example.com:8080",
+			wantPath: "/path",
+		},
+		{
+			name:      "placeholder with query",
+			rawURL:    "https://{client}.example.com/api?version=2",
+			wantHost:  "{client}.example.com",
+			wantPath:  "/api",
+			wantQuery: "version=2",
+		},
+		{
+			name:     "https scheme with placeholder",
+			rawURL:   "https://{client}.example.com/",
+			wantHost: "{client}.example.com",
+			wantPath: "/",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u, err := Parse(tt.rawURL)
+			if err != nil {
+				t.Fatalf("Parse(%q) returned unexpected error: %v", tt.rawURL, err)
+			}
+			if u.Host != tt.wantHost {
+				t.Errorf("Host = %q, want %q", u.Host, tt.wantHost)
+			}
+			if u.Path != tt.wantPath {
+				t.Errorf("Path = %q, want %q", u.Path, tt.wantPath)
+			}
+			if u.RawQuery != tt.wantQuery {
+				t.Errorf("RawQuery = %q, want %q", u.RawQuery, tt.wantQuery)
+			}
+			// Roundtrip: URL_String(Parse(s)) must equal s
+			if got := URL_String(u); got != tt.rawURL {
+				t.Errorf("URL_String(Parse(%q)) = %q, want original URL", tt.rawURL, got)
+			}
+		})
 	}
 }
