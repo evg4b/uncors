@@ -234,10 +234,6 @@ func getScheme(rawURL string) (scheme, path string, err error) {
 	return "", rawURL, nil
 }
 
-// URL is an alias for net/url.URL, provided so package consumers can use
-// urlt.URL in struct literals and type assertions without importing net/url.
-type URL = base_url.URL
-
 // URLT is a defined type over net/url.URL that provides custom binary
 // marshaling using [URL_String] and [Parse] instead of the standard library
 // implementations.
@@ -855,12 +851,6 @@ func resolvePath(base, ref string) string {
 		r = r[1:]
 	}
 	return r
-}
-
-// URL_IsAbs reports whether the [URL] is absolute.
-// Absolute means that it has a non-empty scheme.
-func URL_IsAbs(u *base_url.URL) bool {
-	return u.Scheme != ""
 }
 
 // URL_Parse parses a [URL] in the context of the receiver. The provided URL

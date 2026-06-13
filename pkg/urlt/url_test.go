@@ -18,6 +18,8 @@ import (
 	"testing"
 )
 
+type URL = base_url.URL
+
 type URLTest struct {
 	in        string
 	out       *URL   // expected parse
@@ -1981,8 +1983,8 @@ func TestJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if URL_String((*base_url.URL)(u1)) != URL_String(u) {
-		t.Errorf("json decoded to: %s\nwant: %s\n", URL_String((*base_url.URL)(u1)), URL_String(u))
+	if URL_String((*URL)(u1)) != URL_String(u) {
+		t.Errorf("json decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
 	}
 }
 
@@ -2002,8 +2004,8 @@ func TestGob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if URL_String((*base_url.URL)(u1)) != URL_String(u) {
-		t.Errorf("gob decoded to: %s\nwant: %s\n", URL_String((*base_url.URL)(u1)), URL_String(u))
+	if URL_String((*URL)(u1)) != URL_String(u) {
+		t.Errorf("gob decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
 	}
 }
 
