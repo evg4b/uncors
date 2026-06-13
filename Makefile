@@ -19,7 +19,7 @@ CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE)
 .DEFAULT_GOAL := all
 
 # Phony targets (targets that don't represent files)
-.PHONY: all help clean format upgrade test test-cover build build-release install check colors
+.PHONY: all help clean format upgrade test test-integration test-cover build build-release install check colors
 
 # Target descriptions and implementations
 
@@ -57,6 +57,11 @@ upgrade:
 test:
 	@gum style --foreground 11 "Running tests..."
 	@$(GOTEST) -race ./...
+
+## test-integration: Run end-to-end integration tests (real sockets + TLS)
+test-integration:
+	@gum style --foreground 11 "Running integration tests..."
+	@$(GOTEST) -tags integration -race ./tests/integration/...
 
 test-release:
 	@gum style --foreground 11 "Running release tests..."
