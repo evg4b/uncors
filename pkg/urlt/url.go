@@ -1056,11 +1056,11 @@ func (u *URL) UnmarshalBinary(text []byte) error {
 // Any sequences of multiple / characters will be reduced to a single /.
 // Path elements must already be in escaped form, as produced by [PathEscape].
 func (u *URL) JoinPath(elem ...string) *URL {
-	url, _ := u.joinPath(elem...)
+	url, _ := joinPath(u, elem...)
 	return url
 }
 
-func (u *URL) joinPath(elem ...string) (*URL, error) {
+func joinPath(u *URL, elem ...string) (*URL, error) {
 	elem = append([]string{u.EscapedPath()}, elem...)
 	var p string
 	if !strings.HasPrefix(elem[0], "/") {
@@ -1142,7 +1142,7 @@ func JoinPath(base string, elem ...string) (result string, err error) {
 	if err != nil {
 		return
 	}
-	res, err := url.joinPath(elem...)
+	res, err := joinPath(url, elem...)
 	if err != nil {
 		return "", err
 	}
