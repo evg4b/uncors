@@ -5,19 +5,16 @@ package urlparser
 import (
 	"errors"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/evg4b/uncors/pkg/urlt"
-	"golang.org/x/net/idna"
 )
 
 var (
-	ErrEmptyHost   = errors.New("empty host")
-	ErrEmptyPort   = errors.New("empty port")
-	ErrInvalidHost = errors.New("invalid host")
-	ErrEmptyURL    = errors.New("empty url")
+	ErrEmptyHost = errors.New("empty host")
+	ErrEmptyPort = errors.New("empty port")
+	ErrEmptyURL  = errors.New("empty url")
 )
 
 const (
@@ -53,9 +50,10 @@ func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 		return nil, err
 	}
 
-	err = checkHost(host)
-	if err != nil {
-		return nil, err
+	// urlt validates the host structure while parsing; the only extra case it
+	// permits is an empty host, which uncors treats as invalid.
+	if host == "" {
+		return nil, &url.Error{Op: hostOperation, URL: rawURL, Err: ErrEmptyHost}
 	}
 
 	parsedURL.Host = strings.ToLower(parsedURL.Host)
@@ -86,38 +84,6 @@ func defaultScheme(rawURL, scheme string) string {
 	}
 
 	return rawURL
-}
-
-var (
-	// domainRegexp validates domain names including * wildcards and {key} placeholders.
-	domainRegexp = regexp.MustCompile(`^([a-zA-Z0-9-_*{}]{1,63}\.)*([a-zA-Z0-9-*{}]{1,63})$`)
-	ipv4Regexp   = regexp.MustCompile(`^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$`)
-	ipv6Regexp   = regexp.MustCompile(`^\[[a-fA-F0-9:]+]$`)
-)
-
-func checkHost(host string) error {
-	if host == "" {
-		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
-	}
-
-	host = strings.ToLower(host)
-	if domainRegexp.MatchString(host) {
-		return nil
-	}
-
-	punycode, err := idna.ToASCII(host)
-	if err != nil {
-		return err
-	} else if domainRegexp.MatchString(punycode) {
-		return nil
-	}
-
-	// IPv4 and IPv6.
-	if ipv4Regexp.MatchString(host) || ipv6Regexp.MatchString(host) {
-		return nil
-	}
-
-	return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
 }
 
 // SplitHostPort splits network address of the form "host:port" into

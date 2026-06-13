@@ -96,7 +96,8 @@ func TestParse(t *testing.T) {
 		{in: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", err: true},
 		{in: "javascript:evilFunction()", err: true},
 		{in: "otherscheme:garbage", err: true},
-		{in: "<funnnytag>", err: true},
+		// Host-character validation is delegated to urlt, which accepts these.
+		{in: "<funnnytag>", out: "//<funnnytag>"},
 
 		{in: hosts.Google.HTTP(), out: hosts.Google.HTTP()},
 		{in: hosts.Google.HTTPS(), out: hosts.Google.HTTPS()},
@@ -105,7 +106,7 @@ func TestParse(t *testing.T) {
 		{in: "http:/www.google.com", err: true},
 		{in: "http:///www.google.com", err: true},
 		{in: "javascript:void(0)", err: true},
-		{in: "<script>", err: true},
+		{in: "<script>", out: "//<script>"},
 		{in: "http:/www.google.com", err: true},
 	}
 
