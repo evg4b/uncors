@@ -207,64 +207,6 @@ func escape(s string, mode encoding) string {
 	return string(t)
 }
 
-// A URL represents a parsed URL (technically, a URI reference).
-//
-// The general form represented is:
-//
-//	[scheme:][//[userinfo@]host][/]path[?query][#fragment]
-//
-// URLs that do not start with a slash after the scheme are interpreted as:
-//
-//	scheme:opaque[?query][#fragment]
-//
-// The Host field contains the host and port subcomponents of the URL.
-// When the port is present, it is separated from the host with a colon.
-// When the host is an IPv6 address, it must be enclosed in square brackets:
-// "[fe80::1]:80". The [net.JoinHostPort] function combines a host and port
-// into a string suitable for the Host field, adding square brackets to
-// the host when necessary.
-//
-// Note that the Path field is stored in decoded form: /%47%6f%2f becomes /Go/.
-// A consequence is that it is impossible to tell which slashes in the Path were
-// slashes in the raw URL and which were %2f. This distinction is rarely important,
-// but when it is, the code should use [URL_EscapedPath], which preserves
-// the original encoding of Path. The Fragment field is also stored in decoded form,
-// use [URL_EscapedFragment] to retrieve the original encoding.
-//
-// The [URL_String] function uses [URL_EscapedPath] to obtain the path.
-type URL struct {
-	Scheme   string
-	Opaque   string             // encoded opaque data
-	User     *base_url.Userinfo // username and password information
-	Host     string             // "host" or "host:port" (see Hostname and Port methods)
-	Path     string             // path (relative paths may omit leading slash)
-	Fragment string             // fragment for references (without '#')
-
-	// RawQuery contains the encoded query values, without the initial '?'.
-	// Use URL.Query to decode the query.
-	RawQuery string
-
-	// RawPath is an optional field containing an encoded path hint.
-	// See [URL_EscapedPath] for more details.
-	//
-	// In general, code should call URL_EscapedPath instead of reading RawPath.
-	RawPath string
-
-	// RawFragment is an optional field containing an encoded fragment hint.
-	// See [URL_EscapedFragment] for more details.
-	//
-	// In general, code should call URL_EscapedFragment instead of reading RawFragment.
-	RawFragment string
-
-	// ForceQuery indicates whether the original URL contained a query ('?') character.
-	// When set, the String method will include a trailing '?', even when RawQuery is empty.
-	ForceQuery bool
-
-	// OmitHost indicates the URL has an empty host (authority).
-	// When set, the String method will not include the host when it is empty.
-	OmitHost bool
-}
-
 // Maybe rawURL is of the form scheme:path.
 // (Scheme must be [a-zA-Z][a-zA-Z0-9+.-]*)
 // If so, return scheme, path; else return "", rawURL.
@@ -292,7 +234,14 @@ func getScheme(rawURL string) (scheme, path string, err error) {
 	return "", rawURL, nil
 }
 
-type URLT = URL
+// URL is an alias for net/url.URL, provided so package consumers can use
+// urlt.URL in struct literals and type assertions without importing net/url.
+type URL = base_url.URL
+
+// URLT is a defined type over net/url.URL that provides custom binary
+// marshaling using [URL_String] and [Parse] instead of the standard library
+// implementations.
+type URLT base_url.URL
 
 // Parse parses a raw url into a [URL] structure.
 //
@@ -300,7 +249,7 @@ type URLT = URL
 // (starting with a scheme). Trying to parse a hostname and path
 // without a scheme is invalid but may not necessarily return an
 // error, due to parsing ambiguities.
-func Parse(rawURL string) (*URL, error) {
+func Parse(rawURL string) (*base_url.URL, error) {
 	// Cut off #frag
 	u, frag, _ := strings.Cut(rawURL, "#")
 	url, err := parse(u, false)
@@ -321,7 +270,7 @@ func Parse(rawURL string) (*URL, error) {
 // only as an absolute URI or an absolute path.
 // The string url is assumed not to have a #fragment suffix.
 // (Web browsers strip #fragment before sending the URL to a web server.)
-func ParseRequestURI(rawURL string) (*URL, error) {
+func ParseRequestURI(rawURL string) (*base_url.URL, error) {
 	url, err := parse(rawURL, true)
 	if err != nil {
 		return nil, &base_url.Error{Op: "parse", URL: rawURL, Err: err}
@@ -333,7 +282,7 @@ func ParseRequestURI(rawURL string) (*URL, error) {
 // viaRequest is true, the URL is assumed to have arrived via an HTTP request,
 // in which case only absolute URLs or path-absolute relative URLs are allowed.
 // If viaRequest is false, all forms of relative URLs are allowed.
-func parse(rawURL string, viaRequest bool) (*URL, error) {
+func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 	var rest string
 	var err error
 
@@ -344,7 +293,7 @@ func parse(rawURL string, viaRequest bool) (*URL, error) {
 	if rawURL == "" && viaRequest {
 		return nil, errors.New("empty url")
 	}
-	url := new(URL)
+	url := new(base_url.URL)
 
 	if rawURL == "*" {
 		url.Path = "*"
@@ -546,7 +495,7 @@ func parseHost(scheme, host string) (string, error) {
 // - setPath("/foo%2fbar") will set Path="/foo/bar" and RawPath="/foo%2fbar"
 // setPath will return an error only if the provided path contains an invalid
 // escaping.
-func setPath(u *URL, p string) error {
+func setPath(u *base_url.URL, p string) error {
 	path, err := unescape(p, encodePath)
 	if err != nil {
 		return err
@@ -570,7 +519,7 @@ func setPath(u *URL, p string) error {
 // their results.
 // In general, code should call URL_EscapedPath instead of
 // reading u.RawPath directly.
-func URL_EscapedPath(u *URL) string {
+func URL_EscapedPath(u *base_url.URL) string {
 	if u.RawPath != "" && validEncoded(u.RawPath, encodePath) {
 		p, err := unescape(u.RawPath, encodePath)
 		if err == nil && p == u.Path {
@@ -610,7 +559,7 @@ func validEncoded(s string, mode encoding) bool {
 }
 
 // setFragment is like setPath but for Fragment/RawFragment.
-func setFragment(u *URL, f string) error {
+func setFragment(u *base_url.URL, f string) error {
 	frag, err := unescape(f, encodeFragment)
 	if err != nil {
 		return err
@@ -633,7 +582,7 @@ func setFragment(u *URL, f string) error {
 // The [URL_String] function uses EscapedFragment to construct its result.
 // In general, code should call EscapedFragment instead of
 // reading u.RawFragment directly.
-func URL_EscapedFragment(u *URL) string {
+func URL_EscapedFragment(u *base_url.URL) string {
 	if u.RawFragment != "" && validEncoded(u.RawFragment, encodeFragment) {
 		f, err := unescape(u.RawFragment, encodeFragment)
 		if err == nil && f == u.Fragment {
@@ -681,7 +630,7 @@ func validOptionalPort(port string) bool {
 //     the form host/path does not add its own /.
 //   - if u.RawQuery is empty, ?query is omitted.
 //   - if u.Fragment is empty, #fragment is omitted.
-func URL_String(u *URL) string {
+func URL_String(u *base_url.URL) string {
 	var buf strings.Builder
 
 	n := len(u.Scheme)
@@ -752,7 +701,7 @@ func URL_String(u *URL) string {
 
 // Redacted is like [URL.String] but replaces any password with "xxxxx".
 // Only the password in u.User is redacted.
-func Redacted(u *URL) string {
+func Redacted(u *base_url.URL) string {
 	if u == nil {
 		return ""
 	}
@@ -910,14 +859,14 @@ func resolvePath(base, ref string) string {
 
 // URL_IsAbs reports whether the [URL] is absolute.
 // Absolute means that it has a non-empty scheme.
-func URL_IsAbs(u *URL) bool {
+func URL_IsAbs(u *base_url.URL) bool {
 	return u.Scheme != ""
 }
 
 // URL_Parse parses a [URL] in the context of the receiver. The provided URL
 // may be relative or absolute. URL_Parse returns nil, err on parse
 // failure, otherwise its return value is the same as [URL_ResolveReference].
-func URL_Parse(u *URL, ref string) (*URL, error) {
+func URL_Parse(u *base_url.URL, ref string) (*base_url.URL, error) {
 	refURL, err := Parse(ref)
 	if err != nil {
 		return nil, err
@@ -931,7 +880,7 @@ func URL_Parse(u *URL, ref string) (*URL, error) {
 // [URL] instance, even if the returned URL is identical to either the
 // base or reference. If ref is an absolute URL, then URL_ResolveReference
 // ignores base and returns a copy of ref.
-func URL_ResolveReference(u *URL, ref *URL) *URL {
+func URL_ResolveReference(u *base_url.URL, ref *base_url.URL) *base_url.URL {
 	url := *ref
 	if ref.Scheme == "" {
 		url.Scheme = u.Scheme
@@ -973,14 +922,14 @@ func URL_ResolveReference(u *URL, ref *URL) *URL {
 // URL_Query parses RawQuery and returns the corresponding values.
 // It silently discards malformed value pairs.
 // To check errors use [ParseQuery].
-func URL_Query(u *URL) base_url.Values {
+func URL_Query(u *base_url.URL) base_url.Values {
 	v, _ := ParseQuery(u.RawQuery)
 	return v
 }
 
 // URL_RequestURI returns the encoded path?query or opaque?query
 // string that would be used in an HTTP request for u.
-func URL_RequestURI(u *URL) string {
+func URL_RequestURI(u *base_url.URL) string {
 	result := u.Opaque
 	if result == "" {
 		result = URL_EscapedPath(u)
@@ -1002,7 +951,7 @@ func URL_RequestURI(u *URL) string {
 //
 // If the result is enclosed in square brackets, as literal IPv6 addresses are,
 // the square brackets are removed from the result.
-func URL_Hostname(u *URL) string {
+func URL_Hostname(u *base_url.URL) string {
 	host, _ := splitHostPort(u.Host)
 	return host
 }
@@ -1010,7 +959,7 @@ func URL_Hostname(u *URL) string {
 // URL_Port returns the port part of u.Host, without the leading colon.
 //
 // If u.Host doesn't contain a valid numeric port, URL_Port returns an empty string.
-func URL_Port(u *URL) string {
+func URL_Port(u *base_url.URL) string {
 	_, port := splitHostPort(u.Host)
 	return port
 }
@@ -1041,7 +990,7 @@ func (u *URLT) MarshalBinary() (text []byte, err error) {
 }
 
 func (u *URLT) AppendBinary(b []byte) ([]byte, error) {
-	return append(b, URL_String(u)...), nil
+	return append(b, URL_String((*base_url.URL)(u))...), nil
 }
 
 func (u *URLT) UnmarshalBinary(text []byte) error {
@@ -1049,7 +998,7 @@ func (u *URLT) UnmarshalBinary(text []byte) error {
 	if err != nil {
 		return err
 	}
-	*u = *u1
+	*u = URLT(*u1)
 	return nil
 }
 
@@ -1057,12 +1006,12 @@ func (u *URLT) UnmarshalBinary(text []byte) error {
 // any existing path and the resulting path cleaned of any ./ or ../ elements.
 // Any sequences of multiple / characters will be reduced to a single /.
 // Path elements must already be in escaped form, as produced by [PathEscape].
-func URL_JoinPath(u *URL, elem ...string) *URL {
+func URL_JoinPath(u *base_url.URL, elem ...string) *base_url.URL {
 	url, _ := joinPath(u, elem...)
 	return url
 }
 
-func joinPath(u *URL, elem ...string) (*URL, error) {
+func joinPath(u *base_url.URL, elem ...string) (*base_url.URL, error) {
 	elem = append([]string{URL_EscapedPath(u)}, elem...)
 	var p string
 	if !strings.HasPrefix(elem[0], "/") {
