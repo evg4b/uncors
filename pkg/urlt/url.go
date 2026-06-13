@@ -1,4 +1,5 @@
 // Copyright 2009 The Go Authors. All rights reserved.
+// Portions Copyright 2026 Evgeny Abramovich. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -22,7 +23,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	_ "unsafe" // for linkname
 )
 
 // Error reports an error and the operation and URL that caused it.
@@ -638,16 +638,6 @@ func parseHost(scheme, host string) (string, error) {
 // - setPath("/foo%2fbar") will set Path="/foo/bar" and RawPath="/foo%2fbar"
 // setPath will return an error only if the provided path contains an invalid
 // escaping.
-//
-// setPath should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/sagernet/sing
-//
-// Do not remove or change the type signature.
-// See go.dev/issue/67401.
-//
-//go:linkname badSetPath net/url.(*URL).setPath
 func (u *URL) setPath(p string) error {
 	path, err := unescape(p, encodePath)
 	if err != nil {
@@ -662,9 +652,6 @@ func (u *URL) setPath(p string) error {
 	}
 	return nil
 }
-
-// for linkname because we cannot linkname methods directly
-func badSetPath(*URL, string) error
 
 // EscapedPath returns the escaped form of u.Path.
 // In general there are multiple possible escaped forms of any path.
