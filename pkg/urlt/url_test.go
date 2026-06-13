@@ -751,14 +751,16 @@ func BenchmarkString(b *testing.B) {
 
 func TestParse(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %v", tt.in, err)
-			continue
-		}
-		if !reflect.DeepEqual(u, tt.out) {
-			t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			if err != nil {
+				t.Errorf("Parse(%q) returned error %v", tt.in, err)
+				return
+			}
+			if !reflect.DeepEqual(u, tt.out) {
+				t.Errorf("Parse(%q):\n\tgot  %v\n\twant %v\n", tt.in, ufmt(u), ufmt(tt.out))
+			}
+		})
 	}
 }
 
@@ -795,18 +797,18 @@ var parseRequestURLTests = []struct {
 	{"https://{client}.example.com/api?version=2", true},
 
 	// invalid placeholder formats in host
-	{"http://{}/", false},                          // empty placeholder
-	{"http://{{demo}.example.com/", false},          // double opening brace
-	{"http://{demo.example.com/", false},            // unclosed placeholder
-	{"http://demo}.example.com/", false},            // unmatched closing brace
-	{"http://{ client}.example.com/", false},        // space inside placeholder
-	{"http://{client}}.example.com/", false},        // extra closing brace after placeholder
+	{"http://{}/", false},                    // empty placeholder
+	{"http://{{demo}.example.com/", false},   // double opening brace
+	{"http://{demo.example.com/", false},     // unclosed placeholder
+	{"http://demo}.example.com/", false},     // unmatched closing brace
+	{"http://{ client}.example.com/", false}, // space inside placeholder
+	{"http://{client}}.example.com/", false}, // extra closing brace after placeholder
 
 	// placeholder is not allowed outside of host
-	{"http://example.com/{client}/path", false},     // placeholder in path segment
-	{"http://example.com/path/{client}", false},     // placeholder at end of path
-	{"http://example.com/?{client}=1", false},       // placeholder in query key
-	{"http://example.com/?x={client}", false},       // placeholder in query value
+	{"http://example.com/{client}/path", false}, // placeholder in path segment
+	{"http://example.com/path/{client}", false}, // placeholder at end of path
+	{"http://example.com/?{client}=1", false},   // placeholder in query key
+	{"http://example.com/?x={client}", false},   // placeholder in query value
 
 	{"foo.html", false},
 	{"../dir/", false},
@@ -849,12 +851,14 @@ var parseRequestURLTests = []struct {
 
 func TestParseRequestURI(t *testing.T) {
 	for _, test := range parseRequestURLTests {
-		_, err := ParseRequestURI(test.url)
-		if test.expectedValid && err != nil {
-			t.Errorf("ParseRequestURI(%q) gave err %v; want no error", test.url, err)
-		} else if !test.expectedValid && err == nil {
-			t.Errorf("ParseRequestURI(%q) gave nil error; want some error", test.url)
-		}
+		t.Run(test.url, func(t *testing.T) {
+			_, err := ParseRequestURI(test.url)
+			if test.expectedValid && err != nil {
+				t.Errorf("ParseRequestURI(%q) gave err %v; want no error", test.url, err)
+			} else if !test.expectedValid && err == nil {
+				t.Errorf("ParseRequestURI(%q) gave nil error; want some error", test.url)
+			}
+		})
 	}
 
 	url, err := ParseRequestURI(pathThatLooksSchemeRelative)
@@ -906,25 +910,29 @@ var stringURLTests = []struct {
 
 func TestURLString(t *testing.T) {
 	for _, tt := range urltests {
-		u, err := Parse(tt.in)
-		if err != nil {
-			t.Errorf("Parse(%q) returned error %s", tt.in, err)
-			continue
-		}
-		expected := tt.in
-		if tt.roundtrip != "" {
-			expected = tt.roundtrip
-		}
-		s := URL_String(u)
-		if s != expected {
-			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			if err != nil {
+				t.Errorf("Parse(%q) returned error %s", tt.in, err)
+				return
+			}
+			expected := tt.in
+			if tt.roundtrip != "" {
+				expected = tt.roundtrip
+			}
+			s := URL_String(u)
+			if s != expected {
+				t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
+			}
+		})
 	}
 
 	for _, tt := range stringURLTests {
-		if got := URL_String(&tt.url); got != tt.want {
-			t.Errorf("%+v.String() = %q; want %q", tt.url, got, tt.want)
-		}
+		t.Run(tt.want, func(t *testing.T) {
+			if got := URL_String(&tt.url); got != tt.want {
+				t.Errorf("%+v.String() = %q; want %q", tt.url, got, tt.want)
+			}
+		})
 	}
 }
 
@@ -1070,33 +1078,35 @@ var unescapeTests = []EscapeTest{
 
 func TestUnescape(t *testing.T) {
 	for _, tt := range unescapeTests {
-		actual, err := QueryUnescape(tt.in)
-		if actual != tt.out || (err != nil) != (tt.err != nil) {
-			t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", tt.in, actual, err, tt.out, tt.err)
-		}
-
-		in := tt.in
-		out := tt.out
-		if strings.Contains(tt.in, "+") {
-			in = strings.ReplaceAll(tt.in, "+", "%20")
-			actual, err := PathUnescape(in)
+		t.Run(tt.in, func(t *testing.T) {
+			actual, err := QueryUnescape(tt.in)
 			if actual != tt.out || (err != nil) != (tt.err != nil) {
-				t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, tt.out, tt.err)
+				t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", tt.in, actual, err, tt.out, tt.err)
 			}
-			if tt.err == nil {
-				s, err := QueryUnescape(strings.ReplaceAll(tt.in, "+", "XXX"))
-				if err != nil {
-					continue
-				}
-				in = tt.in
-				out = strings.ReplaceAll(s, "XXX", "+")
-			}
-		}
 
-		actual, err = PathUnescape(in)
-		if actual != out || (err != nil) != (tt.err != nil) {
-			t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, out, tt.err)
-		}
+			in := tt.in
+			out := tt.out
+			if strings.Contains(tt.in, "+") {
+				in = strings.ReplaceAll(tt.in, "+", "%20")
+				actual, err := PathUnescape(in)
+				if actual != tt.out || (err != nil) != (tt.err != nil) {
+					t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, tt.out, tt.err)
+				}
+				if tt.err == nil {
+					s, err := QueryUnescape(strings.ReplaceAll(tt.in, "+", "XXX"))
+					if err != nil {
+						return
+					}
+					in = tt.in
+					out = strings.ReplaceAll(s, "XXX", "+")
+				}
+			}
+
+			actual, err = PathUnescape(in)
+			if actual != out || (err != nil) != (tt.err != nil) {
+				t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", in, actual, err, out, tt.err)
+			}
+		})
 	}
 }
 
@@ -1130,16 +1140,18 @@ var queryEscapeTests = []EscapeTest{
 
 func TestQueryEscape(t *testing.T) {
 	for _, tt := range queryEscapeTests {
-		actual := QueryEscape(tt.in)
-		if tt.out != actual {
-			t.Errorf("QueryEscape(%q) = %q, want %q", tt.in, actual, tt.out)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			actual := QueryEscape(tt.in)
+			if tt.out != actual {
+				t.Errorf("QueryEscape(%q) = %q, want %q", tt.in, actual, tt.out)
+			}
 
-		// for bonus points, verify that escape:unescape is an identity.
-		roundtrip, err := QueryUnescape(actual)
-		if roundtrip != tt.in || err != nil {
-			t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
-		}
+			// for bonus points, verify that escape:unescape is an identity.
+			roundtrip, err := QueryUnescape(actual)
+			if roundtrip != tt.in || err != nil {
+				t.Errorf("QueryUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
+			}
+		})
 	}
 }
 
@@ -1183,16 +1195,18 @@ var pathEscapeTests = []EscapeTest{
 
 func TestPathEscape(t *testing.T) {
 	for _, tt := range pathEscapeTests {
-		actual := PathEscape(tt.in)
-		if tt.out != actual {
-			t.Errorf("PathEscape(%q) = %q, want %q", tt.in, actual, tt.out)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			actual := PathEscape(tt.in)
+			if tt.out != actual {
+				t.Errorf("PathEscape(%q) = %q, want %q", tt.in, actual, tt.out)
+			}
 
-		// for bonus points, verify that escape:unescape is an identity.
-		roundtrip, err := PathUnescape(actual)
-		if roundtrip != tt.in || err != nil {
-			t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
-		}
+			// for bonus points, verify that escape:unescape is an identity.
+			roundtrip, err := PathUnescape(actual)
+			if roundtrip != tt.in || err != nil {
+				t.Errorf("PathUnescape(%q) = %q, %s; want %q, %s", actual, roundtrip, err, tt.in, "[no error]")
+			}
+		})
 	}
 }
 
@@ -1226,9 +1240,11 @@ var encodeQueryTests = []EncodeQueryTest{
 
 func TestEncodeQuery(t *testing.T) {
 	for _, tt := range encodeQueryTests {
-		if q := tt.m.Encode(); q != tt.expected {
-			t.Errorf(`EncodeQuery(%+v) = %q, want %q`, tt.m, q, tt.expected)
-		}
+		t.Run(tt.expected, func(t *testing.T) {
+			if q := tt.m.Encode(); q != tt.expected {
+				t.Errorf(`EncodeQuery(%+v) = %q, want %q`, tt.m, q, tt.expected)
+			}
+		})
 	}
 }
 
@@ -1262,10 +1278,12 @@ var resolvePathTests = []struct {
 
 func TestResolvePath(t *testing.T) {
 	for _, test := range resolvePathTests {
-		got := resolvePath(test.base, test.ref)
-		if got != test.expected {
-			t.Errorf("For %q + %q got %q; expected %q", test.base, test.ref, got, test.expected)
-		}
+		t.Run(test.base+" "+test.ref, func(t *testing.T) {
+			got := resolvePath(test.base, test.ref)
+			if got != test.expected {
+				t.Errorf("For %q + %q got %q; expected %q", test.base, test.ref, got, test.expected)
+			}
+		})
 	}
 }
 
@@ -1421,41 +1439,43 @@ func TestResolveReference(t *testing.T) {
 	}
 	opaque := &URL{Scheme: "scheme", Opaque: "opaque"}
 	for _, test := range resolveReferenceTests {
-		base := mustParse(test.base)
-		rel := mustParse(test.rel)
-		url := URL_ResolveReference(base, rel)
-		if got := URL_String(url); got != test.expected {
-			t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
-		}
-		// Ensure that new instances are returned.
-		if base == url {
-			t.Errorf("Expected URL_ResolveReference to return new URL instance.")
-		}
-		// Test the convenience wrapper too.
-		url, err := URL_Parse(base, test.rel)
-		if err != nil {
-			t.Errorf("URL(%q).Parse(%q) failed: %v", test.base, test.rel, err)
-		} else if got := URL_String(url); got != test.expected {
-			t.Errorf("URL(%q).Parse(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
-		} else if base == url {
-			// Ensure that new instances are returned for the wrapper too.
-			t.Errorf("Expected URL_Parse to return new URL instance.")
-		}
-		// Ensure Opaque resets the URL.
-		url = URL_ResolveReference(base, opaque)
-		if *url != *opaque {
-			t.Errorf("ResolveReference failed to resolve opaque URL:\ngot  %#v\nwant %#v", url, opaque)
-		}
-		// Test the convenience wrapper with an opaque URL too.
-		url, err = URL_Parse(base, "scheme:opaque")
-		if err != nil {
-			t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
-		} else if *url != *opaque {
-			t.Errorf("Parse failed to resolve opaque URL:\ngot  %#v\nwant %#v", opaque, url)
-		} else if base == url {
-			// Ensure that new instances are returned, again.
-			t.Errorf("Expected URL.Parse to return new URL instance.")
-		}
+		t.Run(test.base+" "+test.rel, func(t *testing.T) {
+			base := mustParse(test.base)
+			rel := mustParse(test.rel)
+			url := URL_ResolveReference(base, rel)
+			if got := URL_String(url); got != test.expected {
+				t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
+			}
+			// Ensure that new instances are returned.
+			if base == url {
+				t.Errorf("Expected URL_ResolveReference to return new URL instance.")
+			}
+			// Test the convenience wrapper too.
+			url, err := URL_Parse(base, test.rel)
+			if err != nil {
+				t.Errorf("URL(%q).Parse(%q) failed: %v", test.base, test.rel, err)
+			} else if got := URL_String(url); got != test.expected {
+				t.Errorf("URL(%q).Parse(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
+			} else if base == url {
+				// Ensure that new instances are returned for the wrapper too.
+				t.Errorf("Expected URL_Parse to return new URL instance.")
+			}
+			// Ensure Opaque resets the URL.
+			url = URL_ResolveReference(base, opaque)
+			if *url != *opaque {
+				t.Errorf("ResolveReference failed to resolve opaque URL:\ngot  %#v\nwant %#v", url, opaque)
+			}
+			// Test the convenience wrapper with an opaque URL too.
+			url, err = URL_Parse(base, "scheme:opaque")
+			if err != nil {
+				t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
+			} else if *url != *opaque {
+				t.Errorf("Parse failed to resolve opaque URL:\ngot  %#v\nwant %#v", opaque, url)
+			} else if base == url {
+				// Ensure that new instances are returned, again.
+				t.Errorf("Expected URL.Parse to return new URL instance.")
+			}
+		})
 	}
 }
 
@@ -1748,10 +1768,12 @@ var requritests = []RequestURITest{
 
 func TestRequestURI(t *testing.T) {
 	for _, tt := range requritests {
-		s := URL_RequestURI(tt.url)
-		if s != tt.out {
-			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.url, s, tt.out)
-		}
+		t.Run(tt.out, func(t *testing.T) {
+			s := URL_RequestURI(tt.url)
+			if s != tt.out {
+				t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.url, s, tt.out)
+			}
+		})
 	}
 }
 
@@ -1826,30 +1848,32 @@ func TestParseErrors(t *testing.T) {
 		{"http://{client}.example.com:8080/path", false},
 
 		// invalid placeholder formats in host — must produce an error
-		{"http://{}/", true},                          // empty placeholder
-		{"http://{{demo}.example.com/", true},          // double opening brace
-		{"http://{demo.example.com/", true},            // unclosed placeholder
-		{"http://demo}.example.com/", true},            // unmatched closing brace
-		{"http://{ client}.example.com/", true},        // space inside placeholder
-		{"http://{client}}.example.com/", true},        // extra closing brace after placeholder
+		{"http://{}/", true},                    // empty placeholder
+		{"http://{{demo}.example.com/", true},   // double opening brace
+		{"http://{demo.example.com/", true},     // unclosed placeholder
+		{"http://demo}.example.com/", true},     // unmatched closing brace
+		{"http://{ client}.example.com/", true}, // space inside placeholder
+		{"http://{client}}.example.com/", true}, // extra closing brace after placeholder
 
 		// placeholder in wrong location — must produce an error
-		{"http://example.com/{client}/path", true},     // placeholder in path segment
-		{"http://example.com/path/{client}", true},     // placeholder at end of path
-		{"http://example.com/?{client}=1", true},       // placeholder in query key
-		{"http://example.com/?x={client}", true},       // placeholder in query value
+		{"http://example.com/{client}/path", true}, // placeholder in path segment
+		{"http://example.com/path/{client}", true}, // placeholder at end of path
+		{"http://example.com/?{client}=1", true},   // placeholder in query key
+		{"http://example.com/?x={client}", true},   // placeholder in query value
 	}
 	for _, tt := range tests {
-		u, err := Parse(tt.in)
-		if tt.wantErr {
-			if err == nil {
-				t.Errorf("Parse(%q) = %#v; want an error", tt.in, u)
+		t.Run(tt.in, func(t *testing.T) {
+			u, err := Parse(tt.in)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Parse(%q) = %#v; want an error", tt.in, u)
+				}
+				return
 			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("Parse(%q) = %v; want no error", tt.in, err)
-		}
+			if err != nil {
+				t.Errorf("Parse(%q) = %v; want no error", tt.in, err)
+			}
+		})
 	}
 }
 
@@ -1928,9 +1952,11 @@ var shouldEscapeTests = []shouldEscapeTest{
 
 func TestShouldEscape(t *testing.T) {
 	for _, tt := range shouldEscapeTests {
-		if shouldEscape(tt.in, tt.mode) != tt.escape {
-			t.Errorf("shouldEscape(%q, %v) returned %v; expected %v", tt.in, tt.mode, !tt.escape, tt.escape)
-		}
+		t.Run(fmt.Sprintf("%q_%v", tt.in, tt.mode), func(t *testing.T) {
+			if shouldEscape(tt.in, tt.mode) != tt.escape {
+				t.Errorf("shouldEscape(%q, %v) returned %v; expected %v", tt.in, tt.mode, !tt.escape, tt.escape)
+			}
+		})
 	}
 }
 
@@ -2000,18 +2026,20 @@ var netErrorTests = []struct {
 // Test that base_url.Error implements net.Error and that it forwards
 func TestURLErrorImplementsNetError(t *testing.T) {
 	for i, tt := range netErrorTests {
-		err, ok := tt.err.(net.Error)
-		if !ok {
-			t.Errorf("%d: %T does not implement net.Error", i+1, tt.err)
-			continue
-		}
-		if err.Timeout() != tt.timeout {
-			t.Errorf("%d: err.Timeout(): got %v, want %v", i+1, err.Timeout(), tt.timeout)
-			continue
-		}
-		if err.Temporary() != tt.temporary {
-			t.Errorf("%d: err.Temporary(): got %v, want %v", i+1, err.Temporary(), tt.temporary)
-		}
+		t.Run(fmt.Sprintf("case_%d", i+1), func(t *testing.T) {
+			err, ok := tt.err.(net.Error)
+			if !ok {
+				t.Errorf("%d: %T does not implement net.Error", i+1, tt.err)
+				return
+			}
+			if err.Timeout() != tt.timeout {
+				t.Errorf("%d: err.Timeout(): got %v, want %v", i+1, err.Timeout(), tt.timeout)
+				return
+			}
+			if err.Temporary() != tt.temporary {
+				t.Errorf("%d: err.Temporary(): got %v, want %v", i+1, err.Temporary(), tt.temporary)
+			}
+		})
 	}
 }
 
@@ -2056,14 +2084,16 @@ func TestURLHostnameAndPort(t *testing.T) {
 		{"api.{client}.com:9090", "api.{client}.com", "9090"},
 	}
 	for _, tt := range tests {
-		u := &URL{Host: tt.in}
-		host, port := URL_Hostname(u), URL_Port(u)
-		if host != tt.host {
-			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
-		}
-		if port != tt.port {
-			t.Errorf("Port for Host %q = %q; want %q", tt.in, port, tt.port)
-		}
+		t.Run(tt.in, func(t *testing.T) {
+			u := &URL{Host: tt.in}
+			host, port := URL_Hostname(u), URL_Port(u)
+			if host != tt.host {
+				t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
+			}
+			if port != tt.port {
+				t.Errorf("Port for Host %q = %q; want %q", tt.in, port, tt.port)
+			}
+		})
 	}
 }
 
@@ -2160,11 +2190,13 @@ func TestRejectControlCharacters(t *testing.T) {
 		"http://foo\x7f.com/",
 	}
 	for _, s := range tests {
-		_, err := Parse(s)
-		const wantSub = "net/url: invalid control character in URL"
-		if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
-			t.Errorf("Parse(%q) error = %q; want substring %q", s, got, wantSub)
-		}
+		t.Run(s, func(t *testing.T) {
+			_, err := Parse(s)
+			const wantSub = "net/url: invalid control character in URL"
+			if got := fmt.Sprint(err); !strings.Contains(got, wantSub) {
+				t.Errorf("Parse(%q) error = %q; want substring %q", s, got, wantSub)
+			}
+		})
 	}
 
 	// But don't reject non-ASCII CTLs, at least for now:
@@ -2398,39 +2430,41 @@ func TestJoinPath(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		wantErr := "nil"
-		if tt.out == "" {
-			wantErr = "non-nil error"
-		}
-		out, err := JoinPath(tt.base, tt.elem...)
-		if out != tt.out || (err == nil) != (tt.out != "") {
-			t.Errorf("JoinPath(%q, %q) = %q, %v, want %q, %v", tt.base, tt.elem, out, err, tt.out, wantErr)
-		}
-
-		u, err := Parse(tt.base)
-		if err != nil {
-			if tt.out != "" {
-				t.Errorf("Parse(%q) = %v", tt.base, err)
+		t.Run(tt.base, func(t *testing.T) {
+			wantErr := "nil"
+			if tt.out == "" {
+				wantErr = "non-nil error"
 			}
-			continue
-		}
-		if tt.out == "" {
-			// URL.JoinPath doesn't return an error, so leave it unchanged
-			tt.out = tt.base
-		}
-		out = URL_String(URL_JoinPath(u, tt.elem...))
-		if out != tt.out {
-			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
-		}
+			out, err := JoinPath(tt.base, tt.elem...)
+			if out != tt.out || (err == nil) != (tt.out != "") {
+				t.Errorf("JoinPath(%q, %q) = %q, %v, want %q, %v", tt.base, tt.elem, out, err, tt.out, wantErr)
+			}
+
+			u, err := Parse(tt.base)
+			if err != nil {
+				if tt.out != "" {
+					t.Errorf("Parse(%q) = %v", tt.base, err)
+				}
+				return
+			}
+			if tt.out == "" {
+				// URL.JoinPath doesn't return an error, so leave it unchanged
+				tt.out = tt.base
+			}
+			out = URL_String(URL_JoinPath(u, tt.elem...))
+			if out != tt.out {
+				t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
+			}
+		})
 	}
 }
 
 func TestClientPlaceholderInHost(t *testing.T) {
 	tests := []struct {
-		name     string
-		rawURL   string
-		wantHost string
-		wantPath string
+		name      string
+		rawURL    string
+		wantHost  string
+		wantPath  string
 		wantQuery string
 	}{
 		{
