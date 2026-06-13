@@ -60,3 +60,46 @@ func TestCheckHost(t *testing.T) {
 		assert.ErrorIs(t, checkHost(""), ErrEmptyHost)
 	})
 }
+
+func TestValidatePlaceholders(t *testing.T) {
+	t.Run("valid placeholders", func(t *testing.T) {
+		for _, host := range []string{
+			"example.com",
+			"{client}.example.com",
+			"api.{tenant}.example.com",
+			"{region}-{client}.example.com",
+			"{region}.{tenant}.host.com",
+			"no-placeholders.example.com",
+		} {
+			assert.NoError(t, validatePlaceholders(host), host)
+		}
+	})
+
+	t.Run("empty placeholder", func(t *testing.T) {
+		for _, host := range []string{
+			"{}.example.com",
+			"{client}{}.example.com",
+		} {
+			assert.ErrorIs(t, validatePlaceholders(host), ErrEmptyPlaceholder, host)
+		}
+	})
+
+	t.Run("unclosed placeholder", func(t *testing.T) {
+		for _, host := range []string{
+			"{client.example.com",
+			"{client}{region.example.com",
+			"{{nested}.example.com",
+		} {
+			assert.ErrorIs(t, validatePlaceholders(host), ErrUnclosedPlaceholder, host)
+		}
+	})
+
+	t.Run("unmatched closing brace", func(t *testing.T) {
+		for _, host := range []string{
+			"client}.example.com",
+			"{client}}.example.com",
+		} {
+			assert.ErrorIs(t, validatePlaceholders(host), ErrUnmatchedClosingBrace, host)
+		}
+	})
+}

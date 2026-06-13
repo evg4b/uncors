@@ -65,6 +65,18 @@ func TestParse(t *testing.T) { // NOSONAR
 		{in: "{tenant}.local.com", out: &url.URL{Host: "{tenant}.local.com"}},
 		{in: "http://{region}.{tenant}.host.com", out: &url.URL{Scheme: "http", Host: "{region}.{tenant}.host.com"}},
 		{in: "{tenant}.local.com:8080", out: &url.URL{Host: "{tenant}.local.com:8080"}},
+		{in: "http://{region}-{client}.example.com", out: &url.URL{Scheme: "http", Host: "{region}-{client}.example.com"}},
+		{in: "api.{tenant}.example.com", out: &url.URL{Host: "api.{tenant}.example.com"}},
+
+		// Malformed placeholder hosts.
+		{in: "{}.example.com", err: true},
+		{in: "http://{}.example.com", err: true},
+		{in: "{client.example.com", err: true},
+		{in: "http://{client.example.com", err: true},
+		{in: "client}.example.com", err: true},
+		{in: "http://client}.example.com", err: true},
+		{in: "{client}{}.example.com", err: true},
+		{in: "http://{client}{}.example.com", err: true},
 
 		// Malformed / unsupported inputs.
 		{in: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", err: true},

@@ -14,10 +14,13 @@ import (
 )
 
 var (
-	ErrEmptyHost       = errors.New("empty host")
-	ErrEmptyPort       = errors.New("empty port")
-	ErrEmptyURL        = errors.New("empty url")
-	ErrInvalidHostChar = errors.New("invalid character in host")
+	ErrEmptyHost             = errors.New("empty host")
+	ErrEmptyPort             = errors.New("empty port")
+	ErrEmptyURL              = errors.New("empty url")
+	ErrInvalidHostChar       = errors.New("invalid character in host")
+	ErrEmptyPlaceholder      = errors.New("empty placeholder in host")
+	ErrUnclosedPlaceholder   = errors.New("unclosed placeholder in host")
+	ErrUnmatchedClosingBrace = errors.New("unmatched closing brace in host")
 )
 
 const (
@@ -205,6 +208,43 @@ func checkHost(host string) error {
 		if !isValidHostRune(char) {
 			return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHostChar}
 		}
+	}
+
+	return validatePlaceholders(host)
+}
+
+// validatePlaceholders checks that every "{name}" placeholder in host is well-formed:
+// non-empty, properly opened with "{", and properly closed with "}".
+// It performs a single byte scan with no allocations.
+func validatePlaceholders(host string) error {
+	inPlaceholder := false
+	placeholderLen := 0
+
+	for i := range len(host) {
+		switch host[i] {
+		case '{':
+			if inPlaceholder {
+				return &url.Error{Op: hostOperation, URL: host, Err: ErrUnclosedPlaceholder}
+			}
+			inPlaceholder = true
+			placeholderLen = 0
+		case '}':
+			if !inPlaceholder {
+				return &url.Error{Op: hostOperation, URL: host, Err: ErrUnmatchedClosingBrace}
+			}
+			if placeholderLen == 0 {
+				return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyPlaceholder}
+			}
+			inPlaceholder = false
+		default:
+			if inPlaceholder {
+				placeholderLen++
+			}
+		}
+	}
+
+	if inPlaceholder {
+		return &url.Error{Op: hostOperation, URL: host, Err: ErrUnclosedPlaceholder}
 	}
 
 	return nil
