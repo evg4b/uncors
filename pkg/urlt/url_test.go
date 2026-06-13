@@ -12,10 +12,13 @@ import (
 	"fmt"
 	"io"
 	"net"
+	base_url "net/url"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+type URL = base_url.URL
 
 type URLTest struct {
 	in        string
@@ -71,7 +74,7 @@ var urltests = []URLTest{
 		"ftp://webmaster@www.google.com/",
 		&URL{
 			Scheme: "ftp",
-			User:   User("webmaster"),
+			User:   base_url.User("webmaster"),
 			Host:   "www.google.com",
 			Path:   "/",
 		},
@@ -82,7 +85,7 @@ var urltests = []URLTest{
 		"ftp://john%20doe@www.google.com/",
 		&URL{
 			Scheme: "ftp",
-			User:   User("john doe"),
+			User:   base_url.User("john doe"),
 			Host:   "www.google.com",
 			Path:   "/",
 		},
@@ -203,7 +206,7 @@ var urltests = []URLTest{
 	{
 		"//user@foo/path?a=b",
 		&URL{
-			User:     User("user"),
+			User:     base_url.User("user"),
 			Host:     "foo",
 			Path:     "/path",
 			RawQuery: "a=b",
@@ -226,7 +229,7 @@ var urltests = []URLTest{
 		"http://user:password@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "google.com",
 		},
 		"http://user:password@google.com",
@@ -236,7 +239,7 @@ var urltests = []URLTest{
 		"http://j@ne:password@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("j@ne", "password"),
+			User:   base_url.UserPassword("j@ne", "password"),
 			Host:   "google.com",
 		},
 		"http://j%40ne:password@google.com",
@@ -246,7 +249,7 @@ var urltests = []URLTest{
 		"http://jane:p@ssword@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("jane", "p@ssword"),
+			User:   base_url.UserPassword("jane", "p@ssword"),
 			Host:   "google.com",
 		},
 		"http://jane:p%40ssword@google.com",
@@ -255,7 +258,7 @@ var urltests = []URLTest{
 		"http://j@ne:password@google.com/p@th?q=@go",
 		&URL{
 			Scheme:   "http",
-			User:     UserPassword("j@ne", "password"),
+			User:     base_url.UserPassword("j@ne", "password"),
 			Host:     "google.com",
 			Path:     "/p@th",
 			RawQuery: "q=@go",
@@ -338,7 +341,7 @@ var urltests = []URLTest{
 		"http://%3Fam:pa%3Fsword@google.com",
 		&URL{
 			Scheme: "http",
-			User:   UserPassword("?am", "pa?sword"),
+			User:   base_url.UserPassword("?am", "pa?sword"),
 			Host:   "google.com",
 		},
 		"",
@@ -630,7 +633,7 @@ var urltests = []URLTest{
 		"mongodb://user:password@host1:1,host2:2,host3:3",
 		&URL{
 			Scheme: "mongodb",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
 		},
@@ -640,7 +643,7 @@ var urltests = []URLTest{
 		"mongodb+srv://user:password@host1:1,host2:2,host3:3",
 		&URL{
 			Scheme: "mongodb+srv",
-			User:   UserPassword("user", "password"),
+			User:   base_url.UserPassword("user", "password"),
 			Host:   "host1:1,host2:2,host3:3",
 			Path:   "",
 		},
@@ -676,7 +679,7 @@ func BenchmarkString(b *testing.B) {
 		b.StartTimer()
 		var g string
 		for i := 0; i < b.N; i++ {
-			g = u.String()
+			g = URL_String(u)
 		}
 		b.StopTimer()
 		if w := tt.roundtrip; b.N > 0 && g != w {
@@ -829,14 +832,14 @@ func TestURLString(t *testing.T) {
 		if tt.roundtrip != "" {
 			expected = tt.roundtrip
 		}
-		s := u.String()
+		s := URL_String(u)
 		if s != expected {
 			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
 		}
 	}
 
 	for _, tt := range stringURLTests {
-		if got := tt.url.String(); got != tt.want {
+		if got := URL_String(&tt.url); got != tt.want {
 			t.Errorf("%+v.String() = %q; want %q", tt.url, got, tt.want)
 		}
 	}
@@ -854,7 +857,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   UserPassword("user", "password"),
+				User:   base_url.UserPassword("user", "password"),
 			},
 			want: "http://user:xxxxx@host.tld/this:that",
 		},
@@ -864,7 +867,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   User("user"),
+				User:   base_url.User("user"),
 			},
 			want: "http://user@host.tld/this:that",
 		},
@@ -874,7 +877,7 @@ func TestURLRedacted(t *testing.T) {
 				Scheme: "http",
 				Host:   "host.tld",
 				Path:   "this:that",
-				User:   UserPassword("", "password"),
+				User:   base_url.UserPassword("", "password"),
 			},
 			want: "http://:xxxxx@host.tld/this:that",
 		},
@@ -901,7 +904,7 @@ func TestURLRedacted(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			if g, w := tt.url.Redacted(), tt.want; g != w {
+			if g, w := Redacted(tt.url), tt.want; g != w {
 				t.Fatalf("got: %q\nwant: %q", g, w)
 			}
 		})
@@ -948,27 +951,27 @@ var unescapeTests = []EscapeTest{
 	{
 		"%", // not enough characters after %
 		"",
-		EscapeError("%"),
+		base_url.EscapeError("%"),
 	},
 	{
 		"%a", // not enough characters after %
 		"",
-		EscapeError("%a"),
+		base_url.EscapeError("%a"),
 	},
 	{
 		"%1", // not enough characters after %
 		"",
-		EscapeError("%1"),
+		base_url.EscapeError("%1"),
 	},
 	{
 		"123%45%6", // not enough characters after %
 		"",
-		EscapeError("%6"),
+		base_url.EscapeError("%6"),
 	},
 	{
 		"%zzzzz", // invalid hex digits
 		"",
-		EscapeError("%zz"),
+		base_url.EscapeError("%zz"),
 	},
 	{
 		"a+b",
@@ -1110,28 +1113,22 @@ func TestPathEscape(t *testing.T) {
 	}
 }
 
-//var userinfoTests = []UserinfoTest{
-//	{"user", "password", "user:password"},
-//	{"foo:bar", "~!@#$%^&*()_+{}|[]\\-=`:;'\"<>?,./",
-//		"foo%3Abar:~!%40%23$%25%5E&*()_+%7B%7D%7C%5B%5D%5C-=%60%3A;'%22%3C%3E?,.%2F"},
-//}
-
 type EncodeQueryTest struct {
-	m        Values
+	m        base_url.Values
 	expected string
 }
 
 var encodeQueryTests = []EncodeQueryTest{
 	{nil, ""},
-	{Values{}, ""},
-	{Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
-	{Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
-	{Values{
+	{base_url.Values{}, ""},
+	{base_url.Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
+	{base_url.Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
+	{base_url.Values{
 		"a": {"a1", "a2", "a3"},
 		"b": {"b1", "b2", "b3"},
 		"c": {"c1", "c2", "c3"},
 	}, "a=a1&a=a2&a=a3&b=b1&b=b2&b=b3&c=c1&c=c2&c=c3"},
-	{Values{
+	{base_url.Values{
 		"a": {"a"},
 		"b": {"b"},
 		"c": {"c"},
@@ -1343,31 +1340,31 @@ func TestResolveReference(t *testing.T) {
 	for _, test := range resolveReferenceTests {
 		base := mustParse(test.base)
 		rel := mustParse(test.rel)
-		url := base.ResolveReference(rel)
-		if got := url.String(); got != test.expected {
+		url := URL_ResolveReference(base, rel)
+		if got := URL_String(url); got != test.expected {
 			t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
 		}
 		// Ensure that new instances are returned.
 		if base == url {
-			t.Errorf("Expected URL.ResolveReference to return new URL instance.")
+			t.Errorf("Expected URL_ResolveReference to return new URL instance.")
 		}
 		// Test the convenience wrapper too.
-		url, err := base.Parse(test.rel)
+		url, err := URL_Parse(base, test.rel)
 		if err != nil {
 			t.Errorf("URL(%q).Parse(%q) failed: %v", test.base, test.rel, err)
-		} else if got := url.String(); got != test.expected {
+		} else if got := URL_String(url); got != test.expected {
 			t.Errorf("URL(%q).Parse(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
 		} else if base == url {
 			// Ensure that new instances are returned for the wrapper too.
-			t.Errorf("Expected URL.Parse to return new URL instance.")
+			t.Errorf("Expected URL_Parse to return new URL instance.")
 		}
 		// Ensure Opaque resets the URL.
-		url = base.ResolveReference(opaque)
+		url = URL_ResolveReference(base, opaque)
 		if *url != *opaque {
 			t.Errorf("ResolveReference failed to resolve opaque URL:\ngot  %#v\nwant %#v", url, opaque)
 		}
 		// Test the convenience wrapper with an opaque URL too.
-		url, err = base.Parse("scheme:opaque")
+		url, err = URL_Parse(base, "scheme:opaque")
 		if err != nil {
 			t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
 		} else if *url != *opaque {
@@ -1381,7 +1378,7 @@ func TestResolveReference(t *testing.T) {
 
 func TestQueryValues(t *testing.T) {
 	u, _ := Parse("http://x.com?foo=bar&bar=1&bar=2&baz")
-	v := u.Query()
+	v := URL_Query(u)
 	if len(v) != 3 {
 		t.Errorf("got %d keys in Query values, want 3", len(v))
 	}
@@ -1418,94 +1415,94 @@ func TestQueryValues(t *testing.T) {
 
 type parseTest struct {
 	query string
-	out   Values
+	out   base_url.Values
 	ok    bool
 }
 
 var parseTests = []parseTest{
 	{
 		query: "a=1",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&b=2",
-		out:   Values{"a": []string{"1"}, "b": []string{"2"}},
+		out:   base_url.Values{"a": []string{"1"}, "b": []string{"2"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2&a=banana",
-		out:   Values{"a": []string{"1", "2", "banana"}},
+		out:   base_url.Values{"a": []string{"1", "2", "banana"}},
 		ok:    true,
 	},
 	{
 		query: "ascii=%3Ckey%3A+0x90%3E",
-		out:   Values{"ascii": []string{"<key: 0x90>"}},
+		out:   base_url.Values{"ascii": []string{"<key: 0x90>"}},
 		ok:    true,
 	},
 	{
 		query: "a=1;b=2",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a;b=1",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=%3B", // hex encoding for semicolon
-		out:   Values{"a": []string{";"}},
+		out:   base_url.Values{"a": []string{";"}},
 		ok:    true,
 	},
 	{
 		query: "a%3Bb=1",
-		out:   Values{"a;b": []string{"1"}},
+		out:   base_url.Values{"a;b": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2;a=banana",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a;b&c=1",
-		out:   Values{"c": []string{"1"}},
+		out:   base_url.Values{"c": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;a=3&c=4",
-		out:   Values{"a": []string{"1"}, "c": []string{"4"}},
+		out:   base_url.Values{"a": []string{"1"}, "c": []string{"4"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;c=3",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1;",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1&;",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";a=1&b=2",
-		out:   Values{"b": []string{"2"}},
+		out:   base_url.Values{"b": []string{"2"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 }
@@ -1668,7 +1665,7 @@ var requritests = []RequestURITest{
 
 func TestRequestURI(t *testing.T) {
 	for _, tt := range requritests {
-		s := tt.url.RequestURI()
+		s := URL_RequestURI(tt.url)
 		if s != tt.out {
 			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.url, s, tt.out)
 		}
@@ -1758,7 +1755,7 @@ func TestStarRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := u.RequestURI(), "*"; got != want {
+	if got, want := URL_RequestURI(u), "*"; got != want {
 		t.Errorf("RequestURI = %q; want %q", got, want)
 	}
 }
@@ -1859,44 +1856,44 @@ var netErrorTests = []struct {
 	timeout   bool
 	temporary bool
 }{{
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: true}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: true}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
 	timeout:   true,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", io.EOF},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: io.EOF},
 	timeout:   false,
 	temporary: false,
 }}
 
-// Test that url.Error implements net.Error and that it forwards
+// Test that base_url.Error implements net.Error and that it forwards
 func TestURLErrorImplementsNetError(t *testing.T) {
 	for i, tt := range netErrorTests {
 		err, ok := tt.err.(net.Error)
@@ -1948,7 +1945,7 @@ func TestURLHostnameAndPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		u := &URL{Host: tt.in}
-		host, port := u.Hostname(), u.Port()
+		host, port := URL_Hostname(u), URL_Port(u)
 		if host != tt.host {
 			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
 		}
@@ -1959,9 +1956,9 @@ func TestURLHostnameAndPort(t *testing.T) {
 }
 
 var (
-	_ encodingPkg.BinaryMarshaler   = (*URL)(nil)
-	_ encodingPkg.BinaryUnmarshaler = (*URL)(nil)
-	_ encodingPkg.BinaryAppender    = (*URL)(nil)
+	_ encodingPkg.BinaryMarshaler   = (*URLT)(nil)
+	_ encodingPkg.BinaryUnmarshaler = (*URLT)(nil)
+	_ encodingPkg.BinaryAppender    = (*URLT)(nil)
 )
 
 func TestJSON(t *testing.T) {
@@ -1981,13 +1978,13 @@ func TestJSON(t *testing.T) {
 	// 	t.Errorf("json encoding: %s\nwant: %s\n", js, strconv.Quote(u.String()))
 	// }
 
-	u1 := new(URL)
+	u1 := new(URLT)
 	err = json.Unmarshal(js, u1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u1.String() != u.String() {
-		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
+	if URL_String((*URL)(u1)) != URL_String(u) {
+		t.Errorf("json decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
 	}
 }
 
@@ -2002,13 +1999,13 @@ func TestGob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u1 := new(URL)
+	u1 := new(URLT)
 	err = gob.NewDecoder(&w).Decode(u1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u1.String() != u.String() {
-		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
+	if URL_String((*URL)(u1)) != URL_String(u) {
+		t.Errorf("gob decoded to: %s\nwant: %s\n", URL_String((*URL)(u1)), URL_String(u))
 	}
 }
 
@@ -2309,7 +2306,7 @@ func TestJoinPath(t *testing.T) {
 			// URL.JoinPath doesn't return an error, so leave it unchanged
 			tt.out = tt.base
 		}
-		out = u.JoinPath(tt.elem...).String()
+		out = URL_String(URL_JoinPath(u, tt.elem...))
 		if out != tt.out {
 			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
 		}
