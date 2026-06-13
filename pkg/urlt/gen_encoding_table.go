@@ -37,7 +37,7 @@ func main() {
 	fmt.Fprintln(&out, "// Use of this source code is governed by a BSD-style")
 	fmt.Fprintln(&out, "// license that can be found in the LICENSE file.")
 	fmt.Fprintln(&out)
-	fmt.Fprintln(&out, "package url")
+	fmt.Fprintln(&out, "package urlt")
 	fmt.Fprintln(&out)
 	generateEnc(&out, genSource)
 	generateTable(&out)
