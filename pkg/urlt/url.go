@@ -66,6 +66,7 @@ func unescape(s string, mode encoding) (string, error) {
 	// Count %, check that they're well-formed.
 	n := 0
 	hasPlus := false
+	inPlaceholder := false
 	for i := 0; i < len(s); {
 		switch s[i] {
 		case '%':
@@ -103,12 +104,38 @@ func unescape(s string, mode encoding) (string, error) {
 		case '+':
 			hasPlus = mode == encodeQueryComponent
 			i++
+		case '{':
+			if mode == encodeHost {
+				if inPlaceholder {
+					return "", errors.New("invalid placeholder in host: nested '{'")
+				}
+				inPlaceholder = true
+				if i+1 < len(s) && s[i+1] == '}' {
+					return "", errors.New("invalid placeholder in host: empty placeholder")
+				}
+			} else if mode == encodePath {
+				return "", errors.New("invalid character '{' in URL path")
+			}
+			i++
+		case '}':
+			if mode == encodeHost {
+				if !inPlaceholder {
+					return "", errors.New("invalid placeholder in host: unmatched '}'")
+				}
+				inPlaceholder = false
+			} else if mode == encodePath {
+				return "", errors.New("invalid character '}' in URL path")
+			}
+			i++
 		default:
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
 				return "", base_url.InvalidHostError(s[i : i+1])
 			}
 			i++
 		}
+	}
+	if mode == encodeHost && inPlaceholder {
+		return "", errors.New("invalid placeholder in host: unclosed '{'")
 	}
 
 	if n == 0 && !hasPlus {
@@ -355,9 +382,6 @@ func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 	if err := setPath(url, rest); err != nil {
 		return nil, err
 	}
-	if strings.ContainsAny(url.Path, "{}") {
-		return nil, errors.New("net/url: invalid character in URL path: placeholders are only allowed in host")
-	}
 	if strings.ContainsAny(url.RawQuery, "{}") {
 		return nil, errors.New("net/url: invalid character in URL query: placeholders are only allowed in host")
 	}
@@ -397,38 +421,6 @@ func parseAuthority(scheme, authority string) (user *base_url.Userinfo, host str
 		user = base_url.UserPassword(username, password)
 	}
 	return user, host, nil
-}
-
-// validateHostPlaceholders validates that {}-style placeholders in host are well-formed.
-// It is called only when the host contains '{' or '}'.
-func validateHostPlaceholders(host string) error {
-	inPlaceholder := false
-	for i := 0; i < len(host); i++ {
-		c := host[i]
-		switch c {
-		case '{':
-			if inPlaceholder {
-				return errors.New("invalid placeholder in host: nested '{'")
-			}
-			inPlaceholder = true
-			if i+1 < len(host) && host[i+1] == '}' {
-				return errors.New("invalid placeholder in host: empty placeholder")
-			}
-		case '}':
-			if !inPlaceholder {
-				return errors.New("invalid placeholder in host: unmatched '}'")
-			}
-			inPlaceholder = false
-		default:
-			if inPlaceholder && shouldEscape(c, encodeQueryComponent) {
-				return base_url.InvalidHostError(host[i : i+1])
-			}
-		}
-	}
-	if inPlaceholder {
-		return errors.New("invalid placeholder in host: unclosed '{'")
-	}
-	return nil
 }
 
 // parseHost parses host as an authority without user
@@ -511,12 +503,6 @@ func parseHost(scheme, host string) (string, error) {
 		colonPort := host[i:]
 		if !validOptionalPort(colonPort) {
 			return "", fmt.Errorf("invalid port %q after host", colonPort)
-		}
-	}
-
-	if strings.ContainsAny(host, "{}") {
-		if err := validateHostPlaceholders(host); err != nil {
-			return "", err
 		}
 	}
 
