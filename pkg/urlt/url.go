@@ -26,6 +26,15 @@ import (
 
 const upperhex = "0123456789ABCDEF"
 
+var (
+	errNestedPlaceholder   = errors.New("invalid placeholder in host: nested '{'")
+	errEmptyPlaceholder    = errors.New("invalid placeholder in host: empty placeholder")
+	errUnclosedPlaceholder = errors.New("invalid placeholder in host: unclosed '{'")
+	errUnmatchedCloseBrace = errors.New("invalid placeholder in host: unmatched '}'")
+	errBraceInPath         = errors.New("invalid character in URL path: '{' and '}' are only allowed in host")
+	errBraceInQuery        = errors.New("net/url: invalid character in URL query: placeholders are only allowed in host")
+)
+
 func ishex(c byte) bool {
 	return table[c]&hexChar != 0
 }
@@ -62,7 +71,7 @@ func PathUnescape(s string) (string, error) {
 
 // unescape unescapes a string; the mode specifies
 // which section of the URL string is being unescaped.
-func unescape(s string, mode encoding) (string, error) {
+func unescape(s string, mode encoding) (string, error) { //NOSONAR
 	// Count %, check that they're well-formed.
 	n := 0
 	hasPlus := false
@@ -107,24 +116,24 @@ func unescape(s string, mode encoding) (string, error) {
 		case '{':
 			if mode == encodeHost {
 				if inPlaceholder {
-					return "", errors.New("invalid placeholder in host: nested '{'")
+					return "", errNestedPlaceholder
 				}
 				inPlaceholder = true
 				if i+1 < len(s) && s[i+1] == '}' {
-					return "", errors.New("invalid placeholder in host: empty placeholder")
+					return "", errEmptyPlaceholder
 				}
 			} else if mode == encodePath {
-				return "", errors.New("invalid character '{' in URL path")
+				return "", errBraceInPath
 			}
 			i++
 		case '}':
 			if mode == encodeHost {
 				if !inPlaceholder {
-					return "", errors.New("invalid placeholder in host: unmatched '}'")
+					return "", errUnmatchedCloseBrace
 				}
 				inPlaceholder = false
 			} else if mode == encodePath {
-				return "", errors.New("invalid character '}' in URL path")
+				return "", errBraceInPath
 			}
 			i++
 		default:
@@ -135,7 +144,7 @@ func unescape(s string, mode encoding) (string, error) {
 		}
 	}
 	if mode == encodeHost && inPlaceholder {
-		return "", errors.New("invalid placeholder in host: unclosed '{'")
+		return "", errUnclosedPlaceholder
 	}
 
 	if n == 0 && !hasPlus {
@@ -383,7 +392,7 @@ func parse(rawURL string, viaRequest bool) (*base_url.URL, error) {
 		return nil, err
 	}
 	if strings.ContainsAny(url.RawQuery, "{}") {
-		return nil, errors.New("net/url: invalid character in URL query: placeholders are only allowed in host")
+		return nil, errBraceInQuery
 	}
 	return url, nil
 }
