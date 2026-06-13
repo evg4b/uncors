@@ -229,7 +229,7 @@ func escape(s string, mode encoding) string {
 // slashes in the raw URL and which were %2f. This distinction is rarely important,
 // but when it is, the code should use [URL_EscapedPath], which preserves
 // the original encoding of Path. The Fragment field is also stored in decoded form,
-// use [URL.EscapedFragment] to retrieve the original encoding.
+// use [URL_EscapedFragment] to retrieve the original encoding.
 //
 // The [URL.String] method uses [URL_EscapedPath] to obtain the path.
 type URL struct {
@@ -251,9 +251,9 @@ type URL struct {
 	RawPath string
 
 	// RawFragment is an optional field containing an encoded fragment hint.
-	// See the EscapedFragment method for more details.
+	// See [URL_EscapedFragment] for more details.
 	//
-	// In general, code should call EscapedFragment instead of reading RawFragment.
+	// In general, code should call URL_EscapedFragment instead of reading RawFragment.
 	RawFragment string
 
 	// ForceQuery indicates whether the original URL contained a query ('?') character.
@@ -750,7 +750,7 @@ func (u *URL) String() string {
 
 // Redacted is like [URL.String] but replaces any password with "xxxxx".
 // Only the password in u.User is redacted.
-func (u *URL) Redacted() string {
+func Redacted(u *URL) string {
 	if u == nil {
 		return ""
 	}
