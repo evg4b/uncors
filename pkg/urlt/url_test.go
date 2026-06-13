@@ -1118,21 +1118,21 @@ func TestPathEscape(t *testing.T) {
 //}
 
 type EncodeQueryTest struct {
-	m        Values
+	m        base_url.Values
 	expected string
 }
 
 var encodeQueryTests = []EncodeQueryTest{
 	{nil, ""},
-	{Values{}, ""},
-	{Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
-	{Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
-	{Values{
+	{base_url.Values{}, ""},
+	{base_url.Values{"q": {"puppies"}, "oe": {"utf8"}}, "oe=utf8&q=puppies"},
+	{base_url.Values{"q": {"dogs", "&", "7"}}, "q=dogs&q=%26&q=7"},
+	{base_url.Values{
 		"a": {"a1", "a2", "a3"},
 		"b": {"b1", "b2", "b3"},
 		"c": {"c1", "c2", "c3"},
 	}, "a=a1&a=a2&a=a3&b=b1&b=b2&b=b3&c=c1&c=c2&c=c3"},
-	{Values{
+	{base_url.Values{
 		"a": {"a"},
 		"b": {"b"},
 		"c": {"c"},
@@ -1419,94 +1419,94 @@ func TestQueryValues(t *testing.T) {
 
 type parseTest struct {
 	query string
-	out   Values
+	out   base_url.Values
 	ok    bool
 }
 
 var parseTests = []parseTest{
 	{
 		query: "a=1",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&b=2",
-		out:   Values{"a": []string{"1"}, "b": []string{"2"}},
+		out:   base_url.Values{"a": []string{"1"}, "b": []string{"2"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2&a=banana",
-		out:   Values{"a": []string{"1", "2", "banana"}},
+		out:   base_url.Values{"a": []string{"1", "2", "banana"}},
 		ok:    true,
 	},
 	{
 		query: "ascii=%3Ckey%3A+0x90%3E",
-		out:   Values{"ascii": []string{"<key: 0x90>"}},
+		out:   base_url.Values{"ascii": []string{"<key: 0x90>"}},
 		ok:    true,
 	},
 	{
 		query: "a=1;b=2",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a;b=1",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=%3B", // hex encoding for semicolon
-		out:   Values{"a": []string{";"}},
+		out:   base_url.Values{"a": []string{";"}},
 		ok:    true,
 	},
 	{
 		query: "a%3Bb=1",
-		out:   Values{"a;b": []string{"1"}},
+		out:   base_url.Values{"a;b": []string{"1"}},
 		ok:    true,
 	},
 	{
 		query: "a=1&a=2;a=banana",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a;b&c=1",
-		out:   Values{"c": []string{"1"}},
+		out:   base_url.Values{"c": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;a=3&c=4",
-		out:   Values{"a": []string{"1"}, "c": []string{"4"}},
+		out:   base_url.Values{"a": []string{"1"}, "c": []string{"4"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;c=3",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1;",
-		out:   Values{},
+		out:   base_url.Values{},
 		ok:    false,
 	},
 	{
 		query: "a=1&;",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 	{
 		query: ";a=1&b=2",
-		out:   Values{"b": []string{"2"}},
+		out:   base_url.Values{"b": []string{"2"}},
 		ok:    false,
 	},
 	{
 		query: "a=1&b=2;",
-		out:   Values{"a": []string{"1"}},
+		out:   base_url.Values{"a": []string{"1"}},
 		ok:    false,
 	},
 }
