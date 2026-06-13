@@ -405,7 +405,7 @@ func parse(rawURL string, viaRequest bool) (*URL, error) {
 	// RawPath is a hint of the encoding of Path. We don't want to set it if
 	// the default escaping of Path is equivalent, to help make sure that people
 	// don't rely on it in general.
-	if err := url.setPath(rest); err != nil {
+	if err := setPath(url, rest); err != nil {
 		return nil, err
 	}
 	return url, nil
@@ -544,7 +544,7 @@ func parseHost(scheme, host string) (string, error) {
 // - setPath("/foo%2fbar") will set Path="/foo/bar" and RawPath="/foo%2fbar"
 // setPath will return an error only if the provided path contains an invalid
 // escaping.
-func (u *URL) setPath(p string) error {
+func setPath(u *URL, p string) error {
 	path, err := unescape(p, encodePath)
 	if err != nil {
 		return err
@@ -938,7 +938,7 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 		// The "absoluteURI" or "net_path" cases.
 		// We can ignore the error from setPath since we know we provided a
 		// validly-escaped path.
-		url.setPath(resolvePath(ref.EscapedPath(), ""))
+		setPath(&url, resolvePath(ref.EscapedPath(), ""))
 		return &url
 	}
 	if ref.Opaque != "" {
@@ -964,7 +964,7 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 	// The "abs_path" or "rel_path" cases.
 	url.Host = u.Host
 	url.User = u.User
-	url.setPath(resolvePath(u.EscapedPath(), ref.EscapedPath()))
+	setPath(&url, resolvePath(u.EscapedPath(), ref.EscapedPath()))
 	return &url
 }
 
@@ -1077,7 +1077,7 @@ func (u *URL) joinPath(elem ...string) (*URL, error) {
 		p += "/"
 	}
 	url := *u
-	err := url.setPath(p)
+	err := setPath(&url, p)
 	return &url, err
 }
 
