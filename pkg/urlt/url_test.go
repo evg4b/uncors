@@ -677,7 +677,7 @@ func BenchmarkString(b *testing.B) {
 		b.StartTimer()
 		var g string
 		for i := 0; i < b.N; i++ {
-			g = u.String()
+			g = URL_String(u)
 		}
 		b.StopTimer()
 		if w := tt.roundtrip; b.N > 0 && g != w {
@@ -830,14 +830,14 @@ func TestURLString(t *testing.T) {
 		if tt.roundtrip != "" {
 			expected = tt.roundtrip
 		}
-		s := u.String()
+		s := URL_String(u)
 		if s != expected {
 			t.Errorf("Parse(%q).String() == %q (expected %q)", tt.in, s, expected)
 		}
 	}
 
 	for _, tt := range stringURLTests {
-		if got := tt.url.String(); got != tt.want {
+		if got := URL_String(&tt.url); got != tt.want {
 			t.Errorf("%+v.String() = %q; want %q", tt.url, got, tt.want)
 		}
 	}
@@ -1338,31 +1338,31 @@ func TestResolveReference(t *testing.T) {
 	for _, test := range resolveReferenceTests {
 		base := mustParse(test.base)
 		rel := mustParse(test.rel)
-		url := base.ResolveReference(rel)
-		if got := url.String(); got != test.expected {
+		url := URL_ResolveReference(base, rel)
+		if got := URL_String(url); got != test.expected {
 			t.Errorf("URL(%q).ResolveReference(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
 		}
 		// Ensure that new instances are returned.
 		if base == url {
-			t.Errorf("Expected URL.ResolveReference to return new URL instance.")
+			t.Errorf("Expected URL_ResolveReference to return new URL instance.")
 		}
 		// Test the convenience wrapper too.
-		url, err := base.Parse(test.rel)
+		url, err := URL_Parse(base, test.rel)
 		if err != nil {
 			t.Errorf("URL(%q).Parse(%q) failed: %v", test.base, test.rel, err)
-		} else if got := url.String(); got != test.expected {
+		} else if got := URL_String(url); got != test.expected {
 			t.Errorf("URL(%q).Parse(%q)\ngot  %q\nwant %q", test.base, test.rel, got, test.expected)
 		} else if base == url {
 			// Ensure that new instances are returned for the wrapper too.
-			t.Errorf("Expected URL.Parse to return new URL instance.")
+			t.Errorf("Expected URL_Parse to return new URL instance.")
 		}
 		// Ensure Opaque resets the URL.
-		url = base.ResolveReference(opaque)
+		url = URL_ResolveReference(base, opaque)
 		if *url != *opaque {
 			t.Errorf("ResolveReference failed to resolve opaque URL:\ngot  %#v\nwant %#v", url, opaque)
 		}
 		// Test the convenience wrapper with an opaque URL too.
-		url, err = base.Parse("scheme:opaque")
+		url, err = URL_Parse(base, "scheme:opaque")
 		if err != nil {
 			t.Errorf(`URL(%q).Parse("scheme:opaque") failed: %v`, test.base, err)
 		} else if *url != *opaque {
@@ -1376,7 +1376,7 @@ func TestResolveReference(t *testing.T) {
 
 func TestQueryValues(t *testing.T) {
 	u, _ := Parse("http://x.com?foo=bar&bar=1&bar=2&baz")
-	v := u.Query()
+	v := URL_Query(u)
 	if len(v) != 3 {
 		t.Errorf("got %d keys in Query values, want 3", len(v))
 	}
@@ -1663,7 +1663,7 @@ var requritests = []RequestURITest{
 
 func TestRequestURI(t *testing.T) {
 	for _, tt := range requritests {
-		s := tt.url.RequestURI()
+		s := URL_RequestURI(tt.url)
 		if s != tt.out {
 			t.Errorf("%#v.RequestURI() == %q (expected %q)", tt.url, s, tt.out)
 		}
@@ -1753,7 +1753,7 @@ func TestStarRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := u.RequestURI(), "*"; got != want {
+	if got, want := URL_RequestURI(u), "*"; got != want {
 		t.Errorf("RequestURI = %q; want %q", got, want)
 	}
 }
@@ -1943,7 +1943,7 @@ func TestURLHostnameAndPort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		u := &URL{Host: tt.in}
-		host, port := u.Hostname(), u.Port()
+		host, port := URL_Hostname(u), URL_Port(u)
 		if host != tt.host {
 			t.Errorf("Hostname for Host %q = %q; want %q", tt.in, host, tt.host)
 		}
@@ -1954,9 +1954,9 @@ func TestURLHostnameAndPort(t *testing.T) {
 }
 
 var (
-	_ encodingPkg.BinaryMarshaler   = (*URL)(nil)
-	_ encodingPkg.BinaryUnmarshaler = (*URL)(nil)
-	_ encodingPkg.BinaryAppender    = (*URL)(nil)
+	_ encodingPkg.BinaryMarshaler   = (*URLT)(nil)
+	_ encodingPkg.BinaryUnmarshaler = (*URLT)(nil)
+	_ encodingPkg.BinaryAppender    = (*URLT)(nil)
 )
 
 func TestJSON(t *testing.T) {
@@ -1976,13 +1976,13 @@ func TestJSON(t *testing.T) {
 	// 	t.Errorf("json encoding: %s\nwant: %s\n", js, strconv.Quote(u.String()))
 	// }
 
-	u1 := new(URL)
+	u1 := new(URLT)
 	err = json.Unmarshal(js, u1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u1.String() != u.String() {
-		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
+	if URL_String(u1) != URL_String(u) {
+		t.Errorf("json decoded to: %s\nwant: %s\n", URL_String(u1), URL_String(u))
 	}
 }
 
@@ -1997,13 +1997,13 @@ func TestGob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u1 := new(URL)
+	u1 := new(URLT)
 	err = gob.NewDecoder(&w).Decode(u1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u1.String() != u.String() {
-		t.Errorf("gob decoded to: %s\nwant: %s\n", u1, u)
+	if URL_String(u1) != URL_String(u) {
+		t.Errorf("gob decoded to: %s\nwant: %s\n", URL_String(u1), URL_String(u))
 	}
 }
 
@@ -2304,7 +2304,7 @@ func TestJoinPath(t *testing.T) {
 			// URL.JoinPath doesn't return an error, so leave it unchanged
 			tt.out = tt.base
 		}
-		out = u.JoinPath(tt.elem...).String()
+		out = URL_String(URL_JoinPath(u, tt.elem...))
 		if out != tt.out {
 			t.Errorf("Parse(%q).JoinPath(%q) = %q, want %q", tt.base, tt.elem, out, tt.out)
 		}
