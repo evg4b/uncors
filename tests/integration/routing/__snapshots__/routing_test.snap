@@ -1,0 +1,9 @@
+
+[TestRouting/single_request_forwarding_correctness - 1]
+GET /api/users HTTP/1.1
+Host: <scrubbed>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
