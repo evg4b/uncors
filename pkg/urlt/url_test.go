@@ -1111,12 +1111,6 @@ func TestPathEscape(t *testing.T) {
 	}
 }
 
-//var userinfoTests = []UserinfoTest{
-//	{"user", "password", "user:password"},
-//	{"foo:bar", "~!@#$%^&*()_+{}|[]\\-=`:;'\"<>?,./",
-//		"foo%3Abar:~!%40%23$%25%5E&*()_+%7B%7D%7C%5B%5D%5C-=%60%3A;'%22%3C%3E?,.%2F"},
-//}
-
 type EncodeQueryTest struct {
 	m        base_url.Values
 	expected string
@@ -1897,7 +1891,7 @@ var netErrorTests = []struct {
 	temporary: false,
 }}
 
-// Test that url.Error implements net.Error and that it forwards
+// Test that base_url.Error implements net.Error and that it forwards
 func TestURLErrorImplementsNetError(t *testing.T) {
 	for i, tt := range netErrorTests {
 		err, ok := tt.err.(net.Error)
@@ -2009,7 +2003,7 @@ func TestGob(t *testing.T) {
 		t.Fatal(err)
 	}
 	if u1.String() != u.String() {
-		t.Errorf("json decoded to: %s\nwant: %s\n", u1, u)
+		t.Errorf("gob decoded to: %s\nwant: %s\n", u1, u)
 	}
 }
 
