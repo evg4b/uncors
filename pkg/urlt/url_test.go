@@ -2304,7 +2304,7 @@ func BenchmarkPathUnescape(b *testing.B) {
 	}
 }
 
-func TestJoinPath(t *testing.T) {
+func TestJoinPath(t *testing.T) { //NOSONAR
 	tests := []struct {
 		base string
 		elem []string
@@ -2459,7 +2459,7 @@ func TestJoinPath(t *testing.T) {
 	}
 }
 
-func TestClientPlaceholderInHost(t *testing.T) {
+func TestClientPlaceholderInHost(t *testing.T) { //NOSONAR
 	tests := []struct {
 		name      string
 		rawURL    string
