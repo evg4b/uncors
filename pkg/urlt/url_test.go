@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	base_url "net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -948,27 +949,27 @@ var unescapeTests = []EscapeTest{
 	{
 		"%", // not enough characters after %
 		"",
-		EscapeError("%"),
+		base_url.EscapeError("%"),
 	},
 	{
 		"%a", // not enough characters after %
 		"",
-		EscapeError("%a"),
+		base_url.EscapeError("%a"),
 	},
 	{
 		"%1", // not enough characters after %
 		"",
-		EscapeError("%1"),
+		base_url.EscapeError("%1"),
 	},
 	{
 		"123%45%6", // not enough characters after %
 		"",
-		EscapeError("%6"),
+		base_url.EscapeError("%6"),
 	},
 	{
 		"%zzzzz", // invalid hex digits
 		"",
-		EscapeError("%zz"),
+		base_url.EscapeError("%zz"),
 	},
 	{
 		"a+b",
@@ -1859,39 +1860,39 @@ var netErrorTests = []struct {
 	timeout   bool
 	temporary bool
 }{{
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: true}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutError{timeout: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutError{timeout: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: true}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: true}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &temporaryError{temporary: false}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &temporaryError{temporary: false}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: true}}},
 	timeout:   true,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: true}}},
 	timeout:   false,
 	temporary: true,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: true}, temporaryError{temporary: false}}},
 	timeout:   true,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: &timeoutTemporaryError{timeoutError{timeout: false}, temporaryError{temporary: false}}},
 	timeout:   false,
 	temporary: false,
 }, {
-	err:       &Error{"Get", "http://google.com/", io.EOF},
+	err:       &base_url.Error{Op: "Get", URL: "http://google.com/", Err: io.EOF},
 	timeout:   false,
 	temporary: false,
 }}

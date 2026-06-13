@@ -19,35 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	base_url "net/url"
 	"path"
 	"slices"
-	"strconv"
 	"strings"
 )
-
-// Error reports an error and the operation and URL that caused it.
-type Error struct {
-	Op  string
-	URL string
-	Err error
-}
-
-func (e *Error) Unwrap() error { return e.Err }
-func (e *Error) Error() string { return fmt.Sprintf("%s %q: %s", e.Op, e.URL, e.Err) }
-
-func (e *Error) Timeout() bool {
-	t, ok := e.Err.(interface {
-		Timeout() bool
-	})
-	return ok && t.Timeout()
-}
-
-func (e *Error) Temporary() bool {
-	t, ok := e.Err.(interface {
-		Temporary() bool
-	})
-	return ok && t.Temporary()
-}
 
 const upperhex = "0123456789ABCDEF"
 
@@ -58,18 +34,6 @@ func ishex(c byte) bool {
 // Precondition: ishex(c) is true.
 func unhex(c byte) byte {
 	return 9*(c>>6) + (c & 15)
-}
-
-type EscapeError string
-
-func (e EscapeError) Error() string {
-	return "invalid URL escape " + strconv.Quote(string(e))
-}
-
-type InvalidHostError string
-
-func (e InvalidHostError) Error() string {
-	return "invalid character " + strconv.Quote(string(e)) + " in host name"
 }
 
 // See the reference implementation in gen_encoding_table.go.
@@ -112,7 +76,7 @@ func unescape(s string, mode encoding) (string, error) {
 				if len(s) > 3 {
 					s = s[:3]
 				}
-				return "", EscapeError(s)
+				return "", base_url.EscapeError(s)
 			}
 			// Per https://tools.ietf.org/html/rfc3986#page-21
 			// in the host component %-encoding can only be used
@@ -121,7 +85,7 @@ func unescape(s string, mode encoding) (string, error) {
 			// introduces %25 being allowed to escape a percent sign
 			// in IPv6 scoped-address literals. Yay.
 			if mode == encodeHost && unhex(s[i+1]) < 8 && s[i:i+3] != "%25" {
-				return "", EscapeError(s[i : i+3])
+				return "", base_url.EscapeError(s[i : i+3])
 			}
 			if mode == encodeZone {
 				// RFC 6874 says basically "anything goes" for zone identifiers
@@ -133,7 +97,7 @@ func unescape(s string, mode encoding) (string, error) {
 				// But Windows puts spaces here! Yay.
 				v := unhex(s[i+1])<<4 | unhex(s[i+2])
 				if s[i:i+3] != "%25" && v != ' ' && shouldEscape(v, encodeHost) {
-					return "", EscapeError(s[i : i+3])
+					return "", base_url.EscapeError(s[i : i+3])
 				}
 			}
 			i += 3
@@ -142,7 +106,7 @@ func unescape(s string, mode encoding) (string, error) {
 			i++
 		default:
 			if (mode == encodeHost || mode == encodeZone) && s[i] < 0x80 && shouldEscape(s[i], mode) {
-				return "", InvalidHostError(s[i : i+1])
+				return "", base_url.InvalidHostError(s[i : i+1])
 			}
 			i++
 		}
@@ -397,13 +361,13 @@ func Parse(rawURL string) (*URL, error) {
 	u, frag, _ := strings.Cut(rawURL, "#")
 	url, err := parse(u, false)
 	if err != nil {
-		return nil, &Error{"parse", u, err}
+		return nil, &base_url.Error{Op: "parse", URL: u, Err: err}
 	}
 	if frag == "" {
 		return url, nil
 	}
 	if err = url.setFragment(frag); err != nil {
-		return nil, &Error{"parse", rawURL, err}
+		return nil, &base_url.Error{Op: "parse", URL: rawURL, Err: err}
 	}
 	return url, nil
 }
@@ -416,7 +380,7 @@ func Parse(rawURL string) (*URL, error) {
 func ParseRequestURI(rawURL string) (*URL, error) {
 	url, err := parse(rawURL, true)
 	if err != nil {
-		return nil, &Error{"parse", rawURL, err}
+		return nil, &base_url.Error{Op: "parse", URL: rawURL, Err: err}
 	}
 	return url, nil
 }
