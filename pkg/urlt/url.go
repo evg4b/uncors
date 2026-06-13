@@ -227,7 +227,7 @@ func escape(s string, mode encoding) string {
 // Note that the Path field is stored in decoded form: /%47%6f%2f becomes /Go/.
 // A consequence is that it is impossible to tell which slashes in the Path were
 // slashes in the raw URL and which were %2f. This distinction is rarely important,
-// but when it is, the code should use the [URL.EscapedPath] method, which preserves
+// but when it is, the code should use [URL_EscapedPath], which preserves
 // the original encoding of Path. The Fragment field is also stored in decoded form,
 // use [URL.EscapedFragment] to retrieve the original encoding.
 //
@@ -245,9 +245,9 @@ type URL struct {
 	RawQuery string
 
 	// RawPath is an optional field containing an encoded path hint.
-	// See the EscapedPath method for more details.
+	// See [URL_EscapedPath] for more details.
 	//
-	// In general, code should call EscapedPath instead of reading RawPath.
+	// In general, code should call URL_EscapedPath instead of reading RawPath.
 	RawPath string
 
 	// RawFragment is an optional field containing an encoded fragment hint.
@@ -631,7 +631,7 @@ func setFragment(u *URL, f string) error {
 // The [URL.String] method uses EscapedFragment to construct its result.
 // In general, code should call EscapedFragment instead of
 // reading u.RawFragment directly.
-func (u *URL) EscapedFragment() string {
+func URL_EscapedFragment(u *URL) string {
 	if u.RawFragment != "" && validEncoded(u.RawFragment, encodeFragment) {
 		f, err := unescape(u.RawFragment, encodeFragment)
 		if err == nil && f == u.Fragment {
@@ -743,7 +743,7 @@ func (u *URL) String() string {
 	}
 	if u.Fragment != "" {
 		buf.WriteByte('#')
-		buf.WriteString(u.EscapedFragment())
+		buf.WriteString(URL_EscapedFragment(u))
 	}
 	return buf.String()
 }
