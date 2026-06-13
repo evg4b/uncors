@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/evg4b/uncors/pkg/urlt"
 	"golang.org/x/net/idna"
 )
 
@@ -44,8 +45,8 @@ func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 	rawURL = placeholderRegexp.ReplaceAllString(rawURL, "*")
 	rawURL = defaultScheme(rawURL, scheme)
 
-	// Use net/url.Parse() now.
-	parsedURL, err := url.Parse(rawURL)
+	// Use urlt.Parse() now.
+	parsedURL, err := urlt.Parse(rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +150,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	}
 
 	if index == len(host)-1 {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: ErrEmptyPort}
+		return "", "", &url.Error{Op: portOperation, URL: urlt.URL_String(parsedURL), Err: ErrEmptyPort}
 	}
 
 	port := host[index+1:]
@@ -157,7 +158,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 
 	_, err := strconv.Atoi(port)
 	if err != nil {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: err}
+		return "", "", &url.Error{Op: portOperation, URL: urlt.URL_String(parsedURL), Err: err}
 	}
 
 	return host, port, nil

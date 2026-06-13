@@ -10,6 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 const nanosecondsPerMillisecond = 1e6
@@ -109,7 +110,7 @@ func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
 		URL:         fullURL,
 		HTTPVersion: req.Proto,
 		Headers:     m.headersToNameValues(req.Header),
-		QueryString: queryToNameValues(req.URL.Query()),
+		QueryString: queryToNameValues(urlt.URL_Query(req.URL)),
 		Cookies:     cookies,
 		HeadersSize: -1,
 		BodySize:    bodySize,

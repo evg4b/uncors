@@ -3,9 +3,10 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 var (
@@ -148,7 +149,7 @@ func validateRawURL(rawURL string) error {
 	}
 
 	// Replace {key} placeholders with a placeholder for validation
-	// This allows standard url.Parse to validate the structure
+	// This allows urlt.Parse to validate the structure
 	normalized := placeholderRegexp.ReplaceAllString(rawURL, "x")
 
 	// Ensure URL has a scheme for proper parsing
@@ -161,7 +162,7 @@ func validateRawURL(rawURL string) error {
 	}
 
 	// Validate with standard library
-	parsed, err := url.Parse(normalized)
+	parsed, err := urlt.Parse(normalized)
 	if err != nil {
 		return fmt.Errorf("invalid url: %w", err)
 	}

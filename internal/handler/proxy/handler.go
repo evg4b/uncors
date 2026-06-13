@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/go-http-utils/headers"
 )
 
@@ -74,7 +75,7 @@ func (h *Handler) makeOriginalRequest(
 	req *http.Request,
 	replacer *urlreplacer.Replacer,
 ) (*http.Request, error) {
-	url, err := replacer.Replace(req.URL.String())
+	url, err := replacer.Replace(urlt.URL_String(req.URL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to replace URL: %w", err)
 	}

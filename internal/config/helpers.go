@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 var (
@@ -104,7 +106,7 @@ func normalizeURL(parsedURL url.URL, host, portStr string) string {
 		parsedURL.Host = host
 	}
 
-	return parsedURL.String()
+	return urlt.URL_String(&parsedURL)
 }
 
 func isDefaultPort(scheme string, port int) bool {

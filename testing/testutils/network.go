@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"net"
-	"net/url"
 	"testing"
 
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ func IsPortFree(port int) bool {
 }
 
 func JoinPath(base string, elem ...string) string {
-	joined, err := url.JoinPath(base, elem...)
+	joined, err := urlt.JoinPath(base, elem...)
 	if err != nil {
 		panic(err)
 	}
