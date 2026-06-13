@@ -17,7 +17,6 @@ package urlt
 import (
 	"errors"
 	"fmt"
-	"internal/godebug"
 	"net/netip"
 	"path"
 	"slices"
@@ -25,8 +24,6 @@ import (
 	"strings"
 	_ "unsafe" // for linkname
 )
-
-var urlstrictcolons = godebug.New("urlstrictcolons")
 
 // Error reports an error and the operation and URL that caused it.
 type Error struct {
@@ -616,12 +613,7 @@ func parseHost(scheme, host string) (string, error) {
 			// enforce strict colons only for http and https URLs.
 			//
 			// See https://go.dev/issue/75223 and https://go.dev/issue/78077.
-			if scheme == "http" || scheme == "https" {
-				if urlstrictcolons.Value() == "0" {
-					urlstrictcolons.IncNonDefault()
-					i = lastColon
-				}
-			} else {
+			if scheme != "http" && scheme != "https" {
 				i = lastColon
 			}
 		}
@@ -934,31 +926,7 @@ func ParseQuery(query string) (Values, error) {
 	return m, err
 }
 
-var urlmaxqueryparams = godebug.New("urlmaxqueryparams")
-
-// Keep this in sync with net/http/httputil.
-const defaultMaxParams = 10000
-
-func urlParamsWithinMax(params int) bool {
-	withinDefaultMax := params <= defaultMaxParams
-	if urlmaxqueryparams.Value() == "" {
-		return withinDefaultMax
-	}
-	customMax, err := strconv.Atoi(urlmaxqueryparams.Value())
-	if err != nil {
-		return withinDefaultMax
-	}
-	withinCustomMax := customMax == 0 || params < customMax
-	if withinDefaultMax != withinCustomMax {
-		urlmaxqueryparams.IncNonDefault()
-	}
-	return withinCustomMax
-}
-
 func parseQuery(m Values, query string) (err error) {
-	if !urlParamsWithinMax(strings.Count(query, "&") + 1) {
-		return errors.New("number of URL query parameters exceeded limit")
-	}
 	for query != "" {
 		var key string
 		key, query, _ = strings.Cut(query, "&")
