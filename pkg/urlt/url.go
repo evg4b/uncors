@@ -231,7 +231,7 @@ func escape(s string, mode encoding) string {
 // the original encoding of Path. The Fragment field is also stored in decoded form,
 // use [URL.EscapedFragment] to retrieve the original encoding.
 //
-// The [URL.String] method uses the [URL.EscapedPath] method to obtain the path.
+// The [URL.String] method uses [URL_EscapedPath] to obtain the path.
 type URL struct {
 	Scheme   string
 	Opaque   string             // encoded opaque data
@@ -559,16 +559,16 @@ func setPath(u *URL, p string) error {
 	return nil
 }
 
-// EscapedPath returns the escaped form of u.Path.
+// URL_EscapedPath returns the escaped form of u.Path.
 // In general there are multiple possible escaped forms of any path.
-// EscapedPath returns u.RawPath when it is a valid escaping of u.Path.
-// Otherwise EscapedPath ignores u.RawPath and computes an escaped
+// URL_EscapedPath returns u.RawPath when it is a valid escaping of u.Path.
+// Otherwise URL_EscapedPath ignores u.RawPath and computes an escaped
 // form on its own.
-// The [URL.String] and [URL.RequestURI] methods use EscapedPath to construct
+// The [URL.String] and [URL.RequestURI] methods use URL_EscapedPath to construct
 // their results.
-// In general, code should call EscapedPath instead of
+// In general, code should call URL_EscapedPath instead of
 // reading u.RawPath directly.
-func (u *URL) EscapedPath() string {
+func URL_EscapedPath(u *URL) string {
 	if u.RawPath != "" && validEncoded(u.RawPath, encodePath) {
 		p, err := unescape(u.RawPath, encodePath)
 		if err == nil && p == u.Path {
@@ -720,7 +720,7 @@ func (u *URL) String() string {
 				}
 			}
 		}
-		path := u.EscapedPath()
+		path := URL_EscapedPath(u)
 		if path != "" && path[0] != '/' && u.Host != "" {
 			buf.WriteByte('/')
 		}
@@ -938,7 +938,7 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 		// The "absoluteURI" or "net_path" cases.
 		// We can ignore the error from setPath since we know we provided a
 		// validly-escaped path.
-		setPath(&url, resolvePath(ref.EscapedPath(), ""))
+		setPath(&url, resolvePath(URL_EscapedPath(ref), ""))
 		return &url
 	}
 	if ref.Opaque != "" {
@@ -964,7 +964,7 @@ func (u *URL) ResolveReference(ref *URL) *URL {
 	// The "abs_path" or "rel_path" cases.
 	url.Host = u.Host
 	url.User = u.User
-	setPath(&url, resolvePath(u.EscapedPath(), ref.EscapedPath()))
+	setPath(&url, resolvePath(URL_EscapedPath(u), URL_EscapedPath(ref)))
 	return &url
 }
 
@@ -981,7 +981,7 @@ func (u *URL) Query() base_url.Values {
 func (u *URL) RequestURI() string {
 	result := u.Opaque
 	if result == "" {
-		result = u.EscapedPath()
+		result = URL_EscapedPath(u)
 		if result == "" {
 			result = "/"
 		}
@@ -1061,7 +1061,7 @@ func (u *URL) JoinPath(elem ...string) *URL {
 }
 
 func joinPath(u *URL, elem ...string) (*URL, error) {
-	elem = append([]string{u.EscapedPath()}, elem...)
+	elem = append([]string{URL_EscapedPath(u)}, elem...)
 	var p string
 	if !strings.HasPrefix(elem[0], "/") {
 		// Return a relative path if u is relative,
