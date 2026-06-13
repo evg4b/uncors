@@ -1442,15 +1442,18 @@ var parseTests = []parseTest{
 		query: "ascii=%3Ckey%3A+0x90%3E",
 		out:   Values{"ascii": []string{"<key: 0x90>"}},
 		ok:    true,
-	}, {
+	},
+	{
 		query: "a=1;b=2",
 		out:   Values{},
 		ok:    false,
-	}, {
+	},
+	{
 		query: "a;b=1",
 		out:   Values{},
 		ok:    false,
-	}, {
+	},
+	{
 		query: "a=%3B", // hex encoding for semicolon
 		out:   Values{"a": []string{";"}},
 		ok:    true,
@@ -1955,9 +1958,11 @@ func TestURLHostnameAndPort(t *testing.T) {
 	}
 }
 
-var _ encodingPkg.BinaryMarshaler = (*URL)(nil)
-var _ encodingPkg.BinaryUnmarshaler = (*URL)(nil)
-var _ encodingPkg.BinaryAppender = (*URL)(nil)
+var (
+	_ encodingPkg.BinaryMarshaler   = (*URL)(nil)
+	_ encodingPkg.BinaryUnmarshaler = (*URL)(nil)
+	_ encodingPkg.BinaryAppender    = (*URL)(nil)
+)
 
 func TestJSON(t *testing.T) {
 	u, err := Parse("https://www.google.com/x?y=z")
@@ -2015,7 +2020,6 @@ func TestNilUser(t *testing.T) {
 	}()
 
 	u, err := Parse("http://foo.com/")
-
 	if err != nil {
 		t.Fatalf("parse err: %v", err)
 	}
@@ -2058,7 +2062,6 @@ func TestRejectControlCharacters(t *testing.T) {
 	if _, err := Parse("http://foo.com/ctl\x80"); err != nil {
 		t.Errorf("error parsing URL with non-ASCII control byte: %v", err)
 	}
-
 }
 
 var escapeBenchmarks = []struct {
@@ -2108,7 +2111,6 @@ func BenchmarkQueryEscape(b *testing.B) {
 			if g != tc.query {
 				b.Errorf("QueryEscape(%q) == %q, want %q", tc.unescaped, g, tc.query)
 			}
-
 		})
 	}
 }
@@ -2125,7 +2127,6 @@ func BenchmarkPathEscape(b *testing.B) {
 			if g != tc.path {
 				b.Errorf("PathEscape(%q) == %q, want %q", tc.unescaped, g, tc.path)
 			}
-
 		})
 	}
 }
@@ -2142,7 +2143,6 @@ func BenchmarkQueryUnescape(b *testing.B) {
 			if g != tc.unescaped {
 				b.Errorf("QueryUnescape(%q) == %q, want %q", tc.query, g, tc.unescaped)
 			}
-
 		})
 	}
 }
@@ -2159,7 +2159,6 @@ func BenchmarkPathUnescape(b *testing.B) {
 			if g != tc.unescaped {
 				b.Errorf("PathUnescape(%q) == %q, want %q", tc.path, g, tc.unescaped)
 			}
-
 		})
 	}
 }
