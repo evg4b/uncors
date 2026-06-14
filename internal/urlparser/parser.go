@@ -30,13 +30,13 @@ const (
 //     is parsed into url.Host instead of url.Path.
 //  3. It lowercase's the Host (not only the Scheme).
 func Parse(rawURL string) (*url.URL, error) {
-	return ParseWithDefaultScheme(rawURL, "")
+	return parseWithDefaultScheme(rawURL, "")
 }
 
-// ParseWithDefaultScheme parses raw URL string with a custom default scheme.
+// parseWithDefaultScheme parses raw URL string with a custom default scheme.
 // If the URL doesn't have a scheme, the provided scheme will be used.
 // If scheme is empty, the URL will be parsed without a default scheme.
-func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
+func parseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 	rawURL = defaultScheme(rawURL, scheme)
 
 	// urlt.Parse natively supports {key} placeholders in the host.
