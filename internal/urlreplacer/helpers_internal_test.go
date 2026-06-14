@@ -15,8 +15,8 @@ var testCases = []struct {
 	expectedPattern string
 }{
 	{
-		name:            hosts.Localhost.Host(),
-		url:             hosts.Localhost.Host(),
+		name:            hosts.Localhost.Host().String(),
+		url:             hosts.Localhost.Host().String(),
 		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?localhost(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}localhost${path}",
 	},
@@ -94,7 +94,7 @@ func TestWildCardToRegexp(t *testing.T) {
 			url      string
 			expected []string
 		}{
-			{name: "no placeholders", url: hosts.Localhost.Host(), expected: []string{}},
+			{name: "no placeholders", url: hosts.Localhost.Host().String(), expected: []string{}},
 			{name: "single placeholder", url: "{tenant}", expected: []string{"tenant"}},
 			{name: "two placeholders", url: "{region}.{tenant}.com", expected: []string{"region", "tenant"}},
 			{name: "three placeholders", url: "api.{env}.{region}.{tenant}.com", expected: []string{"env", "region", "tenant"}},

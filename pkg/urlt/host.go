@@ -11,11 +11,63 @@ type Host struct {
 	Port     string
 }
 
-func (h *Host) String() string {
-	if h.Port != "" {
-		return h.Hostname + ":" + h.Port
+// String reassembles the Host into its canonical URL form
+// (scheme://hostname:port). The scheme and port parts are omitted when empty.
+// IPv6 hostnames are wrapped in square brackets.
+func (h Host) String() string {
+	var b strings.Builder
+
+	if h.Scheme != "" {
+		b.WriteString(h.Scheme)
+		b.WriteString("://")
 	}
+
+	b.WriteString(h.bracketedHostname())
+
+	if h.Port != "" {
+		b.WriteByte(':')
+		b.WriteString(h.Port)
+	}
+
+	return b.String()
+}
+
+// HostPort returns the "hostname:port" form without the scheme. When the port
+// is empty only the hostname is returned. IPv6 hostnames are wrapped in
+// square brackets.
+func (h Host) HostPort() string {
+	if h.Port == "" {
+		return h.bracketedHostname()
+	}
+
+	return h.bracketedHostname() + ":" + h.Port
+}
+
+func (h Host) bracketedHostname() string {
+	if strings.Contains(h.Hostname, ":") {
+		return "[" + h.Hostname + "]"
+	}
+
 	return h.Hostname
+}
+
+// MarshalText implements encoding.TextMarshaler, allowing a Host to be encoded
+// to YAML/JSON as its canonical string form.
+func (h Host) MarshalText() ([]byte, error) {
+	return []byte(h.String()), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler, allowing a Host to be
+// decoded from a YAML/JSON string scalar via ParseHost.
+func (h *Host) UnmarshalText(text []byte) error {
+	parsed, err := ParseHost(string(text))
+	if err != nil {
+		return err
+	}
+
+	*h = *parsed
+
+	return nil
 }
 
 func ParseHost(rawURL string) (*Host, error) {

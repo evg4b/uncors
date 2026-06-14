@@ -3,8 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"net"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -26,11 +24,16 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	}
 
 	for index, key := range from {
+		toHost, err := urlt.ParseHost(to[index])
+		if err != nil {
+			return fmt.Errorf("invalid `to` value %q: %w", to[index], err)
+		}
+
 		found := false
 
 		for i := range cfg.Mappings {
-			if strings.EqualFold(cfg.Mappings[i].From, key) {
-				cfg.Mappings[i].To = to[index]
+			if strings.EqualFold(cfg.Mappings[i].From.String(), key) {
+				cfg.Mappings[i].To = *toHost
 				found = true
 
 				break
@@ -38,9 +41,14 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 		}
 
 		if !found {
+			fromHost, err := urlt.ParseHost(key)
+			if err != nil {
+				return fmt.Errorf("invalid `from` value %q: %w", key, err)
+			}
+
 			cfg.Mappings = append(cfg.Mappings, Mapping{
-				From: key,
-				To:   to[index],
+				From: *fromHost,
+				To:   *toHost,
 			})
 		}
 	}
@@ -57,56 +65,29 @@ func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := make(Mappings, 0, len(mappings))
 
 	for _, mapping := range mappings {
-		host, portStr, err := mapping.GetFromHostPort()
-		if err != nil {
-			panic(fmt.Errorf("failed to get host and port: %w", err))
-		}
-
-		sourceURL, err := mapping.GetFromURL()
-		if err != nil {
-			panic(fmt.Errorf("failed to parse source url: %w", err))
-		}
-
 		normalizedMapping := mapping.Clone()
-		normalizedMapping.From = normalizeURL(*sourceURL, host, portStr)
+		normalizedMapping.From = normalizeHost(mapping.From)
 		processedMappings = append(processedMappings, normalizedMapping)
 	}
 
 	return processedMappings
 }
 
-func normalizeURL(parsedURL url.URL, host, portStr string) string {
-	scheme := parsedURL.Scheme
-	if scheme == "" {
-		scheme = httpScheme
+// normalizeHost canonicalises a host: it forces the default http scheme when
+// none is set and drops the port when it matches the scheme's default port.
+func normalizeHost(host urlt.Host) urlt.Host {
+	if host.Scheme == "" {
+		host.Scheme = httpScheme
 	}
 
-	var port int
-
-	if portStr != "" {
-		var err error
-
-		port, err = strconv.Atoi(portStr)
-		if err != nil {
-			panic(fmt.Errorf("invalid port number: %w", err))
-		}
-	} else {
-		if scheme == httpsScheme {
-			port = defaultHTTPSPort
-		} else {
-			port = defaultHTTPPort
+	if host.Port != "" {
+		port, err := strconv.Atoi(host.Port)
+		if err == nil && isDefaultPort(host.Scheme, port) {
+			host.Port = ""
 		}
 	}
 
-	parsedURL.Scheme = scheme
-
-	if !isDefaultPort(scheme, port) {
-		parsedURL.Host = net.JoinHostPort(host, strconv.Itoa(port))
-	} else {
-		parsedURL.Host = host
-	}
-
-	return urlt.URL_String(&parsedURL)
+	return host
 }
 
 func isDefaultPort(scheme string, port int) bool {

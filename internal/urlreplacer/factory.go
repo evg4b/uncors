@@ -36,7 +36,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 	mappings := make([]mapping, 0, mappingsCount)
 
 	for _, urlMapping := range urlMappings {
-		target, source, err := replacers(urlMapping.From, urlMapping.To)
+		target, source, err := replacers(urlMapping.From.String(), urlMapping.To.String())
 		if err != nil {
 			panic(fmt.Errorf("failed to configure url mappings: %w", err))
 		}

@@ -35,7 +35,7 @@ var errNetworkError = errors.New("network error")
 
 func TestProxyHandler(t *testing.T) {
 	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
-		{From: "http://premium.local.com", To: "https://premium.api.com"},
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
 	})
 
 	t.Run("should correctly replace headers in request to target resource", func(t *testing.T) {
@@ -404,7 +404,7 @@ func TestProxyHandler(t *testing.T) {
 					recorderFactory: func() *httptest.ResponseRecorder {
 						writer := httptest.NewRecorder()
 						writer.Header().Set("Custom-Header", "true")
-						writer.Header().Set(headers.AccessControlAllowOrigin, hosts.Localhost.Port(3000))
+						writer.Header().Set(headers.AccessControlAllowOrigin, hosts.Localhost.Port(3000).String())
 
 						return writer
 					},

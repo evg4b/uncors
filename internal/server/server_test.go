@@ -70,7 +70,7 @@ func TestServer(t *testing.T) {
 
 		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			}
 		})
@@ -85,7 +85,7 @@ func TestServer(t *testing.T) {
 
 		for _, port := range freePorts {
 			t.Run(fmt.Sprintf("port %d", port), func(t *testing.T) {
-				assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+				assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 			})
 		}
 	})
@@ -115,7 +115,7 @@ func TestServer(t *testing.T) {
 
 		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address:   hosts.Loopback.Port(port),
+				Address:   hosts.Loopback.Port(port).String(),
 				Handler:   handler,
 				EnableTLS: true,
 			}
@@ -131,7 +131,7 @@ func TestServer(t *testing.T) {
 
 		for _, port := range freePorts {
 			t.Run(fmt.Sprintf("port %d", port), func(t *testing.T) {
-				assertResponse(t, hosts.Loopback.HTTPSPort(port), pool)
+				assertResponse(t, hosts.Loopback.HTTPSPort(port).String(), pool)
 			})
 		}
 	})
@@ -163,14 +163,14 @@ func TestServer(t *testing.T) {
 
 		httpTargets := lo.Map(freeHTTPPorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			}
 		})
 
 		httpsTargets := lo.Map(freeHTTPSPorts, func(port int, _ int) server.Target {
 			return server.Target{
-				Address:   hosts.Loopback.Port(port),
+				Address:   hosts.Loopback.Port(port).String(),
 				Handler:   handler,
 				EnableTLS: true,
 			}
@@ -186,13 +186,13 @@ func TestServer(t *testing.T) {
 
 		for _, port := range freeHTTPSPorts {
 			t.Run(fmt.Sprintf("https port %d", port), func(t *testing.T) {
-				assertResponse(t, hosts.Loopback.HTTPSPort(port), pool)
+				assertResponse(t, hosts.Loopback.HTTPSPort(port).String(), pool)
 			})
 		}
 
 		for _, port := range freeHTTPPorts {
 			t.Run(fmt.Sprintf("http port %d", port), func(t *testing.T) {
-				assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+				assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 			})
 		}
 	})
@@ -204,7 +204,7 @@ func TestServer(t *testing.T) {
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			},
 		}))
@@ -215,7 +215,7 @@ func TestServer(t *testing.T) {
 
 		time.Sleep(50 * time.Millisecond)
 
-		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 
 		err := instance.Shutdown(t.Context())
 		require.NoError(t, err)
@@ -230,7 +230,7 @@ func TestServer(t *testing.T) {
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			},
 		}))
@@ -239,7 +239,7 @@ func TestServer(t *testing.T) {
 			require.NoError(t, instance.Close())
 		}()
 
-		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 
 		err := instance.Close()
 		require.NoError(t, err)
@@ -255,24 +255,24 @@ func TestServer(t *testing.T) {
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(initial),
+				Address: hosts.Loopback.Port(initial).String(),
 				Handler: handler,
 			},
 		}))
 
-		assertResponse(t, hosts.Loopback.HTTPPort(initial), nil)
+		assertResponse(t, hosts.Loopback.HTTPPort(initial).String(), nil)
 		require.True(t, testutils.IsPortFree(restarted))
 
 		err := instance.Restart(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(restarted),
+				Address: hosts.Loopback.Port(restarted).String(),
 				Handler: handler,
 			},
 		})
 		require.NoError(t, err)
 
 		assert.True(t, testutils.IsPortFree(initial))
-		assertResponse(t, hosts.Loopback.HTTPPort(restarted), nil)
+		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
 	})
 
 	t.Run("wait", func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestServer(t *testing.T) {
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 					queue.Track("handler trigered")
 
@@ -314,7 +314,7 @@ func TestServer(t *testing.T) {
 			queue.Track("waiting finished")
 		})
 
-		assertResponse(t, hosts.Loopback.HTTPPort(port), nil)
+		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 
 		waitGroup.Go(func() {
 			queue.Track("shutdown trigered")
@@ -337,7 +337,7 @@ func TestServer(t *testing.T) {
 	t.Run("returns error when port is already in use", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", hosts.Loopback.Port(port))
+		ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", hosts.Loopback.Port(port).String())
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
@@ -345,7 +345,7 @@ func TestServer(t *testing.T) {
 		instance := server.New(manager, server.NewRequestTracker())
 		err = instance.Start(t.Context(), []server.Target{
 			{
-				Address: hosts.Loopback.Port(port),
+				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			},
 		})

@@ -25,13 +25,13 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 			{
 				name: "source url is incorrect",
 				mapping: config.Mappings{
-					{From: string(rune(0x7f)), To: hosts.Github.HTTPS()},
+					{From: urlt.Host{Hostname: string(rune(0x7f))}, To: hosts.Github.HTTPS()},
 				},
 			},
 			{
 				name: "target url is incorrect ",
 				mapping: config.Mappings{
-					{From: hosts.Localhost.Host(), To: string(rune(0x7f))},
+					{From: hosts.Localhost.Host(), To: urlt.Host{Hostname: string(rune(0x7f))}},
 				},
 			},
 		}
@@ -55,8 +55,8 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 
 func TestFactoryMake(t *testing.T) {
 	factory := urlreplacer.NewURLReplacerFactory(config.Mappings{
-		{From: "http://server1.com", To: "https://mappedserver1.com"},
-		{From: "https://server2.com", To: "https://mappedserver2.com"},
+		{From: hosts.Parse("http://server1.com"), To: hosts.Parse("https://mappedserver1.com")},
+		{From: hosts.Parse("https://server2.com"), To: hosts.Parse("https://mappedserver2.com")},
 	})
 
 	tests := []struct {
