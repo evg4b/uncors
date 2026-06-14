@@ -144,12 +144,12 @@ func TestMiddleware(t *testing.T) {
 				args: args{
 					headers: map[string]string{
 						headers.AcceptLanguage:           "en",
-						headers.AccessControlAllowOrigin: hosts.Example.HTTPS(),
+						headers.AccessControlAllowOrigin: hosts.Example.HTTPS().String(),
 					},
 				},
 				expected: expected{
 					headers: http.Header{
-						headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTPS()},
+						headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTPS().String()},
 						headers.AccessControlAllowCredentials: defaultControlAllowCredentials,
 						headers.AccessControlAllowHeaders:     defaultControlAllowHeaders,
 						headers.AccessControlAllowMethods:     defaultControlAllowMethods,
@@ -201,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("for OPTIONS request with origin", func(t *testing.T) {
 		mockedNextHandler := mocks.FailNowHandlerMock(t)
 
-		testOrigin := hosts.Example.HTTPS()
+		testOrigin := hosts.Example.HTTPS().String()
 		middleware := options.NewMiddleware()
 
 		recorder := httptest.NewRecorder()

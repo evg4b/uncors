@@ -35,10 +35,10 @@ func TestValidateHost(t *testing.T) {
 	const field = "field"
 
 	t.Run("valid", func(t *testing.T) {
-		runOK(t, "bare host", func() error { return config.ValidateHost(field, hosts.Localhost.Host()) })
-		runOK(t, "http scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTP()) })
-		runOK(t, "https scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTPS()) })
-		runOK(t, "ip address", func() error { return config.ValidateHost(field, hosts.Loopback.Host()) })
+		runOK(t, "bare host", func() error { return config.ValidateHost(field, hosts.Localhost.Host().String()) })
+		runOK(t, "http scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTP().String()) })
+		runOK(t, "https scheme", func() error { return config.ValidateHost(field, hosts.Github.HTTPS().String()) })
+		runOK(t, "ip address", func() error { return config.ValidateHost(field, hosts.Loopback.Host().String()) })
 	})
 
 	t.Run("invalid", func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestValidateHost(t *testing.T) {
 		runErr(t, "with query", "field must not contain a query",
 			func() error { return config.ValidateHost(field, "example.com?query=1") })
 		runErr(t, "unsupported scheme", "field scheme must be http or https",
-			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp")) })
+			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp").String()) })
 		runErr(t, "invalid host", "field is not a valid host",
 			func() error { return config.ValidateHost(field, "loca:::lhost") })
 	})

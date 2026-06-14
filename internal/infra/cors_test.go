@@ -35,9 +35,9 @@ func TestWriteCorsHeaders(t *testing.T) {
 		{
 			name:   "Empty headers with origin",
 			header: http.Header{},
-			origin: hosts.Localhost.HTTPPort(4000),
+			origin: hosts.Localhost.HTTPPort(4000).String(),
 			expected: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000)},
+				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000).String()},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
@@ -48,7 +48,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 		{
 			name: "Override existing headers",
 			header: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS()},
+				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS().String()},
 				headers.AccessControlAllowCredentials: []string{"false"},
 				headers.AccessControlAllowMethods:     []string{"GET, OPTIONS"},
 			},
@@ -65,7 +65,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 		{
 			name: "Do not change existing headers",
 			header: http.Header{
-				"X-DATA": []string{hosts.Github.HTTPS()},
+				"X-DATA": []string{hosts.Github.HTTPS().String()},
 			},
 			origin: "",
 			expected: http.Header{
@@ -75,7 +75,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
 				headers.AccessControlExposeHeaders:    []string{"*"},
-				"X-DATA":                              []string{hosts.Github.HTTPS()},
+				"X-DATA":                              []string{hosts.Github.HTTPS().String()},
 			},
 		},
 	}
@@ -112,10 +112,10 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "With Origin header",
 			reqHeader: http.Header{
-				headers.Origin: []string{hosts.Localhost.HTTPPort(4000)},
+				headers.Origin: []string{hosts.Localhost.HTTPPort(4000).String()},
 			},
 			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000)},
+				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000).String()},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
@@ -154,12 +154,12 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "With all request headers",
 			reqHeader: http.Header{
-				headers.Origin:                      []string{hosts.Github.HTTPS()},
+				headers.Origin:                      []string{hosts.Github.HTTPS().String()},
 				headers.AccessControlRequestHeaders: []string{xCustomHeader},
 				headers.AccessControlRequestMethod:  []string{"PUT"},
 			},
 			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS()},
+				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS().String()},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{xCustomHeader},
 				headers.AccessControlAllowMethods:     []string{"PUT"},
@@ -170,11 +170,11 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		{
 			name: "Overwrite existing response headers",
 			reqHeader: http.Header{
-				headers.Origin:                     []string{hosts.Example.HTTP()},
+				headers.Origin:                     []string{hosts.Example.HTTP().String()},
 				headers.AccessControlRequestMethod: []string{"DELETE"},
 			},
 			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTP()},
+				headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTP().String()},
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowHeaders:     []string{"*"},
 				headers.AccessControlAllowMethods:     []string{"DELETE"},

@@ -93,15 +93,18 @@ func TestRewritingOptionValidatorIsValidNoError(t *testing.T) {
 		name  string
 		value config.RewritingOption
 	}{
-		{name: "valid paths and host", value: config.RewritingOption{From: fromPath, To: toPath, Host: hosts.Github.Host()}},
+		{
+			name:  "valid paths and host",
+			value: config.RewritingOption{From: fromPath, To: toPath, Host: hosts.Github.Host().String()},
+		},
 		{name: "no host", value: config.RewritingOption{From: fromPath, To: toPath}},
 		{
 			name:  "relative from path",
-			value: config.RewritingOption{From: "../relative/from/path", To: toPath, Host: hosts.Github.Host()},
+			value: config.RewritingOption{From: "../relative/from/path", To: toPath, Host: hosts.Github.Host().String()},
 		},
 		{
 			name:  "relative to path",
-			value: config.RewritingOption{From: fromPath, To: "../relative/to/path", Host: hosts.Github.Host()},
+			value: config.RewritingOption{From: fromPath, To: "../relative/to/path", Host: hosts.Github.Host().String()},
 		},
 	}
 
@@ -120,12 +123,12 @@ func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 	}{
 		{
 			name:  "invalid from path",
-			value: config.RewritingOption{From: "", To: toPath, Host: hosts.Github.Host()},
+			value: config.RewritingOption{From: "", To: toPath, Host: hosts.Github.Host().String()},
 			error: "testField.from must not be empty",
 		},
 		{
 			name:  "invalid to path",
-			value: config.RewritingOption{From: fromPath, To: "", Host: hosts.Github.Host()},
+			value: config.RewritingOption{From: fromPath, To: "", Host: hosts.Github.Host().String()},
 			error: "testField.to must not be empty",
 		},
 		{

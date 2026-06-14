@@ -212,14 +212,14 @@ func TestHandler(t *testing.T) {
 				response: config.Response{
 					Code: http.StatusOK,
 					Headers: map[string]string{
-						headers.AccessControlAllowOrigin:      hosts.Localhost.Host(),
+						headers.AccessControlAllowOrigin:      hosts.Localhost.Host().String(),
 						headers.AccessControlAllowCredentials: "false",
 						headers.ContentType:                   "none",
 					},
 					Raw: textContent,
 				},
 				expected: map[string][]string{
-					headers.AccessControlAllowOrigin:      {hosts.Localhost.Host()},
+					headers.AccessControlAllowOrigin:      {hosts.Localhost.Host().String()},
 					headers.AccessControlAllowCredentials: {"false"},
 					headers.ContentType:                   {"none"},
 					headers.AccessControlAllowHeaders:     {"*"},

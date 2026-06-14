@@ -45,12 +45,7 @@ func (m Mappings) String() string {
 }
 
 func extractHost(item Mapping) string {
-	host, _, err := item.GetFromHostPort()
-	if err != nil {
-		panic(err)
-	}
-
-	return host
+	return item.From.Hostname
 }
 
 func (m Mappings) GroupByPort() PortGroups {
@@ -62,27 +57,21 @@ func (m Mappings) GroupByPort() PortGroups {
 	grouped := make(map[portKey]Mappings)
 
 	for _, mapping := range m {
-		_, portStr, err := mapping.GetFromHostPort()
-		if err != nil {
-			panic(fmt.Errorf("failed to get host and port: %w", err))
-		}
+		port := defaultHTTPPort
+		portStr := mapping.From.Port
 
-		uri, err := mapping.GetFromURL()
-		if err != nil {
-			panic(fmt.Errorf("failed to parse mapping from URL: %w", err))
-		}
-
-		port := 80
 		if portStr != "" {
-			port, err = strconv.Atoi(portStr)
+			parsedPort, err := strconv.Atoi(portStr)
 			if err != nil {
 				panic(fmt.Errorf("invalid port number: %w", err))
 			}
-		} else if uri.Scheme == "https" {
-			port = 443
+
+			port = parsedPort
+		} else if mapping.From.Scheme == httpsScheme {
+			port = defaultHTTPSPort
 		}
 
-		key := portKey{port: port, scheme: uri.Scheme}
+		key := portKey{port: port, scheme: mapping.From.Scheme}
 		grouped[key] = append(grouped[key], mapping)
 	}
 

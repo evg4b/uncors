@@ -113,8 +113,8 @@ func New(t *testing.T, opts ...Option) *Env {
 
 	mappings := make(config.Mappings, 0, loopbackRoutes+len(cfg.routes))
 	mappings = append(mappings,
-		decorated(config.Mapping{From: hosts.Loopback.HTTPPort(httpPort), To: backend.URL()}, cfg.decorate),
-		decorated(config.Mapping{From: hosts.Loopback.HTTPSPort(httpsPort), To: backend.URL()}, cfg.decorate),
+		decorated(config.Mapping{From: hosts.Loopback.HTTPPort(httpPort), To: hosts.Parse(backend.URL())}, cfg.decorate),
+		decorated(config.Mapping{From: hosts.Loopback.HTTPSPort(httpsPort), To: hosts.Parse(backend.URL())}, cfg.decorate),
 	)
 
 	routes := make(map[string]*Route, len(cfg.routes))
@@ -127,7 +127,10 @@ func New(t *testing.T, opts ...Option) *Env {
 		}
 
 		from := spec.host + ":" + strconv.Itoa(spec.port)
-		mapping := config.Mapping{From: scheme(spec.tls) + "://" + from, To: upstream}
+		mapping := config.Mapping{
+			From: hosts.Parse(scheme(spec.tls) + "://" + from),
+			To:   hosts.Parse(upstream),
+		}
 		mappings = append(mappings, decorated(mapping, spec.decorate))
 
 		// In-memory /etc/hosts: the real domain resolves to the loopback proxy.

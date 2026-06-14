@@ -41,7 +41,7 @@ func TestUncorsWithTracker(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestUncorsWithTracker(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port),
+		hosts.Loopback.HTTPPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestUncorsApp(t *testing.T) {
 
 	err = app.Start(t.Context(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestUncorsApp(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			t.Context(),
 			http.MethodGet,
-			hosts.Loopback.HTTPPort(port),
+			hosts.Loopback.HTTPPort(port).String(),
 			nil,
 		)
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestUncorsStart(t *testing.T) {
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -181,7 +181,7 @@ func TestUncorsStart(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port),
+		hosts.Loopback.HTTPPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestUncorsRestart(t *testing.T) {
 
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: server1.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(server1.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -225,7 +225,7 @@ func TestUncorsRestart(t *testing.T) {
 	req1, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port),
+		hosts.Loopback.HTTPPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -238,7 +238,7 @@ func TestUncorsRestart(t *testing.T) {
 
 	err = app.Restart(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: server2.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(server2.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -247,7 +247,7 @@ func TestUncorsRestart(t *testing.T) {
 	req2, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port),
+		hosts.Loopback.HTTPPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestUncorsClose(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -282,7 +282,7 @@ func TestUncorsClose(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port),
+		hosts.Loopback.HTTPPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -303,7 +303,7 @@ func TestUncorsShutdown(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -327,7 +327,7 @@ func TestUncorsWait(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	err := app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -391,7 +391,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	err = app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPSPort(port), To: targetServer.URL},
+			{From: hosts.Loopback.HTTPSPort(port), To: hosts.Parse(targetServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -401,7 +401,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		hosts.Loopback.HTTPSPort(port),
+		hosts.Loopback.HTTPSPort(port).String(),
 		nil,
 	)
 	require.NoError(t, err)
@@ -459,8 +459,8 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 
 	err = app.Start(context.Background(), &config.UncorsConfig{
 		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(httpPort), To: httpServer.URL},
-			{From: hosts.Loopback.HTTPSPort(httpsPort), To: httpsServer.URL},
+			{From: hosts.Loopback.HTTPPort(httpPort), To: hosts.Parse(httpServer.URL)},
+			{From: hosts.Loopback.HTTPSPort(httpsPort), To: hosts.Parse(httpsServer.URL)},
 		},
 	})
 	require.NoError(t, err)
@@ -471,7 +471,7 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet,
-			hosts.Loopback.HTTPPort(httpPort),
+			hosts.Loopback.HTTPPort(httpPort).String(),
 			nil,
 		)
 		require.NoError(t, err)
@@ -487,7 +487,7 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet,
-			hosts.Loopback.HTTPSPort(httpsPort),
+			hosts.Loopback.HTTPSPort(httpsPort).String(),
 			nil,
 		)
 		require.NoError(t, err)
@@ -519,7 +519,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 				Statics: []config.StaticDirectory{
 					{Path: "/static", Dir: "/static", Index: "index.html"},
 				},
@@ -548,7 +548,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet,
-			testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static"),
+			testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "static"),
 			nil,
 		)
 		require.NoError(t, err)
@@ -564,7 +564,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet,
-			testutils.JoinPath(hosts.Loopback.HTTPPort(port), "api", "mock"),
+			testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "api", "mock"),
 			nil,
 		)
 		require.NoError(t, err)
@@ -580,7 +580,7 @@ func TestUncorsWithComplexConfiguration(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet,
-			testutils.JoinPath(hosts.Loopback.HTTPPort(port), "other"),
+			testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "other"),
 			nil,
 		)
 		require.NoError(t, err)
