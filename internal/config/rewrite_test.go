@@ -130,7 +130,7 @@ func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 		},
 		{
 			name:  "invalid host format",
-			value: config.RewritingOption{From: fromPath, To: toPath, Host: "&&&"},
+			value: config.RewritingOption{From: fromPath, To: toPath, Host: "exa mple.com"},
 			error: "testField.host is not a valid host",
 		},
 	}

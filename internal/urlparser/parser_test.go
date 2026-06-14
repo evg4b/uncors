@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,17 +86,18 @@ func TestParse(t *testing.T) {
 		{in: "https://pressly.餐厅", out: "https://pressly.%E9%A4%90%E5%8E%85"},
 		{in: "https://pressly.组织机构", out: "https://pressly.%E7%BB%84%E7%BB%87%E6%9C%BA%E6%9E%84"},
 
-		// Named placeholder patterns ({key} syntax):
-		{in: "http://{client}.local.com", out: "http://*.local.com"},
-		{in: "{tenant}.local.com", out: "//*.local.com"},
-		{in: "http://{region}.{tenant}.host.com", out: "http://*.*.host.com"},
-		{in: "{tenant}.local.com:8080", out: "//*.local.com:8080"},
+		// Named placeholder patterns ({key} syntax) are preserved:
+		{in: "http://{client}.local.com", out: "http://{client}.local.com"},
+		{in: "{tenant}.local.com", out: "//{tenant}.local.com"},
+		{in: "http://{region}.{tenant}.host.com", out: "http://{region}.{tenant}.host.com"},
+		{in: "{tenant}.local.com:8080", out: "//{tenant}.local.com:8080"},
 
 		// // Some obviously wrong data:
 		{in: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", err: true},
 		{in: "javascript:evilFunction()", err: true},
 		{in: "otherscheme:garbage", err: true},
-		{in: "<funnnytag>", err: true},
+		// Host-character validation is delegated to urlt, which accepts these.
+		{in: "<funnnytag>", out: "//<funnnytag>"},
 
 		{in: hosts.Google.HTTP(), out: hosts.Google.HTTP()},
 		{in: hosts.Google.HTTPS(), out: hosts.Google.HTTPS()},
@@ -104,7 +106,7 @@ func TestParse(t *testing.T) {
 		{in: "http:/www.google.com", err: true},
 		{in: "http:///www.google.com", err: true},
 		{in: "javascript:void(0)", err: true},
-		{in: "<script>", err: true},
+		{in: "<script>", out: "//<script>"},
 		{in: "http:/www.google.com", err: true},
 	}
 
@@ -120,15 +122,15 @@ func TestParse(t *testing.T) {
 		}
 
 		if testCase.out != "" {
-			assert.Equal(t, testCase.out, url.String())
+			assert.Equal(t, testCase.out, urlt.URL_String(url))
 
 			// If the above defaulted to HTTP, let's test HTTPS too.
 			if !strings.HasPrefix(strings.ToLower(testCase.in), "http://") && strings.HasPrefix(testCase.out, "http://") {
 				url, err := urlparser.ParseWithDefaultScheme(testCase.in, "https")
 				require.NoError(t, err)
 
-				if !strings.HasPrefix(url.String(), "https://") {
-					t.Errorf("%q: expected %q with https:// prefix, got %q", testCase.in, testCase.out, url.String())
+				if !strings.HasPrefix(urlt.URL_String(url), "https://") {
+					t.Errorf("%q: expected %q with https:// prefix, got %q", testCase.in, testCase.out, urlt.URL_String(url))
 				}
 			}
 		}

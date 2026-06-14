@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/samber/lo"
 )
 
@@ -87,7 +88,7 @@ func (m *Middleware) isCacheableRequest(request *contracts.Request) bool {
 }
 
 func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
-	values := url.Query()
+	values := urlt.URL_Query(url)
 
 	items := make([]string, 0, len(values))
 	for key, value := range values {
@@ -98,7 +99,7 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 
 	sort.Strings(items)
 
-	return fmt.Sprintf("[%s]%s%s?%s", method, url.Hostname(), url.Path, strings.Join(items, ";"))
+	return fmt.Sprintf("[%s]%s%s?%s", method, urlt.URL_Hostname(url), url.Path, strings.Join(items, ";"))
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedResponse {

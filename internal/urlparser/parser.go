@@ -5,18 +5,16 @@ package urlparser
 import (
 	"errors"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/idna"
+	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 var (
-	ErrEmptyHost   = errors.New("empty host")
-	ErrEmptyPort   = errors.New("empty port")
-	ErrInvalidHost = errors.New("invalid host")
-	ErrEmptyURL    = errors.New("empty url")
+	ErrEmptyHost = errors.New("empty host")
+	ErrEmptyPort = errors.New("empty port")
+	ErrEmptyURL  = errors.New("empty url")
 )
 
 const (
@@ -39,13 +37,10 @@ func Parse(rawURL string) (*url.URL, error) {
 // If the URL doesn't have a scheme, the provided scheme will be used.
 // If scheme is empty, the URL will be parsed without a default scheme.
 func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
-	// Replace {key} placeholders with * to allow parsing by net/url
-	// This preserves the placeholder intent while working with Go's URL parser
-	rawURL = placeholderRegexp.ReplaceAllString(rawURL, "*")
 	rawURL = defaultScheme(rawURL, scheme)
 
-	// Use net/url.Parse() now.
-	parsedURL, err := url.Parse(rawURL)
+	// urlt.Parse natively supports {key} placeholders in the host.
+	parsedURL, err := urlt.Parse(rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +50,10 @@ func ParseWithDefaultScheme(rawURL string, scheme string) (*url.URL, error) {
 		return nil, err
 	}
 
-	err = checkHost(host)
-	if err != nil {
-		return nil, err
+	// urlt validates the host structure while parsing; the only extra case it
+	// permits is an empty host, which uncors treats as invalid.
+	if host == "" {
+		return nil, &url.Error{Op: hostOperation, URL: rawURL, Err: ErrEmptyHost}
 	}
 
 	parsedURL.Host = strings.ToLower(parsedURL.Host)
@@ -90,41 +86,6 @@ func defaultScheme(rawURL, scheme string) string {
 	return rawURL
 }
 
-var (
-	// placeholderRegexp matches named URL placeholders like {client} or {region}.
-	placeholderRegexp = regexp.MustCompile(`\{[a-zA-Z][a-zA-Z0-9_]*\}`)
-
-	// domainRegexp validates domain names including * wildcards and {key} placeholders.
-	domainRegexp = regexp.MustCompile(`^([a-zA-Z0-9-_*]{1,63}\.)*([a-zA-Z0-9-*]{1,63})$`)
-	ipv4Regexp   = regexp.MustCompile(`^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$`)
-	ipv6Regexp   = regexp.MustCompile(`^\[[a-fA-F0-9:]+]$`)
-)
-
-func checkHost(host string) error {
-	if host == "" {
-		return &url.Error{Op: hostOperation, URL: host, Err: ErrEmptyHost}
-	}
-
-	host = strings.ToLower(host)
-	if domainRegexp.MatchString(host) {
-		return nil
-	}
-
-	punycode, err := idna.ToASCII(host)
-	if err != nil {
-		return err
-	} else if domainRegexp.MatchString(punycode) {
-		return nil
-	}
-
-	// IPv4 and IPv6.
-	if ipv4Regexp.MatchString(host) || ipv6Regexp.MatchString(host) {
-		return nil
-	}
-
-	return &url.Error{Op: hostOperation, URL: host, Err: ErrInvalidHost}
-}
-
 // SplitHostPort splits network address of the form "host:port" into
 // host and port. Unlike net.SplitHostPort(), it doesn't remove brackets
 // from [IPv6] host, and it accepts net/url.URL struct instead of a string.
@@ -149,7 +110,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 	}
 
 	if index == len(host)-1 {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: ErrEmptyPort}
+		return "", "", &url.Error{Op: portOperation, URL: urlt.URL_String(parsedURL), Err: ErrEmptyPort}
 	}
 
 	port := host[index+1:]
@@ -157,7 +118,7 @@ func SplitHostPort(parsedURL *url.URL) (string, string, error) {
 
 	_, err := strconv.Atoi(port)
 	if err != nil {
-		return "", "", &url.Error{Op: portOperation, URL: parsedURL.String(), Err: err}
+		return "", "", &url.Error{Op: portOperation, URL: urlt.URL_String(parsedURL), Err: err}
 	}
 
 	return host, port, nil

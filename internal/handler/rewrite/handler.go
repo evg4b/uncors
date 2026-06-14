@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/gorilla/mux"
 )
 
@@ -29,7 +30,7 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 func (m *Middleware) rewriteURL(request *contracts.Request) {
 	clonedURL := &url.URL{Path: replace(m.rewrite.To, mux.Vars(request))}
-	request.URL = request.URL.ResolveReference(clonedURL)
+	request.URL = urlt.URL_ResolveReference(request.URL, clonedURL)
 }
 
 func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Request {
