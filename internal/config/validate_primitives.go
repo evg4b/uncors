@@ -4,17 +4,30 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 )
 
 const maxHostLength = 255
+
+// parseLooseURL parses a host or URL string the way uncors expects: when the
+// value has no scheme it is treated as a scheme-relative URL so the host (not
+// the path) gets populated.
+func parseLooseURL(value string) (*url.URL, error) {
+	raw := value
+	if !strings.HasPrefix(raw, "//") && !strings.Contains(raw, "://") {
+		raw = "//" + raw
+	}
+
+	return urlt.Parse(raw)
+}
 
 func ValidateHost(field, value string) error {
 	if value == "" {
@@ -25,8 +38,8 @@ func ValidateHost(field, value string) error {
 		return &ValidationError{fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value))}
 	}
 
-	uri, err := urlparser.Parse(value)
-	if err != nil {
+	uri, err := parseLooseURL(value)
+	if err != nil || uri.Host == "" {
 		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
 	}
 
@@ -56,7 +69,7 @@ func ValidatePath(field, value string, relative bool) error {
 		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
-	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
+	uri, err := urlt.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}

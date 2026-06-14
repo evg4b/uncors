@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
@@ -70,7 +69,7 @@ func ValidateProxy(field, value string) error {
 		return nil
 	}
 
-	_, err := urlparser.Parse(value)
+	_, err := parseLooseURL(value)
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
 	}
