@@ -713,6 +713,13 @@ var urltests = []URLTest{
 		},
 		"",
 	},
+	{
+		"//host.com",
+		&URL{
+			Host: "host.com",
+		},
+		"",
+	},
 }
 
 // more useful string for debugging than fmt's struct printer
