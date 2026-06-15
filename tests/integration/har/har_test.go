@@ -3,7 +3,6 @@
 package har_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -12,7 +11,8 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/tests/integration/harness"
+	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,26 +36,20 @@ func TestHARMiddleware(t *testing.T) {
 	// real temp path and shut the proxy down before reading the file.
 	harPath := filepath.Join(t.TempDir(), "out.har")
 
-	env := harness.New(t, harness.WithMapping(func(mapping *config.Mapping) {
-		mapping.HAR = config.HARConfig{File: harPath}
-	}))
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://har.local"),
+			To:   backend.AsHost(),
+			HAR:  config.HARConfig{File: harPath},
+		}},
+	})
 
-	request, err := http.NewRequestWithContext(
-		context.Background(),
-		http.MethodGet,
-		env.Proxy.HTTPSURL("/recorded/path"),
-		nil,
-	)
-	require.NoError(t, err)
+	result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("har.local", "/recorded/path")))
+	require.NoError(t, result.Response.Body.Close())
+	require.Equal(t, http.StatusOK, result.Response.StatusCode)
 
-	response, err := env.Client.Do(request)
-	require.NoError(t, err)
-	require.NoError(t, response.Body.Close())
-	require.Equal(t, http.StatusOK, response.StatusCode)
-
-	// The writer enqueues the entry asynchronously after the response is sent and
-	// rewrites the file (atomic temp+rename) on every entry, so poll until the
-	// entry lands rather than racing the writer goroutine.
+	// The writer enqueues entries asynchronously; poll until the entry lands.
 	var parsed harFile
 
 	require.Eventually(t, func() bool {

@@ -1,6 +1,6 @@
 //go:build integration
 
-package harness
+package integration
 
 import (
 	"context"
@@ -10,15 +10,13 @@ import (
 	"sync"
 )
 
-// loopback is where every in-process proxy listener binds.
 const loopback = "127.0.0.1"
 
-// Hosts is an in-memory, per-test equivalent of /etc/hosts. It lets a test send
-// requests to a real domain (so the Host header and TLS SNI carry that domain,
-// which is what uncors routes and mints certificates on) while the underlying TCP
-// connection is transparently redirected to the loopback proxy.
+// Hosts is an in-memory per-test /etc/hosts equivalent. It lets tests send
+// requests to real domain names (so Host and TLS SNI carry that name) while
+// the underlying TCP connection is redirected to the loopback proxy.
 //
-// Patterns mirror uncors `from` host syntax: exact ("api.example.local"),
+// Patterns follow uncors host syntax: exact ("api.example.local"),
 // "*.suffix" wildcards, or {key} placeholders — both wildcard forms match a
 // single DNS label.
 type Hosts struct {
@@ -31,12 +29,11 @@ type hostEntry struct {
 	ip    string
 }
 
-// NewHosts returns an empty resolver.
-func NewHosts() *Hosts {
+func newHosts() *Hosts {
 	return &Hosts{}
 }
 
-// Set maps a host pattern to an IP address for the lifetime of the test.
+// Set maps a host pattern to an IP address.
 func (h *Hosts) Set(pattern, ip string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -44,9 +41,8 @@ func (h *Hosts) Set(pattern, ip string) {
 	h.entries = append(h.entries, hostEntry{match: compileHostPattern(pattern), ip: ip})
 }
 
-// DialContext rewrites the connection target for any registered host to its
-// mapped IP while preserving the port, so the request keeps its real Host/SNI but
-// the connection lands on the in-process proxy. Unregistered hosts dial normally.
+// DialContext rewrites the connection target for registered hosts to their
+// mapped IP, preserving the port. Unregistered hosts dial normally.
 func (h *Hosts) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	dialer := &net.Dialer{}
 
@@ -62,7 +58,6 @@ func (h *Hosts) DialContext(ctx context.Context, network, addr string) (net.Conn
 	return dialer.DialContext(ctx, network, addr)
 }
 
-// lookup returns the mapped IP for a host, matching the first registered pattern.
 func (h *Hosts) lookup(host string) (string, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -76,8 +71,6 @@ func (h *Hosts) lookup(host string) (string, bool) {
 	return "", false
 }
 
-// compileHostPattern turns a host pattern into a matcher. {key}/* tokens match a
-// single DNS label ([^.]+); everything else is matched literally, case-insensitively.
 func compileHostPattern(pattern string) func(string) bool {
 	if !strings.ContainsAny(pattern, "{*") {
 		want := strings.ToLower(pattern)
