@@ -1,0 +1,48 @@
+
+[TestRewriteMiddleware/static_path_is_rewritten_before_forwarding - 1]
+GET /new HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestRewriteMiddleware/static_path_is_rewritten_before_forwarding - 2]
+HTTP/1.1 200 OK
+Content-Length: 2
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain
+Date: <scrubbed>
+
+ok
+---
+
+[TestRewriteMiddleware/placeholder_path_preserves_the_captured_segment - 1]
+GET /accounts/42 HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestRewriteMiddleware/placeholder_path_preserves_the_captured_segment - 2]
+HTTP/1.1 200 OK
+Content-Length: 2
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain
+Date: <scrubbed>
+
+ok
+---

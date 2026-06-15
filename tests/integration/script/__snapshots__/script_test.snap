@@ -1,0 +1,30 @@
+
+[TestScriptHandler/inline_script_writes_status_and_body_without_the_backend - 1]
+HTTP/1.1 202 Accepted
+Content-Length: 8
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+
+scripted
+---
+
+[TestScriptHandler/script_reads_path_parameters_from_the_request - 1]
+HTTP/1.1 200 OK
+Content-Length: 6
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+
+abc123
+---

@@ -1,0 +1,33 @@
+
+[TestLocalDomainMapping/exact_local_domain_routes_to_backend_over_TLS - 1]
+GET /users HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestLocalDomainMapping/exact_local_domain_routes_to_backend_over_TLS - 2]
+HTTP/1.1 200 OK
+Content-Length: 12
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+
+from backend
+---
+
+[TestSharedPortDistinctRemotes/shop.local_reaches_only_the_shop_remote - 1]
+GET /catalog HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---

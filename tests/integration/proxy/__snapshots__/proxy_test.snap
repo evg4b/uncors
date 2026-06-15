@@ -1,0 +1,48 @@
+
+[TestProxyHandler/forwarded_request_and_response_both_match_snapshot - 1]
+GET /echo HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestProxyHandler/forwarded_request_and_response_both_match_snapshot - 2]
+HTTP/1.1 200 OK
+Content-Length: 10
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+
+echo:/echo
+---
+
+[TestProxyOverHTTP/forwards_over_plain_HTTP_without_TLS - 1]
+GET /echo HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestProxyOverHTTP/forwards_over_plain_HTTP_without_TLS - 2]
+HTTP/1.1 200 OK
+Content-Length: 10
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+
+echo:/echo
+---

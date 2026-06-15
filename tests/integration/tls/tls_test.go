@@ -3,50 +3,49 @@
 package tls_test
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
 	"net/http"
 	"testing"
 
-	"github.com/evg4b/uncors/tests/integration/harness"
+	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTLS(t *testing.T) {
-	env := harness.New(t, harness.WithBackendHandler(func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(writer, "secure")
-	}))
+	backend := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "secure")
+	})
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://tls.local"),
+			To:   backend.AsHost(),
+		}},
+	})
 
 	t.Run("client trusting the proxy CA completes the handshake", func(t *testing.T) {
-		request, err := http.NewRequestWithContext(
-			context.Background(),
-			http.MethodGet,
-			env.Proxy.HTTPSURL("/"),
-			nil,
-		)
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/")))
+		defer result.Response.Body.Close()
+
+		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
 
-		response, err := env.Client.Do(request)
-		require.NoError(t, err)
-
-		defer response.Body.Close()
-
-		body, err := io.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "secure", string(body))
-		require.NotNil(t, response.TLS, "response must have travelled over TLS")
-		assert.True(t, response.TLS.HandshakeComplete)
+		require.NotNil(t, result.Response.TLS, "response must have travelled over TLS")
+		assert.True(t, result.Response.TLS.HandshakeComplete)
 	})
 
 	t.Run("client not trusting the proxy CA is rejected", func(t *testing.T) {
-		// An empty pool trusts nothing, so verifying the proxy's leaf must fail.
 		untrusting := &http.Client{
 			Transport: &http.Transport{
+				// Resolve mapped hosts to the proxy but trust no CA, so the
+				// failure is the handshake, not DNS.
+				DialContext: env.Hosts.DialContext,
 				TLSClientConfig: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					RootCAs:    x509.NewCertPool(),
@@ -54,17 +53,11 @@ func TestTLS(t *testing.T) {
 			},
 		}
 
-		request, err := http.NewRequestWithContext(
-			context.Background(),
-			http.MethodGet,
-			env.Proxy.HTTPSURL("/"),
-			nil,
-		)
-		require.NoError(t, err)
+		req := integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/"))
 
-		response, err := untrusting.Do(request) //nolint:bodyclose // request must fail before a body exists
+		resp, err := untrusting.Do(req) //nolint:bodyclose
 		require.Error(t, err)
-		require.Nil(t, response)
+		require.Nil(t, resp)
 
 		var certErr x509.UnknownAuthorityError
 		assert.ErrorAs(t, err, &certErr)

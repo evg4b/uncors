@@ -1,0 +1,22 @@
+
+[TestStaticMiddleware/serves_an_existing_static_file - 1]
+HTTP/1.1 200 OK
+Content-Length: 17
+Accept-Ranges: bytes
+Content-Type: text/javascript; charset=utf-8
+Date: <scrubbed>
+Last-Modified: <scrubbed>
+
+console.log('hi')
+---
+
+[TestStaticMiddleware/falls_back_to_the_index_file_for_unknown_paths_under_the_prefix - 1]
+HTTP/1.1 200 OK
+Content-Length: 13
+Accept-Ranges: bytes
+Content-Type: text/html; charset=utf-8
+Date: <scrubbed>
+Last-Modified: <scrubbed>
+
+<h1>home</h1>
+---

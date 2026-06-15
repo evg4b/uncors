@@ -1,0 +1,38 @@
+
+[TestOptionsHandlingEnabled/preflight_is_answered_locally_with_CORS_and_custom_headers - 1]
+HTTP/1.1 204 No Content
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: https://example.com
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Date: <scrubbed>
+X-Options: handled
+
+
+---
+
+[TestOptionsHandlingDisabled/preflight_is_forwarded_to_the_backend_when_disabled - 1]
+OPTIONS /any/path HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+User-Agent: <scrubbed>
+
+
+---
+
+[TestOptionsHandlingDisabled/preflight_is_forwarded_to_the_backend_when_disabled - 2]
+HTTP/1.1 200 OK
+Content-Length: 2
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain
+Date: <scrubbed>
+
+ok
+---

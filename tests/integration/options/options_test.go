@@ -3,67 +3,63 @@
 package options_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/tests/integration/harness"
+	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-// preflight sends an OPTIONS request. A non-empty origin sets the Origin header.
-func preflight(t *testing.T, client *http.Client, url, origin string) *http.Response {
-	t.Helper()
-
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodOptions, url, nil)
-	require.NoError(t, err)
-
-	if origin != "" {
-		request.Header.Set("Origin", origin)
-	}
-
-	response, err := client.Do(request)
-	require.NoError(t, err)
-
-	return response
-}
-
 func TestOptionsHandlingEnabled(t *testing.T) {
-	env := harness.New(t, harness.WithMapping(func(mapping *config.Mapping) {
-		mapping.OptionsHandling = config.OptionsHandling{
-			Code:    http.StatusNoContent,
-			Headers: map[string]string{"X-Options": "handled"},
-		}
-	}))
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://options.local"),
+			To:   backend.AsHost(),
+			OptionsHandling: config.OptionsHandling{
+				Code:    http.StatusNoContent,
+				Headers: map[string]string{"X-Options": "handled"},
+			},
+		}},
+	})
 
 	t.Run("preflight is answered locally with CORS and custom headers", func(t *testing.T) {
-		env.Backend.Reset()
+		req := integration.NewRequest(t, http.MethodOptions, env.URL("options.local", "/any/path"))
+		req.Header.Set("Origin", "https://example.com")
 
-		response := preflight(t, env.Client, env.Proxy.HTTPSURL("/any/path"), "https://example.com")
-		defer response.Body.Close()
+		result := env.Do(t, req)
+		defer result.Response.Body.Close()
 
-		assert.Equal(t, http.StatusNoContent, response.StatusCode)
-		assert.Equal(t, "handled", response.Header.Get("X-Options"))
-		// CORS reflects the requesting origin for the preflight.
-		assert.Equal(t, "https://example.com", response.Header.Get("Access-Control-Allow-Origin"))
-		assert.Equal(t, 0, env.Backend.Count(), "preflight must not reach the backend")
+		assert.Equal(t, http.StatusNoContent, result.Response.StatusCode)
+		assert.Equal(t, "handled", result.Response.Header.Get("X-Options"))
+		assert.Equal(t, "https://example.com", result.Response.Header.Get("Access-Control-Allow-Origin"))
+		assert.False(t, result.HasBackendRequest(), "preflight must not reach the backend")
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
 
 func TestOptionsHandlingDisabled(t *testing.T) {
-	env := harness.New(t, harness.WithMapping(func(mapping *config.Mapping) {
-		mapping.OptionsHandling = config.OptionsHandling{Disabled: true}
-	}))
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From:            hosts.Parse("https://options.local"),
+			To:              backend.AsHost(),
+			OptionsHandling: config.OptionsHandling{Disabled: true},
+		}},
+	})
 
 	t.Run("preflight is forwarded to the backend when disabled", func(t *testing.T) {
-		env.Backend.Reset()
+		result := env.Do(t, integration.NewRequest(t, http.MethodOptions, env.URL("options.local", "/any/path")))
+		defer result.Response.Body.Close()
 
-		response := preflight(t, env.Client, env.Proxy.HTTPSURL("/any/path"), "")
-		defer response.Body.Close()
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.True(t, result.HasBackendRequest())
 
-		assert.Equal(t, http.StatusOK, response.StatusCode)
-		assert.Equal(t, 1, env.Backend.Count())
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
