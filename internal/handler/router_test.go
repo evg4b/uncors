@@ -411,8 +411,8 @@ func TestRouterMockMiddleware(t *testing.T) {
 			routerInstance, err := handler.NewRouter(
 				config.Mappings{
 					{
-						From: "{host}",
-						To:   "{host}",
+						From: hosts.Parse("{host}"),
+						To:   hosts.Parse("{host}"),
 						Mocks: config.Mocks{
 							{
 								Matcher: config.RequestMatcher{
@@ -465,7 +465,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			expectedCode := 299
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
-				{From: "{host}", To: "{host}", Mocks: config.Mocks{{
+				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{{
 					Matcher: config.RequestMatcher{
 						Path:   "/api",
 						Method: http.MethodPut,
@@ -548,7 +548,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 		expectedCode := 299
 		expectedBody := "forwarded"
 		mappings := config.Mappings{
-			{From: "{host}", To: "{host}", Mocks: config.Mocks{
+			{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 				{
 					Matcher: config.RequestMatcher{
 						Path: userPath,
@@ -669,7 +669,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("query handling", func(t *testing.T) {
 		routerInstance, err := handler.NewRouter(
 			config.Mappings{
-				{From: "{host}", To: "{host}", Mocks: config.Mocks{
+				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
 							Path: userPath,
@@ -777,7 +777,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("header handling", func(t *testing.T) {
 		routerInstance, err := handler.NewRouter(
 			config.Mappings{
-				{From: "{host}", To: "{host}", Mocks: config.Mocks{
+				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
 							Path: userPath,

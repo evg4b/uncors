@@ -370,14 +370,14 @@ response:WriteString("OK")
 		)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-		req.Header.Set("Origin", hosts.Example.HTTP())
+		req.Header.Set("Origin", hosts.Example.HTTP().String())
 
 		recorder := httptest.NewRecorder()
 
 		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), req) //nolint:errcheck
 
 		// Check CORS headers are set (when Origin is set, it should be returned)
-		assert.Equal(t, hosts.Example.HTTP(), recorder.Header().Get(headers.AccessControlAllowOrigin))
+		assert.Equal(t, hosts.Example.HTTP().String(), recorder.Header().Get(headers.AccessControlAllowOrigin))
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
 		assert.Equal(t, testconstants.AllMethods, recorder.Header().Get(headers.AccessControlAllowMethods))

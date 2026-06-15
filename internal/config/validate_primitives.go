@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,41 +9,32 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/evg4b/uncors/internal/urlparser"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 )
 
 const maxHostLength = 255
 
-func ValidateHost(field, value string) error {
-	if value == "" {
+// ValidateHost validates an already-parsed host. Structural problems (paths,
+// queries, malformed hosts) are rejected earlier by urlt.ParseHost, so only
+// the semantic constraints remain: a non-empty hostname of bounded length and
+// an http/https (or empty) scheme.
+func ValidateHost(field string, value urlt.Host) error {
+	if value.Hostname == "" {
 		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
 
-	if len(value) > maxHostLength {
-		return &ValidationError{fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value))}
+	if len(value.Hostname) > maxHostLength {
+		return &ValidationError{
+			fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value.Hostname)),
+		}
 	}
 
-	uri, err := urlparser.Parse(value)
-	if err != nil {
-		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
+	if value.Scheme != httpScheme && value.Scheme != httpsScheme && value.Scheme != "" {
+		return &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)}
 	}
 
-	var errs []error
-
-	if uri.Path != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a path", field)})
-	}
-
-	if uri.RawQuery != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a query", field)})
-	}
-
-	if uri.Scheme != "http" && uri.Scheme != httpsScheme && uri.Scheme != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)})
-	}
-
-	return errors.Join(errs...)
+	return nil
 }
 
 func ValidatePath(field, value string, relative bool) error {
@@ -56,7 +46,7 @@ func ValidatePath(field, value string, relative bool) error {
 		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
-	uri, err := urlparser.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
+	uri, err := urlt.Parse("http://localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}

@@ -15,8 +15,8 @@ import (
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/urlparser"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -35,7 +35,7 @@ var errNetworkError = errors.New("network error")
 
 func TestProxyHandler(t *testing.T) {
 	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
-		{From: "http://premium.local.com", To: "https://premium.api.com"},
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
 	})
 
 	t.Run("should correctly replace headers in request to target resource", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestProxyHandler(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				targetURL, err := urlparser.Parse(testCase.URL)
+				targetURL, err := urlt.Parse(testCase.URL)
 				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
@@ -114,7 +114,7 @@ func TestProxyHandler(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				expectedURL, err := urlparser.Parse(testCase.expectedURL)
+				expectedURL, err := urlt.Parse(testCase.expectedURL)
 				testutils.CheckNoError(t, err)
 
 				httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
@@ -404,7 +404,7 @@ func TestProxyHandler(t *testing.T) {
 					recorderFactory: func() *httptest.ResponseRecorder {
 						writer := httptest.NewRecorder()
 						writer.Header().Set("Custom-Header", "true")
-						writer.Header().Set(headers.AccessControlAllowOrigin, hosts.Localhost.Port(3000))
+						writer.Header().Set(headers.AccessControlAllowOrigin, hosts.Localhost.Port(3000).String())
 
 						return writer
 					},

@@ -38,7 +38,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 			},
 		},
 	})
@@ -57,7 +57,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
-			url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "api", method)
+			url := testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "api", method)
 			req, err := http.NewRequestWithContext(t.Context(), method, url, nil)
 			require.NoError(t, err)
 
@@ -83,7 +83,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			t.Context(),
 			http.MethodOptions,
-			testutils.JoinPath(hosts.Loopback.HTTPPort(port), "/api/OPTIONS"),
+			testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "/api/OPTIONS"),
 			nil,
 		)
 		require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPSPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 			},
 		},
 	})
@@ -163,7 +163,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
-			url := testutils.JoinPath(hosts.Loopback.HTTPSPort(port), "secure", method)
+			url := testutils.JoinPath(hosts.Loopback.HTTPSPort(port).String(), "secure", method)
 			req, err := http.NewRequestWithContext(t.Context(), method, url, nil)
 			require.NoError(t, err)
 
@@ -189,7 +189,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 		req, err := http.NewRequestWithContext(
 			t.Context(),
 			http.MethodOptions,
-			testutils.JoinPath(hosts.Loopback.HTTPSPort(port), "/secure/OPTIONS"),
+			testutils.JoinPath(hosts.Loopback.HTTPSPort(port).String(), "/secure/OPTIONS"),
 			nil,
 		)
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   "http://example.com",
+				To:   hosts.Parse("http://example.com"),
 				Mocks: []config.Mock{
 					{
 						Matcher: config.RequestMatcher{
@@ -237,7 +237,7 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "api", "mock")
+	url := testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "api", "mock")
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	require.NoError(t, err)
 
@@ -271,7 +271,7 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   "http://example.com",
+				To:   hosts.Parse("http://example.com"),
 				Statics: []config.StaticDirectory{
 					{
 						Path:  staticDir,
@@ -287,7 +287,7 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	defer app.Close()
 
 	t.Run("serve index file", func(t *testing.T) {
-		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static", "/")
+		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "static", "/")
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
@@ -303,7 +303,7 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("serve specific file", func(t *testing.T) {
-		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port), "static", "test.txt")
+		url := testutils.JoinPath(hosts.Loopback.HTTPPort(port).String(), "static", "test.txt")
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
@@ -340,7 +340,7 @@ func TestHandlerWithCache(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 				Cache: config.CacheGlobs{
 					"/cached/*",
 				},
@@ -357,7 +357,7 @@ func TestHandlerWithCache(t *testing.T) {
 	defer app.Close()
 
 	client := http.DefaultClient
-	baseURL := hosts.Loopback.HTTPPort(port)
+	baseURL := hosts.Loopback.HTTPPort(port).String()
 
 	t.Run("first request", func(t *testing.T) {
 		url := testutils.JoinPath(baseURL, "cached", "test")
@@ -431,11 +431,11 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port1),
-				To:   server1.URL,
+				To:   hosts.Parse(server1.URL),
 			},
 			{
 				From: hosts.Loopback.HTTPPort(port2),
-				To:   server2.URL,
+				To:   hosts.Parse(server2.URL),
 			},
 		},
 	}
@@ -446,7 +446,7 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	client := http.DefaultClient
 
 	t.Run("mapping 1", func(t *testing.T) {
-		url := hosts.Loopback.HTTPPort(port1)
+		url := hosts.Loopback.HTTPPort(port1).String()
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
@@ -461,7 +461,7 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	})
 
 	t.Run("mapping 2", func(t *testing.T) {
-		url := hosts.Loopback.HTTPPort(port2)
+		url := hosts.Loopback.HTTPPort(port2).String()
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 		require.NoError(t, err)
 
@@ -492,11 +492,11 @@ func TestHandlerWithRewrite(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 				Rewrites: []config.RewritingOption{
 					{
 						From: targetServer.URL,
-						To:   hosts.Loopback.HTTPPort(port),
+						To:   hosts.Loopback.HTTPPort(port).String(),
 					},
 				},
 			},
@@ -507,7 +507,7 @@ func TestHandlerWithRewrite(t *testing.T) {
 	defer app.Close()
 
 	client := http.DefaultClient
-	url := hosts.Loopback.HTTPPort(port) + "/test"
+	url := hosts.Loopback.HTTPPort(port).String() + "/test"
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	require.NoError(t, err)
@@ -540,7 +540,7 @@ func TestHandlerWithRewritePath(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 				Rewrites: []config.RewritingOption{
 					{
 						From: "/api/v1",
@@ -557,7 +557,7 @@ func TestHandlerWithRewritePath(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		t.Context(),
 		http.MethodGet,
-		hosts.Loopback.HTTPPort(port)+"/api/v1",
+		hosts.Loopback.HTTPPort(port).String()+"/api/v1",
 		nil,
 	)
 	require.NoError(t, err)
@@ -593,7 +593,7 @@ func TestHandlerWithOptions(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   targetServer.URL,
+				To:   hosts.Parse(targetServer.URL),
 				OptionsHandling: config.OptionsHandling{
 					Code:    http.StatusNoContent,
 					Headers: customHeaders,
@@ -605,7 +605,7 @@ func TestHandlerWithOptions(t *testing.T) {
 	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	url := hosts.Loopback.HTTPPort(port) + "/test"
+	url := hosts.Loopback.HTTPPort(port).String() + "/test"
 	client := &http.Client{}
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, url, nil)
@@ -630,7 +630,7 @@ func TestHandlerWithScript(t *testing.T) {
 		Mappings: []config.Mapping{
 			{
 				From: hosts.Loopback.HTTPPort(port),
-				To:   "http://example.com",
+				To:   hosts.Parse("http://example.com"),
 				Scripts: config.Scripts{
 					{
 						Matcher: config.RequestMatcher{
@@ -646,7 +646,7 @@ func TestHandlerWithScript(t *testing.T) {
 	require.NoError(t, app.Start(t.Context(), cfg))
 	defer app.Close()
 
-	reqURL := hosts.Loopback.HTTPPort(port) + "/script"
+	reqURL := hosts.Loopback.HTTPPort(port).String() + "/script"
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, reqURL, nil)
 	require.NoError(t, err)
 

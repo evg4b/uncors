@@ -14,13 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// clearMappingsCache clears the URL cache in all mappings for testing purposes.
-func clearMappingsCache(cfg *config.UncorsConfig) {
-	for i := range cfg.Mappings {
-		cfg.Mappings[i].ClearCache()
-	}
-}
-
 const acceptEncoding = "Accept-Encoding"
 
 const (
@@ -49,7 +42,7 @@ mappings:
           headers:
             Accept-Encoding: deflate
           raw: demo
-proxy: localhost:8080
+proxy: http://localhost:8080
 debug: true
 https-port: 8081
 cert-file: /etc/certificates/cert-file.pem
@@ -145,7 +138,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy: hosts.Localhost.Port(8080),
+					Proxy: hosts.Localhost.HTTPPort(8080).String(),
 					Debug: true,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
@@ -161,8 +154,8 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "CLI args with default ports",
 				args: []string{
-					params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host(),
-					params.From, hosts.Localhost2.HTTPPort(9090), params.To, hosts.Stackoverflow.Host(),
+					params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String(),
+					params.From, hosts.Localhost2.HTTPPort(9090).String(), params.To, hosts.Stackoverflow.Host().String(),
 				},
 				expected: &config.UncorsConfig{
 					Mappings: config.Mappings{
@@ -180,7 +173,7 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "interactive mode can be disabled with CLI flag",
 				args: []string{
-					params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host(),
+					params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String(),
 					"--interactive=false",
 				},
 				expected: &config.UncorsConfig{
@@ -199,7 +192,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "CLI proxy and debug flags override config file values",
 				args: []string{
 					params.Config, fullConfigPath,
-					"--proxy", "newproxy:9999",
+					"--proxy", "http://newproxy:9999",
 					"--debug=false",
 				},
 				expected: &config.UncorsConfig{
@@ -225,7 +218,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy: "newproxy:9999",
+					Proxy: "http://newproxy:9999",
 					Debug: false,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour, MaxSize: 52428800,
@@ -238,7 +231,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "CLI from/to updates existing mapping from config file",
 				args: []string{
 					params.Config, minimalConfigPath,
-					params.From, hosts.Localhost.HTTPPort(8080), params.To, hosts.Stackoverflow.HTTPS(),
+					params.From, hosts.Localhost.HTTPPort(8080).String(), params.To, hosts.Stackoverflow.HTTPS().String(),
 				},
 				expected: &config.UncorsConfig{
 					Mappings: config.Mappings{
@@ -259,9 +252,6 @@ func TestLoadConfiguration(t *testing.T) {
 				actual, _, err := config.LoadConfiguration(fs, testCase.args)
 				require.NoError(t, err)
 
-				clearMappingsCache(actual)
-				clearMappingsCache(testCase.expected)
-
 				assert.Equal(t, testCase.expected, actual)
 			})
 		}
@@ -269,7 +259,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 	t.Run("returns config file path", func(t *testing.T) {
 		t.Run("empty when no config file flag", func(t *testing.T) {
-			args := []string{params.From, hosts.Localhost1.HTTP(), params.To, hosts.Github.Host()}
+			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
 			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), args)
 			require.NoError(t, err)
 			assert.Empty(t, configPath)
@@ -300,22 +290,22 @@ func TestLoadConfiguration(t *testing.T) {
 			},
 			{
 				name:        "to without matching from",
-				args:        []string{params.To, hosts.Github.Host()},
+				args:        []string{params.To, hosts.Github.Host().String()},
 				expectedErr: "`from` values are not set for every `to`",
 			},
 			{
 				name: "from count exceeds to count",
 				args: []string{
-					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
-					params.From, hosts.Localhost2.Host(),
+					params.From, hosts.Localhost1.Host().String(), params.To, hosts.Github.Host().String(),
+					params.From, hosts.Localhost2.Host().String(),
 				},
 				expectedErr: "`to` values are not set for every `from`",
 			},
 			{
 				name: "to count exceeds from count",
 				args: []string{
-					params.From, hosts.Localhost1.Host(), params.To, hosts.Github.Host(),
-					params.To, hosts.Stackoverflow.Host(),
+					params.From, hosts.Localhost1.Host().String(), params.To, hosts.Github.Host().String(),
+					params.To, hosts.Stackoverflow.Host().String(),
 				},
 				expectedErr: "`from` values are not set for every `to`",
 			},

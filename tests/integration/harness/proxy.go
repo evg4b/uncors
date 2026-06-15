@@ -37,12 +37,12 @@ func (p *ProxyHarness) CACert() *x509.Certificate {
 
 // HTTPSURL builds an absolute https URL on the loopback proxy for the given path.
 func (p *ProxyHarness) HTTPSURL(path string) string {
-	return testutils.JoinPath(hosts.Loopback.HTTPSPort(p.HTTPSPort), path)
+	return testutils.JoinPath(hosts.Loopback.HTTPSPort(p.HTTPSPort).String(), path)
 }
 
 // HTTPURL builds an absolute http URL on the loopback proxy for the given path.
 func (p *ProxyHarness) HTTPURL(path string) string {
-	return testutils.JoinPath(hosts.Loopback.HTTPPort(p.HTTPPort), path)
+	return testutils.JoinPath(hosts.Loopback.HTTPPort(p.HTTPPort).String(), path)
 }
 
 // bootProxy generates a fresh dev CA into the given filesystem at the exact path

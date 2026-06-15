@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,7 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
 			},
 		},
 		{
@@ -32,8 +33,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				mapping(hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
-				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTPS().String(), hosts.Github.HTTPS().String()),
+				mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
 			},
 		},
 		{
@@ -56,7 +57,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
 				"    static: /static => /tmp",
 				"    static: /static2 => /tmp2",
 			},
@@ -74,7 +75,7 @@ func TestMappings(t *testing.T) {
 				},
 			},
 			expected: []string{
-				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
 				"    cache: /static",
 				"    cache: /static2",
 			},
@@ -127,8 +128,8 @@ func TestMappings(t *testing.T) {
 				{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
 			},
 			expected: []string{
-				mapping(hosts.Localhost.HTTPS(), hosts.Github.HTTPS()),
-				mapping(hosts.Localhost.HTTP(), hosts.Github.HTTPS()),
+				mapping(hosts.Localhost.HTTPS().String(), hosts.Github.HTTPS().String()),
+				mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
 				"mock: [POST 200] /endpoint-1",
 				"mock: [GET 500] /demo",
 				"mock: [GET 403] /healthcheck",
@@ -288,35 +289,13 @@ func TestMappings_GroupByPort(t *testing.T) {
 		assert.Empty(t, groups)
 	})
 
-	t.Run("panic on invalid URL in GroupByPort", func(t *testing.T) {
-		mappings := config.Mappings{
-			{From: "://invalid-url", To: hosts.Github.HTTPS()},
-		}
-
-		assert.Panics(t, func() {
-			_ = mappings.GroupByPort()
-		})
-	})
-
 	t.Run("panic on invalid port in GroupByPort", func(t *testing.T) {
 		mappings := config.Mappings{
-			{From: "http://localhost:invalid-port", To: hosts.Github.HTTPS()},
+			{From: urlt.Host{Hostname: "localhost", Port: "invalid-port"}, To: hosts.Github.HTTPS()},
 		}
 
 		assert.Panics(t, func() {
 			_ = mappings.GroupByPort()
-		})
-	})
-}
-
-func TestMappings_String_Panics(t *testing.T) {
-	t.Run("panic on invalid URL in String", func(t *testing.T) {
-		mappings := config.Mappings{
-			{From: "://invalid-url", To: hosts.Github.HTTPS()},
-		}
-
-		assert.Panics(t, func() {
-			_ = mappings.String()
 		})
 	})
 }

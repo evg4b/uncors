@@ -12,7 +12,7 @@ import (
 func GetFreePort(t *testing.T) int {
 	t.Helper()
 
-	listener, err := net.Listen("tcp4", hosts.Loopback.Port(0)) //nolint:noctx
+	listener, err := net.Listen("tcp4", hosts.Loopback.Port(0).String()) //nolint:noctx
 	require.NoError(t, err)
 
 	defer listener.Close()
@@ -35,7 +35,7 @@ func GetFreePorts(t *testing.T, count int) []int {
 }
 
 func IsPortFree(port int) bool {
-	l, err := net.Listen("tcp", hosts.Loopback.Port(port)) // nolint: noctx
+	l, err := net.Listen("tcp", hosts.Loopback.Port(port).String()) // nolint: noctx
 	if err != nil {
 		return false
 	}

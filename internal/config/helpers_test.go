@@ -97,53 +97,8 @@ func TestNormaliseMappings(t *testing.T) {
 		for _, testCase := range testsCases {
 			t.Run(testCase.name, func(t *testing.T) {
 				actual := config.NormaliseMappings(testCase.mappings)
-				// Clear cache for comparison
-				for i := range actual {
-					actual[i].ClearCache()
-				}
-
-				for i := range testCase.expected {
-					testCase.expected[i].ClearCache()
-				}
 
 				assert.Equal(t, testCase.expected, actual)
-			})
-		}
-	})
-
-	t.Run("incorrect mappings", func(t *testing.T) {
-		testsCases := []struct {
-			name        string
-			mappings    config.Mappings
-			expectedErr string
-		}{
-			{
-				name: "incorrect source url",
-				mappings: config.Mappings{
-					{From: "loca^host", To: hosts.Github.Host()},
-				},
-				expectedErr: "failed to get host and port: parse \"//loca^host\": invalid character \"^\" in host name",
-			},
-			{
-				name: "incorrect port in source url",
-				mappings: config.Mappings{
-					{From: "localhost:", To: hosts.Github.Host()},
-				},
-				expectedErr: "failed to get host and port: port \"//localhost:\": empty port",
-			},
-			{
-				name: "invalid port number",
-				mappings: config.Mappings{
-					{From: "localhost:abc", To: hosts.Github.Host()},
-				},
-				expectedErr: "failed to get host and port: parse \"//localhost:abc\": invalid port \":abc\" after host",
-			},
-		}
-		for _, testCase := range testsCases {
-			t.Run(testCase.name, func(t *testing.T) {
-				assert.PanicsWithError(t, testCase.expectedErr, func() {
-					config.NormaliseMappings(testCase.mappings)
-				})
 			})
 		}
 	})

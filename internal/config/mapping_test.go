@@ -17,7 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var localhostSecure = "https://localhost:9090"
+var localhostSecure = hosts.Localhost.HTTPSPort(9090)
 
 func TestMappingUnmarshalYAML(t *testing.T) {
 	t.Run("positive cases", func(t *testing.T) {
@@ -51,7 +51,7 @@ har: ./recordings/api.har
 `,
 				expected: config.Mapping{
 					From: hosts.Localhost.HTTPPort(3000),
-					To:   "https://api.example.com",
+					To:   hosts.Parse("https://api.example.com"),
 					HAR:  config.HARConfig{File: "./recordings/api.har"},
 				},
 			},
@@ -139,7 +139,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "full filled mapping",
 				value: config.Mapping{
-					From: "localhost",
+					From: hosts.Parse("localhost"),
 					To:   hosts.Github.Host(),
 					Statics: []config.StaticDirectory{
 						{Path: "/", Dir: "/tmp"},
@@ -176,7 +176,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping without mocks and statics and caches",
 				value: config.Mapping{
-					From:    "localhost",
+					From:    hosts.Parse("localhost"),
 					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
@@ -204,7 +204,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping without from",
 				value: config.Mapping{
-					From:    "",
+					From:    hosts.Parse(""),
 					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
@@ -215,8 +215,8 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping without to",
 				value: config.Mapping{
-					From:    "localhost",
-					To:      "",
+					From:    hosts.Parse("localhost"),
+					To:      hosts.Parse(""),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
 					Cache:   config.CacheGlobs{},
@@ -226,7 +226,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping with invalid statics",
 				value: config.Mapping{
-					From: "localhost",
+					From: hosts.Parse("localhost"),
 					To:   hosts.Github.Host(),
 					Statics: []config.StaticDirectory{
 						{Path: "/", Dir: "/tmp"},
@@ -240,7 +240,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping with invalid mocks",
 				value: config.Mapping{
-					From:    "localhost",
+					From:    hosts.Parse("localhost"),
 					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks: []config.Mock{
@@ -262,7 +262,7 @@ func TestMappingValidator(t *testing.T) {
 			{
 				name: "mapping with invalid cache glob",
 				value: config.Mapping{
-					From:    "localhost",
+					From:    hosts.Parse("localhost"),
 					To:      hosts.Github.Host(),
 					Statics: []config.StaticDirectory{},
 					Mocks:   []config.Mock{},
@@ -285,7 +285,7 @@ func TestValidateTLS(t *testing.T) {
 	t.Run("skip validation for invalid URL", func(t *testing.T) {
 		err := config.ValidateTLS(
 			"test",
-			config.Mapping{From: "://invalid-url", To: hosts.Example.HTTP()},
+			config.Mapping{From: hosts.Parse("://invalid-url"), To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
 		)
 		assert.NoError(t, err)
@@ -294,7 +294,7 @@ func TestValidateTLS(t *testing.T) {
 	t.Run("skip validation for non-HTTPS", func(t *testing.T) {
 		err := config.ValidateTLS(
 			"test",
-			config.Mapping{From: "http://localhost:8080", To: hosts.Example.HTTP()},
+			config.Mapping{From: hosts.Parse("http://localhost:8080"), To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
 		)
 		assert.NoError(t, err)
@@ -307,7 +307,7 @@ func TestValidateTLS(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		err := config.ValidateTLS("test",
-			config.Mapping{From: "https://localhost:8443", To: hosts.Example.HTTP()},
+			config.Mapping{From: hosts.Parse("https://localhost:8443"), To: hosts.Example.HTTP()},
 			afero.NewOsFs())
 
 		require.Error(t, err)
@@ -327,7 +327,7 @@ func TestValidateTLS(t *testing.T) {
 		require.NoError(t, err)
 
 		err = config.ValidateTLS("test",
-			config.Mapping{From: "https://localhost:8443", To: hosts.Example.HTTP()},
+			config.Mapping{From: hosts.Parse("https://localhost:8443"), To: hosts.Example.HTTP()},
 			fs)
 
 		assert.NoError(t, err)

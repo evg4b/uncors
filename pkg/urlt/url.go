@@ -114,7 +114,7 @@ func unescape(s string, mode encoding) (string, error) { //NOSONAR
 			hasPlus = mode == encodeQueryComponent
 			i++
 		case '{':
-			if mode == encodeHost {
+			if mode == encodeHost || mode == encodePath {
 				if inPlaceholder {
 					return "", errNestedPlaceholder
 				}
@@ -122,18 +122,14 @@ func unescape(s string, mode encoding) (string, error) { //NOSONAR
 				if i+1 < len(s) && s[i+1] == '}' {
 					return "", errEmptyPlaceholder
 				}
-			} else if mode == encodePath {
-				return "", errBraceInPath
 			}
 			i++
 		case '}':
-			if mode == encodeHost {
+			if mode == encodeHost || mode == encodePath {
 				if !inPlaceholder {
 					return "", errUnmatchedCloseBrace
 				}
 				inPlaceholder = false
-			} else if mode == encodePath {
-				return "", errBraceInPath
 			}
 			i++
 		default:

@@ -19,13 +19,13 @@ type replacerTestCase struct {
 func TestReplacerV2Replace(t *testing.T) {
 	t.Run("url is not empty", func(t *testing.T) {
 		t.Run("source", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacer("", hosts.Github.HTTP())
+			_, err := urlreplacer.NewReplacer("", hosts.Github.HTTP().String())
 
 			require.ErrorIs(t, err, urlreplacer.ErrEmptySourceURL)
 		})
 
 		t.Run("target", func(t *testing.T) {
-			_, err := urlreplacer.NewReplacer(hosts.Localhost.Port(3000), "")
+			_, err := urlreplacer.NewReplacer(hosts.Localhost.Port(3000).String(), "")
 
 			require.ErrorIs(t, err, urlreplacer.ErrEmptyTargetURL)
 		})
@@ -225,7 +225,7 @@ var isSecureTestCases = []struct {
 }{
 	{
 		name:     "url with http scheme",
-		url:      hosts.Localhost.HTTP(),
+		url:      hosts.Localhost.HTTP().String(),
 		expected: false,
 	},
 	{
@@ -235,12 +235,12 @@ var isSecureTestCases = []struct {
 	},
 	{
 		name:     "url without scheme",
-		url:      hosts.Localhost.Host(),
+		url:      hosts.Localhost.Host().String(),
 		expected: false,
 	},
 	{
 		name:     "url with https scheme",
-		url:      hosts.Localhost.HTTPS(),
+		url:      hosts.Localhost.HTTPS().String(),
 		expected: true,
 	},
 }
@@ -249,7 +249,7 @@ func TestReplacerIsTargetSecure(t *testing.T) {
 	makeReplacer := func(target string) *urlreplacer.Replacer {
 		t.Helper()
 
-		replacer, err := urlreplacer.NewReplacer(hosts.Github.HTTPS(), target)
+		replacer, err := urlreplacer.NewReplacer(hosts.Github.HTTPS().String(), target)
 		if err != nil {
 			t.Error(err)
 		}

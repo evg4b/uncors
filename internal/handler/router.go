@@ -41,10 +41,7 @@ func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, erro
 	}
 
 	for _, mapping := range mappings {
-		err := instance.registerMapping(mapping)
-		if err != nil {
-			return nil, err
-		}
+		instance.registerMapping(mapping)
 	}
 
 	setDefaultHandler(instance.Router, contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
@@ -56,13 +53,8 @@ func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, erro
 	return &instance, nil
 }
 
-func (r *Router) registerMapping(mapping config.Mapping) error {
-	host, _, err := mapping.GetFromHostPort()
-	if err != nil {
-		return err
-	}
-
-	router := r.Router.Host(replaceWildcards(host)).
+func (r *Router) registerMapping(mapping config.Mapping) {
+	router := r.Router.Host(replaceWildcards(mapping.From.Hostname)).
 		Subrouter()
 
 	defaultHandler := r.prepareDefaultHandler(mapping)
@@ -94,8 +86,6 @@ func (r *Router) registerMapping(mapping config.Mapping) error {
 	}
 
 	setDefaultHandler(router, defaultHandler)
-
-	return nil
 }
 
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {

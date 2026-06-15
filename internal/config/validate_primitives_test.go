@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -43,17 +44,11 @@ func TestValidateHost(t *testing.T) {
 
 	t.Run("invalid", func(t *testing.T) {
 		runErr(t, "empty", "field must not be empty",
-			func() error { return config.ValidateHost(field, "") })
+			func() error { return config.ValidateHost(field, urlt.Host{}) })
 		runErr(t, "too long", "field must not be longer than 255 characters, but got 256",
-			func() error { return config.ValidateHost(field, strings.Repeat("a", 256)) })
-		runErr(t, "with path", "field must not contain a path",
-			func() error { return config.ValidateHost(field, "example.com/path") })
-		runErr(t, "with query", "field must not contain a query",
-			func() error { return config.ValidateHost(field, "example.com?query=1") })
+			func() error { return config.ValidateHost(field, urlt.Host{Hostname: strings.Repeat("a", 256)}) })
 		runErr(t, "unsupported scheme", "field scheme must be http or https",
 			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp")) })
-		runErr(t, "invalid host", "field is not a valid host",
-			func() error { return config.ValidateHost(field, "loca:::lhost") })
 	})
 }
 
@@ -65,6 +60,21 @@ func TestValidatePath(t *testing.T) {
 	t.Run("valid absolute", func(t *testing.T) {
 		runOK(t, "root", func() error { return config.ValidatePath(field, "/", false) })
 		runOK(t, "api path", func() error { return config.ValidatePath(field, "/api/info", false) })
+	})
+
+	t.Run("valid relative", func(t *testing.T) {
+		runOK(t, "no leading slash", func() error { return config.ValidatePath(field, "api/info", true) })
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		runErr(t, "empty", "field must not be empty",
+			func() error { return config.ValidatePath(field, "", false) })
+		runErr(t, "no leading slash when absolute required", "field must be absolute and start with /",
+			func() error { return config.ValidatePath(field, "api/info", false) })
+		runErr(t, "control character in path", "field is not a valid path",
+			func() error { return config.ValidatePath(field, "/\x00null", false) })
+		runErr(t, "path with query", "field must not contain a query",
+			func() error { return config.ValidatePath(field, "/api?q=1", false) })
 	})
 }
 
