@@ -122,3 +122,55 @@ func TestWildCardToReplacePattern(t *testing.T) {
 		}
 	})
 }
+
+func TestValidateRawURL(t *testing.T) {
+	t.Run("valid", func(t *testing.T) {
+		tests := []string{
+			"localhost",
+			"localhost:3000",
+			"example.com",
+			"http://example.com",
+			"https://example.com:8443",
+			"{tenant}.example.com",
+		}
+		for _, url := range tests {
+			t.Run(url, func(t *testing.T) {
+				assert.NoError(t, validateRawURL(url))
+			})
+		}
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		tests := []struct {
+			name string
+			url  string
+			err  string
+		}{
+			{
+				name: "empty url",
+				url:  "",
+				err:  "url is empty",
+			},
+			{
+				name: "wildcard not allowed",
+				url:  "*.example.com",
+				err:  "use {key} placeholders instead of * wildcard",
+			},
+			{
+				name: "url with path",
+				url:  "example.com/api/v1",
+				err:  "url must not have a path",
+			},
+			{
+				name: "url with query",
+				url:  "http://example.com?q=1",
+				err:  "url must not have query parameters",
+			},
+		}
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				require.EqualError(t, validateRawURL(tc.url), tc.err)
+			})
+		}
+	})
+}

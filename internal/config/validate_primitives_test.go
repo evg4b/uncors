@@ -61,6 +61,21 @@ func TestValidatePath(t *testing.T) {
 		runOK(t, "root", func() error { return config.ValidatePath(field, "/", false) })
 		runOK(t, "api path", func() error { return config.ValidatePath(field, "/api/info", false) })
 	})
+
+	t.Run("valid relative", func(t *testing.T) {
+		runOK(t, "no leading slash", func() error { return config.ValidatePath(field, "api/info", true) })
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		runErr(t, "empty", "field must not be empty",
+			func() error { return config.ValidatePath(field, "", false) })
+		runErr(t, "no leading slash when absolute required", "field must be absolute and start with /",
+			func() error { return config.ValidatePath(field, "api/info", false) })
+		runErr(t, "control character in path", "field is not a valid path",
+			func() error { return config.ValidatePath(field, "/\x00null", false) })
+		runErr(t, "path with query", "field must not contain a query",
+			func() error { return config.ValidatePath(field, "/api?q=1", false) })
+	})
 }
 
 // ---- ValidateFile --------------------------------------------------------
