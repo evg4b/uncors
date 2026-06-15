@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,6 +40,8 @@ func TestStaticMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "console.log('hi')", string(body))
 		assert.False(t, result.HasBackendRequest(), "static file must not reach the backend")
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("falls back to the index file for unknown paths under the prefix", func(t *testing.T) {
@@ -50,5 +53,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "<h1>home</h1>", string(body))
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }

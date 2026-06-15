@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,6 +50,8 @@ response:WriteString(request.path_params["id"])
 		assert.Equal(t, http.StatusAccepted, result.Response.StatusCode)
 		assert.Equal(t, "scripted", string(body))
 		assert.False(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("script reads path parameters from the request", func(t *testing.T) {
@@ -60,5 +63,7 @@ response:WriteString(request.path_params["id"])
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "abc123", string(body))
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +43,9 @@ func TestLocalDomainMapping(t *testing.T) {
 		assert.Contains(t, result.Response.TLS.PeerCertificates[0].DNSNames, "api.example.local")
 
 		assert.True(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("domain absent from the resolver is unreachable", func(t *testing.T) {

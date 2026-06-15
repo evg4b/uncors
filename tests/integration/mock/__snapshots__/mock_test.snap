@@ -1,0 +1,58 @@
+
+[TestMockHandler/raw_response_returns_configured_code,_headers_and_body - 1]
+HTTP/1.1 201 Created
+Content-Length: 13
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain; charset=utf-8
+Date: <scrubbed>
+X-Mock: raw
+
+{"mock":true}
+---
+
+[TestMockHandler/file_response_serves_seeded_file_content - 1]
+HTTP/1.1 200 OK
+Content-Length: 15
+Accept-Ranges: bytes
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: application/json
+Date: <scrubbed>
+Last-Modified: <scrubbed>
+
+{"from":"file"}
+---
+
+[TestMockHandler/method_mismatch_falls_through_to_the_backend - 1]
+POST /raw HTTP/1.1
+Host: 127.0.0.1:<port>
+Accept-Encoding: gzip
+Content-Length: 0
+User-Agent: <scrubbed>
+
+
+---
+
+[TestMockHandler/method_mismatch_falls_through_to_the_backend - 2]
+HTTP/1.1 200 OK
+Content-Length: 2
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+Content-Type: text/plain
+Date: <scrubbed>
+
+ok
+---

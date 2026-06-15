@@ -85,6 +85,16 @@ func (r *Result) BackendRequest(t *testing.T) string {
 	return Normalize(r.backendRequests[0])
 }
 
+// RawBackendRequest returns the unmodified raw dump of the first backend request
+// (no port scrubbing), for assertions on exact values such as a rewritten
+// Origin/Referer that includes the live backend port.
+func (r *Result) RawBackendRequest(t *testing.T) string {
+	t.Helper()
+	require.True(t, r.HasBackendRequest(), "no backend request was recorded for this round-trip")
+
+	return r.backendRequests[0]
+}
+
 // ResponseDump returns a normalized full HTTP response dump (status line,
 // headers, body) suitable for snapshot assertions.
 func (r *Result) ResponseDump(t *testing.T) string {

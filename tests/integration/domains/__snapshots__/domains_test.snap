@@ -1,6 +1,6 @@
 
-[TestRouting/forwarded_request_matches_backend_and_response_snapshots - 1]
-GET /api/users HTTP/1.1
+[TestLocalDomainMapping/exact_local_domain_routes_to_backend_over_TLS - 1]
+GET /users HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
@@ -8,17 +8,17 @@ User-Agent: <scrubbed>
 
 ---
 
-[TestRouting/forwarded_request_matches_backend_and_response_snapshots - 2]
+[TestLocalDomainMapping/exact_local_domain_routes_to_backend_over_TLS - 2]
 HTTP/1.1 200 OK
-Content-Length: 11
+Content-Length: 12
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
 Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400
-Content-Type: application/json
+Content-Type: text/plain; charset=utf-8
 Date: <scrubbed>
 
-{"ok":true}
+from backend
 ---

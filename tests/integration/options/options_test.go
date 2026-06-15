@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,6 +37,8 @@ func TestOptionsHandlingEnabled(t *testing.T) {
 		assert.Equal(t, "handled", result.Response.Header.Get("X-Options"))
 		assert.Equal(t, "https://example.com", result.Response.Header.Get("Access-Control-Allow-Origin"))
 		assert.False(t, result.HasBackendRequest(), "preflight must not reach the backend")
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
 
@@ -55,5 +58,8 @@ func TestOptionsHandlingDisabled(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.True(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }

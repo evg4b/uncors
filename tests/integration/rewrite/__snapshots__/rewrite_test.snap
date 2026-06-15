@@ -1,6 +1,6 @@
 
-[TestProxyHandler/forwarded_request_and_response_both_match_snapshot - 1]
-GET /echo HTTP/1.1
+[TestRewriteMiddleware/static_path_is_rewritten_before_forwarding - 1]
+GET /new HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
@@ -8,23 +8,23 @@ User-Agent: <scrubbed>
 
 ---
 
-[TestProxyHandler/forwarded_request_and_response_both_match_snapshot - 2]
+[TestRewriteMiddleware/static_path_is_rewritten_before_forwarding - 2]
 HTTP/1.1 200 OK
-Content-Length: 10
+Content-Length: 2
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
 Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Date: <scrubbed>
 
-echo:/echo
+ok
 ---
 
-[TestProxyOverHTTP/forwards_over_plain_HTTP_without_TLS - 1]
-GET /echo HTTP/1.1
+[TestRewriteMiddleware/placeholder_path_preserves_the_captured_segment - 1]
+GET /accounts/42 HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
@@ -32,17 +32,17 @@ User-Agent: <scrubbed>
 
 ---
 
-[TestProxyOverHTTP/forwards_over_plain_HTTP_without_TLS - 2]
+[TestRewriteMiddleware/placeholder_path_preserves_the_captured_segment - 2]
 HTTP/1.1 200 OK
-Content-Length: 10
+Content-Length: 2
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
 Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Date: <scrubbed>
 
-echo:/echo
+ok
 ---

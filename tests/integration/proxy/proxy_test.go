@@ -183,7 +183,7 @@ func TestProxyHandler(t *testing.T) {
 
 		// The proxy rewrites Origin from the source host to the backend host
 		// before forwarding, so the upstream sees its own address.
-		assert.Contains(t, result.BackendRequest(t), "Origin: "+backendURL)
+		assert.Contains(t, result.RawBackendRequest(t), "Origin: "+backendURL)
 	})
 
 	t.Run("rewrites the Location response header back to the source host", func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestProxyHandler(t *testing.T) {
 		defer result.Response.Body.Close()
 
 		// Only the host part is rewritten; the path is preserved.
-		assert.Contains(t, result.BackendRequest(t), "Referer: "+backendURL+"/from/page")
+		assert.Contains(t, result.RawBackendRequest(t), "Referer: "+backendURL+"/from/page")
 	})
 
 	t.Run("forwards request cookies to the backend", func(t *testing.T) {
@@ -264,6 +264,9 @@ func TestProxyOverHTTP(t *testing.T) {
 		assert.Equal(t, "echo:/echo", result.BodyString())
 		assert.Nil(t, result.Response.TLS, "plain HTTP response must not carry TLS state")
 		assert.True(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
 

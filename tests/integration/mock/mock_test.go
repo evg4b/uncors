@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,6 +49,8 @@ func TestMockHandler(t *testing.T) {
 		assert.Equal(t, "raw", result.Response.Header.Get("X-Mock"))
 		assert.JSONEq(t, `{"mock":true}`, string(body))
 		assert.False(t, result.HasBackendRequest(), "mock must not reach the backend")
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("file response serves seeded file content", func(t *testing.T) {
@@ -60,6 +63,8 @@ func TestMockHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.JSONEq(t, `{"from":"file"}`, string(body))
 		assert.False(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("method mismatch falls through to the backend", func(t *testing.T) {
@@ -72,5 +77,8 @@ func TestMockHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "ok", string(body))
 		assert.True(t, result.HasBackendRequest())
+
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }

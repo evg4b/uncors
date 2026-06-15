@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,6 +45,10 @@ func TestRewriteMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "/new", backendPath(t, result))
+
+		// The backend request shows the rewritten path "/new", not "/old".
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 
 	t.Run("placeholder path preserves the captured segment", func(t *testing.T) {
@@ -52,5 +57,8 @@ func TestRewriteMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "/accounts/42", backendPath(t, result))
+
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
