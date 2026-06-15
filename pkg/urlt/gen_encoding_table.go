@@ -185,7 +185,7 @@ func shouldEscape(c byte, mode encoding) bool {
 			// meaning to individual path segments. This package
 			// only manipulates the path as a whole, so we allow those
 			// last three as well. That leaves only ? to escape.
-			return c == '?'
+			return c == '?' || c == '{' || c == '}'
 
 		case encodePathSegment: // §3.3
 			// The RFC allows : @ & = + $ but saves / ; , for assigning

@@ -46,7 +46,7 @@ func ValidatePath(field, value string, relative bool) error {
 		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
-	uri, err := urlt.Parse("//localhost/" + strings.TrimPrefix(value, "/"))
+	uri, err := urlt.Parse("http://localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}

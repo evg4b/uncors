@@ -809,11 +809,13 @@ var parseRequestURLTests = []struct {
 	{"http://{ client}.example.com/", false}, // space inside placeholder
 	{"http://{client}}.example.com/", false}, // extra closing brace after placeholder
 
-	// placeholder is not allowed outside of host
-	{"http://example.com/{client}/path", false}, // placeholder in path segment
-	{"http://example.com/path/{client}", false}, // placeholder at end of path
-	{"http://example.com/?{client}=1", false},   // placeholder in query key
-	{"http://example.com/?x={client}", false},   // placeholder in query value
+	// placeholder is allowed in the path
+	{"http://example.com/{client}/path", true}, // placeholder in path segment
+	{"http://example.com/path/{client}", true}, // placeholder at end of path
+
+	// placeholder is not allowed in the query
+	{"http://example.com/?{client}=1", false}, // placeholder in query key
+	{"http://example.com/?x={client}", false}, // placeholder in query value
 
 	{"foo.html", false},
 	{"../dir/", false},
@@ -1791,11 +1793,13 @@ func TestParseErrors(t *testing.T) {
 		{"http://{ client}.example.com/", true}, // space inside placeholder
 		{"http://{client}}.example.com/", true}, // extra closing brace after placeholder
 
-		// placeholder in wrong location — must produce an error
-		{"http://example.com/{client}/path", true}, // placeholder in path segment
-		{"http://example.com/path/{client}", true}, // placeholder at end of path
-		{"http://example.com/?{client}=1", true},   // placeholder in query key
-		{"http://example.com/?x={client}", true},   // placeholder in query value
+		// placeholder in the path — must not produce an error
+		{"http://example.com/{client}/path", false}, // placeholder in path segment
+		{"http://example.com/path/{client}", false}, // placeholder at end of path
+
+		// placeholder in the query — must produce an error
+		{"http://example.com/?{client}=1", true}, // placeholder in query key
+		{"http://example.com/?x={client}", true}, // placeholder in query value
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -2430,7 +2434,23 @@ func TestInvalidClientPlaceholder(t *testing.T) {
 		}
 	})
 
-	t.Run("placeholder outside host", func(t *testing.T) {
+	t.Run("placeholder in query", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			rawURL string
+		}{
+			{"placeholder in query key", "http://example.com/?{client}=1"},
+			{"placeholder in query value", "http://example.com/?x={client}"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := Parse(tt.rawURL)
+				assert.Error(t, err, "Parse(%q) should error — placeholder is not allowed in query", tt.rawURL)
+			})
+		}
+	})
+
+	t.Run("placeholder in path is allowed", func(t *testing.T) {
 		tests := []struct {
 			name   string
 			rawURL string
@@ -2438,13 +2458,11 @@ func TestInvalidClientPlaceholder(t *testing.T) {
 			{"placeholder in path segment", "http://example.com/{client}/path"},
 			{"placeholder at end of path", "http://example.com/path/{client}"},
 			{"placeholder as entire path", "http://example.com/{client}"},
-			{"placeholder in query key", "http://example.com/?{client}=1"},
-			{"placeholder in query value", "http://example.com/?x={client}"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				_, err := Parse(tt.rawURL)
-				assert.Error(t, err, "Parse(%q) should error — placeholder is only allowed in host", tt.rawURL)
+				assert.NoError(t, err, "Parse(%q) should allow placeholder in path", tt.rawURL)
 			})
 		}
 	})
