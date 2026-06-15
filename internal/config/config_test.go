@@ -42,7 +42,7 @@ mappings:
           headers:
             Accept-Encoding: deflate
           raw: demo
-proxy: localhost:8080
+proxy: http://localhost:8080
 debug: true
 https-port: 8081
 cert-file: /etc/certificates/cert-file.pem
@@ -138,7 +138,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy: hosts.Localhost.Port(8080).String(),
+					Proxy: hosts.Localhost.HTTPPort(8080).String(),
 					Debug: true,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
@@ -192,7 +192,7 @@ func TestLoadConfiguration(t *testing.T) {
 				name: "CLI proxy and debug flags override config file values",
 				args: []string{
 					params.Config, fullConfigPath,
-					"--proxy", "newproxy:9999",
+					"--proxy", "http://newproxy:9999",
 					"--debug=false",
 				},
 				expected: &config.UncorsConfig{
@@ -218,7 +218,7 @@ func TestLoadConfiguration(t *testing.T) {
 							},
 						},
 					},
-					Proxy: "newproxy:9999",
+					Proxy: "http://newproxy:9999",
 					Debug: false,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour, MaxSize: 52428800,

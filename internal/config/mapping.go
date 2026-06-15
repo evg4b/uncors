@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/pkg/urlt"
@@ -69,8 +70,10 @@ func ValidateProxy(field, value string) error {
 		return nil
 	}
 
-	_, err := parseLooseURL(value)
-	if err != nil {
+	// A proxy must be an absolute URL with an explicit scheme and host
+	// (e.g. "http://localhost:8080").
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
 	}
 
@@ -92,8 +95,8 @@ func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
 func (m *Mapping) Validate(field string, fs afero.Fs) error {
 	errs := make([]error, 0, 5+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
 
-	errs = append(errs, ValidateHost(joinPath(field, "from"), m.From.String()))
-	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To.String()))
+	errs = append(errs, ValidateHost(joinPath(field, "from"), m.From))
+	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To))
 	errs = append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
 	errs = append(errs, m.HAR.Validate(joinPath(field, "har")))
 	errs = append(errs, ValidateTLS(field, *m, fs))

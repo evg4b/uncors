@@ -34,12 +34,12 @@ func (m *Middleware) rewriteURL(request *contracts.Request) {
 }
 
 func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Request {
-	if m.rewrite.Host == "" {
+	if m.rewrite.Host == (urlt.Host{}) {
 		return request
 	}
 
 	return request.WithContext(
-		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host),
+		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host.HostPort()),
 	)
 }
 

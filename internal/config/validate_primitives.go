@@ -1,10 +1,8 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -17,47 +15,26 @@ import (
 
 const maxHostLength = 255
 
-// parseLooseURL parses a host or URL string the way uncors expects: when the
-// value has no scheme it is treated as a scheme-relative URL so the host (not
-// the path) gets populated.
-func parseLooseURL(value string) (*url.URL, error) {
-	raw := value
-	if !strings.HasPrefix(raw, "//") && !strings.Contains(raw, "://") {
-		raw = "//" + raw
-	}
-
-	return urlt.Parse(raw)
-}
-
-func ValidateHost(field, value string) error {
-	if value == "" {
+// ValidateHost validates an already-parsed host. Structural problems (paths,
+// queries, malformed hosts) are rejected earlier by urlt.ParseHost, so only
+// the semantic constraints remain: a non-empty hostname of bounded length and
+// an http/https (or empty) scheme.
+func ValidateHost(field string, value urlt.Host) error {
+	if value.Hostname == "" {
 		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
 
-	if len(value) > maxHostLength {
-		return &ValidationError{fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value))}
+	if len(value.Hostname) > maxHostLength {
+		return &ValidationError{
+			fmt.Sprintf("%s must not be longer than 255 characters, but got %d", field, len(value.Hostname)),
+		}
 	}
 
-	uri, err := parseLooseURL(value)
-	if err != nil || uri.Host == "" {
-		return &ValidationError{fmt.Sprintf("%s is not a valid host", field)}
+	if value.Scheme != httpScheme && value.Scheme != httpsScheme && value.Scheme != "" {
+		return &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)}
 	}
 
-	var errs []error
-
-	if uri.Path != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a path", field)})
-	}
-
-	if uri.RawQuery != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s must not contain a query", field)})
-	}
-
-	if uri.Scheme != "http" && uri.Scheme != httpsScheme && uri.Scheme != "" {
-		errs = append(errs, &ValidationError{fmt.Sprintf("%s scheme must be http or https", field)})
-	}
-
-	return errors.Join(errs...)
+	return nil
 }
 
 func ValidatePath(field, value string, relative bool) error {
