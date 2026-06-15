@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,5 +96,61 @@ func TestPlaceholderDomainMapping(t *testing.T) {
 		}
 
 		assert.Equal(t, len(tenants), backend.Count())
+	})
+}
+
+// TestSharedPortDistinctRemotes maps two different local domains onto a single
+// shared local listener port, each forwarding to a different remote host. It
+// proves the proxy dispatches purely by the Host header: every request reaches
+// only its own remote, and the forwarded request carries that remote's address.
+func TestSharedPortDistinctRemotes(t *testing.T) {
+	shopRemote := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "shop remote")
+	})
+	blogRemote := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "blog remote")
+	})
+
+	// One local port shared by both domains; an explicit port is respected by the
+	// harness, so the two mappings land on the same listener.
+	port := strconv.Itoa(testutils.GetFreePort(t))
+	env := integration.New(t, shopRemote, &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Parse("https://shop.local:" + port), To: shopRemote.AsHost()},
+			{From: hosts.Parse("https://blog.local:" + port), To: blogRemote.AsHost()},
+		},
+	})
+
+	// Both domains resolve to the same local listener port.
+	require.Equal(t, env.PortFor("shop.local"), env.PortFor("blog.local"))
+
+	t.Run("shop.local reaches only the shop remote", func(t *testing.T) {
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("shop.local", "/catalog")))
+		defer result.Response.Body.Close()
+
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "shop remote", result.BodyString())
+		assert.Equal(t, 1, shopRemote.Count())
+		assert.Equal(t, 0, blogRemote.Count())
+
+		// The forwarded request carries the shop remote's own host:port.
+		snaps.MatchSnapshot(t, result.BackendRequest(t))
+	})
+
+	t.Run("blog.local reaches only the blog remote", func(t *testing.T) {
+		shopBefore := shopRemote.Count()
+
+		response, err := env.Client.Do(integration.NewRequest(t, http.MethodGet, env.URL("blog.local", "/posts")))
+		require.NoError(t, err)
+
+		defer response.Body.Close()
+
+		body, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, "blog remote", string(body))
+		assert.Equal(t, 1, blogRemote.Count())
+		assert.Equal(t, shopBefore, shopRemote.Count(), "blog request must not reach the shop remote")
 	})
 }
