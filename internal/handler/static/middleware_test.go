@@ -119,7 +119,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -137,7 +137,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -164,7 +164,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -182,7 +182,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.WrapResponseWriter(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -205,7 +205,7 @@ func TestStaticMiddleware(t *testing.T) {
 			requestURI, err := url.Parse("/options/")
 			testutils.CheckNoError(t, err)
 
-			responseWriter := contracts.WrapResponseWriter(recorder)
+			responseWriter := contracts.NewResponseRecorder(recorder)
 
 			handlerErr := handler.ServeHTTP(responseWriter, &http.Request{
 				Method: http.MethodGet,

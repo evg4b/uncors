@@ -188,7 +188,7 @@ func TestMiddleware(t *testing.T) {
 
 				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 									ServeHTTP(
-						contracts.WrapResponseWriter(recorder),
+						contracts.NewResponseRecorder(recorder),
 						request,
 					)
 
@@ -210,7 +210,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				contracts.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -236,7 +236,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				contracts.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -258,7 +258,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				contracts.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -283,7 +283,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				contracts.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -314,7 +314,7 @@ func TestMiddleware(t *testing.T) {
 				middleware := options.NewMiddleware()
 
 				recorder := httptest.NewRecorder()
-				response := contracts.WrapResponseWriter(recorder)
+				response := contracts.NewResponseRecorder(recorder)
 				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil) //nolint: errcheck

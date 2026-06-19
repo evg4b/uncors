@@ -40,7 +40,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		})
 
 		handler := middleware.Wrap(next)
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+		handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 		assert.True(t, nextCalled)
 	})
@@ -69,7 +69,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		})
 
 		handler := middleware.Wrap(next)
-		handler.ServeHTTP(contracts.WrapResponseWriter(recorder), request) //nolint:errcheck
+		handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 		assert.True(t, nextCalled)
 	})

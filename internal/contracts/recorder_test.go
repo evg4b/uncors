@@ -96,19 +96,6 @@ func TestResponseRecorder_Captured(t *testing.T) {
 	})
 }
 
-func TestWrapResponseWriter(t *testing.T) {
-	t.Run("returns a ResponseRecorder", func(t *testing.T) {
-		underlying := httptest.NewRecorder()
-		rec := contracts.WrapResponseWriter(underlying)
-
-		_, err := rec.Write([]byte("test"))
-		require.NoError(t, err)
-
-		assert.Equal(t, "test", underlying.Body.String())
-		assert.Equal(t, http.StatusOK, rec.Captured().StatusCode)
-	})
-}
-
 func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
 	rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 

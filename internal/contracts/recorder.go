@@ -44,12 +44,6 @@ func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
 	return rec
 }
 
-// WrapResponseWriter creates a ResponseRecorder around w.
-// It satisfies ResponseWriter and BodyCapturer.
-func WrapResponseWriter(w http.ResponseWriter) *ResponseRecorder {
-	return NewResponseRecorder(w)
-}
-
 func (r *ResponseRecorder) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)

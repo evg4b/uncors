@@ -142,7 +142,7 @@ func noopHARFactory() handler.HARMiddlewareFactory {
 }
 
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
-	wrappedWriter := contracts.WrapResponseWriter(recorder)
+	wrappedWriter := contracts.NewResponseRecorder(recorder)
 	contractsRouter := contracts.CastToContractsHandler(router)
 	httpRouterHandler := contracts.CastToHTTPHandler(contractsRouter)
 	httpRouterHandler.ServeHTTP(wrappedWriter, request)
