@@ -1,30 +1,14 @@
-package contracts
+package server
 
 import (
 	"bytes"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/evg4b/uncors/internal/contracts"
 )
 
-// ResponseCapture holds the captured response data after a request completes.
-type ResponseCapture struct {
-	StatusCode int
-	Header     http.Header
-	Body       []byte
-	Duration   time.Duration
-}
-
-// BodyCapturer is implemented by ResponseRecorder; middleware use it to opt in
-// to body buffering and read the captured response after calling next.
-type BodyCapturer interface {
-	EnableBodyCapture()
-	Captured() ResponseCapture
-}
-
-// ResponseRecorder wraps http.ResponseWriter, optionally buffers the response
-// body, and exposes the captured data via Captured() after the handler returns.
-// It is the single capture point for HAR recording, caching, and request tracking.
 type ResponseRecorder struct {
 	http.ResponseWriter
 
@@ -57,8 +41,6 @@ func (r *ResponseRecorder) StatusCode() int {
 	return r.statusCode
 }
 
-// EnableBodyCapture turns on response body buffering. Must be called before the
-// handler writes any body bytes. Subsequent calls are no-ops.
 func (r *ResponseRecorder) EnableBodyCapture() {
 	if r.buf != nil {
 		return
@@ -68,15 +50,13 @@ func (r *ResponseRecorder) EnableBodyCapture() {
 	r.output = io.MultiWriter(r.buf, r.ResponseWriter)
 }
 
-// Captured returns a snapshot of the response as written so far.
-// Body is nil unless EnableBodyCapture was called before the handler ran.
-func (r *ResponseRecorder) Captured() ResponseCapture {
+func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 	var body []byte
 	if r.buf != nil {
 		body = r.buf.Bytes()
 	}
 
-	return ResponseCapture{
+	return contracts.ResponseCapture{
 		StatusCode: normaliseStatusCode(r.statusCode),
 		Header:     r.Header(),
 		Body:       body,

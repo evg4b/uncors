@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -74,7 +74,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.expected, body)
@@ -141,7 +141,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 				header := testutils.ReadHeader(t, recorder)
 				assert.Equal(t, testCase.expected, header.Get(headers.ContentType))
@@ -242,7 +242,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 				assert.Equal(t, testCase.expected, testutils.ReadHeader(t, recorder))
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -295,7 +295,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
@@ -370,7 +370,7 @@ func TestHandler(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
 
-					handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request) //nolint:errcheck
+					handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
 
 					assert.Equal(t, called, testCase.shouldBeCalled)
 				})
@@ -395,7 +395,7 @@ func TestHandler(t *testing.T) {
 			var waitGroup sync.WaitGroup
 
 			waitGroup.Go(func() {
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), request.WithContext(ctx)) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), request.WithContext(ctx)) //nolint:errcheck
 			})
 
 			cancel()

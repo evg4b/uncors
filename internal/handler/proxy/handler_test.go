@@ -10,11 +10,11 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -92,7 +92,7 @@ func TestProxyHandler(t *testing.T) {
 
 				req.Header.Add(testCase.headerKey, testCase.URL)
 
-				handler.ServeHTTP(contracts.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
 			})
 		}
 	})
@@ -146,7 +146,7 @@ func TestProxyHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(contracts.NewResponseRecorder(recorder), req) //nolint:errcheck
+				handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
 
 				assert.Equal(t, testCase.expectedURL, recorder.Header().Get(testCase.headerKey))
 			})
@@ -180,7 +180,7 @@ func TestProxyHandler(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(contracts.NewResponseRecorder(recorder), req) //nolint:errcheck
+		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
 
 		header := recorder.Header()
 		assert.Equal(t, "*", header.Get(headers.AccessControlAllowOrigin))
@@ -220,7 +220,7 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set(headers.ContentType, "application/json")
 		helpers.NormaliseRequest(req)
 
-		handler.ServeHTTP(contracts.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+		handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
 	})
 
 	t.Run("should forward cookies from request to target", func(t *testing.T) {
@@ -259,7 +259,7 @@ func TestProxyHandler(t *testing.T) {
 		})
 		helpers.NormaliseRequest(req)
 
-		handler.ServeHTTP(contracts.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+		handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
 	})
 
 	t.Run("should forward cookies from response to source", func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestProxyHandler(t *testing.T) {
 		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(contracts.NewResponseRecorder(recorder), req) //nolint:errcheck
+		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
 
 		cookies := recorder.Result().Cookies()
 		require.NotEmpty(t, cookies)
@@ -326,7 +326,7 @@ func TestProxyHandler(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, "premium.api.com"))
 
 		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(contracts.NewResponseRecorder(recorder), req) //nolint:errcheck
+		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
 	})
 
 	t.Run("should return error when http client fails", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestProxyHandler(t *testing.T) {
 		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
-		responseWriter := contracts.NewResponseRecorder(recorder)
+		responseWriter := server.NewResponseRecorder(recorder)
 
 		handlerErr := handler.ServeHTTP(responseWriter, req) //nolint:errcheck
 		if handlerErr != nil {
@@ -422,7 +422,7 @@ func TestProxyHandler(t *testing.T) {
 					req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(contracts.NewResponseRecorder(recorder), req) //nolint:errcheck
+					handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())

@@ -166,7 +166,7 @@ func (s *Server) Close() error {
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
-	rec := contracts.NewResponseRecorder(writer)
+	rec := NewResponseRecorder(writer)
 	requestID := s.nextID.Add(1)
 
 	s.tracker.Emit(RequestEvent{

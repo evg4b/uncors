@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +120,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -137,7 +138,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -164,7 +165,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -182,7 +183,7 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(contracts.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
@@ -205,7 +206,7 @@ func TestStaticMiddleware(t *testing.T) {
 			requestURI, err := url.Parse("/options/")
 			testutils.CheckNoError(t, err)
 
-			responseWriter := contracts.NewResponseRecorder(recorder)
+			responseWriter := server.NewResponseRecorder(recorder)
 
 			handlerErr := handler.ServeHTTP(responseWriter, &http.Request{
 				Method: http.MethodGet,

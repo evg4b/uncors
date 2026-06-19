@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
-					rec := contracts.NewResponseRecorder(recorder)
+					rec := server.NewResponseRecorder(recorder)
 					require.NoError(t, wrappedHandler.ServeHTTP(
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
@@ -169,7 +170,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
-					rec := contracts.NewResponseRecorder(recorder)
+					rec := server.NewResponseRecorder(recorder)
 					require.NoError(t, wrappedHandler.ServeHTTP(
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
@@ -198,7 +199,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
-			rec := contracts.NewResponseRecorder(recorder)
+			rec := server.NewResponseRecorder(recorder)
 			url := fmt.Sprintf("https://test-host-%d.com:4200/api/test", index)
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 			require.NoError(t, wrappedHandler.ServeHTTP(rec, request))
@@ -232,7 +233,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
-			rec := contracts.NewResponseRecorder(recorder)
+			rec := server.NewResponseRecorder(recorder)
 			request := httptest.NewRequestWithContext(t.Context(), method, "https://test-host.com:4200/api/test", nil)
 			require.NoError(t, wrappedHandler.ServeHTTP(rec, request))
 			assert.Equal(t, expectedHeader, recorder.Header())
