@@ -54,19 +54,15 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			req.Body = io.NopCloser(strings.NewReader(buf.String()))
 		}
 
-		if rec, ok := writer.(contracts.BodyCapturer); ok {
-			rec.EnableBodyCapture()
+		writer.EnableBodyCapture()
 
-			err := next.ServeHTTP(writer, req)
+		err := next.ServeHTTP(writer, req)
 
-			elapsed := time.Since(start)
-			entry := m.buildEntry(req, rec.Captured(), start, elapsed, reqBodySize)
-			m.writer.AddEntry(entry)
+		elapsed := time.Since(start)
+		entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
+		m.writer.AddEntry(entry)
 
-			return err
-		}
-
-		return next.ServeHTTP(writer, req)
+		return err
 	})
 }
 

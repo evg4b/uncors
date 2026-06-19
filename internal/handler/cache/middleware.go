@@ -51,17 +51,13 @@ func (m *Middleware) cacheRequest(
 		return nil
 	}
 
-	if rec, ok := writer.(contracts.BodyCapturer); ok {
-		rec.EnableBodyCapture()
+	writer.EnableBodyCapture()
 
-		err := next.ServeHTTP(writer, request)
+	err := next.ServeHTTP(writer, request)
 
-		m.storeResponse(cacheKey, rec.Captured())
+	m.storeResponse(cacheKey, writer.Captured())
 
-		return err
-	}
-
-	return next.ServeHTTP(writer, request)
+	return err
 }
 
 func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
