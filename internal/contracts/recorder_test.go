@@ -1,4 +1,4 @@
-package server_test
+package contracts_test
 
 import (
 	"net/http"
@@ -7,20 +7,19 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestResponseRecorder_StatusCode(t *testing.T) {
 	t.Run("returns 0 by default", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 
 		assert.Equal(t, 0, rec.StatusCode())
 	})
 
 	t.Run("returns code set by WriteHeader", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		rec.WriteHeader(http.StatusNotFound)
 
 		assert.Equal(t, http.StatusNotFound, rec.StatusCode())
@@ -30,7 +29,7 @@ func TestResponseRecorder_StatusCode(t *testing.T) {
 func TestResponseRecorder_Write(t *testing.T) {
 	t.Run("writes through to underlying writer", func(t *testing.T) {
 		underlying := httptest.NewRecorder()
-		rec := server.NewResponseRecorder(underlying)
+		rec := contracts.NewResponseRecorder(underlying)
 
 		_, err := rec.Write([]byte("hello"))
 		require.NoError(t, err)
@@ -40,7 +39,7 @@ func TestResponseRecorder_Write(t *testing.T) {
 
 	t.Run("buffers body and still writes through when capture is enabled", func(t *testing.T) {
 		underlying := httptest.NewRecorder()
-		rec := server.NewResponseRecorder(underlying)
+		rec := contracts.NewResponseRecorder(underlying)
 		rec.EnableBodyCapture()
 
 		_, err := rec.Write([]byte("buffered"))
@@ -52,27 +51,27 @@ func TestResponseRecorder_Write(t *testing.T) {
 
 func TestResponseRecorder_Captured(t *testing.T) {
 	t.Run("returns correct status code", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		rec.WriteHeader(http.StatusCreated)
 
 		assert.Equal(t, http.StatusCreated, rec.Captured().StatusCode)
 	})
 
 	t.Run("normalises missing WriteHeader to 200", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 
 		assert.Equal(t, http.StatusOK, rec.Captured().StatusCode)
 	})
 
 	t.Run("body is nil when capture not enabled", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		_, _ = rec.Write([]byte("ignored"))
 
 		assert.Nil(t, rec.Captured().Body)
 	})
 
 	t.Run("body is captured when EnableBodyCapture is called", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		rec.EnableBodyCapture()
 		_, _ = rec.Write([]byte("captured"))
 
@@ -80,7 +79,7 @@ func TestResponseRecorder_Captured(t *testing.T) {
 	})
 
 	t.Run("second EnableBodyCapture call is a no-op", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		rec.EnableBodyCapture()
 		rec.EnableBodyCapture()
 		_, _ = rec.Write([]byte("once"))
@@ -89,21 +88,34 @@ func TestResponseRecorder_Captured(t *testing.T) {
 	})
 
 	t.Run("duration is non-zero", func(t *testing.T) {
-		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 		time.Sleep(time.Millisecond)
 
 		assert.Positive(t, rec.Captured().Duration)
 	})
 }
 
-func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
-	rec := server.NewResponseRecorder(httptest.NewRecorder())
+func TestWrapResponseWriter(t *testing.T) {
+	t.Run("returns a ResponseRecorder", func(t *testing.T) {
+		underlying := httptest.NewRecorder()
+		rec := contracts.WrapResponseWriter(underlying)
 
-	t.Run("implements contracts.ResponseWriter", func(t *testing.T) {
+		_, err := rec.Write([]byte("test"))
+		require.NoError(t, err)
+
+		assert.Equal(t, "test", underlying.Body.String())
+		assert.Equal(t, http.StatusOK, rec.Captured().StatusCode)
+	})
+}
+
+func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
+	rec := contracts.NewResponseRecorder(httptest.NewRecorder())
+
+	t.Run("implements ResponseWriter", func(t *testing.T) {
 		var _ contracts.ResponseWriter = rec
 	})
 
-	t.Run("implements contracts.BodyCapturer", func(t *testing.T) {
+	t.Run("implements BodyCapturer", func(t *testing.T) {
 		var _ contracts.BodyCapturer = rec
 	})
 }
