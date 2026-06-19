@@ -28,7 +28,7 @@ type Uncors struct {
 	closers      []io.Closer
 }
 
-func CreateUncors(fs afero.Fs, tracker *server.RequestTracker, output contracts.Output, version string) *Uncors {
+func CreateUncors(fs afero.Fs, tracker server.IRequestTracker, output contracts.Output, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
@@ -131,7 +131,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 	for _, group := range uncorsConfig.Mappings.GroupByPort() {
 		router, err := handler.NewRouter(
 			group.Mappings,
-			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig, group.Mappings)),
+			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
 			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
 			handler.ForRouterWithOptionsMiddlewareFactory(app.buildOptionsMiddlewareFactory()),
 			handler.ForRouterWithStaticMiddlewareFactory(app.buildStaticMiddlewareFactory()),

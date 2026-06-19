@@ -4,7 +4,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-func RequestPrinter(tracker *RequestTracker, output contracts.Output) {
+func RequestPrinter(tracker IRequestTracker, output contracts.Output) {
 	for event := range tracker.Events() {
 		if event.Done && event.Data != nil {
 			if event.Prefix != "" {

@@ -19,27 +19,30 @@ type RequestEvent struct {
 	Data      *contracts.RequestData
 }
 
-type RequestTracker struct {
+type IRequestTracker interface {
+	Events() <-chan RequestEvent
+	Close()
+	Emit(event RequestEvent)
+}
+
+type requestTracker struct {
 	events chan RequestEvent
 }
 
-func NewRequestTracker() *RequestTracker {
-	return &RequestTracker{
+func NewRequestTracker() IRequestTracker {
+	return &requestTracker{
 		events: make(chan RequestEvent, requestEventsBufferSize),
 	}
 }
 
-func (t *RequestTracker) Events() <-chan RequestEvent {
+func (t *requestTracker) Events() <-chan RequestEvent {
 	return t.events
 }
 
-func (t *RequestTracker) Close() {
+func (t *requestTracker) Close() {
 	close(t.events)
 }
 
-func (t *RequestTracker) Emit(event RequestEvent) {
-	select {
-	case t.events <- event:
-	default:
-	}
+func (t *requestTracker) Emit(event RequestEvent) {
+	t.events <- event
 }
