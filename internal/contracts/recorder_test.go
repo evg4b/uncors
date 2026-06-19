@@ -89,6 +89,7 @@ func TestResponseRecorder_Captured(t *testing.T) {
 
 	t.Run("duration is non-zero", func(t *testing.T) {
 		rec := contracts.NewResponseRecorder(httptest.NewRecorder())
+
 		time.Sleep(time.Millisecond)
 
 		assert.Positive(t, rec.Captured().Duration)
@@ -111,11 +112,11 @@ func TestWrapResponseWriter(t *testing.T) {
 func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
 	rec := contracts.NewResponseRecorder(httptest.NewRecorder())
 
-	t.Run("implements ResponseWriter", func(t *testing.T) {
+	t.Run("implements ResponseWriter", func(_ *testing.T) {
 		var _ contracts.ResponseWriter = rec
 	})
 
-	t.Run("implements BodyCapturer", func(t *testing.T) {
+	t.Run("implements BodyCapturer", func(_ *testing.T) {
 		var _ contracts.BodyCapturer = rec
 	})
 }

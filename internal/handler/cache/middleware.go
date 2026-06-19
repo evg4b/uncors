@@ -55,6 +55,7 @@ func (m *Middleware) cacheRequest(
 		rec.EnableBodyCapture()
 
 		err := next.ServeHTTP(writer, request)
+
 		m.storeResponse(cacheKey, rec.Captured())
 
 		return err
@@ -63,12 +64,12 @@ func (m *Middleware) cacheRequest(
 	return next.ServeHTTP(writer, request)
 }
 
-func (m *Middleware) storeResponse(key string, cap contracts.ResponseCapture) {
-	if !helpers.Is2xxCode(cap.StatusCode) {
+func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
+	if !helpers.Is2xxCode(capture.StatusCode) {
 		return
 	}
 
-	headers := lo.MapToSlice(cap.Header, func(name string, values []string) contracts.CachedHeader {
+	headers := lo.MapToSlice(capture.Header, func(name string, values []string) contracts.CachedHeader {
 		return contracts.CachedHeader{
 			Name:  name,
 			Value: values,
@@ -80,8 +81,8 @@ func (m *Middleware) storeResponse(key string, cap contracts.ResponseCapture) {
 	})
 
 	m.cache.Set(key, contracts.CachedResponse{
-		Code:    cap.StatusCode,
-		Body:    cap.Body,
+		Code:    capture.StatusCode,
+		Body:    capture.Body,
 		Headers: headers,
 	})
 }

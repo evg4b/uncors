@@ -35,13 +35,13 @@ type ResponseRecorder struct {
 }
 
 func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
-	r := &ResponseRecorder{
+	rec := &ResponseRecorder{
 		ResponseWriter: w,
 		startedAt:      time.Now(),
 	}
-	r.output = w
+	rec.output = w
 
-	return r
+	return rec
 }
 
 // WrapResponseWriter creates a ResponseRecorder around w.

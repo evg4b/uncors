@@ -186,7 +186,8 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 		})
 	})
 
-	if err := handler.ServeHTTP(rec, request.WithContext(ctx)); err != nil {
+	err := handler.ServeHTTP(rec, request.WithContext(ctx))
+	if err != nil {
 		infra.HTTPError(rec, err)
 	}
 

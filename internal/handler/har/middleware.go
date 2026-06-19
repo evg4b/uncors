@@ -39,7 +39,7 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) error {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, req *contracts.Request) error {
 		start := time.Now()
 
 		var reqBodySize int64
@@ -54,10 +54,10 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			req.Body = io.NopCloser(strings.NewReader(buf.String()))
 		}
 
-		if rec, ok := w.(contracts.BodyCapturer); ok {
+		if rec, ok := writer.(contracts.BodyCapturer); ok {
 			rec.EnableBodyCapture()
 
-			err := next.ServeHTTP(w, req)
+			err := next.ServeHTTP(writer, req)
 
 			elapsed := time.Since(start)
 			entry := m.buildEntry(req, rec.Captured(), start, elapsed, reqBodySize)
@@ -66,13 +66,13 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return err
 		}
 
-		return next.ServeHTTP(w, req)
+		return next.ServeHTTP(writer, req)
 	})
 }
 
 func (m *Middleware) buildEntry(
 	req *http.Request,
-	cap contracts.ResponseCapture,
+	capture contracts.ResponseCapture,
 	start time.Time,
 	elapsed time.Duration,
 	reqBodySize int64,
@@ -83,7 +83,7 @@ func (m *Middleware) buildEntry(
 		StartedDateTime: start,
 		Time:            elapsedMS,
 		Request:         m.buildRequest(req, reqBodySize),
-		Response:        m.buildResponse(cap),
+		Response:        m.buildResponse(capture),
 		Timings: Timings{
 			Send:    0,
 			Wait:    elapsedMS,
@@ -118,8 +118,8 @@ func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
 	}
 }
 
-func (m *Middleware) buildResponse(cap contracts.ResponseCapture) Response {
-	mimeType := cap.Header.Get("Content-Type")
+func (m *Middleware) buildResponse(capture contracts.ResponseCapture) Response {
+	mimeType := capture.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
@@ -127,20 +127,20 @@ func (m *Middleware) buildResponse(cap contracts.ResponseCapture) Response {
 	var cookies []Cookie
 
 	if m.captureSecureHeaders {
-		cookies = cookiesToHAR(extractResponseCookies(cap.Header))
+		cookies = cookiesToHAR(extractResponseCookies(capture.Header))
 	}
 
-	rawBody := cap.Body
-	content := buildContent(rawBody, cap.Header.Get("Content-Encoding"), mimeType)
+	rawBody := capture.Body
+	content := buildContent(rawBody, capture.Header.Get("Content-Encoding"), mimeType)
 
 	return Response{
-		Status:      cap.StatusCode,
-		StatusText:  http.StatusText(cap.StatusCode),
+		Status:      capture.StatusCode,
+		StatusText:  http.StatusText(capture.StatusCode),
 		HTTPVersion: "HTTP/1.1",
-		Headers:     m.headersToNameValues(cap.Header),
+		Headers:     m.headersToNameValues(capture.Header),
 		Cookies:     cookies,
 		Content:     content,
-		RedirectURL: cap.Header.Get("Location"),
+		RedirectURL: capture.Header.Get("Location"),
 		HeadersSize: -1,
 		BodySize:    int64(len(rawBody)),
 	}
