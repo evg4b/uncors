@@ -42,8 +42,6 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(w contracts.ResponseWriter, req *contracts.Request) error {
 		start := time.Now()
 
-		capture := newCaptureWriter(w)
-
 		var reqBodySize int64
 
 		if req.Body != nil && req.Body != http.NoBody {
@@ -53,25 +51,28 @@ func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			reqBodySize = n
 			_ = req.Body.Close()
 
-			// Restore body so the next handler can read it.
 			req.Body = io.NopCloser(strings.NewReader(buf.String()))
 		}
 
-		err := next.ServeHTTP(capture, req)
+		if rec, ok := w.(contracts.BodyCapturer); ok {
+			rec.EnableBodyCapture()
 
-		elapsed := time.Since(start)
+			err := next.ServeHTTP(w, req)
 
-		entry := m.buildEntry(req, capture, start, elapsed, reqBodySize)
+			elapsed := time.Since(start)
+			entry := m.buildEntry(req, rec.Captured(), start, elapsed, reqBodySize)
+			m.writer.AddEntry(entry)
 
-		m.writer.AddEntry(entry)
+			return err
+		}
 
-		return err
+		return next.ServeHTTP(w, req)
 	})
 }
 
 func (m *Middleware) buildEntry(
 	req *http.Request,
-	capture *captureWriter,
+	cap contracts.ResponseCapture,
 	start time.Time,
 	elapsed time.Duration,
 	reqBodySize int64,
@@ -82,7 +83,7 @@ func (m *Middleware) buildEntry(
 		StartedDateTime: start,
 		Time:            elapsedMS,
 		Request:         m.buildRequest(req, reqBodySize),
-		Response:        m.buildResponse(capture),
+		Response:        m.buildResponse(cap),
 		Timings: Timings{
 			Send:    0,
 			Wait:    elapsedMS,
@@ -117,8 +118,8 @@ func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
 	}
 }
 
-func (m *Middleware) buildResponse(capture *captureWriter) Response {
-	mimeType := capture.Header().Get("Content-Type")
+func (m *Middleware) buildResponse(cap contracts.ResponseCapture) Response {
+	mimeType := cap.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
@@ -126,20 +127,20 @@ func (m *Middleware) buildResponse(capture *captureWriter) Response {
 	var cookies []Cookie
 
 	if m.captureSecureHeaders {
-		cookies = cookiesToHAR(extractResponseCookies(capture.Header()))
+		cookies = cookiesToHAR(extractResponseCookies(cap.Header))
 	}
 
-	rawBody := capture.body()
-	content := buildContent(rawBody, capture.Header().Get("Content-Encoding"), mimeType)
+	rawBody := cap.Body
+	content := buildContent(rawBody, cap.Header.Get("Content-Encoding"), mimeType)
 
 	return Response{
-		Status:      capture.code,
-		StatusText:  http.StatusText(capture.code),
+		Status:      cap.StatusCode,
+		StatusText:  http.StatusText(cap.StatusCode),
 		HTTPVersion: "HTTP/1.1",
-		Headers:     m.headersToNameValues(capture.Header()),
+		Headers:     m.headersToNameValues(cap.Header),
 		Cookies:     cookies,
 		Content:     content,
-		RedirectURL: capture.Header().Get("Location"),
+		RedirectURL: cap.Header.Get("Location"),
 		HeadersSize: -1,
 		BodySize:    int64(len(rawBody)),
 	}
@@ -184,7 +185,6 @@ func cookiesToHAR(cookies []*http.Cookie) []Cookie {
 }
 
 func extractResponseCookies(h http.Header) []*http.Cookie {
-	// Parse Set-Cookie headers via a synthetic response.
 	resp := &http.Response{Header: h}
 
 	return resp.Cookies()

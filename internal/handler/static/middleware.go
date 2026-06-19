@@ -29,8 +29,6 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		response := contracts.WrapResponseWriter(writer)
-
 		filePath := h.extractFilePath(request)
 
 		file, stat, err := h.openFile(filePath)
@@ -38,7 +36,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 
 		if err != nil {
 			if errors.Is(err, errNotHandled) {
-				return next.ServeHTTP(response, request)
+				return next.ServeHTTP(writer, request)
 			}
 
 			log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
@@ -46,7 +44,7 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return err
 		}
 
-		http.ServeContent(response, request, stat.Name(), stat.ModTime(), file)
+		http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
 		return nil
 	})

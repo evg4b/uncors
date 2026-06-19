@@ -51,10 +51,39 @@ func (m *Middleware) cacheRequest(
 		return nil
 	}
 
-	cacheableWriter := NewCacheableResponseWriter(m.cache, writer, cacheKey)
-	defer cacheableWriter.Close()
+	if rec, ok := writer.(contracts.BodyCapturer); ok {
+		rec.EnableBodyCapture()
 
-	return next.ServeHTTP(cacheableWriter, request)
+		err := next.ServeHTTP(writer, request)
+		m.storeResponse(cacheKey, rec.Captured())
+
+		return err
+	}
+
+	return next.ServeHTTP(writer, request)
+}
+
+func (m *Middleware) storeResponse(key string, cap contracts.ResponseCapture) {
+	if !helpers.Is2xxCode(cap.StatusCode) {
+		return
+	}
+
+	headers := lo.MapToSlice(cap.Header, func(name string, values []string) contracts.CachedHeader {
+		return contracts.CachedHeader{
+			Name:  name,
+			Value: values,
+		}
+	})
+
+	sort.Slice(headers, func(i, j int) bool {
+		return headers[i].Name < headers[j].Name
+	})
+
+	m.cache.Set(key, contracts.CachedResponse{
+		Code:    cap.StatusCode,
+		Body:    cap.Body,
+		Headers: headers,
+	})
 }
 
 func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *contracts.CachedResponse) {

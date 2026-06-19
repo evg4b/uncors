@@ -18,12 +18,13 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func makeHARWriter(rec *httptest.ResponseRecorder) contracts.ResponseWriter {
-	return contracts.WrapResponseWriter(rec)
+func makeHARWriter(rec *httptest.ResponseRecorder) *server.ResponseRecorder {
+	return server.NewResponseRecorder(rec)
 }
 
 func makeHARRequest(t *testing.T, rawURL string) *http.Request {
@@ -93,7 +94,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/path")) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path")) //nolint:errcheck
 
 		assert.True(t, called)
 		assert.Equal(t, http.StatusOK, rec.Code)
@@ -111,7 +113,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/")) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/")) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -129,7 +132,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -160,7 +164,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		require.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
 
 		assert.Equal(t, body, received)
 	})
@@ -181,7 +186,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -190,11 +196,9 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		entry := archive.Log.Entries[0]
 
-		// Cookies arrays must be empty.
 		assert.Empty(t, entry.Request.Cookies)
 		assert.Empty(t, entry.Response.Cookies)
 
-		// Sensitive headers must not appear.
 		blocked := []string{"Cookie", "Authorization"}
 		for _, name := range blocked {
 			for _, nv := range entry.Request.Headers {
@@ -221,7 +225,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.TLS = &tls.ConnectionState{}
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -249,7 +254,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
-		mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), req) //nolint:errcheck
+		rr := makeHARWriter(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
 
 		require.NoError(t, harWriter.Close())
 
@@ -301,7 +307,8 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 			})
 
 			rec := httptest.NewRecorder()
-			mdlw.Wrap(next).ServeHTTP(makeHARWriter(rec), makeHARRequest(t, "http://example.com/api")) //nolint:errcheck
+			rr := makeHARWriter(rec)
+			mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api")) //nolint:errcheck
 
 			require.NoError(t, harWriter.Close())
 
