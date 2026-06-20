@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 
@@ -30,7 +31,12 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		if !m.isCacheableRequest(request) {
+		isCacheable, err := m.isCacheableRequest(request)
+		if err != nil {
+			return err
+		}
+
+		if !isCacheable {
 			return next.ServeHTTP(writer, request)
 		}
 
@@ -102,15 +108,23 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 	}
 }
 
-func (m *Middleware) isCacheableRequest(request *contracts.Request) bool {
-	return lo.Contains(m.methods, request.Method) && lo.ContainsBy(m.pathGlobs, func(pattern string) bool {
+func (m *Middleware) isCacheableRequest(request *contracts.Request) (bool, error) {
+	if !slices.Contains(m.methods, request.Method) {
+		return false, nil
+	}
+
+	for _, pattern := range m.pathGlobs {
 		ok, err := doublestar.PathMatch(pattern, request.URL.Path)
 		if err != nil {
-			panic(err)
+			return false, err
 		}
 
-		return ok
-	})
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (m *Middleware) extractCacheKey(method string, url *url.URL) string {

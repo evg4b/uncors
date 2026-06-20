@@ -2,6 +2,7 @@ package uncors
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"strconv"
@@ -85,9 +86,10 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *Uncors) Close() error {
-	app.closeAll()
-
-	return app.server.Close()
+	return errors.Join(
+		app.closeAll(),
+		app.server.Close(),
+	)
 }
 
 func (app *Uncors) Wait() {
@@ -117,12 +119,19 @@ func (app *Uncors) registerCloser(c io.Closer) {
 	app.closers = append(app.closers, c)
 }
 
-func (app *Uncors) closeAll() {
+func (app *Uncors) closeAll() error {
+	var errs []error
+
 	for _, c := range app.closers {
-		_ = c.Close()
+		err := c.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	app.closers = nil
+
+	return errors.Join(errs...)
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
