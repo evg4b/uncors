@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +27,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 
 	t.Run("cast correctly", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
-		responseWriter := contracts.WrapResponseWriter(recorder)
+		responseWriter := server.NewResponseRecorder(recorder)
 
 		assert.NotPanics(t, func() {
 			handler.ServeHTTP(responseWriter, request) //nolint:errcheck
@@ -54,7 +55,7 @@ func TestHandlerFunc(t *testing.T) {
 	})
 
 	recorder := httptest.NewRecorder()
-	responseWriter := contracts.WrapResponseWriter(recorder)
+	responseWriter := server.NewResponseRecorder(recorder)
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
 
 	uncorsHandler.ServeHTTP(responseWriter, request) //nolint:errcheck

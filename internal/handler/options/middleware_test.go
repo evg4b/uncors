@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
@@ -188,7 +188,7 @@ func TestMiddleware(t *testing.T) {
 
 				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 									ServeHTTP(
-						contracts.WrapResponseWriter(recorder),
+						server.NewResponseRecorder(recorder),
 						request,
 					)
 
@@ -210,7 +210,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				server.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -236,7 +236,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				server.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -258,7 +258,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				server.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -283,7 +283,7 @@ func TestMiddleware(t *testing.T) {
 
 		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
 							ServeHTTP(
-				contracts.WrapResponseWriter(recorder),
+				server.NewResponseRecorder(recorder),
 				request,
 			)
 
@@ -314,7 +314,7 @@ func TestMiddleware(t *testing.T) {
 				middleware := options.NewMiddleware()
 
 				recorder := httptest.NewRecorder()
-				response := contracts.WrapResponseWriter(recorder)
+				response := server.NewResponseRecorder(recorder)
 				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil) //nolint: errcheck

@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -142,7 +143,7 @@ func noopHARFactory() handler.HARMiddlewareFactory {
 }
 
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
-	wrappedWriter := contracts.WrapResponseWriter(recorder)
+	wrappedWriter := server.NewResponseRecorder(recorder)
 	contractsRouter := contracts.CastToContractsHandler(router)
 	httpRouterHandler := contracts.CastToHTTPHandler(contractsRouter)
 	httpRouterHandler.ServeHTTP(wrappedWriter, request)

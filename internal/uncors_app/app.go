@@ -32,7 +32,7 @@ type uncorsApp struct {
 
 	app     *uncors.Uncors
 	output  *tuiOutput
-	tracker *server.RequestTracker
+	tracker server.IRequestTracker
 
 	outputCh   chan string
 	appContext func() context.Context

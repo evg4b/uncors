@@ -21,12 +21,12 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (app *Uncors) buildProxyHandler(uncorsConfig *config.UncorsConfig, mappings config.Mappings) contracts.Handler {
+func (app *Uncors) buildProxyHandler(proxyURL string, mappings config.Mappings) contracts.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
 
 	return withPrefix(prefix, proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(infra.MakeHTTPClient(uncorsConfig.Proxy)),
+		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
 		proxy.WithOutput(app.output.NewPrefixOutput(prefix)),
 	))
 }

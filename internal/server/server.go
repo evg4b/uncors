@@ -31,11 +31,11 @@ type Server struct {
 
 	listeners []*PortListener
 	manager   *HostCertManager
-	tracker   *RequestTracker
+	tracker   IRequestTracker
 	nextID    atomic.Uint64
 }
 
-func New(manager *HostCertManager, tracker *RequestTracker) *Server {
+func New(manager *HostCertManager, tracker IRequestTracker) *Server {
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
@@ -81,7 +81,9 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 
 			var once sync.Once
 
-			err := srv.Listen(ctx, func() { once.Do(launchWaitGroup.Done) })
+			err := srv.Listen(ctx, func() {
+				once.Do(launchWaitGroup.Done)
+			})
 
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				launchErrorsMu.Lock()
@@ -123,9 +125,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 			err := srv.Shutdown(ctx)
 			if err != nil {
 				errsMu.Lock()
+				defer errsMu.Unlock()
 
 				errs = append(errs, err)
-				errsMu.Unlock()
 			}
 		}(server)
 	}
@@ -151,8 +153,8 @@ func (s *Server) Wait() {
 func (s *Server) Close() error {
 	var errs []error
 
-	for _, pl := range s.listeners {
-		err := pl.Close()
+	for _, portListener := range s.listeners {
+		err := portListener.Close()
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -164,39 +166,38 @@ func (s *Server) Close() error {
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
-	responseWriter := contracts.WrapResponseWriter(writer)
-
+	rec := NewResponseRecorder(writer)
 	requestID := s.nextID.Add(1)
-	select {
-	case s.tracker.events <- RequestEvent{
+
+	s.tracker.Emit(RequestEvent{
 		ID:        requestID,
 		Method:    request.Method,
 		URL:       request.URL,
 		StartedAt: time.Now(),
-	}:
-	default:
-	}
+	})
 
 	var lastPrefix string
 
-	ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(p string) {
-		lastPrefix = p
-		select {
-		case s.tracker.events <- RequestEvent{ID: requestID, Prefix: p}:
-		default:
-		}
+	ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(prefix string) {
+		lastPrefix = prefix
+		s.tracker.Emit(RequestEvent{
+			ID:     requestID,
+			Prefix: prefix,
+		})
 	})
 
-	err := handler.ServeHTTP(responseWriter, request.WithContext(ctx))
+	err := handler.ServeHTTP(rec, request.WithContext(ctx))
 	if err != nil {
-		infra.HTTPError(responseWriter, err)
+		infra.HTTPError(rec, err)
 	}
 
-	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(responseWriter.StatusCode()))
+	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil
 
-	select {
-	case s.tracker.events <- RequestEvent{ID: requestID, Done: true, Prefix: lastPrefix, Data: data}:
-	default:
-	}
+	s.tracker.Emit(RequestEvent{
+		ID:     requestID,
+		Done:   true,
+		Prefix: lastPrefix,
+		Data:   data,
+	})
 }
