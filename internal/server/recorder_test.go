@@ -66,7 +66,8 @@ func TestResponseRecorder_Captured(t *testing.T) {
 
 	t.Run("body is nil when capture not enabled", func(t *testing.T) {
 		rec := server.NewResponseRecorder(httptest.NewRecorder())
-		_, _ = rec.Write([]byte("ignored"))
+		_, err := rec.Write([]byte("ignored"))
+		require.NoError(t, err)
 
 		assert.Nil(t, rec.Captured().Body)
 	})
@@ -74,7 +75,8 @@ func TestResponseRecorder_Captured(t *testing.T) {
 	t.Run("body is captured when EnableBodyCapture is called", func(t *testing.T) {
 		rec := server.NewResponseRecorder(httptest.NewRecorder())
 		rec.EnableBodyCapture()
-		_, _ = rec.Write([]byte("captured"))
+		_, err := rec.Write([]byte("captured"))
+		require.NoError(t, err)
 
 		assert.Equal(t, []byte("captured"), rec.Captured().Body)
 	})
@@ -83,7 +85,8 @@ func TestResponseRecorder_Captured(t *testing.T) {
 		rec := server.NewResponseRecorder(httptest.NewRecorder())
 		rec.EnableBodyCapture()
 		rec.EnableBodyCapture()
-		_, _ = rec.Write([]byte("once"))
+		_, err := rec.Write([]byte("once"))
+		require.NoError(t, err)
 
 		assert.Equal(t, []byte("once"), rec.Captured().Body)
 	})

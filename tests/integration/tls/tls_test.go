@@ -18,7 +18,8 @@ import (
 
 func TestTLS(t *testing.T) {
 	backend := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "secure")
+		_, err := io.WriteString(w, "secure")
+		assert.NoError(t, err)
 	})
 	env := integration.New(t, backend, &config.UncorsConfig{
 		Mappings: config.Mappings{{

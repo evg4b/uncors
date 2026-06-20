@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMiddlewareWrap(t *testing.T) {
@@ -41,7 +42,8 @@ func TestMiddlewareWrap(t *testing.T) {
 		})
 
 		handler := middleware.Wrap(next)
-		handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+		require.NoError(t, err)
 
 		assert.True(t, nextCalled)
 	})
@@ -70,7 +72,8 @@ func TestMiddlewareWrap(t *testing.T) {
 		})
 
 		handler := middleware.Wrap(next)
-		handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+		serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+		require.NoError(t, serveErr)
 
 		assert.True(t, nextCalled)
 	})

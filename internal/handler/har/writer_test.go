@@ -91,7 +91,10 @@ func TestWriter(t *testing.T) {
 		path := filepath.Join(dir, "out.har")
 
 		require.NoError(t, os.Chmod(dir, 0o500))
-		t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+		t.Cleanup(func() {
+			err := os.Chmod(dir, 0o755)
+			require.NoError(t, err)
+		})
 
 		harWriter := har.NewWriter(path)
 		harWriter.AddEntry(har.Entry{})

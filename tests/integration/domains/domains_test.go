@@ -22,7 +22,8 @@ import (
 // purely through the in-memory host resolver (no /etc/hosts, no real DNS).
 func TestLocalDomainMapping(t *testing.T) {
 	backend := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "from backend")
+		_, err := io.WriteString(w, "from backend")
+		assert.NoError(t, err)
 	})
 	env := integration.New(t, backend, &config.UncorsConfig{
 		Mappings: config.Mappings{{
@@ -66,7 +67,8 @@ func TestLocalDomainMapping(t *testing.T) {
 // serves any subdomain, each resolved in-memory to the loopback proxy.
 func TestPlaceholderDomainMapping(t *testing.T) {
 	backend := integration.NewBackend(t, func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.WriteString(w, "served "+r.URL.Path) //nolint:gosec
+		_, err := io.WriteString(w, "served "+r.URL.Path) //nolint:gosec
+		assert.NoError(t, err)
 	})
 	env := integration.New(t, backend, &config.UncorsConfig{
 		Mappings: config.Mappings{{
@@ -105,10 +107,12 @@ func TestPlaceholderDomainMapping(t *testing.T) {
 // only its own remote, and the forwarded request carries that remote's address.
 func TestSharedPortDistinctRemotes(t *testing.T) {
 	shopRemote := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "shop remote")
+		_, err := io.WriteString(w, "shop remote")
+		assert.NoError(t, err)
 	})
 	blogRemote := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "blog remote")
+		_, err := io.WriteString(w, "blog remote")
+		assert.NoError(t, err)
 	})
 
 	// One local port shared by both domains; an explicit port is respected by the

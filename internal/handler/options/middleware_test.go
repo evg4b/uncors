@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -186,8 +187,8 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-									ServeHTTP(
+				_ = middleware.Wrap(mockedNextHandler).
+					ServeHTTP(
 						server.NewResponseRecorder(recorder),
 						request,
 					)
@@ -208,11 +209,10 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-							ServeHTTP(
-				server.NewResponseRecorder(recorder),
-				request,
-			)
+		err := middleware.Wrap(mockedNextHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -234,8 +234,8 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-							ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler).
+			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
 			)
@@ -256,8 +256,8 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-							ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler).
+			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
 			)
@@ -281,8 +281,8 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-							ServeHTTP(
+		_ = middleware.Wrap(mockedNextHandler).
+			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
 			)
@@ -317,10 +317,11 @@ func TestMiddleware(t *testing.T) {
 				response := server.NewResponseRecorder(recorder)
 				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
-				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil) //nolint: errcheck
+				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil)
 
-				_ = middleware.Wrap(mockedNextHandler). //nolint:errcheck
-									ServeHTTP(response, request)
+				err := middleware.Wrap(mockedNextHandler).
+					ServeHTTP(response, request)
+				require.NoError(t, err)
 
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Empty(t, recorder.Header())

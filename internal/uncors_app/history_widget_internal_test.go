@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHistoryWidget(t *testing.T) {
@@ -12,7 +13,8 @@ func TestHistoryWidget(t *testing.T) {
 
 	cleanup := func(widget *HistoryWidget) {
 		if widget != nil && widget.hist != nil {
-			_ = widget.Close()
+			err := widget.Close()
+			require.NoError(t, err)
 		}
 	}
 

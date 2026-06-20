@@ -103,10 +103,8 @@ func TestNewConfigWatcher(t *testing.T) {
 		defer watcher.Close()
 
 		// Write multiple times in quick succession.
-		for i := range 5 {
+		for range 5 {
 			require.NoError(t, os.WriteFile(configFile, []byte("proxy: change"), 0o600))
-
-			_ = i
 		}
 
 		// Wait for the first (and hopefully only) callback.

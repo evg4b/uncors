@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"testing"
@@ -39,7 +40,9 @@ func NewServer(t *testing.T, handler http.Handler) *TestServer {
 	}
 }
 
-func (s *TestServer) Close() {
-	_ = s.server.Close()
-	_ = s.listener.Close()
+func (s *TestServer) Close() error {
+	return errors.Join(
+		s.server.Close(),
+		s.listener.Close(),
+	)
 }

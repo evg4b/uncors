@@ -16,6 +16,7 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -74,7 +75,8 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+				require.NoError(t, err)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.expected, body)
@@ -141,7 +143,8 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+				require.NoError(t, err)
 
 				header := testutils.ReadHeader(t, recorder)
 				assert.Equal(t, testCase.expected, header.Get(headers.ContentType))
@@ -242,7 +245,8 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected, testutils.ReadHeader(t, recorder))
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -295,7 +299,8 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
@@ -315,6 +320,7 @@ func TestHandler(t *testing.T) {
 					response: config.Response{
 						Code:  http.StatusCreated,
 						Delay: 3 * time.Second,
+						Raw:   "Ok",
 					},
 					shouldBeCalled: true,
 					expected:       3 * time.Second,
@@ -324,6 +330,7 @@ func TestHandler(t *testing.T) {
 					response: config.Response{
 						Code:  http.StatusCreated,
 						Delay: 15 * time.Hour,
+						Raw:   "Ok",
 					},
 					shouldBeCalled: true,
 					expected:       15 * time.Hour,
@@ -333,6 +340,7 @@ func TestHandler(t *testing.T) {
 					response: config.Response{
 						Code:  http.StatusCreated,
 						Delay: 0 * time.Second,
+						Raw:   "Ok",
 					},
 					shouldBeCalled: false,
 				},
@@ -340,6 +348,7 @@ func TestHandler(t *testing.T) {
 					name: "delay is not set",
 					response: config.Response{
 						Code: http.StatusCreated,
+						Raw:  "Ok",
 					},
 					shouldBeCalled: false,
 				},
@@ -348,6 +357,7 @@ func TestHandler(t *testing.T) {
 					response: config.Response{
 						Code:  http.StatusCreated,
 						Delay: -13 * time.Minute,
+						Raw:   "Ok",
 					},
 					shouldBeCalled: false,
 				},
@@ -370,7 +380,8 @@ func TestHandler(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
 
-					handler.ServeHTTP(server.NewResponseRecorder(recorder), request) //nolint:errcheck
+					err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+					require.NoError(t, err)
 
 					assert.Equal(t, called, testCase.shouldBeCalled)
 				})
@@ -395,7 +406,8 @@ func TestHandler(t *testing.T) {
 			var waitGroup sync.WaitGroup
 
 			waitGroup.Go(func() {
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), request.WithContext(ctx)) //nolint:errcheck
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request.WithContext(ctx))
+				require.NoError(t, err)
 			})
 
 			cancel()

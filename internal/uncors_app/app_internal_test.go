@@ -50,10 +50,12 @@ func cleanupTestApp(t *testing.T, app *uncorsApp) {
 	t.Helper()
 
 	app.cancel()
-	_ = app.app.Close()
+	err := app.app.Close()
+	require.NoError(t, err)
 
 	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		_ = app.historyWidget.hist.Close()
+		err := app.historyWidget.hist.Close()
+		require.NoError(t, err)
 	}
 }
 
@@ -289,7 +291,8 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		assert.Equal(t, tea.Quit(), cmd())
 
 		app.cancel()
-		_ = app.app.Close()
+		err := app.app.Close()
+		require.NoError(t, err)
 	})
 }
 
@@ -308,7 +311,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
 		require.NoError(t, err)
 
-		_ = tmpFile.Close()
+		err = tmpFile.Close()
+		require.NoError(t, err)
 
 		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
@@ -319,10 +323,12 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 
 		defer func() {
 			app.cancel()
-			_ = app.app.Close()
+			err := app.app.Close()
+			require.NoError(t, err)
 
 			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				_ = app.historyWidget.hist.Close()
+				err := app.historyWidget.hist.Close()
+				require.NoError(t, err)
 			}
 		}()
 
@@ -331,7 +337,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		require.NotNil(t, cmd)
 		require.NotNil(t, app.watcher)
 
-		_ = app.watcher.Close()
+		err = app.watcher.Close()
+		require.NoError(t, err)
 	})
 
 	t.Run("logs error when config file does not exist", func(t *testing.T) {
@@ -344,10 +351,12 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 
 		defer func() {
 			app.cancel()
-			_ = app.app.Close()
+			err := app.app.Close()
+			require.NoError(t, err)
 
 			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				_ = app.historyWidget.hist.Close()
+				err := app.historyWidget.hist.Close()
+				require.NoError(t, err)
 			}
 		}()
 
@@ -383,7 +392,8 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
 	require.NoError(t, err)
 
-	_ = tmpFile.Close()
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	fs := afero.NewMemMapFs()
 	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
@@ -410,11 +420,13 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 		app.cancel()
 
 		if app.watcher != nil {
-			_ = app.watcher.Close()
+			err := app.watcher.Close()
+			require.NoError(t, err)
 		}
 
 		if app.historyWidget != nil && app.historyWidget.hist != nil {
-			_ = app.historyWidget.hist.Close()
+			err := app.historyWidget.hist.Close()
+			require.NoError(t, err)
 		}
 	}()
 
@@ -436,7 +448,8 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
 	require.NoError(t, err)
 
-	_ = tmpFile.Close()
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	ctx := t.Context()
 
@@ -452,9 +465,11 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 	assert.Equal(t, tea.Quit(), cmd())
 
 	app.cancel()
-	_ = app.app.Close()
+	err = app.app.Close()
+	require.NoError(t, err)
 
 	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		_ = app.historyWidget.hist.Close()
+		err := app.historyWidget.hist.Close()
+		require.NoError(t, err)
 	}
 }

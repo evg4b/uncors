@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlt"
@@ -86,13 +85,13 @@ func TestProxyHandler(t *testing.T) {
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
 				testutils.CheckNoError(t, err)
 
-				req.URL.Scheme = targetURL.Scheme
 				req.Host = targetURL.Host
-				req.URL.Path = targetURL.Path
+				req.URL = targetURL
 
 				req.Header.Add(testCase.headerKey, testCase.URL)
 
-				handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+				err = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+				require.NoError(t, err)
 			})
 		}
 	})
@@ -146,7 +145,8 @@ func TestProxyHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 
-				handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
+				err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expectedURL, recorder.Header().Get(testCase.headerKey))
 			})
@@ -180,7 +180,8 @@ func TestProxyHandler(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 
-		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
+		err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+		require.NoError(t, err)
 
 		header := recorder.Header()
 		assert.Equal(t, "*", header.Get(headers.AccessControlAllowOrigin))
@@ -220,7 +221,8 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set(headers.ContentType, "application/json")
 		helpers.NormaliseRequest(req)
 
-		handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+		err = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
 	})
 
 	t.Run("should forward cookies from request to target", func(t *testing.T) {
@@ -259,7 +261,8 @@ func TestProxyHandler(t *testing.T) {
 		})
 		helpers.NormaliseRequest(req)
 
-		handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req) //nolint:errcheck
+		err = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
 	})
 
 	t.Run("should forward cookies from response to source", func(t *testing.T) {
@@ -290,7 +293,8 @@ func TestProxyHandler(t *testing.T) {
 		helpers.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
+		err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+		require.NoError(t, err)
 
 		cookies := recorder.Result().Cookies()
 		require.NotEmpty(t, cookies)
@@ -326,7 +330,8 @@ func TestProxyHandler(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, "premium.api.com"))
 
 		recorder := httptest.NewRecorder()
-		handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
+		err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+		require.NoError(t, err)
 	})
 
 	t.Run("should return error when http client fails", func(t *testing.T) {
@@ -350,12 +355,9 @@ func TestProxyHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		responseWriter := server.NewResponseRecorder(recorder)
 
-		handlerErr := handler.ServeHTTP(responseWriter, req) //nolint:errcheck
-		if handlerErr != nil {
-			infra.HTTPError(responseWriter, handlerErr)
-		}
+		handlerErr := handler.ServeHTTP(responseWriter, req)
 
-		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.ErrorIs(t, handlerErr, errNetworkError)
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
@@ -422,7 +424,8 @@ func TestProxyHandler(t *testing.T) {
 					req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 					testutils.CheckNoError(t, err)
 
-					handler.ServeHTTP(server.NewResponseRecorder(recorder), req) //nolint:errcheck
+					err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+					require.NoError(t, err)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, recorder.Header())

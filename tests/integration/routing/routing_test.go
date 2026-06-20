@@ -19,10 +19,12 @@ func TestRouting(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/users", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"ok":true}`)
+		_, err := io.WriteString(w, `{"ok":true}`)
+		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "pong")
+		_, err := io.WriteString(w, "pong")
+		assert.NoError(t, err)
 	})
 
 	backend := integration.NewBackend(t, mux.ServeHTTP)

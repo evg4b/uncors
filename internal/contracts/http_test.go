@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCastToHTTPHandler(t *testing.T) {
@@ -30,7 +31,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 		responseWriter := server.NewResponseRecorder(recorder)
 
 		assert.NotPanics(t, func() {
-			handler.ServeHTTP(responseWriter, request) //nolint:errcheck
+			handler.ServeHTTP(responseWriter, request)
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
 	})
@@ -39,7 +40,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		assert.PanicsWithValue(t, contracts.ErrResponseNotCasted, func() {
-			handler.ServeHTTP(recorder, request) //nolint:errcheck
+			handler.ServeHTTP(recorder, request)
 		})
 	})
 }
@@ -58,7 +59,8 @@ func TestHandlerFunc(t *testing.T) {
 	responseWriter := server.NewResponseRecorder(recorder)
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
 
-	uncorsHandler.ServeHTTP(responseWriter, request) //nolint:errcheck
+	err := uncorsHandler.ServeHTTP(responseWriter, request)
 
+	require.NoError(t, err)
 	assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 }

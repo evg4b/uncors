@@ -78,7 +78,7 @@ func TestWatcherRunEventsNotOk(t *testing.T) {
 
 	// Close the underlying fsnotify watcher so its backend goroutine can exit.
 	// It closes its own (original) Events and Errors channels, not ours.
-	_ = watcher.fsWatcher.Close()
+	require.NoError(t, watcher.fsWatcher.Close())
 }
 
 // TestWatcherRunErrorsNotOk covers the return in run() when the Errors channel
@@ -102,7 +102,7 @@ func TestWatcherRunErrorsNotOk(t *testing.T) {
 
 	// Close the underlying fsnotify watcher so its backend goroutine can exit.
 	// It closes its own (original) Events and Errors channels, not ours.
-	_ = watcher.fsWatcher.Close()
+	require.NoError(t, watcher.fsWatcher.Close())
 }
 
 // TestWatcherRunErrorPath covers the log.Printf branch in run() when an error
@@ -128,5 +128,5 @@ func TestWatcherRunErrorPath(t *testing.T) {
 	}
 
 	// Close the underlying fsnotify watcher so its backend goroutine can exit.
-	_ = watcher.fsWatcher.Close()
+	require.NoError(t, watcher.fsWatcher.Close())
 }

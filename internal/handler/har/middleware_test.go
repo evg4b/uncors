@@ -63,11 +63,13 @@ func compressBody(t *testing.T, algo string, data []byte) []byte {
 	switch algo {
 	case "gzip":
 		w := gzip.NewWriter(&buf)
-		_, _ = w.Write(data)
+		_, err := w.Write(data)
+		require.NoError(t, err)
 		require.NoError(t, w.Close())
 	case "deflate":
 		w := zlib.NewWriter(&buf)
-		_, _ = w.Write(data)
+		_, err := w.Write(data)
+		require.NoError(t, err)
 		require.NoError(t, w.Close())
 	}
 
@@ -78,7 +80,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("passes request to next handler", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		defer harWriter.Close() //nolint:errcheck
+		defer harWriter.Close()
 
 		called := false
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
@@ -91,7 +93,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path")) //nolint:errcheck
+		err := mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
+		require.NoError(t, err)
 
 		assert.True(t, called)
 		assert.Equal(t, http.StatusOK, rec.Code)
@@ -110,7 +113,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/")) //nolint:errcheck
+		err := mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
+		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
 
@@ -129,7 +133,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
+		err := mdlw.Wrap(next).ServeHTTP(rr, req)
+		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
 
@@ -139,7 +144,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("restores request body for downstream handlers", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		defer harWriter.Close() //nolint:errcheck
+		defer harWriter.Close()
 
 		body := "request-payload"
 
@@ -161,7 +166,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
+		serveErr := mdlw.Wrap(next).ServeHTTP(rr, req)
+		require.NoError(t, serveErr)
 
 		assert.Equal(t, body, received)
 	})
@@ -183,7 +189,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
+		err := mdlw.Wrap(next).ServeHTTP(rr, req)
+		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
 
@@ -222,7 +229,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
+		err := mdlw.Wrap(next).ServeHTTP(rr, req)
+		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
 
@@ -251,7 +259,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		mdlw.Wrap(next).ServeHTTP(rr, req) //nolint:errcheck
+		serveErr := mdlw.Wrap(next).ServeHTTP(rr, req)
+		require.NoError(t, serveErr)
 
 		require.NoError(t, harWriter.Close())
 
@@ -297,14 +306,19 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 				rw.Header().Set("Content-Type", "application/json")
 				rw.Header().Set("Content-Encoding", testCase.encoding)
 				rw.WriteHeader(http.StatusOK)
-				_, _ = rw.Write(compressed)
+
+				_, err := rw.Write(compressed)
+				if err != nil {
+					return err
+				}
 
 				return nil
 			})
 
 			rec := httptest.NewRecorder()
 			rr := server.NewResponseRecorder(rec)
-			mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api")) //nolint:errcheck
+			serveErr := mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
+			require.NoError(t, serveErr)
 
 			require.NoError(t, harWriter.Close())
 

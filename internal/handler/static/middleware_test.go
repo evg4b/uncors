@@ -10,7 +10,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -120,10 +119,11 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
+					require.NoError(t, serveErr)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -138,10 +138,11 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
+					require.NoError(t, serveErr)
 
 					assert.Equal(t, testHTTPStatusCode, recorder.Code)
 					assert.Equal(t, testHTTPBody, testutils.ReadBody(t, recorder))
@@ -165,10 +166,11 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
+					require.NoError(t, serveErr)
 
 					require.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
@@ -183,10 +185,12 @@ func TestStaticMiddleware(t *testing.T) {
 					requestURI, err := url.Parse(testCase.path)
 					testutils.CheckNoError(t, err)
 
-					_ = handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{ //nolint:errcheck
+					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
 						Method: http.MethodGet,
 						URL:    requestURI,
 					})
+
+					require.NoError(t, serveErr)
 
 					assert.Equal(t, http.StatusOK, recorder.Code)
 					assert.Equal(t, indexHTMLContent, testutils.ReadBody(t, recorder))
@@ -212,11 +216,8 @@ func TestStaticMiddleware(t *testing.T) {
 				Method: http.MethodGet,
 				URL:    requestURI,
 			})
-			if handlerErr != nil {
-				infra.HTTPError(responseWriter, handlerErr)
-			}
 
-			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+			assert.Error(t, handlerErr)
 		})
 	})
 }

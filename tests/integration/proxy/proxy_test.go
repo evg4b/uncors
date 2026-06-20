@@ -37,7 +37,7 @@ func newMuxBackend(t *testing.T) *backend {
 	t.Helper()
 
 	self := &backend{}
-	self.Backend = integration.NewBackend(t, backendMux(self).ServeHTTP)
+	self.Backend = integration.NewBackend(t, backendMux(t, self).ServeHTTP)
 	self.base = self.URL()
 
 	parsed, err := url.Parse(self.base)
@@ -51,17 +51,19 @@ func newMuxBackend(t *testing.T) *backend {
 // backendMux serves the endpoints the proxy tests forward to. The /redirect and
 // /set-cookie handlers emit the backend's own address (from self), so the test
 // can assert the proxy rewrites it back to the source host.
-func backendMux(self *backend) http.Handler {
+func backendMux(t *testing.T, self *backend) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/echo", func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = io.WriteString(writer, "echo:"+request.URL.Path) //nolint:gosec
+		_, err := io.WriteString(writer, "echo:"+request.URL.Path) //nolint:gosec
+		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/data", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.Header().Set("X-Backend", "served")
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusCreated)
-		_, _ = io.WriteString(writer, `{"id":1}`)
+		_, err := io.WriteString(writer, `{"id":1}`)
+		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/redirect", func(writer http.ResponseWriter, _ *http.Request) {
 		// Location points at the backend's own address so the proxy must rewrite
@@ -74,21 +76,25 @@ func backendMux(self *backend) http.Handler {
 		// the source host before the client sees it.
 		//nolint:gosec // G124: test cookie; Secure is added by the proxy on the way out
 		http.SetCookie(writer, &http.Cookie{Name: "sid", Value: "abc", Domain: self.host, Path: "/"})
-		_, _ = io.WriteString(writer, "cookie set")
+		_, err := io.WriteString(writer, "cookie set")
+		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/read-cookie", func(writer http.ResponseWriter, request *http.Request) {
 		cookie, err := request.Cookie("token")
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
-			_, _ = io.WriteString(writer, "missing")
+			_, writeErr := io.WriteString(writer, "missing")
+			assert.NoError(t, writeErr)
 
 			return
 		}
 
-		_, _ = io.WriteString(writer, "token="+cookie.Value) //nolint:gosec // G705: value is test-controlled
+		_, writeErr := io.WriteString(writer, "token="+cookie.Value) //nolint:gosec // G705: value is test-controlled
+		assert.NoError(t, writeErr)
 	})
 	mux.HandleFunc("/", func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(writer, "ok")
+		_, err := io.WriteString(writer, "ok")
+		assert.NoError(t, err)
 	})
 
 	return mux
@@ -275,10 +281,12 @@ func TestProxyOverHTTP(t *testing.T) {
 // their Host header.
 func TestProxyMultipleMappings(t *testing.T) {
 	alpha := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "alpha")
+		_, err := io.WriteString(w, "alpha")
+		assert.NoError(t, err)
 	})
 	beta := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, "beta")
+		_, err := io.WriteString(w, "beta")
+		assert.NoError(t, err)
 	})
 
 	// Both From hosts deliberately share the same port (no explicit port means
