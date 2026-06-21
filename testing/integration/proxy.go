@@ -44,7 +44,10 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 	err = app.Start(t.Context(), cfg)
 	require.NoError(t, err)
 
-	t.Cleanup(func() { _ = app.Close() })
+	t.Cleanup(func() {
+		_ = app.Close()
+		_ = container.Close()
+	})
 
 	return caCert
 }

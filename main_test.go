@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,6 +54,8 @@ func TestRunGenerateCerts(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		result := runGenerateCerts(container)
 
 		assert.Equal(t, 0, result)
@@ -62,6 +65,7 @@ func TestRunGenerateCerts(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
 		_ = runGenerateCerts(container)
 		result := runGenerateCerts(container)
@@ -73,6 +77,7 @@ func TestRunGenerateCerts(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
 
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
 		result := runGenerateCerts(container)
 
@@ -113,6 +118,7 @@ mappings:
 func TestStartConfigWatcher(t *testing.T) {
 	t.Run("logs error for non-existent config path", func(t *testing.T) {
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
 		assert.NotPanics(t, func() {
 			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
@@ -121,6 +127,7 @@ func TestStartConfigWatcher(t *testing.T) {
 
 	t.Run("creates watcher for existing config file", func(t *testing.T) {
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")

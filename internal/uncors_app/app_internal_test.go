@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,6 +28,10 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 	}
 
 	container := di.NewContainer()
+
+	t.Cleanup(func() {
+		container.Close()
+	})
 
 	loadCalls := 0
 	app := NewUncorsApp(
@@ -315,6 +320,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		app := NewUncorsApp("v1", container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
@@ -341,6 +348,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
 		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		app := NewUncorsApp("v1", container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
@@ -393,8 +402,10 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 	called := make(chan struct{}, 1)
 
-	contaienr := di.NewContainer()
-	app := NewUncorsApp("v1", contaienr, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
+	app := NewUncorsApp("v1", container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
 		select {
 		case called <- struct{}{}:
 		default:

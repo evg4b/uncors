@@ -9,12 +9,14 @@ import (
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/version"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestContainer(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
 
 	t.Run("fs", func(t *testing.T) {
 		fs := container.Fs()

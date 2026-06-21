@@ -1,6 +1,7 @@
 package di
 
 import (
+	"errors"
 	"io"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -20,6 +21,8 @@ type Container struct {
 	generateCertsCommand factory[*commands.GenerateCertsCommand]
 	hostCertManager      factory[*server.HostCertManager]
 	server               factory[*server.Server]
+
+	closers []io.Closer
 }
 
 type ContainerOption = func(c *Container)
@@ -47,6 +50,7 @@ func NewContainer(options ...ContainerOption) *Container {
 		fs:      afero.NewMemMapFs(),
 		stdout:  io.Discard,
 		version: "0.0.0",
+		closers: []io.Closer{},
 	}
 
 	container = helpers.ApplyOptions(container, options)
@@ -58,4 +62,17 @@ func NewContainer(options ...ContainerOption) *Container {
 	container.server = newFactory(container.newServer)
 
 	return container
+}
+
+func (c *Container) Close() error {
+	var errs []error
+
+	for _, closer := range c.closers {
+		err := closer.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
 }

@@ -31,11 +31,13 @@ func main() {
 
 func run() int {
 	fs := afero.NewOsFs()
+
 	container := di.NewContainer(
 		di.WithFs(fs),
 		di.WithStdout(os.Stdout),
 		di.WithVersion(Version),
 	)
+	defer container.Close()
 
 	output := container.CliOutput()
 

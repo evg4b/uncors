@@ -72,6 +72,8 @@ const version = "1.0.0"
 
 func TestCreateUncors(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	assert.NotNil(t, app)
@@ -79,6 +81,8 @@ func TestCreateUncors(t *testing.T) {
 
 func TestUncorsApp(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 	fs := container.Fs()
 
@@ -161,6 +165,8 @@ func TestUncorsApp(t *testing.T) {
 
 func TestUncorsStart(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -201,6 +207,8 @@ func TestUncorsStart(t *testing.T) {
 
 func TestUncorsRestart(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -263,6 +271,8 @@ func TestUncorsRestart(t *testing.T) {
 
 func TestUncorsClose(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -294,6 +304,8 @@ func TestUncorsClose(t *testing.T) {
 
 func TestUncorsShutdown(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -319,6 +331,8 @@ func TestUncorsShutdown(t *testing.T) {
 
 func TestUncorsWait(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -361,6 +375,8 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 	container := di.NewContainer(di.WithFs(fs))
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -426,6 +442,8 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 	container := di.NewContainer(di.WithFs(fs))
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 
 	httpServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -506,6 +524,8 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 
 func TestUncorsWithComplexConfiguration(t *testing.T) {
 	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
 	app := uncors.CreateUncors(container, version)
 	fs := container.Fs()
 
