@@ -27,26 +27,32 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		filePath := h.extractFilePath(request)
+func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	filePath := h.extractFilePath(request)
 
-		file, stat, err := h.openFile(filePath)
-		defer helpers.CloseSafe(file)
+	file, stat, err := h.openFile(filePath)
+	defer helpers.CloseSafe(file)
 
-		if err != nil {
-			if errors.Is(err, errNotHandled) {
-				return next.ServeHTTP(writer, request)
-			}
-
-			log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
-
-			return err
+	if err != nil {
+		if errors.Is(err, errNotHandled) {
+			return next(writer, request)
 		}
 
-		http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+		log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
 
-		return nil
+		return err
+	}
+
+	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+
+	return nil
+}
+
+func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
+	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		return h.ServeHTTP(writer, request, func(w contracts.ResponseWriter, r *contracts.Request) error {
+			return next.ServeHTTP(w, r)
+		})
 	})
 }
 

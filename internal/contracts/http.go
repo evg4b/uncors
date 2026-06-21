@@ -30,8 +30,10 @@ type Handler interface {
 	ServeHTTP(writer ResponseWriter, request *Request) error
 }
 
+type Next func(writer ResponseWriter, request *Request) error
+
 type Middleware interface {
-	Wrap(next Handler) Handler
+	ServeHTTP(writer ResponseWriter, request *Request, next Next) error
 }
 
 // MiddlewareFunc adapts an ordinary func into a Middleware.

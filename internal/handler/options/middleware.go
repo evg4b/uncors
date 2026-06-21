@@ -18,16 +18,14 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) error {
-		if strings.EqualFold(req.Method, http.MethodOptions) {
-			m.handle(resp, req)
+func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
+	if strings.EqualFold(req.Method, http.MethodOptions) {
+		m.handle(resp, req)
 
-			return nil
-		}
+		return nil
+	}
 
-		return next.ServeHTTP(resp, req)
-	})
+	return next(resp, req)
 }
 
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {

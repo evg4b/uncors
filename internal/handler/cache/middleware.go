@@ -29,19 +29,25 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		isCacheable, err := m.isCacheableRequest(request)
-		if err != nil {
-			return err
-		}
+func (m *Middleware) ServeHTTP(
+	writer contracts.ResponseWriter,
+	request *contracts.Request,
+	next contracts.Next,
+) error {
+	isCacheable, err := m.isCacheableRequest(request)
+	if err != nil {
+		return err
+	}
 
-		if !isCacheable {
-			return next.ServeHTTP(writer, request)
-		}
+	if !isCacheable {
+		return next(writer, request)
+	}
 
-		return m.cacheRequest(writer, request, next)
+	nextHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
+		return next(w, r)
 	})
+
+	return m.cacheRequest(writer, request, nextHandler)
 }
 
 func (m *Middleware) cacheRequest(

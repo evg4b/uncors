@@ -41,7 +41,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := middleware.Wrap(next)
+		handler := server.Mddleware(middleware, next)
 		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, err)
 
@@ -71,7 +71,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := middleware.Wrap(next)
+		handler := server.Mddleware(middleware, next)
 		serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, serveErr)
 

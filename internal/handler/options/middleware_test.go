@@ -187,7 +187,7 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				_ = middleware.Wrap(mockedNextHandler).
+				_ = server.Mddleware(middleware, mockedNextHandler).
 					ServeHTTP(
 						server.NewResponseRecorder(recorder),
 						request,
@@ -209,7 +209,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		err := middleware.Wrap(mockedNextHandler).
+		err := server.Mddleware(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 
 		require.NoError(t, err)
@@ -234,7 +234,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		_ = middleware.Wrap(mockedNextHandler).
+		_ = server.Mddleware(middleware, mockedNextHandler).
 			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
@@ -256,7 +256,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		_ = middleware.Wrap(mockedNextHandler).
+		_ = server.Mddleware(middleware, mockedNextHandler).
 			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
@@ -281,7 +281,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		_ = middleware.Wrap(mockedNextHandler).
+		_ = server.Mddleware(middleware, mockedNextHandler).
 			ServeHTTP(
 				server.NewResponseRecorder(recorder),
 				request,
@@ -319,7 +319,7 @@ func TestMiddleware(t *testing.T) {
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil)
 
-				err := middleware.Wrap(mockedNextHandler).
+				err := server.Mddleware(middleware, mockedNextHandler).
 					ServeHTTP(response, request)
 				require.NoError(t, err)
 

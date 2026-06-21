@@ -38,32 +38,30 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 	return m
 }
 
-func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, req *contracts.Request) error {
-		start := time.Now()
+func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
+	start := time.Now()
 
-		var reqBodySize int64
+	var reqBodySize int64
 
-		if req.Body != nil && req.Body != http.NoBody {
-			var buf strings.Builder
+	if req.Body != nil && req.Body != http.NoBody {
+		var buf strings.Builder
 
-			n, _ := io.Copy(&buf, req.Body)
-			reqBodySize = n
-			_ = req.Body.Close()
+		n, _ := io.Copy(&buf, req.Body)
+		reqBodySize = n
+		_ = req.Body.Close()
 
-			req.Body = io.NopCloser(strings.NewReader(buf.String()))
-		}
+		req.Body = io.NopCloser(strings.NewReader(buf.String()))
+	}
 
-		writer.EnableBodyCapture()
+	writer.EnableBodyCapture()
 
-		err := next.ServeHTTP(writer, req)
+	err := next(writer, req)
 
-		elapsed := time.Since(start)
-		entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
-		m.writer.AddEntry(entry)
+	elapsed := time.Since(start)
+	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
+	m.writer.AddEntry(entry)
 
-		return err
-	})
+	return err
 }
 
 func (m *Middleware) buildEntry(

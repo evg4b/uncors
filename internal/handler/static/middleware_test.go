@@ -105,12 +105,14 @@ func TestStaticMiddleware(t *testing.T) {
 			static.WithFileSystem(fs),
 		)
 
-		handler := middleware.Wrap(contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+		nextHandler := contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 			writer.WriteHeader(testHTTPStatusCode)
 			fmt.Fprint(writer, testHTTPBody)
 
 			return nil
-		}))
+		})
+
+		handler := middleware.Wrap(nextHandler)
 
 		t.Run("return static content", func(t *testing.T) {
 			for _, testCase := range staticFileTests {

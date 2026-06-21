@@ -20,12 +20,10 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (m *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		m.rewriteURL(request)
+func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	m.rewriteURL(request)
 
-		return next.ServeHTTP(writer, m.rewriteRequest(request))
-	})
+	return next(writer, m.rewriteRequest(request))
 }
 
 func (m *Middleware) rewriteURL(request *contracts.Request) {

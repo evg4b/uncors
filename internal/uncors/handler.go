@@ -35,15 +35,16 @@ func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.C
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		prefix := styles.CacheStyle.Render("CACHE")
 
-		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			middleware := cache.NewMiddleware(
-				cache.WithMethods(cfg.Methods),
-				cache.WithCacheStorage(app.getCacheStorage(cfg)),
-				cache.WithGlobs(globs),
-			)
+		middleware := cache.NewMiddleware(
+			cache.WithMethods(cfg.Methods),
+			cache.WithCacheStorage(app.getCacheStorage(cfg)),
+			cache.WithGlobs(globs),
+		)
 
-			return withPrefix(prefix, middleware.Wrap(next))
-		})
+		return &prefixedMiddleware{
+			middleware: middleware,
+			prefix:     prefix,
+		}
 	}
 }
 
@@ -51,14 +52,15 @@ func (app *Uncors) buildOptionsMiddlewareFactory() handler.OptionsMiddlewareFact
 	return func(cfg config.OptionsHandling) contracts.Middleware {
 		prefix := styles.OptionsStyle.Render("OPTIONS")
 
-		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			middleware := options.NewMiddleware(
-				options.WithHeaders(cfg.Headers),
-				options.WithCode(cfg.Code),
-			)
+		middleware := options.NewMiddleware(
+			options.WithHeaders(cfg.Headers),
+			options.WithCode(cfg.Code),
+		)
 
-			return withPrefix(prefix, middleware.Wrap(next))
-		})
+		return &prefixedMiddleware{
+			middleware: middleware,
+			prefix:     prefix,
+		}
 	}
 }
 
@@ -78,15 +80,16 @@ func (app *Uncors) buildStaticMiddlewareFactory() handler.StaticMiddlewareFactor
 	return func(path string, dir config.StaticDirectory) contracts.Middleware {
 		prefix := styles.StaticStyle.Render("STATIC")
 
-		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			middleware := static.NewStaticMiddleware(
-				static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
-				static.WithIndex(dir.Index),
-				static.WithPrefix(path),
-			)
+		middleware := static.NewStaticMiddleware(
+			static.WithFileSystem(afero.NewBasePathFs(app.fs, dir.Dir)),
+			static.WithIndex(dir.Index),
+			static.WithPrefix(path),
+		)
 
-			return withPrefix(prefix, middleware.Wrap(next))
-		})
+		return &prefixedMiddleware{
+			middleware: middleware,
+			prefix:     prefix,
+		}
 	}
 }
 
@@ -118,11 +121,12 @@ func (app *Uncors) buildRewriteMiddlewareFactory() handler.RewriteMiddlewareFact
 	return func(rewriting config.RewritingOption) contracts.Middleware {
 		prefix := styles.RewriteStyle.Render("REWRITE")
 
-		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			middleware := rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+		middleware := rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
 
-			return withPrefix(prefix, middleware.Wrap(next))
-		})
+		return &prefixedMiddleware{
+			middleware: middleware,
+			prefix:     prefix,
+		}
 	}
 }
 
@@ -135,5 +139,18 @@ func withPrefix(prefix string, next contracts.Handler) contracts.Handler {
 		ctx := context.WithValue(req.Context(), contracts.PrefixKey, prefix)
 
 		return next.ServeHTTP(resp, req.WithContext(ctx))
+	})
+}
+
+type prefixedMiddleware struct {
+	middleware contracts.Middleware
+	prefix     string
+}
+
+func (p *prefixedMiddleware) ServeHTTP(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
+	return p.middleware.ServeHTTP(w, r, func(w contracts.ResponseWriter, r *contracts.Request) error {
+		return withPrefix(p.prefix, contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
+			return next(w, r)
+		})).ServeHTTP(w, r)
 	})
 }

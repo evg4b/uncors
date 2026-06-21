@@ -6,6 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/server"
 	"github.com/gorilla/mux"
 )
 
@@ -60,10 +61,8 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	defaultHandler := r.prepareDefaultHandler(mapping)
 
 	for _, staticDir := range mapping.Statics {
-		handler := r.staticMiddlewareFactory(staticDir.Path, staticDir).
-			Wrap(defaultHandler)
-
-		registerPrefixHandler(router, staticDir.Path, handler)
+		middleware := r.staticMiddlewareFactory(staticDir.Path, staticDir)
+		registerPrefixHandler(router, staticDir.Path, server.Mddleware(middleware, defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
@@ -79,8 +78,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := r.rewriteMiddlewareFactory(rewrite).
-			Wrap(defaultHandler)
+		wrappedHandler := server.Mddleware(r.rewriteMiddlewareFactory(rewrite), defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -91,18 +89,15 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = r.optionsMiddlewareFactory(mapping.OptionsHandling).
-			Wrap(defaultHandler)
+		defaultHandler = server.Mddleware(r.optionsMiddlewareFactory(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
-		defaultHandler = r.cacheMiddlewareFactory(mapping.Cache).
-			Wrap(defaultHandler)
+		defaultHandler = server.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = r.harMiddlewareFactory(mapping.HAR).
-			Wrap(defaultHandler)
+		defaultHandler = server.Mddleware(r.harMiddlewareFactory(mapping.HAR), defaultHandler)
 	}
 
 	return defaultHandler

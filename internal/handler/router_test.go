@@ -124,21 +124,19 @@ func scriptHandlerFactory() handler.ScriptHandlerFactory {
 
 func rewriteFactory() handler.RewriteMiddlewareFactory {
 	return func(_ config.RewritingOption) contracts.Middleware {
-		return contracts.MiddlewareFunc(func(next contracts.Handler) contracts.Handler {
-			return next
-		})
+		return &noopMiddleware2{}
 	}
 }
 
-type noopMiddleware struct{}
+type noopMiddleware2 struct{}
 
-func (m *noopMiddleware) Wrap(next contracts.Handler) contracts.Handler {
-	return next
+func (m *noopMiddleware2) ServeHTTP(_ contracts.ResponseWriter, _ *contracts.Request, next contracts.Next) error {
+	return next(nil, nil)
 }
 
 func noopHARFactory() handler.HARMiddlewareFactory {
 	return func(_ config.HARConfig) contracts.Middleware {
-		return &noopMiddleware{}
+		return &noopMiddleware2{}
 	}
 }
 

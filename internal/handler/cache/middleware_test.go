@@ -100,7 +100,7 @@ func TestCacheMiddleware(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler.Reset()
 
-				wrappedHandler := middleware.Wrap(handler)
+				wrappedHandler := server.Mddleware(middleware, handler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -166,7 +166,7 @@ func TestCacheMiddleware(t *testing.T) {
 					return nil
 				})
 
-				wrappedHandler := middleware.Wrap(handler)
+				wrappedHandler := server.Mddleware(middleware, handler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -195,7 +195,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		wrappedHandler := middleware.Wrap(handler)
+		wrappedHandler := server.Mddleware(middleware, handler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
@@ -229,7 +229,7 @@ func TestCacheMiddleware(t *testing.T) {
 			return nil
 		})
 
-		wrappedHandler := middleware.Wrap(handler)
+		wrappedHandler := server.Mddleware(middleware, handler)
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
