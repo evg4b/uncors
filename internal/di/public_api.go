@@ -11,14 +11,12 @@ import (
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
-	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui/styles"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 )
@@ -131,15 +129,4 @@ func (c *Container) HARMiddleware(harConfig *config.HARConfig) contracts.Middlew
 		har.WithWriter(w),
 		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
 	)
-}
-
-func (c *Container) ProxyHandler(proxyURL string, mappings config.Mappings) contracts.Handler {
-	prefix := styles.ProxyStyle.Render("PROXY")
-	output := c.CliOutput()
-
-	return infra.WithPrefix(prefix, proxy.NewProxyHandler(
-		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
-		proxy.WithOutput(output.NewPrefixOutput(prefix)),
-	))
 }
