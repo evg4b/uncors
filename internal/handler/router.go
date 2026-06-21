@@ -26,13 +26,7 @@ type Router struct {
 	defaultHandler contracts.Handler
 	container      *di.Container
 
-	cacheMiddlewareFactory   CacheMiddlewareFactory
-	staticMiddlewareFactory  StaticMiddlewareFactory
-	mockHandlerFactory       MockHandlerFactory
-	scriptHandlerFactory     ScriptHandlerFactory
-	rewriteMiddlewareFactory RewriteMiddlewareFactory
-	optionsMiddlewareFactory OptionsMiddlewareFactory
-	harMiddlewareFactory     HARMiddlewareFactory
+	cacheMiddlewareFactory CacheMiddlewareFactory
 }
 
 func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, error) {
@@ -64,24 +58,24 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	defaultHandler := r.prepareDefaultHandler(mapping)
 
 	for _, staticDir := range mapping.Statics {
-		middleware := r.staticMiddlewareFactory(staticDir.Path, staticDir)
+		middleware := r.container.StaticMiddleware(staticDir.Path, staticDir)
 		registerPrefixHandler(router, staticDir.Path, Mddleware(middleware, defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(def *config.Mock) {
-			registerRoute(createRoute(router, def.Matcher), r.mockHandlerFactory(def.Response))
+			registerRoute(createRoute(router, def.Matcher), r.container.MockHandler(&def.Response))
 		})
 
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(def *config.Script) {
-			registerRoute(createRoute(router, def.Matcher), r.scriptHandlerFactory(*def))
+			registerRoute(createRoute(router, def.Matcher), r.container.ScriptHandler(def))
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := Mddleware(r.rewriteMiddlewareFactory(rewrite), defaultHandler)
+		wrappedHandler := Mddleware(r.container.RewriteMiddleware(&rewrite), defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -92,7 +86,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = Mddleware(r.optionsMiddlewareFactory(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = Mddleware(r.container.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
@@ -100,7 +94,7 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = Mddleware(r.harMiddlewareFactory(mapping.HAR), defaultHandler)
+		defaultHandler = Mddleware(r.container.HARMiddleware(&mapping.HAR), defaultHandler)
 	}
 
 	return defaultHandler

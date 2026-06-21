@@ -2,15 +2,21 @@ package di
 
 import (
 	"io"
+	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
+	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 )
@@ -44,17 +50,23 @@ func (c *Container) HostCertManager() *server.HostCertManager {
 }
 
 func (c *Container) OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware {
-	return options.NewMiddleware(
-		options.WithHeaders(cfg.Headers),
-		options.WithCode(cfg.Code),
+	return infra.NewPrefixedMiddleware(
+		options.NewMiddleware(
+			options.WithHeaders(cfg.Headers),
+			options.WithCode(cfg.Code),
+		),
+		styles.OptionsStyle.Render("OPTIONS"),
 	)
 }
 
 func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
-	return static.NewStaticMiddleware(
-		static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
-		static.WithIndex(dir.Index),
-		static.WithPrefix(path),
+	return infra.NewPrefixedMiddleware(
+		static.NewStaticMiddleware(
+			static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
+			static.WithIndex(dir.Index),
+			static.WithPrefix(path),
+		),
+		styles.StaticStyle.Render("STATIC"),
 	)
 }
 
@@ -71,9 +83,50 @@ func (c *Container) Cache(cfs *config.CacheConfig) contracts.Cache {
 }
 
 func (c *Container) CacheMiddleware(cfg *config.CacheConfig, globs config.CacheGlobs) contracts.Middleware {
-	return cache.NewMiddleware(
-		cache.WithMethods(cfg.Methods),
-		cache.WithCacheStorage(c.Cache(cfg)),
-		cache.WithGlobs(globs),
+	return infra.NewPrefixedMiddleware(
+		cache.NewMiddleware(
+			cache.WithMethods(cfg.Methods),
+			cache.WithCacheStorage(c.Cache(cfg)),
+			cache.WithGlobs(globs),
+		),
+		styles.CacheStyle.Render("CACHE"),
+	)
+}
+
+func (c *Container) MockHandler(response *config.Response) contracts.Handler {
+	prefix := styles.MockStyle.Render("MOCK")
+
+	return infra.WithPrefix(prefix, mock.NewMockHandler(
+		mock.WithResponse(response),
+		mock.WithFileSystem(c.fs),
+		mock.WithAfter(time.After),
+	))
+}
+
+func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
+	prefix := styles.RewriteStyle.Render("SCRIPT")
+	output := c.CliOutput()
+
+	return infra.WithPrefix(prefix, script.NewHandler(
+		script.WithOutput(output.NewPrefixOutput(prefix)),
+		script.WithScript(scriptConfig),
+		script.WithFileSystem(c.fs),
+	))
+}
+
+func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
+	return infra.NewPrefixedMiddleware(
+		rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting)),
+		styles.RewriteStyle.Render("REWRITE"),
+	)
+}
+
+func (c *Container) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
+	w := har.NewWriter(harConfig.File)
+	c.closers = append(c.closers, w)
+
+	return har.NewMiddleware(
+		har.WithWriter(w),
+		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
 	)
 }

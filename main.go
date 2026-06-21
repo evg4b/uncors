@@ -107,9 +107,7 @@ func runNonInteractive(
 
 	go server.RequestPrinter(container.RequestTracker(), output)
 
-	if configPath != "" {
-		startConfigWatcher(ctx, container, configPath, app)
-	}
+	startConfigWatcher(ctx, container, configPath, app)
 
 	err := app.Start(ctx, cfg)
 	if err != nil {
@@ -138,6 +136,10 @@ func startConfigWatcher(
 	configPath string,
 	app *uncors.Uncors,
 ) {
+	if configPath == "" {
+		return
+	}
+
 	output := container.CliOutput()
 	fs := container.Fs()
 	watcher := config.NewWatcher(configPath)

@@ -11,12 +11,10 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/handler/mock"
-	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
-	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -25,7 +23,6 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -80,67 +77,6 @@ func proxyFactory(
 	)
 }
 
-func optionsFactory() handler.OptionsMiddlewareFactory {
-	return func(config config.OptionsHandling) contracts.Middleware {
-		return options.NewMiddleware(
-			options.WithHeaders(config.Headers),
-			options.WithCode(config.Code),
-		)
-	}
-}
-
-func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
-	return func(path string, dir config.StaticDirectory) contracts.Middleware {
-		return static.NewStaticMiddleware(
-			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
-			static.WithIndex(dir.Index),
-			static.WithPrefix(path),
-		)
-	}
-}
-
-func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
-	if fs == nil {
-		fs = afero.NewMemMapFs()
-	}
-
-	return func(response config.Response) contracts.Handler {
-		return mock.NewMockHandler(
-			mock.WithResponse(response),
-			mock.WithFileSystem(fs),
-			mock.WithAfter(time.After),
-		)
-	}
-}
-
-func scriptHandlerFactory() handler.ScriptHandlerFactory {
-	return func(_ config.Script) contracts.Handler {
-		return infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-			w.WriteHeader(http.StatusAccepted)
-
-			return nil
-		})
-	}
-}
-
-func rewriteFactory() handler.RewriteMiddlewareFactory {
-	return func(_ config.RewritingOption) contracts.Middleware {
-		return &noopMiddleware2{}
-	}
-}
-
-type noopMiddleware2 struct{}
-
-func (m *noopMiddleware2) ServeHTTP(_ contracts.ResponseWriter, _ *contracts.Request, next contracts.Next) error {
-	return next(nil, nil)
-}
-
-func noopHARFactory() handler.HARMiddlewareFactory {
-	return func(_ config.HARConfig) contracts.Middleware {
-		return &noopMiddleware2{}
-	}
-}
-
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
 	wrappedWriter := server.NewResponseRecorder(recorder)
 	contractsRouter := infra.CastToContractsHandler(router)
@@ -157,6 +93,9 @@ func TestRouter(t *testing.T) {
 		"/assets/index.html":     indexHTML,
 		"/mock.json":             mockJSON,
 	})
+
+	container := di.NewContainer(di.WithFs(fs))
+	defer testutils.Close(t, container)
 
 	mappings := config.Mappings{
 		{
@@ -232,12 +171,7 @@ func TestRouter(t *testing.T) {
 		mappings,
 		handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
 		handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		handler.ForRouterWithStaticMiddlewareFactory(staticFactory(fs)),
-		handler.ForRouterWithMockHandlerFactory(mockFactory(fs)),
-		handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-		handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-		handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-		handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+		handler.WithDiContainer(container),
 	)
 	require.NoError(t, err)
 
@@ -408,6 +342,9 @@ func TestRouter(t *testing.T) {
 func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
+			container := di.NewContainer()
+			defer testutils.Close(t, container)
+
 			routerInstance, err := handler.NewRouter(
 				config.Mappings{
 					{
@@ -428,12 +365,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 				},
 				handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+				handler.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -462,6 +394,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 		})
 
 		t.Run("where method is set", func(t *testing.T) {
+			container := di.NewContainer()
+			defer testutils.Close(t, container)
+
 			expectedCode := 299
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
@@ -489,12 +424,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 						}, nil
 					}))),
 				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+				handler.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -545,6 +475,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("path handling", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		expectedCode := 299
 		expectedBody := "forwarded"
 		mappings := config.Mappings{
@@ -600,12 +533,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 					}, nil
 				}))),
 			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			handler.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -667,6 +595,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("query handling", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		routerInstance, err := handler.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
@@ -708,12 +639,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			handler.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -775,6 +701,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("header handling", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		routerInstance, err := handler.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
@@ -816,12 +745,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			handler.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 

@@ -66,7 +66,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -134,7 +134,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -235,7 +235,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -289,7 +289,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -366,7 +366,7 @@ func TestHandler(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
 					handler := mock.NewMockHandler(
-						mock.WithResponse(testCase.response),
+						mock.WithResponse(&testCase.response),
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
 							assert.Equal(t, testCase.expected, duration)
@@ -390,7 +390,7 @@ func TestHandler(t *testing.T) {
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
 			handler := mock.NewMockHandler(
-				mock.WithResponse(config.Response{
+				mock.WithResponse(&config.Response{
 					Code:  http.StatusOK,
 					Delay: 1 * time.Hour,
 					Raw:   "Text content",

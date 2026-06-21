@@ -24,7 +24,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		nextCalled := false
 
 		middleware := rewrite.NewMiddleware(
-			rewrite.WithRewritingOptions(config.RewritingOption{
+			rewrite.WithRewritingOptions(&config.RewritingOption{
 				To:   expectedURL,
 				Host: expectedHost,
 			}),
@@ -55,7 +55,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		nextCalled := false
 
 		middleware := rewrite.NewMiddleware(
-			rewrite.WithRewritingOptions(config.RewritingOption{
+			rewrite.WithRewritingOptions(&config.RewritingOption{
 				To: expectedURL,
 			}),
 		)

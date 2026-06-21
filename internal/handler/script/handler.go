@@ -13,7 +13,7 @@ import (
 )
 
 type Handler struct {
-	script config.Script
+	script *config.Script
 	output contracts.Output
 	fs     afero.Fs
 }
@@ -75,7 +75,7 @@ func WithOutput(output contracts.Output) HandlerOption {
 	}
 }
 
-func WithScript(script config.Script) HandlerOption {
+func WithScript(script *config.Script) HandlerOption {
 	return func(h *Handler) {
 		h.script = script
 	}

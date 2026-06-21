@@ -35,7 +35,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 		t.Run(testCase.name, func(t *testing.T) {
 			handler := script.NewHandler(
 				script.WithOutput(mocks.NoopOutput()),
-				script.WithScript(config.Script{
+				script.WithScript(&config.Script{
 					Script: testCase.script,
 				}),
 				script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -225,7 +225,7 @@ response:WriteString("Error response")
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(config.Script{
+					script.WithScript(&config.Script{
 						File: testCase.file,
 					}),
 					script.WithFileSystem(fileSystem),
@@ -317,7 +317,7 @@ response:WriteString("Body: " .. request.body)
 
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(config.Script{
+					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -335,7 +335,7 @@ response:WriteString("Body: " .. request.body)
 	t.Run("path parameters", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
 local id = request.path_params["id"] or "none"
@@ -363,7 +363,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 	t.Run("CORS headers", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
 response:WriteString("OK")
@@ -423,7 +423,7 @@ response:WriteString(x.field)  -- This will cause an error
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(testCase.script),
+					script.WithScript(&testCase.script),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
@@ -442,7 +442,7 @@ response:WriteString(x.field)  -- This will cause an error
 	t.Run("default response status", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 -- Don't set status, should default to 200
 response:WriteString("Default status")
@@ -464,7 +464,7 @@ response:WriteString("Default status")
 	t.Run("empty response body", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(204)
 -- Don't set body
@@ -486,7 +486,7 @@ response:WriteHeader(204)
 	t.Run("complex script with table library", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 local table = require("table")
 local items = {"apple", "banana", "cherry"}
@@ -594,7 +594,7 @@ response:WriteString("old and new")
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(config.Script{
+					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
@@ -626,7 +626,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 	})
 
 	t.Run("WithScript", func(t *testing.T) {
-		scriptConfig := config.Script{Script: "response:WriteHeader(200)"}
+		scriptConfig := &config.Script{Script: "response:WriteHeader(200)"}
 		handler := script.NewHandler(script.WithScript(scriptConfig))
 		require.NotNil(t, handler)
 	})
@@ -638,7 +638,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 	})
 
 	t.Run("all options together", func(t *testing.T) {
-		scriptConfig := config.Script{Script: "response:WriteHeader(200)"}
+		scriptConfig := &config.Script{Script: "response:WriteHeader(200)"}
 		fs := testutils.FsFromMap(t, map[string]string{})
 
 		handler := script.NewHandler(
@@ -715,7 +715,7 @@ end
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(config.Script{Script: testCase.script}),
+					script.WithScript(&config.Script{Script: testCase.script}),
 				)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
@@ -794,7 +794,7 @@ end
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
-					script.WithScript(config.Script{Script: testCase.script}),
+					script.WithScript(&config.Script{Script: testCase.script}),
 				)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
@@ -820,7 +820,7 @@ func TestScriptHandler_ResponseMetatableEdgeCases(t *testing.T) {
 	t.Run("response metatable prevents status field writes", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.status = 500
 response:WriteHeader(200)
@@ -842,7 +842,7 @@ response:WriteString("Status not writable")
 	t.Run("response metatable prevents body field writes", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.body = "This should be ignored"
 response:WriteHeader(200)
@@ -864,7 +864,7 @@ response:WriteString("Actual body")
 	t.Run("response metatable allows custom fields", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.custom_field = "custom_value"
 response:WriteHeader(200)
@@ -886,7 +886,7 @@ response:WriteString("Custom: " .. response.custom_field)
 	t.Run("response WriteHeader idempotency", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
 response:WriteHeader(500)
@@ -908,7 +908,7 @@ response:WriteString("First status wins")
 	t.Run("response Write without explicit WriteHeader", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:Write("Auto status")
 `,
@@ -928,7 +928,7 @@ response:Write("Auto status")
 	t.Run("response WriteString without explicit WriteHeader", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response:WriteString("Auto status with string")
 `,
@@ -948,7 +948,7 @@ response:WriteString("Auto status with string")
 	t.Run("response headers metatable Get method", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.headers["X-Test"] = "TestValue"
 local value = response.headers:Get("X-Test")
@@ -971,7 +971,7 @@ response:WriteString("Value: " .. value)
 	t.Run("response headers metatable Set method", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.headers:Set("X-Custom", "CustomValue")
 response:WriteHeader(200)
@@ -993,7 +993,7 @@ response:WriteString("Header set")
 	t.Run("response headers access via index", func(t *testing.T) {
 		handler := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
-			script.WithScript(config.Script{
+			script.WithScript(&config.Script{
 				Script: `
 response.headers["Content-Type"] = "text/plain"
 local ct = response.headers["Content-Type"]

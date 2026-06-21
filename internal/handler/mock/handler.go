@@ -18,7 +18,7 @@ import (
 )
 
 type Handler struct {
-	response config.Response
+	response *config.Response
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
 }

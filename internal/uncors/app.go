@@ -2,8 +2,6 @@ package uncors
 
 import (
 	"context"
-	"errors"
-	"io"
 	"net"
 	"strconv"
 
@@ -26,8 +24,6 @@ type Uncors struct {
 	output    contracts.Output
 	server    *server.Server
 	container *di.Container
-
-	closers []io.Closer
 }
 
 func CreateUncors(container *di.Container) *Uncors {
@@ -58,9 +54,6 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	app.output.Info("Restarting server....")
 
-	previous := app.closers
-	app.closers = nil
-
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
 		return err
@@ -69,10 +62,6 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 	err = app.server.Restart(ctx, targets)
 	if err != nil {
 		return err
-	}
-
-	for _, c := range previous {
-		_ = c.Close()
 	}
 
 	app.output.InfoBox(
@@ -84,10 +73,7 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 }
 
 func (app *Uncors) Close() error {
-	return errors.Join(
-		app.closeAll(),
-		app.server.Close(),
-	)
+	return app.server.Close()
 }
 
 func (app *Uncors) Wait() {
@@ -96,25 +82,6 @@ func (app *Uncors) Wait() {
 
 func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
-}
-
-func (app *Uncors) registerCloser(c io.Closer) {
-	app.closers = append(app.closers, c)
-}
-
-func (app *Uncors) closeAll() error {
-	var errs []error
-
-	for _, c := range app.closers {
-		err := c.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	app.closers = nil
-
-	return errors.Join(errs...)
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
@@ -126,12 +93,6 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			handler.WithDiContainer(app.container),
 			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
 			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(&uncorsConfig.CacheConfig)),
-			handler.ForRouterWithOptionsMiddlewareFactory(app.buildOptionsMiddlewareFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(app.buildStaticMiddlewareFactory()),
-			handler.ForRouterWithMockHandlerFactory(app.buildMockHandlerFactory()),
-			handler.ForRouterWithScriptHandlerFactory(app.buildScriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(app.buildRewriteMiddlewareFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(app.buildHARMiddlewareFactory()),
 		)
 		if err != nil {
 			return nil, err
