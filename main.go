@@ -9,8 +9,8 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -32,17 +32,18 @@ func main() {
 }
 
 func run() int {
-	output := tui.NewCliOutput(os.Stdout)
+	fs := afero.NewOsFs()
+	container := di.NewContainer(fs, os.Stdout)
+
+	output := container.CliOutput()
 
 	defer helpers.PanicInterceptor(func(value any) {
 		output.Error(value)
 		log.Fatalf("Caught panic: %v", value)
 	})
 
-	fs := afero.NewOsFs()
-
 	if len(os.Args) > 1 && os.Args[1] == generateCertsCmd {
-		return runGenerateCerts(fs, output)
+		return runGenerateCerts(container)
 	}
 
 	pflag.Usage = func() {
@@ -61,11 +62,9 @@ func run() int {
 }
 
 // runGenerateCerts executes the generate-certs sub-command and returns an exit code.
-func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
-	cmd := commands.NewGenerateCertsCommand(
-		commands.WithFs(fs),
-		commands.WithOutput(output),
-	)
+func runGenerateCerts(container *di.Container) int {
+	cmd := container.GenerateCertsCommand()
+	output := container.CliOutput()
 
 	flags := pflag.NewFlagSet(generateCertsCmd, pflag.ContinueOnError)
 	cmd.DefineFlags(flags)
