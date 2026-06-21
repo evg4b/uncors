@@ -91,7 +91,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 		router, err := handler.NewRouter(
 			group.Mappings,
 			handler.WithDiContainer(app.container),
-			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
+			handler.ForRouterWithDefaultHandler(app.container.ProxyHandler(uncorsConfig.Proxy, group.Mappings)),
 			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(&uncorsConfig.CacheConfig)),
 		)
 		if err != nil {
