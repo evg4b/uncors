@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
 )
@@ -14,7 +15,7 @@ import (
 var errHostNotMapped = errors.New("host not mapped")
 
 func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
-	httpHandler := contracts.CastToHTTPHandler(handler)
+	httpHandler := infra.CastToHTTPHandler(handler)
 	router.NotFoundHandler = httpHandler
 	router.MethodNotAllowedHandler = httpHandler
 }
@@ -47,7 +48,7 @@ func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, erro
 		instance.registerMapping(mapping)
 	}
 
-	setDefaultHandler(instance.Router, contracts.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
+	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
 		// instance.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
 		// log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
 		return errHostNotMapped

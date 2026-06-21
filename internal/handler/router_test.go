@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -114,7 +115,7 @@ func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
 
 func scriptHandlerFactory() handler.ScriptHandlerFactory {
 	return func(_ config.Script) contracts.Handler {
-		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+		return infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 			w.WriteHeader(http.StatusAccepted)
 
 			return nil
@@ -142,8 +143,8 @@ func noopHARFactory() handler.HARMiddlewareFactory {
 
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
 	wrappedWriter := server.NewResponseRecorder(recorder)
-	contractsRouter := contracts.CastToContractsHandler(router)
-	httpRouterHandler := contracts.CastToHTTPHandler(contractsRouter)
+	contractsRouter := infra.CastToContractsHandler(router)
+	httpRouterHandler := infra.CastToHTTPHandler(contractsRouter)
 	httpRouterHandler.ServeHTTP(wrappedWriter, request)
 }
 

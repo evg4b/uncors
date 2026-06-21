@@ -12,6 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
 )
 
@@ -49,7 +50,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 }
 
 func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return contracts.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+	return infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 		return h.ServeHTTP(writer, request, func(w contracts.ResponseWriter, r *contracts.Request) error {
 			return next.ServeHTTP(w, r)
 		})

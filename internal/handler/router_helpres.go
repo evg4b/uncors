@@ -6,6 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/gorilla/mux"
 )
 
@@ -49,7 +50,7 @@ func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.
 }
 
 func registerRoute(route *mux.Route, handler contracts.Handler) {
-	route.Handler(contracts.CastToHTTPHandler(handler))
+	route.Handler(infra.CastToHTTPHandler(handler))
 }
 
 func normalizePath(path string) (string, string) {

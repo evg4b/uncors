@@ -1,11 +1,8 @@
 package contracts
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
-
-	"github.com/evg4b/uncors/internal/infra"
 )
 
 type contextKey string
@@ -34,41 +31,4 @@ type Next func(writer ResponseWriter, request *Request) error
 
 type Middleware interface {
 	ServeHTTP(writer ResponseWriter, request *Request, next Next) error
-}
-
-// MiddlewareFunc adapts an ordinary func into a Middleware.
-type MiddlewareFunc func(Handler) Handler
-
-func (f MiddlewareFunc) Wrap(next Handler) Handler {
-	return f(next)
-}
-
-type HandlerFunc func(ResponseWriter, *Request) error
-
-func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) error {
-	return f(w, r)
-}
-
-var ErrResponseNotCasted = errors.New("received incorrect response writer type")
-
-func CastToHTTPHandler(handler Handler) http.Handler {
-	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		writer, ok := response.(ResponseWriter)
-		if !ok {
-			panic(ErrResponseNotCasted)
-		}
-
-		err := handler.ServeHTTP(writer, request)
-		if err != nil {
-			infra.HTTPError(writer, err)
-		}
-	})
-}
-
-func CastToContractsHandler(handler http.Handler) Handler {
-	return HandlerFunc(func(writer ResponseWriter, request *Request) error {
-		handler.ServeHTTP(writer, request)
-
-		return nil
-	})
 }

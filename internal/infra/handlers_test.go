@@ -1,4 +1,4 @@
-package contracts_test
+package infra_test
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 func TestCastToHTTPHandler(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 
-	handlerStub := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	handlerStub := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, expectedBody)
 
@@ -24,7 +25,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 	})
 
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
-	handler := contracts.CastToHTTPHandler(handlerStub)
+	handler := infra.CastToHTTPHandler(handlerStub)
 
 	t.Run("cast correctly", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
@@ -39,7 +40,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 	t.Run("panic when request is not wrapped", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
-		assert.PanicsWithValue(t, contracts.ErrResponseNotCasted, func() {
+		assert.PanicsWithValue(t, infra.ErrResponseNotCasted, func() {
 			handler.ServeHTTP(recorder, request)
 		})
 	})
@@ -48,7 +49,7 @@ func TestCastToHTTPHandler(t *testing.T) {
 func TestHandlerFunc(t *testing.T) {
 	const expectedBody = `{ "OK": true }`
 
-	uncorsHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	uncorsHandler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, expectedBody)
 

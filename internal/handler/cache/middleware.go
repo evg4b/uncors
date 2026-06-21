@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/samber/lo"
 )
@@ -39,7 +40,7 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 		return next(writer, request)
 	}
 
-	handler := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
+	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
 		return next(w, r)
 	})
 

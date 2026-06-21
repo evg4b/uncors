@@ -10,6 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/static"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -105,7 +106,7 @@ func TestStaticMiddleware(t *testing.T) {
 			static.WithFileSystem(fs),
 		)
 
-		nextHandler := contracts.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+		nextHandler := infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 			writer.WriteHeader(testHTTPStatusCode)
 			fmt.Fprint(writer, testHTTPBody)
 
