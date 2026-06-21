@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -53,7 +52,7 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("generates certs and returns 0", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
-		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer()
 		result := runGenerateCerts(container)
 
 		assert.Equal(t, 0, result)
@@ -62,7 +61,7 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when execute fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
-		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer()
 
 		_ = runGenerateCerts(container)
 		result := runGenerateCerts(container)
@@ -73,7 +72,7 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when flags parse fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
 
-		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer()
 
 		result := runGenerateCerts(container)
 
@@ -113,7 +112,7 @@ mappings:
 
 func TestStartConfigWatcher(t *testing.T) {
 	t.Run("logs error for non-existent config path", func(t *testing.T) {
-		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer()
 
 		assert.NotPanics(t, func() {
 			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
@@ -121,7 +120,7 @@ func TestStartConfigWatcher(t *testing.T) {
 	})
 
 	t.Run("creates watcher for existing config file", func(t *testing.T) {
-		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer()
 
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")

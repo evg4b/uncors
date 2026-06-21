@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
@@ -20,21 +21,23 @@ import (
 const baseAddress = "127.0.0.1"
 
 type Uncors struct {
-	fs      afero.Fs
-	version string
-	output  contracts.Output
-	server  *server.Server
+	fs        afero.Fs
+	version   string
+	output    contracts.Output
+	server    *server.Server
+	container *di.Container
 
 	cacheStorage contracts.Cache
 	closers      []io.Closer
 }
 
-func CreateUncors(fs afero.Fs, server *server.Server, output contracts.Output, version string) *Uncors {
+func CreateUncors(container *di.Container, version string) *Uncors {
 	return &Uncors{
-		fs:      fs,
-		version: version,
-		output:  output,
-		server:  server,
+		fs:        container.Fs(),
+		version:   version,
+		output:    container.CliOutput(),
+		container: container,
+		server:    container.Server(),
 	}
 }
 
@@ -140,6 +143,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 	for _, group := range uncorsConfig.Mappings.GroupByPort() {
 		router, err := handler.NewRouter(
 			group.Mappings,
+			handler.WithDiContainer(app.container),
 			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
 			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
 			handler.ForRouterWithOptionsMiddlewareFactory(app.buildOptionsMiddlewareFactory()),

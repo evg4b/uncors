@@ -10,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -33,7 +34,11 @@ func main() {
 
 func run() int {
 	fs := afero.NewOsFs()
-	container := di.NewContainer(fs, os.Stdout)
+	container := di.NewContainer(
+		di.WithFs(fs),
+		di.WithStdout(os.Stdout),
+		di.WithVersion(Version),
+	)
 
 	output := container.CliOutput()
 
@@ -55,7 +60,7 @@ func run() int {
 	uncorsConfig, configPath := loadConfiguration(fs)
 
 	if uncorsConfig.Interactive {
-		return runInteractive(fs, configPath, uncorsConfig)
+		return runInteractive(container, configPath, uncorsConfig)
 	}
 
 	return runNonInteractive(context.Background(), container, configPath, uncorsConfig)
@@ -99,7 +104,7 @@ func runNonInteractive(
 ) int {
 	output := container.CliOutput()
 
-	app := uncors.CreateUncors(container.Fs(), container.Server(), output, Version)
+	app := uncors.CreateUncors(container, Version)
 
 	go server.RequestPrinter(container.RequestTracker(), output)
 
@@ -161,7 +166,7 @@ func startConfigWatcher(
 }
 
 // startVersionChecker waits for a short delay then checks for a newer release.
-func startVersionChecker(ctx context.Context, output *tui.CliOutput, proxy string) {
+func startVersionChecker(ctx context.Context, output contracts.Output, proxy string) {
 	const checkDelay = 50 * time.Millisecond
 
 	versionChecker := version.NewVersionChecker(
@@ -175,14 +180,14 @@ func startVersionChecker(ctx context.Context, output *tui.CliOutput, proxy strin
 }
 
 // runInteractive starts the proxy in interactive TUI mode.
-func runInteractive(fs afero.Fs, configPath string, cfg *config.UncorsConfig) int {
+func runInteractive(container *di.Container, configPath string, cfg *config.UncorsConfig) int {
 	app := uncorsapp.NewUncorsApp(
 		Version,
-		fs,
+		container,
 		configPath,
 		cfg,
 		func() *config.UncorsConfig {
-			reloaded, _ := loadConfiguration(fs)
+			reloaded, _ := loadConfiguration(container.Fs())
 
 			return reloaded
 		},

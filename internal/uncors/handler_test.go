@@ -22,8 +22,8 @@ import (
 )
 
 func TestHandlerWithHTTP(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -105,8 +105,8 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	fs := afero.NewOsFs()
 	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-	container := di.NewContainer(fs, io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer(di.WithFs(fs))
+	app := uncors.CreateUncors(container, "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -206,8 +206,8 @@ func TestHandlerWithHTTPS(t *testing.T) {
 }
 
 func TestHandlerWithMockMiddleware(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	mockFile := "/mock-response.json"
 	mockContent := `{"message":"mocked"}`
@@ -255,9 +255,9 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 }
 
 func TestHandlerWithStaticMiddleware(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	container := di.NewContainer(fs, io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
+	fs := container.Fs()
 
 	staticDir := "/static"
 	indexFile := filepath.Join(staticDir, "index.html")
@@ -323,8 +323,8 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 }
 
 func TestHandlerWithCache(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	callCount := 0
 
@@ -413,8 +413,8 @@ func TestHandlerWithCache(t *testing.T) {
 }
 
 func TestHandlerWithMultipleMappings(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -479,8 +479,8 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 }
 
 func TestHandlerWithRewrite(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -527,8 +527,8 @@ func TestHandlerWithRewrite(t *testing.T) {
 }
 
 func TestHandlerWithRewritePath(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -577,8 +577,8 @@ func TestHandlerWithRewritePath(t *testing.T) {
 }
 
 func TestHandlerWithOptions(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -623,8 +623,8 @@ func TestHandlerWithOptions(t *testing.T) {
 }
 
 func TestHandlerWithScript(t *testing.T) {
-	container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
-	app := uncors.CreateUncors(container.Fs(), container.Server(), container.CliOutput(), "test")
+	container := di.NewContainer()
+	app := uncors.CreateUncors(container, "test")
 
 	port := testutils.GetFreePort(t)
 

@@ -11,8 +11,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,15 +22,16 @@ var errBoom = errors.New("boom")
 func newTestApp(t *testing.T) (*UncorsApp, *int) {
 	t.Helper()
 
-	fs := afero.NewMemMapFs()
 	uncorsConfig := &config.UncorsConfig{
 		Mappings: config.Mappings{},
 	}
 
+	container := di.NewContainer()
+
 	loadCalls := 0
 	app := NewUncorsApp(
 		"test-version",
-		fs,
+		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
 		func() *config.UncorsConfig {
@@ -311,10 +312,10 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		err = tmpFile.Close()
 		require.NoError(t, err)
 
-		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		app := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		container := di.NewContainer()
+		app := NewUncorsApp("v1", container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -337,10 +338,10 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 	})
 
 	t.Run("logs error when config file does not exist", func(t *testing.T) {
-		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		app := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		container := di.NewContainer()
+		app := NewUncorsApp("v1", container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -388,12 +389,12 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	err = tmpFile.Close()
 	require.NoError(t, err)
 
-	fs := afero.NewMemMapFs()
 	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
 	called := make(chan struct{}, 1)
 
-	app := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	contaienr := di.NewContainer()
+	app := NewUncorsApp("v1", contaienr, tmpFile.Name(), cfg, func() *config.UncorsConfig {
 		select {
 		case called <- struct{}{}:
 		default:

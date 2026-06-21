@@ -4,8 +4,8 @@ import (
 	"io"
 
 	"github.com/evg4b/uncors/internal/commands"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
 
@@ -17,7 +17,7 @@ func (c *Container) Stdout() io.Writer {
 	return c.stdout
 }
 
-func (c *Container) CliOutput() *tui.CliOutput {
+func (c *Container) CliOutput() contracts.Output {
 	return c.cliOutput.GetOrBuild()
 }
 
