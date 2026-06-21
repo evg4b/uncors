@@ -25,7 +25,7 @@ func TestHandlerWithHTTP(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -110,7 +110,7 @@ func TestHandlerWithHTTPS(t *testing.T) {
 	container := di.NewContainer(di.WithFs(fs))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Test-Header", "test-value")
@@ -213,7 +213,7 @@ func TestHandlerWithMockMiddleware(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	mockFile := "/mock-response.json"
 	mockContent := `{"message":"mocked"}`
@@ -264,7 +264,7 @@ func TestHandlerWithStaticMiddleware(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 	fs := container.Fs()
 
 	staticDir := "/static"
@@ -334,7 +334,7 @@ func TestHandlerWithCache(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	callCount := 0
 
@@ -426,7 +426,7 @@ func TestHandlerWithMultipleMappings(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -494,7 +494,7 @@ func TestHandlerWithRewrite(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -544,7 +544,7 @@ func TestHandlerWithRewritePath(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -596,7 +596,7 @@ func TestHandlerWithOptions(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -644,7 +644,7 @@ func TestHandlerWithScript(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, "test")
+	app := uncors.CreateUncors(container)
 
 	port := testutils.GetFreePort(t)
 

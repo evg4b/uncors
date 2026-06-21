@@ -103,7 +103,7 @@ func runNonInteractive(
 ) int {
 	output := container.CliOutput()
 
-	app := uncors.CreateUncors(container, Version)
+	app := uncors.CreateUncors(container)
 
 	go server.RequestPrinter(container.RequestTracker(), output)
 
@@ -177,7 +177,6 @@ func startVersionChecker(ctx context.Context, container *di.Container, proxy str
 // runInteractive starts the proxy in interactive TUI mode.
 func runInteractive(container *di.Container, configPath string, cfg *config.UncorsConfig) int {
 	app := uncorsapp.NewUncorsApp(
-		Version,
 		container,
 		configPath,
 		cfg,

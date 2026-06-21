@@ -35,7 +35,6 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 
 	loadCalls := 0
 	app := NewUncorsApp(
-		"test-version",
 		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
@@ -66,7 +65,6 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	app, _ := newTestApp(t)
 	defer cleanupTestApp(t, app)
 
-	assert.Equal(t, "test-version", app.version)
 	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.tracker)
 	assert.NotNil(t, app.historyWidget.hist)
@@ -322,7 +320,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp("v1", container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -350,7 +348,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp("v1", container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -405,7 +403,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := NewUncorsApp("v1", container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
 		select {
 		case called <- struct{}{}:
 		default:

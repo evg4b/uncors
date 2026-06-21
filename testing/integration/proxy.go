@@ -39,7 +39,7 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 
 	container := di.NewContainer(di.WithFs(fs))
 
-	app := uncors.CreateUncors(container, "integration-test")
+	app := uncors.CreateUncors(container)
 
 	err = app.Start(t.Context(), cfg)
 	require.NoError(t, err)

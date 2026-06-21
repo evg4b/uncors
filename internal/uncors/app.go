@@ -10,7 +10,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/handler"
-	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
@@ -21,20 +20,18 @@ import (
 const baseAddress = "127.0.0.1"
 
 type Uncors struct {
-	fs        afero.Fs
-	version   string
+	fs afero.Fs
+
 	output    contracts.Output
 	server    *server.Server
 	container *di.Container
 
-	cacheStorage contracts.Cache
-	closers      []io.Closer
+	closers []io.Closer
 }
 
-func CreateUncors(container *di.Container, version string) *Uncors {
+func CreateUncors(container *di.Container) *Uncors {
 	return &Uncors{
 		fs:        container.Fs(),
-		version:   version,
 		output:    container.CliOutput(),
 		container: container,
 		server:    container.Server(),
@@ -42,7 +39,7 @@ func CreateUncors(container *di.Container, version string) *Uncors {
 }
 
 func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	tui.PrintLogo(app.output, app.version)
+	tui.PrintLogo(app.output, app.container.Version())
 	app.output.Print("")
 	app.output.WarnBox(tui.DisclaimerMessage)
 	app.output.Print("")
@@ -62,9 +59,6 @@ func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfi
 
 	previous := app.closers
 	app.closers = nil
-	// Drop the cache so the reloaded cache-config (size/TTL) takes effect; the
-	// old instance is in `previous` and is closed below.
-	app.cacheStorage = nil
 
 	targets, err := app.mappingsToTarget(uncorsConfig)
 	if err != nil {
@@ -103,21 +97,6 @@ func (app *Uncors) Shutdown(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
-// getCacheStorage lazily builds a single cache shared by every cache-enabled
-// mapping in the current build. It is called only during Start/Restart (a single
-// goroutine), so the nil check needs no synchronisation. The cache is registered
-// as a closer so the previous instance is released on the next Restart, which is
-// also what lets a changed cache-config take effect on reload.
-func (app *Uncors) getCacheStorage(cfg config.CacheConfig) contracts.Cache {
-	if app.cacheStorage == nil {
-		storage := cache.NewRistrettoCache(cfg.MaxSize, cfg.ExpirationTime)
-		app.cacheStorage = storage
-		app.registerCloser(storage)
-	}
-
-	return app.cacheStorage
-}
-
 func (app *Uncors) registerCloser(c io.Closer) {
 	app.closers = append(app.closers, c)
 }
@@ -145,7 +124,7 @@ func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server
 			group.Mappings,
 			handler.WithDiContainer(app.container),
 			handler.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
-			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(uncorsConfig.CacheConfig)),
+			handler.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(&uncorsConfig.CacheConfig)),
 			handler.ForRouterWithOptionsMiddlewareFactory(app.buildOptionsMiddlewareFactory()),
 			handler.ForRouterWithStaticMiddlewareFactory(app.buildStaticMiddlewareFactory()),
 			handler.ForRouterWithMockHandlerFactory(app.buildMockHandlerFactory()),

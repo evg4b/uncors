@@ -71,19 +71,19 @@ func TestUncorsWithTracker(t *testing.T) {
 const version = "1.0.0"
 
 func TestCreateUncors(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	assert.NotNil(t, app)
 }
 
 func TestUncorsApp(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 	fs := container.Fs()
 
 	testResponceHeader := "# Test resrver"
@@ -164,10 +164,10 @@ func TestUncorsApp(t *testing.T) {
 }
 
 func TestUncorsStart(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -206,10 +206,10 @@ func TestUncorsStart(t *testing.T) {
 }
 
 func TestUncorsRestart(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	server1 := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "Server 1")
@@ -270,10 +270,10 @@ func TestUncorsRestart(t *testing.T) {
 }
 
 func TestUncorsClose(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -303,10 +303,10 @@ func TestUncorsClose(t *testing.T) {
 }
 
 func TestUncorsShutdown(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)
@@ -330,10 +330,10 @@ func TestUncorsShutdown(t *testing.T) {
 }
 
 func TestUncorsWait(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -377,7 +377,7 @@ func TestUncorsWithHTTPSMapping(t *testing.T) {
 	container := di.NewContainer(di.WithFs(fs))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -444,7 +444,7 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 	container := di.NewContainer(di.WithFs(fs))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 
 	httpServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, "HTTP")
@@ -523,10 +523,10 @@ func TestUncorsWithMixedHTTPAndHTTPS(t *testing.T) {
 }
 
 func TestUncorsWithComplexConfiguration(t *testing.T) {
-	container := di.NewContainer()
+	container := di.NewContainer(di.WithVersion(version))
 	defer testutils.Close(t, container)
 
-	app := uncors.CreateUncors(container, version)
+	app := uncors.CreateUncors(container)
 	fs := container.Fs()
 
 	require.NoError(t, fs.MkdirAll("/static", 0o755))

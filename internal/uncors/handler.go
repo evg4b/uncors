@@ -7,7 +7,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler"
-	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -28,19 +27,11 @@ func (app *Uncors) buildProxyHandler(proxyURL string, mappings config.Mappings) 
 	))
 }
 
-func (app *Uncors) buildCacheMiddlewareFactory(cfg config.CacheConfig) handler.CacheMiddlewareFactory {
+func (app *Uncors) buildCacheMiddlewareFactory(cfg *config.CacheConfig) handler.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
-		prefix := styles.CacheStyle.Render("CACHE")
-
-		middleware := cache.NewMiddleware(
-			cache.WithMethods(cfg.Methods),
-			cache.WithCacheStorage(app.getCacheStorage(cfg)),
-			cache.WithGlobs(globs),
-		)
-
 		return &PrefixedMiddleware{
-			middleware: middleware,
-			prefix:     prefix,
+			middleware: app.container.CacheMiddleware(cfg, globs),
+			prefix:     styles.CacheStyle.Render("CACHE"),
 		}
 	}
 }

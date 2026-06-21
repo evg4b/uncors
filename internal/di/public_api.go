@@ -6,6 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
@@ -16,6 +17,10 @@ import (
 
 func (c *Container) Fs() afero.Fs {
 	return c.fs
+}
+
+func (c *Container) Version() string {
+	return c.version
 }
 
 func (c *Container) Stdout() io.Writer {
@@ -58,5 +63,17 @@ func (c *Container) VersionChecker(proxy string) *version.Checker {
 		version.WithOutput(c.CliOutput()),
 		version.WithHTTPClient(infra.MakeHTTPClient(proxy)),
 		version.WithCurrentVersion(c.version),
+	)
+}
+
+func (c *Container) Cache(cfs *config.CacheConfig) contracts.Cache {
+	return c.cache.GetOrBuild(cfs)
+}
+
+func (c *Container) CacheMiddleware(cfg *config.CacheConfig, globs config.CacheGlobs) contracts.Middleware {
+	return cache.NewMiddleware(
+		cache.WithMethods(cfg.Methods),
+		cache.WithCacheStorage(c.Cache(cfg)),
+		cache.WithGlobs(globs),
 	)
 }

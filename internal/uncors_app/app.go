@@ -26,8 +26,7 @@ const (
 )
 
 type UncorsApp struct {
-	version string
-	keys    keyMap
+	keys keyMap
 
 	app       *uncors.Uncors
 	output    *tuiOutput
@@ -69,7 +68,6 @@ type appUpdateMsg interface {
 // config file path (empty string if no config file is used); when non-empty
 // the app watches it for changes and auto-restarts the proxy on every save.
 func NewUncorsApp(
-	ver string,
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
@@ -89,9 +87,8 @@ func NewUncorsApp(
 	historyWidget := NewHistoryWidget(keys)
 
 	return &UncorsApp{
-		version:       ver,
 		keys:          keys,
-		app:           uncors.CreateUncors(container, ver),
+		app:           uncors.CreateUncors(container),
 		output:        output,
 		tracker:       container.RequestTracker(),
 		container:     container,
