@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +53,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		defer watcher.Close()
+		defer testutils.Close(t, watcher)
 
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: localhost:8080"), 0o600))
 		assert.True(t, waitForCall(called, watcherTimeout), "onChange was not called after file write")
@@ -100,7 +101,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		defer watcher.Close()
+		defer testutils.Close(t, watcher)
 
 		// Write multiple times in quick succession.
 		for range 5 {
@@ -148,7 +149,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		defer watcher.Close()
+		defer testutils.Close(t, watcher)
 
 		// Simulate the atomic-save pattern used by vim/IntelliJ/VS Code: write a
 		// sibling temp file, then rename it over the target. This replaces the
@@ -184,7 +185,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		defer watcher.Close()
+		defer testutils.Close(t, watcher)
 
 		// Cancel the context
 		cancel()

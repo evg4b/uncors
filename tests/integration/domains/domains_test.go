@@ -35,7 +35,7 @@ func TestLocalDomainMapping(t *testing.T) {
 	t.Run("exact local domain routes to backend over TLS", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet,
 			env.URL("api.example.local", "/users")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "from backend", result.BodyString())
@@ -86,7 +86,7 @@ func TestPlaceholderDomainMapping(t *testing.T) {
 
 			body, err := io.ReadAll(result.Response.Body)
 			require.NoError(t, err)
-			result.Response.Body.Close()
+			testutils.Close(t, result.Response.Body)
 
 			assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 			assert.Equal(t, "served /dashboard", string(body))
@@ -130,7 +130,7 @@ func TestSharedPortDistinctRemotes(t *testing.T) {
 
 	t.Run("shop.local reaches only the shop remote", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("shop.local", "/catalog")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "shop remote", result.BodyString())
@@ -147,7 +147,7 @@ func TestSharedPortDistinctRemotes(t *testing.T) {
 		response, err := env.Client.Do(integration.NewRequest(t, http.MethodGet, env.URL("blog.local", "/posts")))
 		require.NoError(t, err)
 
-		defer response.Body.Close()
+		defer testutils.Close(t, response.Body)
 
 		body, err := io.ReadAll(response.Body)
 		require.NoError(t, err)

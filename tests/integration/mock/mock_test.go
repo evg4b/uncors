@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("raw response returns configured code, headers and body", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/raw")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
@@ -55,7 +56,7 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("file response serves seeded file content", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/file")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
@@ -69,7 +70,7 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("method mismatch falls through to the backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodPost, env.URL("mock.local", "/raw")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)

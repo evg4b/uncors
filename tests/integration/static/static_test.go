@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 	t.Run("serves an existing static file", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", "/assets/app.js")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
@@ -46,7 +47,7 @@ func TestStaticMiddleware(t *testing.T) {
 
 	t.Run("falls back to the index file for unknown paths under the prefix", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", "/assets/missing-route")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)

@@ -19,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -80,7 +81,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("passes request to next handler", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		defer harWriter.Close()
+		defer testutils.Close(t, harWriter)
 
 		called := false
 		next := contracts.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
@@ -144,7 +145,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("restores request body for downstream handlers", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		defer harWriter.Close()
+		defer testutils.Close(t, harWriter)
 
 		body := "request-payload"
 

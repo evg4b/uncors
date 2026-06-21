@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,7 @@ response:WriteString(request.path_params["id"])
 
 	t.Run("inline script writes status and body without the backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("script.local", "/hello")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
@@ -56,7 +57,7 @@ response:WriteString(request.path_params["id"])
 
 	t.Run("script reads path parameters from the request", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("script.local", "/echo/abc123")))
-		defer result.Response.Body.Close()
+		defer testutils.Close(t, result.Response.Body)
 
 		body, err := io.ReadAll(result.Response.Body)
 		require.NoError(t, err)
