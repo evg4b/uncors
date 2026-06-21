@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -58,15 +57,4 @@ func normalizePath(path string) (string, string) {
 	fullPath := clearPath + "/"
 
 	return clearPath, fullPath
-}
-
-const wildcard = "*"
-
-func replaceWildcards(host string) string {
-	count := strings.Count(host, wildcard)
-	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
-	}
-
-	return host
 }

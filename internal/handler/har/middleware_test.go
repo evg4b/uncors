@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -94,7 +95,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := server.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
+		err := handler.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
 		require.NoError(t, err)
 
 		assert.True(t, called)
@@ -114,7 +115,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := server.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
+		err := handler.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -134,7 +135,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := server.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := handler.Mddleware(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -167,7 +168,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		serveErr := server.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		serveErr := handler.Mddleware(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, serveErr)
 
 		assert.Equal(t, body, received)
@@ -190,7 +191,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := server.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := handler.Mddleware(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -230,7 +231,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := server.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := handler.Mddleware(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -260,7 +261,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		serveErr := server.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		serveErr := handler.Mddleware(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, serveErr)
 
 		require.NoError(t, harWriter.Close())
@@ -318,7 +319,7 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			rr := server.NewResponseRecorder(rec)
-			serveErr := server.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
+			serveErr := handler.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
 			require.NoError(t, serveErr)
 
 			require.NoError(t, harWriter.Close())

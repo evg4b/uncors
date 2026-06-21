@@ -6,7 +6,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/gorilla/mux"
 )
 
@@ -55,14 +54,14 @@ func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, erro
 }
 
 func (r *Router) registerMapping(mapping config.Mapping) {
-	router := r.Router.Host(replaceWildcards(mapping.From.Hostname)).
+	router := r.Router.Host(mapping.From.Hostname).
 		Subrouter()
 
 	defaultHandler := r.prepareDefaultHandler(mapping)
 
 	for _, staticDir := range mapping.Statics {
 		middleware := r.staticMiddlewareFactory(staticDir.Path, staticDir)
-		registerPrefixHandler(router, staticDir.Path, server.Mddleware(middleware, defaultHandler))
+		registerPrefixHandler(router, staticDir.Path, Mddleware(middleware, defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
@@ -78,7 +77,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := server.Mddleware(r.rewriteMiddlewareFactory(rewrite), defaultHandler)
+		wrappedHandler := Mddleware(r.rewriteMiddlewareFactory(rewrite), defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -89,15 +88,15 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = server.Mddleware(r.optionsMiddlewareFactory(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = Mddleware(r.optionsMiddlewareFactory(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
-		defaultHandler = server.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
+		defaultHandler = Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = server.Mddleware(r.harMiddlewareFactory(mapping.HAR), defaultHandler)
+		defaultHandler = Mddleware(r.harMiddlewareFactory(mapping.HAR), defaultHandler)
 	}
 
 	return defaultHandler
