@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
+
 	"github.com/gorilla/mux"
 )
 

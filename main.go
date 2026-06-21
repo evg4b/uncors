@@ -10,15 +10,12 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
-	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -117,7 +114,7 @@ func runNonInteractive(
 		panic(err)
 	}
 
-	go startVersionChecker(ctx, output, cfg.Proxy)
+	go startVersionChecker(ctx, container, cfg.Proxy)
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Println("shutdown signal received")
@@ -166,17 +163,13 @@ func startConfigWatcher(
 }
 
 // startVersionChecker waits for a short delay then checks for a newer release.
-func startVersionChecker(ctx context.Context, output contracts.Output, proxy string) {
+func startVersionChecker(ctx context.Context, container *di.Container, proxy string) {
 	const checkDelay = 50 * time.Millisecond
 
-	versionChecker := version.NewVersionChecker(
-		version.WithOutput(output),
-		version.WithHTTPClient(infra.MakeHTTPClient(proxy)),
-		version.WithCurrentVersion(Version),
-	)
-
 	time.Sleep(checkDelay)
-	versionChecker.CheckNewVersion(ctx)
+
+	container.VersionChecker(proxy).
+		CheckNewVersion(ctx)
 }
 
 // runInteractive starts the proxy in interactive TUI mode.

@@ -13,10 +13,8 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
-	"github.com/evg4b/uncors/internal/version"
 )
 
 const (
@@ -31,9 +29,10 @@ type UncorsApp struct {
 	version string
 	keys    keyMap
 
-	app     *uncors.Uncors
-	output  *tuiOutput
-	tracker server.IRequestTracker
+	app       *uncors.Uncors
+	output    *tuiOutput
+	tracker   server.IRequestTracker
+	container *di.Container
 
 	outputCh   chan string
 	appContext func() context.Context
@@ -95,6 +94,7 @@ func NewUncorsApp(
 		app:           uncors.CreateUncors(container, ver),
 		output:        output,
 		tracker:       container.RequestTracker(),
+		container:     container,
 		outputCh:      outputCh,
 		appContext:    func() context.Context { return appCtx },
 		appDone:       appCtx.Done(),
@@ -404,14 +404,10 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 
 func (m *UncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {
-		versionChecker := version.NewVersionChecker(
-			version.WithOutput(m.output),
-			version.WithHTTPClient(infra.MakeHTTPClient(m.cfg.Proxy)),
-			version.WithCurrentVersion(m.version),
-		)
-
 		time.Sleep(versionCheckDelay)
-		versionChecker.CheckNewVersion(m.appContext())
+
+		m.container.VersionChecker(m.cfg.Proxy).
+			CheckNewVersion(m.appContext())
 
 		return nil
 	}
