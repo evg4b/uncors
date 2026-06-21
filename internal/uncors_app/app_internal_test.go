@@ -19,7 +19,7 @@ import (
 
 var errBoom = errors.New("boom")
 
-func newTestApp(t *testing.T) (*uncorsApp, *int) {
+func newTestApp(t *testing.T) (*UncorsApp, *int) {
 	t.Helper()
 
 	fs := afero.NewMemMapFs()
@@ -28,7 +28,7 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 	}
 
 	loadCalls := 0
-	model := NewUncorsApp(
+	app := NewUncorsApp(
 		"test-version",
 		fs,
 		"", // no config file — watcher is not created
@@ -40,13 +40,10 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 		},
 	)
 
-	app, ok := model.(*uncorsApp)
-	require.True(t, ok)
-
 	return app, &loadCalls
 }
 
-func cleanupTestApp(t *testing.T, app *uncorsApp) {
+func cleanupTestApp(t *testing.T, app *UncorsApp) {
 	t.Helper()
 
 	app.cancel()
@@ -317,9 +314,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
-		app, ok := model.(*uncorsApp)
-		require.True(t, ok)
+		app := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -345,9 +340,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		model := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
-		app, ok := model.(*uncorsApp)
-		require.True(t, ok)
+		app := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -400,7 +393,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 	called := make(chan struct{}, 1)
 
-	model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	app := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
 		select {
 		case called <- struct{}{}:
 		default:
@@ -408,9 +401,6 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 		return cfg
 	})
-
-	app, ok := model.(*uncorsApp)
-	require.True(t, ok)
 
 	defer func() {
 		// Cancel context first so any in-flight Restart fails fast.

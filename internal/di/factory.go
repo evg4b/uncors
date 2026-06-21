@@ -3,9 +3,10 @@ package di
 import "sync"
 
 type factory[T any] struct {
+	sync.Mutex
+
 	cache   *T
 	factory func() *T
-	sync.Mutex
 }
 
 func (f *factory[T]) GetOrBuild() *T {
@@ -17,9 +18,10 @@ func (f *factory[T]) GetOrBuild() *T {
 	}
 
 	f.cache = f.factory()
+
 	return f.cache
 }
 
-func newFactory[T any](new func() *T) factory[T] {
-	return factory[T]{factory: new}
+func newFactory[T any](factoryFunc func() *T) factory[T] {
+	return factory[T]{factory: factoryFunc}
 }

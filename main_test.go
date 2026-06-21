@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,10 +62,10 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when execute fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
-		conatiner := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
 
-		_ = runGenerateCerts(conatiner)
-		result := runGenerateCerts(conatiner)
+		_ = runGenerateCerts(container)
+		result := runGenerateCerts(container)
 
 		assert.Equal(t, 1, result)
 	})
@@ -74,9 +73,9 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when flags parse fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
 
-		conatiner := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
 
-		result := runGenerateCerts(conatiner)
+		result := runGenerateCerts(container)
 
 		assert.Equal(t, 1, result)
 	})
@@ -114,22 +113,22 @@ mappings:
 
 func TestStartConfigWatcher(t *testing.T) {
 	t.Run("logs error for non-existent config path", func(t *testing.T) {
-		output := tui.NewCliOutput(io.Discard)
+		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
 
 		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), afero.NewMemMapFs(), output, "/no/such/config.yaml", nil)
+			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
 		})
 	})
 
 	t.Run("creates watcher for existing config file", func(t *testing.T) {
+		container := di.NewContainer(afero.NewMemMapFs(), io.Discard)
+
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
 
-		output := tui.NewCliOutput(io.Discard)
-
 		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), afero.NewMemMapFs(), output, configFile, nil)
+			startConfigWatcher(context.Background(), container, configFile, nil)
 		})
 	})
 }

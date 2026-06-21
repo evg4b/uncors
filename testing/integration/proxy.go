@@ -37,7 +37,9 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
 	require.NoError(t, err)
 
-	app := uncors.CreateUncors(fs, server.NewRequestTracker(), mocks.NoopOutput(), "integration-test")
+	server := server.New(server.NewHostCertManager(fs), server.NewRequestTracker())
+
+	app := uncors.CreateUncors(fs, server, mocks.NoopOutput(), "integration-test")
 
 	err = app.Start(t.Context(), cfg)
 	require.NoError(t, err)

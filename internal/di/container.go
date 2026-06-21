@@ -16,37 +16,18 @@ type Container struct {
 	cliOutput            factory[tui.CliOutput]
 	requestTracker       factory[server.RequestTracker]
 	generateCertsCommand factory[commands.GenerateCertsCommand]
+	hostCertManager      factory[server.HostCertManager]
+	server               factory[server.Server]
 }
 
 func NewContainer(fs afero.Fs, stdout io.Writer) *Container {
-	c := &Container{fs: fs, stdout: stdout}
+	container := &Container{fs: fs, stdout: stdout}
 
-	c.cliOutput = newFactory(c.newCliOutput)
-	c.requestTracker = newFactory(server.NewRequestTracker)
-	c.generateCertsCommand = newFactory(c.newGenerateCertsCommand)
+	container.cliOutput = newFactory(container.newCliOutput)
+	container.requestTracker = newFactory(server.NewRequestTracker)
+	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
+	container.hostCertManager = newFactory(container.newHostCertManager)
+	container.server = newFactory(container.newServer)
 
-	return c
-}
-
-func (c *Container) CliOutput() *tui.CliOutput {
-	return c.cliOutput.GetOrBuild()
-}
-
-func (c *Container) newCliOutput() *tui.CliOutput {
-	return tui.NewCliOutput(c.stdout)
-}
-
-func (c *Container) RequestTracker() *server.RequestTracker {
-	return c.requestTracker.GetOrBuild()
-}
-
-func (c *Container) GenerateCertsCommand() *commands.GenerateCertsCommand {
-	return c.generateCertsCommand.GetOrBuild()
-}
-
-func (c *Container) newGenerateCertsCommand() *commands.GenerateCertsCommand {
-	return commands.NewGenerateCertsCommand(
-		commands.WithOutput(c.CliOutput()),
-		commands.WithFs(c.fs),
-	)
+	return container
 }

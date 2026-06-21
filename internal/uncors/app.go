@@ -29,12 +29,12 @@ type Uncors struct {
 	closers      []io.Closer
 }
 
-func CreateUncors(fs afero.Fs, tracker server.IRequestTracker, output contracts.Output, version string) *Uncors {
+func CreateUncors(fs afero.Fs, server *server.Server, output contracts.Output, version string) *Uncors {
 	return &Uncors{
 		fs:      fs,
 		version: version,
 		output:  output,
-		server:  server.New(server.NewHostCertManager(fs), tracker),
+		server:  server,
 	}
 }
 

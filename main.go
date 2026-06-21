@@ -58,7 +58,7 @@ func run() int {
 		return runInteractive(fs, configPath, uncorsConfig)
 	}
 
-	return runNonInteractive(context.Background(), fs, output, configPath, uncorsConfig)
+	return runNonInteractive(context.Background(), container, configPath, uncorsConfig)
 }
 
 // runGenerateCerts executes the generate-certs sub-command and returns an exit code.
@@ -93,18 +93,18 @@ func runGenerateCerts(container *di.Container) int {
 // when configPath is non-empty.
 func runNonInteractive(
 	ctx context.Context,
-	fs afero.Fs,
-	output *tui.CliOutput,
+	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
 ) int {
-	tracker := server.NewRequestTracker()
-	app := uncors.CreateUncors(fs, tracker, output, Version)
+	output := container.CliOutput()
 
-	go server.RequestPrinter(tracker, output)
+	app := uncors.CreateUncors(container.Fs(), container.Server(), output, Version)
+
+	go server.RequestPrinter(container.RequestTracker(), output)
 
 	if configPath != "" {
-		startConfigWatcher(ctx, fs, output, configPath, app)
+		startConfigWatcher(ctx, container, configPath, app)
 	}
 
 	err := app.Start(ctx, cfg)
@@ -130,11 +130,12 @@ func runNonInteractive(
 // every change. The watcher lives for the process lifetime (not closed explicitly).
 func startConfigWatcher(
 	ctx context.Context,
-	fs afero.Fs,
-	output *tui.CliOutput,
+	container *di.Container,
 	configPath string,
 	app *uncors.Uncors,
 ) {
+	output := container.CliOutput()
+	fs := container.Fs()
 	watcher := config.NewWatcher(configPath)
 
 	err := watcher.Watch(ctx, func() {
