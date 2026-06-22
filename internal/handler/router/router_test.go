@@ -1,4 +1,4 @@
-package handler_test
+package router_test
 
 import (
 	"fmt"
@@ -12,9 +12,9 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -48,7 +48,7 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory() handler.CacheMiddlewareFactory {
+func cacheFactory() router.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
@@ -167,11 +167,11 @@ func TestRouter(t *testing.T) {
 		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
-	router, err := handler.NewRouter(
+	router, err := router.NewRouter(
 		mappings,
-		handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
-		handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		handler.WithDiContainer(container),
+		router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
+		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+		router.WithDiContainer(container),
 	)
 	require.NoError(t, err)
 
@@ -345,7 +345,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			container := di.NewContainer()
 			defer testutils.Close(t, container)
 
-			routerInstance, err := handler.NewRouter(
+			routerInstance, err := router.NewRouter(
 				config.Mappings{
 					{
 						From: hosts.Parse("{host}"),
@@ -363,9 +363,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 						},
 					},
 				},
-				handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithDiContainer(container),
+				router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				router.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -413,9 +413,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 			}
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-			routerInstance, err := handler.NewRouter(
+			routerInstance, err := router.NewRouter(
 				mappings,
-				handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+				router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
 							Request:    req,
@@ -423,8 +423,8 @@ func TestRouterMockMiddleware(t *testing.T) {
 							Body:       io.NopCloser(strings.NewReader(expectedBody)),
 						}, nil
 					}))),
-				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.WithDiContainer(container),
+				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				router.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -522,9 +522,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 		}
 		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-		routerInstance, err := handler.NewRouter(
+		routerInstance, err := router.NewRouter(
 			mappings,
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    req,
@@ -532,8 +532,8 @@ func TestRouterMockMiddleware(t *testing.T) {
 						Body:       io.NopCloser(strings.NewReader(expectedBody)),
 					}, nil
 				}))),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithDiContainer(container),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -598,7 +598,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		routerInstance, err := handler.NewRouter(
+		routerInstance, err := router.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
@@ -637,9 +637,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 					},
 				}},
 			},
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithDiContainer(container),
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -704,7 +704,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		routerInstance, err := handler.NewRouter(
+		routerInstance, err := router.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
@@ -743,9 +743,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 					},
 				}},
 			},
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.WithDiContainer(container),
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 

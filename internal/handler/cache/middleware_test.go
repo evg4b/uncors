@@ -9,8 +9,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -101,7 +101,7 @@ func TestCacheMiddleware(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				testHandler.Reset()
 
-				wrappedHandler := handler.Mddleware(middleware, testHandler)
+				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -167,7 +167,7 @@ func TestCacheMiddleware(t *testing.T) {
 					return nil
 				})
 
-				wrappedHandler := handler.Mddleware(middleware, testHandler)
+				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -196,7 +196,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		wrappedHandler := handler.Mddleware(middleware, testHandler)
+		wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
@@ -230,7 +230,7 @@ func TestCacheMiddleware(t *testing.T) {
 			return nil
 		})
 
-		wrappedHandler := handler.Mddleware(middleware, testHandler)
+		wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()

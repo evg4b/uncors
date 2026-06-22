@@ -3,8 +3,8 @@ package uncors
 import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler"
 	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -20,7 +20,7 @@ func (app *Uncors) buildProxyHandler(proxyURL string, mappings config.Mappings) 
 	))
 }
 
-func (app *Uncors) buildCacheMiddlewareFactory(cfg *config.CacheConfig) handler.CacheMiddlewareFactory {
+func (app *Uncors) buildCacheMiddlewareFactory(cfg *config.CacheConfig) router.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return app.container.CacheMiddleware(cfg, globs)
 	}

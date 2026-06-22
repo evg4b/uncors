@@ -1,4 +1,4 @@
-package handler
+package router
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ type Router struct {
 	cacheMiddlewareFactory CacheMiddlewareFactory
 }
 
-func NewRouter(mappings config.Mappings, options ...RouterOption) (*Router, error) {
+func NewRouter(mappings config.Mappings, options ...Option) (*Router, error) {
 	instance := Router{
 		Router: mux.NewRouter(),
 	}
@@ -59,7 +59,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 
 	for _, staticDir := range mapping.Statics {
 		middleware := r.container.StaticMiddleware(staticDir.Path, staticDir)
-		registerPrefixHandler(router, staticDir.Path, Mddleware(middleware, defaultHandler))
+		registerPrefixHandler(router, staticDir.Path, infra.Mddleware(middleware, defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
@@ -75,7 +75,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := Mddleware(r.container.RewriteMiddleware(&rewrite), defaultHandler)
+		wrappedHandler := infra.Mddleware(r.container.RewriteMiddleware(&rewrite), defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -86,15 +86,15 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = Mddleware(r.container.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = infra.Mddleware(r.container.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
-		defaultHandler = Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
+		defaultHandler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = Mddleware(r.container.HARMiddleware(&mapping.HAR), defaultHandler)
+		defaultHandler = infra.Mddleware(r.container.HARMiddleware(&mapping.HAR), defaultHandler)
 	}
 
 	return defaultHandler
