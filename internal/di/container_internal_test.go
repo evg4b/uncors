@@ -4,40 +4,40 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	errCloseError  = errors.New("close error")
+	errFirstError  = errors.New("first error")
+	errSecondError = errors.New("second error")
 )
 
 func TestContainerCloseError(t *testing.T) {
 	t.Run("collects errors from closers", func(t *testing.T) {
-		expectedErr := errors.New("close error")
-
 		container := NewContainer()
 		container.closers = append(container.closers, closerFunc(func() error {
-			return expectedErr
+			return errCloseError
 		}))
 
 		err := container.Close()
 
 		require.Error(t, err)
-		assert.ErrorIs(t, err, expectedErr)
+		require.ErrorIs(t, err, errCloseError)
 	})
 
 	t.Run("joins multiple closer errors", func(t *testing.T) {
-		err1 := errors.New("first error")
-		err2 := errors.New("second error")
-
 		container := NewContainer()
 		container.closers = append(container.closers,
-			closerFunc(func() error { return err1 }),
-			closerFunc(func() error { return err2 }),
+			closerFunc(func() error { return errFirstError }),
+			closerFunc(func() error { return errSecondError }),
 		)
 
 		err := container.Close()
 
 		require.Error(t, err)
-		assert.ErrorIs(t, err, err1)
-		assert.ErrorIs(t, err, err2)
+		require.ErrorIs(t, err, errFirstError)
+		require.ErrorIs(t, err, errSecondError)
 	})
 }
 

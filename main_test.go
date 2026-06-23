@@ -115,6 +115,17 @@ mappings:
 	assert.Len(t, cfg.Mappings, 1)
 }
 
+func TestStartVersionChecker(t *testing.T) {
+	t.Run("runs without panic", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		assert.NotPanics(t, func() {
+			startVersionChecker(context.Background(), container, "")
+		})
+	})
+}
+
 func TestStartConfigWatcher(t *testing.T) {
 	t.Run("logs error for non-existent config path", func(t *testing.T) {
 		container := di.NewContainer()

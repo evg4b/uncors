@@ -21,6 +21,7 @@ import (
 func TestContainerOptions(t *testing.T) {
 	t.Run("WithStdout", func(t *testing.T) {
 		buf := &bytes.Buffer{}
+
 		container := di.NewContainer(di.WithStdout(buf))
 		defer testutils.Close(t, container)
 
@@ -36,6 +37,7 @@ func TestContainerOptions(t *testing.T) {
 
 	t.Run("WithFs", func(t *testing.T) {
 		fs := afero.NewOsFs()
+
 		container := di.NewContainer(di.WithFs(fs))
 		defer testutils.Close(t, container)
 
@@ -204,6 +206,30 @@ func TestContainer(t *testing.T) {
 		assert.Implements(t, (*contracts.Handler)(nil), handler)
 	})
 
+	t.Run("router with cache globs invokes cache middleware factory", func(t *testing.T) {
+		cacheContainer := di.NewContainer()
+		defer testutils.Close(t, cacheContainer)
+
+		mappings := config.Mappings{
+			{
+				From:  hosts.Localhost.HTTP(),
+				To:    hosts.Localhost.HTTPS(),
+				Cache: config.CacheGlobs{"*.json"},
+				Mocks: config.Mocks{
+					{
+						Matcher:  config.RequestMatcher{Path: "/data.json"},
+						Response: config.Response{Code: 200, Raw: "{}"},
+					},
+				},
+			},
+		}
+
+		handler, err := cacheContainer.Router(mappings, &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}, "")
+
+		require.NoError(t, err)
+		assert.NotNil(t, handler)
+	})
+
 	t.Run("singleton behavior", func(t *testing.T) {
 		output1 := container.CliOutput()
 		output2 := container.CliOutput()
@@ -225,6 +251,7 @@ func TestContainerOverride(t *testing.T) {
 		customOutput := container.CliOutput()
 
 		overrideApplied := false
+
 		container.Override(di.OverrideCliOutput(func() contracts.Output {
 			overrideApplied = true
 
@@ -233,12 +260,14 @@ func TestContainerOverride(t *testing.T) {
 
 		newContainer := di.NewContainer()
 		defer testutils.Close(t, newContainer)
+
 		newContainer.Override(di.OverrideCliOutput(func() contracts.Output {
 			return customOutput
 		}))
 
 		result := newContainer.CliOutput()
 		assert.Same(t, customOutput, result)
+
 		_ = overrideApplied
 	})
 

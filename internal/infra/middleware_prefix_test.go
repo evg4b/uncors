@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var errMiddlewareError = errors.New("middleware error")
+
 func TestMiddlewareFunc(t *testing.T) {
 	t.Run("Wrap calls handler with next", func(t *testing.T) {
 		const body = "wrapped"
@@ -23,12 +25,13 @@ func TestMiddlewareFunc(t *testing.T) {
 		nextCalled := false
 		next := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 			nextCalled = true
+
 			fmt.Fprint(w, body)
 
 			return nil
 		})
 
-		mw := infra.MiddlewareFunc(func(h contracts.Handler) contracts.Handler {
+		middleware := infra.MiddlewareFunc(func(h contracts.Handler) contracts.Handler {
 			return infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
 				return h.ServeHTTP(w, r)
 			})
@@ -38,7 +41,7 @@ func TestMiddlewareFunc(t *testing.T) {
 		writer := server.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		handler := mw.Wrap(next)
+		handler := middleware.Wrap(next)
 		err := handler.ServeHTTP(writer, request)
 
 		require.NoError(t, err)
@@ -73,7 +76,7 @@ func TestMddleware(t *testing.T) {
 		const body = "chained"
 
 		middlewareCalled := false
-		mw := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
+		passthrough := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
 			middlewareCalled = true
 
 			return next(w, r)
@@ -85,7 +88,7 @@ func TestMddleware(t *testing.T) {
 			return nil
 		})
 
-		chained := infra.Mddleware(mw, handler)
+		chained := infra.Mddleware(passthrough, handler)
 
 		recorder := httptest.NewRecorder()
 		writer := server.NewResponseRecorder(recorder)
@@ -99,17 +102,15 @@ func TestMddleware(t *testing.T) {
 	})
 
 	t.Run("propagates error from middleware", func(t *testing.T) {
-		expectedErr := errors.New("middleware error")
-
-		mw := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
-			return expectedErr
+		failing := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
+			return errMiddlewareError
 		})
 
 		handler := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 			return nil
 		})
 
-		chained := infra.Mddleware(mw, handler)
+		chained := infra.Mddleware(failing, handler)
 
 		recorder := httptest.NewRecorder()
 		writer := server.NewResponseRecorder(recorder)
@@ -117,7 +118,7 @@ func TestMddleware(t *testing.T) {
 
 		err := chained.ServeHTTP(writer, request)
 
-		assert.ErrorIs(t, err, expectedErr)
+		assert.ErrorIs(t, err, errMiddlewareError)
 	})
 }
 
@@ -153,6 +154,7 @@ func TestWithPrefix(t *testing.T) {
 		updaterCalled := false
 		updater := func(p string) {
 			updaterCalled = true
+
 			assert.Equal(t, prefix, p)
 		}
 
@@ -189,11 +191,11 @@ func TestPrefixedMiddleware(t *testing.T) {
 			return nil
 		}
 
-		mw := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
+		passthrough := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
 			return next(w, r)
 		})
 
-		prefixed := infra.NewPrefixedMiddleware(mw, prefix)
+		prefixed := infra.NewPrefixedMiddleware(passthrough, prefix)
 
 		recorder := httptest.NewRecorder()
 		writer := server.NewResponseRecorder(recorder)
@@ -206,13 +208,11 @@ func TestPrefixedMiddleware(t *testing.T) {
 	})
 
 	t.Run("propagates error from middleware", func(t *testing.T) {
-		expectedErr := errors.New("middleware error")
-
-		mw := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
-			return expectedErr
+		failing := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
+			return errMiddlewareError
 		})
 
-		prefixed := infra.NewPrefixedMiddleware(mw, "PREFIX")
+		prefixed := infra.NewPrefixedMiddleware(failing, "PREFIX")
 
 		recorder := httptest.NewRecorder()
 		writer := server.NewResponseRecorder(recorder)
@@ -221,7 +221,7 @@ func TestPrefixedMiddleware(t *testing.T) {
 		next := func(_ contracts.ResponseWriter, _ *contracts.Request) error { return nil }
 		err := prefixed.ServeHTTP(writer, request, next)
 
-		assert.ErrorIs(t, err, expectedErr)
+		assert.ErrorIs(t, err, errMiddlewareError)
 	})
 }
 
