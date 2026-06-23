@@ -17,13 +17,7 @@ import (
 
 const shutdownTimeout = 15 * time.Second
 
-func runNonIneractive(
-	ctx context.Context,
-	fs afero.Fs,
-	uncorsConfig *config.UncorsConfig,
-	configPath string,
-	args []string,
-) error {
+func runNonIneractive(ctx context.Context, fs afero.Fs, cfg *config.UncorsConfig, cfgPath string, args []string) error {
 	container := di.NewContainer(
 		di.WithFs(fs),
 		di.WithStdout(os.Stdout),
@@ -36,10 +30,10 @@ func runNonIneractive(
 	output.Print("")
 	output.WarnBox(tui.DisclaimerMessage)
 	output.Print("")
-	output.InfoBox(uncorsConfig.Mappings.String())
+	output.InfoBox(cfg.Mappings.String())
 	output.Print("")
 
-	targets, err := container.Targets(uncorsConfig)
+	targets, err := container.Targets(cfg)
 	if err != nil {
 		return err
 	}
@@ -51,10 +45,10 @@ func runNonIneractive(
 		return err
 	}
 
-	go startVersionChecker(ctx, container, uncorsConfig.Proxy)
+	go startVersionChecker(ctx, container, cfg.Proxy)
 
 	go func() {
-		watcher := config.NewWatcher(configPath)
+		watcher := config.NewWatcher(cfgPath)
 
 		err := watcher.Watch(ctx, func() { reloadServer(ctx, container, srv, args) })
 		if err != nil {
