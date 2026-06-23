@@ -52,7 +52,7 @@ func cleanupTestApp(t *testing.T, app *UncorsApp) {
 	t.Helper()
 
 	app.cancel()
-	err := app.app.Close()
+	err := app.srv.Close()
 	require.NoError(t, err)
 
 	if app.historyWidget != nil && app.historyWidget.hist != nil {
@@ -292,7 +292,7 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		assert.Equal(t, tea.Quit(), cmd())
 
 		app.cancel()
-		err := app.app.Close()
+		err := app.srv.Close()
 		require.NoError(t, err)
 	})
 }
@@ -324,7 +324,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 
 		defer func() {
 			app.cancel()
-			err := app.app.Close()
+			err := app.srv.Close()
 			require.NoError(t, err)
 
 			if app.historyWidget != nil && app.historyWidget.hist != nil {
@@ -352,7 +352,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 
 		defer func() {
 			app.cancel()
-			err := app.app.Close()
+			err := app.srv.Close()
 			require.NoError(t, err)
 
 			if app.historyWidget != nil && app.historyWidget.hist != nil {
@@ -414,7 +414,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 	defer func() {
 		// Cancel context first so any in-flight Restart fails fast.
-		// We deliberately skip app.app.Close() here: closeAll() writes
+		// We deliberately skip app.srv.Close() here: closeAll() writes
 		// app.closers concurrently with the Restart goroutine's read of
 		// app.closers, which would be a data race.
 		app.cancel()
@@ -465,7 +465,7 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 	assert.Equal(t, tea.Quit(), cmd())
 
 	app.cancel()
-	err = app.app.Close()
+	err = app.srv.Close()
 	require.NoError(t, err)
 
 	if app.historyWidget != nil && app.historyWidget.hist != nil {
