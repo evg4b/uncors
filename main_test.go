@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/cli"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func TestSetupLogging(t *testing.T) {
 		saveLogger(t)
 		t.Setenv("UNCORS_LOGGING", "")
 
-		setupLogging()
+		infra.SetupLogging()
 
 		assert.Equal(t, io.Discard, log.Writer())
 	})
@@ -46,7 +47,7 @@ func TestSetupLogging(t *testing.T) {
 		logPath := filepath.Join(t.TempDir(), "test.log")
 		t.Setenv("UNCORS_LOGGING", logPath)
 
-		setupLogging()
+		infra.SetupLogging()
 
 		require.NotEqual(t, io.Discard, log.Writer())
 
@@ -58,7 +59,7 @@ func TestSetupLogging(t *testing.T) {
 		saveLogger(t)
 		t.Setenv("UNCORS_LOGGING", "/no-such-dir/test.log")
 
-		setupLogging()
+		infra.SetupLogging()
 
 		assert.Equal(t, io.Discard, log.Writer())
 	})
