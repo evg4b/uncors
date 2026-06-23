@@ -34,6 +34,10 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 		return errAlreadyWatching
 	}
 
+	if w.filePath == "" {
+		return nil
+	}
+
 	_, err := os.Stat(w.filePath)
 	if err != nil {
 		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
@@ -52,9 +56,10 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 
 	err = fsWatcher.Add(dir)
 	if err != nil {
-		_ = fsWatcher.Close()
-
-		return fmt.Errorf("failed to watch config directory '%s': %w", dir, err)
+		return errors.Join(
+			fsWatcher.Close(),
+			fmt.Errorf("failed to watch config directory '%s': %w", dir, err),
+		)
 	}
 
 	w.fsWatcher = fsWatcher
