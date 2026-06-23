@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
@@ -12,6 +13,30 @@ type Script struct {
 	Matcher RequestMatcher `yaml:",inline"`
 	Script  string         `yaml:"script"`
 	File    string         `yaml:"file"`
+}
+
+// scriptMarshal is the canonical YAML representation of Script.
+// Using a flat struct (no inline) and trimming multi-line script strings avoids
+// a gopkg.in/yaml.v3 round-trip bug where strings starting with \n are
+// serialized as "|4" block scalars with wrong content indentation.
+type scriptMarshal struct {
+	Path    string            `yaml:"path,omitempty"`
+	Method  string            `yaml:"method,omitempty"`
+	Queries map[string]string `yaml:"queries,omitempty"`
+	Headers map[string]string `yaml:"headers,omitempty"`
+	Script  string            `yaml:"script,omitempty"`
+	File    string            `yaml:"file,omitempty"`
+}
+
+func (s Script) MarshalYAML() (any, error) {
+	return scriptMarshal{
+		Path:    s.Matcher.Path,
+		Method:  s.Matcher.Method,
+		Queries: s.Matcher.Queries,
+		Headers: s.Matcher.Headers,
+		Script:  strings.TrimSpace(s.Script),
+		File:    s.File,
+	}, nil
 }
 
 func (s *Script) Clone() Script {
