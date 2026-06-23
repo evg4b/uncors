@@ -6,7 +6,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
@@ -20,11 +19,20 @@ func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
 	router.MethodNotAllowedHandler = httpHandler
 }
 
+type DI interface {
+	StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware
+	RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware
+	HARMiddleware(harConfig *config.HARConfig) contracts.Middleware
+	ScriptHandler(scriptConfig *config.Script) contracts.Handler
+	OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware
+	MockHandler(response *config.Response) contracts.Handler
+}
+
 type Router struct {
 	*mux.Router
 
 	defaultHandler contracts.Handler
-	container      *di.Container
+	container      DI
 
 	cacheMiddlewareFactory CacheMiddlewareFactory
 }

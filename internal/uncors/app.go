@@ -2,13 +2,12 @@ package uncors
 
 import (
 	"context"
+	"errors"
 	"net"
 	"strconv"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/handler/router"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 
@@ -85,25 +84,24 @@ func (app *Uncors) Shutdown(ctx context.Context) error {
 }
 
 func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
-	targets := make([]server.Target, 0, len(uncorsConfig.Mappings.GroupByPort()))
+	groupedMappings := uncorsConfig.Mappings.GroupByPort()
+	targets := make([]server.Target, 0, len(groupedMappings))
+	errs := make([]error, 0, len(groupedMappings))
 
-	for _, group := range uncorsConfig.Mappings.GroupByPort() {
-		muxRouter, err := router.NewRouter(
-			group.Mappings,
-			router.WithDiContainer(app.container),
-			router.ForRouterWithDefaultHandler(app.buildProxyHandler(uncorsConfig.Proxy, group.Mappings)),
-			router.ForRouterWithCacheMiddlewareFactory(app.buildCacheMiddlewareFactory(&uncorsConfig.CacheConfig)),
-		)
+	for _, group := range groupedMappings {
+		muxRouter, err := app.container.Router(group.Mappings, &uncorsConfig.CacheConfig, uncorsConfig.Proxy)
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
+
+			continue
 		}
 
 		targets = append(targets, server.Target{
 			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   infra.CastToContractsHandler(muxRouter),
+			Handler:   muxRouter,
 			EnableTLS: group.Scheme == "https",
 		})
 	}
 
-	return targets, nil
+	return targets, errors.Join(errs...)
 }

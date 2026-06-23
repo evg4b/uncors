@@ -24,50 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestUncorsWithTracker was testing the WithTracker method which has been replaced
-// by injecting the tracker via the CreateUncors constructor parameter
-/*
-func TestUncorsWithTracker(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	tracker := server.NewRequestTracker()
-	app := uncors.CreateUncors(fs, tracker, mocks.NoopOutput(), "test")
-
-	targetServer := testutils.NewServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "target")
-	}))
-	defer targetServer.Close()
-
-	port := testutils.GetFreePort(t)
-	err := app.Start(context.Background(), &config.UncorsConfig{
-		Mappings: []config.Mapping{
-			{From: hosts.Loopback.HTTPPort(port), To: hosts.Parse(targetServer.URL)},
-		},
-	})
-	require.NoError(t, err)
-
-	defer app.Close()
-
-	req, err := http.NewRequestWithContext(
-		context.Background(),
-		http.MethodGet,
-		hosts.Loopback.HTTPPort(port).String(),
-		nil,
-	)
-	require.NoError(t, err)
-
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	resp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	event := <-tracker.Events()
-	assert.Equal(t, http.MethodGet, event.Method)
-	assert.False(t, event.Done)
-}
-*/
-
 const version = "1.0.0"
 
 func TestCreateUncors(t *testing.T) {
