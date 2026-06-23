@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 
 	tea "charm.land/bubbletea/v2"
@@ -11,10 +12,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	GenerateCertsCmd = "generate-certs"
-	baseAddress      = "127.0.0.1"
-)
+const GenerateCertsCmd = "generate-certs"
 
 func GenerateCerts(args []string) error {
 	fs := afero.NewOsFs()
@@ -39,9 +37,7 @@ func GenerateCerts(args []string) error {
 	return cmd.Execute()
 }
 
-func RunUncors(args []string) error {
-	fs := afero.NewOsFs()
-
+func RunUncors(ctx context.Context, fs afero.Fs, args []string) error {
 	uncorsConfig, path, err := config.LoadConfiguration(fs, args)
 	if err != nil {
 		return err
@@ -51,7 +47,7 @@ func RunUncors(args []string) error {
 		return runIneractive(fs, uncorsConfig, path, args)
 	}
 
-	return runNonIneractive(fs, uncorsConfig, path, args)
+	return runNonIneractive(ctx, fs, uncorsConfig, path, args)
 }
 
 func runIneractive(fs afero.Fs, uncorsConfig *config.UncorsConfig, configPath string, args []string) error {
