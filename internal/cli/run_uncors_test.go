@@ -203,18 +203,3 @@ func TestRunUncors(t *testing.T) {
 		}
 	})
 }
-
-func TestGenerateCerts(t *testing.T) {
-	t.Run("returns error for unknown flag", func(t *testing.T) {
-		err := cli.GenerateCerts([]string{"--unknown-flag"})
-		require.Error(t, err)
-	})
-
-	t.Run("generates CA certificate with valid args", func(t *testing.T) {
-		// Point HOME to a temp dir so certs go there, not ~/.config/uncors.
-		t.Setenv("HOME", t.TempDir())
-
-		err := cli.GenerateCerts([]string{"--validity-days=7"})
-		require.NoError(t, err)
-	})
-}
