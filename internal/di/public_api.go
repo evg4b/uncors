@@ -1,7 +1,10 @@
 package di
 
 import (
+	"errors"
 	"io"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -115,4 +118,44 @@ func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) cont
 		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
 		proxy.WithOutput(output.NewPrefixOutput(prefix)),
 	))
+}
+
+func (c *Container) Router(
+	mappings config.Mappings,
+	cacheConfig *config.CacheConfig,
+	proxyURL string,
+) (contracts.Handler, error) {
+	router, err := router.NewRouter(
+		mappings,
+		router.WithDiContainer(c),
+		router.ForRouterWithDefaultHandler(c.ProxyHandler(mappings, proxyURL)),
+		router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+			return c.CacheMiddleware(cacheConfig, globs)
+		}),
+	)
+
+	return infra.CastToContractsHandler(router), err
+}
+
+func (c *Container) Targets(cfg *config.UncorsConfig) ([]server.Target, error) {
+	groupedMappings := cfg.Mappings.GroupByPort()
+	targets := make([]server.Target, 0, len(groupedMappings))
+	errs := make([]error, 0, len(groupedMappings))
+
+	for _, group := range groupedMappings {
+		muxRouter, err := c.Router(group.Mappings, &cfg.CacheConfig, cfg.Proxy)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
+		}
+
+		targets = append(targets, server.Target{
+			Address:   net.JoinHostPort("127.0.0.1", strconv.Itoa(group.Port)),
+			Handler:   muxRouter,
+			EnableTLS: group.Scheme == "https",
+		})
+	}
+
+	return targets, errors.Join(errs...)
 }

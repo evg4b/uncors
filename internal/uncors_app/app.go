@@ -2,10 +2,7 @@ package uncorsapp
 
 import (
 	"context"
-	"errors"
 	"log"
-	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -340,7 +337,7 @@ func (m *UncorsApp) startServerCmd() tea.Cmd {
 		m.output.InfoBox(m.cfg.Mappings.String())
 		m.output.Print("")
 
-		targets, err := m.mappingsToTargets(m.cfg)
+		targets, err := m.container.Targets(m.cfg)
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -415,7 +412,7 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 func (m *UncorsApp) restart(ctx context.Context, cfg *config.UncorsConfig) error {
 	m.output.Info("Restarting server....")
 
-	targets, err := m.mappingsToTargets(cfg)
+	targets, err := m.container.Targets(cfg)
 	if err != nil {
 		return err
 	}
@@ -429,28 +426,6 @@ func (m *UncorsApp) restart(ctx context.Context, cfg *config.UncorsConfig) error
 	return nil
 }
 
-func (m *UncorsApp) mappingsToTargets(cfg *config.UncorsConfig) ([]server.Target, error) {
-	groupedMappings := cfg.Mappings.GroupByPort()
-	targets := make([]server.Target, 0, len(groupedMappings))
-	errs := make([]error, 0, len(groupedMappings))
-
-	for _, group := range groupedMappings {
-		muxRouter, err := m.container.Router(group.Mappings, &cfg.CacheConfig, cfg.Proxy)
-		if err != nil {
-			errs = append(errs, err)
-
-			continue
-		}
-
-		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort("127.0.0.1", strconv.Itoa(group.Port)),
-			Handler:   muxRouter,
-			EnableTLS: group.Scheme == "https",
-		})
-	}
-
-	return targets, errors.Join(errs...)
-}
 
 func (m *UncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {

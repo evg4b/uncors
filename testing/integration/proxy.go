@@ -4,9 +4,6 @@ package integration
 
 import (
 	"crypto/x509"
-	"errors"
-	"net"
-	"strconv"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -41,7 +38,7 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 
 	container := di.NewContainer(di.WithFs(fs))
 
-	targets, err := mappingsToTargets(container, cfg)
+	targets, err := container.Targets(cfg)
 	require.NoError(t, err)
 
 	srv := container.Server()
@@ -55,27 +52,4 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 	})
 
 	return caCert
-}
-
-func mappingsToTargets(container *di.Container, cfg *config.UncorsConfig) ([]server.Target, error) {
-	groupedMappings := cfg.Mappings.GroupByPort()
-	targets := make([]server.Target, 0, len(groupedMappings))
-	errs := make([]error, 0, len(groupedMappings))
-
-	for _, group := range groupedMappings {
-		muxRouter, err := container.Router(group.Mappings, &cfg.CacheConfig, cfg.Proxy)
-		if err != nil {
-			errs = append(errs, err)
-
-			continue
-		}
-
-		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort("127.0.0.1", strconv.Itoa(group.Port)),
-			Handler:   muxRouter,
-			EnableTLS: group.Scheme == "https",
-		})
-	}
-
-	return targets, errors.Join(errs...)
 }
