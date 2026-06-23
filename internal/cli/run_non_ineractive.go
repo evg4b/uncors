@@ -2,22 +2,28 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"log"
-	"net"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
 
-func runNonIneractive(fs afero.Fs, uncorsConfig *config.UncorsConfig, configPath string, args []string) error {
+const shutdownTimeout = 15 * time.Second
+
+func runNonIneractive(
+	ctx context.Context,
+	fs afero.Fs,
+	uncorsConfig *config.UncorsConfig,
+	configPath string,
+	args []string,
+) error {
 	container := di.NewContainer(
 		di.WithFs(fs),
 		di.WithStdout(os.Stdout),
@@ -33,44 +39,58 @@ func runNonIneractive(fs afero.Fs, uncorsConfig *config.UncorsConfig, configPath
 	output.InfoBox(uncorsConfig.Mappings.String())
 	output.Print("")
 
-	targets, err := mappingsToTarget(container, uncorsConfig)
+	targets, err := container.Targets(uncorsConfig)
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
+	srv := container.Server()
 
-	server := container.Server()
-
-	err = server.Start(ctx, targets)
+	err = srv.Start(ctx, targets)
 	if err != nil {
 		return err
 	}
 
 	go startVersionChecker(ctx, container, uncorsConfig.Proxy)
 
-	go func(configPath string) {
+	go func() {
 		watcher := config.NewWatcher(configPath)
 
-		err := watcher.Watch(ctx, func() { reloadServer(ctx, container, server, args) })
+		err := watcher.Watch(ctx, func() { reloadServer(ctx, container, srv, args) })
 		if err != nil {
 			output.Error(err)
 		}
-	}(configPath)
+	}()
 
-	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		log.Println("shutdown signal received")
+	go func() { //nolint:gosec // G118: shutdown needs a fresh context because parent ctx is being cancelled
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-		return server.Shutdown(shutdownCtx)
-	})
+		defer signal.Stop(stop)
 
-	server.Wait()
+		select {
+		case sig := <-stop:
+			if sig == syscall.SIGINT {
+				_, _ = os.Stdout.WriteString("\n")
+			}
+
+			log.Println("shutdown signal received")
+		case <-ctx.Done():
+		}
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+
+		_ = srv.Shutdown(shutdownCtx)
+	}()
+
+	srv.Wait()
 	output.Info("Server was stopped")
 
 	return nil
 }
 
-func reloadServer(ctx context.Context, container *di.Container, server *server.Server, args []string) {
+func reloadServer(ctx context.Context, container *di.Container, srv *server.Server, args []string) {
 	output := container.CliOutput()
 
 	newUncorsConfig, _, err := config.LoadConfiguration(container.Fs(), args)
@@ -82,14 +102,14 @@ func reloadServer(ctx context.Context, container *di.Container, server *server.S
 
 	output.Info("Restarting server....")
 
-	targets, err := mappingsToTarget(container, newUncorsConfig)
+	targets, err := container.Targets(newUncorsConfig)
 	if err != nil {
 		output.Error(err)
 
 		return
 	}
 
-	err = server.Restart(ctx, targets)
+	err = srv.Restart(ctx, targets)
 	if err != nil {
 		output.Error(err)
 
@@ -100,29 +120,6 @@ func reloadServer(ctx context.Context, container *di.Container, server *server.S
 		"Server restarted",
 		newUncorsConfig.Mappings.String(),
 	)
-}
-
-func mappingsToTarget(container *di.Container, uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
-	groupedMappings := uncorsConfig.Mappings.GroupByPort()
-	targets := make([]server.Target, 0, len(groupedMappings))
-	errs := make([]error, 0, len(groupedMappings))
-
-	for _, group := range groupedMappings {
-		muxRouter, err := container.Router(group.Mappings, &uncorsConfig.CacheConfig, uncorsConfig.Proxy)
-		if err != nil {
-			errs = append(errs, err)
-
-			continue
-		}
-
-		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   muxRouter,
-			EnableTLS: group.Scheme == "https",
-		})
-	}
-
-	return targets, errors.Join(errs...)
 }
 
 // startVersionChecker waits for a short delay then checks for a newer release.

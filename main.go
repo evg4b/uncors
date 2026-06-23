@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/spf13/afero"
 )
 
 var Version = "v0.7.0"
@@ -49,7 +51,7 @@ func main() {
 		return
 	}
 
-	err := cli.RunUncors(os.Args[1:])
+	err := cli.RunUncors(context.Background(), afero.NewOsFs(), os.Args[1:])
 	if err != nil {
 		output.Error(err)
 	}
