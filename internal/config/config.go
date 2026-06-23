@@ -12,7 +12,6 @@ import (
 type UncorsConfig struct {
 	Mappings    Mappings    `yaml:"mappings"`
 	Proxy       string      `yaml:"proxy"`
-	Debug       bool        `yaml:"debug"`
 	CacheConfig CacheConfig `yaml:"cache-config"`
 	Interactive bool        `yaml:"-"`
 }
@@ -69,10 +68,6 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	if flags.Changed("proxy") {
 		cfg.Proxy, _ = flags.GetString("proxy")
-	}
-
-	if flags.Changed("debug") {
-		cfg.Debug, _ = flags.GetBool("debug")
 	}
 
 	if flags.Changed("interactive") {
