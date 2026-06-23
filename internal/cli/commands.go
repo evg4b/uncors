@@ -19,8 +19,6 @@ const (
 )
 
 func GenerateCerts(args []string) error {
-	print("GenerateCerts ")
-
 	pflag.Usage = func() {
 		output := tui.NewCliOutput(os.Stdout)
 		tui.PrintLogo(output, "Version")
@@ -30,9 +28,7 @@ func GenerateCerts(args []string) error {
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
 
-	flags.Parse(args)
-
-	return nil
+	return flags.Parse(args)
 }
 
 func RunUncors(args []string) error {

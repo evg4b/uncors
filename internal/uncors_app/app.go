@@ -342,7 +342,8 @@ func (m *UncorsApp) startServerCmd() tea.Cmd {
 			return serverErrMsg{err: err}
 		}
 
-		if err = m.srv.Start(m.appContext(), targets); err != nil {
+		err = m.srv.Start(m.appContext(), targets)
+		if err != nil {
 			return serverErrMsg{err: err}
 		}
 
@@ -401,7 +402,8 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 
 		newCfg := m.loadConfig()
 
-		if err := m.restart(m.appContext(), newCfg); err != nil {
+		err := m.restart(m.appContext(), newCfg)
+		if err != nil {
 			m.output.Errorf("Failed to restart: %v", err)
 		}
 
@@ -417,7 +419,8 @@ func (m *UncorsApp) restart(ctx context.Context, cfg *config.UncorsConfig) error
 		return err
 	}
 
-	if err = m.srv.Restart(ctx, targets); err != nil {
+	err = m.srv.Restart(ctx, targets)
+	if err != nil {
 		return err
 	}
 
@@ -425,7 +428,6 @@ func (m *UncorsApp) restart(ctx context.Context, cfg *config.UncorsConfig) error
 
 	return nil
 }
-
 
 func (m *UncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {
