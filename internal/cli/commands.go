@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/tui"
 	uncor "github.com/evg4b/uncors/internal/uncors_app"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -19,16 +17,26 @@ const (
 )
 
 func GenerateCerts(args []string) error {
-	pflag.Usage = func() {
-		output := tui.NewCliOutput(os.Stdout)
-		tui.PrintLogo(output, "Version")
-		fmt.Fprintf(output, "Usage of %s:\n", os.Args[0])
-		pflag.PrintDefaults()
-	}
+	fs := afero.NewOsFs()
+
+	container := di.NewContainer(
+		di.WithFs(fs),
+		di.WithStdout(os.Stdout),
+		// di.WithVersion("Version"),
+	)
+	defer container.Close()
+
+	cmd := container.GenerateCertsCommand()
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
+	cmd.DefineFlags(flags)
 
-	return flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		return err
+	}
+
+	return cmd.Execute()
 }
 
 func RunUncors(args []string) error {
