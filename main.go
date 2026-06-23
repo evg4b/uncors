@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/tui"
@@ -24,14 +25,14 @@ func setupLogging() {
 		return
 	}
 
-	f, err := os.OpenFile(path, logFileFlags, logFilePerm)
+	logFile, err := os.OpenFile(filepath.Clean(path), logFileFlags, logFilePerm)
 	if err != nil {
 		log.SetOutput(io.Discard)
 
 		return
 	}
 
-	log.SetOutput(f)
+	log.SetOutput(logFile)
 }
 
 func main() {
