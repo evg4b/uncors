@@ -10,7 +10,7 @@ import (
 type RewritingOption struct {
 	From string    `yaml:"from"`
 	To   string    `yaml:"to"`
-	Host urlt.Host `yaml:"host"`
+	Host urlt.Host `yaml:"host,omitempty"`
 }
 
 func (r RewritingOption) Clone() RewritingOption {
