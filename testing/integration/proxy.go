@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"context"
 	"crypto/x509"
 	"net"
 	"strconv"
@@ -19,7 +20,13 @@ import (
 
 // caValidityDays must stay clear of the proxy's expiration warning threshold
 // (7 days); below it HostCertManager refuses to serve TLS.
-const caValidityDays = 30
+const (
+	caValidityDays   = 30
+	configFilePerm   = 0o600
+	proxyReadyWait   = 5 * time.Second
+	proxyPollTick    = 25 * time.Millisecond
+	proxyDialTimeout = 100 * time.Millisecond
+)
 
 // bootProxy generates a fresh dev CA, starts uncors in-process with the given
 // config, and registers shutdown with t.Cleanup. Returns the CA that the client
@@ -45,11 +52,13 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 
 	const configPath = "/uncors-config.yaml"
 
-	err = afero.WriteFile(fs, configPath, data, 0o644)
+	err = afero.WriteFile(fs, configPath, data, configFilePerm)
 	require.NoError(t, err)
 
 	go func() {
-		_ = cli.RunUncors(t.Context(), fs, []string{"-c", configPath})
+		// --interactive=false overrides the default (true) so the proxy runs
+		// in headless mode and actually starts its TCP listeners.
+		_ = cli.RunUncors(t.Context(), fs, []string{"-c", configPath, "--interactive=false"})
 	}()
 
 	waitForMappings(t, cfg)
@@ -61,34 +70,30 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 func waitForMappings(t *testing.T, cfg *config.UncorsConfig) {
 	t.Helper()
 
-	const (
-		readyTimeout  = 5 * time.Second
-		pollInterval  = 25 * time.Millisecond
-		dialTimeout   = 100 * time.Millisecond
-	)
-
-	for _, m := range cfg.Mappings {
-		if m.From.Port == "" {
+	for _, mapping := range cfg.Mappings {
+		if mapping.From.Port == "" {
 			continue
 		}
 
-		addr := net.JoinHostPort("127.0.0.1", m.From.Port)
-		deadline := time.Now().Add(readyTimeout)
+		addr := net.JoinHostPort("127.0.0.1", mapping.From.Port)
+		deadline := time.Now().Add(proxyReadyWait)
 
 		for time.Now().Before(deadline) {
-			conn, dialErr := net.DialTimeout("tcp", addr, dialTimeout)
+			dialer := &net.Dialer{Timeout: proxyDialTimeout}
+
+			conn, dialErr := dialer.DialContext(context.Background(), "tcp", addr)
 			if dialErr == nil {
 				conn.Close()
 
 				break
 			}
 
-			time.Sleep(pollInterval)
+			time.Sleep(proxyPollTick)
 		}
 
 		if time.Now().After(deadline) {
-			port, _ := strconv.Atoi(m.From.Port)
-			t.Fatalf("proxy port %d did not become ready within %s", port, readyTimeout)
+			port, _ := strconv.Atoi(mapping.From.Port)
+			t.Fatalf("proxy port %d did not become ready within %s", port, proxyReadyWait)
 		}
 	}
 }
