@@ -2,6 +2,7 @@ package di_test
 
 import (
 	"bytes"
+	"net/http"
 	"testing"
 	"time"
 
@@ -283,6 +284,92 @@ func TestContainerOverride(t *testing.T) {
 
 		result := container.CliOutput()
 		assert.Same(t, sentinel, result)
+	})
+}
+
+func TestContainerTargets(t *testing.T) {
+	defaultCache := config.CacheConfig{
+		ExpirationTime: time.Minute,
+		MaxSize:        1024,
+		Methods:        []string{http.MethodGet},
+	}
+
+	t.Run("returns single HTTP target", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		cfg := &config.UncorsConfig{
+			Mappings: config.Mappings{{
+				From: hosts.Localhost.HTTPPort(18080),
+				To:   hosts.Localhost.HTTP(),
+			}},
+			CacheConfig: defaultCache,
+		}
+
+		targets, err := container.Targets(cfg)
+
+		require.NoError(t, err)
+		require.Len(t, targets, 1)
+		assert.Equal(t, "127.0.0.1:18080", targets[0].Address)
+		assert.False(t, targets[0].EnableTLS)
+		assert.NotNil(t, targets[0].Handler)
+	})
+
+	t.Run("returns HTTPS target with TLS enabled", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		cfg := &config.UncorsConfig{
+			Mappings: config.Mappings{{
+				From: hosts.Localhost.HTTPSPort(18443),
+				To:   hosts.Localhost.HTTP(),
+			}},
+			CacheConfig: defaultCache,
+		}
+
+		targets, err := container.Targets(cfg)
+
+		require.NoError(t, err)
+		require.Len(t, targets, 1)
+		assert.Equal(t, "127.0.0.1:18443", targets[0].Address)
+		assert.True(t, targets[0].EnableTLS)
+	})
+
+	t.Run("groups two mappings on same port into one target", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		cfg := &config.UncorsConfig{
+			Mappings: config.Mappings{
+				{From: hosts.Localhost1.HTTPPort(19000), To: hosts.Localhost.HTTP()},
+				{From: hosts.Localhost2.HTTPPort(19000), To: hosts.Localhost.HTTP()},
+			},
+			CacheConfig: defaultCache,
+		}
+
+		targets, err := container.Targets(cfg)
+
+		require.NoError(t, err)
+		assert.Len(t, targets, 1)
+		assert.Equal(t, "127.0.0.1:19000", targets[0].Address)
+	})
+
+	t.Run("returns two targets for mappings on different ports", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		cfg := &config.UncorsConfig{
+			Mappings: config.Mappings{
+				{From: hosts.Localhost1.HTTPPort(19001), To: hosts.Localhost.HTTP()},
+				{From: hosts.Localhost2.HTTPPort(19002), To: hosts.Localhost.HTTP()},
+			},
+			CacheConfig: defaultCache,
+		}
+
+		targets, err := container.Targets(cfg)
+
+		require.NoError(t, err)
+		assert.Len(t, targets, 2)
 	})
 }
 
