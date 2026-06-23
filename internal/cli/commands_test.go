@@ -164,6 +164,10 @@ func TestRunUncors(t *testing.T) {
 
 		select {
 		case err := <-errCh:
+			if err != nil {
+				t.Logf("RunUncors returned error: %v", err)
+			}
+
 			require.NoError(t, err)
 		case <-time.After(10 * time.Second):
 			t.Fatal("RunUncors did not exit after context cancellation")

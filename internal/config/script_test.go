@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -8,7 +9,54 @@ import (
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
+
+func TestScript_MarshalYAML(t *testing.T) {
+	t.Run("inline script with leading newline round-trips without error", func(t *testing.T) {
+		script := config.Script{
+			Matcher: config.RequestMatcher{Path: "/hello"},
+			Script: `
+response:set_status(200)
+response:set_body("ok")
+`,
+		}
+
+		data, err := yaml.Marshal(script)
+		require.NoError(t, err)
+
+		var decoded config.Script
+
+		err = yaml.Unmarshal(data, &decoded)
+		require.NoError(t, err)
+
+		assert.Equal(t, "/hello", decoded.Matcher.Path)
+		// Leading/trailing whitespace is trimmed on marshal; the script content itself is preserved.
+		assert.Equal(t, strings.TrimSpace(script.Script), decoded.Script)
+	})
+
+	t.Run("matcher fields are preserved in round-trip", func(t *testing.T) {
+		script := config.Script{
+			Matcher: config.RequestMatcher{
+				Path:   "/api/{id}",
+				Method: "POST",
+			},
+			File: "/scripts/handler.lua",
+		}
+
+		data, err := yaml.Marshal(script)
+		require.NoError(t, err)
+
+		var decoded config.Script
+
+		err = yaml.Unmarshal(data, &decoded)
+		require.NoError(t, err)
+
+		assert.Equal(t, "/api/{id}", decoded.Matcher.Path)
+		assert.Equal(t, "POST", decoded.Matcher.Method)
+		assert.Equal(t, "/scripts/handler.lua", decoded.File)
+	})
+}
 
 func TestRequestMatcher_Clone(t *testing.T) {
 	original := config.RequestMatcher{
