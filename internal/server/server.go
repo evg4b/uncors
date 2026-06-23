@@ -138,6 +138,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
+	s.Add(1)
+	defer s.Done()
+
 	err := s.Shutdown(ctx)
 	if err != nil {
 		return err
