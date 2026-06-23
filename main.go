@@ -12,13 +12,30 @@ import (
 var Version = "v0.7.0"
 
 const (
-	logFileName  = "uncors.log"
 	logFileFlags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
 	logFilePerm  = 0o644
 )
 
+func setupLogging() {
+	path := os.Getenv("UNCORS_LOGGING")
+	if path == "" {
+		log.SetOutput(io.Discard)
+
+		return
+	}
+
+	f, err := os.OpenFile(path, logFileFlags, logFilePerm)
+	if err != nil {
+		log.SetOutput(io.Discard)
+
+		return
+	}
+
+	log.SetOutput(f)
+}
+
 func main() {
-	log.SetOutput(io.Discard)
+	setupLogging()
 
 	output := tui.NewCliOutput(os.Stdout)
 
