@@ -11,26 +11,31 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/spf13/afero"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var errBoom = errors.New("boom")
 
-func newTestApp(t *testing.T) (*uncorsApp, *int) {
+func newTestApp(t *testing.T) (*UncorsApp, *int) {
 	t.Helper()
 
-	fs := afero.NewMemMapFs()
 	uncorsConfig := &config.UncorsConfig{
 		Mappings: config.Mappings{},
 	}
 
+	container := di.NewContainer()
+
+	t.Cleanup(func() {
+		container.Close()
+	})
+
 	loadCalls := 0
-	model := NewUncorsApp(
-		"test-version",
-		fs,
+	app := NewUncorsApp(
+		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
 		func() *config.UncorsConfig {
@@ -40,13 +45,10 @@ func newTestApp(t *testing.T) (*uncorsApp, *int) {
 		},
 	)
 
-	app, ok := model.(*uncorsApp)
-	require.True(t, ok)
-
 	return app, &loadCalls
 }
 
-func cleanupTestApp(t *testing.T, app *uncorsApp) {
+func cleanupTestApp(t *testing.T, app *UncorsApp) {
 	t.Helper()
 
 	app.cancel()
@@ -63,7 +65,6 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	app, _ := newTestApp(t)
 	defer cleanupTestApp(t, app)
 
-	assert.Equal(t, "test-version", app.version)
 	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.tracker)
 	assert.NotNil(t, app.historyWidget.hist)
@@ -314,12 +315,12 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		err = tmpFile.Close()
 		require.NoError(t, err)
 
-		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
-		app, ok := model.(*uncorsApp)
-		require.True(t, ok)
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -342,12 +343,12 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 	})
 
 	t.Run("logs error when config file does not exist", func(t *testing.T) {
-		fs := afero.NewMemMapFs()
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
-		model := NewUncorsApp("v1", fs, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
-		app, ok := model.(*uncorsApp)
-		require.True(t, ok)
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
 
 		defer func() {
 			app.cancel()
@@ -395,12 +396,14 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	err = tmpFile.Close()
 	require.NoError(t, err)
 
-	fs := afero.NewMemMapFs()
 	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
 	called := make(chan struct{}, 1)
 
-	model := NewUncorsApp("v1", fs, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
+	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
 		select {
 		case called <- struct{}{}:
 		default:
@@ -408,9 +411,6 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 
 		return cfg
 	})
-
-	app, ok := model.(*uncorsApp)
-	require.True(t, ok)
 
 	defer func() {
 		// Cancel context first so any in-flight Restart fails fast.

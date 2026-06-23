@@ -9,15 +9,13 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/uncors"
 	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
-	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -32,17 +30,24 @@ func main() {
 }
 
 func run() int {
-	output := tui.NewCliOutput(os.Stdout)
+	fs := afero.NewOsFs()
+
+	container := di.NewContainer(
+		di.WithFs(fs),
+		di.WithStdout(os.Stdout),
+		di.WithVersion(Version),
+	)
+	defer container.Close()
+
+	output := container.CliOutput()
 
 	defer helpers.PanicInterceptor(func(value any) {
 		output.Error(value)
 		log.Fatalf("Caught panic: %v", value)
 	})
 
-	fs := afero.NewOsFs()
-
 	if len(os.Args) > 1 && os.Args[1] == generateCertsCmd {
-		return runGenerateCerts(fs, output)
+		return runGenerateCerts(container)
 	}
 
 	pflag.Usage = func() {
@@ -54,18 +59,16 @@ func run() int {
 	uncorsConfig, configPath := loadConfiguration(fs)
 
 	if uncorsConfig.Interactive {
-		return runInteractive(fs, configPath, uncorsConfig)
+		return runInteractive(container, configPath, uncorsConfig)
 	}
 
-	return runNonInteractive(context.Background(), fs, output, configPath, uncorsConfig)
+	return runNonInteractive(context.Background(), container, configPath, uncorsConfig)
 }
 
 // runGenerateCerts executes the generate-certs sub-command and returns an exit code.
-func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
-	cmd := commands.NewGenerateCertsCommand(
-		commands.WithFs(fs),
-		commands.WithOutput(output),
-	)
+func runGenerateCerts(container *di.Container) int {
+	cmd := container.GenerateCertsCommand()
+	output := container.CliOutput()
 
 	flags := pflag.NewFlagSet(generateCertsCmd, pflag.ContinueOnError)
 	cmd.DefineFlags(flags)
@@ -94,26 +97,24 @@ func runGenerateCerts(fs afero.Fs, output *tui.CliOutput) int {
 // when configPath is non-empty.
 func runNonInteractive(
 	ctx context.Context,
-	fs afero.Fs,
-	output *tui.CliOutput,
+	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
 ) int {
-	tracker := server.NewRequestTracker()
-	app := uncors.CreateUncors(fs, tracker, output, Version)
+	output := container.CliOutput()
 
-	go server.RequestPrinter(tracker, output)
+	app := uncors.CreateUncors(container)
 
-	if configPath != "" {
-		startConfigWatcher(ctx, fs, output, configPath, app)
-	}
+	go server.RequestPrinter(container.RequestTracker(), output)
+
+	startConfigWatcher(ctx, container, configPath, app)
 
 	err := app.Start(ctx, cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	go startVersionChecker(ctx, output, cfg.Proxy)
+	go startVersionChecker(ctx, container, cfg.Proxy)
 
 	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Println("shutdown signal received")
@@ -131,11 +132,16 @@ func runNonInteractive(
 // every change. The watcher lives for the process lifetime (not closed explicitly).
 func startConfigWatcher(
 	ctx context.Context,
-	fs afero.Fs,
-	output *tui.CliOutput,
+	container *di.Container,
 	configPath string,
 	app *uncors.Uncors,
 ) {
+	if configPath == "" {
+		return
+	}
+
+	output := container.CliOutput()
+	fs := container.Fs()
 	watcher := config.NewWatcher(configPath)
 
 	err := watcher.Watch(ctx, func() {
@@ -161,28 +167,23 @@ func startConfigWatcher(
 }
 
 // startVersionChecker waits for a short delay then checks for a newer release.
-func startVersionChecker(ctx context.Context, output *tui.CliOutput, proxy string) {
+func startVersionChecker(ctx context.Context, container *di.Container, proxy string) {
 	const checkDelay = 50 * time.Millisecond
 
-	versionChecker := version.NewVersionChecker(
-		version.WithOutput(output),
-		version.WithHTTPClient(infra.MakeHTTPClient(proxy)),
-		version.WithCurrentVersion(Version),
-	)
-
 	time.Sleep(checkDelay)
-	versionChecker.CheckNewVersion(ctx)
+
+	container.VersionChecker(proxy).
+		CheckNewVersion(ctx)
 }
 
 // runInteractive starts the proxy in interactive TUI mode.
-func runInteractive(fs afero.Fs, configPath string, cfg *config.UncorsConfig) int {
+func runInteractive(container *di.Container, configPath string, cfg *config.UncorsConfig) int {
 	app := uncorsapp.NewUncorsApp(
-		Version,
-		fs,
+		container,
 		configPath,
 		cfg,
 		func() *config.UncorsConfig {
-			reloaded, _ := loadConfiguration(fs)
+			reloaded, _ := loadConfiguration(container.Fs())
 
 			return reloaded
 		},

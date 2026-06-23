@@ -1,12 +1,12 @@
-package handler
+package router
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/gorilla/mux"
 )
 
@@ -50,7 +50,7 @@ func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.
 }
 
 func registerRoute(route *mux.Route, handler contracts.Handler) {
-	route.Handler(contracts.CastToHTTPHandler(handler))
+	route.Handler(infra.CastToHTTPHandler(handler))
 }
 
 func normalizePath(path string) (string, string) {
@@ -58,15 +58,4 @@ func normalizePath(path string) (string, string) {
 	fullPath := clearPath + "/"
 
 	return clearPath, fullPath
-}
-
-const wildcard = "*"
-
-func replaceWildcards(host string) string {
-	count := strings.Count(host, wildcard)
-	for i := 1; i <= count; i++ {
-		host = strings.Replace(host, wildcard, fmt.Sprintf("{p%d}", i), 1)
-	}
-
-	return host
 }

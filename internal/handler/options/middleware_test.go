@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -187,11 +188,9 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				_ = server.Mddleware(middleware, mockedNextHandler).
-					ServeHTTP(
-						server.NewResponseRecorder(recorder),
-						request,
-					)
+				err := infra.Mddleware(middleware, mockedNextHandler).
+					ServeHTTP(server.NewResponseRecorder(recorder), request)
+				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected.code, recorder.Code)
 				assert.Equal(t, testCase.expected.headers, recorder.Header())
@@ -209,7 +208,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		err := server.Mddleware(middleware, mockedNextHandler).
+		err := infra.Mddleware(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 
 		require.NoError(t, err)
@@ -234,11 +233,10 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		_ = server.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(
-				server.NewResponseRecorder(recorder),
-				request,
-			)
+		err := infra.Mddleware(middleware, mockedNextHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -256,11 +254,10 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		_ = server.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(
-				server.NewResponseRecorder(recorder),
-				request,
-			)
+		err := infra.Mddleware(middleware, mockedNextHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -281,11 +278,9 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		_ = server.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(
-				server.NewResponseRecorder(recorder),
-				request,
-			)
+		err := infra.Mddleware(middleware, mockedNextHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request)
+		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -319,7 +314,7 @@ func TestMiddleware(t *testing.T) {
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil)
 
-				err := server.Mddleware(middleware, mockedNextHandler).
+				err := infra.Mddleware(middleware, mockedNextHandler).
 					ServeHTTP(response, request)
 				require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package handler
+package router
 
 import (
 	"github.com/evg4b/uncors/internal/config"

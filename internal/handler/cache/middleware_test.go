@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -38,7 +39,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}),
 	)
 
-	handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+	testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
 		fmt.Fprint(writer, expectedBody)
@@ -98,9 +99,9 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler.Reset()
+				testHandler.Reset()
 
-				wrappedHandler := server.Mddleware(middleware, handler)
+				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -113,7 +114,7 @@ func TestCacheMiddleware(t *testing.T) {
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
 
-				assert.Equal(t, 1, handler.Count())
+				assert.Equal(t, 1, testHandler.Count())
 			})
 		}
 	})
@@ -158,7 +159,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+				testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					fmt.Fprint(writer, expectedBody)
@@ -166,7 +167,7 @@ func TestCacheMiddleware(t *testing.T) {
 					return nil
 				})
 
-				wrappedHandler := server.Mddleware(middleware, handler)
+				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
@@ -179,7 +180,7 @@ func TestCacheMiddleware(t *testing.T) {
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
 
-				assert.Equal(t, 5, handler.Count())
+				assert.Equal(t, 5, testHandler.Count())
 			})
 		}
 	})
@@ -187,7 +188,7 @@ func TestCacheMiddleware(t *testing.T) {
 	t.Run("should not cache response between different hosts matched by one rule", func(t *testing.T) {
 		const count = 5
 
-		handler.Reset()
+		testHandler.Reset()
 
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
@@ -195,7 +196,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		wrappedHandler := server.Mddleware(middleware, handler)
+		wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
@@ -207,13 +208,13 @@ func TestCacheMiddleware(t *testing.T) {
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
 
-		assert.Equal(t, count, handler.Count())
+		assert.Equal(t, count, testHandler.Count())
 	})
 
 	t.Run("should not cache response between different methods matched by one rule", func(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut}
 
-		handler.Reset()
+		testHandler.Reset()
 
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
@@ -221,7 +222,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		handler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
 			fmt.Fprint(writer, request.Method)
@@ -229,7 +230,7 @@ func TestCacheMiddleware(t *testing.T) {
 			return nil
 		})
 
-		wrappedHandler := server.Mddleware(middleware, handler)
+		wrappedHandler := infra.Mddleware(middleware, testHandler)
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
@@ -240,6 +241,6 @@ func TestCacheMiddleware(t *testing.T) {
 			assert.Equal(t, method, testutils.ReadBody(t, recorder))
 		}
 
-		assert.Len(t, methods, handler.Count())
+		assert.Len(t, methods, testHandler.Count())
 	})
 }

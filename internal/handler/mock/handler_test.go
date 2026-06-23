@@ -66,7 +66,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -134,7 +134,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -235,7 +235,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -289,7 +289,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := mock.NewMockHandler(
-					mock.WithResponse(testCase.response),
+					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
 						return time.After(time.Nanosecond)
@@ -305,6 +305,42 @@ func TestHandler(t *testing.T) {
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
 		}
+	})
+
+	t.Run("undefined response error", func(t *testing.T) {
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			}),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		assert.ErrorIs(t, err, mock.ErrResponseIsNotDefined)
+	})
+
+	t.Run("raw content longer than sniff limit gets truncated for detection", func(t *testing.T) {
+		longRaw := string(make([]byte, 600))
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{Raw: longRaw}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			}),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, recorder.Header().Get("Content-Type"))
 	})
 
 	t.Run("mock response delay", func(t *testing.T) {
@@ -366,7 +402,7 @@ func TestHandler(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
 					handler := mock.NewMockHandler(
-						mock.WithResponse(testCase.response),
+						mock.WithResponse(&testCase.response),
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
 							assert.Equal(t, testCase.expected, duration)
@@ -390,7 +426,7 @@ func TestHandler(t *testing.T) {
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
 			handler := mock.NewMockHandler(
-				mock.WithResponse(config.Response{
+				mock.WithResponse(&config.Response{
 					Code:  http.StatusOK,
 					Delay: 1 * time.Hour,
 					Raw:   "Text content",

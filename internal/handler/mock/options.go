@@ -9,7 +9,7 @@ import (
 
 type HandlerOption = func(*Handler)
 
-func WithResponse(response config.Response) HandlerOption {
+func WithResponse(response *config.Response) HandlerOption {
 	return func(h *Handler) {
 		h.response = response
 	}

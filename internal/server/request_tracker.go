@@ -25,24 +25,24 @@ type IRequestTracker interface {
 	Emit(event RequestEvent)
 }
 
-type requestTracker struct {
+type RequestTracker struct {
 	events chan RequestEvent
 }
 
-func NewRequestTracker() IRequestTracker {
-	return &requestTracker{
+func NewRequestTracker() *RequestTracker {
+	return &RequestTracker{
 		events: make(chan RequestEvent, requestEventsBufferSize),
 	}
 }
 
-func (t *requestTracker) Events() <-chan RequestEvent {
+func (t *RequestTracker) Events() <-chan RequestEvent {
 	return t.events
 }
 
-func (t *requestTracker) Close() {
+func (t *RequestTracker) Close() {
 	close(t.events)
 }
 
-func (t *requestTracker) Emit(event RequestEvent) {
+func (t *RequestTracker) Emit(event RequestEvent) {
 	t.events <- event
 }

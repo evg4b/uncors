@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,10 +19,6 @@ func setArgs(args []string) func() {
 	os.Args = args
 
 	return func() { os.Args = old }
-}
-
-func newTestOutput() *tui.CliOutput {
-	return tui.NewCliOutput(io.Discard)
 }
 
 func TestLoadConfiguration(t *testing.T) {
@@ -57,10 +53,10 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("generates certs and returns 0", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
-		fs := afero.NewMemMapFs()
-		output := newTestOutput()
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
-		result := runGenerateCerts(fs, output)
+		result := runGenerateCerts(container)
 
 		assert.Equal(t, 0, result)
 	})
@@ -68,12 +64,11 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when execute fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd})()
 
-		// Second call on the same fs finds certs already exist → ErrCAAlreadyExists.
-		fs := afero.NewMemMapFs()
-		output := newTestOutput()
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
-		_ = runGenerateCerts(fs, output)
-		result := runGenerateCerts(fs, output)
+		_ = runGenerateCerts(container)
+		result := runGenerateCerts(container)
 
 		assert.Equal(t, 1, result)
 	})
@@ -81,7 +76,10 @@ func TestRunGenerateCerts(t *testing.T) {
 	t.Run("returns 1 when flags parse fails", func(t *testing.T) {
 		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
 
-		result := runGenerateCerts(afero.NewMemMapFs(), newTestOutput())
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		result := runGenerateCerts(container)
 
 		assert.Equal(t, 1, result)
 	})
@@ -117,24 +115,37 @@ mappings:
 	assert.Len(t, cfg.Mappings, 1)
 }
 
-func TestStartConfigWatcher(t *testing.T) {
-	t.Run("logs error for non-existent config path", func(t *testing.T) {
-		output := newTestOutput()
+func TestStartVersionChecker(t *testing.T) {
+	t.Run("runs without panic", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
 
 		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), afero.NewMemMapFs(), output, "/no/such/config.yaml", nil)
+			startVersionChecker(context.Background(), container, "")
+		})
+	})
+}
+
+func TestStartConfigWatcher(t *testing.T) {
+	t.Run("logs error for non-existent config path", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		assert.NotPanics(t, func() {
+			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
 		})
 	})
 
 	t.Run("creates watcher for existing config file", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
 
-		output := newTestOutput()
-
 		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), afero.NewMemMapFs(), output, configFile, nil)
+			startConfigWatcher(context.Background(), container, configFile, nil)
 		})
 	})
 }

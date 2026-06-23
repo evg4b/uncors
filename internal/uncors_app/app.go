@@ -10,12 +10,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
-	"github.com/evg4b/uncors/internal/version"
-	"github.com/spf13/afero"
 )
 
 const (
@@ -26,13 +25,13 @@ const (
 	bytesPerMegabyte  = 1024 * 1024
 )
 
-type uncorsApp struct {
-	version string
-	keys    keyMap
+type UncorsApp struct {
+	keys keyMap
 
-	app     *uncors.Uncors
-	output  *tuiOutput
-	tracker server.IRequestTracker
+	app       *uncors.Uncors
+	output    *tuiOutput
+	tracker   server.IRequestTracker
+	container *di.Container
 
 	outputCh   chan string
 	appContext func() context.Context
@@ -62,34 +61,37 @@ type (
 )
 
 type appUpdateMsg interface {
-	update(app *uncorsApp) tea.Cmd
+	update(app *UncorsApp) tea.Cmd
 }
 
 // NewUncorsApp creates the interactive TUI model. configPath is the active
 // config file path (empty string if no config file is used); when non-empty
 // the app watches it for changes and auto-restarts the proxy on every save.
 func NewUncorsApp(
-	ver string,
-	fs afero.Fs,
+	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
 	loadConfig func() *config.UncorsConfig,
-) tea.Model {
+) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
-	tracker := server.NewRequestTracker()
+
 	appCtx, cancel := context.WithCancel(context.Background())
+
+	container.Override(di.OverrideCliOutput(func() contracts.Output {
+		return output
+	}))
 
 	keys := newKeyMap()
 
 	historyWidget := NewHistoryWidget(keys)
 
-	return &uncorsApp{
-		version:       ver,
+	return &UncorsApp{
 		keys:          keys,
-		app:           uncors.CreateUncors(fs, tracker, output, ver),
+		app:           uncors.CreateUncors(container),
 		output:        output,
-		tracker:       tracker,
+		tracker:       container.RequestTracker(),
+		container:     container,
 		outputCh:      outputCh,
 		appContext:    func() context.Context { return appCtx },
 		appDone:       appCtx.Done(),
@@ -104,7 +106,7 @@ func NewUncorsApp(
 	}
 }
 
-func (m *uncorsApp) Init() tea.Cmd {
+func (m *UncorsApp) Init() tea.Cmd {
 	log.Println("Initializing UncorsApp")
 
 	return tea.Batch(
@@ -118,7 +120,7 @@ func (m *uncorsApp) Init() tea.Cmd {
 	)
 }
 
-func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch typedMsg := msg.(type) {
@@ -179,7 +181,7 @@ func (m *uncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *uncorsApp) View() tea.View {
+func (m *UncorsApp) View() tea.View {
 	var viewBuilder strings.Builder
 
 	// 1. History
@@ -210,7 +212,7 @@ func (m *uncorsApp) View() tea.View {
 	return v
 }
 
-func (m *uncorsApp) updateLayout(msg tea.Msg) {
+func (m *UncorsApp) updateLayout(msg tea.Msg) {
 	if _, isRequest := msg.(requestEventMsg); isRequest {
 		m.updateHistoryHeight()
 	} else if _, isKey := msg.(tea.KeyPressMsg); isKey {
@@ -218,7 +220,7 @@ func (m *uncorsApp) updateLayout(msg tea.Msg) {
 	}
 }
 
-func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
+func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 	if key.Matches(msg, m.keys.Restart) {
 		return m.restartCmd()
 	}
@@ -230,7 +232,7 @@ func (m *uncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 	return nil
 }
 
-func (m *uncorsApp) updateHistoryHeight() {
+func (m *UncorsApp) updateHistoryHeight() {
 	footerHeight := m.footerHeight()
 	viewportHeight := max(m.termHeight-footerHeight, 1)
 
@@ -243,7 +245,7 @@ func (m *uncorsApp) updateHistoryHeight() {
 	m.historyWidget.SetHeight(viewportHeight)
 }
 
-func (m *uncorsApp) footerHeight() int {
+func (m *UncorsApp) footerHeight() int {
 	footerHeight := m.helpWidget.Height()
 
 	if m.trackerWidget.ActiveCount() > 0 {
@@ -253,19 +255,19 @@ func (m *uncorsApp) footerHeight() int {
 	return footerHeight
 }
 
-func (msg serverStartedMsg) update(app *uncorsApp) tea.Cmd {
+func (msg serverStartedMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleServerStarted()
 }
 
-func (msg serverErrMsg) update(app *uncorsApp) tea.Cmd {
+func (msg serverErrMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleServerError(msg)
 }
 
-func (msg shutdownMsg) update(app *uncorsApp) tea.Cmd {
+func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleShutdown()
 }
 
-func (m *uncorsApp) handleServerStarted() tea.Cmd {
+func (m *UncorsApp) handleServerStarted() tea.Cmd {
 	if m.configPath != "" {
 		watcher := config.NewWatcher(m.configPath)
 
@@ -291,13 +293,13 @@ func (m *uncorsApp) handleServerStarted() tea.Cmd {
 	return m.versionCheckCmd()
 }
 
-func (m *uncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
+func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
 	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
 
 	return tea.Quit
 }
 
-func (m *uncorsApp) handleRequestEvent(event requestEventMsg) {
+func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
 	if !event.Done || event.Data == nil {
 		return
 	}
@@ -309,12 +311,12 @@ func (m *uncorsApp) handleRequestEvent(event requestEventMsg) {
 	}
 }
 
-func (m *uncorsApp) handleRestart() {
+func (m *UncorsApp) handleRestart() {
 	log.Println("Handling restart")
 	m.updateHistoryHeight()
 }
 
-func (m *uncorsApp) handleShutdown() tea.Cmd {
+func (m *UncorsApp) handleShutdown() tea.Cmd {
 	log.Println("Handling shutdown")
 
 	if m.watcher != nil {
@@ -326,7 +328,7 @@ func (m *uncorsApp) handleShutdown() tea.Cmd {
 	return tea.Quit
 }
 
-func (m *uncorsApp) startServerCmd() tea.Cmd {
+func (m *UncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
 		err := m.app.Start(m.appContext(), m.cfg)
 		if err != nil {
@@ -337,7 +339,7 @@ func (m *uncorsApp) startServerCmd() tea.Cmd {
 	}
 }
 
-func (m *uncorsApp) waitOutputCmd() tea.Cmd {
+func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
 		case line, ok := <-m.outputCh:
@@ -352,7 +354,7 @@ func (m *uncorsApp) waitOutputCmd() tea.Cmd {
 	}
 }
 
-func (m *uncorsApp) watchEventsCmd() tea.Cmd {
+func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
 		case event, ok := <-m.tracker.Events():
@@ -367,7 +369,7 @@ func (m *uncorsApp) watchEventsCmd() tea.Cmd {
 	}
 }
 
-func (m *uncorsApp) shutdownCmd() tea.Cmd {
+func (m *UncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
 		m.cancel()
 
@@ -380,7 +382,7 @@ func (m *uncorsApp) shutdownCmd() tea.Cmd {
 	}
 }
 
-func (m *uncorsApp) restartCmd() tea.Cmd {
+func (m *UncorsApp) restartCmd() tea.Cmd {
 	return func() tea.Msg {
 		defer helpers.PanicInterceptor(func(value any) {
 			m.output.Errorf("Restart error: %v", value)
@@ -397,16 +399,12 @@ func (m *uncorsApp) restartCmd() tea.Cmd {
 	}
 }
 
-func (m *uncorsApp) versionCheckCmd() tea.Cmd {
+func (m *UncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {
-		versionChecker := version.NewVersionChecker(
-			version.WithOutput(m.output),
-			version.WithHTTPClient(infra.MakeHTTPClient(m.cfg.Proxy)),
-			version.WithCurrentVersion(m.version),
-		)
-
 		time.Sleep(versionCheckDelay)
-		versionChecker.CheckNewVersion(m.appContext())
+
+		m.container.VersionChecker(m.cfg.Proxy).
+			CheckNewVersion(m.appContext())
 
 		return nil
 	}

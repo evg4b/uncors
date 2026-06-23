@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/samber/lo"
 )
@@ -29,11 +30,7 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) ServeHTTP(
-	writer contracts.ResponseWriter,
-	request *contracts.Request,
-	next contracts.Next,
-) error {
+func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
 	isCacheable, err := m.isCacheableRequest(request)
 	if err != nil {
 		return err
@@ -43,11 +40,11 @@ func (m *Middleware) ServeHTTP(
 		return next(writer, request)
 	}
 
-	nextHandler := contracts.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
+	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
 		return next(w, r)
 	})
 
-	return m.cacheRequest(writer, request, nextHandler)
+	return m.cacheRequest(writer, request, handler)
 }
 
 func (m *Middleware) cacheRequest(

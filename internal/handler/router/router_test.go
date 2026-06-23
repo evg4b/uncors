@@ -1,30 +1,29 @@
-package handler_test
+package router_test
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/handler/mock"
-	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
-	"github.com/evg4b/uncors/internal/handler/static"
+	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +49,7 @@ var (
 	userIDHeader = "User-Id"
 )
 
-func cacheFactory() handler.CacheMiddlewareFactory {
+func cacheFactory() router.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
@@ -79,71 +78,10 @@ func proxyFactory(
 	)
 }
 
-func optionsFactory() handler.OptionsMiddlewareFactory {
-	return func(config config.OptionsHandling) contracts.Middleware {
-		return options.NewMiddleware(
-			options.WithHeaders(config.Headers),
-			options.WithCode(config.Code),
-		)
-	}
-}
-
-func staticFactory(fs afero.Fs) handler.StaticMiddlewareFactory {
-	return func(path string, dir config.StaticDirectory) contracts.Middleware {
-		return static.NewStaticMiddleware(
-			static.WithFileSystem(afero.NewBasePathFs(fs, dir.Dir)),
-			static.WithIndex(dir.Index),
-			static.WithPrefix(path),
-		)
-	}
-}
-
-func mockFactory(fs afero.Fs) handler.MockHandlerFactory {
-	if fs == nil {
-		fs = afero.NewMemMapFs()
-	}
-
-	return func(response config.Response) contracts.Handler {
-		return mock.NewMockHandler(
-			mock.WithResponse(response),
-			mock.WithFileSystem(fs),
-			mock.WithAfter(time.After),
-		)
-	}
-}
-
-func scriptHandlerFactory() handler.ScriptHandlerFactory {
-	return func(_ config.Script) contracts.Handler {
-		return contracts.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-			w.WriteHeader(http.StatusAccepted)
-
-			return nil
-		})
-	}
-}
-
-func rewriteFactory() handler.RewriteMiddlewareFactory {
-	return func(_ config.RewritingOption) contracts.Middleware {
-		return &noopMiddleware2{}
-	}
-}
-
-type noopMiddleware2 struct{}
-
-func (m *noopMiddleware2) ServeHTTP(_ contracts.ResponseWriter, _ *contracts.Request, next contracts.Next) error {
-	return next(nil, nil)
-}
-
-func noopHARFactory() handler.HARMiddlewareFactory {
-	return func(_ config.HARConfig) contracts.Middleware {
-		return &noopMiddleware2{}
-	}
-}
-
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
 	wrappedWriter := server.NewResponseRecorder(recorder)
-	contractsRouter := contracts.CastToContractsHandler(router)
-	httpRouterHandler := contracts.CastToHTTPHandler(contractsRouter)
+	contractsRouter := infra.CastToContractsHandler(router)
+	httpRouterHandler := infra.CastToHTTPHandler(contractsRouter)
 	httpRouterHandler.ServeHTTP(wrappedWriter, request)
 }
 
@@ -156,6 +94,9 @@ func TestRouter(t *testing.T) {
 		"/assets/index.html":     indexHTML,
 		"/mock.json":             mockJSON,
 	})
+
+	container := di.NewContainer(di.WithFs(fs))
+	defer testutils.Close(t, container)
 
 	mappings := config.Mappings{
 		{
@@ -227,16 +168,11 @@ func TestRouter(t *testing.T) {
 		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
 	})
 
-	router, err := handler.NewRouter(
+	router, err := router.NewRouter(
 		mappings,
-		handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
-		handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		handler.ForRouterWithStaticMiddlewareFactory(staticFactory(fs)),
-		handler.ForRouterWithMockHandlerFactory(mockFactory(fs)),
-		handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-		handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-		handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-		handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+		router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
+		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+		router.WithDiContainer(container),
 	)
 	require.NoError(t, err)
 
@@ -404,10 +340,182 @@ func TestRouter(t *testing.T) {
 	})
 }
 
+func TestRouterScriptsAndRewrites(t *testing.T) {
+	t.Run("scripts are registered and served", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				Scripts: config.Scripts{
+					{
+						Matcher: config.RequestMatcher{Path: "/api/script"},
+						Script:  "response:WriteHeader(200)\nresponse:WriteString(\"from-script\")",
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/script", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "from-script", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("rewrites are served via path handler", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		expectedCode := 202
+		expectedBody := "rewritten"
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				Rewrites: config.RewriteOptions{
+					{From: "/old", To: "/new"},
+				},
+			},
+		}
+
+		factory := urlreplacer.NewURLReplacerFactory(mappings)
+		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Request:    req,
+				StatusCode: expectedCode,
+				Body:       io.NopCloser(strings.NewReader(expectedBody)),
+			}, nil
+		})
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		t.Run("exact path", func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old", nil)
+
+			serveHTTP(t, routerInstance, recorder, request)
+
+			assert.Equal(t, expectedCode, recorder.Code)
+		})
+
+		t.Run("path with trailing slash", func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old/sub", nil)
+
+			serveHTTP(t, routerInstance, recorder, request)
+
+			assert.Equal(t, expectedCode, recorder.Code)
+		})
+	})
+
+	t.Run("cache globs enable cache middleware", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		callCount := 0
+		mappings := config.Mappings{
+			{
+				From:  hosts.Parse("{host}"),
+				To:    hosts.Parse("{host}"),
+				Cache: config.CacheGlobs{"*.json"},
+				Mocks: config.Mocks{
+					{
+						Matcher: config.RequestMatcher{Path: "/data.json"},
+						Response: config.Response{
+							Code: http.StatusOK,
+							Raw:  `{"cached": true}`,
+						},
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+				callCount++
+
+				return cacheFactory()(globs)
+			}),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/data.json", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, 1, callCount, "cache middleware factory should be called once for the mapping")
+	})
+
+	t.Run("HAR config enables HAR middleware", func(t *testing.T) {
+		harFile := filepath.Join(t.TempDir(), "test.har")
+
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				HAR:  config.HARConfig{File: harFile},
+				Mocks: config.Mocks{
+					{
+						Matcher:  config.RequestMatcher{Path: "/api"},
+						Response: config.Response{Code: http.StatusOK, Raw: mock1Body},
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, mock1Body, testutils.ReadBody(t, recorder))
+	})
+}
+
 func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
-			routerInstance, err := handler.NewRouter(
+			container := di.NewContainer()
+			defer testutils.Close(t, container)
+
+			routerInstance, err := router.NewRouter(
 				config.Mappings{
 					{
 						From: hosts.Parse("{host}"),
@@ -425,14 +533,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 						},
 					},
 				},
-				handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+				router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				router.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -461,6 +564,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 		})
 
 		t.Run("where method is set", func(t *testing.T) {
+			container := di.NewContainer()
+			defer testutils.Close(t, container)
+
 			expectedCode := 299
 			expectedBody := "forwarded"
 			mappings := config.Mappings{
@@ -477,9 +583,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 			}
 			factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-			routerInstance, err := handler.NewRouter(
+			routerInstance, err := router.NewRouter(
 				mappings,
-				handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+				router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 					Set(func(req *http.Request) (*http.Response, error) {
 						return &http.Response{
 							Request:    req,
@@ -487,13 +593,8 @@ func TestRouterMockMiddleware(t *testing.T) {
 							Body:       io.NopCloser(strings.NewReader(expectedBody)),
 						}, nil
 					}))),
-				handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-				handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-				handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-				handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-				handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-				handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+				router.WithDiContainer(container),
 			)
 			require.NoError(t, err)
 
@@ -544,6 +645,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("path handling", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
 		expectedCode := 299
 		expectedBody := "forwarded"
 		mappings := config.Mappings{
@@ -588,9 +692,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 		}
 		factory := urlreplacer.NewURLReplacerFactory(mappings)
 
-		routerInstance, err := handler.NewRouter(
+		routerInstance, err := router.NewRouter(
 			mappings,
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
+			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
 				Set(func(req *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    req,
@@ -598,13 +702,8 @@ func TestRouterMockMiddleware(t *testing.T) {
 						Body:       io.NopCloser(strings.NewReader(expectedBody)),
 					}, nil
 				}))),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -666,7 +765,10 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("query handling", func(t *testing.T) {
-		routerInstance, err := handler.NewRouter(
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		routerInstance, err := router.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
@@ -705,14 +807,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 					},
 				}},
 			},
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 
@@ -774,7 +871,10 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("header handling", func(t *testing.T) {
-		routerInstance, err := handler.NewRouter(
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		routerInstance, err := router.NewRouter(
 			config.Mappings{
 				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
 					{
@@ -813,14 +913,9 @@ func TestRouterMockMiddleware(t *testing.T) {
 					},
 				}},
 			},
-			handler.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			handler.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			handler.ForRouterWithMockHandlerFactory(mockFactory(nil)),
-			handler.ForRouterWithOptionsMiddlewareFactory(optionsFactory()),
-			handler.ForRouterWithStaticMiddlewareFactory(staticFactory(nil)),
-			handler.ForRouterWithScriptHandlerFactory(scriptHandlerFactory()),
-			handler.ForRouterWithRewriteMiddlewareFactory(rewriteFactory()),
-			handler.ForRouterWithHARMiddlewareFactory(noopHARFactory()),
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
 		)
 		require.NoError(t, err)
 

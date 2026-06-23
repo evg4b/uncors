@@ -13,7 +13,7 @@ import (
 )
 
 type Middleware struct {
-	rewrite config.RewritingOption
+	rewrite *config.RewritingOption
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
@@ -51,7 +51,7 @@ func replace(s string, data map[string]string) string {
 
 type MiddlewareOption = func(*Middleware)
 
-func WithRewritingOptions(rewrite config.RewritingOption) MiddlewareOption {
+func WithRewritingOptions(rewrite *config.RewritingOption) MiddlewareOption {
 	return func(h *Middleware) {
 		h.rewrite = rewrite
 	}

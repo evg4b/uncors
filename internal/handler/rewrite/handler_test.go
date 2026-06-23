@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		nextCalled := false
 
 		middleware := rewrite.NewMiddleware(
-			rewrite.WithRewritingOptions(config.RewritingOption{
+			rewrite.WithRewritingOptions(&config.RewritingOption{
 				To:   expectedURL,
 				Host: expectedHost,
 			}),
@@ -32,7 +33,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+		next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
 			nextCalled = true
 
 			assert.Equal(t, expectedURL, request.URL.Path)
@@ -41,7 +42,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := server.Mddleware(middleware, next)
+		handler := infra.Mddleware(middleware, next)
 		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, err)
 
@@ -53,7 +54,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		nextCalled := false
 
 		middleware := rewrite.NewMiddleware(
-			rewrite.WithRewritingOptions(config.RewritingOption{
+			rewrite.WithRewritingOptions(&config.RewritingOption{
 				To: expectedURL,
 			}),
 		)
@@ -62,7 +63,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := contracts.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+		next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
 			nextCalled = true
 
 			assert.Equal(t, expectedURL, request.URL.Path)
@@ -71,7 +72,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := server.Mddleware(middleware, next)
+		handler := infra.Mddleware(middleware, next)
 		serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, serveErr)
 
