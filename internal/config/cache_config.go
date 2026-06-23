@@ -14,9 +14,9 @@ func (g CacheGlobs) Clone() CacheGlobs {
 }
 
 type CacheConfig struct {
-	ExpirationTime time.Duration `yaml:"expiration-time"`
-	MaxSize        int64         `yaml:"max-size"`
-	Methods        []string      `yaml:"methods"`
+	ExpirationTime time.Duration `yaml:"expiration-time,omitempty"`
+	MaxSize        int64         `yaml:"max-size,omitempty"`
+	Methods        []string      `yaml:"methods,omitempty"`
 }
 
 func (c *CacheConfig) Clone() *CacheConfig {
