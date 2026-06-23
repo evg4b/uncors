@@ -168,6 +168,34 @@ func TestNewConfigWatcher(t *testing.T) {
 		assert.True(t, waitForCall(called, watcherTimeout), "onChange not called after second atomic save")
 	})
 
+	t.Run("returns errAlreadyWatching when Watch called twice", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configFile := filepath.Join(tmpDir, "config.yaml")
+		require.NoError(t, os.WriteFile(configFile, []byte(""), 0o600))
+
+		ctx := t.Context()
+
+		watcher := config.NewWatcher(configFile)
+		err := watcher.Watch(ctx, func() {})
+		require.NoError(t, err)
+
+		defer testutils.Close(t, watcher)
+
+		err = watcher.Watch(ctx, func() {})
+		require.Error(t, err)
+	})
+
+	t.Run("Watch with empty path returns nil immediately", func(t *testing.T) {
+		watcher := config.NewWatcher("")
+		err := watcher.Watch(context.Background(), func() {})
+		require.NoError(t, err)
+	})
+
+	t.Run("Close without Watch returns nil", func(t *testing.T) {
+		watcher := config.NewWatcher("/some/path.yaml")
+		require.NoError(t, watcher.Close())
+	})
+
 	t.Run("stops watching when context is cancelled", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configFile := filepath.Join(tmpDir, "config.yaml")
