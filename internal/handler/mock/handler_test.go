@@ -307,6 +307,42 @@ func TestHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("undefined response error", func(t *testing.T) {
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			}),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		assert.ErrorIs(t, err, mock.ErrResponseIsNotDefined)
+	})
+
+	t.Run("raw content longer than sniff limit gets truncated for detection", func(t *testing.T) {
+		longRaw := string(make([]byte, 600))
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{Raw: longRaw}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
+				return time.After(time.Nanosecond)
+			}),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, recorder.Header().Get("Content-Type"))
+	})
+
 	t.Run("mock response delay", func(t *testing.T) {
 		t.Run("correctly handle delay", func(t *testing.T) {
 			tests := []struct {

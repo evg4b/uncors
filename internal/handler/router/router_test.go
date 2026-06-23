@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -336,6 +337,175 @@ func TestRouter(t *testing.T) {
 			expectedMessage := "failed to open file /unknown.json: open /unknown.json: file does not exist"
 			assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
 		})
+	})
+}
+
+func TestRouterScriptsAndRewrites(t *testing.T) {
+	t.Run("scripts are registered and served", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				Scripts: config.Scripts{
+					{
+						Matcher: config.RequestMatcher{Path: "/api/script"},
+						Script:  "response:WriteHeader(200)\nresponse:WriteString(\"from-script\")",
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/script", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "from-script", testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("rewrites are served via path handler", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		expectedCode := 202
+		expectedBody := "rewritten"
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				Rewrites: config.RewriteOptions{
+					{From: "/old", To: "/new"},
+				},
+			},
+		}
+
+		factory := urlreplacer.NewURLReplacerFactory(mappings)
+		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Request:    req,
+				StatusCode: expectedCode,
+				Body:       io.NopCloser(strings.NewReader(expectedBody)),
+			}, nil
+		})
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		t.Run("exact path", func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old", nil)
+
+			serveHTTP(t, routerInstance, recorder, request)
+
+			assert.Equal(t, expectedCode, recorder.Code)
+		})
+
+		t.Run("path with trailing slash", func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old/sub", nil)
+
+			serveHTTP(t, routerInstance, recorder, request)
+
+			assert.Equal(t, expectedCode, recorder.Code)
+		})
+	})
+
+	t.Run("cache globs enable cache middleware", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		callCount := 0
+		mappings := config.Mappings{
+			{
+				From:  hosts.Parse("{host}"),
+				To:    hosts.Parse("{host}"),
+				Cache: config.CacheGlobs{"*.json"},
+				Mocks: config.Mocks{
+					{
+						Matcher: config.RequestMatcher{Path: "/data.json"},
+						Response: config.Response{
+							Code: http.StatusOK,
+							Raw:  `{"cached": true}`,
+						},
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+				callCount++
+
+				return cacheFactory()(globs)
+			}),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/data.json", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, 1, callCount, "cache middleware factory should be called once for the mapping")
+	})
+
+	t.Run("HAR config enables HAR middleware", func(t *testing.T) {
+		harFile := filepath.Join(t.TempDir(), "test.har")
+
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		mappings := config.Mappings{
+			{
+				From: hosts.Parse("{host}"),
+				To:   hosts.Parse("{host}"),
+				HAR:  config.HARConfig{File: harFile},
+				Mocks: config.Mocks{
+					{
+						Matcher:  config.RequestMatcher{Path: "/api"},
+						Response: config.Response{Code: http.StatusOK, Raw: mock1Body},
+					},
+				},
+			},
+		}
+
+		routerInstance, err := router.NewRouter(
+			mappings,
+			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
+			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+			router.WithDiContainer(container),
+		)
+		require.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api", nil)
+
+		serveHTTP(t, routerInstance, recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, mock1Body, testutils.ReadBody(t, recorder))
 	})
 }
 
