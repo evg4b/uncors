@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func defineFlags(version string) *pflag.FlagSet {
+func defineFlags(version string) (*pflag.FlagSet, error) {
 	flags := pflag.NewFlagSet("uncors", pflag.ContinueOnError)
 	flags.Usage = func() {
 		tui.PrintLogo(flags.Output(), version)
@@ -19,6 +19,12 @@ func defineFlags(version string) *pflag.FlagSet {
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.StringP("config", "c", "", "Path to the configuration file")
 	flags.Bool("interactive", true, "Run application in interactive TUI mode")
+	flags.BoolP("version", "v", false, "Print the version and exit")
 
-	return flags
+	err := flags.MarkHidden("version")
+	if err != nil {
+		return nil, err
+	}
+
+	return flags, nil
 }
