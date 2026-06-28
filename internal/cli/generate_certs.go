@@ -24,7 +24,7 @@ func GenerateCerts(args []string) error {
 	cmd := container.GenerateCertsCommand()
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
-	cmd.DefineFlags(flags)
+	cmd.DefineFlags(flags, Version)
 
 	err := flags.Parse(args)
 	if err != nil {

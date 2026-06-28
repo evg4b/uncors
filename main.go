@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"os"
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
-	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -27,9 +25,7 @@ func main() {
 
 	err := cli.RunUncors(context.Background(), afero.NewOsFs(), os.Args[1:])
 	if err != nil {
-		if !errors.Is(err, pflag.ErrHelp) {
-			tui.NewCliOutput(os.Stdout).
-				Error(err)
-		}
+		tui.NewCliOutput(os.Stdout).
+			Error(err)
 	}
 }

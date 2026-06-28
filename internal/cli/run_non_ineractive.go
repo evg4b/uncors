@@ -85,7 +85,7 @@ func runNonIneractive(
 func reloadServer(ctx context.Context, container *di.Container, srv *server.Server, args []string) {
 	output := container.CliOutput()
 
-	newUncorsConfig, _, err := config.LoadConfiguration(container.Fs(), args)
+	newUncorsConfig, _, err := config.LoadConfiguration(container.Fs(), Version, args)
 	if err != nil {
 		output.Error(err)
 
