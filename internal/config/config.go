@@ -16,8 +16,8 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
-	flags := defineFlags()
+func LoadConfiguration(fs afero.Fs, version string, args []string) (*UncorsConfig, string, error) {
+	flags := defineFlags(version)
 
 	err := flags.Parse(args)
 	if err != nil {

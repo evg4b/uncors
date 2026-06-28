@@ -21,7 +21,7 @@ func runIneractive(
 		cfgPath,
 		cfg,
 		func() *config.UncorsConfig {
-			reloaded, _, _ := config.LoadConfiguration(container.Fs(), args)
+			reloaded, _, _ := config.LoadConfiguration(container.Fs(), Version, args)
 
 			return reloaded
 		},
