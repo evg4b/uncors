@@ -12,14 +12,6 @@ import (
 )
 
 func RunUncors(ctx context.Context, fs afero.Fs, args []string) error {
-	uncorsConfig, path, err := config.LoadConfiguration(fs, Version, args)
-	if err != nil {
-		if !errors.Is(err, pflag.ErrHelp) {
-			return err
-		}
-		return nil
-	}
-
 	var containerError error
 
 	container := di.NewContainer(
@@ -30,6 +22,20 @@ func RunUncors(ctx context.Context, fs afero.Fs, args []string) error {
 	defer func() {
 		containerError = container.Close()
 	}()
+
+	uncorsConfig, path, err := config.LoadConfiguration(fs, Version, args)
+	if err != nil {
+		if errors.Is(err, config.ErrVersionRequested) {
+			println(container.Version())
+			return nil
+		}
+
+		if !errors.Is(err, pflag.ErrHelp) && !errors.Is(err, config.ErrVersionRequested) {
+			return err
+		}
+
+		return nil
+	}
 
 	var runError error
 	if uncorsConfig.Interactive {
