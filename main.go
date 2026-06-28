@@ -10,17 +10,14 @@ import (
 	"github.com/spf13/afero"
 )
 
-var Version = "v0.7.0"
-
 func main() {
 	infra.SetupLogging()
-
-	output := tui.NewCliOutput(os.Stdout)
 
 	if len(os.Args) >= 2 && os.Args[1] == cli.GenerateCertsCmd {
 		err := cli.GenerateCerts(os.Args[2:])
 		if err != nil {
-			output.Error(err)
+			tui.NewCliOutput(os.Stdout).
+				Error(err)
 		}
 
 		return
@@ -28,6 +25,7 @@ func main() {
 
 	err := cli.RunUncors(context.Background(), afero.NewOsFs(), os.Args[1:])
 	if err != nil {
-		output.Error(err)
+		tui.NewCliOutput(os.Stdout).
+			Error(err)
 	}
 }
