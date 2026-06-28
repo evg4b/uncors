@@ -14,14 +14,13 @@ func runIneractive(
 	container *di.Container,
 	cfg *config.UncorsConfig,
 	cfgPath string,
-	args []string,
 ) error {
 	app := uncor.NewUncorsApp(
 		container,
 		cfgPath,
 		cfg,
 		func() *config.UncorsConfig {
-			reloaded, _, _ := config.LoadConfiguration(container.Fs(), Version, args)
+			reloaded, _, _ := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
 
 			return reloaded
 		},

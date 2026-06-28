@@ -12,8 +12,11 @@ import (
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -58,7 +61,11 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 	go func() {
 		// --interactive=false overrides the default (true) so the proxy runs
 		// in headless mode and actually starts its TCP listeners.
-		_ = cli.RunUncors(t.Context(), fs, []string{"-c", configPath, "--interactive=false"})
+		container := di.NewContainer(di.WithFs(fs), di.WithArgs([]string{"-c", configPath, "--interactive=false"}))
+		defer testutils.Close(t, container)
+
+		err = cli.RunUncors(t.Context(), container)
+		assert.NoError(t, err)
 	}()
 
 	waitForMappings(t, cfg)
