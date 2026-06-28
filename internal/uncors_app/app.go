@@ -78,7 +78,7 @@ func NewUncorsApp(
 
 	appCtx, cancel := context.WithCancel(context.Background())
 
-	container.Override(di.OverrideCliOutput(func() contracts.Output {
+	container.Override(di.WithCliOutput(func() contracts.Output {
 		return output
 	}))
 

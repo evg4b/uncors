@@ -2,31 +2,20 @@ package cli
 
 import (
 	"errors"
-	"os"
 
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
 
 const GenerateCertsCmd = "generate-certs"
 
-func GenerateCerts(args []string) error {
-	fs := afero.NewOsFs()
-
-	container := di.NewContainer(
-		di.WithFs(fs),
-		di.WithStdout(os.Stdout),
-		di.WithVersion(Version),
-	)
-	defer container.Close()
-
+func GenerateCerts(container *di.Container) error {
 	cmd := container.GenerateCertsCommand()
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
-	cmd.DefineFlags(flags, Version)
+	cmd.DefineFlags(flags, container.Version())
 
-	err := flags.Parse(args)
+	err := flags.Parse(container.Args())
 	if err != nil {
 		if !errors.Is(err, pflag.ErrHelp) {
 			return err

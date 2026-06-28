@@ -253,7 +253,7 @@ func TestContainerOverride(t *testing.T) {
 
 		overrideApplied := false
 
-		container.Override(di.OverrideCliOutput(func() contracts.Output {
+		container.Override(di.WithCliOutput(func() contracts.Output {
 			overrideApplied = true
 
 			return customOutput
@@ -262,7 +262,7 @@ func TestContainerOverride(t *testing.T) {
 		newContainer := di.NewContainer()
 		defer testutils.Close(t, newContainer)
 
-		newContainer.Override(di.OverrideCliOutput(func() contracts.Output {
+		newContainer.Override(di.WithCliOutput(func() contracts.Output {
 			return customOutput
 		}))
 
@@ -278,7 +278,7 @@ func TestContainerOverride(t *testing.T) {
 
 		sentinel := container.CliOutput()
 
-		container.Override(di.OverrideCliOutput(func() contracts.Output {
+		container.Override(di.WithCliOutput(func() contracts.Output {
 			return sentinel
 		}))
 

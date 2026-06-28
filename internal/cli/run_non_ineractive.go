@@ -21,7 +21,6 @@ func runNonIneractive(
 	container *di.Container,
 	cfg *config.UncorsConfig,
 	cfgPath string,
-	args []string,
 ) error {
 	output := container.CliOutput()
 	tui.PrintLogo(output, container.Version())
@@ -48,7 +47,7 @@ func runNonIneractive(
 	go func() {
 		watcher := config.NewWatcher(cfgPath)
 
-		err := watcher.Watch(ctx, func() { reloadServer(ctx, container, srv, args) })
+		err := watcher.Watch(ctx, func() { reloadServer(ctx, container, srv) })
 		if err != nil {
 			output.Error(err)
 		}
@@ -82,10 +81,10 @@ func runNonIneractive(
 	return nil
 }
 
-func reloadServer(ctx context.Context, container *di.Container, srv *server.Server, args []string) {
+func reloadServer(ctx context.Context, container *di.Container, srv *server.Server) {
 	output := container.CliOutput()
 
-	newUncorsConfig, _, err := config.LoadConfiguration(container.Fs(), Version, args)
+	newUncorsConfig, _, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
 	if err != nil {
 		output.Error(err)
 

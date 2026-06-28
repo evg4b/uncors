@@ -12,6 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -84,7 +85,7 @@ func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
 	errCh := make(chan error, 1)
 
 	go func() {
-		errCh <- cli.RunUncors(ctx, fs, args)
+		errCh <- cli.RunUncors(ctx, di.NewContainer(di.WithFs(fs), di.WithArgs(args)))
 	}()
 
 	return errCh
@@ -93,17 +94,17 @@ func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
 func TestRunUncors(t *testing.T) {
 	t.Run("returns error when LoadConfiguration fails", func(t *testing.T) {
 		// No --from/--to flags and no config file → "mappings must not be empty"
-		err := cli.RunUncors(context.Background(), afero.NewMemMapFs(), []string{})
+		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{})))
 		require.Error(t, err)
 	})
 
 	t.Run("returns nil for --version flag", func(t *testing.T) {
-		err := cli.RunUncors(context.Background(), afero.NewMemMapFs(), []string{"--version"})
+		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{"--version"})))
 		require.NoError(t, err)
 	})
 
 	t.Run("returns nil for --help flag", func(t *testing.T) {
-		err := cli.RunUncors(context.Background(), afero.NewMemMapFs(), []string{"--help"})
+		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{"--help"})))
 		require.NoError(t, err)
 	})
 
@@ -147,7 +148,9 @@ func TestRunUncors(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, afero.WriteFile(fs, "/config.yaml", data, 0o600))
 
-		err = cli.RunUncors(context.Background(), fs, []string{"-c", "/config.yaml", "--interactive=false"})
+		container := di.NewContainer(di.WithFs(fs), di.WithArgs([]string{"-c", "/config.yaml", "--interactive=false"}))
+
+		err = cli.RunUncors(context.Background(), container)
 		require.Error(t, err)
 	})
 
