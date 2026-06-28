@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"os"
 
 	"github.com/evg4b/uncors/internal/di"
@@ -27,7 +28,10 @@ func GenerateCerts(args []string) error {
 
 	err := flags.Parse(args)
 	if err != nil {
-		return err
+		if !errors.Is(err, pflag.ErrHelp) {
+			return err
+		}
+		return nil
 	}
 
 	return cmd.Execute()

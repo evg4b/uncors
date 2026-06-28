@@ -12,19 +12,17 @@ import (
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/spf13/afero"
 )
 
 const shutdownTimeout = 15 * time.Second
 
-func runNonIneractive(ctx context.Context, fs afero.Fs, cfg *config.UncorsConfig, cfgPath string, args []string) error {
-	container := di.NewContainer(
-		di.WithFs(fs),
-		di.WithStdout(os.Stdout),
-		di.WithVersion(Version),
-	)
-	defer container.Close()
-
+func runNonIneractive(
+	ctx context.Context,
+	container *di.Container,
+	cfg *config.UncorsConfig,
+	cfgPath string,
+	args []string,
+) error {
 	output := container.CliOutput()
 	tui.PrintLogo(output, container.Version())
 	output.Print("")
