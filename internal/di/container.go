@@ -3,6 +3,7 @@ package di
 import (
 	"errors"
 	"io"
+	"os"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -58,7 +59,7 @@ func NewContainer(options ...ContainerOption) *Container {
 		stdout:  io.Discard,
 		version: "0.0.0",
 		closers: []io.Closer{},
-		args:    []string{},
+		args:    os.Args,
 	}
 
 	container = helpers.ApplyOptions(container, options)

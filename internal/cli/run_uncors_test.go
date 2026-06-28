@@ -85,7 +85,12 @@ func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
 	errCh := make(chan error, 1)
 
 	go func() {
-		errCh <- cli.RunUncors(ctx, di.NewContainer(di.WithFs(fs), di.WithArgs(args)))
+		container := di.NewContainer(di.WithFs(fs), di.WithArgs(args))
+		defer func() {
+			errCh <- container.Close()
+		}()
+
+		errCh <- cli.RunUncors(ctx, container)
 	}()
 
 	return errCh
@@ -94,17 +99,26 @@ func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
 func TestRunUncors(t *testing.T) {
 	t.Run("returns error when LoadConfiguration fails", func(t *testing.T) {
 		// No --from/--to flags and no config file → "mappings must not be empty"
-		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{})))
+		container := di.NewContainer(di.WithArgs([]string{}))
+		defer testutils.Close(t, container)
+
+		err := cli.RunUncors(context.Background(), container)
 		require.Error(t, err)
 	})
 
 	t.Run("returns nil for --version flag", func(t *testing.T) {
-		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{"--version"})))
+		container := di.NewContainer(di.WithArgs([]string{"--version"}))
+		defer testutils.Close(t, container)
+
+		err := cli.RunUncors(context.Background(), container)
 		require.NoError(t, err)
 	})
 
 	t.Run("returns nil for --help flag", func(t *testing.T) {
-		err := cli.RunUncors(context.Background(), di.NewContainer(di.WithArgs([]string{"--help"})))
+		container := di.NewContainer(di.WithArgs([]string{"--help"}))
+		defer testutils.Close(t, container)
+
+		err := cli.RunUncors(context.Background(), container)
 		require.NoError(t, err)
 	})
 
@@ -149,6 +163,7 @@ func TestRunUncors(t *testing.T) {
 		require.NoError(t, afero.WriteFile(fs, "/config.yaml", data, 0o600))
 
 		container := di.NewContainer(di.WithFs(fs), di.WithArgs([]string{"-c", "/config.yaml", "--interactive=false"}))
+		defer testutils.Close(t, container)
 
 		err = cli.RunUncors(context.Background(), container)
 		require.Error(t, err)
