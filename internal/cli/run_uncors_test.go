@@ -97,6 +97,16 @@ func TestRunUncors(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("returns nil for --version flag", func(t *testing.T) {
+		err := cli.RunUncors(context.Background(), afero.NewMemMapFs(), []string{"--version"})
+		require.NoError(t, err)
+	})
+
+	t.Run("returns nil for --help flag", func(t *testing.T) {
+		err := cli.RunUncors(context.Background(), afero.NewMemMapFs(), []string{"--help"})
+		require.NoError(t, err)
+	})
+
 	t.Run("non-interactive: starts server and shuts down on context cancellation", func(t *testing.T) {
 		cfg, port := httpMapping(t)
 		fs := afero.NewMemMapFs()
