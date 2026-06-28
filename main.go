@@ -40,11 +40,13 @@ func main() {
 	handleError(err)
 }
 
+var osExit = os.Exit
+
 func handleError(err error) {
 	if err != nil {
 		tui.NewCliOutput(os.Stdout).
 			Error(err)
 
-		os.Exit(1)
+		osExit(1)
 	}
 }

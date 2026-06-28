@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -63,6 +64,36 @@ func TestSetupLogging(t *testing.T) {
 
 		assert.Equal(t, io.Discard, log.Writer())
 	})
+}
+
+var errTest = errors.New("something went wrong")
+
+func TestHandleError_ExitsOnError(t *testing.T) {
+	orig := osExit
+
+	var capturedCode int
+
+	osExit = func(code int) { capturedCode = code }
+
+	t.Cleanup(func() { osExit = orig })
+
+	handleError(errTest)
+
+	assert.Equal(t, 1, capturedCode)
+}
+
+func TestHandleError_NoopOnNil(t *testing.T) {
+	orig := osExit
+
+	called := false
+
+	osExit = func(_ int) { called = true }
+
+	t.Cleanup(func() { osExit = orig })
+
+	handleError(nil)
+
+	assert.False(t, called)
 }
 
 func TestMain_RunUncorsVersionPath(t *testing.T) {
