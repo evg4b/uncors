@@ -20,4 +20,9 @@ func TestGenerateCerts(t *testing.T) {
 		err := cli.GenerateCerts([]string{"--validity-days=7"})
 		require.NoError(t, err)
 	})
+
+	t.Run("returns nil for --help flag", func(t *testing.T) {
+		err := cli.GenerateCerts([]string{"--help"})
+		require.NoError(t, err)
+	})
 }

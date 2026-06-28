@@ -336,6 +336,11 @@ func TestLoadConfiguration(t *testing.T) {
 	})
 }
 
+func TestLoadConfiguration_VersionFlag(t *testing.T) {
+	_, _, err := config.LoadConfiguration(afero.NewMemMapFs(), "1.2.3", []string{"--version"})
+	require.ErrorIs(t, err, config.ErrVersionRequested)
+}
+
 func TestUncorsConfigValidator(t *testing.T) {
 	mapFs := testutils.FsFromMap(t, map[string]string{})
 
