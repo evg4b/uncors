@@ -7,7 +7,7 @@ GOTEST := $(GO) test
 GOBUILD := $(GO) build
 GOINSTALL := $(GO) install
 VERSION := $(shell git rev-parse --short HEAD)
-LDFLAGS := -ldflags="-s -w -X 'github.com/evg4b/uncors/internal/cli.Version=$(VERSION)'"
+LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)'"
 COVERAGE_FILE := coverage.out
 BINARY_NAME := uncors
 BINARY_WINDOWS := $(BINARY_NAME).exe
