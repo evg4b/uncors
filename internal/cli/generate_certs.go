@@ -16,7 +16,7 @@ func GenerateCerts(args []string) error {
 	container := di.NewContainer(
 		di.WithFs(fs),
 		di.WithStdout(os.Stdout),
-		// di.WithVersion("Version"),
+		di.WithVersion(Version),
 	)
 	defer container.Close()
 

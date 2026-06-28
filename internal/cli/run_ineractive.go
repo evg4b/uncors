@@ -15,7 +15,7 @@ func runIneractive(ctx context.Context, fs afero.Fs, cfg *config.UncorsConfig, c
 	container := di.NewContainer(
 		di.WithFs(fs),
 		di.WithStdout(os.Stdout),
-		// di.WithVersion("Version"),
+		di.WithVersion(Version),
 	)
 	defer container.Close()
 

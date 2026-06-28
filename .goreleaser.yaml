@@ -21,7 +21,7 @@ builds:
         goarch: '386'
     main: '.'
     ldflags:
-      - -s -w -X main.Version={{ .Version }}
+      - -s -w -X github.com/evg4b/uncors/internal/cli.Version={{ .Version }}
     tags: [ release ]
 checksum:
   name_template: 'checksums.txt'
