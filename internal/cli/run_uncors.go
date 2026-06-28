@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -26,15 +27,16 @@ func RunUncors(ctx context.Context, fs afero.Fs, args []string) error {
 	uncorsConfig, path, err := config.LoadConfiguration(fs, Version, args)
 	if err != nil {
 		if errors.Is(err, config.ErrVersionRequested) {
-			println(container.Version())
+			fmt.Fprintln(os.Stdout, container.Version())
+
 			return nil
 		}
 
-		if !errors.Is(err, pflag.ErrHelp) && !errors.Is(err, config.ErrVersionRequested) {
-			return err
+		if errors.Is(err, pflag.ErrHelp) {
+			return nil
 		}
 
-		return nil
+		return err
 	}
 
 	var runError error

@@ -35,6 +35,7 @@ func LoadConfiguration(fs afero.Fs, version string, args []string) (*UncorsConfi
 	if err != nil {
 		return nil, "", err
 	}
+
 	if printVersion {
 		return nil, "", ErrVersionRequested
 	}
