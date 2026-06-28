@@ -31,6 +31,7 @@ func GenerateCerts(args []string) error {
 		if !errors.Is(err, pflag.ErrHelp) {
 			return err
 		}
+
 		return nil
 	}
 
