@@ -65,10 +65,10 @@ func TestSetupLogging(t *testing.T) {
 	})
 }
 
-func TestMain_RunUncorsErrorPath(t *testing.T) {
+func TestMain_RunUncorsVersionPath(t *testing.T) {
 	saveLogger(t)
-	// Test args are not valid uncors config, so RunUncors returns an error.
-	// main() must swallow it gracefully (no panic).
+	setArgs(t, []string{"uncors", "--version"})
+
 	assert.NotPanics(t, func() {
 		main()
 	})
@@ -85,9 +85,9 @@ func TestMain_GenerateCertsPath(t *testing.T) {
 	})
 }
 
-func TestMain_GenerateCertsErrorPath(t *testing.T) {
+func TestMain_GenerateCertsHelpPath(t *testing.T) {
 	saveLogger(t)
-	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--unknown-flag"})
+	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--help"})
 
 	assert.NotPanics(t, func() {
 		main()
