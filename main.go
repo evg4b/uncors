@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-const Version = "v0.0.0"
+var Version = "v0.0.0"
 
 func main() {
 	infra.SetupLogging()
