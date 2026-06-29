@@ -14,7 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/uncors"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 type UncorsApp struct {
 	keys keyMap
 
-	app       *uncors.Uncors
+	srv       *server.Server
 	output    *tuiOutput
 	tracker   server.IRequestTracker
 	container *di.Container
@@ -78,7 +78,7 @@ func NewUncorsApp(
 
 	appCtx, cancel := context.WithCancel(context.Background())
 
-	container.Override(di.OverrideCliOutput(func() contracts.Output {
+	container.Override(di.WithCliOutput(func() contracts.Output {
 		return output
 	}))
 
@@ -88,7 +88,7 @@ func NewUncorsApp(
 
 	return &UncorsApp{
 		keys:          keys,
-		app:           uncors.CreateUncors(container),
+		srv:           container.Server(),
 		output:        output,
 		tracker:       container.RequestTracker(),
 		container:     container,
@@ -278,7 +278,7 @@ func (m *UncorsApp) handleServerStarted() tea.Cmd {
 
 			newCfg := m.loadConfig()
 
-			err := m.app.Restart(m.appContext(), newCfg)
+			err := m.restart(m.appContext(), newCfg)
 			if err != nil {
 				m.output.Errorf("Failed to restart server: %v", err)
 			}
@@ -330,7 +330,19 @@ func (m *UncorsApp) handleShutdown() tea.Cmd {
 
 func (m *UncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.app.Start(m.appContext(), m.cfg)
+		tui.PrintLogo(m.output, m.container.Version())
+		m.output.Print("")
+		m.output.WarnBox(tui.DisclaimerMessage)
+		m.output.Print("")
+		m.output.InfoBox(m.cfg.Mappings.String())
+		m.output.Print("")
+
+		targets, err := m.container.Targets(m.cfg)
+		if err != nil {
+			return serverErrMsg{err: err}
+		}
+
+		err = m.srv.Start(m.appContext(), targets)
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -376,7 +388,7 @@ func (m *UncorsApp) shutdownCmd() tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
-		_ = m.app.Shutdown(ctx)
+		_ = m.srv.Shutdown(ctx)
 
 		return shutdownMsg{}
 	}
@@ -390,13 +402,31 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 
 		newCfg := m.loadConfig()
 
-		err := m.app.Restart(m.appContext(), newCfg)
+		err := m.restart(m.appContext(), newCfg)
 		if err != nil {
 			m.output.Errorf("Failed to restart: %v", err)
 		}
 
 		return restartMsg{}
 	}
+}
+
+func (m *UncorsApp) restart(ctx context.Context, cfg *config.UncorsConfig) error {
+	m.output.Info("Restarting server....")
+
+	targets, err := m.container.Targets(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = m.srv.Restart(ctx, targets)
+	if err != nil {
+		return err
+	}
+
+	m.output.InfoBox("Server restarted", cfg.Mappings.String())
+
+	return nil
 }
 
 func (m *UncorsApp) versionCheckCmd() tea.Cmd {

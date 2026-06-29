@@ -1,151 +1,126 @@
 package main
 
 import (
-	"context"
+	"errors"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/spf13/afero"
+	"github.com/evg4b/uncors/internal/cli"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// setArgs temporarily overrides os.Args and returns a restore function.
-func setArgs(args []string) func() {
-	old := os.Args
+// saveLogger captures the current log writer and restores it after the test.
+func saveLogger(t *testing.T) {
+	t.Helper()
+
+	orig := log.Writer()
+
+	t.Cleanup(func() { log.SetOutput(orig) })
+}
+
+// setArgs temporarily overrides os.Args and restores it via t.Cleanup.
+func setArgs(t *testing.T, args []string) {
+	t.Helper()
+
+	orig := os.Args
 	os.Args = args
 
-	return func() { os.Args = old }
+	t.Cleanup(func() { os.Args = orig })
 }
 
-func TestLoadConfiguration(t *testing.T) {
-	t.Run("returns config for valid flags", func(t *testing.T) {
-		defer setArgs([]string{"uncors", "-f", "http://localhost:3000", "-t", "https://api.example.com"})()
+func TestSetupLogging(t *testing.T) {
+	t.Run("discards output when UNCORS_LOGGING is empty", func(t *testing.T) {
+		saveLogger(t)
+		t.Setenv("UNCORS_LOGGING", "")
 
-		cfg, path := loadConfiguration(afero.NewMemMapFs())
+		infra.SetupLogging()
 
-		require.NotNil(t, cfg)
-		assert.Empty(t, path)
-		assert.Len(t, cfg.Mappings, 1)
+		assert.Equal(t, io.Discard, log.Writer())
 	})
 
-	t.Run("panics when mappings are empty", func(t *testing.T) {
-		defer setArgs([]string{"uncors"})()
+	t.Run("writes to file when UNCORS_LOGGING points to a valid path", func(t *testing.T) {
+		saveLogger(t)
+		logPath := filepath.Join(t.TempDir(), "test.log")
+		t.Setenv("UNCORS_LOGGING", logPath)
 
-		assert.Panics(t, func() {
-			loadConfiguration(afero.NewMemMapFs())
-		})
+		infra.SetupLogging()
+
+		require.NotEqual(t, io.Discard, log.Writer())
+
+		_, err := os.Stat(logPath)
+		assert.NoError(t, err)
 	})
 
-	t.Run("panics on invalid flags", func(t *testing.T) {
-		defer setArgs([]string{"uncors", "--no-such-flag"})()
+	t.Run("discards output when log file cannot be opened", func(t *testing.T) {
+		saveLogger(t)
+		t.Setenv("UNCORS_LOGGING", "/no-such-dir/test.log")
 
-		assert.Panics(t, func() {
-			loadConfiguration(afero.NewMemMapFs())
-		})
-	})
-}
+		infra.SetupLogging()
 
-func TestRunGenerateCerts(t *testing.T) {
-	t.Run("generates certs and returns 0", func(t *testing.T) {
-		defer setArgs([]string{"uncors", generateCertsCmd})()
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		result := runGenerateCerts(container)
-
-		assert.Equal(t, 0, result)
-	})
-
-	t.Run("returns 1 when execute fails", func(t *testing.T) {
-		defer setArgs([]string{"uncors", generateCertsCmd})()
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		_ = runGenerateCerts(container)
-		result := runGenerateCerts(container)
-
-		assert.Equal(t, 1, result)
-	})
-
-	t.Run("returns 1 when flags parse fails", func(t *testing.T) {
-		defer setArgs([]string{"uncors", generateCertsCmd, "--no-such-flag"})()
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		result := runGenerateCerts(container)
-
-		assert.Equal(t, 1, result)
+		assert.Equal(t, io.Discard, log.Writer())
 	})
 }
 
-func TestLoadConfigurationWithDebug(t *testing.T) {
-	t.Chdir(t.TempDir())
+var errTest = errors.New("something went wrong")
 
-	defer setArgs([]string{"uncors", "-f", "http://localhost:3000", "-t", "https://api.example.com", "--debug"})()
+func TestHandleError_ExitsOnError(t *testing.T) {
+	orig := osExit
 
-	cfg, _ := loadConfiguration(afero.NewMemMapFs())
+	var capturedCode int
 
-	require.NotNil(t, cfg)
-	assert.True(t, cfg.Debug)
+	osExit = func(code int) { capturedCode = code }
+
+	t.Cleanup(func() { osExit = orig })
+
+	handleError(errTest)
+
+	assert.Equal(t, 1, capturedCode)
 }
 
-func TestLoadConfigurationWithConfigFile(t *testing.T) {
-	const cfgContent = `
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-`
+func TestHandleError_NoopOnNil(t *testing.T) {
+	orig := osExit
 
-	defer setArgs([]string{"uncors", "--config", "/config.yaml"})()
+	called := false
 
-	fs := afero.NewMemMapFs()
-	require.NoError(t, afero.WriteFile(fs, "/config.yaml", []byte(cfgContent), 0o600))
+	osExit = func(_ int) { called = true }
 
-	cfg, path := loadConfiguration(fs)
+	t.Cleanup(func() { osExit = orig })
 
-	require.NotNil(t, cfg)
-	assert.Equal(t, "/config.yaml", path)
-	assert.Len(t, cfg.Mappings, 1)
+	handleError(nil)
+
+	assert.False(t, called)
 }
 
-func TestStartVersionChecker(t *testing.T) {
-	t.Run("runs without panic", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+func TestMain_RunUncorsVersionPath(t *testing.T) {
+	saveLogger(t)
+	setArgs(t, []string{"uncors", "--version"})
 
-		assert.NotPanics(t, func() {
-			startVersionChecker(context.Background(), container, "")
-		})
+	assert.NotPanics(t, func() {
+		main()
 	})
 }
 
-func TestStartConfigWatcher(t *testing.T) {
-	t.Run("logs error for non-existent config path", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+func TestMain_GenerateCertsPath(t *testing.T) {
+	saveLogger(t)
+	// Point HOME to a temp dir so CA certificates go there, not ~/.config/uncors.
+	t.Setenv("HOME", t.TempDir())
+	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--validity-days=7"})
 
-		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
-		})
+	assert.NotPanics(t, func() {
+		main()
 	})
+}
 
-	t.Run("creates watcher for existing config file", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+func TestMain_GenerateCertsHelpPath(t *testing.T) {
+	saveLogger(t)
+	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--help"})
 
-		tmpDir := t.TempDir()
-		configFile := filepath.Join(tmpDir, "config.yaml")
-		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
-
-		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), container, configFile, nil)
-		})
+	assert.NotPanics(t, func() {
+		main()
 	})
 }

@@ -29,6 +29,7 @@ type Target struct {
 type Server struct {
 	sync.WaitGroup
 
+	mu        sync.RWMutex
 	listeners []*PortListener
 	manager   *HostCertManager
 	tracker   IRequestTracker
@@ -44,6 +45,7 @@ func New(manager *HostCertManager, tracker IRequestTracker) *Server {
 }
 
 func (s *Server) Start(ctx context.Context, targets []Target) error {
+	s.mu.Lock()
 	s.listeners = lo.Map(targets, func(target Target, _ int) *PortListener {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
 
@@ -65,6 +67,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 
 		return portListener
 	})
+	s.mu.Unlock()
 
 	var launchWaitGroup sync.WaitGroup
 	launchWaitGroup.Add(len(s.listeners))
@@ -111,13 +114,17 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
+	s.mu.RLock()
+	listeners := s.listeners
+	s.mu.RUnlock()
+
 	var (
 		waitGroup sync.WaitGroup
 		errsMu    sync.Mutex
 		errs      []error
 	)
 
-	for _, server := range s.listeners {
+	for _, server := range listeners {
 		waitGroup.Add(1)
 		go func(srv *PortListener) {
 			defer waitGroup.Done()
@@ -138,6 +145,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
+	s.Add(1)
+	defer s.Done()
+
 	err := s.Shutdown(ctx)
 	if err != nil {
 		return err
@@ -151,9 +161,13 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) Close() error {
+	s.mu.RLock()
+	listeners := s.listeners
+	s.mu.RUnlock()
+
 	var errs []error
 
-	for _, portListener := range s.listeners {
+	for _, portListener := range listeners {
 		err := portListener.Close()
 		if err != nil {
 			errs = append(errs, err)

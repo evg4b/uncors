@@ -1,7 +1,10 @@
 package di
 
 import (
+	"errors"
 	"io"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -23,6 +26,10 @@ import (
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 )
+
+func (c *Container) Args() []string {
+	return c.args
+}
 
 func (c *Container) Fs() afero.Fs {
 	return c.fs
@@ -160,4 +167,27 @@ func (c *Container) Router(
 	)
 
 	return infra.CastToContractsHandler(router), err
+}
+
+func (c *Container) Targets(cfg *config.UncorsConfig) ([]server.Target, error) {
+	groupedMappings := cfg.Mappings.GroupByPort()
+	targets := make([]server.Target, 0, len(groupedMappings))
+	errs := make([]error, 0, len(groupedMappings))
+
+	for _, group := range groupedMappings {
+		muxRouter, err := c.Router(group.Mappings, &cfg.CacheConfig, cfg.Proxy)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
+		}
+
+		targets = append(targets, server.Target{
+			Address:   net.JoinHostPort("127.0.0.1", strconv.Itoa(group.Port)),
+			Handler:   muxRouter,
+			EnableTLS: group.Scheme == "https",
+		})
+	}
+
+	return targets, errors.Join(errs...)
 }

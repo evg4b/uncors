@@ -43,7 +43,6 @@ mappings:
             Accept-Encoding: deflate
           raw: demo
 proxy: http://localhost:8080
-debug: true
 https-port: 8081
 cert-file: /etc/certificates/cert-file.pem
 key-file: /etc/certificates/key-file.key
@@ -81,6 +80,8 @@ func makeTestFs(t *testing.T) afero.Fs {
 		minimalConfigPath:   minimalConfig,
 	})
 }
+
+const version = "v0.0.0"
 
 func TestLoadConfiguration(t *testing.T) {
 	fs := makeTestFs(t)
@@ -139,7 +140,6 @@ func TestLoadConfiguration(t *testing.T) {
 						},
 					},
 					Proxy: hosts.Localhost.HTTPPort(8080).String(),
-					Debug: true,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour,
 						MaxSize:        52428800,
@@ -189,11 +189,10 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 			{
-				name: "CLI proxy and debug flags override config file values",
+				name: "CLI proxy flag overrides config file value",
 				args: []string{
 					params.Config, fullConfigPath,
 					"--proxy", "http://newproxy:9999",
-					"--debug=false",
 				},
 				expected: &config.UncorsConfig{
 					Mappings: config.Mappings{
@@ -219,7 +218,6 @@ func TestLoadConfiguration(t *testing.T) {
 						},
 					},
 					Proxy: "http://newproxy:9999",
-					Debug: false,
 					CacheConfig: config.CacheConfig{
 						ExpirationTime: time.Hour, MaxSize: 52428800,
 						Methods: []string{http.MethodGet, http.MethodPost},
@@ -249,7 +247,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, _, err := config.LoadConfiguration(fs, testCase.args)
+				actual, _, err := config.LoadConfiguration(fs, "", testCase.args)
 				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected, actual)
@@ -260,13 +258,13 @@ func TestLoadConfiguration(t *testing.T) {
 	t.Run("returns config file path", func(t *testing.T) {
 		t.Run("empty when no config file flag", func(t *testing.T) {
 			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
-			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), args)
+			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), version, args)
 			require.NoError(t, err)
 			assert.Empty(t, configPath)
 		})
 
 		t.Run("returns the given config path", func(t *testing.T) {
-			_, configPath, err := config.LoadConfiguration(fs, []string{params.Config, minimalConfigPath})
+			_, configPath, err := config.LoadConfiguration(fs, version, []string{params.Config, minimalConfigPath})
 			require.NoError(t, err)
 			assert.Equal(t, minimalConfigPath, configPath)
 		})
@@ -331,11 +329,16 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, _, err := config.LoadConfiguration(fs, testCase.args)
+				_, _, err := config.LoadConfiguration(fs, version, testCase.args)
 				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
 	})
+}
+
+func TestLoadConfiguration_VersionFlag(t *testing.T) {
+	_, _, err := config.LoadConfiguration(afero.NewMemMapFs(), "1.2.3", []string{"--version"})
+	require.ErrorIs(t, err, config.ErrVersionRequested)
 }
 
 func TestUncorsConfigValidator(t *testing.T) {

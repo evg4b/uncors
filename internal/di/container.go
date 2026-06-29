@@ -3,6 +3,7 @@ package di
 import (
 	"errors"
 	"io"
+	"os"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
@@ -15,6 +16,7 @@ import (
 type Container struct {
 	fs      afero.Fs
 	stdout  io.Writer
+	args    []string
 	version string
 
 	cliOutput            factory[contracts.Output]
@@ -47,12 +49,19 @@ func WithFs(fs afero.Fs) ContainerOption {
 	}
 }
 
+func WithArgs(args []string) ContainerOption {
+	return func(c *Container) {
+		c.args = args
+	}
+}
+
 func NewContainer(options ...ContainerOption) *Container {
 	container := &Container{
 		fs:      afero.NewMemMapFs(),
 		stdout:  io.Discard,
 		version: "0.0.0",
 		closers: []io.Closer{},
+		args:    os.Args,
 	}
 
 	container = helpers.ApplyOptions(container, options)

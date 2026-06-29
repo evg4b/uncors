@@ -2,13 +2,11 @@ package di
 
 import "github.com/evg4b/uncors/internal/contracts"
 
-type OverrideFunc func(c *Container)
-
-func (c *Container) Override(action OverrideFunc) {
+func (c *Container) Override(action ContainerOption) {
 	action(c)
 }
 
-func OverrideCliOutput(factory func() contracts.Output) OverrideFunc {
+func WithCliOutput(factory func() contracts.Output) ContainerOption {
 	return func(c *Container) {
 		c.cliOutput = newFactory(factory)
 	}
