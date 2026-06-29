@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -21,37 +23,49 @@ var (
 
 const UncorsTestVrsion = "v1.2.3"
 
-func UncorsCommand(t *testing.T, args []string) *exec.Cmd {
+func SetupBin(_ *testing.M) {
 	compile.Do(func() {
-		tmp := t.TempDir()
+		//nolint:usetesting // intentional: binary lifetime must span all tests, not one subtest
+		tmp, err := os.MkdirTemp("", "uncors-test-*")
+		if err != nil {
+			panic(err)
+		}
+
 		bin = filepath.Join(tmp, "uncors")
-		cmd := exec.Command(
-			"go",
-			"build",
+		cmd := exec.CommandContext(
+			context.Background(),
+			"go", "build",
 			"-o", bin,
-			"-ldflags",
-			fmt.Sprintf("-s -w -X 'main.Version=%s'", UncorsTestVrsion),
-			RepoRoot(t),
+			"-ldflags", fmt.Sprintf("-s -w -X 'main.Version=%s'", UncorsTestVrsion),
+			repoRootPath(),
 		)
-		_, err := cmd.CombinedOutput()
+
+		_, err = cmd.CombinedOutput()
 		if err != nil {
 			panic(err)
 		}
 	})
+}
 
+func UncorsCommand(t *testing.T, args []string) *exec.Cmd {
 	return exec.CommandContext(t.Context(), bin, args...)
 }
 
-func RepoRoot(t *testing.T) string {
-
-	t.Helper()
+func repoRootPath() string {
 	repoRootOnce.Do(func() {
-		out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}").Output()
+		out, err := exec.CommandContext(context.Background(), "go", "list", "-m", "-f", "{{.Dir}}").Output()
 		if err != nil {
-			t.Fatalf("failed to determine repository root: %v", err)
+			panic(fmt.Sprintf("failed to determine repository root: %v", err))
 		}
+
 		repoRoot = strings.TrimSpace(string(out))
 	})
-	return repoRoot
 
+	return repoRoot
+}
+
+func RepoRoot(t *testing.T) string {
+	t.Helper()
+
+	return repoRootPath()
 }
