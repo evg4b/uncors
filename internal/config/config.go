@@ -50,6 +50,8 @@ func LoadConfiguration(fs afero.Fs, flags *Flags) (*UncorsConfig, error) {
 		return nil, err
 	}
 
+	warnAboutShadowedRoutes(cfg)
+
 	return cfg, nil
 }
 

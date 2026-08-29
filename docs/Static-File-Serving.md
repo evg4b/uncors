@@ -70,14 +70,17 @@ mappings:
 
 ## Proxy Mode
 
-Proxy mode serves local files when they exist, but forwards unmatched requests
-to the upstream server or mock handlers.
+Proxy mode serves local files when they exist and forwards everything else
+upstream.
 
 **How it works:**
 
- 1. Requests matching the `path` prefix are checked against local files
- 2. If a file exists locally, it is served from `dir`
- 3. If no file exists, the request passes to the next handler (mock or upstream)
+ 1. Mocks, scripts and rewrites are matched first — a static mount never hides
+    them, whatever path it is mounted on (see
+    [Route Precedence](Configuration#route-precedence))
+ 2. Requests matching the `path` prefix are then checked against local files
+ 3. If a file exists locally, it is served from `dir`
+ 4. If no file exists, the request is forwarded to `to:`
 
 **Configuration:**
 
@@ -133,6 +136,8 @@ mappings:
 
 In this configuration:
 
- - SPA files are served from the root path `/`
- - The `/api/health` endpoint is mocked
- - All other `/api/*` requests are proxied to `https://api.example.com`
+ - `/api/health` is answered by the mock — mocks are matched before static
+   mounts, so mounting the SPA at `/` does not hide them
+ - Every other `/api/*` request is proxied to `https://api.example.com`
+ - Everything else is served from the SPA build, falling back to `index.html` so
+   that client-side routes work on a full page load
