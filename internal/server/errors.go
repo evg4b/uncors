@@ -12,9 +12,6 @@ var (
 	// ErrNoSNIProvided is returned when no SNI is provided in the client hello.
 	ErrNoSNIProvided = errors.New("no SNI provided in client hello")
 
-	// ErrNoCertificateForHost is returned when no certificate is available for the requested host.
-	ErrNoCertificateForHost = errors.New("no certificate available for host")
-
 	// ErrCACertExpired is returned when the CA certificate has already expired.
 	ErrCACertExpired = errors.New("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
 

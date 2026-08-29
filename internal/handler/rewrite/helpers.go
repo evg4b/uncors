@@ -24,7 +24,3 @@ func GetRewriteHost(request *http.Request) (string, error) {
 
 	return "", ErrInvalidHost
 }
-
-func IsRewriteRequest(request *http.Request) bool {
-	return request.Context().Value(RewriteHostKey) != nil
-}

@@ -10,29 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIsRewriteRequest(t *testing.T) {
-	t.Run("returns true when rewrite host exists", func(t *testing.T) {
-		ctx := context.WithValue(t.Context(), rewrite.RewriteHostKey, "example.com")
-		request := &http.Request{}
-
-		result := rewrite.IsRewriteRequest(
-			request.WithContext(ctx),
-		)
-
-		assert.True(t, result)
-	})
-
-	t.Run("returns false when rewrite host is not set", func(t *testing.T) {
-		request := &http.Request{}
-
-		result := rewrite.IsRewriteRequest(
-			request.WithContext(t.Context()),
-		)
-
-		assert.False(t, result)
-	})
-}
-
 func TestGetRewriteHost(t *testing.T) {
 	t.Run("returns host when exists", func(t *testing.T) {
 		expected := "example.com"

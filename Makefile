@@ -19,7 +19,7 @@ CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE)
 .DEFAULT_GOAL := all
 
 # Phony targets (targets that don't represent files)
-.PHONY: all help clean format upgrade test test-integration test-cover build build-release install check colors
+.PHONY: all help clean format upgrade test test-integration test-cover build build-release install check dead-code colors
 
 # Target descriptions and implementations
 
@@ -93,6 +93,12 @@ clean:
 	@gum style --foreground 11 "Cleaning generated files..."
 	@rm -rf $(CLEAN_FILES)
 
-## check: Run format, test, and build (quality checks)
-check: format test build
+## dead-code: Report functions under internal/ that nothing can reach
+dead-code:
+	@gum style --foreground 11 "Checking for dead code..."
+	@$(GO) run golang.org/x/tools/cmd/deadcode@v0.49.0 \
+		-test -filter '^github.com/evg4b/uncors/internal/' ./... | tee /dev/stderr | (! grep -q .)
+
+## check: Run format, test, dead-code and build (quality checks)
+check: format test dead-code build
 	@gum style --bold --foreground 10 "✓ All checks passed!"

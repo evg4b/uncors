@@ -24,6 +24,20 @@ jobs:
         with:
           version: v2.12.2
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # golangci-lint's `unused` does not report exported declarations, which is
+      # how a dead request printer and an unimplemented Logger interface lived in
+      # the tree unnoticed. Reachability analysis does, and everything under
+      # internal/ is ours, so an unreachable function there is dead code.
+      - name: Check for dead code
+        run: |
+          go run golang.org/x/tools/cmd/deadcode@v0.49.0 \
+            -test -filter '^github.com/evg4b/uncors/internal/' ./... | tee /dev/stderr | (! grep -q .)
+
   test:
     name: Test code
     runs-on: ubuntu-latest
