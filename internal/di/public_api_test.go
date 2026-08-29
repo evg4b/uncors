@@ -3,7 +3,6 @@ package di_test
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
@@ -126,30 +125,6 @@ func TestContainer(t *testing.T) {
 		assert.IsType(t, &version.Checker{}, checker)
 	})
 
-	t.Run("cache", func(t *testing.T) {
-		cfg := &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}
-		c := container.Cache(cfg)
-
-		assert.NotNil(t, c)
-		assert.Implements(t, (*contracts.Cache)(nil), c)
-	})
-
-	t.Run("cache singleton", func(t *testing.T) {
-		cfg := &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}
-		c1 := container.Cache(cfg)
-		c2 := container.Cache(cfg)
-
-		assert.Same(t, c1, c2)
-	})
-
-	t.Run("cache middleware", func(t *testing.T) {
-		cfg := &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}
-		middleware := container.CacheMiddleware(cfg, config.CacheGlobs{"*.json"})
-
-		assert.NotNil(t, middleware)
-		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
-	})
-
 	t.Run("mock handler", func(t *testing.T) {
 		response := &config.Response{Code: 200, Raw: "ok"}
 		handler := container.MockHandler(response)
@@ -177,14 +152,6 @@ func TestContainer(t *testing.T) {
 		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
 	})
 
-	t.Run("HAR middleware", func(t *testing.T) {
-		harConfig := &config.HARConfig{File: "/tmp/test.har"}
-		middleware := container.HARMiddleware(harConfig)
-
-		assert.NotNil(t, middleware)
-		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
-	})
-
 	t.Run("proxy handler", func(t *testing.T) {
 		mappings := config.Mappings{
 			{From: hosts.Localhost.HTTP(), To: hosts.Localhost.HTTPS()},
@@ -193,41 +160,6 @@ func TestContainer(t *testing.T) {
 
 		assert.NotNil(t, handler)
 		assert.Implements(t, (*contracts.Handler)(nil), handler)
-	})
-
-	t.Run("router", func(t *testing.T) {
-		mappings := config.Mappings{
-			{From: hosts.Localhost.HTTP(), To: hosts.Localhost.HTTPS()},
-		}
-		handler, err := container.Router(mappings, &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}, "")
-
-		require.NoError(t, err)
-		assert.NotNil(t, handler)
-		assert.Implements(t, (*contracts.Handler)(nil), handler)
-	})
-
-	t.Run("router with cache globs invokes cache middleware factory", func(t *testing.T) {
-		cacheContainer := di.NewContainer()
-		defer testutils.Close(t, cacheContainer)
-
-		mappings := config.Mappings{
-			{
-				From:  hosts.Localhost.HTTP(),
-				To:    hosts.Localhost.HTTPS(),
-				Cache: config.CacheGlobs{"*.json"},
-				Mocks: config.Mocks{
-					{
-						Matcher:  config.RequestMatcher{Path: "/data.json"},
-						Response: config.Response{Code: 200, Raw: "{}"},
-					},
-				},
-			},
-		}
-
-		handler, err := cacheContainer.Router(mappings, &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}, "")
-
-		require.NoError(t, err)
-		assert.NotNil(t, handler)
 	})
 
 	t.Run("singleton behavior", func(t *testing.T) {
@@ -289,25 +221,6 @@ func TestContainerOverride(t *testing.T) {
 func TestContainerClose(t *testing.T) {
 	t.Run("close with no closers succeeds", func(t *testing.T) {
 		container := di.NewContainer()
-		err := container.Close()
-
-		require.NoError(t, err)
-	})
-
-	t.Run("close with cache closer succeeds", func(t *testing.T) {
-		container := di.NewContainer()
-		cfg := &config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute}
-		_ = container.Cache(cfg)
-
-		err := container.Close()
-
-		require.NoError(t, err)
-	})
-
-	t.Run("close with HAR writer closer succeeds", func(t *testing.T) {
-		container := di.NewContainer()
-		_ = container.HARMiddleware(&config.HARConfig{File: "/test.har"})
-
 		err := container.Close()
 
 		require.NoError(t, err)

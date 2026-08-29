@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/evg4b/uncors/internal/commands"
-	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
@@ -22,7 +21,6 @@ type Container struct {
 	generateCertsCommand factory[*commands.GenerateCertsCommand]
 	hostCertManager      factory[*server.HostCertManager]
 	server               factory[*server.Server]
-	cache                factory1[contracts.Cache, *config.CacheConfig]
 
 	closers []io.Closer
 }
@@ -62,7 +60,6 @@ func NewContainer(options ...ContainerOption) *Container {
 	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)
-	container.cache = newFactory1(container.newCache)
 
 	return container
 }
