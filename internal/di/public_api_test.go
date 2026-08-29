@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
@@ -76,13 +75,6 @@ func TestContainer(t *testing.T) {
 
 		assert.NotNil(t, tracker)
 		assert.IsType(t, &server.RequestTracker{}, tracker)
-	})
-
-	t.Run("generate certs command", func(t *testing.T) {
-		cmd := container.GenerateCertsCommand()
-
-		assert.NotNil(t, cmd)
-		assert.IsType(t, &commands.GenerateCertsCommand{}, cmd)
 	})
 
 	t.Run("host cert manager", func(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
@@ -40,10 +39,6 @@ func (c *Container) CliOutput() contracts.Output {
 
 func (c *Container) RequestTracker() *server.RequestTracker {
 	return c.requestTracker()
-}
-
-func (c *Container) GenerateCertsCommand() *commands.GenerateCertsCommand {
-	return c.generateCertsCommand()
 }
 
 func (c *Container) Server() *server.Server {

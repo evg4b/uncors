@@ -82,6 +82,19 @@ func makeTestFs(t *testing.T) afero.Fs {
 	})
 }
 
+// loadWithArgs parses the command line the way the CLI does and then loads the
+// configuration, which is the flow under test.
+func loadWithArgs(t *testing.T, fs afero.Fs, args []string) (*config.UncorsConfig, error) {
+	t.Helper()
+
+	flags, err := config.ParseFlags(args)
+	if err != nil {
+		return nil, err
+	}
+
+	return config.LoadConfiguration(fs, flags)
+}
+
 func TestLoadConfiguration(t *testing.T) {
 	fs := makeTestFs(t)
 
@@ -249,7 +262,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, _, err := config.LoadConfiguration(fs, testCase.args)
+				actual, err := loadWithArgs(t, fs, testCase.args)
 				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected, actual)
@@ -260,14 +273,24 @@ func TestLoadConfiguration(t *testing.T) {
 	t.Run("returns config file path", func(t *testing.T) {
 		t.Run("empty when no config file flag", func(t *testing.T) {
 			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
-			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), args)
+			flags, err := config.ParseFlags(args)
 			require.NoError(t, err)
+
+			_, err = config.LoadConfiguration(afero.NewMemMapFs(), flags)
+			require.NoError(t, err)
+
+			configPath := flags.ConfigPath()
 			assert.Empty(t, configPath)
 		})
 
 		t.Run("returns the given config path", func(t *testing.T) {
-			_, configPath, err := config.LoadConfiguration(fs, []string{params.Config, minimalConfigPath})
+			flags, err := config.ParseFlags([]string{params.Config, minimalConfigPath})
 			require.NoError(t, err)
+
+			_, err = config.LoadConfiguration(fs, flags)
+			require.NoError(t, err)
+
+			configPath := flags.ConfigPath()
 			assert.Equal(t, minimalConfigPath, configPath)
 		})
 	})
@@ -331,7 +354,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, _, err := config.LoadConfiguration(fs, testCase.args)
+				_, err := loadWithArgs(t, fs, testCase.args)
 				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}

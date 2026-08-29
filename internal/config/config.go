@@ -17,37 +17,33 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
-	flags := defineFlags()
-
-	err := flags.Parse(args)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed parsing flags: %w", err)
-	}
-
+// LoadConfiguration reads the configuration file the flags point at and applies
+// the flag overrides on top of it. Parsing the command line is the caller's job,
+// so that a reload re-reads only the file.
+func LoadConfiguration(fs afero.Fs, flags *Flags) (*UncorsConfig, error) {
 	cfg := defaultConfig()
-	configPath, _ := flags.GetString("config")
 
+	configPath := flags.ConfigPath()
 	if configPath != "" {
 		err := readYAMLFile(fs, cfg, configPath)
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 	}
 
-	err = applyFlagOverrides(cfg, flags)
+	err := applyFlagOverrides(cfg, flags.set)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	cfg.Mappings = NormaliseMappings(cfg.Mappings)
 
 	err = cfg.Validate(fs)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return cfg, configPath, nil
+	return cfg, nil
 }
 
 func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {

@@ -5,7 +5,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -24,12 +23,11 @@ type Container struct {
 	output  contracts.Output
 	version string
 
-	cliOutput            func() contracts.Output
-	clients              func() *infra.ClientPool
-	requestTracker       func() *server.RequestTracker
-	generateCertsCommand func() *commands.GenerateCertsCommand
-	hostCertManager      func() *server.HostCertManager
-	server               func() *server.Server
+	cliOutput       func() contracts.Output
+	clients         func() *infra.ClientPool
+	requestTracker  func() *server.RequestTracker
+	hostCertManager func() *server.HostCertManager
+	server          func() *server.Server
 
 	closers []io.Closer
 }
@@ -85,7 +83,6 @@ func NewContainer(options ...ContainerOption) *Container {
 	container.cliOutput = sync.OnceValue(container.newCliOutput)
 	container.clients = sync.OnceValue(infra.NewClientPool)
 	container.requestTracker = sync.OnceValue(server.NewRequestTracker)
-	container.generateCertsCommand = sync.OnceValue(container.newGenerateCertsCommand)
 	container.hostCertManager = sync.OnceValue(container.newHostCertManager)
 	container.server = sync.OnceValue(container.newServer)
 

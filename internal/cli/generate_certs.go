@@ -1,6 +1,7 @@
-package commands
+package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +28,7 @@ type GenerateCertsCommand struct {
 }
 
 // NewGenerateCertsCommand creates a new generate-certs command.
-func NewGenerateCertsCommand(options ...Option) *GenerateCertsCommand {
+func NewGenerateCertsCommand(options ...GenerateCertsOption) *GenerateCertsCommand {
 	return helpers.ApplyOptions(&GenerateCertsCommand{}, options)
 }
 
@@ -95,4 +96,24 @@ func (c *GenerateCertsCommand) Execute() error {
 	)
 
 	return nil
+}
+
+// generateCertsCommand exposes the CA generation as a subcommand.
+func generateCertsCommand() Command {
+	var command *GenerateCertsCommand
+
+	return Command{
+		Name:  "generate-certs",
+		Short: "Generate the local CA certificate used for HTTPS mappings",
+		Flags: func(set *pflag.FlagSet) {
+			command = NewGenerateCertsCommand()
+			command.DefineFlags(set)
+		},
+		Run: func(_ context.Context, env Env, _ *pflag.FlagSet) error {
+			command.fs = env.Fs
+			command.output = env.Console
+
+			return command.Execute()
+		},
+	}
 }

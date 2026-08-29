@@ -1,11 +1,11 @@
-package commands_test
+package cli_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/commands"
+	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
@@ -23,9 +23,9 @@ const (
 func TestNewGenerateCertsCommand(t *testing.T) {
 	t.Run("should create new command", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		assert.NotNil(t, cmd)
 	})
@@ -34,9 +34,9 @@ func TestNewGenerateCertsCommand(t *testing.T) {
 func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 	t.Run("should define validity-days flag", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
@@ -49,9 +49,9 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 
 	t.Run("should define force flag", func(t *testing.T) {
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
@@ -74,9 +74,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
@@ -107,9 +107,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
@@ -141,18 +141,18 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd1 := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd2 := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
@@ -168,9 +168,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		cmd1 := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd1 := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd1.DefineFlags(flags1)
@@ -184,9 +184,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		cmd2 := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd2 := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd2.DefineFlags(flags2)
@@ -211,9 +211,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		t.Setenv("HOME", fakeHome)
 
 		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
+		cmd := cli.NewGenerateCertsCommand(
+			cli.WithFs(fs),
+			cli.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 		cmd.DefineFlags(flags)
@@ -231,8 +231,8 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		content  []byte
 		wantErr  error
 	}{
-		{"only cert file", caCertFile, []byte("cert"), commands.ErrCAAlreadyExists},
-		{"only key file", caKeyFile, []byte("key"), commands.ErrCAKeyAlreadyExists},
+		{"only cert file", caCertFile, []byte("cert"), cli.ErrCAAlreadyExists},
+		{"only key file", caKeyFile, []byte("key"), cli.ErrCAKeyAlreadyExists},
 	} {
 		t.Run("should fail when "+testCase.name+" exists without force flag", func(t *testing.T) {
 			tmpDir := t.TempDir()
@@ -246,9 +246,9 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			require.NoError(t, os.WriteFile(filepath.Join(caDir, testCase.filename), testCase.content, 0o600))
 
 			fs := afero.NewOsFs()
-			cmd := commands.NewGenerateCertsCommand(
-				commands.WithFs(fs),
-				commands.WithOutput(mocks.NoopOutput()),
+			cmd := cli.NewGenerateCertsCommand(
+				cli.WithFs(fs),
+				cli.WithOutput(mocks.NoopOutput()),
 			)
 			flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 			cmd.DefineFlags(flags)
