@@ -13,12 +13,9 @@ import (
 	"github.com/evg4b/uncors/internal/tui"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/spf13/afero"
 )
 
 type Uncors struct {
-	fs afero.Fs
-
 	output    contracts.Output
 	server    *server.Server
 	container *di.Container
@@ -31,7 +28,6 @@ type Uncors struct {
 
 func CreateUncors(container *di.Container) *Uncors {
 	return &Uncors{
-		fs:        container.Fs(),
 		output:    container.CliOutput(),
 		container: container,
 		server:    container.Server(),

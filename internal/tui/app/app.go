@@ -24,10 +24,9 @@ const (
 type UncorsApp struct {
 	keys keyMap
 
-	app       *uncors.Uncors
-	output    *Output
-	tracker   server.IRequestTracker
-	container *di.Container
+	app     *uncors.Uncors
+	output  *Output
+	tracker server.IRequestTracker
 
 	outputCh   <-chan string
 	logCh      <-chan string
@@ -35,8 +34,7 @@ type UncorsApp struct {
 	appDone    <-chan struct{}
 	cancel     context.CancelFunc
 
-	cfg        *config.UncorsConfig
-	configPath string
+	cfg *config.UncorsConfig
 
 	reloader *uncors.Reloader
 	runner   *uncors.Runner
@@ -86,14 +84,12 @@ func NewUncorsApp(
 		app:           app,
 		output:        output,
 		tracker:       container.RequestTracker(),
-		container:     container,
 		outputCh:      output.Lines(),
 		logCh:         logRecords(),
 		appContext:    func() context.Context { return appCtx },
 		appDone:       appCtx.Done(),
 		cancel:        cancel,
 		cfg:           cfg,
-		configPath:    configPath,
 		reloader:      reloader,
 		runner:        uncors.NewRunner(app, reloader, output, checkVersion),
 		historyWidget: historyWidget,

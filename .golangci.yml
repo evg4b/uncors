@@ -25,6 +25,10 @@ linters:
     - wrapcheck
     - wsl
   settings:
+    unused:
+      # A field that is only ever written is dead weight, and the default hides
+      # exactly the leftovers a refactor produces.
+      field-writes-are-uses: false
     varnamelen:
       ignore-names:
         - form

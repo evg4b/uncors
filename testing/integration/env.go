@@ -40,10 +40,9 @@ type Env struct {
 }
 
 type route struct {
-	pattern string
-	match   func(string) bool
-	port    int
-	scheme  string
+	match  func(string) bool
+	port   int
+	scheme string
 }
 
 // Option customises the Env.
@@ -102,10 +101,9 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 
 		resolver.Set(from.Hostname, loopback)
 		env.routes = append(env.routes, route{
-			pattern: from.Hostname,
-			match:   compileHostPattern(from.Hostname),
-			port:    port,
-			scheme:  from.Scheme,
+			match:  compileHostPattern(from.Hostname),
+			port:   port,
+			scheme: from.Scheme,
 		})
 	}
 

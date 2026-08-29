@@ -18,8 +18,7 @@ import (
 // The renderers and their buffer are built once per Output and reused, rather
 // than allocated per line.
 type Output struct {
-	ch     chan string
-	prefix string
+	ch chan string
 
 	mu          sync.Mutex
 	buf         bytes.Buffer
@@ -32,7 +31,7 @@ func NewOutput() *Output {
 }
 
 func newOutput(ch chan string, prefix string) *Output {
-	output := &Output{ch: ch, prefix: prefix}
+	output := &Output{ch: ch}
 	output.renderer = tui.NewCliOutput(&output.buf, tui.WithPrefix(prefix))
 	output.boxRenderer = tui.NewCliOutput(&output.buf)
 
