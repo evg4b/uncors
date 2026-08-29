@@ -12,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
 )
@@ -39,10 +38,9 @@ type UncorsApp struct {
 	cancel     context.CancelFunc
 
 	cfg        *config.UncorsConfig
-	loadConfig func() *config.UncorsConfig
 	configPath string
 
-	watcher *config.Watcher
+	reloader *uncors.Reloader
 
 	termHeight int
 	termWidth  int
@@ -71,7 +69,7 @@ func NewUncorsApp(
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
-	loadConfig func() *config.UncorsConfig,
+	loadConfig uncors.ConfigLoader,
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
@@ -86,9 +84,11 @@ func NewUncorsApp(
 
 	historyWidget := NewHistoryWidget(keys)
 
+	app := uncors.CreateUncors(container)
+
 	return &UncorsApp{
 		keys:          keys,
-		app:           uncors.CreateUncors(container),
+		app:           app,
 		output:        output,
 		tracker:       container.RequestTracker(),
 		container:     container,
@@ -97,8 +97,8 @@ func NewUncorsApp(
 		appDone:       appCtx.Done(),
 		cancel:        cancel,
 		cfg:           cfg,
-		loadConfig:    loadConfig,
 		configPath:    configPath,
+		reloader:      uncors.NewReloader(app, output, loadConfig, configPath),
 		historyWidget: historyWidget,
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
@@ -268,26 +268,10 @@ func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
 }
 
 func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	if m.configPath != "" {
-		watcher := config.NewWatcher(m.configPath)
-
-		err := watcher.Watch(m.appContext(), func() {
-			defer helpers.PanicInterceptor(func(value any) {
-				m.output.Errorf("Config reloading error: %v", value)
-			})
-
-			newCfg := m.loadConfig()
-
-			err := m.app.Restart(m.appContext(), newCfg)
-			if err != nil {
-				m.output.Errorf("Failed to restart server: %v", err)
-			}
-		})
-		if err != nil {
-			m.output.Errorf("Failed to watch config file: %v", err)
-		} else {
-			m.watcher = watcher
-		}
+	err := m.reloader.Start(m.appContext())
+	if err != nil {
+		log.Printf("Failed to watch config file: %v", err)
+		m.output.Errorf("Failed to watch config file: %v", err)
 	}
 
 	return m.versionCheckCmd()
@@ -319,9 +303,7 @@ func (m *UncorsApp) handleRestart() {
 func (m *UncorsApp) handleShutdown() tea.Cmd {
 	log.Println("Handling shutdown")
 
-	if m.watcher != nil {
-		_ = m.watcher.Close()
-	}
+	_ = m.reloader.Close()
 
 	_ = m.historyWidget.Close()
 
@@ -384,14 +366,9 @@ func (m *UncorsApp) shutdownCmd() tea.Cmd {
 
 func (m *UncorsApp) restartCmd() tea.Cmd {
 	return func() tea.Msg {
-		defer helpers.PanicInterceptor(func(value any) {
-			m.output.Errorf("Restart error: %v", value)
-		})
-
-		newCfg := m.loadConfig()
-
-		err := m.app.Restart(m.appContext(), newCfg)
+		err := m.reloader.Reload(m.appContext())
 		if err != nil {
+			log.Printf("Failed to restart: %v", err)
 			m.output.Errorf("Failed to restart: %v", err)
 		}
 

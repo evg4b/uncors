@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,10 +39,10 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
-		func() *config.UncorsConfig {
+		func() (*config.UncorsConfig, error) {
 			loadCalls++
 
-			return uncorsConfig
+			return uncorsConfig, nil
 		},
 	)
 
@@ -320,7 +321,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
 
 		defer func() {
 			app.cancel()
@@ -336,10 +337,9 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		cmd := app.handleServerStarted()
 
 		require.NotNil(t, cmd)
-		require.NotNil(t, app.watcher)
+		require.True(t, app.reloader.Watching())
 
-		err = app.watcher.Close()
-		require.NoError(t, err)
+		require.NoError(t, app.reloader.Close())
 	})
 
 	t.Run("logs error when config file does not exist", func(t *testing.T) {
@@ -348,7 +348,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
+		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, loader)
 
 		defer func() {
 			app.cancel()
@@ -364,7 +365,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		cmd := app.handleServerStarted()
 
 		require.NotNil(t, cmd)
-		assert.Nil(t, app.watcher)
+		assert.False(t, app.reloader.Watching())
 	})
 }
 
@@ -403,13 +404,13 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
 		select {
 		case called <- struct{}{}:
 		default:
 		}
 
-		return cfg
+		return cfg, nil
 	})
 
 	defer func() {
@@ -419,10 +420,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 		// app.closers, which would be a data race.
 		app.cancel()
 
-		if app.watcher != nil {
-			err := app.watcher.Close()
-			require.NoError(t, err)
-		}
+		require.NoError(t, app.reloader.Close())
 
 		if app.historyWidget != nil && app.historyWidget.hist != nil {
 			err := app.historyWidget.hist.Close()
@@ -433,7 +431,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	cmd := app.handleServerStarted()
 
 	require.NotNil(t, cmd)
-	require.NotNil(t, app.watcher)
+	require.True(t, app.reloader.Watching())
 
 	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
 
@@ -451,14 +449,13 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 	err = tmpFile.Close()
 	require.NoError(t, err)
 
-	ctx := t.Context()
-
-	watcher := config.NewWatcher(tmpFile.Name())
-	err = watcher.Watch(ctx, func() {})
-	require.NoError(t, err)
-
 	app, _ := newTestApp(t)
-	app.watcher = watcher
+	app.reloader = uncors.NewReloader(app.app, app.output, func() (*config.UncorsConfig, error) {
+		return app.cfg, nil
+	}, tmpFile.Name())
+
+	require.NoError(t, app.reloader.Start(t.Context()))
+	require.True(t, app.reloader.Watching())
 
 	cmd := app.handleShutdown()
 	require.NotNil(t, cmd)

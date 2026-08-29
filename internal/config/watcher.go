@@ -30,17 +30,21 @@ func NewWatcher(filePath string) *Watcher {
 }
 
 func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
-	if w.isWatching.Load() {
+	if !w.isWatching.CompareAndSwap(false, true) {
 		return errAlreadyWatching
 	}
 
 	_, err := os.Stat(w.filePath)
 	if err != nil {
+		w.isWatching.Store(false)
+
 		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
 	}
 
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		w.isWatching.Store(false)
+
 		return fmt.Errorf("failed to create file watcher: %w", err)
 	}
 
@@ -54,26 +58,38 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 	if err != nil {
 		_ = fsWatcher.Close()
 
+		w.isWatching.Store(false)
+
 		return fmt.Errorf("failed to watch config directory '%s': %w", dir, err)
 	}
 
 	w.fsWatcher = fsWatcher
-	w.isWatching.Store(true)
 
-	go w.run(ctx, onChange)
+	go w.run(ctx, fsWatcher, onChange)
 
 	return nil
 }
 
+// Close releases the file system watch. It is safe to call on a watcher that
+// was never started, and a closed watcher can be started again.
 func (w *Watcher) Close() error {
-	if w.fsWatcher != nil {
-		return w.fsWatcher.Close()
+	if !w.isWatching.CompareAndSwap(true, false) {
+		return nil
 	}
 
-	return nil
+	fsWatcher := w.fsWatcher
+	w.fsWatcher = nil
+
+	if fsWatcher == nil {
+		return nil
+	}
+
+	return fsWatcher.Close()
 }
 
-func (w *Watcher) run(ctx context.Context, onChange func()) {
+// run owns the fsnotify watcher it was handed: reading it from the struct would
+// race with Close clearing the field.
+func (w *Watcher) run(ctx context.Context, fsWatcher *fsnotify.Watcher, onChange func()) {
 	var debounce *time.Timer
 
 	defer func() {
@@ -87,14 +103,14 @@ func (w *Watcher) run(ctx context.Context, onChange func()) {
 		case <-ctx.Done():
 			return
 
-		case event, ok := <-w.fsWatcher.Events:
+		case event, ok := <-fsWatcher.Events:
 			if !ok {
 				return
 			}
 
 			w.handleEvent(event, &debounce, onChange)
 
-		case err, ok := <-w.fsWatcher.Errors:
+		case err, ok := <-fsWatcher.Errors:
 			if !ok {
 				return
 			}

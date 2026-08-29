@@ -56,7 +56,10 @@ func run() int {
 		pflag.PrintDefaults()
 	}
 
-	uncorsConfig, configPath := loadConfiguration(fs)
+	uncorsConfig, configPath, err := loadConfiguration(fs)
+	if err != nil {
+		panic(err)
+	}
 
 	if uncorsConfig.Interactive {
 		return runInteractive(container, configPath, uncorsConfig)
@@ -112,11 +115,23 @@ func runNonInteractive(
 
 	go server.RequestPrinter(tracker, output)
 
-	startConfigWatcher(ctx, container, configPath, app)
+	reloader := uncors.NewReloader(app, output, configLoader(container.Fs()), configPath)
+	defer func() {
+		closeErr := reloader.Close()
+		if closeErr != nil {
+			log.Printf("Failed to close config watcher: %v", closeErr)
+		}
+	}()
 
 	err := app.Start(ctx, cfg)
 	if err != nil {
 		panic(err)
+	}
+
+	err = reloader.Start(ctx)
+	if err != nil {
+		log.Printf("Failed to start config watcher: %v", err)
+		output.Errorf("Failed to start config watcher: %v", err)
 	}
 
 	go startVersionChecker(ctx, container, cfg.Proxy)
@@ -138,44 +153,6 @@ func runNonInteractive(
 	return 0
 }
 
-// startConfigWatcher begins watching the config file and restarts the proxy on
-// every change. The watcher lives for the process lifetime (not closed explicitly).
-func startConfigWatcher(
-	ctx context.Context,
-	container *di.Container,
-	configPath string,
-	app *uncors.Uncors,
-) {
-	if configPath == "" {
-		return
-	}
-
-	output := container.CliOutput()
-	fs := container.Fs()
-	watcher := config.NewWatcher(configPath)
-
-	err := watcher.Watch(ctx, func() {
-		defer helpers.PanicInterceptor(func(value any) {
-			log.Printf("Config reloading error: %v", value)
-			output.Errorf("Config reloading error: %v", value)
-		})
-
-		reloaded, _ := loadConfiguration(fs)
-
-		restartErr := app.Restart(ctx, reloaded)
-		if restartErr != nil {
-			log.Printf("Failed to restart server: %v", restartErr)
-			output.Errorf("Failed to restart server: %v", restartErr)
-		}
-	})
-	if err != nil {
-		log.Printf("Failed to start config watcher: %v", err)
-		output.Errorf("Failed to start config watcher: %v", err)
-
-		return
-	}
-}
-
 // startVersionChecker waits for a short delay then checks for a newer release.
 func startVersionChecker(ctx context.Context, container *di.Container, proxy string) {
 	const checkDelay = 50 * time.Millisecond
@@ -192,11 +169,7 @@ func runInteractive(container *di.Container, configPath string, cfg *config.Unco
 		container,
 		configPath,
 		cfg,
-		func() *config.UncorsConfig {
-			reloaded, _ := loadConfiguration(container.Fs())
-
-			return reloaded
-		},
+		configLoader(container.Fs()),
 	)
 
 	_, err := tea.NewProgram(app).Run()
@@ -213,19 +186,29 @@ const (
 	logFilePerm  = 0o644
 )
 
+// configLoader returns the loader both run modes use to reload the
+// configuration. Errors are propagated so that a malformed config is reported
+// as such instead of silently becoming a nil configuration.
+func configLoader(fs afero.Fs) uncors.ConfigLoader {
+	return func() (*config.UncorsConfig, error) {
+		uncorsConfig, _, err := loadConfiguration(fs)
+
+		return uncorsConfig, err
+	}
+}
+
 // loadConfiguration loads and validates the configuration from CLI args and the
-// config file. It panics on any error so that the PanicInterceptor in run() can
-// display a human-readable message and exit cleanly.
-func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
+// config file.
+func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string, error) {
 	uncorsConfig, configPath, err := config.LoadConfiguration(fs, os.Args)
 	if err != nil {
-		panic(err)
+		return nil, "", err
 	}
 
 	if uncorsConfig.Debug {
 		logFile, err := os.OpenFile(logFileName, logFileFlags, logFilePerm)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to open log file: %v", err))
+			return nil, "", fmt.Errorf("failed to open log file: %w", err)
 		}
 
 		log.SetOutput(logFile)
@@ -234,5 +217,5 @@ func loadConfiguration(fs afero.Fs) (*config.UncorsConfig, string) {
 		log.SetOutput(io.Discard)
 	}
 
-	return uncorsConfig, configPath
+	return uncorsConfig, configPath, nil
 }
