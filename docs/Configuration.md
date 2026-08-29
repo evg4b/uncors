@@ -160,6 +160,22 @@ mappings:
 | `mappings`     | array   | `[]`    | List of host mapping configurations (see below)                           |
 | `cache-config` | object  | -       | Global cache behavior settings (see [Response Caching](Response-Caching)) |
 
+### File Paths
+
+Every path in the configuration — `statics.dir`, `mocks.response.file`,
+`scripts.file`, `har` — follows the same three rules:
+
+| Path              | Resolves to                                                |
+| ----------------- | ---------------------------------------------------------- |
+| `/srv/app/dist`   | itself; absolute paths are used as they are                |
+| `~/projects/dist` | your home directory                                        |
+| `./dist`          | the directory **containing the config file**               |
+
+Resolving relative paths against the config file rather than the working
+directory is what makes a config file portable: `uncors -c ~/projects/app/.uncors.yaml`
+works the same from anywhere. Without a config file (plain `--from`/`--to`), the
+working directory is used instead.
+
 ### Listen Address
 
 By default uncors is reachable only from the machine it runs on. It disables CORS
