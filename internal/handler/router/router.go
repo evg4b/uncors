@@ -1,21 +1,28 @@
 package router
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
 )
 
-var errHostNotMapped = errors.New("host not mapped")
+// maxRewriteRedispatch bounds how many times a request may be rewritten before
+// it is refused, so that mutually recursive rewrite rules terminate.
+const maxRewriteRedispatch = 8
 
-func setDefaultHandler(router *mux.Router, handler http.Handler) {
-	router.NotFoundHandler = handler
-	router.MethodNotAllowedHandler = handler
-}
+var (
+	errHostNotMapped = errors.New("host not mapped")
+	errRewriteLoop   = errors.New("rewrite rules redirect the request in a loop")
+)
+
+type rewriteDepthKey struct{}
 
 type Router struct {
 	*mux.Router
@@ -33,60 +40,101 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 		instance.registerMapping(mapping)
 	}
 
-	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) error {
-		// instance.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
-		// log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
+	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
+		//nolint:gosec // G706: the host is passed through SanitizeLogValue
+		log.Printf("Host %s is not mapped", helpers.SanitizeLogValue(request.Host))
+
 		return errHostNotMapped
 	}))
 
 	return &instance, nil
 }
 
+// registerMapping builds the request graph of a single mapping. The mapping gets
+// a router of its own so that its cross-cutting middleware wraps every route it
+// contains — mocks, scripts, statics and the proxy fallback alike — rather than
+// decorating one branch and silently skipping the others.
 func (r *Router) registerMapping(mapping config.Mapping) {
-	router := r.Router.Host(mapping.From.Hostname).
-		Subrouter()
+	mappingRouter := mux.NewRouter()
+	routes := mappingRouter.Host(mapping.From.Hostname).Subrouter()
 
-	defaultHandler := r.prepareDefaultHandler(mapping)
-
-	for _, staticDir := range mapping.Statics {
-		middleware := r.deps.Static(staticDir.Path, staticDir)
-		registerPrefixHandler(router, staticDir.Path, middleware(defaultHandler))
+	// The cache stays on the upstream branch on purpose: caching a mock, a
+	// script or a static file would only serve a stale copy of a response that
+	// is already produced locally.
+	upstream := r.deps.Proxy
+	if len(mapping.Cache) > 0 {
+		upstream = r.deps.Cache(mapping.Cache)(upstream)
 	}
 
+	// Registration order is the precedence policy: specific matchers first,
+	// path prefix catch-alls (statics, commonly mounted at "/") last, and the
+	// proxy fallback after everything else.
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(def *config.Mock) {
-			registerRoute(createRoute(router, def.Matcher), r.deps.Mock(&def.Response))
+			registerRoute(createRoute(routes, def.Matcher), r.deps.Mock(&def.Response))
 		})
 
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(def *config.Script) {
-			registerRoute(createRoute(router, def.Matcher), r.deps.Script(def))
+			registerRoute(createRoute(routes, def.Matcher), r.deps.Script(def))
 		})
 
-	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := r.deps.Rewrite(&rewrite)(defaultHandler)
+	// A rewritten request re-enters the mapping's routes, so that it can be
+	// answered by a mock, a script or a static file instead of always going
+	// upstream.
+	redispatch := redispatchHandler(mappingRouter)
 
-		registerPathHandler(router, rewrite.From, wrappedHandler)
+	for _, rewriting := range mapping.Rewrites {
+		registerPathHandler(routes, rewriting.From, r.deps.Rewrite(&rewriting)(redispatch))
 	}
 
-	setDefaultHandler(router, defaultHandler)
+	for _, staticDir := range mapping.Statics {
+		registerPrefixHandler(routes, staticDir.Path, r.deps.Static(staticDir.Path, staticDir)(upstream))
+	}
+
+	// The fallback is a route rather than a NotFoundHandler because gorilla/mux
+	// does not run route middleware for the latter.
+	registerRoute(routes.NewRoute(), upstream)
+
+	r.Router.Host(mapping.From.Hostname).
+		Handler(r.wrapMapping(mapping, mappingRouter))
 }
 
-func (r *Router) prepareDefaultHandler(mapping config.Mapping) http.Handler {
-	defaultHandler := r.deps.Proxy
+// wrapMapping applies the middleware that belongs to the whole mapping rather
+// than to one of its routes.
+func (r *Router) wrapMapping(mapping config.Mapping, handler http.Handler) http.Handler {
+	// A CORS preflight is a transport concern: it is answered before the router
+	// decides whether the path is a mock, a static file or a proxy target.
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = r.deps.Options(mapping.OptionsHandling)(defaultHandler)
+		handler = r.deps.Options(mapping.OptionsHandling)(handler)
 	}
 
-	if len(mapping.Cache) > 0 {
-		defaultHandler = r.deps.Cache(mapping.Cache)(defaultHandler)
-	}
-
+	// HAR records everything the mapping serves, locally produced responses
+	// included, which is what "records the traffic of a mapping" means.
 	if mapping.HAR.Enabled() {
-		defaultHandler = r.deps.HAR(&mapping.HAR)(defaultHandler)
+		handler = r.deps.HAR(&mapping.HAR)(handler)
 	}
 
-	return defaultHandler
+	return handler
+}
+
+func redispatchHandler(routes http.Handler) http.Handler {
+	return infra.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) error {
+		depth, _ := request.Context().Value(rewriteDepthKey{}).(int)
+		if depth >= maxRewriteRedispatch {
+			return errRewriteLoop
+		}
+
+		ctx := context.WithValue(request.Context(), rewriteDepthKey{}, depth+1)
+		routes.ServeHTTP(writer, request.WithContext(ctx))
+
+		return nil
+	})
+}
+
+func setDefaultHandler(router *mux.Router, handler http.Handler) {
+	router.NotFoundHandler = handler
+	router.MethodNotAllowedHandler = handler
 }

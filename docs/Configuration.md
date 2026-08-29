@@ -19,6 +19,7 @@ Settings are organized into two levels:
  - [Global Configuration Properties](#global-configuration-properties)
  - [Mapping Configuration](#mapping-configuration)
    
+    - [Route Precedence](#route-precedence)
     - [OPTIONS Request Handling](#options-request-handling)
     - [Protocol Scheme Mapping](#protocol-scheme-mapping)
     - [Named Placeholder Mapping](#named-placeholder-mapping)
@@ -166,6 +167,34 @@ for HTTP and 443 for HTTPS if omitted. Additional features like mocking, static
 file serving, and scripting can be configured per mapping. See [Response
 Mocking](Response-Mocking), [Static File Serving](Static-File-Serving), and
 [Script Handler](Script-Handler) for details.
+
+### Route Precedence
+
+Within one mapping, a request is offered to the configured handlers in a fixed
+order, from the most specific to the most general:
+
+1. **Mocks** — those with a method, header or query matcher first, then the ones
+   matched by path alone.
+2. **Scripts** — same two-step order as mocks.
+3. **Rewrites** — a rewritten request re-enters this list from the top, so it can
+   be answered by a mock, a script or a static file. Rewrites that keep
+   redirecting a request into each other are stopped after 8 rounds.
+4. **Statics** — path-prefix mounts are tried after everything above, so a static
+   directory mounted at `/` (the usual SPA setup) no longer shadows the mocks and
+   scripts of the same mapping.
+5. **The proxy** — anything nothing above claimed is forwarded to `to:`. A static
+   mount whose file (and index file) is missing also falls through to here.
+
+Two features apply to the whole mapping rather than to a single route:
+
+- **`options-handling`** answers CORS preflights before any of the above is
+  consulted, so a preflight to a mocked path is handled like any other.
+- **`har`** records every response the mapping produces, including mocked,
+  scripted and statically served ones.
+
+**`cache` applies only to proxied responses.** Locally produced responses
+(mocks, scripts, statics) are cheap to produce and change whenever the config
+changes, so caching them would only serve stale copies.
 
 ### OPTIONS Request Handling
 
