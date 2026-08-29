@@ -49,6 +49,21 @@ var (
 	userIDHeader = "User-Id"
 )
 
+// newRuntime builds a configuration generation to act as the router's factory
+// source; closing it releases everything the router created.
+func newRuntime(t *testing.T, container *di.Container) *di.Runtime {
+	t.Helper()
+
+	runtime, err := container.BuildRuntime(&config.UncorsConfig{})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		require.NoError(t, runtime.Close())
+	})
+
+	return runtime
+}
+
 func cacheFactory() router.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
@@ -172,7 +187,7 @@ func TestRouter(t *testing.T) {
 		mappings,
 		router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
 		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		router.WithDiContainer(container),
+		router.WithDiContainer(newRuntime(t, container)),
 	)
 	require.NoError(t, err)
 
@@ -362,7 +377,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -405,7 +420,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -458,7 +473,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 
 				return cacheFactory()(globs)
 			}),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -495,7 +510,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -535,7 +550,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 				},
 				router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithDiContainer(container),
+				router.WithDiContainer(newRuntime(t, container)),
 			)
 			require.NoError(t, err)
 
@@ -594,7 +609,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 						}, nil
 					}))),
 				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithDiContainer(container),
+				router.WithDiContainer(newRuntime(t, container)),
 			)
 			require.NoError(t, err)
 
@@ -703,7 +718,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 					}, nil
 				}))),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -809,7 +824,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
@@ -915,7 +930,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(container),
+			router.WithDiContainer(newRuntime(t, container)),
 		)
 		require.NoError(t, err)
 
