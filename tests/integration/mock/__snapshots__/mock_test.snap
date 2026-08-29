@@ -38,6 +38,9 @@ Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 Content-Length: 0
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: mock.local:<port>
+X-Forwarded-Proto: https
 
 
 ---

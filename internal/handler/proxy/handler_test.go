@@ -327,7 +327,7 @@ func TestProxyHandler(t *testing.T) {
 		handler.ServeHTTP(infra.NewResponseRecorder(recorder), req)
 	})
 
-	t.Run("should return error when http client fails", func(t *testing.T) {
+	t.Run("should answer 502 when the upstream request fails", func(t *testing.T) {
 		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(_ *http.Request) (*http.Response, error) {
 			return nil, errNetworkError
 		})
@@ -348,9 +348,9 @@ func TestProxyHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		responseWriter := infra.NewResponseRecorder(recorder)
 
-		handlerErr := handler.Serve(responseWriter, req)
+		require.NoError(t, handler.Serve(responseWriter, req))
 
-		assert.ErrorIs(t, handlerErr, errNetworkError)
+		assert.Equal(t, http.StatusBadGateway, recorder.Code)
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
@@ -423,6 +423,84 @@ func TestProxyHandler(t *testing.T) {
 					assert.Equal(t, testCase.expected, recorder.Header())
 				})
 			}
+		})
+	})
+}
+
+func TestProxyHandlerForwarding(t *testing.T) {
+	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
+	})
+
+	newRequest := func(t *testing.T) *http.Request {
+		t.Helper()
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/app", nil)
+		require.NoError(t, err)
+
+		request.Host = "premium.local.com"
+		request.RemoteAddr = "10.1.2.3:4567"
+		helpers.NormaliseRequest(request)
+
+		return request
+	}
+
+	serve := func(t *testing.T, request *http.Request, inspect func(*http.Request)) *httptest.ResponseRecorder {
+		t.Helper()
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(testutils.NewTestClient(func(outbound *http.Request) *http.Response {
+				inspect(outbound)
+
+				return &http.Response{
+					Status:     http.StatusText(http.StatusOK),
+					StatusCode: http.StatusOK,
+					Header:     http.Header{},
+					Body:       io.NopCloser(strings.NewReader("")),
+					Request:    outbound,
+				}
+			})),
+			proxy.WithURLReplacerFactory(replacerFactory),
+			proxy.WithOutput(mocks.NoopOutput()),
+		)
+
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
+
+		return recorder
+	}
+
+	t.Run("does not forward hop-by-hop headers", func(t *testing.T) {
+		request := newRequest(t)
+		request.Header.Set("Connection", "keep-alive, X-Custom-Hop")
+		request.Header.Set("X-Custom-Hop", "dropped")
+		request.Header.Set(headers.ProxyAuthorization, "Basic dGVzdA==")
+
+		serve(t, request, func(outbound *http.Request) {
+			assert.Empty(t, outbound.Header.Get("Connection"))
+			assert.Empty(t, outbound.Header.Get("X-Custom-Hop"))
+			assert.Empty(t, outbound.Header.Get(headers.ProxyAuthorization))
+		})
+	})
+
+	t.Run("announces the original client", func(t *testing.T) {
+		serve(t, newRequest(t), func(outbound *http.Request) {
+			assert.Equal(t, "10.1.2.3", outbound.Header.Get(headers.XForwardedFor))
+			assert.Equal(t, "premium.local.com", outbound.Header.Get("X-Forwarded-Host"))
+			assert.Equal(t, "http", outbound.Header.Get(headers.XForwardedProto))
+		})
+	})
+
+	t.Run("keeps path and query while replacing the host", func(t *testing.T) {
+		request := newRequest(t)
+		request.URL.RawQuery = "q=a%20b&x=1"
+
+		serve(t, request, func(outbound *http.Request) {
+			assert.Equal(t, "premium.api.com", outbound.URL.Host)
+			assert.Equal(t, "https", outbound.URL.Scheme)
+			assert.Equal(t, "/app", outbound.URL.Path)
+			assert.Equal(t, "q=a%20b&x=1", outbound.URL.RawQuery)
+			assert.Equal(t, "premium.api.com", outbound.Host)
 		})
 	})
 }

@@ -4,6 +4,9 @@ GET /users HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: api.example.local:<port>
+X-Forwarded-Proto: https
 
 
 ---
@@ -28,6 +31,9 @@ GET /catalog HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: shop.local:<port>
+X-Forwarded-Proto: https
 
 
 ---

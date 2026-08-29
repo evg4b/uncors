@@ -3,6 +3,7 @@ package urlreplacer
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -100,6 +101,31 @@ func (r *Replacer) Replace(source string) (string, error) {
 	}
 
 	return replaced, nil
+}
+
+// ReplaceURL rewrites the scheme and host of a URL, carrying the path, query and
+// fragment across untouched. Placeholders are host-only, so there is nothing in
+// the rest of the URL to substitute, and the request path never has to survive a
+// render-match-reparse round trip.
+func (r *Replacer) ReplaceURL(source *url.URL) (*url.URL, error) {
+	replaced, err := r.Replace(source.Scheme + "://" + source.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	parsed, err := url.Parse(replaced)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse replaced url '%s': %w", replaced, err)
+	}
+
+	result := *source
+	result.Host = parsed.Host
+
+	if parsed.Scheme != "" {
+		result.Scheme = parsed.Scheme
+	}
+
+	return &result, nil
 }
 
 func (r *Replacer) ReplaceSoft(source string) string {

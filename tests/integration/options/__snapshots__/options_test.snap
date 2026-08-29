@@ -18,6 +18,9 @@ OPTIONS /any/path HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: options.local:<port>
+X-Forwarded-Proto: https
 
 
 ---

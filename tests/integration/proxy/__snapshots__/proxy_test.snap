@@ -4,6 +4,9 @@ GET /echo HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: app.example.local:<port>
+X-Forwarded-Proto: https
 
 
 ---
@@ -28,6 +31,9 @@ GET /echo HTTP/1.1
 Host: 127.0.0.1:<port>
 Accept-Encoding: gzip
 User-Agent: <scrubbed>
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: plain.local:<port>
+X-Forwarded-Proto: http
 
 
 ---

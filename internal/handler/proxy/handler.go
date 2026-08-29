@@ -1,176 +1,159 @@
 package proxy
 
 import (
-	"fmt"
-	"io"
+	"context"
+	"log"
 	"net/http"
+	"net/http/httputil"
+	"sync"
+	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/go-http-utils/headers"
 )
+
+// flushInterval bounds how long a proxied byte may sit in the transport buffer.
+// httputil.ReverseProxy flushes immediately regardless for responses that stream
+// (text/event-stream, or an unknown content length).
+const flushInterval = 100 * time.Millisecond
+
+type replacersKey struct{}
+
+// exchange carries what the ReverseProxy hooks need about the inbound request:
+// they run after routing, and neither of them can report an error.
+type exchange struct {
+	target *urlreplacer.Replacer
+	source *urlreplacer.Replacer
+	origin string
+}
 
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
 	output    contracts.Output
+
+	proxy *httputil.ReverseProxy
+
+	// rewriteReplacers memoises the replacers built for rewrite hosts. Building
+	// them compiles two regexps, and the set of hosts comes from the config, so
+	// it is small and bounded.
+	rewriteReplacers sync.Map
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	middleware := helpers.ApplyOptions(&Handler{}, options)
+	handler := helpers.ApplyOptions(&Handler{}, options)
 
-	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middleware.output, "ProxyHandler: Output is not configured")
-	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
+	helpers.AssertIsDefined(handler.replacers, "ProxyHandler: ReplacerFactory is not configured")
+	helpers.AssertIsDefined(handler.output, "ProxyHandler: Output is not configured")
+	helpers.AssertIsDefined(handler.http, "ProxyHandler: Http client is not configured")
 
-	return middleware
+	handler.proxy = &httputil.ReverseProxy{
+		Rewrite:        rewriteRequest,
+		ModifyResponse: modifyResponse,
+		ErrorHandler:   handler.handleError,
+		Transport:      roundTripper{client: handler.http},
+		FlushInterval:  flushInterval,
+		ErrorLog:       log.Default(),
+	}
+
+	return handler
 }
 
 func (h *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	infra.HandlerFunc(h.Serve).ServeHTTP(response, request)
 }
 
-// Serve is the error returning form of ServeHTTP. ServeHTTP renders a returned
-// error as an HTTP error response; callers that want to handle it themselves
-// call Serve directly.
+// Serve is the error returning form of ServeHTTP. Only failures to resolve the
+// mapping are reported this way; upstream transport failures are rendered by the
+// proxy's error handler.
 func (h *Handler) Serve(response http.ResponseWriter, request *http.Request) error {
-	err := h.handle(response, request)
+	target, source, err := h.createReplacers(request)
 	if err != nil {
-		if request.Context().Err() != nil {
-			return err
-		}
-
 		h.output.Errorf("Proxy handler error: %v", err)
 
 		return err
 	}
 
-	return nil
-}
-
-func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
-	targetReplacer, sourceReplacer, err := h.createReplacers(req)
-	if err != nil {
-		return err
-	}
-
-	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
-	if err != nil {
-		return fmt.Errorf("failed to create request to original source: %w", err)
-	}
-
-	originalResponse, err := h.executeQuery(originalRequest)
-	if err != nil {
-		return err
-	}
-
-	defer helpers.CloseSafe(originalResponse.Body)
-
-	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer, req)
-	if err != nil {
-		return fmt.Errorf("failed to make uncors response: %w", err)
-	}
-
-	return nil
-}
-
-func (h *Handler) makeOriginalRequest(
-	req *http.Request,
-	replacer *urlreplacer.Replacer,
-) (*http.Request, error) {
-	url, err := replacer.Replace(urlt.URL_String(req.URL))
-	if err != nil {
-		return nil, fmt.Errorf("failed to replace URL: %w", err)
-	}
-
-	//nolint:gosec // G704: forwarding to user-configured target is intentional
-	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request to original server: %w", err)
-	}
-
-	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{
-		headers.Origin:  replacer.Replace,
-		headers.Referer: replacer.Replace,
+	ctx := context.WithValue(request.Context(), replacersKey{}, &exchange{
+		target: target,
+		source: source,
+		origin: request.Header.Get(headers.Origin),
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	copyCookiesToTarget(req, replacer, originalRequest)
-
-	return originalRequest, nil
-}
-
-func (h *Handler) makeUncorsResponse(
-	original *http.Response,
-	target http.ResponseWriter,
-	replacer *urlreplacer.Replacer,
-	req *http.Request,
-) error {
-	copyCookiesToSource(original, replacer, target)
-
-	err := copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: func(s string) (string, error) { //nolint:unparam
-			return replacer.ReplaceSoft(s), nil
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	origin := req.Header.Get(headers.Origin)
-	infra.WriteCorsHeaders(target.Header(), origin)
-
-	target.WriteHeader(original.StatusCode)
-
-	_, err = io.Copy(target, original.Body)
-	if err != nil {
-		return fmt.Errorf("failed to copy body to response: %w", err)
-	}
+	h.proxy.ServeHTTP(response, request.WithContext(ctx))
 
 	return nil
+}
+
+func (h *Handler) handleError(writer http.ResponseWriter, request *http.Request, err error) {
+	if request.Context().Err() != nil {
+		// The client went away; there is nobody left to report to.
+		return
+	}
+
+	h.output.Errorf("Proxy handler error: %v", err)
+	http.Error(writer, "uncors: the request to the original source failed", http.StatusBadGateway)
 }
 
 func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
 	rewriteHost, err := rewrite.GetRewriteHost(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
+		return nil, nil, err
 	}
 
 	if rewriteHost == "" {
-		targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to transform general url: %w", err)
-		}
-
-		return targetReplacer, sourceReplacer, nil
+		return h.replacers.Make(req.URL)
 	}
 
-	target, err := urlreplacer.NewReplacer(req.URL.Host, rewriteHost)
+	return h.rewriteReplacersFor(req.URL.Host, rewriteHost)
+}
+
+func (h *Handler) rewriteReplacersFor(host, rewriteHost string) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
+	key := host + "->" + rewriteHost
+
+	if cached, ok := h.rewriteReplacers.Load(key); ok {
+		pair, _ := cached.(*replacerPair)
+
+		return pair.target, pair.source, nil
+	}
+
+	target, err := urlreplacer.NewReplacer(host, rewriteHost)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	source, err := urlreplacer.NewReplacer(rewriteHost, req.URL.Host)
+	source, err := urlreplacer.NewReplacer(rewriteHost, host)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	h.rewriteReplacers.Store(key, &replacerPair{target: target, source: source})
 
 	return target, source, nil
 }
 
-func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
-	originalResponse, err := h.http.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
+type replacerPair struct {
+	target *urlreplacer.Replacer
+	source *urlreplacer.Replacer
+}
 
-	return originalResponse, nil
+// roundTripper adapts the configured HTTP client to the transport the
+// ReverseProxy drives.
+type roundTripper struct {
+	client contracts.HTTPClient
+}
+
+func (t roundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
+	// The proxy hands over a clone of the inbound request, which still carries
+	// the server side RequestURI that http.Client refuses to send. The clone
+	// belongs to this call, so clearing it in place is safe.
+	request.RequestURI = ""
+
+	return t.client.Do(request) //nolint:wrapcheck // the proxy's ErrorHandler reports it
 }
 
 type HandlerOption = func(*Handler)
