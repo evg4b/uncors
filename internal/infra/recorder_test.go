@@ -8,6 +8,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +42,7 @@ func TestResponseRecorder_Write(t *testing.T) {
 	t.Run("buffers body and still writes through when capture is enabled", func(t *testing.T) {
 		underlying := httptest.NewRecorder()
 		rec := infra.NewResponseRecorder(underlying)
-		rec.EnableBodyCapture()
+		rec.EnableBodyCapture(infra.DefaultCaptureLimit)
 
 		_, err := rec.Write([]byte("buffered"))
 		require.NoError(t, err)
@@ -74,7 +75,7 @@ func TestResponseRecorder_Captured(t *testing.T) {
 
 	t.Run("body is captured when EnableBodyCapture is called", func(t *testing.T) {
 		rec := infra.NewResponseRecorder(httptest.NewRecorder())
-		rec.EnableBodyCapture()
+		rec.EnableBodyCapture(infra.DefaultCaptureLimit)
 		_, err := rec.Write([]byte("captured"))
 		require.NoError(t, err)
 
@@ -83,8 +84,8 @@ func TestResponseRecorder_Captured(t *testing.T) {
 
 	t.Run("second EnableBodyCapture call is a no-op", func(t *testing.T) {
 		rec := infra.NewResponseRecorder(httptest.NewRecorder())
-		rec.EnableBodyCapture()
-		rec.EnableBodyCapture()
+		rec.EnableBodyCapture(infra.DefaultCaptureLimit)
+		rec.EnableBodyCapture(infra.DefaultCaptureLimit)
 		_, err := rec.Write([]byte("once"))
 		require.NoError(t, err)
 
@@ -110,4 +111,95 @@ func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
 	t.Run("implements BodyCapturer", func(_ *testing.T) {
 		var _ contracts.BodyCapturer = rec
 	})
+}
+
+func TestResponseRecorderCapabilities(t *testing.T) {
+	t.Run("forwards Flush to the underlying writer", func(t *testing.T) {
+		underlying := &flushableWriter{ResponseRecorder: httptest.NewRecorder()}
+		recorder := infra.NewResponseRecorder(underlying)
+
+		flusher, ok := any(recorder).(http.Flusher)
+		require.True(t, ok, "the recorder must be an http.Flusher, or nothing can stream")
+
+		flusher.Flush()
+
+		assert.True(t, underlying.flushed)
+	})
+
+	t.Run("is reachable through http.NewResponseController", func(t *testing.T) {
+		underlying := &flushableWriter{ResponseRecorder: httptest.NewRecorder()}
+		recorder := infra.NewResponseRecorder(underlying)
+
+		require.NoError(t, http.NewResponseController(recorder).Flush())
+		assert.True(t, underlying.flushed)
+	})
+
+	t.Run("reports that a plain writer cannot be hijacked", func(t *testing.T) {
+		recorder := infra.NewResponseRecorder(httptest.NewRecorder())
+
+		hijacker, ok := any(recorder).(http.Hijacker)
+		require.True(t, ok)
+
+		_, _, err := hijacker.Hijack()
+
+		require.ErrorIs(t, err, http.ErrNotSupported)
+	})
+}
+
+func TestResponseRecorderCaptureLimit(t *testing.T) {
+	t.Run("keeps at most the requested number of bytes", func(t *testing.T) {
+		const limit = 8
+
+		underlying := httptest.NewRecorder()
+		recorder := infra.NewResponseRecorder(underlying)
+		recorder.EnableBodyCapture(limit)
+
+		_, err := recorder.Write([]byte("0123456789abcdef"))
+		require.NoError(t, err)
+
+		capture := recorder.Captured()
+
+		assert.Equal(t, "01234567", string(capture.Body))
+		assert.True(t, capture.Truncated)
+		assert.Equal(t, "0123456789abcdef", underlying.Body.String(), "the client still gets the whole body")
+	})
+
+	t.Run("keeps the larger limit when two consumers enable capture", func(t *testing.T) {
+		recorder := infra.NewResponseRecorder(httptest.NewRecorder())
+		recorder.EnableBodyCapture(4)
+		recorder.EnableBodyCapture(16)
+
+		_, err := recorder.Write([]byte("0123456789"))
+		require.NoError(t, err)
+
+		capture := recorder.Captured()
+
+		assert.Equal(t, "0123456789", string(capture.Body))
+		assert.False(t, capture.Truncated)
+	})
+
+	t.Run("does not buffer a streamed response", func(t *testing.T) {
+		underlying := httptest.NewRecorder()
+		recorder := infra.NewResponseRecorder(underlying)
+		recorder.EnableBodyCapture(infra.DefaultCaptureLimit)
+
+		recorder.Header().Set(headers.ContentType, "text/event-stream")
+		recorder.WriteHeader(http.StatusOK)
+
+		_, err := recorder.Write([]byte("data: tick\n\n"))
+		require.NoError(t, err)
+
+		assert.Empty(t, recorder.Captured().Body)
+		assert.Equal(t, "data: tick\n\n", underlying.Body.String())
+	})
+}
+
+type flushableWriter struct {
+	*httptest.ResponseRecorder
+
+	flushed bool
+}
+
+func (w *flushableWriter) Flush() {
+	w.flushed = true
 }

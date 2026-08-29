@@ -2,10 +2,8 @@ package har
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -14,7 +12,12 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-const nanosecondsPerMillisecond = 1e6
+const (
+	nanosecondsPerMillisecond = 1e6
+
+	// truncatedBodyComment marks entries whose body exceeded the capture limit.
+	truncatedBodyComment = "body truncated by uncors: response larger than the capture limit"
+)
 
 var secureHeaderNames = map[string]bool{
 	"Cookie":              true,
@@ -43,17 +46,10 @@ func (m *Middleware) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 
-		var reqBodySize int64
-
-		if req.Body != nil && req.Body != http.NoBody {
-			var buf strings.Builder
-
-			n, _ := io.Copy(&buf, req.Body)
-			reqBodySize = n
-			_ = req.Body.Close()
-
-			req.Body = io.NopCloser(strings.NewReader(buf.String()))
-		}
+		// The request body is reported, not buffered: HAR entries never carried
+		// postData, so reading the whole body into memory bought nothing and
+		// broke streamed uploads.
+		reqBodySize := max(req.ContentLength, 0)
 
 		// The pipeline normally installs a recorder; when it did not, record
 		// into one of our own rather than giving up on the archive.
@@ -63,7 +59,7 @@ func (m *Middleware) Wrap(next http.Handler) http.Handler {
 			capturer, writer = recorder, recorder
 		}
 
-		capturer.EnableBodyCapture()
+		capturer.EnableBodyCapture(infra.DefaultCaptureLimit)
 
 		next.ServeHTTP(writer, req)
 
@@ -135,6 +131,10 @@ func (m *Middleware) buildResponse(capture contracts.ResponseCapture) Response {
 
 	rawBody := capture.Body
 	content := buildContent(rawBody, capture.Header.Get("Content-Encoding"), mimeType)
+
+	if capture.Truncated {
+		content.Comment = truncatedBodyComment
+	}
 
 	return Response{
 		Status:      capture.StatusCode,

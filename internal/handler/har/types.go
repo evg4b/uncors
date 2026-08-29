@@ -63,6 +63,9 @@ type Content struct {
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text,omitempty"`
 	Encoding string `json:"encoding,omitempty"`
+	// Comment records that the body was too large to keep in full, so that a
+	// partial body is never mistaken for a complete one.
+	Comment string `json:"comment,omitempty"`
 }
 
 // Timings breaks down request time into phases (all in ms).

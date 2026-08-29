@@ -67,7 +67,7 @@ func (m *Middleware) cacheRequest(writer http.ResponseWriter, request *http.Requ
 		capturer, writer = recorder, recorder
 	}
 
-	capturer.EnableBodyCapture()
+	capturer.EnableBodyCapture(infra.DefaultCaptureLimit)
 
 	next.ServeHTTP(writer, request)
 
@@ -76,6 +76,12 @@ func (m *Middleware) cacheRequest(writer http.ResponseWriter, request *http.Requ
 
 func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
 	if !helpers.Is2xxCode(capture.StatusCode) {
+		return
+	}
+
+	// Storing a body we only saw the beginning of would serve a corrupted
+	// response on the next hit, so oversized responses are simply not cached.
+	if capture.Truncated {
 		return
 	}
 
