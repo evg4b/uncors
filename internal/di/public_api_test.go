@@ -120,8 +120,9 @@ func TestContainer(t *testing.T) {
 	})
 
 	t.Run("version checker", func(t *testing.T) {
-		checker := container.VersionChecker("")
+		checker, err := container.VersionChecker("")
 
+		require.NoError(t, err)
 		assert.NotNil(t, checker)
 		assert.IsType(t, &version.Checker{}, checker)
 	})
@@ -156,8 +157,9 @@ func TestContainer(t *testing.T) {
 		mappings := config.Mappings{
 			{From: hosts.Localhost.HTTP(), To: hosts.Localhost.HTTPS()},
 		}
-		handler := container.ProxyHandler(mappings, "")
+		handler, err := container.ProxyHandler(mappings, "")
 
+		require.NoError(t, err)
 		assert.NotNil(t, handler)
 		assert.Implements(t, (*http.Handler)(nil), handler)
 	})

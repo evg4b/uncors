@@ -75,12 +75,22 @@ func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) co
 	)
 }
 
-func (c *Container) VersionChecker(proxy string) *version.Checker {
+// HTTPClient returns the shared client for the given upstream proxy setting.
+func (c *Container) HTTPClient(proxy string) (*http.Client, error) {
+	return c.clients().For(proxy)
+}
+
+func (c *Container) VersionChecker(proxy string) (*version.Checker, error) {
+	client, err := c.HTTPClient(proxy)
+	if err != nil {
+		return nil, err
+	}
+
 	return version.NewVersionChecker(
 		version.WithOutput(c.CliOutput()),
-		version.WithHTTPClient(infra.MakeHTTPClient(proxy)),
+		version.WithHTTPClient(client),
 		version.WithCurrentVersion(c.version),
-	)
+	), nil
 }
 
 func (c *Container) MockHandler(response *config.Response) http.Handler {
@@ -111,13 +121,18 @@ func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contrac
 	)
 }
 
-func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) http.Handler {
+func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) (http.Handler, error) {
+	client, err := c.HTTPClient(proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
 	prefix := styles.ProxyStyle.Render("PROXY")
 	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
+		proxy.WithHTTPClient(client),
 		proxy.WithOutput(output.NewPrefixOutput(prefix)),
-	))
+	)), nil
 }

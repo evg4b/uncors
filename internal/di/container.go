@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
@@ -24,6 +25,7 @@ type Container struct {
 	version string
 
 	cliOutput            func() contracts.Output
+	clients              func() *infra.ClientPool
 	requestTracker       func() *server.RequestTracker
 	generateCertsCommand func() *commands.GenerateCertsCommand
 	hostCertManager      func() *server.HostCertManager
@@ -72,7 +74,16 @@ func NewContainer(options ...ContainerOption) *Container {
 
 	container = helpers.ApplyOptions(container, options)
 
+	// The client pool is process scoped: a transport owns a connection pool and
+	// is meant to outlive any single configuration.
+	container.closers = append(container.closers, closerFn(func() error {
+		container.clients().CloseIdleConnections()
+
+		return nil
+	}))
+
 	container.cliOutput = sync.OnceValue(container.newCliOutput)
+	container.clients = sync.OnceValue(infra.NewClientPool)
 	container.requestTracker = sync.OnceValue(server.NewRequestTracker)
 	container.generateCertsCommand = sync.OnceValue(container.newGenerateCertsCommand)
 	container.hostCertManager = sync.OnceValue(container.newHostCertManager)
@@ -93,6 +104,11 @@ func (c *Container) Close() error {
 
 	return errors.Join(errs...)
 }
+
+// closerFn adapts a function to io.Closer.
+type closerFn func() error
+
+func (f closerFn) Close() error { return f() }
 
 func (c *Container) newCliOutput() contracts.Output {
 	if c.output != nil {

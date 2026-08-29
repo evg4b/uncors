@@ -133,8 +133,13 @@ func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Targ
 }
 
 func (r *Runtime) router(mappings config.Mappings, proxyURL string) (http.Handler, error) {
+	proxyHandler, err := r.container.ProxyHandler(mappings, proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
 	muxRouter, err := router.NewRouter(mappings, router.Deps{
-		Proxy:   r.container.ProxyHandler(mappings, proxyURL),
+		Proxy:   proxyHandler,
 		Static:  r.container.StaticMiddleware,
 		Rewrite: r.container.RewriteMiddleware,
 		Options: r.container.OptionsMiddleware,

@@ -373,8 +373,14 @@ func (m *UncorsApp) versionCheckCmd() tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(versionCheckDelay)
 
-		m.container.VersionChecker(m.cfg.Proxy).
-			CheckNewVersion(m.appContext())
+		checker, err := m.container.VersionChecker(m.cfg.Proxy)
+		if err != nil {
+			log.Printf("Version check failed: %v", err)
+
+			return nil
+		}
+
+		checker.CheckNewVersion(m.appContext())
 
 		return nil
 	}

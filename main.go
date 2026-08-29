@@ -167,8 +167,14 @@ func startVersionChecker(ctx context.Context, container *di.Container, proxy str
 
 	time.Sleep(checkDelay)
 
-	container.VersionChecker(proxy).
-		CheckNewVersion(ctx)
+	checker, err := container.VersionChecker(proxy)
+	if err != nil {
+		log.Printf("Version check failed: %v", err)
+
+		return
+	}
+
+	checker.CheckNewVersion(ctx)
 }
 
 // runInteractive starts the proxy in interactive TUI mode.
