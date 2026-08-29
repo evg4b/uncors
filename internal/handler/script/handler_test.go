@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/script"
@@ -33,13 +34,14 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			handler := script.NewHandler(
+			handler, err := script.NewHandler(
 				script.WithOutput(mocks.NoopOutput()),
 				script.WithScript(&config.Script{
 					Script: testCase.script,
 				}),
 				script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 			)
+			require.NoError(t, err)
 
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test/path", nil)
 			req.Header.Set(headers.UserAgent, "TestAgent/1.0")
@@ -222,13 +224,14 @@ response:WriteString("Error response")
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
+				handler, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&config.Script{
 						File: testCase.file,
 					}),
 					script.WithFileSystem(fileSystem),
 				)
+				require.NoError(t, err)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -313,13 +316,14 @@ response:WriteString("Body: " .. request.body)
 
 				testCase.setupRequest(req)
 
-				handler := script.NewHandler(
+				handler, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
+				require.NoError(t, err)
 
 				recorder := httptest.NewRecorder()
 				handler.ServeHTTP(infra.NewResponseRecorder(recorder), req)
@@ -330,7 +334,7 @@ response:WriteString("Body: " .. request.body)
 	})
 
 	t.Run("path parameters", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -342,6 +346,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/users/123/edit", nil)
 		req = testutils.SetMuxVars(req, map[string]string{
@@ -357,7 +362,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 	})
 
 	t.Run("CORS headers", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -367,6 +372,7 @@ response:WriteString("OK")
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		req.Header.Set("Origin", hosts.Example.HTTP().String())
@@ -382,60 +388,80 @@ response:WriteString("OK")
 		assert.Equal(t, testconstants.AllMethods, recorder.Header().Get(headers.AccessControlAllowMethods))
 	})
 
-	t.Run("error handling", func(t *testing.T) {
+	// A missing file and a script that does not compile are configuration
+	// errors: they are reported once, when the handler is built, instead of on
+	// every request that reaches the route.
+	t.Run("configuration errors are reported at construction", func(t *testing.T) {
 		tests := []struct {
-			name         string
-			script       config.Script
-			expectedCode int
+			name     string
+			script   config.Script
+			expected error
 		}{
 			{
-				name: "script file not found",
-				script: config.Script{
-					File: "nonexistent.lua",
-				},
-				expectedCode: http.StatusInternalServerError,
+				name:     "script file not found",
+				script:   config.Script{File: "nonexistent.lua"},
+				expected: script.ErrScriptFileNotFound,
 			},
 			{
-				name: "lua syntax error",
-				script: config.Script{
-					Script: "this is not valid lua code ###",
-				},
-				expectedCode: http.StatusInternalServerError,
+				name:     "lua syntax error",
+				script:   config.Script{Script: "this is not valid lua code ###"},
+				expected: script.ErrScriptCompilationFailed,
 			},
 			{
-				name: "lua runtime error",
-				script: config.Script{
-					Script: `
-local x = nil
-response:WriteString(x.field)  -- This will cause an error
-`,
-				},
-				expectedCode: http.StatusInternalServerError,
+				name:     "nothing configured",
+				script:   config.Script{},
+				expected: script.ErrScriptNotConfigured,
 			},
 		}
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
+				_, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&testCase.script),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
 
-				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				recorder := httptest.NewRecorder()
-
-				responseWriter := infra.NewResponseRecorder(recorder)
-
-				handlerErr := handler.Serve(responseWriter, req)
-
-				assert.Error(t, handlerErr)
+				require.ErrorIs(t, err, testCase.expected)
 			})
 		}
 	})
 
+	t.Run("a runtime error fails the request", func(t *testing.T) {
+		handler, err := script.NewHandler(
+			script.WithOutput(mocks.NoopOutput()),
+			script.WithScript(&config.Script{Script: "local x = nil\nresponse:WriteString(x.field)"}),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+		)
+		require.NoError(t, err)
+
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+		recorder := httptest.NewRecorder()
+
+		require.Error(t, handler.Serve(infra.NewResponseRecorder(recorder), req))
+	})
+
+	// A script that never returns used to pin a goroutine and an OS thread until
+	// the process was restarted.
+	t.Run("a runaway script is stopped by its timeout", func(t *testing.T) {
+		handler, err := script.NewHandler(
+			script.WithOutput(mocks.NoopOutput()),
+			script.WithScript(&config.Script{
+				Script:  "while true do end",
+				Timeout: 100 * time.Millisecond,
+			}),
+			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
+		)
+		require.NoError(t, err)
+
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+		recorder := httptest.NewRecorder()
+
+		require.ErrorIs(t, handler.Serve(infra.NewResponseRecorder(recorder), req), script.ErrScriptTimeout)
+	})
+
 	t.Run("default response status", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -445,6 +471,7 @@ response:WriteString("Default status")
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
@@ -456,7 +483,7 @@ response:WriteString("Default status")
 	})
 
 	t.Run("empty response body", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -466,6 +493,7 @@ response:WriteHeader(204)
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
@@ -477,7 +505,7 @@ response:WriteHeader(204)
 	})
 
 	t.Run("complex script with table library", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -490,6 +518,7 @@ response:WriteString(result)
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		recorder := httptest.NewRecorder()
@@ -584,13 +613,14 @@ response:WriteString("old and new")
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
+				handler, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
+				require.NoError(t, err)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
@@ -612,19 +642,28 @@ response:WriteString("old and new")
 
 func TestScriptHandlerOptions(t *testing.T) {
 	t.Run("WithOutput", func(t *testing.T) {
-		handler := script.NewHandler(script.WithOutput(mocks.NoopOutput()))
+		handler, err := script.NewHandler(
+			script.WithOutput(mocks.NoopOutput()),
+			script.WithScript(&config.Script{Script: "response:WriteHeader(200)"}),
+		)
+		require.NoError(t, err)
 		require.NotNil(t, handler)
 	})
 
 	t.Run("WithScript", func(t *testing.T) {
 		scriptConfig := &config.Script{Script: "response:WriteHeader(200)"}
-		handler := script.NewHandler(script.WithScript(scriptConfig))
+		handler, err := script.NewHandler(script.WithScript(scriptConfig))
+		require.NoError(t, err)
 		require.NotNil(t, handler)
 	})
 
 	t.Run("WithFileSystem", func(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{})
-		handler := script.NewHandler(script.WithFileSystem(fs))
+		handler, err := script.NewHandler(
+			script.WithFileSystem(fs),
+			script.WithScript(&config.Script{Script: "response:WriteHeader(200)"}),
+		)
+		require.NoError(t, err)
 		require.NotNil(t, handler)
 	})
 
@@ -632,11 +671,12 @@ func TestScriptHandlerOptions(t *testing.T) {
 		scriptConfig := &config.Script{Script: "response:WriteHeader(200)"}
 		fs := testutils.FsFromMap(t, map[string]string{})
 
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(scriptConfig),
 			script.WithFileSystem(fs),
 		)
+		require.NoError(t, err)
 
 		require.NotNil(t, handler)
 
@@ -703,10 +743,11 @@ end
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
+				handler, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&config.Script{Script: testCase.script}),
 				)
+				require.NoError(t, err)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 				parsedQuery := req.URL.Query()
@@ -781,10 +822,11 @@ end
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := script.NewHandler(
+				handler, err := script.NewHandler(
 					script.WithOutput(mocks.NoopOutput()),
 					script.WithScript(&config.Script{Script: testCase.script}),
 				)
+				require.NoError(t, err)
 
 				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 
@@ -806,7 +848,7 @@ end
 
 func TestScriptHandler_ResponseMetatableEdgeCases(t *testing.T) {
 	t.Run("response metatable prevents status field writes", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -816,6 +858,7 @@ response:WriteString("Status not writable")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -827,7 +870,7 @@ response:WriteString("Status not writable")
 	})
 
 	t.Run("response metatable prevents body field writes", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -837,6 +880,7 @@ response:WriteString("Actual body")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -848,7 +892,7 @@ response:WriteString("Actual body")
 	})
 
 	t.Run("response metatable allows custom fields", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -858,6 +902,7 @@ response:WriteString("Custom: " .. response.custom_field)
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -869,7 +914,7 @@ response:WriteString("Custom: " .. response.custom_field)
 	})
 
 	t.Run("response WriteHeader idempotency", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -879,6 +924,7 @@ response:WriteString("First status wins")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -890,7 +936,7 @@ response:WriteString("First status wins")
 	})
 
 	t.Run("response Write without explicit WriteHeader", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -898,6 +944,7 @@ response:Write("Auto status")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -909,7 +956,7 @@ response:Write("Auto status")
 	})
 
 	t.Run("response WriteString without explicit WriteHeader", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -917,6 +964,7 @@ response:WriteString("Auto status with string")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -928,7 +976,7 @@ response:WriteString("Auto status with string")
 	})
 
 	t.Run("response headers metatable Get method", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -939,6 +987,7 @@ response:WriteString("Value: " .. value)
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -950,7 +999,7 @@ response:WriteString("Value: " .. value)
 	})
 
 	t.Run("response headers metatable Set method", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -960,6 +1009,7 @@ response:WriteString("Header set")
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -971,7 +1021,7 @@ response:WriteString("Header set")
 	})
 
 	t.Run("response headers access via index", func(t *testing.T) {
-		handler := script.NewHandler(
+		handler, err := script.NewHandler(
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script: `
@@ -982,6 +1032,7 @@ response:WriteString("CT: " .. ct)
 `,
 			}),
 		)
+		require.NoError(t, err)
 
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/test", nil)
 		recorder := httptest.NewRecorder()

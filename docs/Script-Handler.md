@@ -504,7 +504,31 @@ response:WriteString('{"random": ' .. random .. ', "min": ' .. min .. ', "max": 
 
 ## Available Libraries
 
-The script handler provides access to standard libraries:
+Scripts run in a VM with an explicit library set: `base`, `package` (for
+`require`), `string`, `table`, `math`, `os` and `json`.
+
+> [!WARNING]
+> `os` is available, so a script can read the clock and the environment and can
+> call `os.execute`. A uncors config that contains scripts is executable code —
+> review one before running a config file someone else wrote. `io`, `debug` and
+> `coroutine` are **not** available, so a script cannot read or write files.
+
+Each script is compiled once, when the configuration is loaded: a syntax error
+is reported there, with the file and line, rather than failing every request that
+reaches the route. Editing a script file takes effect when the configuration is
+reloaded.
+
+Every run is bounded by a timeout — five seconds by default — and is cancelled
+when the client goes away:
+
+```yaml
+scripts:
+  - path: /api/slow
+    timeout: 30s
+    file: ./scripts/report.lua
+```
+
+The script handler provides access to these standard libraries:
 
 ### Math Library
 

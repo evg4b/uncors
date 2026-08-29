@@ -132,8 +132,9 @@ func TestContainer(t *testing.T) {
 			Matcher: config.RequestMatcher{Path: "/api"},
 			Script:  `response:set_status(200)`,
 		}
-		handler := container.ScriptHandler(script)
+		handler, err := container.ScriptHandler(script)
 
+		require.NoError(t, err)
 		assert.NotNil(t, handler)
 		assert.Implements(t, (*http.Handler)(nil), handler)
 	})

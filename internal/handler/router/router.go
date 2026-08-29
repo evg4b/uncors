@@ -35,8 +35,15 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 		deps:   deps,
 	}
 
+	errs := make([]error, 0, len(mappings))
+
 	for _, mapping := range mappings {
-		instance.registerMapping(mapping)
+		errs = append(errs, instance.registerMapping(mapping))
+	}
+
+	err := errors.Join(errs...)
+	if err != nil {
+		return nil, err
 	}
 
 	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
@@ -56,7 +63,7 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 // a router of its own so that its cross-cutting middleware wraps every route it
 // contains — mocks, scripts, statics and the proxy fallback alike — rather than
 // decorating one branch and silently skipping the others.
-func (r *Router) registerMapping(mapping config.Mapping) {
+func (r *Router) registerMapping(mapping config.Mapping) error {
 	mappingRouter := mux.NewRouter()
 	routes := mappingRouter.Host(mapping.From.Hostname).Subrouter()
 
@@ -77,10 +84,19 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 			registerRoute(createRoute(routes, def.Matcher), r.deps.Mock(&def.Response))
 		})
 
+	var scriptErrs []error
+
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(def *config.Script) {
-			registerRoute(createRoute(routes, def.Matcher), r.deps.Script(def))
+			handler, err := r.deps.Script(def)
+			if err != nil {
+				scriptErrs = append(scriptErrs, err)
+
+				return
+			}
+
+			registerRoute(createRoute(routes, def.Matcher), handler)
 		})
 
 	// A rewritten request re-enters the mapping's routes, so that it can be
@@ -102,6 +118,8 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 
 	r.Router.Host(mapping.From.Hostname).
 		Handler(r.wrapMapping(mapping, mappingRouter))
+
+	return errors.Join(scriptErrs...)
 }
 
 // wrapMapping applies the middleware that belongs to the whole mapping rather

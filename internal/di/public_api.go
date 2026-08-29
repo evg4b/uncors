@@ -98,15 +98,20 @@ func (c *Container) MockHandler(response *config.Response) http.Handler {
 	))
 }
 
-func (c *Container) ScriptHandler(scriptConfig *config.Script) http.Handler {
+func (c *Container) ScriptHandler(scriptConfig *config.Script) (http.Handler, error) {
 	prefix := styles.RewriteStyle.Render("SCRIPT")
 	output := c.CliOutput()
 
-	return infra.WithPrefix(prefix, script.NewHandler(
+	handler, err := script.NewHandler(
 		script.WithOutput(output.NewPrefixOutput(prefix)),
 		script.WithScript(scriptConfig),
 		script.WithFileSystem(c.fs),
-	))
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return infra.WithPrefix(prefix, handler), nil
 }
 
 func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {

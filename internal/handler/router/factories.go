@@ -26,6 +26,8 @@ type Deps struct {
 	Cache func(globs config.CacheGlobs) contracts.Middleware
 	// Mock answers with a configured response.
 	Mock func(response *config.Response) http.Handler
-	// Script answers with the result of a Lua script.
-	Script func(scriptConfig *config.Script) http.Handler
+	// Script answers with the result of a Lua script. It reports a script that
+	// does not compile, so a syntax error fails the configuration rather than
+	// every request that reaches the route.
+	Script func(scriptConfig *config.Script) (http.Handler, error)
 }
