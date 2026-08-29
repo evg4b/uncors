@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
@@ -59,11 +58,23 @@ func run() int {
 
 	// The output implementation is chosen before the container is built, so
 	// nothing can capture the wrong one.
-	if uncorsConfig.Interactive {
+	if uncorsConfig.Interactive && isTerminal(os.Stdout) {
 		return runInteractive(console, fs, configPath, uncorsConfig)
 	}
 
 	return runNonInteractive(context.Background(), fs, configPath, uncorsConfig)
+}
+
+// isTerminal reports whether the writer is an interactive terminal. Interactive
+// mode is the default, so without this check `uncors | tee log.txt`, a CI script
+// and the Docker image would all start a full-screen TUI against a pipe.
+func isTerminal(file *os.File) bool {
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 func newContainer(fs afero.Fs, options ...di.ContainerOption) *di.Container {
@@ -123,34 +134,19 @@ func runNonInteractive(
 
 	go server.RequestPrinter(tracker, output)
 
-	reloader := uncors.NewReloader(app, output, configLoader(fs), configPath)
-	defer func() {
-		closeErr := reloader.Close()
-		if closeErr != nil {
-			log.Printf("Failed to close config watcher: %v", closeErr)
-		}
-	}()
+	runner := uncors.NewRunner(
+		app,
+		uncors.NewReloader(app, output, configLoader(fs), configPath),
+		output,
+		versionCheck(container, cfg.Proxy),
+	)
 
-	err := app.Start(ctx, cfg)
+	err := runner.Start(ctx, cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	err = reloader.Start(ctx)
-	if err != nil {
-		log.Printf("Failed to start config watcher: %v", err)
-		output.Errorf("Failed to start config watcher: %v", err)
-	}
-
-	go startVersionChecker(ctx, container, cfg.Proxy)
-
-	go helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		log.Println("shutdown signal received")
-
-		return app.Shutdown(shutdownCtx)
-	})
-
-	app.Wait()
+	runner.Wait()
 
 	if dropped := tracker.Dropped(); dropped > 0 {
 		output.Warnf("%d activity lines were dropped to keep the proxy responsive", dropped)
@@ -161,20 +157,18 @@ func runNonInteractive(
 	return 0
 }
 
-// startVersionChecker waits for a short delay then checks for a newer release.
-func startVersionChecker(ctx context.Context, container *di.Container, proxy string) {
-	const checkDelay = 50 * time.Millisecond
+// versionCheck builds the release check both run modes perform after startup.
+func versionCheck(container *di.Container, proxy string) uncors.VersionCheck {
+	return func(ctx context.Context) {
+		checker, err := container.VersionChecker(proxy)
+		if err != nil {
+			log.Printf("Version check failed: %v", err)
 
-	time.Sleep(checkDelay)
+			return
+		}
 
-	checker, err := container.VersionChecker(proxy)
-	if err != nil {
-		log.Printf("Version check failed: %v", err)
-
-		return
+		checker.CheckNewVersion(ctx)
 	}
-
-	checker.CheckNewVersion(ctx)
 }
 
 // runInteractive starts the proxy in interactive TUI mode.
@@ -190,6 +184,7 @@ func runInteractive(console contracts.Output, fs afero.Fs, configPath string, cf
 		configPath,
 		cfg,
 		configLoader(fs),
+		versionCheck(container, cfg.Proxy),
 	)
 
 	_, err := tea.NewProgram(app).Run()

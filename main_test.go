@@ -117,14 +117,26 @@ mappings:
 	assert.Len(t, cfg.Mappings, 1)
 }
 
-func TestStartVersionChecker(t *testing.T) {
+func TestVersionCheck(t *testing.T) {
 	t.Run("runs without panic", func(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
 		assert.NotPanics(t, func() {
-			startVersionChecker(context.Background(), container, "")
+			versionCheck(container, "")(context.Background())
 		})
+	})
+}
+
+func TestIsTerminal(t *testing.T) {
+	t.Run("a pipe is not a terminal", func(t *testing.T) {
+		reader, writer, err := os.Pipe()
+		require.NoError(t, err)
+
+		defer reader.Close()
+		defer writer.Close()
+
+		assert.False(t, isTerminal(writer))
 	})
 }
 

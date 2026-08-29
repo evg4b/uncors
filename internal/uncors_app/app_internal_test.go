@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"os"
@@ -46,6 +47,7 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 
 			return uncorsConfig, nil
 		},
+		func(context.Context) {},
 	)
 
 	return app, &loadCalls
@@ -165,9 +167,6 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 
 		msg := app.startServerCmd()()
 		assert.IsType(t, serverStartedMsg{}, msg)
-
-		cmd := app.handleServerStarted()
-		require.NotNil(t, cmd)
 
 		msg = app.restartCmd()()
 		assert.Equal(t, restartMsg{}, msg)
@@ -304,14 +303,15 @@ func TestServerStartedMsgUpdate(t *testing.T) {
 	app, _ := newTestApp(t)
 	defer cleanupTestApp(t, app)
 
-	model, cmd := app.Update(serverStartedMsg{})
+	model, _ := app.Update(serverStartedMsg{})
 
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
 }
 
-func TestHandleServerStartedWithConfigPath(t *testing.T) {
-	t.Run("creates watcher when config file exists", func(t *testing.T) {
+// The config watcher, the signal handler and the version check are started by
+// the shared runner, so that they behave identically in both run modes.
+func TestStartServerWatchesTheConfigFile(t *testing.T) {
+	t.Run("watches an existing config file", func(t *testing.T) {
 		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
 		require.NoError(t, err)
 
@@ -324,7 +324,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		defer testutils.Close(t, container)
 
 		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
-		app := NewUncorsApp(container, NewOutput(), tmpFile.Name(), cfg, loader)
+		app := NewUncorsApp(container, NewOutput(), tmpFile.Name(), cfg, loader, func(context.Context) {})
 
 		defer func() {
 			app.cancel()
@@ -337,22 +337,20 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 			}
 		}()
 
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
+		require.IsType(t, serverStartedMsg{}, app.startServerCmd()())
 		require.True(t, app.reloader.Watching())
 
 		require.NoError(t, app.reloader.Close())
 	})
 
-	t.Run("logs error when config file does not exist", func(t *testing.T) {
+	t.Run("reports a missing config file and keeps running", func(t *testing.T) {
 		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
 		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
-		app := NewUncorsApp(container, NewOutput(), "/nonexistent/path/config.yaml", cfg, loader)
+		app := NewUncorsApp(container, NewOutput(), "/nonexistent/path/config.yaml", cfg, loader, func(context.Context) {})
 
 		defer func() {
 			app.cancel()
@@ -365,9 +363,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 			}
 		}()
 
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
+		require.IsType(t, serverStartedMsg{}, app.startServerCmd()())
 		assert.False(t, app.reloader.Watching())
 	})
 }
@@ -414,7 +410,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 		}
 
 		return cfg, nil
-	})
+	}, func(context.Context) {})
 
 	defer func() {
 		// Cancel context first so any in-flight Restart fails fast.
@@ -431,9 +427,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 		}
 	}()
 
-	cmd := app.handleServerStarted()
-
-	require.NotNil(t, cmd)
+	require.IsType(t, serverStartedMsg{}, app.startServerCmd()())
 	require.True(t, app.reloader.Watching())
 
 	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))

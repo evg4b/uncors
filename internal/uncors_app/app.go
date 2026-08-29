@@ -17,8 +17,6 @@ import (
 
 const (
 	outputChannelSize = 1000
-	shutdownTimeout   = 5 * time.Second
-	versionCheckDelay = 50 * time.Millisecond
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
@@ -40,6 +38,7 @@ type UncorsApp struct {
 	configPath string
 
 	reloader *uncors.Reloader
+	runner   *uncors.Runner
 
 	termHeight int
 	termWidth  int
@@ -70,6 +69,7 @@ func NewUncorsApp(
 	configPath string,
 	cfg *config.UncorsConfig,
 	loadConfig uncors.ConfigLoader,
+	checkVersion uncors.VersionCheck,
 ) *UncorsApp {
 	appCtx, cancel := context.WithCancel(context.Background())
 
@@ -78,6 +78,7 @@ func NewUncorsApp(
 	historyWidget := NewHistoryWidget(keys)
 
 	app := uncors.CreateUncors(container)
+	reloader := uncors.NewReloader(app, output, loadConfig, configPath)
 
 	return &UncorsApp{
 		keys:          keys,
@@ -91,7 +92,8 @@ func NewUncorsApp(
 		cancel:        cancel,
 		cfg:           cfg,
 		configPath:    configPath,
-		reloader:      uncors.NewReloader(app, output, loadConfig, configPath),
+		reloader:      reloader,
+		runner:        uncors.NewRunner(app, reloader, output, checkVersion),
 		historyWidget: historyWidget,
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
@@ -248,8 +250,10 @@ func (m *UncorsApp) footerHeight() int {
 	return footerHeight
 }
 
-func (msg serverStartedMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleServerStarted()
+// The runner starts config watching, signal handling and the version check as
+// part of startup, so there is nothing left for the model to kick off here.
+func (msg serverStartedMsg) update(*UncorsApp) tea.Cmd {
+	return nil
 }
 
 func (msg serverErrMsg) update(app *UncorsApp) tea.Cmd {
@@ -258,16 +262,6 @@ func (msg serverErrMsg) update(app *UncorsApp) tea.Cmd {
 
 func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleShutdown()
-}
-
-func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	err := m.reloader.Start(m.appContext())
-	if err != nil {
-		log.Printf("Failed to watch config file: %v", err)
-		m.output.Errorf("Failed to watch config file: %v", err)
-	}
-
-	return m.versionCheckCmd()
 }
 
 func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
@@ -305,7 +299,7 @@ func (m *UncorsApp) handleShutdown() tea.Cmd {
 
 func (m *UncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.app.Start(m.appContext(), m.cfg)
+		err := m.runner.Start(m.appContext(), m.cfg)
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -346,12 +340,13 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 
 func (m *UncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
+		ctx := m.appContext()
 		m.cancel()
 
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-
-		_ = m.app.Shutdown(ctx)
+		err := m.runner.Shutdown(ctx)
+		if err != nil {
+			log.Printf("Shutdown error: %v", err)
+		}
 
 		return shutdownMsg{}
 	}
@@ -359,29 +354,12 @@ func (m *UncorsApp) shutdownCmd() tea.Cmd {
 
 func (m *UncorsApp) restartCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.reloader.Reload(m.appContext())
+		err := m.runner.Reload(m.appContext())
 		if err != nil {
 			log.Printf("Failed to restart: %v", err)
 			m.output.Errorf("Failed to restart: %v", err)
 		}
 
 		return restartMsg{}
-	}
-}
-
-func (m *UncorsApp) versionCheckCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(versionCheckDelay)
-
-		checker, err := m.container.VersionChecker(m.cfg.Proxy)
-		if err != nil {
-			log.Printf("Version check failed: %v", err)
-
-			return nil
-		}
-
-		checker.CheckNewVersion(m.appContext())
-
-		return nil
 	}
 }
