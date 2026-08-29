@@ -33,8 +33,10 @@ func TestCacheMiddleware(t *testing.T) {
 		headers.ContentEncoding: {"deflate, gzip"},
 	}
 
+	storage := cache.NewRistrettoCache(1024*1024, time.Minute)
+
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+		cache.WithCacheStorage(storage),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
@@ -111,6 +113,10 @@ func TestCacheMiddleware(t *testing.T) {
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
 					)
+					// Admission is asynchronous on the request path; only the
+					// test needs it to have landed before the next request.
+					storage.Wait()
+
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
@@ -175,6 +181,10 @@ func TestCacheMiddleware(t *testing.T) {
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
 					)
+					// Admission is asynchronous on the request path; only the
+					// test needs it to have landed before the next request.
+					storage.Wait()
+
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
@@ -189,8 +199,10 @@ func TestCacheMiddleware(t *testing.T) {
 
 		testHandler.Reset()
 
+		storage := cache.NewRistrettoCache(1024*1024, time.Minute)
+
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(storage),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
@@ -215,8 +227,10 @@ func TestCacheMiddleware(t *testing.T) {
 
 		testHandler.Reset()
 
+		storage := cache.NewRistrettoCache(1024*1024, time.Minute)
+
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(storage),
 			cache.WithMethods(methods),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)

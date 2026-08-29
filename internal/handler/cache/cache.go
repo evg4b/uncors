@@ -20,8 +20,13 @@ func CalcCost(value *contracts.CachedResponse) int64 {
 }
 
 const (
-	numCounters = 1e5
 	bufferItems = 64
+	// expectedEntrySize is the response size the counter budget is sized around.
+	// Ristretto wants roughly ten counters per item it expects to hold, so the
+	// budget has to follow MaxSize rather than being a fixed number.
+	expectedEntrySize = 4 << 10 // 4 KiB
+	countersPerEntry  = 10
+	minNumCounters    = 1 << 10
 )
 
 type RistrettoCache struct {
@@ -31,7 +36,7 @@ type RistrettoCache struct {
 
 func NewRistrettoCache(maxSize int64, ttl time.Duration) *RistrettoCache {
 	storage, err := ristretto.NewCache(&ristretto.Config[string, contracts.CachedResponse]{
-		NumCounters: numCounters,
+		NumCounters: numCountersFor(maxSize),
 		MaxCost:     maxSize,
 		BufferItems: bufferItems,
 	})
@@ -49,13 +54,26 @@ func (cs *RistrettoCache) Get(key string) (contracts.CachedResponse, bool) {
 	return cs.storage.Get(key)
 }
 
+// Set admits a response. Admission is asynchronous by design — that is the
+// reason ristretto is here — so this never blocks the request that produced the
+// response.
 func (cs *RistrettoCache) Set(key string, value contracts.CachedResponse) {
 	cs.storage.SetWithTTL(key, value, CalcCost(&value), cs.ttl)
+}
+
+// Wait blocks until pending admissions have been processed. Tests need it to be
+// deterministic; the request path must not pay for that.
+func (cs *RistrettoCache) Wait() {
 	cs.storage.Wait()
 }
 
-func (cs *RistrettoCache) Wait() {
-	cs.storage.Wait()
+func numCountersFor(maxSize int64) int64 {
+	counters := maxSize / expectedEntrySize * countersPerEntry
+	if counters < minNumCounters {
+		return minNumCounters
+	}
+
+	return counters
 }
 
 // Close releases the underlying cache. It satisfies io.Closer so the app can

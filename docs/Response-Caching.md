@@ -90,6 +90,28 @@ cache-config:
  3. **Evicted** (after `expiration-time` or when `max-size` is reached) - Cache
     entry is removed; next request fetches fresh data from upstream
 
+## What Is and Is Not Cached
+
+A cached entry is identified by the request method, the full host (including the
+port), the path, the sorted query string, the `Accept-Encoding` header and — for
+methods with a body, such as `POST` — a hash of that body. Two `POST`s to the
+same path with different bodies are therefore different entries.
+
+A response is **not** stored when:
+
+ - it is not a 2xx response;
+ - it carries `Set-Cookie`;
+ - its `Cache-Control` contains `no-store` or `private`;
+ - the request carried `Authorization` and the response is not marked `public`;
+ - it carries a `Vary` on anything other than `Accept-Encoding` — honouring those
+   would need a variant index, and serving one variant to every client would be
+   worse than not caching;
+ - its body was larger than the capture limit, or the request body was larger
+   than 1 MiB.
+
+These rules exist so that a cached response is never served to a client the
+upstream did not produce it for.
+
 ## Examples
 
 ### Cache API Responses
