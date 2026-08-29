@@ -3,7 +3,7 @@ package uncors
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -50,7 +50,7 @@ func (r *Runner) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) e
 
 	watchErr := r.reloader.Start(ctx)
 	if watchErr != nil {
-		log.Printf("Failed to watch config file: %v", watchErr)
+		slog.Error("failed to watch the config file", "err", watchErr)
 		r.output.Errorf("Failed to watch config file: %v", watchErr)
 	}
 
@@ -88,7 +88,7 @@ func (r *Runner) Shutdown(ctx context.Context) error {
 
 func (r *Runner) awaitShutdownSignal(ctx context.Context) {
 	GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
-		log.Println("shutdown signal received")
+		slog.Info("shutdown signal received")
 
 		return r.Shutdown(shutdownCtx)
 	})

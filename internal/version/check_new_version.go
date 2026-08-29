@@ -3,7 +3,7 @@ package version
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/tui"
@@ -17,10 +17,10 @@ type versionInfo struct {
 }
 
 func (checker *Checker) CheckNewVersion(ctx context.Context) {
-	log.Print("Checking new version")
+	slog.Debug("checking for a new version")
 
 	if checker.skip {
-		log.Print("Skipping version check in debug mode")
+		slog.Debug("skipping the version check in debug mode")
 		checker.output.Info("Skipping version check in debug mode")
 
 		return
@@ -28,14 +28,14 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) {
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
 	if err != nil {
-		log.Printf("failed to generate new version check request: %v", err)
+		slog.Debug("failed to build the version check request", "err", err)
 
 		return
 	}
 
 	response, err := checker.http.Do(request)
 	if err != nil {
-		log.Printf("http error occurred: %v", err)
+		slog.Debug("version check request failed", "err", err)
 
 		return
 	}
@@ -48,14 +48,14 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) {
 
 	err = decoder.Decode(&lastVersionInfo)
 	if err != nil {
-		log.Printf("failed to parse last version response: %v", err)
+		slog.Debug("failed to parse the version check response", "err", err)
 
 		return
 	}
 
 	lastVersion, err := version.NewVersion(lastVersionInfo.Version)
 	if err != nil {
-		log.Printf("failed to parse last version: %v", err)
+		slog.Debug("failed to parse the latest version", "err", err)
 
 		return
 	}
@@ -64,6 +64,6 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) {
 		checker.output.Infof(tui.NewVersionIsAvailable, checker.currentVersion.String(), lastVersion.String())
 		checker.output.Info("")
 	} else {
-		log.Print("Version is up to date")
+		slog.Debug("version is up to date")
 	}
 }

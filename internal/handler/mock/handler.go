@@ -3,7 +3,7 @@ package mock
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -44,10 +44,7 @@ func (h *Handler) Serve(writer http.ResponseWriter, request *http.Request) error
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		//nolint:gosec // G706: both values are passed through SanitizeLogValue
-		log.Printf("ERROR: Mock handler error: %s (URL: %s)",
-			infra.SanitizeLogValue(err.Error()),
-			infra.SanitizeLogValue(urlt.URL_String(request.URL)))
+		slog.Error("mock handler failed", "err", err, "url", urlt.URL_String(request.URL))
 
 		return err
 	}

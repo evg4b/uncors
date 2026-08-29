@@ -4,23 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	tuiapp "github.com/evg4b/uncors/internal/tui/app"
 	"github.com/evg4b/uncors/internal/uncors"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
-)
-
-const (
-	logFileName  = "uncors.log"
-	logFileFlags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
-	logFilePerm  = 0o644
 )
 
 // proxyCommand is the root command: it runs the proxy itself.
@@ -40,7 +35,18 @@ func proxyCommand() Command {
 
 			// The output implementation is chosen before the container is built,
 			// so that nothing can capture the wrong one.
-			if uncorsConfig.Interactive && isTerminal(env.Stdout) {
+			interactive := uncorsConfig.Interactive && isTerminal(env.Stdout)
+
+			closer, err := setupLogging(flags, interactive)
+			if err != nil {
+				return err
+			}
+
+			if closer != nil {
+				defer closer.Close()
+			}
+
+			if interactive {
 				return runInteractive(env, flags, uncorsConfig)
 			}
 
@@ -59,6 +65,25 @@ func isTerminal(file *os.File) bool {
 	}
 
 	return info.Mode()&os.ModeCharDevice != 0
+}
+
+// setupLogging installs the process logger. In interactive mode the diagnostics
+// must not be written to the terminal, where they would corrupt the alt-screen,
+// so they are routed into the history view instead — unless the user asked for a
+// log file, which is a request to keep them out of the view.
+func setupLogging(flags *config.Flags, interactive bool) (io.Closer, error) {
+	options := infra.LogOptions{Level: flags.LogLevel(), File: flags.LogFile()}
+
+	if interactive && options.File == "" {
+		level, err := infra.ParseLogLevel(options.Level)
+		if err != nil {
+			return nil, err
+		}
+
+		options.Handler = tuiapp.NewLogHandler(level)
+	}
+
+	return infra.SetupLogging(options)
 }
 
 // runHeadless starts the proxy without a terminal UI and blocks until the server
@@ -137,7 +162,7 @@ func versionCheck(container *di.Container, proxy string) uncors.VersionCheck {
 	return func(ctx context.Context) {
 		checker, err := container.VersionChecker(proxy)
 		if err != nil {
-			log.Printf("Version check failed: %v", err)
+			slog.Error("version check failed", "err", err)
 
 			return
 		}
@@ -156,33 +181,5 @@ func configLoader(fs afero.Fs, flags *config.Flags) uncors.ConfigLoader {
 }
 
 func loadConfiguration(fs afero.Fs, flags *config.Flags) (*config.UncorsConfig, error) {
-	uncorsConfig, err := config.LoadConfiguration(fs, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	err = configureLogging(uncorsConfig.Debug)
-	if err != nil {
-		return nil, err
-	}
-
-	return uncorsConfig, nil
-}
-
-func configureLogging(debug bool) error {
-	if !debug {
-		log.SetOutput(io.Discard)
-
-		return nil
-	}
-
-	logFile, err := os.OpenFile(logFileName, logFileFlags, logFilePerm)
-	if err != nil {
-		return fmt.Errorf("failed to open log file: %w", err)
-	}
-
-	log.SetOutput(logFile)
-	log.Print("Enabled debug messages")
-
-	return nil
+	return config.LoadConfiguration(fs, flags)
 }

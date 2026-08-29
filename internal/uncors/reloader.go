@@ -3,7 +3,7 @@ package uncors
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -107,6 +107,6 @@ func (r *Reloader) Close() error {
 }
 
 func (r *Reloader) report(err error) {
-	log.Printf("Config reloading error: %v", err)
+	slog.Error("config reloading failed", "err", err)
 	r.output.Errorf("Config reloading error: %v", err)
 }

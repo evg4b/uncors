@@ -1,7 +1,7 @@
 package app
 
 import (
-	"log"
+	"log/slog"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
@@ -19,7 +19,7 @@ type HistoryWidget struct {
 }
 
 func NewHistoryWidget(keys keyMap) *HistoryWidget {
-	log.Println("Creating HistoryWidget")
+	slog.Debug("Creating HistoryWidget")
 
 	hist := newHistory()
 
@@ -55,7 +55,7 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 		}
 
 	case restartMsg:
-		log.Println("HistoryWidget: handling restartMsg")
+		slog.Debug("HistoryWidget: handling restartMsg")
 
 		return m, nil
 
@@ -67,7 +67,7 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 }
 
 func (m *HistoryWidget) SetHeight(height int) {
-	log.Printf("HistoryWidget: setting height to %d", height)
+	slogDebugf("HistoryWidget: setting height to %d", height)
 	m.vp.SetHeight(height)
 }
 
@@ -76,7 +76,7 @@ func (m *HistoryWidget) HasLines() bool {
 }
 
 func (m *HistoryWidget) Close() error {
-	log.Println("HistoryWidget: closing")
+	slog.Debug("HistoryWidget: closing")
 
 	return m.hist.Close()
 }

@@ -175,11 +175,13 @@ func TestCliOutput_NewPrefixOutput(t *testing.T) {
 	})
 }
 
-func TestCliOutput_PanicsOnWriteError(t *testing.T) {
+// A failing console write is normal — `uncors | head` closes the pipe — and must
+// not take the proxy down with it.
+func TestCliOutput_SurvivesWriteError(t *testing.T) {
 	out := tui.NewCliOutput(&errorWriter{})
 
-	assert.Panics(t, func() {
-		out.Info("this will panic")
+	assert.NotPanics(t, func() {
+		out.Info("this must not panic")
 	})
 }
 

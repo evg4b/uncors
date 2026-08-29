@@ -141,6 +141,10 @@ func (s *Server) newPortListener(target Target) *PortListener {
 
 	portListener.Server = http.Server{
 		ReadHeaderTimeout: readHeaderTimeout,
+		// Without this, net/http writes TLS handshake failures and recovered
+		// handler panics to the standard logger, where they used to be
+		// discarded.
+		ErrorLog: infra.StdLogger(),
 		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			s.handleRequest(portListener.Handler(), writer, request)
 		}),

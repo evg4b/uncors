@@ -1,5 +1,22 @@
 This guide helps you diagnose and resolve common issues when using UNCORS.
 
+## Diagnostics and Logging
+
+UNCORS writes its diagnostics to **stderr** by default, at `info` level. Failures
+that used to be silent — a HAR archive that could not be written, a config
+watcher that died, a rejected TLS handshake — are reported there.
+
+```bash
+uncors --config .uncors.yaml --log-level debug   # everything, including per-handler detail
+uncors --config .uncors.yaml --debug             # shorthand for --log-level debug
+uncors --config .uncors.yaml --quiet             # errors only
+uncors --config .uncors.yaml --log-file uncors.log
+```
+
+In interactive mode the diagnostics appear in the history view rather than on
+stderr, because writing to the terminal would corrupt the UI. Passing
+`--log-file` sends them to the file instead.
+
 ## Quick Diagnostics Checklist
 
 Before diving into specific issues, verify these basics:
@@ -156,7 +173,7 @@ curl -k https://api.local:8443/
 Enable debug logging and verify requests appear in the output:
 
 ```bash
-uncors --config .uncors.yaml --debug
+uncors --config .uncors.yaml --log-level debug
 ```
 
 **2. OPTIONS request being forwarded instead of handled**

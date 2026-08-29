@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"sync"
@@ -65,7 +64,7 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 		ErrorHandler:   handler.handleError,
 		Transport:      roundTripper{client: handler.http},
 		FlushInterval:  flushInterval,
-		ErrorLog:       log.Default(),
+		ErrorLog:       infra.StdLogger(),
 	}
 
 	return handler

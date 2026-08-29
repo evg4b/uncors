@@ -3,7 +3,7 @@ package router
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -40,8 +40,7 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 	}
 
 	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
-		//nolint:gosec // G706: the host is passed through SanitizeLogValue
-		log.Printf("Host %s is not mapped", infra.SanitizeLogValue(request.Host))
+		slog.Warn("host is not mapped", "host", request.Host)
 
 		return errHostNotMapped
 	}))

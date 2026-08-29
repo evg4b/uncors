@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"os"
 	"text/tabwriter"
 
@@ -137,7 +138,7 @@ func printCommands(out io.Writer, commands []Command) {
 }
 
 func report(env Env, err error) int {
-	log.Printf("Error: %v", err)
+	slog.Error("command failed", "err", err)
 	env.Console.Error(err)
 
 	return exitError

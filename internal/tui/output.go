@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -149,7 +150,9 @@ func (output *CliOutput) print(msg string, level outputType) {
 	output.buffer.Reset()
 
 	if err != nil {
-		panic(err)
+		// A failing console write (a closed pipe from `uncors | head`, a
+		// detached terminal) is normal and must not take the proxy down.
+		slog.Debug("failed to write console output", "err", err)
 	}
 }
 

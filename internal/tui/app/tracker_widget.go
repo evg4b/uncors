@@ -1,7 +1,7 @@
 package app
 
 import (
-	"log"
+	"log/slog"
 	"strings"
 
 	"charm.land/bubbles/v2/spinner"
@@ -32,7 +32,7 @@ type TrackerWidget struct {
 }
 
 func NewTrackerWidget() *TrackerWidget {
-	log.Println("Creating TrackerWidget")
+	slog.Debug("Creating TrackerWidget")
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
@@ -66,7 +66,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 		return m, nil
 
 	case restartMsg:
-		log.Println("TrackerWidget: handling restartMsg")
+		slog.Debug("TrackerWidget: handling restartMsg")
 
 		m.pending = make(map[uint64]server.RequestEvent)
 		m.ticking = false
@@ -128,17 +128,17 @@ func (m *TrackerWidget) View() tea.View {
 func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, tea.Cmd) {
 	switch {
 	case msg.Done:
-		log.Printf("TrackerWidget: request done: %d", msg.ID)
+		slogDebugf("TrackerWidget: request done: %d", msg.ID)
 		delete(m.pending, msg.ID)
 	case msg.URL != nil:
-		log.Printf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, urlt.URL_String(msg.URL))
+		slogDebugf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, urlt.URL_String(msg.URL))
 		m.pending[msg.ID] = server.RequestEvent(msg)
 	}
 
 	var cmd tea.Cmd
 
 	if len(m.pending) > 0 && !m.ticking {
-		log.Println("TrackerWidget: starting tick")
+		slog.Debug("TrackerWidget: starting tick")
 
 		m.ticking = true
 		cmd = m.spinner.Tick

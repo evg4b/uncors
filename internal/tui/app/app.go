@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -30,6 +30,7 @@ type UncorsApp struct {
 	container *di.Container
 
 	outputCh   <-chan string
+	logCh      <-chan string
 	appContext func() context.Context
 	appDone    <-chan struct{}
 	cancel     context.CancelFunc
@@ -87,6 +88,7 @@ func NewUncorsApp(
 		tracker:       container.RequestTracker(),
 		container:     container,
 		outputCh:      output.Lines(),
+		logCh:         logRecords(),
 		appContext:    func() context.Context { return appCtx },
 		appDone:       appCtx.Done(),
 		cancel:        cancel,
@@ -102,11 +104,12 @@ func NewUncorsApp(
 }
 
 func (m *UncorsApp) Init() tea.Cmd {
-	log.Println("Initializing UncorsApp")
+	slog.Debug("Initializing UncorsApp")
 
 	return tea.Batch(
 		m.startServerCmd(),
 		m.waitOutputCmd(),
+		m.waitLogCmd(),
 		m.watchEventsCmd(),
 		m.memWidget.Init(),
 		m.trackerWidget.Init(),
@@ -120,17 +123,22 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
-		log.Printf("Window resized to %dx%d", typedMsg.Width, typedMsg.Height)
+		slogDebugf("Window resized to %dx%d", typedMsg.Width, typedMsg.Height)
 		m.termHeight = typedMsg.Height
 		m.termWidth = typedMsg.Width
 		m.updateHistoryHeight()
 
 	case restartMsg:
-		log.Println("Restart message received")
+		slog.Debug("Restart message received")
 		m.handleRestart()
 
 	case outputLineMsg:
 		cmds = append(cmds, m.waitOutputCmd())
+
+	case logLineMsg:
+		m.historyWidget.Update(outputLineMsg(typedMsg))
+
+		cmds = append(cmds, m.waitLogCmd())
 
 	case requestEventMsg:
 		m.handleRequestEvent(typedMsg)
@@ -138,7 +146,7 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:
-		log.Printf("Key pressed: %s", typedMsg.String())
+		slogDebugf("Key pressed: %s", typedMsg.String())
 
 		if cmd := m.handleKeyPress(typedMsg); cmd != nil {
 			return m, cmd
@@ -231,7 +239,7 @@ func (m *UncorsApp) updateHistoryHeight() {
 	footerHeight := m.footerHeight()
 	viewportHeight := max(m.termHeight-footerHeight, 1)
 
-	log.Printf(
+	slogDebugf(
 		"Updating layout: termHeight=%d, footerHeight=%d => viewportHeight=%d",
 		m.termHeight,
 		footerHeight,
@@ -283,12 +291,12 @@ func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
 }
 
 func (m *UncorsApp) handleRestart() {
-	log.Println("Handling restart")
+	slog.Debug("Handling restart")
 	m.updateHistoryHeight()
 }
 
 func (m *UncorsApp) handleShutdown() tea.Cmd {
-	log.Println("Handling shutdown")
+	slog.Debug("Handling shutdown")
 
 	_ = m.reloader.Close()
 
@@ -323,6 +331,28 @@ func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 	}
 }
 
+// waitLogCmd renders the process diagnostics in the history view, which is
+// where they have to go in interactive mode: writing them to the terminal would
+// corrupt the alt-screen.
+func (m *UncorsApp) waitLogCmd() tea.Cmd {
+	if m.logCh == nil {
+		return nil
+	}
+
+	return func() tea.Msg {
+		select {
+		case line, ok := <-m.logCh:
+			if !ok {
+				return nil
+			}
+
+			return logLineMsg(line)
+		case <-m.appDone:
+			return nil
+		}
+	}
+}
+
 func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
@@ -345,7 +375,7 @@ func (m *UncorsApp) shutdownCmd() tea.Cmd {
 
 		err := m.runner.Shutdown(ctx)
 		if err != nil {
-			log.Printf("Shutdown error: %v", err)
+			slog.Error("shutdown failed", "err", err)
 		}
 
 		return shutdownMsg{}
@@ -356,7 +386,7 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 	return func() tea.Msg {
 		err := m.runner.Reload(m.appContext())
 		if err != nil {
-			log.Printf("Failed to restart: %v", err)
+			slog.Error("restart failed", "err", err)
 			m.output.Errorf("Failed to restart: %v", err)
 		}
 

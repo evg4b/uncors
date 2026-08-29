@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -115,7 +115,7 @@ func (w *Watcher) run(ctx context.Context, fsWatcher *fsnotify.Watcher, onChange
 				return
 			}
 
-			log.Printf("config watcher error: %v", err)
+			slog.Error("config watcher failed", "err", err)
 		}
 	}
 }

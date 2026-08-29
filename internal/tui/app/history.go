@@ -1,7 +1,7 @@
 package app
 
 import (
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 )
@@ -17,7 +17,7 @@ type history struct {
 }
 
 func newHistory() *history {
-	log.Println("Initializing new history")
+	slog.Debug("Initializing new history")
 
 	return &history{
 		lines: make([]string, 0, historyInitialCapacity),
@@ -34,7 +34,7 @@ func (h *history) AppendLine(line string) {
 	newLines := strings.Split(line, "\n")
 	h.lines = append(h.lines, newLines...)
 
-	log.Printf("Appended %d lines to history (total lines: %d)", len(newLines), len(h.lines))
+	slogDebugf("Appended %d lines to history (total lines: %d)", len(newLines), len(h.lines))
 }
 
 // Lines returns a copy of the slice of all stored lines.
@@ -61,7 +61,7 @@ func (h *history) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	log.Printf("Closing history with %d lines", len(h.lines))
+	slogDebugf("Closing history with %d lines", len(h.lines))
 	h.lines = nil
 
 	return nil

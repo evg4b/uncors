@@ -20,7 +20,10 @@ func DefineFlags(set *pflag.FlagSet) *Flags {
 	set.StringSliceP("from", "f", []string{},
 		"Local host with protocol for the resource from which proxying will take place")
 	set.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
-	set.Bool("debug", false, "Write debug output to uncors.log")
+	set.Bool("debug", false, "Shorthand for --log-level=debug")
+	set.String("log-level", "info", "Diagnostic verbosity: debug, info, warn or error")
+	set.String("log-file", "", "Write diagnostics to this file instead of stderr")
+	set.Bool("quiet", false, "Report errors only (shorthand for --log-level=error)")
 	set.StringP("config", "c", "", "Path to the configuration file")
 	set.Bool("interactive", true, "Render the terminal UI (falls back to plain output when stdout is not a terminal)")
 
@@ -43,6 +46,29 @@ func ParseFlags(args []string) (*Flags, error) {
 // ConfigPath is the config file the flags point at, empty when none was given.
 func (f *Flags) ConfigPath() string {
 	value, _ := f.set.GetString("config")
+
+	return value
+}
+
+// LogLevel is the requested diagnostic verbosity. --debug and --quiet are
+// shorthands, so they win over an explicit --log-level only when they were set.
+func (f *Flags) LogLevel() string {
+	if debug, _ := f.set.GetBool("debug"); debug {
+		return "debug"
+	}
+
+	if quiet, _ := f.set.GetBool("quiet"); quiet {
+		return "error"
+	}
+
+	level, _ := f.set.GetString("log-level")
+
+	return level
+}
+
+// LogFile is the file diagnostics are written to, empty for stderr.
+func (f *Flags) LogFile() string {
+	value, _ := f.set.GetString("log-file")
 
 	return value
 }

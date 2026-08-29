@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -42,10 +42,7 @@ func (h *Middleware) Wrap(next http.Handler) http.Handler {
 				return nil
 			}
 
-			//nolint:gosec // G706: both values are passed through SanitizeLogValue
-			log.Printf("ERROR: Static handler error: %s, url: %s",
-				infra.SanitizeLogValue(err.Error()),
-				infra.SanitizeLogValue(request.URL.String()))
+			slog.Error("static handler failed", "err", err, "url", request.URL.String())
 
 			return err
 		}
@@ -64,8 +61,7 @@ func closeFile(file afero.File) {
 
 	err := file.Close()
 	if err != nil {
-		//nolint:gosec // G706: the value is passed through SanitizeLogValue
-		log.Printf("ERROR: Static handler failed to close file: %s", infra.SanitizeLogValue(err.Error()))
+		slog.Warn("static handler failed to close file", "err", err)
 	}
 }
 
