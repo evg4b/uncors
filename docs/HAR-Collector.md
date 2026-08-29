@@ -130,6 +130,25 @@ mappings:
 > new entries are silently dropped rather than slowing down your requests. This is
 > uncommon in normal development use.
 
+## What Is Recorded
+
+Everything the mapping answers, including responses uncors produced itself:
+proxied responses, mocks, scripts, static files, cached hits and the CORS
+preflights uncors answers locally. If a request reached the mapping, it is in the
+archive.
+
+Two things are deliberately left out:
+
+ - **Security-sensitive headers** — `Cookie`, `Set-Cookie`, `Authorization`,
+   `WWW-Authenticate` and the `Proxy-*` pair — unless
+   `capture-secure-headers: true` is set.
+ - **Request bodies.** Only their size is recorded; HAR `postData` is not
+   written, so a large upload is never buffered.
+
+Response bodies larger than 5 MiB are recorded up to that point, and the entry is
+marked with a `comment` saying the body was truncated — a partial body is never
+presented as a complete one.
+
 ## Viewing Captured HAR Files
 
 Open the generated file with any of these tools:
@@ -170,7 +189,9 @@ mappings:
 
 ### Combine with Other Features
 
-HAR recording works alongside mocking, caching, and static file serving:
+HAR recording works alongside mocking, caching and static file serving. Every
+response the mapping produces is recorded — the mocked `/api/feature-flags`, the
+files served from `./dist`, the cached `/api/config` and everything proxied:
 
 ```yaml
 mappings:
