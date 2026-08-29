@@ -21,7 +21,7 @@ func TestCacheMiddleware(t *testing.T) {
 		CacheConfig: config.CacheConfig{
 			Methods:        []string{http.MethodGet},
 			MaxSize:        10 * 1024 * 1024,
-			ExpirationTime: 5 * time.Minute,
+			ExpirationTime: config.Duration(5 * time.Minute),
 		},
 		Mappings: config.Mappings{{
 			From:  hosts.Parse("https://cache.local"),

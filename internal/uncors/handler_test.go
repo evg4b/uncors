@@ -360,7 +360,7 @@ func TestHandlerWithCache(t *testing.T) {
 		},
 		CacheConfig: config.CacheConfig{
 			Methods:        []string{http.MethodGet},
-			ExpirationTime: time.Minute,
+			ExpirationTime: config.Duration(time.Minute),
 			MaxSize:        100 * 1024 * 1024,
 		},
 	}

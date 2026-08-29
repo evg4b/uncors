@@ -120,7 +120,7 @@ func (h *Handler) waitDelay(writer http.ResponseWriter, request *http.Request) b
 		writer.WriteHeader(http.StatusServiceUnavailable)
 
 		return true
-	case <-h.after(h.response.Delay):
+	case <-h.after(time.Duration(h.response.Delay)):
 		return false
 	}
 }

@@ -448,7 +448,7 @@ response:WriteString("OK")
 			script.WithOutput(mocks.NoopOutput()),
 			script.WithScript(&config.Script{
 				Script:  "while true do end",
-				Timeout: 100 * time.Millisecond,
+				Timeout: config.Duration(100 * time.Millisecond),
 			}),
 			script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 		)

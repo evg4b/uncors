@@ -155,7 +155,7 @@ func TestLoadConfiguration(t *testing.T) {
 					Proxy: hosts.Localhost.HTTPPort(8080).String(),
 					Debug: true,
 					CacheConfig: config.CacheConfig{
-						ExpirationTime: time.Hour,
+						ExpirationTime: config.Duration(time.Hour),
 						MaxSize:        52428800,
 						Methods: []string{
 							http.MethodGet,
@@ -238,7 +238,7 @@ func TestLoadConfiguration(t *testing.T) {
 					Proxy: "http://newproxy:9999",
 					Debug: false,
 					CacheConfig: config.CacheConfig{
-						ExpirationTime: time.Hour, MaxSize: 52428800,
+						ExpirationTime: config.Duration(time.Hour), MaxSize: 52428800,
 						Methods: []string{http.MethodGet, http.MethodPost},
 					},
 					Listen:      config.DefaultListenAddress,
@@ -383,7 +383,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 					},
 					CacheConfig: config.CacheConfig{
 						MaxSize:        100 * 1024 * 1024,
-						ExpirationTime: 10 * time.Minute,
+						ExpirationTime: config.Duration(10 * time.Minute),
 						Methods:        []string{http.MethodGet},
 					},
 				},
@@ -410,7 +410,7 @@ func TestUncorsConfigValidator(t *testing.T) {
 					Mappings: []config.Mapping{},
 					CacheConfig: config.CacheConfig{
 						MaxSize:        100 * 1024 * 1024,
-						ExpirationTime: 10 * time.Minute,
+						ExpirationTime: config.Duration(10 * time.Minute),
 						Methods:        []string{http.MethodGet},
 					},
 				},

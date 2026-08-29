@@ -16,7 +16,7 @@ import (
 
 func harConfiguration() *config.UncorsConfig {
 	return &config.UncorsConfig{
-		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
+		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: config.Duration(time.Minute)},
 		Mappings: config.Mappings{
 			{
 				From:  hosts.Localhost.HTTP(),

@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/spf13/afero"
@@ -12,7 +11,7 @@ import (
 type Response struct {
 	Code    int               `yaml:"code"`
 	Headers map[string]string `yaml:"headers"`
-	Delay   time.Duration     `yaml:"delay"`
+	Delay   Duration          `yaml:"delay"`
 	Raw     string            `yaml:"raw"`
 	File    string            `yaml:"file"`
 }

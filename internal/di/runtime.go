@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -82,7 +83,8 @@ func (r *Runtime) Close() error {
 // cache-config.
 func (r *Runtime) Cache() contracts.Cache {
 	if r.cacheStore == nil {
-		r.cacheStore = register(r, cache.NewRistrettoCache(r.cacheConfig.MaxSize, r.cacheConfig.ExpirationTime))
+		ttl := time.Duration(r.cacheConfig.ExpirationTime)
+		r.cacheStore = register(r, cache.NewRistrettoCache(r.cacheConfig.MaxSize, ttl))
 	}
 
 	return r.cacheStore

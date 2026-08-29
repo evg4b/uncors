@@ -31,7 +31,7 @@ func TestCacheGlobsClone(t *testing.T) {
 
 func TestCacheConfigClone(t *testing.T) {
 	cacheConfig := &config.CacheConfig{
-		ExpirationTime: 5 * time.Minute,
+		ExpirationTime: config.Duration(5 * time.Minute),
 		MaxSize:        50 * 1024 * 1024,
 		Methods:        []string{http.MethodGet, http.MethodPost},
 	}
@@ -56,7 +56,7 @@ func TestCacheConfigValidator(t *testing.T) {
 
 	t.Run("should not register errors for", func(t *testing.T) {
 		err := (&config.CacheConfig{
-			ExpirationTime: 5 * time.Minute,
+			ExpirationTime: config.Duration(5 * time.Minute),
 			MaxSize:        100 * 1024 * 1024,
 			Methods:        []string{http.MethodGet, http.MethodPost},
 		}).Validate(field)
@@ -75,24 +75,32 @@ func TestCacheConfigValidator(t *testing.T) {
 				error: "test.expiration-time must be greater than 0",
 			},
 			{
-				name:  "zero max size",
-				value: config.CacheConfig{ExpirationTime: 5 * time.Minute, MaxSize: 0, Methods: []string{http.MethodGet}},
+				name: "zero max size",
+				value: config.CacheConfig{
+					ExpirationTime: config.Duration(5 * time.Minute),
+					MaxSize:        0,
+					Methods:        []string{http.MethodGet},
+				},
 				error: "test.max-size must be greater than 0",
 			},
 			{
-				name:  "negative max size",
-				value: config.CacheConfig{ExpirationTime: 5 * time.Minute, MaxSize: -1, Methods: []string{http.MethodGet}},
+				name: "negative max size",
+				value: config.CacheConfig{
+					ExpirationTime: config.Duration(5 * time.Minute),
+					MaxSize:        -1,
+					Methods:        []string{http.MethodGet},
+				},
 				error: "test.max-size must be greater than 0",
 			},
 			{
 				name:  "empty methods",
-				value: config.CacheConfig{ExpirationTime: 5 * time.Minute, MaxSize: 100 * 1024 * 1024},
+				value: config.CacheConfig{ExpirationTime: config.Duration(5 * time.Minute), MaxSize: 100 * 1024 * 1024},
 				error: "methods must not be empty",
 			},
 			{
 				name: "invalid method",
 				value: config.CacheConfig{
-					ExpirationTime: 5 * time.Minute,
+					ExpirationTime: config.Duration(5 * time.Minute),
 					MaxSize:        100 * 1024 * 1024,
 					Methods:        []string{"invalid"},
 				},
@@ -101,7 +109,7 @@ func TestCacheConfigValidator(t *testing.T) {
 			{
 				name: "invalid second method",
 				value: config.CacheConfig{
-					ExpirationTime: 5 * time.Minute,
+					ExpirationTime: config.Duration(5 * time.Minute),
 					MaxSize:        100 * 1024 * 1024,
 					Methods:        []string{http.MethodGet, "invalid", http.MethodPost},
 				},

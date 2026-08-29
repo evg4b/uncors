@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 )
 
 type CacheGlobs []string
@@ -14,9 +13,9 @@ func (g CacheGlobs) Clone() CacheGlobs {
 }
 
 type CacheConfig struct {
-	ExpirationTime time.Duration `yaml:"expiration-time"`
-	MaxSize        int64         `yaml:"max-size"`
-	Methods        []string      `yaml:"methods"`
+	ExpirationTime Duration `yaml:"expiration-time"`
+	MaxSize        int64    `yaml:"max-size"`
+	Methods        []string `yaml:"methods"`
 }
 
 func (c *CacheConfig) Clone() *CacheConfig {

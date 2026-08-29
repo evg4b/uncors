@@ -10,7 +10,7 @@ const (
 	defaultHTTPSPort = 443
 	// DefaultListenAddress keeps the proxy reachable only from this machine.
 	DefaultListenAddress  = "127.0.0.1"
-	DefaultExpirationTime = 30 * time.Minute
+	DefaultExpirationTime = Duration(30 * time.Minute)
 	DefaultMaxSize        = 100 * 1024 * 1024 // 100 MB
 )
 

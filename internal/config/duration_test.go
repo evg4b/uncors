@@ -15,12 +15,19 @@ func TestCacheConfigDurationUnmarshal(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    string
-			expected time.Duration
+			expected config.Duration
 		}{
 			{
 				name:     "duration without spaces",
 				input:    "expiration-time: 3h6m13s",
-				expected: 3*time.Hour + 6*time.Minute + 13*time.Second,
+				expected: config.Duration(3*time.Hour + 6*time.Minute + 13*time.Second),
+			},
+			// The documentation writes multi-unit durations with spaces, so the
+			// spelling a reader copies has to be the spelling uncors accepts.
+			{
+				name:     "duration with spaces",
+				input:    "expiration-time: 1h 30m",
+				expected: config.Duration(time.Hour + 30*time.Minute),
 			},
 		}
 
@@ -50,7 +57,8 @@ func TestCacheConfigDurationUnmarshal(t *testing.T) {
 
 		err := yaml.Unmarshal([]byte("expiration-time: notaduration"), &cfg)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot unmarshal !!str `notadur...` into time.Duration")
+		assert.Contains(t, err.Error(), "is not a valid duration")
+		assert.Contains(t, err.Error(), "1m30s", "the error should show what a valid value looks like")
 	})
 
 	t.Run("returns error when max-size is not a number", func(t *testing.T) {
@@ -73,17 +81,27 @@ func TestResponseDelayUnmarshal(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    string
-			expected time.Duration
+			expected config.Duration
 		}{
 			{
 				name:     "millisecond delay",
 				input:    "delay: 200ms",
-				expected: 200 * time.Millisecond,
+				expected: config.Duration(200 * time.Millisecond),
 			},
 			{
-				name:     "a houd with 500 milliseconds",
+				name:     "an hour with 500 milliseconds",
 				input:    "delay: \"1h500ms\"",
-				expected: 1*time.Hour + 500*time.Millisecond,
+				expected: config.Duration(time.Hour + 500*time.Millisecond),
+			},
+			{
+				name:     "the documented spaced spellings",
+				input:    "delay: 1m 30s",
+				expected: config.Duration(time.Minute + 30*time.Second),
+			},
+			{
+				name:     "milliseconds with a space",
+				input:    "delay: 2s 500ms",
+				expected: config.Duration(2*time.Second + 500*time.Millisecond),
 			},
 		}
 
@@ -101,7 +119,7 @@ func TestResponseDelayUnmarshal(t *testing.T) {
 
 		err := yaml.Unmarshal([]byte("delay: notaduration"), &resp)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot unmarshal !!str `notadur...` into time.Duration")
+		assert.Contains(t, err.Error(), "is not a valid duration")
 	})
 
 	t.Run("zero delay when field absent", func(t *testing.T) {

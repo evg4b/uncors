@@ -348,7 +348,7 @@ func TestHandler(t *testing.T) {
 					name: "3s delay",
 					response: config.Response{
 						Code:  http.StatusCreated,
-						Delay: 3 * time.Second,
+						Delay: config.Duration(3 * time.Second),
 						Raw:   "Ok",
 					},
 					shouldBeCalled: true,
@@ -358,7 +358,7 @@ func TestHandler(t *testing.T) {
 					name: "15h delay",
 					response: config.Response{
 						Code:  http.StatusCreated,
-						Delay: 15 * time.Hour,
+						Delay: config.Duration(15 * time.Hour),
 						Raw:   "Ok",
 					},
 					shouldBeCalled: true,
@@ -368,7 +368,7 @@ func TestHandler(t *testing.T) {
 					name: "0s delay",
 					response: config.Response{
 						Code:  http.StatusCreated,
-						Delay: 0 * time.Second,
+						Delay: config.Duration(0 * time.Second),
 						Raw:   "Ok",
 					},
 					shouldBeCalled: false,
@@ -385,7 +385,7 @@ func TestHandler(t *testing.T) {
 					name: "incorrect delay",
 					response: config.Response{
 						Code:  http.StatusCreated,
-						Delay: -13 * time.Minute,
+						Delay: config.Duration(-13 * time.Minute),
 						Raw:   "Ok",
 					},
 					shouldBeCalled: false,
@@ -420,7 +420,7 @@ func TestHandler(t *testing.T) {
 			handler := mock.NewMockHandler(
 				mock.WithResponse(&config.Response{
 					Code:  http.StatusOK,
-					Delay: 1 * time.Hour,
+					Delay: config.Duration(1 * time.Hour),
 					Raw:   "Text content",
 				}),
 				mock.WithFileSystem(fileSystem),

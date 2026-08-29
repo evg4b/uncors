@@ -34,7 +34,7 @@ file: ./body.json
 				"Content-Type": "application/json",
 				"X-Custom":     "value",
 			},
-			Delay: 200 * time.Millisecond,
+			Delay: config.Duration(200 * time.Millisecond),
 			Raw:   `{"ok":true}`,
 			File:  "./body.json",
 		}, actual)
@@ -50,12 +50,12 @@ file: ./body.json
 	})
 
 	t.Run("parses delay with embedded spaces", func(t *testing.T) {
-		const input = `delay: "1s500ms"`
+		const input = `delay: "1s 500ms"`
 
 		var actual config.Response
 
 		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
-		assert.Equal(t, 1500*time.Millisecond, actual.Delay)
+		assert.Equal(t, config.Duration(1500*time.Millisecond), actual.Delay)
 	})
 
 	t.Run("returns error for invalid delay", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestResponseClone(t *testing.T) {
 		},
 		Raw:   "this is plain text",
 		File:  "~/projects/uncors/response/demo.json",
-		Delay: time.Hour,
+		Delay: config.Duration(time.Hour),
 	}
 
 	clonedResponse := response.Clone()
@@ -136,8 +136,11 @@ func TestResponseValidator(t *testing.T) {
 			name  string
 			value config.Response
 		}{
-			{name: "with file", value: config.Response{Code: 200, File: file, Delay: 3 * time.Second}},
-			{name: "with raw", value: config.Response{Code: 200, Raw: `{ "test": "test" }`, Delay: 3 * time.Second}},
+			{name: "with file", value: config.Response{Code: 200, File: file, Delay: config.Duration(3 * time.Second)}},
+			{
+				name:  "with raw",
+				value: config.Response{Code: 200, Raw: `{ "test": "test" }`, Delay: config.Duration(3 * time.Second)},
+			},
 			{name: "without delay", value: config.Response{Code: 200, Raw: `{ "test": "test" }`}},
 		}
 		for _, test := range tests {
@@ -155,27 +158,27 @@ func TestResponseValidator(t *testing.T) {
 		}{
 			{
 				name:  "code",
-				value: config.Response{Code: 0, File: file, Delay: 3 * time.Second},
+				value: config.Response{Code: 0, File: file, Delay: config.Duration(3 * time.Second)},
 				error: "test.code code must be in range 100-599",
 			},
 			{
 				name:  "file",
-				value: config.Response{Code: 200, File: "testdata/unknown.txt", Delay: 3 * time.Second},
+				value: config.Response{Code: 200, File: "testdata/unknown.txt", Delay: config.Duration(3 * time.Second)},
 				error: "test.file testdata/unknown.txt does not exist",
 			},
 			{
 				name:  "delay",
-				value: config.Response{Code: 200, File: file, Delay: -1 * time.Second},
+				value: config.Response{Code: 200, File: file, Delay: config.Duration(-1 * time.Second)},
 				error: "test.delay must be greater than or equal to 0",
 			},
 			{
 				name:  "both empty",
-				value: config.Response{Code: 200, Delay: 3 * time.Second},
+				value: config.Response{Code: 200, Delay: config.Duration(3 * time.Second)},
 				error: "test.raw or test.file must be set",
 			},
 			{
 				name:  "both set",
-				value: config.Response{Code: 200, File: file, Raw: "test", Delay: 3 * time.Second},
+				value: config.Response{Code: 200, File: file, Raw: "test", Delay: config.Duration(3 * time.Second)},
 				error: "only one of test.raw or test.file must be set",
 			},
 		}

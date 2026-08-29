@@ -40,15 +40,19 @@ mappings:
 
 **Common configuration patterns:**
 
+Basic proxy with caching:
+
 ```yaml
-# Basic proxy with caching
 mappings:
   - from: http://api.local:3000
     to: https://api.example.com
     cache:
       - /api/**
+```
 
-# Proxy with static files (SPA)
+Proxy with static files (SPA):
+
+```yaml
 mappings:
   - from: http://app.local:3000
     to: https://api.example.com
@@ -56,8 +60,11 @@ mappings:
       - path: /
         dir: ./dist
         index: index.html
+```
 
-# Proxy with mocked endpoints
+Proxy with mocked endpoints:
+
+```yaml
 mappings:
   - from: http://api.local:3000
     to: https://api.example.com
@@ -110,7 +117,7 @@ example demonstrating all available options:
 ```yaml
 # Global configuration
 debug: false
-proxy: localhost:8080
+proxy: http://localhost:8080
 
 # Mappings configuration
 mappings:

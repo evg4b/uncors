@@ -8,7 +8,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/urlpattern"
@@ -112,7 +111,7 @@ func ValidateStatus(field string, value int) error {
 	return nil
 }
 
-func ValidateDuration(field string, value time.Duration, allowZero bool) error {
+func ValidateDuration(field string, value Duration, allowZero bool) error {
 	if allowZero {
 		if value < 0 {
 			return &ValidationError{fmt.Sprintf("%s must be greater than or equal to 0", field)}

@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
@@ -14,7 +13,7 @@ type Script struct {
 	Script  string         `yaml:"script"`
 	File    string         `yaml:"file"`
 	// Timeout bounds how long the script may run. Zero means the default.
-	Timeout time.Duration `yaml:"timeout"`
+	Timeout Duration `yaml:"timeout"`
 }
 
 func (s *Script) Clone() Script {

@@ -594,34 +594,34 @@ cd my-project
 
 ```yaml
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
+  - from: http://your-domain.local:3000
+    to: https://target-api.example.com
 ```
 
 ### Proxy with Mocking
 
 ```yaml
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
+  - from: http://your-domain.local:3000
+    to: https://target-api.example.com
     mocks:
-      - path: /api/[ENDPOINT]
+      - path: /api/your-endpoint
         response:
           code: 200
           headers:
             Content-Type: application/json
-          raw: "[JSON-RESPONSE]"
+          raw: '{"example": "response"}'
 ```
 
 ### SPA with API
 
 ```yaml
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
+  - from: http://your-domain.local:3000
+    to: https://target-api.example.com
     statics:
       - path: /
-        dir: [PATH-TO-BUILD]
+        dir: ./dist
         index: index.html
 ```
 
@@ -633,21 +633,21 @@ cache-config:
   expiration-time: 10m
 
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
+  - from: http://your-domain.local:3000
+    to: https://target-api.example.com
 
     statics:
       - path: /
-        dir: [BUILD-DIR]
+        dir: ./dist
         index: index.html
 
     mocks:
-      - path: /api/[ENDPOINT]
+      - path: /api/your-endpoint
         response:
           code: 200
           headers:
             Content-Type: application/json
-          file: ./mocks/[FILE].json
+          file: ./mocks/your-endpoint.json
 
     cache:
       - /api/**

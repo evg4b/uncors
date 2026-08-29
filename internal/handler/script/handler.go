@@ -46,7 +46,7 @@ func NewHandler(options ...HandlerOption) (*Handler, error) {
 		return nil, err
 	}
 
-	handler.timeout = handler.script.Timeout
+	handler.timeout = time.Duration(handler.script.Timeout)
 	if handler.timeout <= 0 {
 		handler.timeout = defaultTimeout
 	}

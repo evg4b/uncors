@@ -140,18 +140,18 @@ func TestValidateDuration(t *testing.T) {
 	const field = "test-field"
 
 	runOK(t, "positive without allowZero", func() error {
-		return config.ValidateDuration(field, time.Second, false)
+		return config.ValidateDuration(field, config.Duration(time.Second), false)
 	})
 	runOK(t, "zero with allowZero", func() error {
 		return config.ValidateDuration(field, 0, true)
 	})
 
 	runErr(t, "negative without allowZero", "test-field must be greater than 0",
-		func() error { return config.ValidateDuration(field, -time.Second, false) })
+		func() error { return config.ValidateDuration(field, config.Duration(-time.Second), false) })
 	runErr(t, "zero without allowZero", "test-field must be greater than 0",
 		func() error { return config.ValidateDuration(field, 0, false) })
 	runErr(t, "negative with allowZero", "test-field must be greater than or equal to 0",
-		func() error { return config.ValidateDuration(field, -time.Second, true) })
+		func() error { return config.ValidateDuration(field, config.Duration(-time.Second), true) })
 }
 
 // ---- ValidateMethod ------------------------------------------------------

@@ -76,7 +76,7 @@ func TestMockValidator(t *testing.T) {
 			Response: config.Response{
 				Code:  200,
 				Raw:   "test",
-				Delay: 1 * time.Second,
+				Delay: config.Duration(1 * time.Second),
 			},
 		}).Validate("mock", afero.NewMemMapFs())
 
