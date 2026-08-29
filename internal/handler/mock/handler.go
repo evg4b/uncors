@@ -11,7 +11,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 )
@@ -44,7 +43,7 @@ func (h *Handler) Serve(writer http.ResponseWriter, request *http.Request) error
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		slog.Error("mock handler failed", "err", err, "url", urlt.URL_String(request.URL))
+		slog.Error("mock handler failed", "err", err, "url", request.URL.String())
 
 		return err
 	}

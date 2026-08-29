@@ -8,7 +8,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/gorilla/mux"
 )
 
@@ -30,11 +30,11 @@ func (m *Middleware) Wrap(next http.Handler) http.Handler {
 
 func (m *Middleware) rewriteURL(request *http.Request) {
 	clonedURL := &url.URL{Path: replace(m.rewrite.To, mux.Vars(request))}
-	request.URL = urlt.URL_ResolveReference(request.URL, clonedURL)
+	request.URL = request.URL.ResolveReference(clonedURL)
 }
 
 func (m *Middleware) rewriteRequest(request *http.Request) *http.Request {
-	if m.rewrite.Host == (urlt.Host{}) {
+	if m.rewrite.Host == (urlpattern.Host{}) {
 		return request
 	}
 

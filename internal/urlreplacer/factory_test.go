@@ -1,11 +1,12 @@
 package urlreplacer_test
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -25,13 +26,13 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 			{
 				name: "source url is incorrect",
 				mapping: config.Mappings{
-					{From: urlt.Host{Hostname: string(rune(0x7f))}, To: hosts.Github.HTTPS()},
+					{From: urlpattern.Host{Hostname: string(rune(0x7f))}, To: hosts.Github.HTTPS()},
 				},
 			},
 			{
 				name: "target url is incorrect ",
 				mapping: config.Mappings{
-					{From: hosts.Localhost.Host(), To: urlt.Host{Hostname: string(rune(0x7f))}},
+					{From: hosts.Localhost.Host(), To: urlpattern.Host{Hostname: string(rune(0x7f))}},
 				},
 			},
 		}
@@ -80,7 +81,7 @@ func TestFactoryMake(t *testing.T) {
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			parseURL, err := urlt.Parse(testCase.url)
+			parseURL, err := url.Parse(testCase.url)
 			testutils.CheckNoError(t, err)
 
 			got, got1, err := factory.Make(parseURL)

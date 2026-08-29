@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 )
@@ -291,7 +291,7 @@ func TestMappings_GroupByPort(t *testing.T) {
 
 	t.Run("panic on invalid port in GroupByPort", func(t *testing.T) {
 		mappings := config.Mappings{
-			{From: urlt.Host{Hostname: "localhost", Port: "invalid-port"}, To: hosts.Github.HTTPS()},
+			{From: urlpattern.Host{Hostname: "localhost", Port: "invalid-port"}, To: hosts.Github.HTTPS()},
 		}
 
 		assert.Panics(t, func() {

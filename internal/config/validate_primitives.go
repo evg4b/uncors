@@ -3,23 +3,24 @@ package config
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/spf13/afero"
 )
 
 const maxHostLength = 255
 
 // ValidateHost validates an already-parsed host. Structural problems (paths,
-// queries, malformed hosts) are rejected earlier by urlt.ParseHost, so only
+// queries, malformed hosts) are rejected earlier by urlpattern.Parse, so only
 // the semantic constraints remain: a non-empty hostname of bounded length and
 // an http/https (or empty) scheme.
-func ValidateHost(field string, value urlt.Host) error {
+func ValidateHost(field string, value urlpattern.Host) error {
 	if value.Hostname == "" {
 		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}
 	}
@@ -46,7 +47,7 @@ func ValidatePath(field, value string, relative bool) error {
 		return &ValidationError{fmt.Sprintf("%s must be absolute and start with /", field)}
 	}
 
-	uri, err := urlt.Parse("http://localhost/" + strings.TrimPrefix(value, "/"))
+	uri, err := url.Parse("http://localhost/" + strings.TrimPrefix(value, "/"))
 	if err != nil {
 		return &ValidationError{fmt.Sprintf("%s is not a valid path", field)}
 	}

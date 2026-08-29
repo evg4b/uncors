@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -13,8 +13,8 @@ import (
 var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
 
 type Mapping struct {
-	From            urlt.Host         `yaml:"from"`
-	To              urlt.Host         `yaml:"to"`
+	From            urlpattern.Host   `yaml:"from"`
+	To              urlpattern.Host   `yaml:"to"`
 	Statics         StaticDirectories `yaml:"statics"`
 	Mocks           Mocks             `yaml:"mocks"`
 	Scripts         Scripts           `yaml:"scripts"`
@@ -115,12 +115,12 @@ func (m *Mapping) unmarshalShorthand(value *yaml.Node) error {
 		return ErrMappingShorthandValue
 	}
 
-	from, err := urlt.ParseHost(value.Content[0].Value)
+	from, err := urlpattern.Parse(value.Content[0].Value)
 	if err != nil {
 		return err
 	}
 
-	to, err := urlt.ParseHost(value.Content[1].Value)
+	to, err := urlpattern.Parse(value.Content[1].Value)
 	if err != nil {
 		return err
 	}

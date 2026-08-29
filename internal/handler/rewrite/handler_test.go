@@ -8,14 +8,14 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMiddlewareWrap(t *testing.T) {
 	t.Run("rewrites URL and calls next handler", func(t *testing.T) {
 		expectedURL := "/rewritten"
-		expectedHost := urlt.Host{Hostname: "example.com"}
+		expectedHost := urlpattern.Host{Hostname: "example.com"}
 		nextCalled := false
 
 		middleware := rewrite.NewMiddleware(

@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/urlt"
 )
 
 var pendingMethodStyle = lipgloss.NewStyle().
@@ -101,7 +100,7 @@ func (m *TrackerWidget) View() tea.View {
 	for _, req := range m.pending {
 		urlStr := ""
 		if req.URL != nil {
-			urlStr = urlt.URL_String(req.URL)
+			urlStr = req.URL.String()
 		}
 
 		url := pendingTextStyle.Render(urlStr)
@@ -131,7 +130,7 @@ func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, te
 		slogDebugf("TrackerWidget: request done: %d", msg.ID)
 		delete(m.pending, msg.ID)
 	case msg.URL != nil:
-		slogDebugf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, urlt.URL_String(msg.URL))
+		slogDebugf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, msg.URL.String())
 		m.pending[msg.ID] = server.RequestEvent(msg)
 	}
 

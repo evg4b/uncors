@@ -17,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 )
@@ -220,7 +219,7 @@ func (m *Middleware) extractCacheKey(request *http.Request) (string, bool) {
 		return "", false
 	}
 
-	values := urlt.URL_Query(request.URL)
+	values := request.URL.Query()
 
 	items := make([]string, 0, len(values))
 	for key, value := range values {

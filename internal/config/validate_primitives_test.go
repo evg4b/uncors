@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -44,9 +44,9 @@ func TestValidateHost(t *testing.T) {
 
 	t.Run("invalid", func(t *testing.T) {
 		runErr(t, "empty", "field must not be empty",
-			func() error { return config.ValidateHost(field, urlt.Host{}) })
+			func() error { return config.ValidateHost(field, urlpattern.Host{}) })
 		runErr(t, "too long", "field must not be longer than 255 characters, but got 256",
-			func() error { return config.ValidateHost(field, urlt.Host{Hostname: strings.Repeat("a", 256)}) })
+			func() error { return config.ValidateHost(field, urlpattern.Host{Hostname: strings.Repeat("a", 256)}) })
 		runErr(t, "unsupported scheme", "field scheme must be http or https",
 			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp")) })
 	})

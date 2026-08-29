@@ -4,10 +4,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func describe(c testCase) string {
 }
 
 func TestNormaliseRequest(t *testing.T) {
-	url, err := urlt.Parse(hosts.Localhost.HTTP().String())
+	url, err := url.Parse(hosts.Localhost.HTTP().String())
 	testutils.CheckNoError(t, err)
 
 	t.Run("set correct scheme", func(t *testing.T) {

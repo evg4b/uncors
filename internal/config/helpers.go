@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 )
 
 var (
@@ -24,7 +24,7 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	}
 
 	for index, key := range from {
-		toHost, err := urlt.ParseHost(to[index])
+		toHost, err := urlpattern.Parse(to[index])
 		if err != nil {
 			return fmt.Errorf("invalid `to` value %q: %w", to[index], err)
 		}
@@ -41,7 +41,7 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 		}
 
 		if !found {
-			fromHost, err := urlt.ParseHost(key)
+			fromHost, err := urlpattern.Parse(key)
 			if err != nil {
 				return fmt.Errorf("invalid `from` value %q: %w", key, err)
 			}
@@ -75,7 +75,7 @@ func NormaliseMappings(mappings Mappings) Mappings {
 
 // normalizeHost canonicalises a host: it forces the default http scheme when
 // none is set and drops the port when it matches the scheme's default port.
-func normalizeHost(host urlt.Host) urlt.Host {
+func normalizeHost(host urlpattern.Host) urlpattern.Host {
 	if host.Scheme == "" {
 		host.Scheme = httpScheme
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui/styles"
-	"github.com/evg4b/uncors/internal/urlt"
 )
 
 const prefixWidth = 13
@@ -29,7 +28,7 @@ func printResponse(data *contracts.RequestData) string {
 
 	prefixStyle = prefixStyle.Width(prefixWidth)
 
-	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(urlt.URL_String(data.URL)))
+	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(data.URL.String()))
 }
 
 func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {

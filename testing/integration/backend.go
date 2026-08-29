@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,9 +58,9 @@ func (b *Backend) URL() string {
 	return b.server.URL
 }
 
-// AsHost returns the backend URL as a urlt.Host for use in config Mapping.To fields.
-func (b *Backend) AsHost() urlt.Host {
-	parsed, _ := urlt.ParseHost(b.server.URL)
+// AsHost returns the backend URL as a urlpattern.Host for use in config Mapping.To fields.
+func (b *Backend) AsHost() urlpattern.Host {
+	parsed, _ := urlpattern.Parse(b.server.URL)
 
 	return *parsed
 }

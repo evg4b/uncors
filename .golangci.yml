@@ -51,7 +51,6 @@ linters:
       - third_party$
       - builtin$
       - examples$
-      - internal/urlt
 formatters:
   enable:
     - gofmt
@@ -63,4 +62,3 @@ formatters:
       - third_party$
       - builtin$
       - examples$
-      - internal/urlt

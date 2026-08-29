@@ -6,22 +6,20 @@ import (
 
 	"github.com/gorilla/mux"
 	lua "github.com/yuin/gopher-lua"
-
-	"github.com/evg4b/uncors/internal/urlt"
 )
 
 func createRequestTable(luaState *lua.LState, request *http.Request) *lua.LTable {
 	reqTable := luaState.NewTable()
 
 	reqTable.RawSetString("method", lua.LString(request.Method))
-	reqTable.RawSetString("url", lua.LString(urlt.URL_String(request.URL)))
+	reqTable.RawSetString("url", lua.LString(request.URL.String()))
 	reqTable.RawSetString("path", lua.LString(request.URL.Path))
 	reqTable.RawSetString("query", lua.LString(request.URL.RawQuery))
 	reqTable.RawSetString("host", lua.LString(request.Host))
 	reqTable.RawSetString("remote_addr", lua.LString(request.RemoteAddr))
 
 	reqTable.RawSetString("headers", createHeadersTable(luaState, request.Header))
-	reqTable.RawSetString("query_params", createQueryParamsTable(luaState, urlt.URL_Query(request.URL)))
+	reqTable.RawSetString("query_params", createQueryParamsTable(luaState, request.URL.Query()))
 	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
 	if request.Body != nil {

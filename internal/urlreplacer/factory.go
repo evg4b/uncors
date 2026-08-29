@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/urlt"
 )
 
 type ReplacerFactory interface {
@@ -51,7 +50,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 }
 
 func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {
-	mapping, err := f.findMapping(urlt.URL_String(requestURL))
+	mapping, err := f.findMapping(requestURL.String())
 	if err != nil {
 		return nil, nil, err
 	}

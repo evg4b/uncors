@@ -4,13 +4,13 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/evg4b/uncors/internal/urlt"
+	"github.com/evg4b/uncors/internal/urlpattern"
 )
 
 type RewritingOption struct {
-	From string    `yaml:"from"`
-	To   string    `yaml:"to"`
-	Host urlt.Host `yaml:"host"`
+	From string          `yaml:"from"`
+	To   string          `yaml:"to"`
+	Host urlpattern.Host `yaml:"host"`
 }
 
 func (r RewritingOption) Clone() RewritingOption {
@@ -29,7 +29,7 @@ func (r RewritingOption) Validate(field string) error {
 	errs = append(errs, ValidatePath(joinPath(field, "from"), r.From, true))
 	errs = append(errs, ValidatePath(joinPath(field, "to"), r.To, true))
 
-	if r.Host != (urlt.Host{}) {
+	if r.Host != (urlpattern.Host{}) {
 		errs = append(errs, ValidateHost(joinPath(field, "host"), r.Host))
 	}
 
