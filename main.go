@@ -10,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
@@ -31,28 +32,23 @@ func main() {
 
 func run() int {
 	fs := afero.NewOsFs()
-
-	container := di.NewContainer(
-		di.WithFs(fs),
-		di.WithStdout(os.Stdout),
-		di.WithVersion(Version),
-	)
-	defer container.Close()
-
-	output := container.CliOutput()
+	console := tui.NewCliOutput(os.Stdout)
 
 	defer helpers.PanicInterceptor(func(value any) {
-		output.Error(value)
+		console.Error(value)
 		log.Fatalf("Caught panic: %v", value)
 	})
 
 	if len(os.Args) > 1 && os.Args[1] == generateCertsCmd {
+		container := newContainer(fs, di.WithStdout(os.Stdout))
+		defer container.Close()
+
 		return runGenerateCerts(container)
 	}
 
 	pflag.Usage = func() {
-		tui.PrintLogo(output, Version)
-		fmt.Fprintf(output, "Usage of %s:\n", os.Args[0])
+		tui.PrintLogo(console, Version)
+		fmt.Fprintf(console, "Usage of %s:\n", os.Args[0])
 		pflag.PrintDefaults()
 	}
 
@@ -61,11 +57,20 @@ func run() int {
 		panic(err)
 	}
 
+	// The output implementation is chosen before the container is built, so
+	// nothing can capture the wrong one.
 	if uncorsConfig.Interactive {
-		return runInteractive(container, configPath, uncorsConfig)
+		return runInteractive(console, fs, configPath, uncorsConfig)
 	}
 
-	return runNonInteractive(context.Background(), container, configPath, uncorsConfig)
+	return runNonInteractive(context.Background(), fs, configPath, uncorsConfig)
+}
+
+func newContainer(fs afero.Fs, options ...di.ContainerOption) *di.Container {
+	return di.NewContainer(append([]di.ContainerOption{
+		di.WithFs(fs),
+		di.WithVersion(Version),
+	}, options...)...)
 }
 
 // runGenerateCerts executes the generate-certs sub-command and returns an exit code.
@@ -100,10 +105,13 @@ func runGenerateCerts(container *di.Container) int {
 // when configPath is non-empty.
 func runNonInteractive(
 	ctx context.Context,
-	container *di.Container,
+	fs afero.Fs,
 	configPath string,
 	cfg *config.UncorsConfig,
 ) int {
+	container := newContainer(fs, di.WithStdout(os.Stdout))
+	defer container.Close()
+
 	output := container.CliOutput()
 
 	app := uncors.CreateUncors(container)
@@ -115,7 +123,7 @@ func runNonInteractive(
 
 	go server.RequestPrinter(tracker, output)
 
-	reloader := uncors.NewReloader(app, output, configLoader(container.Fs()), configPath)
+	reloader := uncors.NewReloader(app, output, configLoader(fs), configPath)
 	defer func() {
 		closeErr := reloader.Close()
 		if closeErr != nil {
@@ -164,17 +172,26 @@ func startVersionChecker(ctx context.Context, container *di.Container, proxy str
 }
 
 // runInteractive starts the proxy in interactive TUI mode.
-func runInteractive(container *di.Container, configPath string, cfg *config.UncorsConfig) int {
+func runInteractive(console contracts.Output, fs afero.Fs, configPath string, cfg *config.UncorsConfig) int {
+	output := uncorsapp.NewOutput()
+
+	container := newContainer(fs, di.WithOutput(output))
+	defer container.Close()
+
 	app := uncorsapp.NewUncorsApp(
 		container,
+		output,
 		configPath,
 		cfg,
-		configLoader(container.Fs()),
+		configLoader(fs),
 	)
 
 	_, err := tea.NewProgram(app).Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Interactive mode failed: %v", err)
+		console.Error(err)
+
+		return 1
 	}
 
 	return 0

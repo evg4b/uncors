@@ -28,7 +28,8 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 		Mappings: config.Mappings{},
 	}
 
-	container := di.NewContainer()
+	output := NewOutput()
+	container := di.NewContainer(di.WithOutput(output))
 
 	t.Cleanup(func() {
 		container.Close()
@@ -37,6 +38,7 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 	loadCalls := 0
 	app := NewUncorsApp(
 		container,
+		output,
 		"", // no config file — watcher is not created
 		uncorsConfig,
 		func() (*config.UncorsConfig, error) {
@@ -179,7 +181,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		app.outputCh <- "queued"
+		app.output.ch <- "queued"
 
 		assert.Equal(t, outputLineMsg("queued"), app.waitOutputCmd()())
 
@@ -191,7 +193,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		close(app.outputCh)
+		close(app.output.ch)
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
@@ -321,7 +323,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
+		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
+		app := NewUncorsApp(container, NewOutput(), tmpFile.Name(), cfg, loader)
 
 		defer func() {
 			app.cancel()
@@ -349,7 +352,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		defer testutils.Close(t, container)
 
 		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, loader)
+		app := NewUncorsApp(container, NewOutput(), "/nonexistent/path/config.yaml", cfg, loader)
 
 		defer func() {
 			app.cancel()
@@ -404,7 +407,7 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
+	app := NewUncorsApp(container, NewOutput(), tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
 		select {
 		case called <- struct{}{}:
 		default:

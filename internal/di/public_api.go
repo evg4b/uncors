@@ -34,19 +34,23 @@ func (c *Container) Stdout() io.Writer {
 }
 
 func (c *Container) CliOutput() contracts.Output {
-	return c.cliOutput.GetOrBuild()
+	return c.cliOutput()
 }
 
 func (c *Container) RequestTracker() *server.RequestTracker {
-	return c.requestTracker.GetOrBuild()
+	return c.requestTracker()
 }
 
 func (c *Container) GenerateCertsCommand() *commands.GenerateCertsCommand {
-	return c.generateCertsCommand.GetOrBuild()
+	return c.generateCertsCommand()
+}
+
+func (c *Container) Server() *server.Server {
+	return c.server()
 }
 
 func (c *Container) HostCertManager() *server.HostCertManager {
-	return c.hostCertManager.GetOrBuild()
+	return c.hostCertManager()
 }
 
 func (c *Container) OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware {

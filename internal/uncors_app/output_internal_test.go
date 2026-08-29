@@ -23,10 +23,10 @@ func recv(t *testing.T, ch <-chan string) string {
 	}
 }
 
-func newTestOutput() (*tuiOutput, <-chan string) {
-	outputCh := make(chan string, 10)
+func newTestOutput() (*Output, <-chan string) {
+	output := NewOutput()
 
-	return newTuiOutput(outputCh), outputCh
+	return output, output.Lines()
 }
 
 func TestTuiOutput_Info(t *testing.T) {

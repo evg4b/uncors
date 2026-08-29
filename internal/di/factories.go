@@ -2,9 +2,7 @@ package di
 
 import (
 	"github.com/evg4b/uncors/internal/commands"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui"
 )
 
 func (c *Container) newGenerateCertsCommand() *commands.GenerateCertsCommand {
@@ -16,14 +14,6 @@ func (c *Container) newGenerateCertsCommand() *commands.GenerateCertsCommand {
 
 func (c *Container) newHostCertManager() *server.HostCertManager {
 	return server.NewHostCertManager(c.fs)
-}
-
-func (c *Container) Server() *server.Server {
-	return c.server.GetOrBuild()
-}
-
-func (c *Container) newCliOutput() contracts.Output {
-	return tui.NewCliOutput(c.stdout)
 }
 
 func (c *Container) newServer() *server.Server {

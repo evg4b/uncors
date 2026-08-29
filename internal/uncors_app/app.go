@@ -10,7 +10,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/uncors"
@@ -28,11 +27,11 @@ type UncorsApp struct {
 	keys keyMap
 
 	app       *uncors.Uncors
-	output    *tuiOutput
+	output    *Output
 	tracker   server.IRequestTracker
 	container *di.Container
 
-	outputCh   chan string
+	outputCh   <-chan string
 	appContext func() context.Context
 	appDone    <-chan struct{}
 	cancel     context.CancelFunc
@@ -67,18 +66,12 @@ type appUpdateMsg interface {
 // the app watches it for changes and auto-restarts the proxy on every save.
 func NewUncorsApp(
 	container *di.Container,
+	output *Output,
 	configPath string,
 	cfg *config.UncorsConfig,
 	loadConfig uncors.ConfigLoader,
 ) *UncorsApp {
-	outputCh := make(chan string, outputChannelSize)
-	output := newTuiOutput(outputCh)
-
 	appCtx, cancel := context.WithCancel(context.Background())
-
-	container.Override(di.OverrideCliOutput(func() contracts.Output {
-		return output
-	}))
 
 	keys := newKeyMap()
 
@@ -92,7 +85,7 @@ func NewUncorsApp(
 		output:        output,
 		tracker:       container.RequestTracker(),
 		container:     container,
-		outputCh:      outputCh,
+		outputCh:      output.Lines(),
 		appContext:    func() context.Context { return appCtx },
 		appDone:       appCtx.Done(),
 		cancel:        cancel,

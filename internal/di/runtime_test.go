@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -51,8 +50,6 @@ func TestBuildRuntime(t *testing.T) {
 		require.NoError(t, err)
 
 		defer testutils.Close(t, runtime)
-
-		assert.Implements(t, (*contracts.Middleware)(nil), runtime.CacheMiddleware(config.CacheGlobs{"*.json"}))
 
 		store := runtime.Cache()
 

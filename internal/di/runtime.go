@@ -88,7 +88,7 @@ func (r *Runtime) Cache() contracts.Cache {
 	return r.cacheStore
 }
 
-func (r *Runtime) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware {
+func (r *Runtime) cacheMiddleware(globs config.CacheGlobs) contracts.Middleware {
 	return infra.NewPrefixedMiddleware(
 		cache.NewMiddleware(
 			cache.WithMethods(r.cacheConfig.Methods),
@@ -99,33 +99,13 @@ func (r *Runtime) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware 
 	)
 }
 
-func (r *Runtime) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
+func (r *Runtime) harMiddleware(harConfig *config.HARConfig) contracts.Middleware {
 	writer := register(r, har.NewWriter(harConfig.File))
 
 	return har.NewMiddleware(
 		har.WithWriter(writer),
 		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
 	)
-}
-
-func (r *Runtime) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
-	return r.container.StaticMiddleware(path, dir)
-}
-
-func (r *Runtime) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
-	return r.container.RewriteMiddleware(rewriting)
-}
-
-func (r *Runtime) OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware {
-	return r.container.OptionsMiddleware(cfg)
-}
-
-func (r *Runtime) MockHandler(response *config.Response) contracts.Handler {
-	return r.container.MockHandler(response)
-}
-
-func (r *Runtime) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
-	return r.container.ScriptHandler(scriptConfig)
 }
 
 func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
@@ -152,12 +132,16 @@ func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Targ
 }
 
 func (r *Runtime) router(mappings config.Mappings, proxyURL string) (contracts.Handler, error) {
-	muxRouter, err := router.NewRouter(
-		mappings,
-		router.WithDiContainer(r),
-		router.ForRouterWithDefaultHandler(r.container.ProxyHandler(mappings, proxyURL)),
-		router.ForRouterWithCacheMiddlewareFactory(r.CacheMiddleware),
-	)
+	muxRouter, err := router.NewRouter(mappings, router.Deps{
+		Proxy:   r.container.ProxyHandler(mappings, proxyURL),
+		Static:  r.container.StaticMiddleware,
+		Rewrite: r.container.RewriteMiddleware,
+		Options: r.container.OptionsMiddleware,
+		Mock:    r.container.MockHandler,
+		Script:  r.container.ScriptHandler,
+		HAR:     r.harMiddleware,
+		Cache:   r.cacheMiddleware,
+	})
 
 	return infra.CastToContractsHandler(muxRouter), err
 }

@@ -2,6 +2,7 @@ package di_test
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -9,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -175,46 +177,25 @@ func TestContainer(t *testing.T) {
 	})
 }
 
-func TestContainerOverride(t *testing.T) {
-	t.Run("Override replaces cli output factory", func(t *testing.T) {
-		container := di.NewContainer()
+func TestContainerOutput(t *testing.T) {
+	t.Run("uses the explicitly provided output", func(t *testing.T) {
+		expected := tui.NewCliOutput(io.Discard)
+
+		container := di.NewContainer(di.WithOutput(expected))
 		defer testutils.Close(t, container)
 
-		customOutput := container.CliOutput()
-
-		overrideApplied := false
-
-		container.Override(di.OverrideCliOutput(func() contracts.Output {
-			overrideApplied = true
-
-			return customOutput
-		}))
-
-		newContainer := di.NewContainer()
-		defer testutils.Close(t, newContainer)
-
-		newContainer.Override(di.OverrideCliOutput(func() contracts.Output {
-			return customOutput
-		}))
-
-		result := newContainer.CliOutput()
-		assert.Same(t, customOutput, result)
-
-		_ = overrideApplied
+		assert.Same(t, expected, container.CliOutput())
 	})
 
-	t.Run("OverrideCliOutput sets custom factory", func(t *testing.T) {
-		container := di.NewContainer()
+	t.Run("falls back to a console output over stdout", func(t *testing.T) {
+		buf := &bytes.Buffer{}
+
+		container := di.NewContainer(di.WithStdout(buf))
 		defer testutils.Close(t, container)
 
-		sentinel := container.CliOutput()
+		container.CliOutput().Print("hello")
 
-		container.Override(di.OverrideCliOutput(func() contracts.Output {
-			return sentinel
-		}))
-
-		result := container.CliOutput()
-		assert.Same(t, sentinel, result)
+		assert.Contains(t, buf.String(), "hello")
 	})
 }
 
