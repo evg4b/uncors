@@ -22,16 +22,22 @@ mappings:
 
 ## Configuration Properties
 
-| Property | Type   | Required | Description                                   |
-| -------- | ------ | -------- | --------------------------------------------- |
-| `from`   | string | Yes      | Path pattern to match (supports wildcards)    |
-| `to`     | string | Yes      | Replacement path pattern (supports wildcards) |
-| `host`   | string | No       | Override upstream host for this rewrite rule  |
+| Property | Type   | Required | Description                                                            |
+| -------- | ------ | -------- | ---------------------------------------------------------------------- |
+| `from`   | string | Yes      | Path to match, with `{name}` **path variables**                        |
+| `to`     | string | Yes      | Replacement path; may use the variables `from` captured                |
+| `host`   | string | No       | Send this rule's requests to another host, optionally with a scheme    |
 
-## Wildcard Support
+## Path Variables
 
-Capture parts of the URL using `{variable}` syntax and reference them in the
-target path:
+Capture parts of the URL with `{name}` and reference them in the target path. A
+path variable matches **one path segment** and does not cross a `/`.
+
+> [!NOTE]
+> uncors uses three different pattern syntaxes, one per job: **path variables**
+> (`{name}`) in rewrites, **host placeholders** (`{name}`) in mapping hosts, and
+> **glob patterns** (`**`) in `cache`. A `{name}` in `to` that `from` does not
+> capture is a configuration error.
 
 ```yaml
 mappings:
@@ -90,11 +96,17 @@ mappings:
     rewrites:
       - from: /auth/{endpoint}
         to: /v1/{endpoint}
-        host: auth-service.example.com
+        host: https://auth-service.example.com
       - from: /payment/{endpoint}
         to: /v2/{endpoint}
-        host: payment-service.example.com
+        host: https://payment-service.example.com
 ```
+
+> [!IMPORTANT]
+> Include the scheme in `host` when the other service speaks a different one.
+> Without it, the incoming request's scheme is kept — so a rule reached over
+> `http://` would go out over `http://` too, and cookies coming back would not be
+> marked secure.
 
 **Request flow:**
 
@@ -106,7 +118,9 @@ mappings:
 
 ### Combining Rewrites with Other Features
 
-Rewrites, mocks, and caching can be used together in a single mapping:
+Rewrites, mocks, and caching can be used together in a single mapping. A
+rewritten request re-enters the mapping's routes, so `/old-api/health` below is
+rewritten to `/v2/api/health` and then answered by the mock at that path:
 
 ```yaml
 mappings:
@@ -123,3 +137,6 @@ mappings:
     cache:
       - /v2/api/users/**
 ```
+
+Rules that keep sending a request back into each other are stopped after eight
+rounds, and the request is answered with `508 Loop Detected`.

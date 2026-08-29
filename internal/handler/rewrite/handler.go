@@ -38,8 +38,17 @@ func (m *Middleware) rewriteRequest(request *http.Request) *http.Request {
 		return request
 	}
 
+	// The scheme travels with the host when one was configured, so that
+	// `host: https://auth.example.com` upgrades the request as written — and so
+	// that cookies forwarded to it are marked secure. Without a scheme the
+	// incoming request's own scheme is kept.
+	target := m.rewrite.Host.HostPort()
+	if m.rewrite.Host.Scheme != "" {
+		target = m.rewrite.Host.String()
+	}
+
 	return request.WithContext(
-		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host.HostPort()),
+		context.WithValue(request.Context(), RewriteHostKey, target),
 	)
 }
 

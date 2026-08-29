@@ -144,3 +144,22 @@ func TestRewritingOptionValidatorIsValidWithError(t *testing.T) {
 		})
 	}
 }
+
+func TestRewritingOptionVariableValidation(t *testing.T) {
+	t.Run("accepts variables the from pattern captures", func(t *testing.T) {
+		option := config.RewritingOption{From: "/old-api/{resource}", To: "/v2/api/{resource}"}
+
+		require.NoError(t, option.Validate("rewrites[0]"))
+	})
+
+	// A {name} the from pattern never captures is left in the outgoing path
+	// literally, so the request quietly goes somewhere nobody meant.
+	t.Run("reports a variable the from pattern does not capture", func(t *testing.T) {
+		option := config.RewritingOption{From: "/old-api/{resource}", To: "/v2/api/{id}"}
+
+		err := option.Validate("rewrites[0]")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "rewrites[0].to references {id}")
+	})
+}
