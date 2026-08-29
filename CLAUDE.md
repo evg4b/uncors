@@ -67,7 +67,8 @@ go test -run TestName ./internal/handler/proxy/
   and read the diff before committing it.
 - `interactive` is a CLI flag only (`yaml:"-"`), and it falls back to plain
   output when stdout is not a terminal.
-- `schema.json` is for editor completion; it is not used at runtime.
+- `schema.json` is for editor completion; it is not used at runtime, and
+  `tests/schema` fails if it drifts from the config structs.
 - Three documentation guards will fail a change that drifts: `tests/docs` loads
   every config example in `docs/`, `internal/cli` pins the documented flag table
   to the real flag set, and `make dead-code` rejects unreachable code.

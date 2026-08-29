@@ -43,7 +43,7 @@
         "500ms",
         "1h 30m 15s 500ms 100us 200ns"
       ],
-      "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$",
+      "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|\u00b5s))?\\s*(\\d+(ns))?$",
       "title": "Duration",
       "type": "string"
     },
@@ -225,9 +225,9 @@
           "$ref": "#/definitions/Headers",
           "description": "Custom headers to be sent in response to OPTIONS requests"
         },
-        "status": {
+        "code": {
           "$ref": "#/definitions/StatusCode",
-          "description": "Custom status code to be sent in response to OPTIONS requests"
+          "description": "Status code to answer OPTIONS requests with"
         }
       },
       "type": "object"
@@ -334,6 +334,10 @@
         "script": {
           "description": "Inline script code",
           "type": "string"
+        },
+        "timeout": {
+          "description": "How long the script may run before it is stopped",
+          "$ref": "#/definitions/Duration"
         }
       },
       "required": [
@@ -383,10 +387,6 @@
       "additionalProperties": false,
       "description": "Global cache configuration",
       "properties": {
-        "clear-time": {
-          "description": "Expired cache clear time",
-          "type": "string"
-        },
         "expiration-time": {
           "description": "Cache expiration time",
           "type": "string"
@@ -400,6 +400,12 @@
             "$ref": "#/definitions/Method"
           },
           "type": "array"
+        },
+        "max-size": {
+          "description": "Maximum total size of cached responses, in bytes",
+          "type": "integer",
+          "minimum": 1,
+          "default": 104857600
         }
       },
       "type": "object"
@@ -421,6 +427,11 @@
       "description": "HTTP/HTTPS proxy to provide requests to real server (used system by default)",
       "format": "uri",
       "type": "string"
+    },
+    "listen": {
+      "description": "Address to bind to. Anything but a loopback address exposes the proxy to your network",
+      "type": "string",
+      "default": "127.0.0.1"
     }
   },
   "required": [
