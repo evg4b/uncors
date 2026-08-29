@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/hashicorp/go-version"
 )
@@ -41,7 +40,7 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) {
 		return
 	}
 
-	defer helpers.CloseSafe(response.Body)
+	defer response.Body.Close()
 
 	decoder := json.NewDecoder(response.Body)
 

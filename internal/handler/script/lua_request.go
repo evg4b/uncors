@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 func createRequestTable(luaState *lua.LState, request *http.Request) *lua.LTable {

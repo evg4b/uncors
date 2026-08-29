@@ -7,9 +7,8 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +27,7 @@ func TestMiddlewareWrap(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
-		helpers.NormaliseRequest(request)
+		infra.NormaliseRequest(request)
 
 		next := infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 			nextCalled = true
@@ -57,7 +56,7 @@ func TestMiddlewareWrap(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
-		helpers.NormaliseRequest(request)
+		infra.NormaliseRequest(request)
 
 		next := infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 			nextCalled = true

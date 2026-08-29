@@ -3,7 +3,7 @@ package hosts
 import (
 	"strconv"
 
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 type host string

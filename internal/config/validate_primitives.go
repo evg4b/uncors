@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/spf13/afero"
 )
 

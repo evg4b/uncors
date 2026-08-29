@@ -2,6 +2,7 @@ package helpers
 
 import "github.com/samber/lo"
 
+// CloneMap copies a map, cloning values that know how to clone themselves.
 func CloneMap[K comparable, V any](data map[K]V) map[K]V {
 	if data == nil {
 		return nil

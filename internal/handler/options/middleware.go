@@ -36,7 +36,7 @@ func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Set(key, value)
 	}
 
-	resp.WriteHeader(helpers.NormaliseStatusCode(m.code))
+	resp.WriteHeader(infra.NormaliseStatusCode(m.code))
 }
 
 type MiddlewareOption = func(*Middleware)

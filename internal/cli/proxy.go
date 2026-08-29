@@ -11,8 +11,8 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	tuiapp "github.com/evg4b/uncors/internal/tui/app"
 	"github.com/evg4b/uncors/internal/uncors"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -103,12 +103,12 @@ func runHeadless(ctx context.Context, env Env, flags *config.Flags, cfg *config.
 
 // runInteractive starts the proxy with the terminal UI.
 func runInteractive(env Env, flags *config.Flags, cfg *config.UncorsConfig) error {
-	output := uncorsapp.NewOutput()
+	output := tuiapp.NewOutput()
 
 	container := newContainer(env, di.WithOutput(output))
 	defer container.Close()
 
-	app := uncorsapp.NewUncorsApp(
+	app := tuiapp.NewUncorsApp(
 		container,
 		output,
 		flags.ConfigPath(),

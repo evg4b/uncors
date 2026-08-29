@@ -13,7 +13,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/handler/router"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -70,7 +69,7 @@ func serve(t *testing.T, handler http.Handler, method, url string) *httptest.Res
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequestWithContext(t.Context(), method, url, nil)
-	helpers.NormaliseRequest(request)
+	infra.NormaliseRequest(request)
 
 	handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 

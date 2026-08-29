@@ -17,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/router"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -230,7 +229,7 @@ func TestRouter(t *testing.T) {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-						helpers.NormaliseRequest(request)
+						infra.NormaliseRequest(request)
 
 						serveHTTP(t, router, recorder, request)
 
@@ -243,7 +242,7 @@ func TestRouter(t *testing.T) {
 			t.Run("should return index file by default", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
-				helpers.NormaliseRequest(request)
+				infra.NormaliseRequest(request)
 
 				serveHTTP(t, router, recorder, request)
 
@@ -254,7 +253,7 @@ func TestRouter(t *testing.T) {
 			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
-				helpers.NormaliseRequest(request)
+				infra.NormaliseRequest(request)
 
 				serveHTTP(t, router, recorder, request)
 
@@ -287,7 +286,7 @@ func TestRouter(t *testing.T) {
 					t.Run(testCase.name, func(t *testing.T) {
 						recorder := httptest.NewRecorder()
 						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-						helpers.NormaliseRequest(request)
+						infra.NormaliseRequest(request)
 
 						serveHTTP(t, router, recorder, request)
 
@@ -300,7 +299,7 @@ func TestRouter(t *testing.T) {
 			t.Run("should return original file", func(t *testing.T) {
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
-				helpers.NormaliseRequest(request)
+				infra.NormaliseRequest(request)
 
 				serveHTTP(t, router, recorder, request)
 
@@ -341,7 +340,7 @@ func TestRouter(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := httptest.NewRecorder()
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-					helpers.NormaliseRequest(request)
+					infra.NormaliseRequest(request)
 
 					serveHTTP(t, router, recorder, request)
 
@@ -354,7 +353,7 @@ func TestRouter(t *testing.T) {
 		t.Run("should return error code when mock file doesn't exists", func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
-			helpers.NormaliseRequest(request)
+			infra.NormaliseRequest(request)
 
 			serveHTTP(t, router, recorder, request)
 

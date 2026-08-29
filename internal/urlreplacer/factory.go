@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 type ReplacerFactory interface {

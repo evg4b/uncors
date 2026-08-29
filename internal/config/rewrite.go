@@ -4,7 +4,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 type RewritingOption struct {

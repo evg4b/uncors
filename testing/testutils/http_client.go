@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -23,7 +21,7 @@ func ReadBody(t *testing.T, recorder *httptest.ResponseRecorder) string {
 	t.Helper()
 
 	response := recorder.Result()
-	defer helpers.CloseSafe(response.Body)
+	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	CheckNoError(t, err)
@@ -35,7 +33,7 @@ func ReadHeader(t *testing.T, recorder *httptest.ResponseRecorder) http.Header {
 	t.Helper()
 
 	response := recorder.Result()
-	defer helpers.CloseSafe(response.Body)
+	defer response.Body.Close()
 
 	return response.Header
 }

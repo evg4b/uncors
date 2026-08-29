@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
@@ -42,7 +41,7 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 
 	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 		//nolint:gosec // G706: the host is passed through SanitizeLogValue
-		log.Printf("Host %s is not mapped", helpers.SanitizeLogValue(request.Host))
+		log.Printf("Host %s is not mapped", infra.SanitizeLogValue(request.Host))
 
 		return errHostNotMapped
 	}))

@@ -14,7 +14,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -44,7 +43,7 @@ type Command struct {
 // Execute resolves and runs the command named by args (excluding the program
 // name) and returns the process exit code.
 func Execute(ctx context.Context, env Env, args []string) int {
-	defer helpers.PanicInterceptor(func(value any) {
+	defer PanicInterceptor(func(value any) {
 		env.Console.Error(value)
 		log.Fatalf("Caught panic: %v", value)
 	})

@@ -12,10 +12,9 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -140,7 +139,7 @@ func TestProxyHandler(t *testing.T) {
 				req.URL.Scheme = expectedURL.Scheme
 				req.Host = expectedURL.Host
 				req.URL.Path = expectedURL.Path
-				helpers.NormaliseRequest(req)
+				infra.NormaliseRequest(req)
 
 				recorder := httptest.NewRecorder()
 
@@ -174,7 +173,7 @@ func TestProxyHandler(t *testing.T) {
 
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
 
@@ -216,7 +215,7 @@ func TestProxyHandler(t *testing.T) {
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
 		req.Header.Set(headers.ContentType, "application/json")
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 
 		handler.ServeHTTP(infra.NewResponseRecorder(httptest.NewRecorder()), req)
 	})
@@ -255,7 +254,7 @@ func TestProxyHandler(t *testing.T) {
 			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
 		})
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 
 		handler.ServeHTTP(infra.NewResponseRecorder(httptest.NewRecorder()), req)
 	})
@@ -285,7 +284,7 @@ func TestProxyHandler(t *testing.T) {
 
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(infra.NewResponseRecorder(recorder), req)
@@ -320,7 +319,7 @@ func TestProxyHandler(t *testing.T) {
 
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 		req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, "premium.api.com"))
 
 		recorder := httptest.NewRecorder()
@@ -343,7 +342,7 @@ func TestProxyHandler(t *testing.T) {
 
 		req.URL.Scheme = premiumLocalScheme
 		req.Host = premiumLocalHost
-		helpers.NormaliseRequest(req)
+		infra.NormaliseRequest(req)
 
 		recorder := httptest.NewRecorder()
 		responseWriter := infra.NewResponseRecorder(recorder)
@@ -440,7 +439,7 @@ func TestProxyHandlerForwarding(t *testing.T) {
 
 		request.Host = "premium.local.com"
 		request.RemoteAddr = "10.1.2.3:4567"
-		helpers.NormaliseRequest(request)
+		infra.NormaliseRequest(request)
 
 		return request
 	}

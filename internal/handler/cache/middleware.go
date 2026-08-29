@@ -13,7 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/samber/lo"
 )
 
@@ -26,7 +26,9 @@ type Middleware struct {
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	middleware := helpers.ApplyOptions(&Middleware{}, options)
 
-	helpers.AssertIsDefined(middleware.cache, "Cache storage is not configured")
+	if middleware.cache == nil {
+		panic("CacheMiddleware: cache storage is not configured")
+	}
 
 	return middleware
 }
@@ -75,7 +77,7 @@ func (m *Middleware) cacheRequest(writer http.ResponseWriter, request *http.Requ
 }
 
 func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
-	if !helpers.Is2xxCode(capture.StatusCode) {
+	if !infra.Is2xxCode(capture.StatusCode) {
 		return
 	}
 

@@ -32,7 +32,8 @@ func (h *Middleware) Wrap(next http.Handler) http.Handler {
 		filePath := h.extractFilePath(request)
 
 		file, stat, err := h.openFile(filePath)
-		defer helpers.CloseSafe(file)
+
+		defer closeFile(file)
 
 		if err != nil {
 			if errors.Is(err, errNotHandled) {
@@ -43,8 +44,8 @@ func (h *Middleware) Wrap(next http.Handler) http.Handler {
 
 			//nolint:gosec // G706: both values are passed through SanitizeLogValue
 			log.Printf("ERROR: Static handler error: %s, url: %s",
-				helpers.SanitizeLogValue(err.Error()),
-				helpers.SanitizeLogValue(request.URL.String()))
+				infra.SanitizeLogValue(err.Error()),
+				infra.SanitizeLogValue(request.URL.String()))
 
 			return err
 		}
@@ -53,6 +54,19 @@ func (h *Middleware) Wrap(next http.Handler) http.Handler {
 
 		return nil
 	})
+}
+
+// closeFile reports a failing close instead of turning it into a panic.
+func closeFile(file afero.File) {
+	if file == nil {
+		return
+	}
+
+	err := file.Close()
+	if err != nil {
+		//nolint:gosec // G706: the value is passed through SanitizeLogValue
+		log.Printf("ERROR: Static handler failed to close file: %s", infra.SanitizeLogValue(err.Error()))
+	}
 }
 
 func (h *Middleware) extractFilePath(request *http.Request) string {

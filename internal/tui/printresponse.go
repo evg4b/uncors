@@ -5,9 +5,9 @@ import (
 
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tui/styles"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 const prefixWidth = 13
@@ -33,23 +33,23 @@ func printResponse(data *contracts.RequestData) string {
 }
 
 func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
-	if helpers.Is1xxCode(statusCode) {
+	if infra.Is1xxCode(statusCode) {
 		return styles.HTTPStatus1xxBlockStyle, styles.HTTPStatus1xxTextStyle
 	}
 
-	if helpers.Is2xxCode(statusCode) {
+	if infra.Is2xxCode(statusCode) {
 		return styles.HTTPStatus2xxBlockStyle, styles.HTTPStatus2xxTextStyle
 	}
 
-	if helpers.Is3xxCode(statusCode) {
+	if infra.Is3xxCode(statusCode) {
 		return styles.HTTPStatus3xxBlockStyle, styles.HTTPStatus3xxTextStyle
 	}
 
-	if helpers.Is4xxCode(statusCode) {
+	if infra.Is4xxCode(statusCode) {
 		return styles.HTTPStatus4xxBlockStyle, styles.HTTPStatus4xxTextStyle
 	}
 
-	if helpers.Is5xxCode(statusCode) {
+	if infra.Is5xxCode(statusCode) {
 		return styles.HTTPStatus5xxBlockStyle, styles.HTTPStatus5xxTextStyle
 	}
 

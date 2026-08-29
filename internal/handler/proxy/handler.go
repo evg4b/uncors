@@ -34,7 +34,7 @@ type exchange struct {
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	output    contracts.Output
+	output    contracts.ErrorOutput
 
 	proxy *httputil.ReverseProxy
 
@@ -47,9 +47,17 @@ type Handler struct {
 func NewProxyHandler(options ...HandlerOption) *Handler {
 	handler := helpers.ApplyOptions(&Handler{}, options)
 
-	helpers.AssertIsDefined(handler.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(handler.output, "ProxyHandler: Output is not configured")
-	helpers.AssertIsDefined(handler.http, "ProxyHandler: Http client is not configured")
+	if handler.replacers == nil {
+		panic("ProxyHandler: ReplacerFactory is not configured")
+	}
+
+	if handler.output == nil {
+		panic("ProxyHandler: Output is not configured")
+	}
+
+	if handler.http == nil {
+		panic("ProxyHandler: HTTP client is not configured")
+	}
 
 	handler.proxy = &httputil.ReverseProxy{
 		Rewrite:        rewriteRequest,
@@ -170,7 +178,7 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	}
 }
 
-func WithOutput(output contracts.Output) HandlerOption {
+func WithOutput(output contracts.ErrorOutput) HandlerOption {
 	return func(m *Handler) {
 		m.output = output
 	}

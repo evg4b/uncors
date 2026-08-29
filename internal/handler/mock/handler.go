@@ -11,7 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 )
@@ -46,8 +46,8 @@ func (h *Handler) Serve(writer http.ResponseWriter, request *http.Request) error
 	if err != nil {
 		//nolint:gosec // G706: both values are passed through SanitizeLogValue
 		log.Printf("ERROR: Mock handler error: %s (URL: %s)",
-			helpers.SanitizeLogValue(err.Error()),
-			helpers.SanitizeLogValue(urlt.URL_String(request.URL)))
+			infra.SanitizeLogValue(err.Error()),
+			infra.SanitizeLogValue(urlt.URL_String(request.URL)))
 
 		return err
 	}
@@ -90,7 +90,7 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 		header.Set(headers.ContentType, contentType)
 	}
 
-	writer.WriteHeader(helpers.NormaliseStatusCode(response.Code))
+	writer.WriteHeader(infra.NormaliseStatusCode(response.Code))
 	_, err := fmt.Fprint(writer, response.Raw)
 
 	return err

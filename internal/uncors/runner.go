@@ -8,7 +8,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 // shutdownTimeout bounds how long in-flight requests are given to finish. It is
@@ -88,7 +87,7 @@ func (r *Runner) Shutdown(ctx context.Context) error {
 }
 
 func (r *Runner) awaitShutdownSignal(ctx context.Context) {
-	helpers.GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
+	GracefulShutdown(ctx, func(shutdownCtx context.Context) error {
 		log.Println("shutdown signal received")
 
 		return r.Shutdown(shutdownCtx)

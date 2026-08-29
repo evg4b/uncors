@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/samber/lo"
 )
@@ -157,6 +156,11 @@ func (s *Server) launch(ctx context.Context, pending []*PortListener) error {
 		return nil
 	}
 
+	err := s.checkTLSReadiness(pending)
+	if err != nil {
+		return err
+	}
+
 	var launchWaitGroup sync.WaitGroup
 
 	launchWaitGroup.Add(len(pending))
@@ -209,6 +213,27 @@ func (s *Server) launch(ctx context.Context, pending []*PortListener) error {
 }
 
 // takeListeners detaches every live listener from the server and returns them.
+// checkTLSReadiness reports the missing local CA before any socket is opened, so
+// that an https mapping fails with an actionable message rather than with a
+// handshake error on the first request.
+func (s *Server) checkTLSReadiness(pending []*PortListener) error {
+	var errs []error
+
+	for _, listener := range pending {
+		if !listener.enableTLS {
+			continue
+		}
+
+		if !CAExists(s.manager.fs) {
+			errs = append(errs, &TLSError{Host: listener.address})
+
+			s.forget(listener)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
 func (s *Server) takeListeners() []*PortListener {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -260,7 +285,7 @@ func shutdownListeners(ctx context.Context, listeners []*PortListener) error {
 }
 
 func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
-	helpers.NormaliseRequest(request)
+	infra.NormaliseRequest(request)
 
 	rec := infra.NewResponseRecorder(writer)
 	requestID := s.nextID.Add(1)
@@ -288,7 +313,7 @@ func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter,
 
 	handler.ServeHTTP(rec, request.WithContext(ctx))
 
-	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
+	data := infra.ToRequestData(request, infra.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil
 
 	prefixMu.Lock()

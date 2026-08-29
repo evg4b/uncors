@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/evg4b/uncors/internal/urlt"
 )
 
 var (

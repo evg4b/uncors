@@ -15,7 +15,7 @@ import (
 
 type Handler struct {
 	script *config.Script
-	output contracts.Output
+	output contracts.ErrorOutput
 	fs     afero.Fs
 }
 
@@ -77,7 +77,7 @@ func (h *Handler) runScript(luaState *lua.LState) error {
 
 type HandlerOption = func(*Handler)
 
-func WithOutput(output contracts.Output) HandlerOption {
+func WithOutput(output contracts.ErrorOutput) HandlerOption {
 	return func(h *Handler) {
 		h.output = output
 	}
