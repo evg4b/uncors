@@ -23,6 +23,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,7 +63,7 @@ func newDeps(t *testing.T, container *di.Container, proxy http.Handler) router.D
 		Script:  container.ScriptHandler,
 		Cache:   cacheFactory(),
 		HAR: func(harConfig *config.HARConfig) contracts.Middleware {
-			writer := har.NewWriter(harConfig.File)
+			writer := har.NewWriter(afero.NewOsFs(), harConfig.File)
 
 			t.Cleanup(func() {
 				require.NoError(t, writer.Close())

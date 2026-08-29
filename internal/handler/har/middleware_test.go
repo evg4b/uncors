@@ -19,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middlewa
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "test.har")
-	harWriter := har.NewWriter(path)
+	harWriter := har.NewWriter(afero.NewOsFs(), path)
 	opts = append([]har.MiddlewareOption{har.WithWriter(harWriter)}, opts...)
 	mdlw := har.NewMiddleware(opts...)
 

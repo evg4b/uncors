@@ -32,6 +32,9 @@ type Env struct {
 	// proxy. Use Hosts.DialContext when building a custom client (e.g. one that
 	// does not trust the proxy CA) so it can still reach mapped hosts by name.
 	Hosts *Hosts
+	// Fs is the filesystem the proxy runs against. Everything uncors writes —
+	// static files it serves, HAR archives it records — lives here.
+	Fs afero.Fs
 
 	routes []route
 }
@@ -82,7 +85,7 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 	}
 
 	resolver := newHosts()
-	env := &Env{Backend: backend, Hosts: resolver}
+	env := &Env{Backend: backend, Hosts: resolver, Fs: fs}
 
 	for i := range cfg.Mappings {
 		from := &cfg.Mappings[i].From

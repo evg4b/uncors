@@ -23,8 +23,7 @@ mappings:
     har: ./recordings/api.har
 ```
 
-UNCORS creates the file on the first request and keeps it updated atomically
-after each subsequent request.
+UNCORS creates the file on the first request and refreshes it as you browse.
 
 ## Configuration
 
@@ -107,12 +106,24 @@ mappings:
 
 ## File Lifecycle
 
- - **Created** on the first captured request (parent directory must exist).
- - **Updated atomically** after every request - UNCORS writes to a temporary
-   file then renames it, so the `.har` file is always in a valid, complete state
-   even if you open it mid-session.
- - **Flushed and closed** on shutdown or when the configuration is reloaded. All
-   buffered entries are written before the file handle is released.
+ - **Created** on the first captured request; parent directories are created
+   for you.
+ - **Recorded continuously** into a `<name>.har.jsonl` journal next to the
+   archive. Appending one entry costs the same whether it is the first or the
+   ten-thousandth, so a long session does not get slower.
+ - **Rebuilt** from that journal at most a few times per second, written to a
+   temporary file and renamed over the target. The `.har` file is therefore
+   always valid and complete if you open it mid-session, though it may be a
+   fraction of a second behind the newest request.
+ - **Finalised and closed** on shutdown and when the configuration is reloaded:
+   every pending entry is written, and the journal is removed.
+ - **Bounded** at 100,000 entries per archive. Beyond that, entries are dropped
+   and a warning is logged rather than letting one session grow without limit.
+
+> [!TIP]
+> A `.har.jsonl` file left next to your archive means the process was killed
+> before it could finalise the recording. It holds one JSON entry per line and
+> can be recovered by hand.
 
 > [!NOTE]
 > If the internal write buffer (4,096 entries) fills up during a traffic spike,

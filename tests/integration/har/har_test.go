@@ -5,14 +5,13 @@ package har_test
 import (
 	"encoding/json"
 	"net/http"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,9 +31,9 @@ type harFile struct {
 }
 
 func TestHARMiddleware(t *testing.T) {
-	// The HAR writer uses the real filesystem and flushes on Close, so use a
-	// real temp path and shut the proxy down before reading the file.
-	harPath := filepath.Join(t.TempDir(), "out.har")
+	// The HAR writer records through the injected filesystem, which the harness
+	// keeps in memory.
+	const harPath = "/har/out.har"
 
 	backend := integration.NewBackend(t, nil)
 	env := integration.New(t, backend, &config.UncorsConfig{
@@ -53,7 +52,7 @@ func TestHARMiddleware(t *testing.T) {
 	var parsed harFile
 
 	require.Eventually(t, func() bool {
-		data, err := os.ReadFile(harPath)
+		data, err := afero.ReadFile(env.Fs, harPath)
 		if err != nil {
 			return false
 		}
