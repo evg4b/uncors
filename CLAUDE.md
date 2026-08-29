@@ -79,7 +79,7 @@ UNCORS follows a clean layered architecture with middleware composition:
 
 **`internal/infra`** - Infrastructure services
 - HTTP client with connection pooling and proxy support
-- Logger setup (logs to stderr or file with debug flag)
+- Logger setup (`log/slog` to stderr or a file, level-controlled)
 - TLS certificate generation and handling
 
 **`internal/tui`** - Terminal UI and logging
@@ -177,7 +177,7 @@ Key test flags:
 4. Update CONTRIBUTING.md if user-facing
 
 ### Debugging
-- Enable debug logs: `./uncors -d` (writes to `uncors.log`)
+- Diagnostics go to stderr at `info` level; `--log-level debug`, `--log-file PATH` and `--quiet` control them (`--debug` is shorthand for `--log-level debug`)
 - Run single test: `go test -run TestName ./internal/handler/proxy/`
 - Race detector: Already enabled in `make test` and `make test-cover`
 - Integration tests: `make test-integration` (slower, real network)

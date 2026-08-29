@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -63,7 +65,32 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 		return fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
 	}
 
+	warnAboutUnknownFields(fs, path)
+
 	return nil
+}
+
+// warnAboutUnknownFields reports keys the configuration does not have. A
+// misspelled or removed key is otherwise accepted in silence, and the user is
+// left believing they enabled something they did not — which is worse than an
+// error. It is a warning rather than a failure because upgrading configs are
+// likely to carry keys from older versions.
+func warnAboutUnknownFields(fs afero.Fs, path string) {
+	file, err := fs.Open(path)
+	if err != nil {
+		return
+	}
+
+	defer file.Close()
+
+	decoder := yaml.NewDecoder(file)
+	decoder.KnownFields(true)
+
+	err = decoder.Decode(&UncorsConfig{})
+	if err != nil && !errors.Is(err, io.EOF) {
+		slog.Warn("the configuration file contains unknown keys, which uncors ignores",
+			"path", path, "detail", err)
+	}
 }
 
 func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
