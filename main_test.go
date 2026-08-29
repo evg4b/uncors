@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/di"
@@ -25,27 +24,28 @@ func TestLoadConfiguration(t *testing.T) {
 	t.Run("returns config for valid flags", func(t *testing.T) {
 		defer setArgs([]string{"uncors", "-f", "http://localhost:3000", "-t", "https://api.example.com"})()
 
-		cfg, path := loadConfiguration(afero.NewMemMapFs())
+		cfg, path, err := loadConfiguration(afero.NewMemMapFs())
 
+		require.NoError(t, err)
 		require.NotNil(t, cfg)
 		assert.Empty(t, path)
 		assert.Len(t, cfg.Mappings, 1)
 	})
 
-	t.Run("panics when mappings are empty", func(t *testing.T) {
+	t.Run("fails when mappings are empty", func(t *testing.T) {
 		defer setArgs([]string{"uncors"})()
 
-		assert.Panics(t, func() {
-			loadConfiguration(afero.NewMemMapFs())
-		})
+		_, _, err := loadConfiguration(afero.NewMemMapFs())
+
+		require.Error(t, err)
 	})
 
-	t.Run("panics on invalid flags", func(t *testing.T) {
+	t.Run("fails on invalid flags", func(t *testing.T) {
 		defer setArgs([]string{"uncors", "--no-such-flag"})()
 
-		assert.Panics(t, func() {
-			loadConfiguration(afero.NewMemMapFs())
-		})
+		_, _, err := loadConfiguration(afero.NewMemMapFs())
+
+		require.Error(t, err)
 	})
 }
 
@@ -90,8 +90,9 @@ func TestLoadConfigurationWithDebug(t *testing.T) {
 
 	defer setArgs([]string{"uncors", "-f", "http://localhost:3000", "-t", "https://api.example.com", "--debug"})()
 
-	cfg, _ := loadConfiguration(afero.NewMemMapFs())
+	cfg, _, err := loadConfiguration(afero.NewMemMapFs())
 
+	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	assert.True(t, cfg.Debug)
 }
@@ -108,8 +109,9 @@ mappings:
 	fs := afero.NewMemMapFs()
 	require.NoError(t, afero.WriteFile(fs, "/config.yaml", []byte(cfgContent), 0o600))
 
-	cfg, path := loadConfiguration(fs)
+	cfg, path, err := loadConfiguration(fs)
 
+	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	assert.Equal(t, "/config.yaml", path)
 	assert.Len(t, cfg.Mappings, 1)
@@ -126,26 +128,22 @@ func TestStartVersionChecker(t *testing.T) {
 	})
 }
 
-func TestStartConfigWatcher(t *testing.T) {
-	t.Run("logs error for non-existent config path", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+func TestConfigLoader(t *testing.T) {
+	t.Run("propagates configuration errors instead of returning a nil config", func(t *testing.T) {
+		defer setArgs([]string{"uncors"})()
 
-		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), container, "/no/such/config.yaml", nil)
-		})
+		cfg, err := configLoader(afero.NewMemMapFs())()
+
+		require.Error(t, err)
+		assert.Nil(t, cfg)
 	})
 
-	t.Run("creates watcher for existing config file", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+	t.Run("returns the loaded configuration", func(t *testing.T) {
+		defer setArgs([]string{"uncors", "-f", "http://localhost:3000", "-t", "https://api.example.com"})()
 
-		tmpDir := t.TempDir()
-		configFile := filepath.Join(tmpDir, "config.yaml")
-		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
+		cfg, err := configLoader(afero.NewMemMapFs())()
 
-		assert.NotPanics(t, func() {
-			startConfigWatcher(context.Background(), container, configFile, nil)
-		})
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
 	})
 }

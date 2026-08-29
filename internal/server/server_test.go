@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -353,4 +354,104 @@ func TestServer(t *testing.T) {
 
 		require.Error(t, err)
 	})
+}
+
+func TestServerRestartReconcilesPorts(t *testing.T) {
+	manager := server.NewHostCertManager(afero.NewMemMapFs())
+
+	handlerFor := func(body string) contracts.Handler {
+		return infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+			_, err := fmt.Fprint(w, body)
+
+			return err
+		})
+	}
+
+	t.Run("swaps the handler of a port that stays mapped", func(t *testing.T) {
+		instance := server.New(manager, server.NewRequestTracker())
+		port := testutils.GetFreePort(t)
+		address := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{Address: address, Handler: handlerFor("first")},
+		}))
+
+		defer instance.Close()
+
+		assert.Equal(t, "first", getBody(t, "http://"+address))
+
+		require.NoError(t, instance.Restart(t.Context(), []server.Target{
+			{Address: address, Handler: handlerFor("second")},
+		}))
+
+		assert.Equal(t, "second", getBody(t, "http://"+address))
+	})
+
+	t.Run("stops listeners that are no longer mapped", func(t *testing.T) {
+		instance := server.New(manager, server.NewRequestTracker())
+		kept := net.JoinHostPort("127.0.0.1", strconv.Itoa(testutils.GetFreePort(t)))
+		dropped := net.JoinHostPort("127.0.0.1", strconv.Itoa(testutils.GetFreePort(t)))
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{Address: kept, Handler: handlerFor("kept")},
+			{Address: dropped, Handler: handlerFor("dropped")},
+		}))
+
+		defer instance.Close()
+
+		require.NoError(t, instance.Restart(t.Context(), []server.Target{
+			{Address: kept, Handler: handlerFor("kept")},
+		}))
+
+		assert.Equal(t, "kept", getBody(t, "http://"+kept))
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+dropped, nil)
+		require.NoError(t, err)
+
+		_, err = http.DefaultClient.Do(request) //nolint:bodyclose // the request must not reach a listener
+		require.Error(t, err, "the unmapped port must no longer be served")
+	})
+
+	t.Run("a failing new port does not take down the ports that work", func(t *testing.T) {
+		instance := server.New(manager, server.NewRequestTracker())
+		kept := net.JoinHostPort("127.0.0.1", strconv.Itoa(testutils.GetFreePort(t)))
+
+		var listenConfig net.ListenConfig
+
+		occupied, err := listenConfig.Listen(t.Context(), "tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+
+		defer occupied.Close()
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{Address: kept, Handler: handlerFor("kept")},
+		}))
+
+		defer instance.Close()
+
+		err = instance.Restart(t.Context(), []server.Target{
+			{Address: kept, Handler: handlerFor("kept")},
+			{Address: occupied.Addr().String(), Handler: handlerFor("conflict")},
+		})
+
+		require.Error(t, err)
+		assert.Equal(t, "kept", getBody(t, "http://"+kept))
+	})
+}
+
+func getBody(t *testing.T, url string) string {
+	t.Helper()
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	require.NoError(t, err)
+
+	response, err := http.DefaultClient.Do(request)
+	require.NoError(t, err)
+
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	return string(body)
 }
