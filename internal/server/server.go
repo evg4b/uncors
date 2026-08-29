@@ -235,7 +235,13 @@ func (s *Server) checkTLSReadiness(pending []*PortListener) error {
 		}
 
 		if !CAExists(s.manager.fs, s.manager.caDir) {
-			errs = append(errs, &TLSError{Host: listener.address})
+			// Name the host the user configured, not the address we bind to.
+			host := listener.defaultHost
+			if host == "" {
+				host = listener.address
+			}
+
+			errs = append(errs, &TLSError{Host: host})
 
 			s.forget(listener)
 		}

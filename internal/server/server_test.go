@@ -479,3 +479,25 @@ func TestServerBindsTheConfiguredAddress(t *testing.T) {
 
 	assert.Equal(t, "bound", getBody(t, "http://127.0.0.1:"+strconv.Itoa(port)))
 }
+
+// The user configured a hostname; the address uncors happens to bind is not what
+// they need to see in the error.
+func TestTLSReadinessNamesTheConfiguredHost(t *testing.T) {
+	manager := server.NewHostCertManager(afero.NewMemMapFs(), "")
+	instance := server.New(manager, server.NewRequestTracker())
+
+	defer instance.Close()
+
+	err := instance.Start(t.Context(), []server.Target{
+		{
+			Address:     net.JoinHostPort("127.0.0.1", strconv.Itoa(testutils.GetFreePort(t))),
+			EnableTLS:   true,
+			DefaultHost: "secure.local",
+			Handler:     http.NotFoundHandler(),
+		},
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "secure.local")
+	assert.Contains(t, err.Error(), "uncors generate-certs")
+}
