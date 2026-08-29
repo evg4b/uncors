@@ -1,201 +1,186 @@
 # UNCORS Architecture
 
-A quick overview of how UNCORS works and how the code is organized.
+How UNCORS works and how the code is organised. For the user-facing reference see
+[docs/](docs/); for contributor conventions see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What is UNCORS?
 
-UNCORS is a local development proxy that bypasses CORS restrictions. It sits between your browser and backend servers, modifying CORS headers on the fly.
+UNCORS is a local development proxy that bypasses CORS restrictions. It sits
+between your browser and your backends, rewriting hosts and CORS headers on the
+fly, and can answer requests locally from mocks, Lua scripts or static files.
 
-**How it works:**
+## Layers
 
-- Intercepts HTTP/HTTPS requests
-- Forwards requests to target servers
-- Modifies CORS headers in responses
-- Uses middleware for additional features (caching, mocking, etc.)
-
-## Core Components
-
-### Main Application (`internal/uncors`)
-
-Manages server lifecycle, graceful shutdown, and config watching.
-
-### Configuration (`internal/config`)
-
-Loads and validates YAML config files using JSON Schema.
-
-### Request Handlers (`internal/handler`)
-
-Routes requests and builds middleware chains based on configuration.
-
-**Available handlers:**
-
-- **Proxy** - Forwards requests to upstream servers with modified CORS headers
-- **Mock** - Returns predefined responses from files or config
-- **Script** - Runs Lua scripts for dynamic responses
-- **Static** - Serves static files from filesystem
-
-**Middleware:**
-
-- **Cache** - In-memory response caching with TTL
-- **Rewrite** - URL/header/query parameter manipulation
-- **Options** - Handles CORS preflight requests
-- **HAR Collector** - Records all request/response pairs to an HTTP Archive (HAR 1.2) file
-
-### Infrastructure (`internal/infra`)
-
-HTTP client, logger setup, TLS certificate handling.
-
-### Terminal UI (`internal/tui`)
-
-Colored logging and request/response formatting.
-
-## Request Flow
-
-1. **Client sends request** → UNCORS server
-2. **Route matching** - Find mapping by host/port
-3. **Middleware pipeline** - Apply HAR capture → options → cache → static
-4. **Handler selection** - Choose mock, script, or proxy handler
-5. **CORS modification** - Add/modify CORS headers
-6. **Response** - Return to client (HAR entry is enqueued asynchronously)
-
-Example CORS headers added:
+The dependency direction is one-way. Nothing on a lower line may import
+something from a higher one.
 
 ```
-Access-Control-Allow-Origin: *
+internal/cli                     command tree, run modes  (composition root)
+internal/uncors, internal/di     application lifecycle, per-generation wiring
+internal/server, internal/tui    listeners and TLS, terminal rendering
+internal/handler/*               handlers and middleware
+internal/config, internal/infra  configuration, shared HTTP infrastructure
+internal/contracts               the few interfaces the layers share
+```
+
+Run `go list ./...` for the current package list, and `go doc ./internal/<pkg>`
+for what a package is for — the package comments are the source of truth, not
+this file.
+
+## Core components
+
+**`internal/cli`** — the command tree. It resolves the command named on the
+command line, parses its flags, and runs it. `uncors` itself is the root command;
+`generate-certs` is a subcommand. This is the only package that decides between
+the terminal UI and plain output.
+
+**`internal/uncors`** — the application. `Uncors` owns the server and the current
+configuration generation; `Runner` owns the process lifecycle (startup, config
+watching, the version check, signal handling, shutdown); `Reloader` owns config
+hot reload. Both run modes drive the same three types, so their behaviour cannot
+diverge.
+
+**`internal/di`** — the composition root. `Container` holds the process-scoped
+values (filesystem, output, version) and the application-scoped singletons
+(server, request tracker, certificate manager, HTTP client pool). `Runtime` holds
+everything derived from *one* configuration — routers, HAR writers, the response
+cache, the server targets — and releases exactly that on `Close`, which is what
+makes a reload leak-free.
+
+**`internal/config`** — loading and validation. Validation is hand-written Go:
+each type has a `Validate(field, …)` method, and the errors are joined with
+dotted field paths. `schema.json` is an editor-support artefact for YAML
+completion; it is not consulted at runtime.
+
+**`internal/handler`** — the request graph.
+
+| Handler  | Answers with                              |
+| -------- | ----------------------------------------- |
+| `proxy`  | the upstream, via `httputil.ReverseProxy` |
+| `mock`   | a configured response                     |
+| `script` | the result of a compiled Lua script       |
+| `static` | a file from disk                          |
+
+| Middleware | Does                                              |
+| ---------- | ------------------------------------------------- |
+| `har`      | records the traffic of a mapping to a HAR archive |
+| `options`  | answers CORS preflights                           |
+| `cache`    | serves repeated upstream responses from memory    |
+| `rewrite`  | rewrites a path and re-enters routing             |
+
+`router` assembles them into one router per mapping.
+
+**`internal/server`** — TCP and TLS listeners, per-host certificate generation
+with an SNI cache, and the request activity tracker.
+
+**`internal/infra`** — shared HTTP infrastructure: the client pool, the response
+recorder, CORS headers, the error page, and logging setup.
+
+**`internal/tui`** — console rendering, with `internal/tui/app` holding the
+BubbleTea model.
+
+## Request flow
+
+1. A **listener** accepts the request and wraps the writer in an
+   `infra.ResponseRecorder`, which observes the status and, on request, the body.
+   An activity event is emitted for the tracker.
+2. The **host router** picks the mapping whose `from:` matches.
+3. **Mapping-wide middleware** runs, outermost first: `har` (so every response
+   the mapping produces is recorded) then `options` (so a preflight is answered
+   before anything decides what serves the path).
+4. The **mapping's routes** are tried in precedence order: mocks, then scripts,
+   then rewrites, then static mounts, then the proxy. A rewritten request
+   re-enters this list, bounded at 8 rounds.
+5. The **cache** wraps the proxy branch only: a mock, a script or a static file
+   is produced locally and changes when the config does, so caching it would only
+   serve a stale copy.
+6. **CORS headers** are written by whichever handler answered.
+7. The recorder reports the final status, and a terminal activity event is
+   emitted.
+
+The headers added to a proxied response are:
+
+```
+Access-Control-Allow-Origin: <the request's Origin, or * when it had none>
 Access-Control-Allow-Credentials: true
-Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
 ```
 
-## Project Structure
+A preflight answered by the `options` middleware echoes the request's
+`Access-Control-Request-Headers` and `-Method` instead of the wildcards.
 
-```
-uncors/
-├── main.go
-├── internal/
-│   ├── config/           # Config loading & validation
-│   ├── contracts/        # Interfaces (handler, logger, http client)
-│   ├── handler/          # Request handlers & middleware
-│   │   ├── cache/
-│   │   ├── har/          # HAR collector middleware & async writer
-│   │   ├── mock/
-│   │   ├── proxy/
-│   │   ├── script/
-│   │   ├── static/
-│   │   └── ...
-│   ├── infra/            # HTTP client, logger, TLS
-│   ├── tui/              # Terminal UI
-│   ├── uncors/           # Main app
-│   └── helpers/          # Utilities
-├── testing/              # Mocks & test helpers
-└── tests/                # Integration tests
-```
+## Key design patterns
 
-## HAR Collector
-
-The HAR (HTTP Archive) collector records every proxied request/response pair to
-a [HAR 1.2](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file.
-It is enabled per-mapping via the `har.file` config key and is implemented as a
-standalone middleware (`internal/handler/har`).
-
-**Design goals:**
-- **Non-blocking** - the middleware never blocks the request goroutine. Entries
-  are sent over a buffered channel (capacity 4096). If the channel is full the
-  entry is silently dropped rather than stalling the request.
-- **High throughput writes** - a single background goroutine serialises all
-  disk I/O. After every new entry it atomically replaces the HAR file using a
-  write-to-tmp-then-rename strategy so the file is always in a valid state.
-- **Per-mapping isolation** - each mapping creates its own `Writer` instance and
-  its own output file, so traffic from different mappings can be captured
-  independently.
-- **Lifecycle management** - `Writer` implements `io.Closer`. The app registers
-  each writer via `registerCloser`; on shutdown or config reload it calls
-  `Close()` which drains the channel and flushes outstanding entries before
-  stopping the background goroutine.
-
-**Configuration:**
-
-The simplest form uses a string shorthand - the value is treated as the output file path:
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    har: ./recordings/api.har
-```
-
-For full control, use the object form:
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    har:
-      file: ./recordings/api.har
-      capture-secure-headers: true   # default: false
-```
-
-**Security-sensitive headers:**
-
-By default the following headers are **excluded** from HAR entries to avoid
-persisting credentials on disk. Set `capture-secure-headers: true` to include
-them.
-
-| Header                | Why it is sensitive                        |
-|-----------------------|--------------------------------------------|
-| `Cookie`              | Session identifiers                        |
-| `Set-Cookie`          | Session identifiers set by the server      |
-| `Authorization`       | Bearer tokens, Basic credentials           |
-| `WWW-Authenticate`    | Server auth challenges (reveals scheme)    |
-| `Proxy-Authorization` | Proxy credentials                          |
-| `Proxy-Authenticate`  | Proxy auth challenges                      |
-
-## Key Design Patterns
-
-**Middleware Pattern** - Composable request/response processing
+**Standard net/http shapes.** Handlers are `http.Handler` and middleware is
+`func(http.Handler) http.Handler`:
 
 ```go
+// internal/contracts
 type Middleware = func(http.Handler) http.Handler
 ```
 
-**Factory Pattern** - Creates handlers/middleware with dependency injection
+Handlers that benefit from returning an error opt in locally; `infra.HandlerFunc`
+renders a returned error as an HTTP error response with an appropriate status.
+
+**Explicit dependencies.** The router states what it needs as a value the
+composition root fills in, rather than reaching back into a container:
 
 ```go
-type ProxyHandlerFactory = func() contracts.Handler
+// internal/handler/router
+type Deps struct {
+    Proxy  http.Handler
+    Mock   func(*config.Response) http.Handler
+    Static func(path string, dir config.StaticDirectory) contracts.Middleware
+    // …
+}
 ```
 
-**Interface-based** - Small interfaces for easy testing and mocking
+**Functional options.** Every handler and middleware is constructed with
+`WithX(...)` options.
+
+**Generation-scoped resources.** Anything derived from the configuration lives in
+`di.Runtime` and is closed when that configuration stops being current.
 
 ## Extending UNCORS
 
-Want to add a new feature? Here's where to start:
+**A new handler:**
 
-**New handler:**
+1. Create `internal/handler/<name>/`, implementing `http.Handler`.
+2. Add a constructor to `internal/di/public_api.go`.
+3. Add a field for it to `router.Deps` and fill it in `internal/di/runtime.go`.
+4. Register its routes in `router.registerMapping`, in precedence order.
 
-1. Create package in `internal/handler/`
-2. Implement `contracts.Handler` interface
-3. Add factory to `RequestHandler`
+**A new middleware:**
 
-**New middleware:**
+1. Create `internal/handler/<name>/` with a `Wrap(http.Handler) http.Handler`
+   method.
+2. Decide whether it belongs to the whole mapping (like `har`) or to one branch
+   (like `cache`) and wire it in `router.registerMapping` accordingly.
 
-1. Create middleware package
-2. Implement `func(http.Handler) http.Handler` signature
-3. Add to middleware chain
+**A new config option:**
 
-**New config option:**
-
-1. Update structs in `internal/config/`
-2. Update `schema.json`
-3. Add validator if needed
+1. Add the field and its `Validate` rules in `internal/config/`.
+2. Update `schema.json` for editor completion.
+3. Document it — `tests/docs` loads every example in `docs/`, and
+   `internal/cli` pins the documented flag table to the real flag set.
 
 ## Testing
 
-- Unit tests use mocks (generated with `minimock`)
-- Integration tests in `tests/`
-- Run: `make test` or `go test ./...`
+- Unit tests live beside the code; mocks are generated with `minimock`.
+- `tests/integration` boots the real proxy over real sockets and TLS
+  (`make test-integration`).
+- `tests/docs` loads every configuration example in the documentation.
+- `make dead-code` reports anything under `internal/` that nothing can reach.
 
-## Important Notes
+## Important notes
 
-**Security:** UNCORS is for local development only. Don't expose it to the internet!
+**Security.** UNCORS is a development tool: it strips CORS protections and can
+hold a locally trusted CA. It binds to loopback by default; `--listen` opts out
+of that, loudly.
 
-**Performance:** Uses goroutines, connection pooling, and in-memory caching for speed.
+**Performance.** One shared HTTP transport per upstream proxy setting, an
+in-memory response cache, non-blocking activity reporting, and HAR recording
+through an append-only journal.
