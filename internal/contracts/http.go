@@ -21,14 +21,8 @@ type RequestData struct {
 	Cancelled bool
 }
 
-type Request = http.Request
-
-type Handler interface {
-	ServeHTTP(writer ResponseWriter, request *Request) error
-}
-
-type Next func(writer ResponseWriter, request *Request) error
-
-type Middleware interface {
-	ServeHTTP(writer ResponseWriter, request *Request, next Next) error
-}
+// Middleware is the conventional Go middleware shape. Using the standard
+// signature keeps the whole net/http ecosystem — http.TimeoutHandler,
+// httputil.ReverseProxy, mux.Router.Use, tracing middleware — usable in the
+// pipeline, and removes the need to convert handlers at every route.
+type Middleware = func(http.Handler) http.Handler

@@ -2,11 +2,11 @@ package rewrite
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/gorilla/mux"
@@ -20,18 +20,20 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
-	m.rewriteURL(request)
+func (m *Middleware) Wrap(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		m.rewriteURL(request)
 
-	return next(writer, m.rewriteRequest(request))
+		next.ServeHTTP(writer, m.rewriteRequest(request))
+	})
 }
 
-func (m *Middleware) rewriteURL(request *contracts.Request) {
+func (m *Middleware) rewriteURL(request *http.Request) {
 	clonedURL := &url.URL{Path: replace(m.rewrite.To, mux.Vars(request))}
 	request.URL = urlt.URL_ResolveReference(request.URL, clonedURL)
 }
 
-func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Request {
+func (m *Middleware) rewriteRequest(request *http.Request) *http.Request {
 	if m.rewrite.Host == (urlt.Host{}) {
 		return request
 	}

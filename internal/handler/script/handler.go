@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/spf13/afero"
 	lua "github.com/yuin/gopher-lua"
@@ -22,7 +23,14 @@ func NewHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
-func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	infra.HandlerFunc(h.Serve).ServeHTTP(writer, request)
+}
+
+// Serve is the error returning form of ServeHTTP. ServeHTTP renders a returned
+// error as an HTTP error response; callers that want to handle it themselves
+// call Serve directly.
+func (h *Handler) Serve(writer http.ResponseWriter, request *http.Request) error {
 	err := h.executeScript(writer, request)
 	if err != nil {
 		h.output.Errorf("Script handler error: %v", err)
@@ -33,7 +41,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	return nil
 }
 
-func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
+func (h *Handler) executeScript(writer http.ResponseWriter, request *http.Request) error {
 	luaState := newLuaState()
 	defer luaState.Close()
 

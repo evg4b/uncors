@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	lua "github.com/yuin/gopher-lua"
-
-	"github.com/evg4b/uncors/internal/contracts"
 )
 
 const (
@@ -15,7 +13,7 @@ const (
 	luaReturnTwo = 2
 )
 
-func createResponseTable(luaState *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
+func createResponseTable(luaState *lua.LState, writer http.ResponseWriter) *lua.LTable {
 	respTable := luaState.NewTable()
 	headerWritten := false
 
@@ -64,7 +62,7 @@ func setupResponseMetatable(luaState *lua.LState, respTable *lua.LTable) {
 	luaState.SetMetatable(respTable, metatable)
 }
 
-func createResponseHeadersTable(luaState *lua.LState, writer contracts.ResponseWriter) *lua.LTable {
+func createResponseHeadersTable(luaState *lua.LState, writer http.ResponseWriter) *lua.LTable {
 	headersTable := luaState.NewTable()
 	headersMetatable := luaState.NewTable()
 
@@ -103,7 +101,7 @@ func createResponseHeadersTable(luaState *lua.LState, writer contracts.ResponseW
 	return headersTable
 }
 
-func addHeaderMethods(luaState *lua.LState, headersTable *lua.LTable, writer contracts.ResponseWriter) {
+func addHeaderMethods(luaState *lua.LState, headersTable *lua.LTable, writer http.ResponseWriter) {
 	setHeaderMethod := luaState.NewFunction(func(state *lua.LState) int {
 		key := state.CheckString(luaArgKey)
 		value := state.CheckString(luaArgValue)
@@ -126,7 +124,7 @@ func addHeaderMethods(luaState *lua.LState, headersTable *lua.LTable, writer con
 func addResponseMethods(
 	luaState *lua.LState,
 	respTable *lua.LTable,
-	writer contracts.ResponseWriter,
+	writer http.ResponseWriter,
 	headerWritten *bool,
 	headersTable *lua.LTable,
 ) {

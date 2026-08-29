@@ -2,37 +2,30 @@ package infra
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-func WithPrefix(prefix string, next contracts.Handler) contracts.Handler {
-	return HandlerFunc(func(resp contracts.ResponseWriter, req *contracts.Request) error {
-		if updater, ok := req.Context().Value(contracts.PrefixUpdaterKey).(func(string)); ok {
+// WithPrefix labels every request served by next with prefix, so that the
+// activity log can show which handler answered it.
+func WithPrefix(prefix string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if updater, ok := request.Context().Value(contracts.PrefixUpdaterKey).(func(string)); ok {
 			updater(prefix)
 		}
 
-		ctx := context.WithValue(req.Context(), contracts.PrefixKey, prefix)
+		ctx := context.WithValue(request.Context(), contracts.PrefixKey, prefix)
 
-		return next.ServeHTTP(resp, req.WithContext(ctx))
+		next.ServeHTTP(writer, request.WithContext(ctx))
 	})
 }
 
-type PrefixedMiddleware struct {
-	middleware contracts.Middleware
-	prefix     string
-}
-
-func NewPrefixedMiddleware(middleware contracts.Middleware, prefix string) *PrefixedMiddleware {
-	return &PrefixedMiddleware{
-		middleware: middleware,
-		prefix:     prefix,
+// NewPrefixedMiddleware labels the requests that middleware passes through to
+// the rest of the chain. Requests the middleware answers itself keep the prefix
+// of whoever answered them.
+func NewPrefixedMiddleware(middleware contracts.Middleware, prefix string) contracts.Middleware {
+	return func(next http.Handler) http.Handler {
+		return middleware(WithPrefix(prefix, next))
 	}
-}
-
-func (p *PrefixedMiddleware) ServeHTTP(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
-	return p.middleware.ServeHTTP(w, r, func(w contracts.ResponseWriter, r *contracts.Request) error {
-		return WithPrefix(p.prefix, HandlerFunc(next)).
-			ServeHTTP(w, r)
-	})
 }

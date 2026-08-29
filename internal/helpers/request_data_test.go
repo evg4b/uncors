@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,7 +53,7 @@ func TestToRequestData(t *testing.T) {
 			parsedURL, err := url.Parse(testCase.urlStr)
 			require.NoError(t, err)
 
-			req := &contracts.Request{
+			req := &http.Request{
 				Method: testCase.method,
 				URL:    parsedURL,
 				Header: testCase.headers,
@@ -73,7 +72,7 @@ func TestToRequestData(t *testing.T) {
 
 func TestToRequestDataPreservesURL(t *testing.T) {
 	url, _ := url.Parse("http://example.com/path?query=value#fragment")
-	req := &contracts.Request{
+	req := &http.Request{
 		Method: http.MethodGet,
 		URL:    url,
 		Header: make(http.Header),

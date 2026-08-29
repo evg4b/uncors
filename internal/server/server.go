@@ -22,7 +22,7 @@ const (
 
 type Target struct {
 	Address   string
-	Handler   contracts.Handler
+	Handler   http.Handler
 	EnableTLS bool
 }
 
@@ -259,10 +259,10 @@ func shutdownListeners(ctx context.Context, listeners []*PortListener) error {
 	return errors.Join(errs...)
 }
 
-func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
+func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
-	rec := NewResponseRecorder(writer)
+	rec := infra.NewResponseRecorder(writer)
 	requestID := s.nextID.Add(1)
 
 	s.sink.Emit(RequestEvent{
@@ -286,10 +286,7 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 		lastPrefix = prefix
 	})
 
-	err := handler.ServeHTTP(rec, request.WithContext(ctx))
-	if err != nil {
-		infra.HTTPError(rec, err)
-	}
+	handler.ServeHTTP(rec, request.WithContext(ctx))
 
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"slices"
 	"sort"
@@ -30,43 +31,47 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return middleware
 }
 
-func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
-	isCacheable, err := m.isCacheableRequest(request)
-	if err != nil {
-		return err
-	}
+func (m *Middleware) Wrap(next http.Handler) http.Handler {
+	return infra.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) error {
+		isCacheable, err := m.isCacheableRequest(request)
+		if err != nil {
+			return err
+		}
 
-	if !isCacheable {
-		return next(writer, request)
-	}
+		if !isCacheable {
+			next.ServeHTTP(writer, request)
 
-	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
-		return next(w, r)
+			return nil
+		}
+
+		m.cacheRequest(writer, request, next)
+
+		return nil
 	})
-
-	return m.cacheRequest(writer, request, handler)
 }
 
-func (m *Middleware) cacheRequest(
-	writer contracts.ResponseWriter,
-	request *contracts.Request,
-	next contracts.Handler,
-) error {
+func (m *Middleware) cacheRequest(writer http.ResponseWriter, request *http.Request, next http.Handler) {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
 		m.writeCachedResponse(writer, cachedResponse)
 
-		return nil
+		return
 	}
 
-	writer.EnableBodyCapture()
+	// The pipeline normally installs a recorder; when it did not, cache through
+	// one of our own instead of silently caching nothing.
+	capturer, ok := infra.CaptureFrom(writer)
+	if !ok {
+		recorder := infra.NewResponseRecorder(writer)
+		capturer, writer = recorder, recorder
+	}
 
-	err := next.ServeHTTP(writer, request)
+	capturer.EnableBodyCapture()
 
-	m.storeResponse(cacheKey, writer.Captured())
+	next.ServeHTTP(writer, request)
 
-	return err
+	m.storeResponse(cacheKey, capturer.Captured())
 }
 
 func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
@@ -92,7 +97,7 @@ func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture
 	})
 }
 
-func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *contracts.CachedResponse) {
+func (m *Middleware) writeCachedResponse(writer http.ResponseWriter, cachedResponse *contracts.CachedResponse) {
 	header := writer.Header()
 
 	for _, cachedHeader := range cachedResponse.Headers {
@@ -111,7 +116,7 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 	}
 }
 
-func (m *Middleware) isCacheableRequest(request *contracts.Request) (bool, error) {
+func (m *Middleware) isCacheableRequest(request *http.Request) (bool, error) {
 	if !slices.Contains(m.methods, request.Method) {
 		return false, nil
 	}

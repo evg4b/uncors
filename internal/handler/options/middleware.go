@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 )
@@ -18,14 +17,16 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
-	if strings.EqualFold(req.Method, http.MethodOptions) {
-		m.handle(resp, req)
+func (m *Middleware) Wrap(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+		if strings.EqualFold(req.Method, http.MethodOptions) {
+			m.handle(resp, req)
 
-		return nil
-	}
+			return
+		}
 
-	return next(resp, req)
+		next.ServeHTTP(resp, req)
+	})
 }
 
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {

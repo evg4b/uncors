@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/gorilla/mux"
 )
 
@@ -32,14 +30,14 @@ func createRoute(router *mux.Router, matcher config.RequestMatcher) *mux.Route {
 	return route
 }
 
-func registerPathHandler(router *mux.Router, path string, handler contracts.Handler) {
+func registerPathHandler(router *mux.Router, path string, handler http.Handler) {
 	clearPath, fullPath := normalizePath(path)
 
 	registerRoute(router.NewRoute().Path(clearPath), handler)
 	registerRoute(router.NewRoute().PathPrefix(fullPath), handler)
 }
 
-func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.Handler) {
+func registerPrefixHandler(router *mux.Router, prefix string, handler http.Handler) {
 	clearPrefix, fullPrefix := normalizePath(prefix)
 
 	router.NewRoute().
@@ -49,8 +47,8 @@ func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.
 	registerRoute(router.NewRoute().PathPrefix(fullPrefix), handler)
 }
 
-func registerRoute(route *mux.Route, handler contracts.Handler) {
-	route.Handler(infra.CastToHTTPHandler(handler))
+func registerRoute(route *mux.Route, handler http.Handler) {
+	route.Handler(handler)
 }
 
 func normalizePath(path string) (string, string) {

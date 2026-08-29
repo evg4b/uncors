@@ -8,15 +8,18 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
+
+// methodBody keeps the response body a value derived from a known set rather
+// than an echo of request data.
+func methodBody(method string) string {
+	return "handled " + method
+}
 
 func TestCacheMiddleware(t *testing.T) {
 	const (
@@ -39,13 +42,11 @@ func TestCacheMiddleware(t *testing.T) {
 		}),
 	)
 
-	testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+	testHandler := testutils.NewCounter(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		testutils.CopyHeaders(expectedHeader, writer.Header())
 		fmt.Fprint(writer, expectedBody)
-
-		return nil
-	})
+	}))
 
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
 		tests := []struct {
@@ -101,15 +102,15 @@ func TestCacheMiddleware(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				testHandler.Reset()
 
-				wrappedHandler := infra.Mddleware(middleware, testHandler)
+				wrappedHandler := middleware.Wrap(testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
-					rec := server.NewResponseRecorder(recorder)
-					require.NoError(t, wrappedHandler.ServeHTTP(
+					rec := infra.NewResponseRecorder(recorder)
+					wrappedHandler.ServeHTTP(
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
-					))
+					)
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
@@ -159,23 +160,21 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+				testHandler := testutils.NewCounter(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 					writer.WriteHeader(testCase.statusCode)
 					testutils.CopyHeaders(expectedHeader, writer.Header())
 					fmt.Fprint(writer, expectedBody)
+				}))
 
-					return nil
-				})
-
-				wrappedHandler := infra.Mddleware(middleware, testHandler)
+				wrappedHandler := middleware.Wrap(testHandler)
 
 				testutils.Times(5, func(_ int) {
 					recorder := httptest.NewRecorder()
-					rec := server.NewResponseRecorder(recorder)
-					require.NoError(t, wrappedHandler.ServeHTTP(
+					rec := infra.NewResponseRecorder(recorder)
+					wrappedHandler.ServeHTTP(
 						rec,
 						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
-					))
+					)
 					assert.Equal(t, expectedHeader, recorder.Header())
 					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				})
@@ -196,14 +195,14 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		wrappedHandler := infra.Mddleware(middleware, testHandler)
+		wrappedHandler := middleware.Wrap(testHandler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
-			rec := server.NewResponseRecorder(recorder)
+			rec := infra.NewResponseRecorder(recorder)
 			url := fmt.Sprintf("https://test-host-%d.com:4200/api/test", index)
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
-			require.NoError(t, wrappedHandler.ServeHTTP(rec, request))
+			wrappedHandler.ServeHTTP(rec, request)
 			assert.Equal(t, expectedHeader, recorder.Header())
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
@@ -222,23 +221,22 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		testHandler := testutils.NewCounter(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 			testutils.CopyHeaders(expectedHeader, writer.Header())
-			fmt.Fprint(writer, request.Method)
+			//nolint:gosec // G705: a test handler echoing the method it was called with
+			fmt.Fprint(writer, methodBody(request.Method))
+		}))
 
-			return nil
-		})
-
-		wrappedHandler := infra.Mddleware(middleware, testHandler)
+		wrappedHandler := middleware.Wrap(testHandler)
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
-			rec := server.NewResponseRecorder(recorder)
+			rec := infra.NewResponseRecorder(recorder)
 			request := httptest.NewRequestWithContext(t.Context(), method, "https://test-host.com:4200/api/test", nil)
-			require.NoError(t, wrappedHandler.ServeHTTP(rec, request))
+			wrappedHandler.ServeHTTP(rec, request)
 			assert.Equal(t, expectedHeader, recorder.Header())
-			assert.Equal(t, method, testutils.ReadBody(t, recorder))
+			assert.Equal(t, methodBody(method), testutils.ReadBody(t, recorder))
 		}
 
 		assert.Len(t, methods, testHandler.Count())

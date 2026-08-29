@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 )
@@ -11,7 +13,7 @@ import (
 // are built, and it cannot reach back into the composition root to find out.
 type Deps struct {
 	// Proxy handles everything no mapping-specific route matched.
-	Proxy contracts.Handler
+	Proxy http.Handler
 	// Static serves a directory mounted at path.
 	Static func(path string, dir config.StaticDirectory) contracts.Middleware
 	// Rewrite rewrites matching request paths.
@@ -23,7 +25,7 @@ type Deps struct {
 	// Cache caches responses matching the given globs.
 	Cache func(globs config.CacheGlobs) contracts.Middleware
 	// Mock answers with a configured response.
-	Mock func(response *config.Response) contracts.Handler
+	Mock func(response *config.Response) http.Handler
 	// Script answers with the result of a Lua script.
-	Script func(scriptConfig *config.Script) contracts.Handler
+	Script func(scriptConfig *config.Script) http.Handler
 }

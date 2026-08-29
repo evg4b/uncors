@@ -3,25 +3,22 @@ package testutils
 import (
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/gorilla/mux"
 )
 
-type handlerFunc = func(writer contracts.ResponseWriter, request *contracts.Request) error
-
 type CountableHandler struct {
-	handler handlerFunc
+	handler http.Handler
 	count   int
 }
 
-func NewCounter(handler handlerFunc) *CountableHandler {
+func NewCounter(handler http.Handler) *CountableHandler {
 	return &CountableHandler{handler, 0}
 }
 
-func (t *CountableHandler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+func (t *CountableHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	t.count++
 
-	return t.handler(writer, request)
+	t.handler.ServeHTTP(writer, request)
 }
 
 func (t *CountableHandler) Count() int {

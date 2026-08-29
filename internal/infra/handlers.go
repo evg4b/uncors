@@ -1,45 +1,17 @@
 package infra
 
 import (
-	"errors"
 	"net/http"
-
-	"github.com/evg4b/uncors/internal/contracts"
 )
 
-var ErrResponseNotCasted = errors.New("received incorrect response writer type")
+// HandlerFunc adapts an error returning function to http.Handler: a returned
+// error is rendered as an HTTP error response. Handlers opt into error returns
+// where they benefit from them, while the pipeline itself stays plain net/http.
+type HandlerFunc func(http.ResponseWriter, *http.Request) error
 
-// MiddlewareFunc adapts an ordinary func into a Middleware.
-type MiddlewareFunc func(contracts.Handler) contracts.Handler
-
-func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {
-	return f(next)
-}
-
-type HandlerFunc func(contracts.ResponseWriter, *contracts.Request) error
-
-func (f HandlerFunc) ServeHTTP(w contracts.ResponseWriter, r *contracts.Request) error {
-	return f(w, r)
-}
-
-func CastToHTTPHandler(handler contracts.Handler) http.Handler {
-	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		writer, ok := response.(contracts.ResponseWriter)
-		if !ok {
-			panic(ErrResponseNotCasted)
-		}
-
-		err := handler.ServeHTTP(writer, request)
-		if err != nil {
-			HTTPError(writer, err)
-		}
-	})
-}
-
-func CastToContractsHandler(handler http.Handler) contracts.Handler {
-	return HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		handler.ServeHTTP(writer, request)
-
-		return nil
-	})
+func (f HandlerFunc) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	err := f(writer, request)
+	if err != nil {
+		HTTPError(writer, err)
+	}
 }

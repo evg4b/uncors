@@ -6,8 +6,6 @@ import (
 	"net"
 	"net/http"
 	"sync/atomic"
-
-	"github.com/evg4b/uncors/internal/contracts"
 )
 
 // PortListener serves one address. Its handler is swappable so that a config
@@ -19,14 +17,14 @@ type PortListener struct {
 	address   string
 	enableTLS bool
 	manager   *HostCertManager
-	handler   atomic.Pointer[contracts.Handler]
+	handler   atomic.Pointer[http.Handler]
 }
 
-func (ps *PortListener) SetHandler(handler contracts.Handler) {
+func (ps *PortListener) SetHandler(handler http.Handler) {
 	ps.handler.Store(&handler)
 }
 
-func (ps *PortListener) Handler() contracts.Handler {
+func (ps *PortListener) Handler() http.Handler {
 	return *ps.handler.Load()
 }
 

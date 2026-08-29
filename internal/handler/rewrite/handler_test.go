@@ -6,14 +6,11 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMiddlewareWrap(t *testing.T) {
@@ -33,7 +30,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+		next := infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 			nextCalled = true
 
 			assert.Equal(t, expectedURL, request.URL.Path)
@@ -42,9 +39,8 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := infra.Mddleware(middleware, next)
-		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-		require.NoError(t, err)
+		handler := middleware.Wrap(next)
+		handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.True(t, nextCalled)
 	})
@@ -63,7 +59,7 @@ func TestMiddlewareWrap(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
 		helpers.NormaliseRequest(request)
 
-		next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+		next := infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 			nextCalled = true
 
 			assert.Equal(t, expectedURL, request.URL.Path)
@@ -72,9 +68,8 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := infra.Mddleware(middleware, next)
-		serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-		require.NoError(t, serveErr)
+		handler := middleware.Wrap(next)
+		handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.True(t, nextCalled)
 	})

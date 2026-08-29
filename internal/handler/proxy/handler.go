@@ -30,7 +30,14 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 	return middleware
 }
 
-func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) error {
+func (h *Handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	infra.HandlerFunc(h.Serve).ServeHTTP(response, request)
+}
+
+// Serve is the error returning form of ServeHTTP. ServeHTTP renders a returned
+// error as an HTTP error response; callers that want to handle it themselves
+// call Serve directly.
+func (h *Handler) Serve(response http.ResponseWriter, request *http.Request) error {
 	err := h.handle(response, request)
 	if err != nil {
 		if request.Context().Err() != nil {

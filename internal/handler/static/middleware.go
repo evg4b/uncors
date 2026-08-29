@@ -10,7 +10,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/spf13/afero"
@@ -28,32 +27,31 @@ func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
 	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
-func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
-	filePath := h.extractFilePath(request)
+func (h *Middleware) Wrap(next http.Handler) http.Handler {
+	return infra.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) error {
+		filePath := h.extractFilePath(request)
 
-	file, stat, err := h.openFile(filePath)
-	defer helpers.CloseSafe(file)
+		file, stat, err := h.openFile(filePath)
+		defer helpers.CloseSafe(file)
 
-	if err != nil {
-		if errors.Is(err, errNotHandled) {
-			return next(writer, request)
+		if err != nil {
+			if errors.Is(err, errNotHandled) {
+				next.ServeHTTP(writer, request)
+
+				return nil
+			}
+
+			//nolint:gosec // G706: both values are passed through SanitizeLogValue
+			log.Printf("ERROR: Static handler error: %s, url: %s",
+				helpers.SanitizeLogValue(err.Error()),
+				helpers.SanitizeLogValue(request.URL.String()))
+
+			return err
 		}
 
-		log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
+		http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
-		return err
-	}
-
-	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
-
-	return nil
-}
-
-func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		return h.ServeHTTP(writer, request, func(w contracts.ResponseWriter, r *contracts.Request) error {
-			return next.ServeHTTP(w, r)
-		})
+		return nil
 	})
 }
 

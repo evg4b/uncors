@@ -10,115 +10,43 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-var errMiddlewareError = errors.New("middleware error")
+var errHandlerError = errors.New("handler error")
 
-func TestMiddlewareFunc(t *testing.T) {
-	t.Run("Wrap calls handler with next", func(t *testing.T) {
-		const body = "wrapped"
+func TestHandlerFunc(t *testing.T) {
+	t.Run("serves the request", func(t *testing.T) {
+		const body = "served"
 
-		nextCalled := false
-		next := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-			nextCalled = true
-
+		handler := infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
 			fmt.Fprint(w, body)
 
 			return nil
 		})
 
-		middleware := infra.MiddlewareFunc(func(h contracts.Handler) contracts.Handler {
-			return infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
-				return h.ServeHTTP(w, r)
-			})
-		})
-
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		handler := middleware.Wrap(next)
-		err := handler.ServeHTTP(writer, request)
+		handler.ServeHTTP(recorder, request)
 
-		require.NoError(t, err)
-		assert.True(t, nextCalled)
-		assert.Equal(t, body, testutils.ReadBody(t, recorder))
-	})
-}
-
-func TestCastToContractsHandler(t *testing.T) {
-	t.Run("wraps http.Handler as contracts.Handler", func(t *testing.T) {
-		const body = "contracts-handler"
-
-		httpHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			fmt.Fprint(w, body)
-		})
-
-		contractsHandler := infra.CastToContractsHandler(httpHandler)
-
-		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-
-		err := contractsHandler.ServeHTTP(writer, request)
-
-		require.NoError(t, err)
-		assert.Equal(t, body, testutils.ReadBody(t, recorder))
-	})
-}
-
-func TestMddleware(t *testing.T) {
-	t.Run("chains middleware and handler", func(t *testing.T) {
-		const body = "chained"
-
-		middlewareCalled := false
-		passthrough := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
-			middlewareCalled = true
-
-			return next(w, r)
-		})
-
-		handler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-			fmt.Fprint(w, body)
-
-			return nil
-		})
-
-		chained := infra.Mddleware(passthrough, handler)
-
-		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-
-		err := chained.ServeHTTP(writer, request)
-
-		require.NoError(t, err)
-		assert.True(t, middlewareCalled)
 		assert.Equal(t, body, testutils.ReadBody(t, recorder))
 	})
 
-	t.Run("propagates error from middleware", func(t *testing.T) {
-		failing := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
-			return errMiddlewareError
+	t.Run("renders a returned error as an HTTP error", func(t *testing.T) {
+		handler := infra.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) error {
+			return errHandlerError
 		})
-
-		handler := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
-			return nil
-		})
-
-		chained := infra.Mddleware(failing, handler)
 
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		err := chained.ServeHTTP(writer, request)
+		handler.ServeHTTP(recorder, request)
 
-		assert.ErrorIs(t, err, errMiddlewareError)
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, testutils.ReadBody(t, recorder), errHandlerError.Error())
 	})
 }
 
@@ -128,7 +56,7 @@ func TestWithPrefix(t *testing.T) {
 
 		var capturedPrefix string
 
-		handler := infra.HandlerFunc(func(_ contracts.ResponseWriter, r *contracts.Request) error {
+		handler := infra.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) error {
 			if v, ok := r.Context().Value(contracts.PrefixKey).(string); ok {
 				capturedPrefix = v
 			}
@@ -139,12 +67,10 @@ func TestWithPrefix(t *testing.T) {
 		wrapped := infra.WithPrefix(prefix, handler)
 
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
+		writer := infra.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		err := wrapped.ServeHTTP(writer, request)
-
-		require.NoError(t, err)
+		wrapped.ServeHTTP(writer, request)
 		assert.Equal(t, prefix, capturedPrefix)
 	})
 
@@ -161,72 +87,65 @@ func TestWithPrefix(t *testing.T) {
 		ctx := context.WithValue(t.Context(), contracts.PrefixUpdaterKey, func(s string) { updater(s) })
 		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 
-		handler := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+		handler := infra.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) error {
 			return nil
 		})
 
 		wrapped := infra.WithPrefix(prefix, handler)
 
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
+		writer := infra.NewResponseRecorder(recorder)
 
-		err := wrapped.ServeHTTP(writer, request)
-
-		require.NoError(t, err)
+		wrapped.ServeHTTP(writer, request)
 		assert.True(t, updaterCalled)
 	})
 }
 
 func TestPrefixedMiddleware(t *testing.T) {
-	t.Run("ServeHTTP sets prefix on next handler", func(t *testing.T) {
+	passthrough := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	t.Run("labels the requests the middleware passes through", func(t *testing.T) {
 		const prefix = "PREFIXED"
 
 		var capturedPrefix string
 
-		innerNext := func(_ contracts.ResponseWriter, r *contracts.Request) error {
+		next := infra.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) error {
 			if v, ok := r.Context().Value(contracts.PrefixKey).(string); ok {
 				capturedPrefix = v
 			}
 
 			return nil
-		}
-
-		passthrough := testMiddlewareFunc(func(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
-			return next(w, r)
 		})
 
 		prefixed := infra.NewPrefixedMiddleware(passthrough, prefix)
 
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
+		writer := infra.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		err := prefixed.ServeHTTP(writer, request, innerNext)
-
-		require.NoError(t, err)
+		prefixed(next).ServeHTTP(writer, request)
 		assert.Equal(t, prefix, capturedPrefix)
 	})
 
-	t.Run("propagates error from middleware", func(t *testing.T) {
-		failing := testMiddlewareFunc(func(_ contracts.ResponseWriter, _ *contracts.Request, _ contracts.Next) error {
-			return errMiddlewareError
-		})
+	t.Run("does not label requests the middleware answers itself", func(t *testing.T) {
+		answering := func(http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			})
+		}
 
-		prefixed := infra.NewPrefixedMiddleware(failing, "PREFIX")
+		prefixed := infra.NewPrefixedMiddleware(answering, "PREFIX")
 
 		recorder := httptest.NewRecorder()
-		writer := server.NewResponseRecorder(recorder)
+		writer := infra.NewResponseRecorder(recorder)
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		next := func(_ contracts.ResponseWriter, _ *contracts.Request) error { return nil }
-		err := prefixed.ServeHTTP(writer, request, next)
+		prefixed(mocks.FailNowHandlerMock(t)).ServeHTTP(writer, request)
 
-		assert.ErrorIs(t, err, errMiddlewareError)
+		assert.Equal(t, http.StatusTeapot, recorder.Code)
 	})
-}
-
-type testMiddlewareFunc func(contracts.ResponseWriter, *contracts.Request, contracts.Next) error
-
-func (f testMiddlewareFunc) ServeHTTP(w contracts.ResponseWriter, r *contracts.Request, next contracts.Next) error {
-	return f(w, r, next)
 }

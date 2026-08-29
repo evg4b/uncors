@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/pkg/urlt"
@@ -31,13 +30,21 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 	return helpers.ApplyOptions(&Handler{}, options)
 }
 
-func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	infra.HandlerFunc(h.Serve).ServeHTTP(writer, request)
+}
+
+// Serve is the error returning form of ServeHTTP. ServeHTTP renders a returned
+// error as an HTTP error response; callers that want to handle it themselves
+// call Serve directly.
+func (h *Handler) Serve(writer http.ResponseWriter, request *http.Request) error {
 	if h.waitDelay(writer, request) {
 		return nil
 	}
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
+		//nolint:gosec // G706: both values are passed through SanitizeLogValue
 		log.Printf("ERROR: Mock handler error: %s (URL: %s)",
 			helpers.SanitizeLogValue(err.Error()),
 			helpers.SanitizeLogValue(urlt.URL_String(request.URL)))
@@ -48,7 +55,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	return nil
 }
 
-func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
+func (h *Handler) writeResponse(writer http.ResponseWriter, request *http.Request) error {
 	header := writer.Header()
 	response := h.response
 
@@ -107,7 +114,7 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 	return nil
 }
 
-func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
+func (h *Handler) waitDelay(writer http.ResponseWriter, request *http.Request) bool {
 	if h.response.Delay <= 0 {
 		return false
 	}

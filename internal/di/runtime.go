@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"slices"
 	"strconv"
 
@@ -94,7 +95,7 @@ func (r *Runtime) cacheMiddleware(globs config.CacheGlobs) contracts.Middleware 
 			cache.WithMethods(r.cacheConfig.Methods),
 			cache.WithCacheStorage(r.Cache()),
 			cache.WithGlobs(globs),
-		),
+		).Wrap,
 		styles.CacheStyle.Render("CACHE"),
 	)
 }
@@ -105,7 +106,7 @@ func (r *Runtime) harMiddleware(harConfig *config.HARConfig) contracts.Middlewar
 	return har.NewMiddleware(
 		har.WithWriter(writer),
 		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
-	)
+	).Wrap
 }
 
 func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
@@ -131,7 +132,7 @@ func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Targ
 	return targets, errors.Join(errs...)
 }
 
-func (r *Runtime) router(mappings config.Mappings, proxyURL string) (contracts.Handler, error) {
+func (r *Runtime) router(mappings config.Mappings, proxyURL string) (http.Handler, error) {
 	muxRouter, err := router.NewRouter(mappings, router.Deps{
 		Proxy:   r.container.ProxyHandler(mappings, proxyURL),
 		Static:  r.container.StaticMiddleware,
@@ -143,7 +144,7 @@ func (r *Runtime) router(mappings config.Mappings, proxyURL string) (contracts.H
 		Cache:   r.cacheMiddleware,
 	})
 
-	return infra.CastToContractsHandler(muxRouter), err
+	return muxRouter, err
 }
 
 // register binds a resource to the generation's lifetime.

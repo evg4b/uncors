@@ -1,4 +1,4 @@
-package server
+package infra
 
 import (
 	"bytes"
@@ -18,6 +18,25 @@ type ResponseRecorder struct {
 	startedAt  time.Time
 }
 
+// CaptureFrom returns the body capturer installed for this request, unwrapping
+// any writers layered on top of it. Middleware that needs the response body asks
+// for the existing capturer instead of assuming one is there, so a writer it did
+// not install can never turn a request into a panic.
+func CaptureFrom(writer http.ResponseWriter) (contracts.BodyCapturer, bool) {
+	for {
+		if capturer, ok := writer.(contracts.BodyCapturer); ok {
+			return capturer, true
+		}
+
+		unwrapper, ok := writer.(interface{ Unwrap() http.ResponseWriter })
+		if !ok {
+			return nil, false
+		}
+
+		writer = unwrapper.Unwrap()
+	}
+}
+
 func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
 	rec := &ResponseRecorder{
 		ResponseWriter: w,
@@ -26,6 +45,12 @@ func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
 	rec.output = w
 
 	return rec
+}
+
+// Unwrap exposes the underlying writer, which is the convention net/http uses to
+// look through response writer wrappers.
+func (r *ResponseRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
 }
 
 func (r *ResponseRecorder) WriteHeader(statusCode int) {

@@ -10,13 +10,12 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/mock"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -75,8 +74,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-				require.NoError(t, err)
+				handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 				body := testutils.ReadBody(t, recorder)
 				assert.Equal(t, testCase.expected, body)
@@ -143,8 +141,7 @@ func TestHandler(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-				require.NoError(t, err)
+				handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 				header := testutils.ReadHeader(t, recorder)
 				assert.Equal(t, testCase.expected, header.Get(headers.ContentType))
@@ -245,8 +242,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-				require.NoError(t, err)
+				handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 				assert.Equal(t, testCase.expected, testutils.ReadHeader(t, recorder))
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -299,8 +295,7 @@ func TestHandler(t *testing.T) {
 				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 				recorder := httptest.NewRecorder()
 
-				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-				require.NoError(t, err)
+				handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
@@ -319,7 +314,7 @@ func TestHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+		err := handler.Serve(infra.NewResponseRecorder(recorder), request)
 
 		assert.ErrorIs(t, err, mock.ErrResponseIsNotDefined)
 	})
@@ -337,9 +332,7 @@ func TestHandler(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
-		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-
-		require.NoError(t, err)
+		handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 		assert.NotEmpty(t, recorder.Header().Get("Content-Type"))
 	})
 
@@ -416,8 +409,7 @@ func TestHandler(t *testing.T) {
 					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 					recorder := httptest.NewRecorder()
 
-					err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
-					require.NoError(t, err)
+					handler.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 					assert.Equal(t, called, testCase.shouldBeCalled)
 				})
@@ -442,8 +434,7 @@ func TestHandler(t *testing.T) {
 			var waitGroup sync.WaitGroup
 
 			waitGroup.Go(func() {
-				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request.WithContext(ctx))
-				require.NoError(t, err)
+				handler.ServeHTTP(infra.NewResponseRecorder(recorder), request.WithContext(ctx))
 			})
 
 			cancel()

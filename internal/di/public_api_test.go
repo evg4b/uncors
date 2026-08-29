@@ -3,6 +3,7 @@ package di_test
 import (
 	"bytes"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -106,7 +107,6 @@ func TestContainer(t *testing.T) {
 		middleware := container.OptionsMiddleware(cfg)
 
 		assert.NotNil(t, middleware)
-		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
 	})
 
 	t.Run("static middleware", func(t *testing.T) {
@@ -117,7 +117,6 @@ func TestContainer(t *testing.T) {
 		middleware := container.StaticMiddleware("/static", cfg)
 
 		assert.NotNil(t, middleware)
-		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
 	})
 
 	t.Run("version checker", func(t *testing.T) {
@@ -132,7 +131,7 @@ func TestContainer(t *testing.T) {
 		handler := container.MockHandler(response)
 
 		assert.NotNil(t, handler)
-		assert.Implements(t, (*contracts.Handler)(nil), handler)
+		assert.Implements(t, (*http.Handler)(nil), handler)
 	})
 
 	t.Run("script handler", func(t *testing.T) {
@@ -143,7 +142,7 @@ func TestContainer(t *testing.T) {
 		handler := container.ScriptHandler(script)
 
 		assert.NotNil(t, handler)
-		assert.Implements(t, (*contracts.Handler)(nil), handler)
+		assert.Implements(t, (*http.Handler)(nil), handler)
 	})
 
 	t.Run("rewrite middleware", func(t *testing.T) {
@@ -151,7 +150,6 @@ func TestContainer(t *testing.T) {
 		middleware := container.RewriteMiddleware(rewriting)
 
 		assert.NotNil(t, middleware)
-		assert.Implements(t, (*contracts.Middleware)(nil), middleware)
 	})
 
 	t.Run("proxy handler", func(t *testing.T) {
@@ -161,7 +159,7 @@ func TestContainer(t *testing.T) {
 		handler := container.ProxyHandler(mappings, "")
 
 		assert.NotNil(t, handler)
-		assert.Implements(t, (*contracts.Handler)(nil), handler)
+		assert.Implements(t, (*http.Handler)(nil), handler)
 	})
 
 	t.Run("singleton behavior", func(t *testing.T) {

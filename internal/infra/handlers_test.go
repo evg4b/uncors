@@ -1,67 +1,48 @@
 package infra_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCastToHTTPHandler(t *testing.T) {
-	const expectedBody = `{ "OK": true }`
+// A plain http.ResponseWriter has no body capture; the pipeline must degrade
+// instead of asserting that a recorder is present.
+func TestCaptureFrom(t *testing.T) {
+	t.Run("finds the recorder installed by the pipeline", func(t *testing.T) {
+		recorder := infra.NewResponseRecorder(httptest.NewRecorder())
 
-	handlerStub := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, expectedBody)
+		capturer, ok := infra.CaptureFrom(recorder)
 
-		return nil
+		require.True(t, ok)
+		assert.Same(t, recorder, capturer)
 	})
 
-	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
-	handler := infra.CastToHTTPHandler(handlerStub)
+	t.Run("looks through writers layered on top of the recorder", func(t *testing.T) {
+		recorder := infra.NewResponseRecorder(httptest.NewRecorder())
 
-	t.Run("cast correctly", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		responseWriter := server.NewResponseRecorder(recorder)
+		capturer, ok := infra.CaptureFrom(&wrappedWriter{ResponseWriter: recorder})
 
-		assert.NotPanics(t, func() {
-			handler.ServeHTTP(responseWriter, request)
-			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-		})
+		require.True(t, ok)
+		assert.Same(t, recorder, capturer)
 	})
 
-	t.Run("panic when request is not wrapped", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
+	t.Run("reports a plain writer instead of panicking", func(t *testing.T) {
+		capturer, ok := infra.CaptureFrom(httptest.NewRecorder())
 
-		assert.PanicsWithValue(t, infra.ErrResponseNotCasted, func() {
-			handler.ServeHTTP(recorder, request)
-		})
+		assert.False(t, ok)
+		assert.Nil(t, capturer)
 	})
 }
 
-func TestHandlerFunc(t *testing.T) {
-	const expectedBody = `{ "OK": true }`
+type wrappedWriter struct {
+	http.ResponseWriter
+}
 
-	uncorsHandler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, expectedBody)
-
-		return nil
-	})
-
-	recorder := httptest.NewRecorder()
-	responseWriter := server.NewResponseRecorder(recorder)
-	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/data", nil)
-
-	err := uncorsHandler.ServeHTTP(responseWriter, request)
-
-	require.NoError(t, err)
-	assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+func (w *wrappedWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
@@ -52,7 +51,7 @@ var (
 
 // newDeps builds the router dependencies from a container, which is what the
 // composition root does; individual tests override single fields.
-func newDeps(t *testing.T, container *di.Container, proxy contracts.Handler) router.Deps {
+func newDeps(t *testing.T, container *di.Container, proxy http.Handler) router.Deps {
 	t.Helper()
 
 	return router.Deps{
@@ -70,7 +69,7 @@ func newDeps(t *testing.T, container *di.Container, proxy contracts.Handler) rou
 				require.NoError(t, writer.Close())
 			})
 
-			return har.NewMiddleware(har.WithWriter(writer))
+			return har.NewMiddleware(har.WithWriter(writer)).Wrap
 		},
 	}
 }
@@ -86,7 +85,7 @@ func cacheFactory() func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
 			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
-		)
+		).Wrap
 	}
 }
 
@@ -94,7 +93,7 @@ func proxyFactory(
 	t *testing.T,
 	replacerFactory urlreplacer.ReplacerFactory,
 	httpClient contracts.HTTPClient,
-) contracts.Handler {
+) http.Handler {
 	if replacerFactory == nil {
 		replacerFactory = mocks.NewReplacerFactoryMock(t)
 	}
@@ -111,10 +110,7 @@ func proxyFactory(
 }
 
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
-	wrappedWriter := server.NewResponseRecorder(recorder)
-	contractsRouter := infra.CastToContractsHandler(router)
-	httpRouterHandler := infra.CastToHTTPHandler(contractsRouter)
-	httpRouterHandler.ServeHTTP(wrappedWriter, request)
+	router.ServeHTTP(infra.NewResponseRecorder(recorder), request)
 }
 
 func TestRouter(t *testing.T) {

@@ -2,6 +2,7 @@ package di
 
 import (
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -58,7 +59,7 @@ func (c *Container) OptionsMiddleware(cfg config.OptionsHandling) contracts.Midd
 		options.NewMiddleware(
 			options.WithHeaders(cfg.Headers),
 			options.WithCode(cfg.Code),
-		),
+		).Wrap,
 		styles.OptionsStyle.Render("OPTIONS"),
 	)
 }
@@ -69,7 +70,7 @@ func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) co
 			static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
 			static.WithIndex(dir.Index),
 			static.WithPrefix(path),
-		),
+		).Wrap,
 		styles.StaticStyle.Render("STATIC"),
 	)
 }
@@ -82,7 +83,7 @@ func (c *Container) VersionChecker(proxy string) *version.Checker {
 	)
 }
 
-func (c *Container) MockHandler(response *config.Response) contracts.Handler {
+func (c *Container) MockHandler(response *config.Response) http.Handler {
 	prefix := styles.MockStyle.Render("MOCK")
 
 	return infra.WithPrefix(prefix, mock.NewMockHandler(
@@ -92,7 +93,7 @@ func (c *Container) MockHandler(response *config.Response) contracts.Handler {
 	))
 }
 
-func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
+func (c *Container) ScriptHandler(scriptConfig *config.Script) http.Handler {
 	prefix := styles.RewriteStyle.Render("SCRIPT")
 	output := c.CliOutput()
 
@@ -105,12 +106,12 @@ func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler
 
 func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
 	return infra.NewPrefixedMiddleware(
-		rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting)),
+		rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting)).Wrap,
 		styles.RewriteStyle.Render("REWRITE"),
 	)
 }
 
-func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
+func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) http.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
 	output := c.CliOutput()
 

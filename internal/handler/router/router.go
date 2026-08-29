@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
@@ -13,10 +12,9 @@ import (
 
 var errHostNotMapped = errors.New("host not mapped")
 
-func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
-	httpHandler := infra.CastToHTTPHandler(handler)
-	router.NotFoundHandler = httpHandler
-	router.MethodNotAllowedHandler = httpHandler
+func setDefaultHandler(router *mux.Router, handler http.Handler) {
+	router.NotFoundHandler = handler
+	router.MethodNotAllowedHandler = handler
 }
 
 type Router struct {
@@ -35,7 +33,7 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 		instance.registerMapping(mapping)
 	}
 
-	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
+	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) error {
 		// instance.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
 		// log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
 		return errHostNotMapped
@@ -52,7 +50,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 
 	for _, staticDir := range mapping.Statics {
 		middleware := r.deps.Static(staticDir.Path, staticDir)
-		registerPrefixHandler(router, staticDir.Path, infra.Mddleware(middleware, defaultHandler))
+		registerPrefixHandler(router, staticDir.Path, middleware(defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
@@ -68,7 +66,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := infra.Mddleware(r.deps.Rewrite(&rewrite), defaultHandler)
+		wrappedHandler := r.deps.Rewrite(&rewrite)(defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -76,18 +74,18 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	setDefaultHandler(router, defaultHandler)
 }
 
-func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
+func (r *Router) prepareDefaultHandler(mapping config.Mapping) http.Handler {
 	defaultHandler := r.deps.Proxy
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = infra.Mddleware(r.deps.Options(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = r.deps.Options(mapping.OptionsHandling)(defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
-		defaultHandler = infra.Mddleware(r.deps.Cache(mapping.Cache), defaultHandler)
+		defaultHandler = r.deps.Cache(mapping.Cache)(defaultHandler)
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = infra.Mddleware(r.deps.HAR(&mapping.HAR), defaultHandler)
+		defaultHandler = r.deps.HAR(&mapping.HAR)(defaultHandler)
 	}
 
 	return defaultHandler

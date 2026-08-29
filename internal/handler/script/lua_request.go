@@ -2,15 +2,15 @@ package script
 
 import (
 	"io"
+	"net/http"
 
 	"github.com/gorilla/mux"
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+func createRequestTable(luaState *lua.LState, request *http.Request) *lua.LTable {
 	reqTable := luaState.NewTable()
 
 	reqTable.RawSetString("method", lua.LString(request.Method))
@@ -72,7 +72,7 @@ func createQueryParamsTable(luaState *lua.LState, queryParams map[string][]strin
 	return queryTable
 }
 
-func createPathParamsTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+func createPathParamsTable(luaState *lua.LState, request *http.Request) *lua.LTable {
 	pathVarsTable := luaState.NewTable()
 
 	pathVars := mux.Vars(request)

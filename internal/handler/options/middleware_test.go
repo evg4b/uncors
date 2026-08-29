@@ -7,12 +7,10 @@ import (
 
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -188,9 +186,7 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				err := infra.Mddleware(middleware, mockedNextHandler).
-					ServeHTTP(server.NewResponseRecorder(recorder), request)
-				require.NoError(t, err)
+				middleware.Wrap(mockedNextHandler).ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 				assert.Equal(t, testCase.expected.code, recorder.Code)
 				assert.Equal(t, testCase.expected.headers, recorder.Header())
@@ -208,10 +204,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request)
-
-		require.NoError(t, err)
+		middleware.Wrap(mockedNextHandler).ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -233,10 +226,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request)
-
-		require.NoError(t, err)
+		middleware.Wrap(mockedNextHandler).ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -254,10 +244,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request)
-
-		require.NoError(t, err)
+		middleware.Wrap(mockedNextHandler).ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -278,9 +265,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request)
-		require.NoError(t, err)
+		middleware.Wrap(mockedNextHandler).ServeHTTP(infra.NewResponseRecorder(recorder), request)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, testOrigin, recorder.Header().Get(headers.AccessControlAllowOrigin))
@@ -304,20 +289,17 @@ func TestMiddleware(t *testing.T) {
 
 		for _, method := range cases {
 			t.Run(method, func(t *testing.T) {
-				mockedNextHandler := mocks.NewHandlerMock(t)
+				mockedNextHandler := mocks.NewHandlerMock(nil)
 
 				middleware := options.NewMiddleware()
 
 				recorder := httptest.NewRecorder()
-				response := server.NewResponseRecorder(recorder)
+				response := infra.NewResponseRecorder(recorder)
 				request := httptest.NewRequestWithContext(t.Context(), method, "/", nil)
 
-				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil)
+				middleware.Wrap(mockedNextHandler).ServeHTTP(response, request)
 
-				err := infra.Mddleware(middleware, mockedNextHandler).
-					ServeHTTP(response, request)
-				require.NoError(t, err)
-
+				assert.Equal(t, uint64(1), mockedNextHandler.Calls())
 				assert.Equal(t, http.StatusOK, recorder.Code)
 				assert.Empty(t, recorder.Header())
 			})

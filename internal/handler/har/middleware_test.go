@@ -16,10 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +83,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		defer testutils.Close(t, harWriter)
 
 		called := false
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			called = true
 
 			rw.WriteHeader(http.StatusOK)
@@ -94,9 +92,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
-		require.NoError(t, err)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
 
 		assert.True(t, called)
 		assert.Equal(t, http.StatusOK, rec.Code)
@@ -105,7 +102,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("records response body correctly", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			rw.Header().Set("Content-Type", "text/plain")
 			rw.WriteHeader(http.StatusOK)
 			fmt.Fprint(rw, "hello")
@@ -114,9 +111,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		})
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
-		require.NoError(t, err)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
 
 		require.NoError(t, harWriter.Close())
 
@@ -126,7 +122,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("records request with query string", func(t *testing.T) {
 		mdlw, harWriter, _ := newHARMiddleware(t)
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			rw.WriteHeader(http.StatusNoContent)
 
 			return nil
@@ -134,9 +130,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
-		require.NoError(t, err)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req)
 
 		require.NoError(t, harWriter.Close())
 
@@ -152,7 +147,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		var received string
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, r *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) error {
 			b, _ := io.ReadAll(r.Body)
 			received = string(b)
 
@@ -167,9 +162,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		require.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
-		require.NoError(t, serveErr)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req)
 
 		assert.Equal(t, body, received)
 	})
@@ -177,7 +171,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("secure headers not captured by default", func(t *testing.T) {
 		mdlw, harWriter, path := newHARMiddleware(t)
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
 			rw.Header().Set("Www-Authenticate", `Bearer realm="api"`)
 			rw.WriteHeader(http.StatusOK)
@@ -190,9 +184,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
-		require.NoError(t, err)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req)
 
 		require.NoError(t, harWriter.Close())
 
@@ -220,7 +213,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("uses https scheme for TLS requests", func(t *testing.T) {
 		mdlw, harWriter, path := newHARMiddleware(t)
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			rw.WriteHeader(http.StatusOK)
 
 			return nil
@@ -230,9 +223,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.TLS = &tls.ConnectionState{}
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
-		require.NoError(t, err)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req)
 
 		require.NoError(t, harWriter.Close())
 
@@ -248,7 +240,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 	t.Run("secure headers captured when WithCaptureSecureHeaders(true)", func(t *testing.T) {
 		mdlw, harWriter, path := newHARMiddleware(t, har.WithCaptureSecureHeaders(true))
 
-		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
 			rw.WriteHeader(http.StatusOK)
 
@@ -260,9 +252,8 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()
-		rr := server.NewResponseRecorder(rec)
-		serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
-		require.NoError(t, serveErr)
+		rr := infra.NewResponseRecorder(rec)
+		mdlw.Wrap(next).ServeHTTP(rr, req)
 
 		require.NoError(t, harWriter.Close())
 
@@ -304,7 +295,7 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 
 			compressed := compressBody(t, testCase.encoding, []byte(originalBody))
 
-			next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+			next := infra.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) error {
 				rw.Header().Set("Content-Type", "application/json")
 				rw.Header().Set("Content-Encoding", testCase.encoding)
 				rw.WriteHeader(http.StatusOK)
@@ -318,9 +309,8 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 			})
 
 			rec := httptest.NewRecorder()
-			rr := server.NewResponseRecorder(rec)
-			serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
-			require.NoError(t, serveErr)
+			rr := infra.NewResponseRecorder(rec)
+			mdlw.Wrap(next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
 
 			require.NoError(t, harWriter.Close())
 

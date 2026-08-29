@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -28,7 +27,7 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	handler := infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
 		assert.NoError(t, err)
@@ -290,7 +289,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port).String(),
-				Handler: infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+				Handler: infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
@@ -359,8 +358,8 @@ func TestServer(t *testing.T) {
 func TestServerRestartReconcilesPorts(t *testing.T) {
 	manager := server.NewHostCertManager(afero.NewMemMapFs())
 
-	handlerFor := func(body string) contracts.Handler {
-		return infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	handlerFor := func(body string) http.Handler {
+		return infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
 			_, err := fmt.Fprint(w, body)
 
 			return err

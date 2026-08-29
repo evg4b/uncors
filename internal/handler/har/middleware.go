@@ -10,6 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
@@ -38,30 +39,38 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 	return m
 }
 
-func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
-	start := time.Now()
+func (m *Middleware) Wrap(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+		start := time.Now()
 
-	var reqBodySize int64
+		var reqBodySize int64
 
-	if req.Body != nil && req.Body != http.NoBody {
-		var buf strings.Builder
+		if req.Body != nil && req.Body != http.NoBody {
+			var buf strings.Builder
 
-		n, _ := io.Copy(&buf, req.Body)
-		reqBodySize = n
-		_ = req.Body.Close()
+			n, _ := io.Copy(&buf, req.Body)
+			reqBodySize = n
+			_ = req.Body.Close()
 
-		req.Body = io.NopCloser(strings.NewReader(buf.String()))
-	}
+			req.Body = io.NopCloser(strings.NewReader(buf.String()))
+		}
 
-	writer.EnableBodyCapture()
+		// The pipeline normally installs a recorder; when it did not, record
+		// into one of our own rather than giving up on the archive.
+		capturer, ok := infra.CaptureFrom(writer)
+		if !ok {
+			recorder := infra.NewResponseRecorder(writer)
+			capturer, writer = recorder, recorder
+		}
 
-	err := next(writer, req)
+		capturer.EnableBodyCapture()
 
-	elapsed := time.Since(start)
-	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
-	m.writer.AddEntry(entry)
+		next.ServeHTTP(writer, req)
 
-	return err
+		elapsed := time.Since(start)
+		entry := m.buildEntry(req, capturer.Captured(), start, elapsed, reqBodySize)
+		m.writer.AddEntry(entry)
+	})
 }
 
 func (m *Middleware) buildEntry(
