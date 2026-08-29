@@ -31,15 +31,21 @@ type Server struct {
 
 	listeners []*PortListener
 	manager   *HostCertManager
-	tracker   IRequestTracker
+	sink      RequestSink
 	nextID    atomic.Uint64
 }
 
-func New(manager *HostCertManager, tracker IRequestTracker) *Server {
+// New creates a server that reports request activity to sink. A nil sink is
+// replaced by NoopRequestSink so the request path is never left without one.
+func New(manager *HostCertManager, sink RequestSink) *Server {
+	if sink == nil {
+		sink = NoopRequestSink{}
+	}
+
 	return &Server{
 		listeners: []*PortListener{},
 		manager:   manager,
-		tracker:   tracker,
+		sink:      sink,
 	}
 }
 
@@ -169,21 +175,25 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 	rec := NewResponseRecorder(writer)
 	requestID := s.nextID.Add(1)
 
-	s.tracker.Emit(RequestEvent{
+	s.sink.Emit(RequestEvent{
 		ID:        requestID,
 		Method:    request.Method,
 		URL:       request.URL,
 		StartedAt: time.Now(),
 	})
 
-	var lastPrefix string
+	// The prefix is reported once, with the terminal event. Handlers may set it
+	// from a goroutine of their own, so access is guarded.
+	var (
+		prefixMu   sync.Mutex
+		lastPrefix string
+	)
 
 	ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(prefix string) {
+		prefixMu.Lock()
+		defer prefixMu.Unlock()
+
 		lastPrefix = prefix
-		s.tracker.Emit(RequestEvent{
-			ID:     requestID,
-			Prefix: prefix,
-		})
 	})
 
 	err := handler.ServeHTTP(rec, request.WithContext(ctx))
@@ -194,10 +204,14 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil
 
-	s.tracker.Emit(RequestEvent{
+	prefixMu.Lock()
+	prefix := lastPrefix
+	prefixMu.Unlock()
+
+	s.sink.Emit(RequestEvent{
 		ID:     requestID,
 		Done:   true,
-		Prefix: lastPrefix,
+		Prefix: prefix,
 		Data:   data,
 	})
 }

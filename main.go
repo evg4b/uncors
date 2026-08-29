@@ -105,7 +105,12 @@ func runNonInteractive(
 
 	app := uncors.CreateUncors(container)
 
-	go server.RequestPrinter(container.RequestTracker(), output)
+	// Headless mode has no TUI, so it must supply the sink that drains the
+	// tracker itself; without a consumer the request path would only be able to
+	// drop activity events.
+	tracker := container.RequestTracker()
+
+	go server.RequestPrinter(tracker, output)
 
 	startConfigWatcher(ctx, container, configPath, app)
 
@@ -123,6 +128,11 @@ func runNonInteractive(
 	})
 
 	app.Wait()
+
+	if dropped := tracker.Dropped(); dropped > 0 {
+		output.Warnf("%d activity lines were dropped to keep the proxy responsive", dropped)
+	}
+
 	output.Info("Server was stopped")
 
 	return 0
