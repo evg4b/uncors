@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -39,6 +40,11 @@ func (c *Container) CliOutput() contracts.Output {
 
 func (c *Container) RequestTracker() *server.RequestTracker {
 	return c.requestTracker()
+}
+
+// HARWriterFor returns the writer recording to the given archive path.
+func (c *Container) HARWriterFor(path string) *har.Writer {
+	return c.harWriters().For(path)
 }
 
 // CADir is the directory holding the local CA, empty for the default location.

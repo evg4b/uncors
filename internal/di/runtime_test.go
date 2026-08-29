@@ -108,3 +108,45 @@ func TestBuildRuntime(t *testing.T) {
 			"config reloads must not accumulate goroutines")
 	})
 }
+
+// Saving a config file must not truncate a recording that is in progress. Two
+// generations used to get two writers over one archive, and closing the older
+// one took the newer one's journal with it.
+func TestHARRecordingSurvivesAReload(t *testing.T) {
+	const harPath = "/har/reloaded.har"
+
+	fs := afero.NewMemMapFs()
+
+	container := di.NewContainer(di.WithFs(fs), di.WithVersion("1.0.0"))
+	defer testutils.Close(t, container)
+
+	configuration := func() *config.UncorsConfig {
+		return &config.UncorsConfig{
+			CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: config.Duration(time.Minute)},
+			Mappings: config.Mappings{
+				{
+					From: hosts.Localhost.HTTP(),
+					To:   hosts.Localhost.HTTPS(),
+					HAR:  config.HARConfig{File: harPath},
+				},
+			},
+		}
+	}
+
+	first, err := container.BuildRuntime(configuration())
+	require.NoError(t, err)
+
+	second, err := container.BuildRuntime(configuration())
+	require.NoError(t, err)
+
+	// Both generations record to the same archive, so they must share one
+	// writer: two writers over one path fight over its journal, and the older
+	// one deletes what the newer one is still recording into.
+	writer := container.HARWriterFor(harPath)
+
+	assert.Same(t, writer, container.HARWriterFor(harPath),
+		"one archive path must have exactly one writer")
+
+	require.NoError(t, first.Close())
+	require.NoError(t, second.Close())
+}

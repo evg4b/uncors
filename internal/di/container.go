@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -26,6 +27,7 @@ type Container struct {
 
 	cliOutput       func() contracts.Output
 	clients         func() *infra.ClientPool
+	harWriters      func() *har.WriterPool
 	requestTracker  func() *server.RequestTracker
 	hostCertManager func() *server.HostCertManager
 	server          func() *server.Server
@@ -81,16 +83,23 @@ func NewContainer(options ...ContainerOption) *Container {
 
 	container = helpers.ApplyOptions(container, options)
 
-	// The client pool is process scoped: a transport owns a connection pool and
-	// is meant to outlive any single configuration.
-	container.closers = append(container.closers, closerFn(func() error {
-		container.clients().CloseIdleConnections()
+	// Both pools are process scoped. A transport owns a connection pool and is
+	// meant to outlive any single configuration; a HAR archive belongs to the
+	// file it is written to, and a config reload must not truncate it.
+	container.closers = append(container.closers,
+		closerFn(func() error {
+			container.clients().CloseIdleConnections()
 
-		return nil
-	}))
+			return nil
+		}),
+		closerFn(func() error {
+			return container.harWriters().Close()
+		}),
+	)
 
 	container.cliOutput = sync.OnceValue(container.newCliOutput)
 	container.clients = sync.OnceValue(infra.NewClientPool)
+	container.harWriters = sync.OnceValue(container.newHARWriterPool)
 	container.requestTracker = sync.OnceValue(server.NewRequestTracker)
 	container.hostCertManager = sync.OnceValue(container.newHostCertManager)
 	container.server = sync.OnceValue(container.newServer)
@@ -115,6 +124,10 @@ func (c *Container) Close() error {
 type closerFn func() error
 
 func (f closerFn) Close() error { return f() }
+
+func (c *Container) newHARWriterPool() *har.WriterPool {
+	return har.NewWriterPool(c.fs, c.version)
+}
 
 func (c *Container) newCliOutput() contracts.Output {
 	if c.output != nil {
