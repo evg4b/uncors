@@ -12,6 +12,6 @@ type HandlerFunc func(http.ResponseWriter, *http.Request) error
 func (f HandlerFunc) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	err := f(writer, request)
 	if err != nil {
-		HTTPError(writer, err)
+		HTTPError(writer, request, err)
 	}
 }

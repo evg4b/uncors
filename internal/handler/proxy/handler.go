@@ -103,7 +103,12 @@ func (h *Handler) handleError(writer http.ResponseWriter, request *http.Request,
 	}
 
 	h.output.Errorf("Proxy handler error: %v", err)
-	http.Error(writer, "uncors: the request to the original source failed", http.StatusBadGateway)
+
+	infra.HTTPError(writer, request, infra.NewHTTPStatusError(
+		http.StatusBadGateway,
+		"the request to the original source failed",
+		err,
+	))
 }
 
 func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {

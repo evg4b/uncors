@@ -17,7 +17,7 @@ import (
 const maxRewriteRedispatch = 8
 
 var (
-	errHostNotMapped = errors.New("host not mapped")
+	errHostNotMapped = errors.New("host is not mapped in the uncors config")
 	errRewriteLoop   = errors.New("rewrite rules redirect the request in a loop")
 )
 
@@ -42,7 +42,11 @@ func NewRouter(mappings config.Mappings, deps Deps) (*Router, error) {
 	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) error {
 		slog.Warn("host is not mapped", "host", request.Host)
 
-		return errHostNotMapped
+		return infra.NewHTTPStatusError(
+			http.StatusNotFound,
+			"this host is not mapped in the uncors configuration",
+			errHostNotMapped,
+		)
 	}))
 
 	return &instance, nil
@@ -122,7 +126,11 @@ func redispatchHandler(routes http.Handler) http.Handler {
 	return infra.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) error {
 		depth, _ := request.Context().Value(rewriteDepthKey{}).(int)
 		if depth >= maxRewriteRedispatch {
-			return errRewriteLoop
+			return infra.NewHTTPStatusError(
+				http.StatusLoopDetected,
+				"the configured rewrites redirect this request in a loop",
+				errRewriteLoop,
+			)
 		}
 
 		ctx := context.WithValue(request.Context(), rewriteDepthKey{}, depth+1)

@@ -199,5 +199,5 @@ func TestRewriteLoopIsBounded(t *testing.T) {
 
 	recorder := serve(t, instance, http.MethodGet, "http://localhost/ping")
 
-	assert.Equal(t, http.StatusInternalServerError, recorder.Code, "a rewrite loop must terminate")
+	assert.Equal(t, http.StatusLoopDetected, recorder.Code, "a rewrite loop must terminate")
 }
