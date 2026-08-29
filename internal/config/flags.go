@@ -27,6 +27,8 @@ func DefineFlags(set *pflag.FlagSet) *Flags {
 	set.String("log-file", "", "Write diagnostics to this file instead of stderr")
 	set.Bool("quiet", false, "Report errors only (shorthand for --log-level=error)")
 	set.StringP("config", "c", "", "Path to the configuration file")
+	set.String("ca-dir", "",
+		"Directory holding the local CA (default: $XDG_CONFIG_HOME/uncors or ~/.config/uncors)")
 	set.Bool("interactive", true, "Render the terminal UI (falls back to plain output when stdout is not a terminal)")
 
 	return &Flags{set: set}
@@ -48,6 +50,13 @@ func ParseFlags(args []string) (*Flags, error) {
 // ConfigPath is the config file the flags point at, empty when none was given.
 func (f *Flags) ConfigPath() string {
 	value, _ := f.set.GetString("config")
+
+	return value
+}
+
+// CADir is the directory holding the local CA, empty for the default location.
+func (f *Flags) CADir() string {
+	value, _ := f.set.GetString("ca-dir")
 
 	return value
 }

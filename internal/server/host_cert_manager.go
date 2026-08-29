@@ -14,14 +14,18 @@ import (
 // certificate per host on the fly signed by the local development CA.
 type HostCertManager struct {
 	fs        afero.Fs
+	caDir     string
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
 	mutex     sync.RWMutex
 }
 
-func NewHostCertManager(fs afero.Fs) *HostCertManager {
+// NewHostCertManager creates the certificate manager. caDir is the directory
+// holding the local CA; empty means the default location.
+func NewHostCertManager(fs afero.Fs, caDir string) *HostCertManager {
 	return &HostCertManager{
 		fs:    fs,
+		caDir: caDir,
 		cache: make(map[string]*tls.Certificate),
 	}
 }
@@ -78,7 +82,7 @@ func (m *HostCertManager) ensureCA() error {
 		return nil
 	}
 
-	caCert, caKey, err := LoadDefaultCA(m.fs)
+	caCert, caKey, err := LoadDefaultCA(m.fs, m.caDir)
 	if err != nil {
 		return fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}

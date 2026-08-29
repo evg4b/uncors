@@ -76,7 +76,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -122,7 +122,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs)
+		manager := server.NewHostCertManager(fs, "")
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -177,7 +177,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs)
+		manager := server.NewHostCertManager(fs, "")
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
@@ -201,7 +201,7 @@ func TestServer(t *testing.T) {
 	t.Run("shutdown", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -227,7 +227,7 @@ func TestServer(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -251,7 +251,7 @@ func TestServer(t *testing.T) {
 	t.Run("Restart", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
@@ -281,7 +281,7 @@ func TestServer(t *testing.T) {
 
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 
 		queue.Track("server started")
@@ -342,7 +342,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), "")
 		instance := server.New(manager, server.NewRequestTracker())
 		err = instance.Start(t.Context(), []server.Target{
 			{
@@ -356,7 +356,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestServerRestartReconcilesPorts(t *testing.T) {
-	manager := server.NewHostCertManager(afero.NewMemMapFs())
+	manager := server.NewHostCertManager(afero.NewMemMapFs(), "")
 
 	handlerFor := func(body string) http.Handler {
 		return infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
@@ -458,7 +458,7 @@ func getBody(t *testing.T, url string) string {
 // A wildcard bind has no local address to infer a certificate host from, so a
 // client that sends no SNI has to be answered from the mapping's own hostname.
 func TestServerBindsTheConfiguredAddress(t *testing.T) {
-	manager := server.NewHostCertManager(afero.NewMemMapFs())
+	manager := server.NewHostCertManager(afero.NewMemMapFs(), "")
 	instance := server.New(manager, server.NewRequestTracker())
 
 	port := testutils.GetFreePort(t)

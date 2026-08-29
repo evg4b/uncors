@@ -49,7 +49,45 @@ Docker images are available on [Docker
 Hub](https://hub.docker.com/r/evg4b/uncors):
 
 ```bash
-docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
+docker run --rm -p 3000:3000 \
+  --add-host local.github.com:127.0.0.1 \
+  evg4b/uncors --from 'http://local.github.com:3000' --to 'https://github.com'
+```
+
+#### Running in Docker
+
+Three things work differently inside a container:
+
+ - **The published port must match the port in `--from`.** uncors listens on the
+   port of its `from:` host (80 for `http://…` and 443 for `https://…` when no
+   port is given), so `-p 3000:3000` goes with `--from http://…:3000`.
+ - **Mapped hostnames must resolve inside the container.** Your host's `/etc/hosts`
+   is not visible there; use `--add-host name:127.0.0.1` for each mapped host.
+ - **The image binds every interface** (`--listen 0.0.0.0`) and runs without the
+   terminal UI. A container is its own network namespace, so a proxy bound to
+   loopback could not be reached through a published port at all.
+
+Mount a config file instead of passing flags:
+
+```bash
+docker run --rm -p 3000:3000 \
+  --add-host api.local:127.0.0.1 \
+  -v "$PWD/.uncors.yaml:/config.yaml:ro" \
+  evg4b/uncors --config /config.yaml
+```
+
+For `https://` mappings, mount a directory for the local CA so it survives
+between runs:
+
+```bash
+docker run --rm -p 3443:3443 \
+  -v "$HOME/.config/uncors:/ca" \
+  evg4b/uncors generate-certs --ca-dir /ca
+
+docker run --rm -p 3443:3443 \
+  --add-host api.local:127.0.0.1 \
+  -v "$HOME/.config/uncors:/ca:ro" \
+  evg4b/uncors --ca-dir /ca --from 'https://api.local:3443' --to 'https://api.example.com'
 ```
 
 ## Binary Installation

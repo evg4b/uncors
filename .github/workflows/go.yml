@@ -81,9 +81,46 @@ jobs:
       - name: Build
         run: go build -tags release -v .
 
+  docker:
+    name: Docker image smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - *fast-clone
+
+      - *setup-go
+
+      # The published image is a documented installation method that no unit
+      # test covers. It has been unusable before — bound to loopback inside its
+      # own network namespace, starting a full-screen TUI against a pipe — so it
+      # is built and actually driven here.
+      - name: Build the image
+        run: |
+          CGO_ENABLED=0 go build -tags release -o uncors .
+          docker build -t uncors:ci .
+
+      - name: Proxy a request through the container
+        run: |
+          docker run --rm -d --name uncors-ci -p 3000:3000 \
+            --add-host proxied.local:127.0.0.1 \
+            uncors:ci --from 'http://proxied.local:3000' --to 'https://example.com'
+
+          for _ in $(seq 1 30); do
+            if curl -fsS -H 'Host: proxied.local' http://127.0.0.1:3000/ -o /dev/null; then
+              echo "the container served a proxied request"
+              docker rm -f uncors-ci
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "the container never served a request"
+          docker logs uncors-ci
+          docker rm -f uncors-ci
+          exit 1
+
   sonar-scan:
     name: SonarCloud Scan
-    needs: [ test, build, lint ]
+    needs: [ test, build, lint, docker ]
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:

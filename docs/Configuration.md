@@ -99,6 +99,7 @@ Each mapping can use a different port by specifying it in the URL.
 | `--proxy`         |       | HTTP/HTTPS proxy URL for upstream requests                              |
 | `--config`        | `-c`  | Path to YAML configuration file                                         |
 | `--listen`        |       | Address to bind to (default `127.0.0.1`)                                |
+| `--ca-dir`        |       | Directory holding the local CA (default `~/.config/uncors`)             |
 | `--interactive`   |       | Render the terminal UI (default `true`, off when stdout is not a TTY)   |
 | `--log-level`     |       | Diagnostic verbosity: `debug`, `info`, `warn`, `error` (default `info`) |
 | `--log-file`      |       | Write diagnostics to a file instead of stderr                           |

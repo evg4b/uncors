@@ -46,7 +46,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 		require.NotNil(t, manager)
 
 		// Test SNI by requesting certificate for localhost
@@ -68,7 +68,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "test"})
 
@@ -97,7 +97,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		testHost := "example.local"
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 
 		// Test SNI by requesting certificate for the specific host
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: testHost})
@@ -128,7 +128,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 		require.NotNil(t, manager)
 
 		// Test SNI for api.local - should auto-generate cert for this host
@@ -168,7 +168,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 
 		// Mock connection with IP address
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
@@ -196,7 +196,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, "")
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
@@ -219,7 +219,7 @@ func newManagerWithCA(t *testing.T) *HostCertManager {
 	_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 	require.NoError(t, err)
 
-	return NewHostCertManager(fs)
+	return NewHostCertManager(fs, "")
 }
 
 func TestHostCertManager_Caching(t *testing.T) {

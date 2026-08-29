@@ -94,8 +94,14 @@ npm install uncors --save-dev
 #### [Docker](https://www.docker.com/) (Cross-platform)
 
 ```bash
-docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
+docker run --rm -p 3000:3000 \
+  --add-host local.github.com:127.0.0.1 \
+  evg4b/uncors --from 'http://local.github.com:3000' --to 'https://github.com'
 ```
+
+The published port must match the port in `--from`, and the mapped hostname has
+to resolve **inside** the container — see [Running in
+Docker](https://github.com/evg4b/uncors/wiki/Installation#running-in-docker).
 
 #### [Stew](https://github.com/marwanhawari/stew) (Cross-platform)
 

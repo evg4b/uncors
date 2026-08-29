@@ -41,6 +41,11 @@ func (c *Container) RequestTracker() *server.RequestTracker {
 	return c.requestTracker()
 }
 
+// CADir is the directory holding the local CA, empty for the default location.
+func (c *Container) CADir() string {
+	return c.caDir
+}
+
 func (c *Container) Server() *server.Server {
 	return c.server()
 }

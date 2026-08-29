@@ -89,7 +89,7 @@ func setupLogging(flags *config.Flags, interactive bool) (io.Closer, error) {
 // runHeadless starts the proxy without a terminal UI and blocks until the server
 // shuts down.
 func runHeadless(ctx context.Context, env Env, flags *config.Flags, cfg *config.UncorsConfig) error {
-	container := newContainer(env, di.WithStdout(env.Stdout))
+	container := newContainer(env, flags, di.WithStdout(env.Stdout))
 	defer container.Close()
 
 	output := container.CliOutput()
@@ -130,7 +130,7 @@ func runHeadless(ctx context.Context, env Env, flags *config.Flags, cfg *config.
 func runInteractive(env Env, flags *config.Flags, cfg *config.UncorsConfig) error {
 	output := tuiapp.NewOutput()
 
-	container := newContainer(env, di.WithOutput(output))
+	container := newContainer(env, flags, di.WithOutput(output))
 	defer container.Close()
 
 	app := tuiapp.NewUncorsApp(
@@ -150,10 +150,11 @@ func runInteractive(env Env, flags *config.Flags, cfg *config.UncorsConfig) erro
 	return nil
 }
 
-func newContainer(env Env, options ...di.ContainerOption) *di.Container {
+func newContainer(env Env, flags *config.Flags, options ...di.ContainerOption) *di.Container {
 	return di.NewContainer(append([]di.ContainerOption{
 		di.WithFs(env.Fs),
 		di.WithVersion(env.Version),
+		di.WithCADir(flags.CADir()),
 	}, options...)...)
 }
 

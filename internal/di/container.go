@@ -22,6 +22,7 @@ type Container struct {
 	stdout  io.Writer
 	output  contracts.Output
 	version string
+	caDir   string
 
 	cliOutput       func() contracts.Output
 	clients         func() *infra.ClientPool
@@ -47,6 +48,14 @@ func WithStdout(stdout io.Writer) ContainerOption {
 func WithOutput(output contracts.Output) ContainerOption {
 	return func(c *Container) {
 		c.output = output
+	}
+}
+
+// WithCADir sets the directory holding the local CA. Empty means the default
+// location, which follows $XDG_CONFIG_HOME and then the home directory.
+func WithCADir(caDir string) ContainerOption {
+	return func(c *Container) {
+		c.caDir = caDir
 	}
 }
 

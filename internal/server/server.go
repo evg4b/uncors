@@ -234,7 +234,7 @@ func (s *Server) checkTLSReadiness(pending []*PortListener) error {
 			continue
 		}
 
-		if !CAExists(s.manager.fs) {
+		if !CAExists(s.manager.fs, s.manager.caDir) {
 			errs = append(errs, &TLSError{Host: listener.address})
 
 			s.forget(listener)

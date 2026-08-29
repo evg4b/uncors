@@ -5,7 +5,7 @@ import (
 )
 
 func (c *Container) newHostCertManager() *server.HostCertManager {
-	return server.NewHostCertManager(c.fs)
+	return server.NewHostCertManager(c.fs, c.caDir)
 }
 
 func (c *Container) newServer() *server.Server {

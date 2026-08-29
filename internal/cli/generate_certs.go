@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -13,10 +12,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	defaultValidityDays = 365
-	defaultConfigDir    = ".config/uncors"
-)
+const defaultValidityDays = 365
 
 // GenerateCertsCommand handles the 'generate-certs' command.
 type GenerateCertsCommand struct {
@@ -36,16 +32,18 @@ func NewGenerateCertsCommand(options ...GenerateCertsOption) *GenerateCertsComma
 func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet) {
 	flags.IntVar(&c.validityDays, "validity-days", defaultValidityDays, "Certificate validity period in days")
 	flags.BoolVar(&c.force, "force", false, "Force overwrite existing CA certificates")
+	flags.StringVar(&c.outputDir, "ca-dir", "",
+		"Directory to write the CA into (default: $XDG_CONFIG_HOME/uncors or ~/.config/uncors)")
 }
 
 // Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
-	homeDir, err := os.UserHomeDir()
+	outputDir, err := server.CAPathOr(c.outputDir)
 	if err != nil {
-		return fmt.Errorf("failed to get user home directory: %w", err)
+		return err
 	}
 
-	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
+	c.outputDir = outputDir
 
 	certPath := filepath.Join(c.outputDir, server.CACertFileName)
 	keyPath := filepath.Join(c.outputDir, server.CAKeyFileName)
