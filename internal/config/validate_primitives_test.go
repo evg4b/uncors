@@ -218,3 +218,17 @@ func TestValidateStringEnum(t *testing.T) {
 	runErr(t, "invalid option", "'option-x' is not a valid option",
 		func() error { return config.ValidateStringEnum("field", "option-x", options) })
 }
+
+func TestValidateListenAddress(t *testing.T) {
+	t.Run("accepts an address to bind to", func(t *testing.T) {
+		for _, value := range []string{"", "127.0.0.1", "0.0.0.0", "::1", "192.168.1.10"} {
+			require.NoError(t, config.ValidateListenAddress("listen", value), value)
+		}
+	})
+
+	t.Run("rejects anything that is not an address", func(t *testing.T) {
+		for _, value := range []string{"localhost", "127.0.0.1:3000", "nonsense"} {
+			require.Error(t, config.ValidateListenAddress("listen", value), value)
+		}
+	})
+}

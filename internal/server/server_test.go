@@ -454,3 +454,28 @@ func getBody(t *testing.T, url string) string {
 
 	return string(body)
 }
+
+// A wildcard bind has no local address to infer a certificate host from, so a
+// client that sends no SNI has to be answered from the mapping's own hostname.
+func TestServerBindsTheConfiguredAddress(t *testing.T) {
+	manager := server.NewHostCertManager(afero.NewMemMapFs())
+	instance := server.New(manager, server.NewRequestTracker())
+
+	port := testutils.GetFreePort(t)
+	address := net.JoinHostPort("0.0.0.0", strconv.Itoa(port))
+
+	require.NoError(t, instance.Start(t.Context(), []server.Target{
+		{
+			Address: address,
+			Handler: infra.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
+				_, err := fmt.Fprint(w, "bound")
+
+				return err
+			}),
+		},
+	}))
+
+	defer instance.Close()
+
+	assert.Equal(t, "bound", getBody(t, "http://127.0.0.1:"+strconv.Itoa(port)))
+}

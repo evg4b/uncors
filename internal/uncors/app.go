@@ -3,6 +3,8 @@ package uncors
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 	"sync"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -43,6 +45,8 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 	app.output.Print("")
 	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")
+
+	app.warnAboutExposure(uncorsConfig.Listen)
 
 	runtime, err := app.container.BuildRuntime(uncorsConfig)
 	if err != nil {
@@ -102,6 +106,23 @@ func (app *Uncors) Shutdown(ctx context.Context) error {
 		app.server.Shutdown(ctx),
 		closeRuntime(app.swapRuntime(nil)),
 	)
+}
+
+// warnAboutExposure tells the user when the proxy is reachable beyond this
+// machine. uncors strips CORS protections and can hold a trusted local CA, so
+// binding anything but a loopback address deserves to be said out loud.
+func (app *Uncors) warnAboutExposure(listen string) {
+	address := net.ParseIP(listen)
+	if address != nil && address.IsLoopback() {
+		return
+	}
+
+	app.output.WarnBox(
+		fmt.Sprintf("uncors is listening on %s and disables CORS protections.", listen),
+		"Anyone who can reach this machine can use it as a proxy.",
+		"Do not run it this way on an untrusted network.",
+	)
+	app.output.Print("")
 }
 
 // swapRuntime installs runtime as the active generation and returns the one it

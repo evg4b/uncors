@@ -27,12 +27,26 @@ func NewHostCertManager(fs afero.Fs) *HostCertManager {
 }
 
 func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	return m.certificateFor(clientHello, "")
+}
+
+// certificateFor answers the TLS handshake. defaultHost is the certificate to
+// serve when the client sends no SNI and the connection's local address cannot
+// name one — which is the case for a wildcard bind.
+func (m *HostCertManager) certificateFor(
+	clientHello *tls.ClientHelloInfo,
+	defaultHost string,
+) (*tls.Certificate, error) {
 	err := m.ensureCA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load CA certificate: %w", err)
 	}
 
 	host, ok := extractServerHost(clientHello)
+	if !ok {
+		host, ok = defaultHost, defaultHost != ""
+	}
+
 	if !ok {
 		return nil, ErrNoSNIProvided
 	}

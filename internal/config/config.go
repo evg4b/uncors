@@ -10,9 +10,13 @@ import (
 )
 
 type UncorsConfig struct {
-	Mappings    Mappings    `yaml:"mappings"`
-	Proxy       string      `yaml:"proxy"`
-	Debug       bool        `yaml:"debug"`
+	Mappings Mappings `yaml:"mappings"`
+	Proxy    string   `yaml:"proxy"`
+	Debug    bool     `yaml:"debug"`
+	// Listen is the address the proxy binds to. It defaults to loopback, because
+	// uncors disables CORS protections and must not be reachable by default;
+	// binding anything else is an explicit, warned-about choice.
+	Listen      string      `yaml:"listen"`
 	CacheConfig CacheConfig `yaml:"cache-config"`
 	Interactive bool        `yaml:"-"`
 }
@@ -75,6 +79,14 @@ func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 		cfg.Interactive, _ = flags.GetBool("interactive")
 	}
 
+	if flags.Changed("listen") {
+		cfg.Listen, _ = flags.GetString("listen")
+	}
+
+	if cfg.Listen == "" {
+		cfg.Listen = DefaultListenAddress
+	}
+
 	from, _ := flags.GetStringSlice("from")
 	to, _ := flags.GetStringSlice("to")
 
@@ -93,6 +105,7 @@ func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
 	}
 
 	errs = append(errs, ValidateProxy("proxy", cfg.Proxy))
+	errs = append(errs, ValidateListenAddress("listen", cfg.Listen))
 	errs = append(errs, cfg.CacheConfig.Validate("cache-config"))
 
 	return errors.Join(errs...)

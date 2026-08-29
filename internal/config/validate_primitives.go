@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -171,4 +172,18 @@ func ValidateStringEnum(_ string, value string, options []string) error {
 	}
 
 	return nil
+}
+
+// ValidateListenAddress checks that the bind address is an address this machine
+// can actually listen on.
+func ValidateListenAddress(field, value string) error {
+	if value == "" {
+		return nil
+	}
+
+	if net.ParseIP(value) != nil {
+		return nil
+	}
+
+	return &ValidationError{fmt.Sprintf("%s must be an IP address to bind to (for example 127.0.0.1 or 0.0.0.0)", field)}
 }

@@ -14,10 +14,11 @@ import (
 type PortListener struct {
 	http.Server
 
-	address   string
-	enableTLS bool
-	manager   *HostCertManager
-	handler   atomic.Pointer[http.Handler]
+	address     string
+	enableTLS   bool
+	defaultHost string
+	manager     *HostCertManager
+	handler     atomic.Pointer[http.Handler]
 }
 
 func (ps *PortListener) SetHandler(handler http.Handler) {
@@ -38,8 +39,10 @@ func (ps *PortListener) Listen(ctx context.Context, onReady func()) error {
 
 	if ps.enableTLS {
 		listener = tls.NewListener(listener, &tls.Config{
-			MinVersion:     tls.VersionTLS12,
-			GetCertificate: ps.manager.getCertificate,
+			MinVersion: tls.VersionTLS12,
+			GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				return ps.manager.certificateFor(clientHello, ps.defaultHost)
+			},
 		})
 	}
 

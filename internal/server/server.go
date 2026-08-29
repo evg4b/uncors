@@ -23,6 +23,9 @@ type Target struct {
 	Address   string
 	Handler   http.Handler
 	EnableTLS bool
+	// DefaultHost names the certificate to serve to a TLS client that sends no
+	// SNI. A wildcard bind cannot infer it from the connection's local address.
+	DefaultHost string
 }
 
 type Server struct {
@@ -111,6 +114,8 @@ func (s *Server) plan(targets []Target) ([]*PortListener, []*PortListener) {
 		target, keep := desired[address]
 		if keep && target.EnableTLS == listener.enableTLS {
 			listener.SetHandler(target.Handler)
+			listener.defaultHost = target.DefaultHost
+
 			delete(desired, address)
 
 			continue
@@ -132,9 +137,10 @@ func (s *Server) plan(targets []Target) ([]*PortListener, []*PortListener) {
 
 func (s *Server) newPortListener(target Target) *PortListener {
 	portListener := &PortListener{
-		address:   target.Address,
-		enableTLS: target.EnableTLS,
-		manager:   s.manager,
+		address:     target.Address,
+		enableTLS:   target.EnableTLS,
+		defaultHost: target.DefaultHost,
+		manager:     s.manager,
 	}
 
 	portListener.SetHandler(target.Handler)

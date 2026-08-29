@@ -87,11 +87,17 @@ Each mapping can use a different port by specifying it in the URL.
 
 ### Global Configuration
 
-| Parameter  | Short | Description                                |
-| ---------- | ----- | ------------------------------------------ |
-| `--proxy`  |       | HTTP/HTTPS proxy URL for upstream requests |
-| `--config` |       | Path to YAML configuration file            |
-| `--debug`  |       | Enable debug logging output                |
+| Parameter         | Short | Description                                                             |
+| ----------------- | ----- | ----------------------------------------------------------------------- |
+| `--proxy`         |       | HTTP/HTTPS proxy URL for upstream requests                              |
+| `--config`        | `-c`  | Path to YAML configuration file                                         |
+| `--listen`        |       | Address to bind to (default `127.0.0.1`)                                |
+| `--interactive`   |       | Render the terminal UI (default `true`, off when stdout is not a TTY)   |
+| `--log-level`     |       | Diagnostic verbosity: `debug`, `info`, `warn`, `error` (default `info`) |
+| `--log-file`      |       | Write diagnostics to a file instead of stderr                           |
+| `--quiet`         |       | Report errors only                                                      |
+| `--debug`         |       | Shorthand for `--log-level debug`                                       |
+| `--version`       | `-v`  | Print the uncors version and exit                                       |
 
 > [!NOTE]
 > CLI parameters override configuration file settings.
@@ -141,10 +147,25 @@ mappings:
 
 | Property       | Type    | Default | Description                                                               |
 | -------------- | ------- | ------- | ------------------------------------------------------------------------- |
-| `proxy`        | string  | -       | HTTP/HTTPS proxy URL for upstream requests                                |
-| `debug`        | boolean | `false` | Enable debug logging output                                               |
+| `proxy`        | string  | -             | HTTP/HTTPS proxy URL for upstream requests                          |
+| `debug`        | boolean | `false`       | Enable debug logging output                                         |
+| `listen`       | string  | `127.0.0.1`   | Address to bind to (see below)                                      |
 | `mappings`     | array   | `[]`    | List of host mapping configurations (see below)                           |
 | `cache-config` | object  | -       | Global cache behavior settings (see [Response Caching](Response-Caching)) |
+
+### Listen Address
+
+By default uncors is reachable only from the machine it runs on. It disables CORS
+protections and can hold a locally trusted CA, so exposing it is an explicit
+choice:
+
+```yaml
+listen: 0.0.0.0 # reachable from your network — uncors warns loudly about this
+```
+
+Use it to test from a phone, a VM or another machine. The Docker image binds
+`0.0.0.0` already, because a container is its own network namespace and nothing
+published with `-p` could otherwise reach the proxy.
 
 ## Mapping Configuration
 

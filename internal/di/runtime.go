@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -17,8 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
-
-const baseAddress = "127.0.0.1"
 
 // Runtime owns everything derived from a single UncorsConfig: the response
 // cache, the HAR writers, the routers built from the mappings and the server
@@ -127,9 +126,10 @@ func (r *Runtime) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Targ
 		}
 
 		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   handler,
-			EnableTLS: group.Scheme == "https",
+			Address:     net.JoinHostPort(uncorsConfig.Listen, strconv.Itoa(group.Port)),
+			Handler:     handler,
+			EnableTLS:   group.Scheme == "https",
+			DefaultHost: defaultHostOf(group.Mappings),
 		})
 	}
 
@@ -154,6 +154,20 @@ func (r *Runtime) router(mappings config.Mappings, proxyURL string) (http.Handle
 	})
 
 	return muxRouter, err
+}
+
+// defaultHostOf picks the certificate host to use for a client that sends no
+// SNI. A wildcard bind has no local address to fall back on, so the mapping's
+// own hostname is the only sensible answer.
+func defaultHostOf(mappings config.Mappings) string {
+	for _, mapping := range mappings {
+		hostname := mapping.From.Hostname
+		if hostname != "" && !strings.ContainsAny(hostname, "{}") {
+			return hostname
+		}
+	}
+
+	return ""
 }
 
 // register binds a resource to the generation's lifetime.

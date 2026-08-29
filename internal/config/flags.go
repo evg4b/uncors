@@ -20,6 +20,8 @@ func DefineFlags(set *pflag.FlagSet) *Flags {
 	set.StringSliceP("from", "f", []string{},
 		"Local host with protocol for the resource from which proxying will take place")
 	set.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
+	set.String("listen", DefaultListenAddress,
+		"Address to bind to. Anything but a loopback address exposes the proxy to your network")
 	set.Bool("debug", false, "Shorthand for --log-level=debug")
 	set.String("log-level", "info", "Diagnostic verbosity: debug, info, warn or error")
 	set.String("log-file", "", "Write diagnostics to this file instead of stderr")
