@@ -43,6 +43,7 @@ func LoadConfiguration(fs afero.Fs, flags *Flags) (*UncorsConfig, error) {
 	}
 
 	cfg.Mappings = NormaliseMappings(cfg.Mappings)
+	cfg.Proxy = NormaliseProxy(cfg.Proxy)
 	resolvePaths(cfg, configPath)
 
 	err = cfg.Validate(fs)

@@ -169,13 +169,13 @@ mappings:
 
 ## Global Configuration Properties
 
-| Property       | Type    | Default | Description                                                               |
-| -------------- | ------- | ------- | ------------------------------------------------------------------------- |
-| `proxy`        | string  | -             | HTTP/HTTPS proxy URL for upstream requests                          |
-| `debug`        | boolean | `false`       | Enable debug logging output                                         |
-| `listen`       | string  | `127.0.0.1`   | Address to bind to (see below)                                      |
-| `mappings`     | array   | `[]`    | List of host mapping configurations (see below)                           |
-| `cache-config` | object  | -       | Global cache behavior settings (see [Response Caching](Response-Caching)) |
+| Property       | Type    | Default                | Description                                                       |
+| -------------- | ------- | ---------------------- | ----------------------------------------------------------------- |
+| `proxy`        | string  | -                      | Proxy for upstream requests; a bare `host:port` is assumed to be HTTP |
+| `debug`        | boolean | `false`                | Shorthand for `--log-level debug`                                 |
+| `listen`       | string  | `127.0.0.1`            | Address to bind to (see below)                                    |
+| `mappings`     | array   | `[]`                   | Host mappings (see below)                                         |
+| `cache-config` | object  | 30m / 100 MB / `[GET]` | Global cache behaviour (see [Response Caching](Response-Caching))  |
 
 ### File Paths
 
@@ -260,10 +260,29 @@ changes, so caching them would only serve stale copies.
 ### OPTIONS Request Handling
 
 By default, UNCORS intercepts and handles `OPTIONS` requests locally to
-facilitate CORS preflight checks. The default response includes:
+facilitate CORS preflight checks.
 
- - `Access-Control-Allow-Origin: *`
- - `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS`
+**On a normal response**, UNCORS adds:
+
+```
+Access-Control-Allow-Origin: <the request's Origin, or * when it had none>
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 86400
+```
+
+**On a preflight**, the wildcards are replaced by what the request asked for:
+`Access-Control-Allow-Origin` echoes `Origin`, `-Allow-Headers` echoes
+`Access-Control-Request-Headers`, and `-Allow-Methods` echoes
+`Access-Control-Request-Method`. Each falls back to the value above when the
+request did not send its counterpart.
+
+> [!NOTE]
+> The echo is not cosmetic. `Access-Control-Allow-Credentials: true` is always
+> sent, and browsers reject that combined with a wildcard origin — so a preflight
+> has to name the origin it is answering.
 
 **Disabling OPTIONS handling:**
 
@@ -312,20 +331,21 @@ mappings:
     to: http://site.com
 ```
 
-**Scheme-agnostic mapping:**
+**Omitting the scheme:**
 
-Using `//` as the scheme creates a mapping that matches both HTTP and HTTPS
-requests.
-
-Redirect all requests to HTTPS:
+A `from:` written as `//host:port` has no explicit scheme. uncors serves it over
+**plain HTTP** — a single listener is either TLS or it is not — so `//` is a
+shorthand for "http", not a way to serve both. Serving one mapping over both
+schemes needs two mappings on two ports.
 
 ```yaml
 mappings:
-  - from: //localhost:8080
+  - from: //localhost:8080 # listens on http://localhost:8080
     to: https://site.com
 ```
 
-Preserve the original request scheme:
+A `to:` written as `//host` **does** preserve the incoming request's scheme, so
+this forwards http to http and https to https:
 
 ```yaml
 mappings:
@@ -340,10 +360,11 @@ mappings:
 ### Named Placeholder Mapping
 
 UNCORS supports named placeholders in host mappings for flexible domain
-matching. A placeholder is written as `{name}` and matches any sequence of
-characters in that hostname segment (excluding `.` and `/`). Using explicit
-names makes multi-placeholder mappings self-documenting and allows each
-placeholder to be referenced by name in the target URL.
+matching. A placeholder is written as `{name}` and matches **one hostname
+label**: any run of characters other than `.` or `/`. So `{repo}.local.com`
+matches `uncors.local.com` but not `a.b.local.com`. Using explicit names makes
+multi-placeholder mappings self-documenting and allows each placeholder to be
+referenced by name in the target URL.
 
 **Example 1: Static target with placeholder source**
 
@@ -551,3 +572,6 @@ uncors --proxy http://proxy.example.com:8080 --from http://localhost --to https:
 ```yaml
 proxy: http://proxy.example.com:8080
 ```
+
+`proxy:` accepts the same two forms as the environment variables: a full URL, or
+a bare `proxy.example.com:8080`, which is assumed to be HTTP.

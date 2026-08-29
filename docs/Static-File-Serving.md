@@ -26,7 +26,7 @@ mappings:
 | -------- | ------ | -------- | --------------------------------------------------------------- |
 | `path`   | string | Yes      | URL path prefix for serving files (wildcards not supported)     |
 | `dir`    | string | Yes      | Local directory path containing files to serve                  |
-| `index`  | string | No       | Fallback file when requested file not found (relative to `dir`) |
+| `index`  | string | No       | Served when the path is missing or is a directory (relative to `dir`) |
 
 **Request handling behavior:**
 

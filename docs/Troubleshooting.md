@@ -216,7 +216,7 @@ use an incognito/private window.
 **Symptoms:**
 
  - UNCORS starts but doesn't apply configuration
- - "No mappings configured" error
+ - `mappings must not be empty`
  - Configuration changes not taking effect
 
 **1. Wrong configuration file path**

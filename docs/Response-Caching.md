@@ -87,8 +87,10 @@ cache-config:
  1. **Hit** - Response is returned immediately from cache
  2. **Miss** - Request is forwarded to the upstream server; response is stored
     in cache
- 3. **Evicted** (after `expiration-time` or when `max-size` is reached) - Cache
-    entry is removed; next request fetches fresh data from upstream
+ 3. **Evicted** — after `expiration-time`, or when `max-size` is reached. The
+    cache evicts by cost and keeps what is used most; a single response larger
+    than the whole budget is never admitted. The next request fetches fresh data
+    from upstream.
 
 ## What Is and Is Not Cached
 

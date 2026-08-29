@@ -302,3 +302,23 @@ func TestValidateGlobPatternForCache(t *testing.T) {
 		}
 	})
 }
+
+// The environment variables Go itself reads accept a bare host:port, and the
+// documentation offers the same form for `proxy:`.
+func TestValidateProxyAcceptsABareHostPort(t *testing.T) {
+	valid := []string{"", "http://proxy.example.com:8080", "proxy.example.com:8080", "localhost:8080"}
+	for _, value := range valid {
+		require.NoError(t, config.ValidateProxy("proxy", value), value)
+	}
+
+	invalid := []string{"://nonsense", "http://"}
+	for _, value := range invalid {
+		require.Error(t, config.ValidateProxy("proxy", value), value)
+	}
+}
+
+func TestNormaliseProxy(t *testing.T) {
+	assert.Equal(t, "http://proxy.example.com:8080", config.NormaliseProxy("proxy.example.com:8080"))
+	assert.Equal(t, "https://proxy.example.com", config.NormaliseProxy("https://proxy.example.com"))
+	assert.Empty(t, config.NormaliseProxy(""))
+}

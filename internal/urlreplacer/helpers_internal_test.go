@@ -29,49 +29,51 @@ var testCases = []struct {
 	{
 		name:            "single placeholder",
 		url:             "{tenant}",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>[^.]+)(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${tenant}${path}",
 	},
 	{
 		name:            "single placeholder with port",
 		url:             "{tenant}:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>[^.]+)(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${tenant}:3001${path}",
 	},
 	{
 		name:            "single placeholder with url part",
 		url:             "demo.{tenant}.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?demo\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?demo\.(?P<tenant>[^.]+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}demo.${tenant}.com${path}",
 	},
 	{
 		name:            "single placeholder with url part and port",
 		url:             "api.{tenant}.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?api\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?api\.(?P<tenant>[^.]+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}api.${tenant}.com:3001${path}",
 	},
 	{
-		name:            "multiple placeholders with url part",
-		url:             "{region}.host.{tenant}.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		name: "multiple placeholders with url part",
+		url:  "{region}.host.{tenant}.com",
+		expectedRegexp: `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>[^.]+)\.host\.` +
+			`(?P<tenant>[^.]+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${region}.host.${tenant}.com${path}",
 	},
 	{
-		name:            "multiple placeholders with url part and port",
-		url:             "{region}.host.{tenant}.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		name: "multiple placeholders with url part and port",
+		url:  "{region}.host.{tenant}.com:3001",
+		expectedRegexp: `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>[^.]+)\.host\.` +
+			`(?P<tenant>[^.]+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${region}.host.${tenant}.com:3001${path}",
 	},
 	{
 		name:            "host with default http port",
 		url:             "{tenant}.api.com:80",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>[^.]+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${tenant}.api.com:80${path}",
 	},
 	{
 		name:            "host with default https port",
 		url:             "{tenant}.api.com:443",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
+		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>[^.]+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
 		expectedPattern: "${scheme}${tenant}.api.com:443${path}",
 	},
 }

@@ -5,7 +5,6 @@
     <img alt="UNCORS logo" width="60%" src="https://raw.githubusercontent.com/evg4b/uncors/main/.github/logo.png">
   </a>
   <br />
-  <span>Version: 0.6.1</span>
 </p>
 
 

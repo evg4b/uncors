@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/evg4b/uncors/internal/urlpattern"
 	"github.com/spf13/afero"
@@ -69,14 +70,23 @@ func ValidateProxy(field, value string) error {
 		return nil
 	}
 
-	// A proxy must be an absolute URL with an explicit scheme and host
-	// (e.g. "http://localhost:8080").
-	parsed, err := url.Parse(value)
+	parsed, err := url.Parse(NormaliseProxy(value))
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}
 	}
 
 	return nil
+}
+
+// NormaliseProxy fills in the scheme a bare "host:port" leaves out. Go's own
+// http.ProxyFromEnvironment accepts that form for HTTP_PROXY, so a config file
+// that spells the proxy the same way should work too.
+func NormaliseProxy(value string) string {
+	if value == "" || strings.Contains(value, "://") {
+		return value
+	}
+
+	return "http://" + value
 }
 
 func (m *Mapping) Validate(field string, fs afero.Fs) error {

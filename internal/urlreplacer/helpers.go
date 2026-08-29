@@ -99,7 +99,11 @@ func wildCardToRegexp(rawSource string) (*regexp.Regexp, error) {
 		result.WriteString(regexp.QuoteMeta(host[lastIndex:match[0]]))
 
 		key := host[match[0]+1 : match[1]-1] // strip { and }
-		fmt.Fprintf(&result, "(?P<%s>.+)", key)
+
+		// A placeholder stands for one hostname label, so it must not match a
+		// dot: a greedy (.+) makes `{env}.{service}.local` ambiguous about which
+		// name captures what, and lets `{repo}.local` swallow `a.b.c`.
+		fmt.Fprintf(&result, "(?P<%s>[^.]+)", key)
 
 		lastIndex = match[1]
 	}

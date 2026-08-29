@@ -104,7 +104,7 @@ The headers added to a proxied response are:
 Access-Control-Allow-Origin: <the request's Origin, or * when it had none>
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
-Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400
 ```

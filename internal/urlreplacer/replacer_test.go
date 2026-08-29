@@ -334,3 +334,33 @@ func TestReplacerIsMatched(t *testing.T) {
 		})
 	}
 }
+
+// A placeholder stands for one hostname label. A greedy match let
+// `{repo}.local.com` swallow `a.b.c`, and made a multi-placeholder pattern
+// ambiguous about which name captured what.
+func TestPlaceholdersMatchOneLabel(t *testing.T) {
+	t.Run("does not span dots", func(t *testing.T) {
+		replacer, err := urlreplacer.NewReplacer("http://{repo}.local.com", "https://{repo}.github.com")
+		require.NoError(t, err)
+
+		result, err := replacer.Replace("http://uncors.local.com")
+		require.NoError(t, err)
+		assert.Equal(t, "https://uncors.github.com", result)
+
+		_, err = replacer.Replace("http://a.b.c.local.com")
+		require.Error(t, err, "a placeholder must not swallow several labels")
+	})
+
+	t.Run("each placeholder captures its own label", func(t *testing.T) {
+		replacer, err := urlreplacer.NewReplacer(
+			"http://{env}.{service}.local.com",
+			"https://{service}-{env}.example.com",
+		)
+		require.NoError(t, err)
+
+		result, err := replacer.Replace("http://staging.billing.local.com")
+
+		require.NoError(t, err)
+		assert.Equal(t, "https://billing-staging.example.com", result)
+	})
+}

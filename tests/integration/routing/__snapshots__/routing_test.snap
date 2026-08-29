@@ -16,7 +16,7 @@ HTTP/1.1 200 OK
 Content-Length: 11
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
-Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400

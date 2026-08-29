@@ -21,7 +21,7 @@ func TestMiddleware(t *testing.T) {
 
 		defaultControlAllowOrigin := []string{"*"}
 		defaultControlAllowMethods := []string{
-			"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+			"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS",
 		}
 		defaultControlAllowCredentials := []string{"true"}
 		defaultControlAllowHeaders := []string{"*"}
@@ -211,7 +211,7 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
 
-		expectedMethods := "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
+		expectedMethods := "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS"
 		assert.Equal(t, expectedMethods, recorder.Header().Get(headers.AccessControlAllowMethods))
 		assert.Equal(t, "86400", recorder.Header().Get(headers.AccessControlMaxAge))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlExposeHeaders))

@@ -3,6 +3,7 @@ between versions. Breaking changes are documented with before/after examples.
 
 ## Table of Contents
 
+ - [Unreleased](#unreleased)
  - [Version 0.5.x to 0.6.x](#version-05x-to-06x)
    
     - [TLS Certificate Configuration
@@ -11,6 +12,41 @@ between versions. Breaking changes are documented with before/after examples.
     - [Fake Response Feature Removal](#fake-response-feature-removal)
  - [Version 0.4.x to 0.5.x](#version-04x-to-05x)
  - [Older Versions](#older-versions)
+
+---
+
+## Unreleased
+
+### Host placeholders match a single label
+
+**Behaviour change:** a `{name}` placeholder in a mapping host now matches one
+hostname label — any run of characters other than `.` — which is what the
+documentation has always described. It previously matched greedily across dots.
+
+```yaml
+mappings:
+  - from: http://{repo}.local.com
+    to: https://{repo}.github.com
+```
+
+`uncors.local.com` behaves as before. `a.b.local.com` no longer matches, and
+previously bound `repo` to `a.b`. In a multi-placeholder mapping such as
+`{env}.{service}.local.com`, each name now reliably captures its own label
+instead of the first one absorbing as much as it could.
+
+If you relied on a placeholder spanning several labels, add one placeholder per
+label, or use an explicit hostname.
+
+### CORS `Access-Control-Allow-Methods` no longer repeats `HEAD`
+
+The header listed `HEAD` twice. It now reads
+`GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS`. No method was
+added or removed.
+
+### Upstream errors answer 502, unmapped hosts answer 404
+
+Every failure used to be a 500 carrying a stack trace. See
+[Troubleshooting](Troubleshooting) for the status each failure now reports.
 
 ---
 

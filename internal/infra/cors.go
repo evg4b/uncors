@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	allowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
+	allowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, LINK, OPTIONS"
 	maxAge       = "86400" // 24 hours in seconds
 )
 
