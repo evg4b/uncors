@@ -111,8 +111,24 @@ Each mapping can use a different port by specifying it in the URL.
 
 ## Configuration File
 
-UNCORS uses YAML format for configuration files. Below is a comprehensive
-example demonstrating all available options:
+UNCORS uses YAML format for configuration files.
+
+### Editor Support
+
+Point your editor's YAML language server at the schema to get completion and
+inline validation for every option:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/evg4b/uncors/main/schema.json
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+```
+
+The schema is for authoring only. uncors validates your configuration itself when
+it loads it, with messages that name the offending field.
+
+Below is a comprehensive example demonstrating all available options:
 
 ```yaml
 # Global configuration
