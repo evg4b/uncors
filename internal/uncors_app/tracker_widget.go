@@ -126,15 +126,13 @@ func (m *TrackerWidget) View() tea.View {
 }
 
 func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, tea.Cmd) {
-	if msg.Done {
+	switch {
+	case msg.Done:
 		log.Printf("TrackerWidget: request done: %d", msg.ID)
 		delete(m.pending, msg.ID)
-	} else if msg.URL != nil {
+	case msg.URL != nil:
 		log.Printf("TrackerWidget: request started: %d %s %s", msg.ID, msg.Method, urlt.URL_String(msg.URL))
 		m.pending[msg.ID] = server.RequestEvent(msg)
-	} else if event, ok := m.pending[msg.ID]; ok {
-		event.Prefix = msg.Prefix
-		m.pending[msg.ID] = event
 	}
 
 	var cmd tea.Cmd
