@@ -7,13 +7,10 @@ import (
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/handler/cache"
-	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
-	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
@@ -81,21 +78,6 @@ func (c *Container) VersionChecker(proxy string) *version.Checker {
 	)
 }
 
-func (c *Container) Cache(cfs *config.CacheConfig) contracts.Cache {
-	return c.cache.GetOrBuild(cfs)
-}
-
-func (c *Container) CacheMiddleware(cfg *config.CacheConfig, globs config.CacheGlobs) contracts.Middleware {
-	return infra.NewPrefixedMiddleware(
-		cache.NewMiddleware(
-			cache.WithMethods(cfg.Methods),
-			cache.WithCacheStorage(c.Cache(cfg)),
-			cache.WithGlobs(globs),
-		),
-		styles.CacheStyle.Render("CACHE"),
-	)
-}
-
 func (c *Container) MockHandler(response *config.Response) contracts.Handler {
 	prefix := styles.MockStyle.Render("MOCK")
 
@@ -124,16 +106,6 @@ func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contrac
 	)
 }
 
-func (c *Container) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
-	w := har.NewWriter(harConfig.File)
-	c.closers = append(c.closers, w)
-
-	return har.NewMiddleware(
-		har.WithWriter(w),
-		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
-	)
-}
-
 func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
 	output := c.CliOutput()
@@ -143,21 +115,4 @@ func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) cont
 		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
 		proxy.WithOutput(output.NewPrefixOutput(prefix)),
 	))
-}
-
-func (c *Container) Router(
-	mappings config.Mappings,
-	cacheConfig *config.CacheConfig,
-	proxyURL string,
-) (contracts.Handler, error) {
-	router, err := router.NewRouter(
-		mappings,
-		router.WithDiContainer(c),
-		router.ForRouterWithDefaultHandler(c.ProxyHandler(mappings, proxyURL)),
-		router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
-			return c.CacheMiddleware(cacheConfig, globs)
-		}),
-	)
-
-	return infra.CastToContractsHandler(router), err
 }

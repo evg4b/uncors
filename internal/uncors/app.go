@@ -3,8 +3,7 @@ package uncors
 import (
 	"context"
 	"errors"
-	"net"
-	"strconv"
+	"sync"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
@@ -15,14 +14,17 @@ import (
 	"github.com/spf13/afero"
 )
 
-const baseAddress = "127.0.0.1"
-
 type Uncors struct {
 	fs afero.Fs
 
 	output    contracts.Output
 	server    *server.Server
 	container *di.Container
+
+	// runtimeMu guards the currently active configuration generation, which is
+	// replaced on every reload and released on shutdown.
+	runtimeMu sync.Mutex
+	runtime   *di.Runtime
 }
 
 func CreateUncors(container *di.Container) *Uncors {
@@ -42,37 +44,53 @@ func (app *Uncors) Start(ctx context.Context, uncorsConfig *config.UncorsConfig)
 	app.output.InfoBox(uncorsConfig.Mappings.String())
 	app.output.Print("")
 
-	targets, err := app.mappingsToTarget(uncorsConfig)
+	runtime, err := app.container.BuildRuntime(uncorsConfig)
 	if err != nil {
 		return err
 	}
 
-	return app.server.Start(ctx, targets)
+	err = app.server.Start(ctx, runtime.Targets())
+	if err != nil {
+		return errors.Join(err, runtime.Close())
+	}
+
+	app.swapRuntime(runtime)
+
+	return nil
 }
 
+// Restart builds the new configuration generation before touching the running
+// one, so a config that fails to build leaves the proxy serving the previous
+// generation untouched. The old generation is released only once the new one is
+// live, which is what flushes its HAR writers and frees its cache.
 func (app *Uncors) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
 	app.output.Info("Restarting server....")
 
-	targets, err := app.mappingsToTarget(uncorsConfig)
+	runtime, err := app.container.BuildRuntime(uncorsConfig)
 	if err != nil {
 		return err
 	}
 
-	err = app.server.Restart(ctx, targets)
+	err = app.server.Restart(ctx, runtime.Targets())
 	if err != nil {
-		return err
+		return errors.Join(err, runtime.Close())
 	}
+
+	previous := app.swapRuntime(runtime)
 
 	app.output.InfoBox(
 		"Server restarted",
 		uncorsConfig.Mappings.String(),
 	)
 
-	return nil
+	return closeRuntime(previous)
 }
 
 func (app *Uncors) Close() error {
-	return app.server.Close()
+	return errors.Join(
+		app.server.Close(),
+		closeRuntime(app.swapRuntime(nil)),
+	)
 }
 
 func (app *Uncors) Wait() {
@@ -80,28 +98,28 @@ func (app *Uncors) Wait() {
 }
 
 func (app *Uncors) Shutdown(ctx context.Context) error {
-	return app.server.Shutdown(ctx)
+	return errors.Join(
+		app.server.Shutdown(ctx),
+		closeRuntime(app.swapRuntime(nil)),
+	)
 }
 
-func (app *Uncors) mappingsToTarget(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
-	groupedMappings := uncorsConfig.Mappings.GroupByPort()
-	targets := make([]server.Target, 0, len(groupedMappings))
-	errs := make([]error, 0, len(groupedMappings))
+// swapRuntime installs runtime as the active generation and returns the one it
+// replaced, which the caller is responsible for closing.
+func (app *Uncors) swapRuntime(runtime *di.Runtime) *di.Runtime {
+	app.runtimeMu.Lock()
+	defer app.runtimeMu.Unlock()
 
-	for _, group := range groupedMappings {
-		muxRouter, err := app.container.Router(group.Mappings, &uncorsConfig.CacheConfig, uncorsConfig.Proxy)
-		if err != nil {
-			errs = append(errs, err)
+	previous := app.runtime
+	app.runtime = runtime
 
-			continue
-		}
+	return previous
+}
 
-		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   muxRouter,
-			EnableTLS: group.Scheme == "https",
-		})
+func closeRuntime(runtime *di.Runtime) error {
+	if runtime == nil {
+		return nil
 	}
 
-	return targets, errors.Join(errs...)
+	return runtime.Close()
 }
