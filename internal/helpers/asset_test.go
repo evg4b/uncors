@@ -23,7 +23,7 @@ func TestAssertIsDefined(t *testing.T) {
 			})
 			t.Run("nil value in interface", func(t *testing.T) {
 				assert.Panics(t, func() {
-					helpers.AssertIsDefined((http.Handler)(nil))
+					helpers.AssertIsDefined(http.Handler(nil))
 				})
 			})
 			t.Run("nil value in function", func(t *testing.T) {

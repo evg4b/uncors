@@ -15,7 +15,7 @@ func TestVersion(t *testing.T) {
 		bytes, err := cmd.CombinedOutput()
 		require.NoError(t, err)
 
-		assert.Equal(t, fmt.Sprintf("%s\n", integration.UncorsTestVrsion), string(bytes))
+		assert.Equal(t, fmt.Sprintf("%s\n", integration.UncorsTestVersion), string(bytes))
 	})
 
 	t.Run("full", func(t *testing.T) {
@@ -23,6 +23,6 @@ func TestVersion(t *testing.T) {
 		bytes, err := cmd.CombinedOutput()
 		require.NoError(t, err)
 
-		assert.Equal(t, fmt.Sprintf("%s\n", integration.UncorsTestVrsion), string(bytes))
+		assert.Equal(t, fmt.Sprintf("%s\n", integration.UncorsTestVersion), string(bytes))
 	})
 }

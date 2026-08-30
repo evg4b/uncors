@@ -3,7 +3,6 @@ package di
 import (
 	"errors"
 	"io"
-	"os"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -23,6 +22,7 @@ type Container struct {
 	generateCertsCommand factory[*commands.GenerateCertsCommand]
 	hostCertManager      factory[*server.HostCertManager]
 	server               factory[*server.Server]
+	proxy                factory[*Proxy]
 
 	closers []io.Closer
 }
@@ -59,7 +59,6 @@ func NewContainer(options ...ContainerOption) *Container {
 		stdout:  io.Discard,
 		version: "0.0.0",
 		closers: []io.Closer{},
-		args:    os.Args,
 	}
 
 	container = helpers.ApplyOptions(container, options)
@@ -69,6 +68,7 @@ func NewContainer(options ...ContainerOption) *Container {
 	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)
+	container.proxy = newFactory(container.newProxy)
 
 	return container
 }

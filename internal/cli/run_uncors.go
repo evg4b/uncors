@@ -4,39 +4,33 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/spf13/pflag"
 )
 
+// RunUncors loads the configuration from the container's args and runs the
+// proxy until ctx is cancelled or a shutdown signal arrives. The --version and
+// --help flags print their output and return without starting anything.
 func RunUncors(ctx context.Context, container *di.Container) error {
-	uncorsConfig, path, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+	uncorsConfig, cfgPath, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
 	if err != nil {
-		if errors.Is(err, config.ErrVersionRequested) {
-			fmt.Fprintln(os.Stdout, container.Version())
+		switch {
+		case errors.Is(err, config.ErrVersionRequested):
+			_, err = fmt.Fprintln(container.Stdout(), container.Version())
 
+			return err
+		case errors.Is(err, pflag.ErrHelp):
 			return nil
+		default:
+			return err
 		}
-
-		if errors.Is(err, pflag.ErrHelp) {
-			return nil
-		}
-
-		return err
 	}
 
-	var runError error
 	if uncorsConfig.Interactive {
-		runError = runIneractive(ctx, container, uncorsConfig, path)
-	} else {
-		runError = runNonIneractive(ctx, container, uncorsConfig, path)
+		return runInteractive(ctx, container, uncorsConfig, cfgPath)
 	}
 
-	if runError != nil && !errors.Is(runError, pflag.ErrHelp) {
-		return runError
-	}
-
-	return nil
+	return runNonInteractive(ctx, container, uncorsConfig, cfgPath)
 }

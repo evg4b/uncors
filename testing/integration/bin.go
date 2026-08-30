@@ -21,8 +21,10 @@ var (
 	repoRootOnce sync.Once
 )
 
-const UncorsTestVrsion = "v1.2.3"
+const UncorsTestVersion = "v1.2.3"
 
+// SetupBin builds the uncors binary once per test binary. Call it from TestMain
+// of any package that drives uncors as a subprocess.
 func SetupBin(_ *testing.M) {
 	compile.Do(func() {
 		//nolint:usetesting // intentional: binary lifetime must span all tests, not one subtest
@@ -36,13 +38,13 @@ func SetupBin(_ *testing.M) {
 			context.Background(),
 			"go", "build",
 			"-o", bin,
-			"-ldflags", fmt.Sprintf("-s -w -X 'main.Version=%s'", UncorsTestVrsion),
+			"-ldflags", fmt.Sprintf("-s -w -X 'main.Version=%s'", UncorsTestVersion),
 			repoRootPath(),
 		)
 
-		_, err = cmd.CombinedOutput()
+		out, err := cmd.CombinedOutput()
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("failed to build uncors: %v\n%s", err, out))
 		}
 	})
 }

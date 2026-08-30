@@ -323,5 +323,5 @@ If you encounter issues during migration:
  2. Review the [JSON
     Schema](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json) for
     configuration validation
- 3. Enable debug mode: `uncors --config .uncors.yaml --debug`
+ 3. Enable diagnostic logging: `UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml`
  4. Report issues at [GitHub Issues](https://github.com/evg4b/uncors/issues)

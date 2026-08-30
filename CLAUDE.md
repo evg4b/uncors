@@ -56,9 +56,15 @@ UNCORS follows a clean layered architecture with middleware composition:
 
 ### Core Packages
 
-**`internal/uncors`** - Application lifecycle
-- `Uncors` type: manages server startup, graceful shutdown, and config watching
-- Watches for config file changes and restarts when needed
+**`internal/cli`** - Command entry points
+- `RunUncors()`: loads the configuration and runs interactive or headless mode
+- `GenerateCerts()`: the `generate-certs` sub-command
+
+**`internal/di`** - Dependency container & configuration generations
+- `Container`: process-lifetime services (fs, output, server, request tracker)
+- `Runtime`: everything derived from one `UncorsConfig` (cache, HAR writers,
+  routers, server targets); closing it releases exactly that generation
+- `Proxy`: serves one `Runtime` on the server and swaps generations on reload
 
 **`internal/config`** - Configuration loading & validation
 - `LoadConfiguration()`: Parses CLI flags and YAML config file
@@ -209,7 +215,8 @@ uncors/
 ├── .golangci.yml                # Linter configuration
 ├── go.mod / go.sum              # Dependencies
 ├── internal/
-│   ├── uncors/                  # App lifecycle & server management
+│   ├── cli/                     # Command entry points (run, generate-certs)
+│   ├── di/                      # Container, config generations, proxy lifecycle
 │   ├── config/                  # Config loading, validation, watching
 │   ├── handler/                 # Request handlers & middleware
 │   │   ├── proxy/               # HTTP proxy handler

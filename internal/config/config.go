@@ -21,22 +21,14 @@ type UncorsConfig struct {
 }
 
 func LoadConfiguration(fs afero.Fs, version string, args []string) (*UncorsConfig, string, error) {
-	flags, err := defineFlags(version)
-	if err != nil {
-		return nil, "", err
-	}
+	flags := defineFlags(version)
 
-	err = flags.Parse(args)
+	err := flags.Parse(args)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed parsing flags: %w", err)
 	}
 
-	printVersion, err := flags.GetBool("version")
-	if err != nil {
-		return nil, "", err
-	}
-
-	if printVersion {
+	if printVersion, _ := flags.GetBool("version"); printVersion {
 		return nil, "", ErrVersionRequested
 	}
 

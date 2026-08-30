@@ -153,10 +153,11 @@ curl -k https://api.local:8443/
 
 **1. Request not going through UNCORS**
 
-Enable debug logging and verify requests appear in the output:
+Every handled request is printed to the console. Enable diagnostic logging for
+more detail:
 
 ```bash
-uncors --config .uncors.yaml --debug
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
 ```
 
 **2. OPTIONS request being forwarded instead of handled**
@@ -206,7 +207,7 @@ use an incognito/private window.
 
 ```bash
 ls -l .uncors.yaml  # Should exist
-uncors --config .uncors.yaml --debug
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
 ```
 
 Use an absolute path if a relative path fails:
@@ -359,13 +360,7 @@ cache-config:
 
 Or disable caching for this mapping by omitting the `cache:` section entirely.
 
-**2. Debug logging enabled**
-
-```yaml
-debug: false
-```
-
-**3. Large response bodies being cached**
+**2. Large response bodies being cached**
 
 Only cache paths that return small responses:
 
@@ -440,10 +435,11 @@ Verify the path and method match your request exactly.
 
 **2. Script syntax error**
 
-Enable debug logging to see script errors:
+Script errors are printed to the console. For more detail, enable diagnostic
+logging:
 
 ```bash
-uncors --config .uncors.yaml --debug
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
 ```
 
 **3. File-based script not found**
@@ -490,10 +486,12 @@ time curl https://api.example.com/endpoint
 
 ## Getting More Help
 
-### Enable Debug Logging
+### Enable Diagnostic Logging
+
+Set `UNCORS_LOGGING` to a file path to capture internal diagnostic logs:
 
 ```bash
-uncors --config .uncors.yaml --debug
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
 ```
 
 ### Check UNCORS Version
@@ -522,7 +520,7 @@ Issues](https://github.com/evg4b/uncors/issues) with:
 
 ## Prevention Best Practices
 
- 1. **Always use debug mode during initial setup** to see what requests are
+ 1. **Watch the request log during initial setup** to see what requests are
     being handled
  2. **Validate your YAML** before starting - syntax errors produce confusing
     startup behavior

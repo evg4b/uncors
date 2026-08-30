@@ -26,6 +26,10 @@ func (c *Container) newCliOutput() contracts.Output {
 	return tui.NewCliOutput(c.stdout)
 }
 
+func (c *Container) Proxy() *Proxy {
+	return c.proxy.GetOrBuild()
+}
+
 func (c *Container) newServer() *server.Server {
 	return server.New(c.HostCertManager(), c.RequestTracker())
 }

@@ -34,11 +34,7 @@ func NewGenerateCertsCommand(options ...Option) *GenerateCertsCommand {
 
 // DefineFlags defines command-line flags for the generate-certs command.
 func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet, version string) {
-	flags.Usage = func() {
-		tui.PrintLogo(flags.Output(), version)
-		fmt.Fprintln(flags.Output(), "")
-		fmt.Fprintln(flags.Output(), flags.FlagUsages())
-	}
+	flags.Usage = func() { tui.PrintUsage(flags, version) }
 	flags.IntVar(&c.validityDays, "validity-days", defaultValidityDays, "Certificate validity period in days")
 	flags.BoolVar(&c.force, "force", false, "Force overwrite existing CA certificates")
 }

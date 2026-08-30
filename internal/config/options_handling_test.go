@@ -68,7 +68,7 @@ func TestOptionsClone(t *testing.T) {
 				assert.Equal(t, options.Code, clonedMock.Code)
 			})
 
-			t.Run(("rquals disabled"), func(t *testing.T) {
+			t.Run("rquals disabled", func(t *testing.T) {
 				assert.Equal(t, options.Disabled, clonedMock.Disabled)
 			})
 		})

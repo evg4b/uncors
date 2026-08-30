@@ -404,11 +404,6 @@
       },
       "type": "object"
     },
-    "debug": {
-      "default": false,
-      "description": "Show debug output",
-      "type": "boolean"
-    },
     "mappings": {
       "description": "A list of mappings that describe how to forward requests. Ports are specified in the 'from' URL (e.g., http://localhost:8080).",
       "items": {

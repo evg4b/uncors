@@ -6,16 +6,17 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
-	uncor "github.com/evg4b/uncors/internal/uncors_app"
+	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
 )
 
-func runIneractive(
+// runInteractive starts the proxy in interactive TUI mode.
+func runInteractive(
 	ctx context.Context,
 	container *di.Container,
 	cfg *config.UncorsConfig,
 	cfgPath string,
 ) error {
-	app := uncor.NewUncorsApp(
+	app := uncorsapp.NewUncorsApp(
 		container,
 		cfgPath,
 		cfg,
@@ -26,8 +27,7 @@ func runIneractive(
 		},
 	)
 
-	_, err := tea.NewProgram(app, tea.WithContext(ctx)).
-		Run()
+	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()
 
 	return err
 }
