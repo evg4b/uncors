@@ -628,7 +628,6 @@ mappings:
 ### Full-Featured
 
 ```yaml
-debug: false
 cache-config:
   expiration-time: 10m
 

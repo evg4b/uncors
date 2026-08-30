@@ -18,6 +18,7 @@ const (
 	configDir  = ".config"
 	caCertFile = "ca.crt"
 	caKeyFile  = "ca.key"
+	version    = "v0.0.0"
 )
 
 func TestNewGenerateCertsCommand(t *testing.T) {
@@ -40,7 +41,7 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
-		cmd.DefineFlags(flags)
+		cmd.DefineFlags(flags, version)
 
 		flag := flags.Lookup("validity-days")
 		assert.NotNil(t, flag)
@@ -55,7 +56,7 @@ func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
-		cmd.DefineFlags(flags)
+		cmd.DefineFlags(flags, version)
 
 		flag := flags.Lookup("force")
 		assert.NotNil(t, flag)
@@ -79,7 +80,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd.DefineFlags(flags)
+		cmd.DefineFlags(flags, version)
 
 		err := cmd.Execute()
 		require.NoError(t, err)
@@ -112,7 +113,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd.DefineFlags(flags)
+		cmd.DefineFlags(flags, version)
 
 		err := flags.Set("validity-days", "730")
 		require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd1.DefineFlags(flags1)
+		cmd1.DefineFlags(flags1, version)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
@@ -155,7 +156,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd2.DefineFlags(flags2)
+		cmd2.DefineFlags(flags2, version)
 		err = cmd2.Execute()
 		require.Error(t, err)
 	})
@@ -173,7 +174,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags1 := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd1.DefineFlags(flags1)
+		cmd1.DefineFlags(flags1, version)
 		err := cmd1.Execute()
 		require.NoError(t, err)
 
@@ -189,7 +190,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags2 := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd2.DefineFlags(flags2)
+		cmd2.DefineFlags(flags2, version)
 		err = flags2.Set("force", "true")
 		require.NoError(t, err)
 
@@ -216,7 +217,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			commands.WithOutput(mocks.NoopOutput()),
 		)
 		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		cmd.DefineFlags(flags)
+		cmd.DefineFlags(flags, version)
 
 		err := cmd.Execute()
 		require.NoError(t, err)
@@ -251,7 +252,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 				commands.WithOutput(mocks.NoopOutput()),
 			)
 			flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-			cmd.DefineFlags(flags)
+			cmd.DefineFlags(flags, version)
 
 			err := cmd.Execute()
 			require.Error(t, err)

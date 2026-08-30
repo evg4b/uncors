@@ -15,9 +15,17 @@ UNCORS is a local development proxy that bypasses CORS restrictions. It sits bet
 
 ## Core Components
 
-### Main Application (`internal/uncors`)
+### Command Entry Points (`internal/cli`)
 
-Manages server lifecycle, graceful shutdown, and config watching.
+Loads the configuration and runs UNCORS in interactive (TUI) or headless mode,
+including graceful shutdown and config watching.
+
+### Dependency Container (`internal/di`)
+
+Builds the object graph. `Container` holds process-lifetime services; `Runtime`
+holds everything derived from a single configuration (cache, HAR writers,
+routers, server targets); `Proxy` serves one `Runtime` and swaps generations
+when the config file changes.
 
 ### Configuration (`internal/config`)
 
@@ -85,7 +93,8 @@ uncors/
 │   │   └── ...
 │   ├── infra/            # HTTP client, logger, TLS
 │   ├── tui/              # Terminal UI
-│   ├── uncors/           # Main app
+│   ├── cli/              # Command entry points
+│   ├── di/               # Container, config generations, proxy lifecycle
 │   └── helpers/          # Utilities
 ├── testing/              # Mocks & test helpers
 └── tests/                # Integration tests
@@ -108,10 +117,10 @@ standalone middleware (`internal/handler/har`).
 - **Per-mapping isolation** - each mapping creates its own `Writer` instance and
   its own output file, so traffic from different mappings can be captured
   independently.
-- **Lifecycle management** - `Writer` implements `io.Closer`. The app registers
-  each writer via `registerCloser`; on shutdown or config reload it calls
-  `Close()` which drains the channel and flushes outstanding entries before
-  stopping the background goroutine.
+- **Lifecycle management** - `Writer` implements `io.Closer`. Each writer is
+  registered with the `di.Runtime` that created it; on shutdown or config reload
+  the runtime calls `Close()`, which drains the channel and flushes outstanding
+  entries before stopping the background goroutine.
 
 **Configuration:**
 

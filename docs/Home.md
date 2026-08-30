@@ -94,7 +94,7 @@ effectively:
 | **Source Domain**                   | The local domain where UNCORS listens for requests (specified in the `from` URL, e.g., `http://api.local:3000`)                |
 | **Target Domain** (Upstream Server) | The remote server where requests are proxied (specified in the `to` URL, e.g., `https://api.example.com`)                      |
 | **Mapping Configuration**           | Settings specific to individual host mappings, including mocks, statics, scripts, cache, and rewrites                          |
-| **Global Configuration**            | Settings that apply to all mappings, such as debug mode, proxy settings, and SSL certificates                                  |
+| **Global Configuration**            | Settings that apply to all mappings, such as proxy settings and SSL certificates                                                |
 | **Scheme**                          | The protocol prefix of a URL (`http://`, `https://`, or `//` for scheme-agnostic)                                              |
 | **Port**                            | The network port number specified in the `from` URL (defaults: 80 for HTTP, 443 for HTTPS)                                     |
 | **Mock**                            | A configuration that intercepts specific requests and returns pre-defined responses without contacting the upstream server     |

@@ -9,20 +9,27 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ErrVersionRequested is returned when the --version flag is set so that the
+// caller can exit cleanly after the version has been printed.
+var ErrVersionRequested = errors.New("version requested")
+
 type UncorsConfig struct {
 	Mappings    Mappings    `yaml:"mappings"`
 	Proxy       string      `yaml:"proxy"`
-	Debug       bool        `yaml:"debug"`
 	CacheConfig CacheConfig `yaml:"cache-config"`
 	Interactive bool        `yaml:"-"`
 }
 
-func LoadConfiguration(fs afero.Fs, args []string) (*UncorsConfig, string, error) {
-	flags := defineFlags()
+func LoadConfiguration(fs afero.Fs, version string, args []string) (*UncorsConfig, string, error) {
+	flags := defineFlags(version)
 
 	err := flags.Parse(args)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed parsing flags: %w", err)
+	}
+
+	if printVersion, _ := flags.GetBool("version"); printVersion {
+		return nil, "", ErrVersionRequested
 	}
 
 	cfg := defaultConfig()
@@ -69,10 +76,6 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 func applyFlagOverrides(cfg *UncorsConfig, flags *pflag.FlagSet) error {
 	if flags.Changed("proxy") {
 		cfg.Proxy, _ = flags.GetString("proxy")
-	}
-
-	if flags.Changed("debug") {
-		cfg.Debug, _ = flags.GetBool("debug")
 	}
 
 	if flags.Changed("interactive") {

@@ -15,6 +15,7 @@ Settings are organized into two levels:
 
  - [Quick Reference](#quick-reference)
  - [Command-Line Options](#command-line-options)
+ - [Diagnostic Logging](#diagnostic-logging)
  - [Configuration File](#configuration-file)
  - [Global Configuration Properties](#global-configuration-properties)
  - [Mapping Configuration](#mapping-configuration)
@@ -86,14 +87,28 @@ Each mapping can use a different port by specifying it in the URL.
 
 ### Global Configuration
 
-| Parameter  | Short | Description                                |
-| ---------- | ----- | ------------------------------------------ |
-| `--proxy`  |       | HTTP/HTTPS proxy URL for upstream requests |
-| `--config` |       | Path to YAML configuration file            |
-| `--debug`  |       | Enable debug logging output                |
+| Parameter       | Short | Description                                   |
+| --------------- | ----- | --------------------------------------------- |
+| `--proxy`       |       | HTTP/HTTPS proxy URL for upstream requests    |
+| `--config`      | `-c`  | Path to YAML configuration file               |
+| `--interactive` |       | Run in interactive TUI mode (default: `true`) |
+| `--version`     | `-v`  | Print the version and exit                    |
 
 > [!NOTE]
 > CLI parameters override configuration file settings.
+
+## Diagnostic Logging
+
+UNCORS always prints handled requests to the console. Internal diagnostic logs
+are off by default; set the `UNCORS_LOGGING` environment variable to a file path
+to capture them:
+
+```bash
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+```
+
+Logs are appended to the file. When the variable is unset, empty, or points at a
+path that cannot be opened, diagnostic output is discarded.
 
 ## Configuration File
 
@@ -102,7 +117,6 @@ example demonstrating all available options:
 
 ```yaml
 # Global configuration
-debug: false
 proxy: localhost:8080
 
 # Mappings configuration
@@ -141,7 +155,6 @@ mappings:
 | Property       | Type    | Default | Description                                                               |
 | -------------- | ------- | ------- | ------------------------------------------------------------------------- |
 | `proxy`        | string  | -       | HTTP/HTTPS proxy URL for upstream requests                                |
-| `debug`        | boolean | `false` | Enable debug logging output                                               |
 | `mappings`     | array   | `[]`    | List of host mapping configurations (see below)                           |
 | `cache-config` | object  | -       | Global cache behavior settings (see [Response Caching](Response-Caching)) |
 

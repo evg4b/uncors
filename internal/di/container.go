@@ -14,6 +14,7 @@ import (
 type Container struct {
 	fs      afero.Fs
 	stdout  io.Writer
+	args    []string
 	version string
 
 	cliOutput            factory[contracts.Output]
@@ -21,6 +22,7 @@ type Container struct {
 	generateCertsCommand factory[*commands.GenerateCertsCommand]
 	hostCertManager      factory[*server.HostCertManager]
 	server               factory[*server.Server]
+	proxy                factory[*Proxy]
 
 	closers []io.Closer
 }
@@ -45,6 +47,12 @@ func WithFs(fs afero.Fs) ContainerOption {
 	}
 }
 
+func WithArgs(args []string) ContainerOption {
+	return func(c *Container) {
+		c.args = args
+	}
+}
+
 func NewContainer(options ...ContainerOption) *Container {
 	container := &Container{
 		fs:      afero.NewMemMapFs(),
@@ -60,6 +68,7 @@ func NewContainer(options ...ContainerOption) *Container {
 	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)
+	container.proxy = newFactory(container.newProxy)
 
 	return container
 }

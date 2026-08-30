@@ -21,6 +21,10 @@ import (
 	"github.com/spf13/afero"
 )
 
+func (c *Container) Args() []string {
+	return c.args
+}
+
 func (c *Container) Fs() afero.Fs {
 	return c.fs
 }

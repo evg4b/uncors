@@ -1,0 +1,36 @@
+package cli
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/di"
+	"github.com/spf13/pflag"
+)
+
+// RunUncors loads the configuration from the container's args and runs the
+// proxy until ctx is cancelled or a shutdown signal arrives. The --version and
+// --help flags print their output and return without starting anything.
+func RunUncors(ctx context.Context, container *di.Container) error {
+	uncorsConfig, cfgPath, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+	if err != nil {
+		switch {
+		case errors.Is(err, config.ErrVersionRequested):
+			_, err = fmt.Fprintln(container.Stdout(), container.Version())
+
+			return err
+		case errors.Is(err, pflag.ErrHelp):
+			return nil
+		default:
+			return err
+		}
+	}
+
+	if uncorsConfig.Interactive {
+		return runInteractive(ctx, container, uncorsConfig, cfgPath)
+	}
+
+	return runNonInteractive(ctx, container, uncorsConfig, cfgPath)
+}

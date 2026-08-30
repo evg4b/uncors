@@ -1,4 +1,3 @@
-debug: false
 proxy: http://localhost:8080
 cache-config:
   clear-time: 10m
