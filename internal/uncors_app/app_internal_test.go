@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,10 +40,10 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
-		func() *config.UncorsConfig {
+		func() (*config.UncorsConfig, error) {
 			loadCalls++
 
-			return uncorsConfig
+			return uncorsConfig, nil
 		},
 	)
 
@@ -320,7 +322,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
 
 		defer func() {
 			app.cancel()
@@ -348,7 +350,8 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
+		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, loader)
 
 		defer func() {
 			app.cancel()
@@ -403,13 +406,13 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
 		select {
 		case called <- struct{}{}:
 		default:
 		}
 
-		return cfg
+		return cfg, nil
 	})
 
 	defer func() {
@@ -472,4 +475,49 @@ func TestHandleShutdownWithWatcher(t *testing.T) {
 		err := app.historyWidget.hist.Close()
 		require.NoError(t, err)
 	}
+}
+
+// A config that fails to parse or validate must leave the running generation
+// serving, exactly as headless mode does. Before this was fixed the failing
+// load produced a nil config, which BuildRuntime dereferenced.
+func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
+	port := testutils.GetFreePort(t)
+	cfg := &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Localhost.HTTPPort(port), To: hosts.Localhost.HTTP()},
+		},
+	}
+
+	container := di.NewContainer()
+	defer testutils.Close(t, container)
+
+	loadCalls := 0
+	app := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
+		loadCalls++
+
+		return nil, errBoom
+	})
+
+	defer cleanupTestApp(t, app)
+
+	require.NoError(t, app.proxy.Start(app.appContext(), cfg))
+
+	require.NotPanics(t, func() {
+		msg := app.restartCmd()()
+
+		assert.IsType(t, restartMsg{}, msg)
+	})
+
+	assert.Equal(t, 1, loadCalls)
+	assert.False(t, testutils.IsPortFree(port), "the previous generation must still be bound")
+
+	var reported bool
+
+	for len(app.outputCh) > 0 {
+		if strings.Contains(<-app.outputCh, "Failed to reload config") {
+			reported = true
+		}
+	}
+
+	assert.True(t, reported, "the load failure must be reported to the user")
 }
