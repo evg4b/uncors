@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/spf13/pflag"
@@ -33,4 +34,14 @@ func RunUncors(ctx context.Context, container *di.Container) error {
 	}
 
 	return runNonInteractive(ctx, container, uncorsConfig, cfgPath)
+}
+
+// configLoader re-reads the configuration the process was started with. Both
+// run modes reload the same way, so they share one loader.
+func configLoader(container *di.Container) app.Loader {
+	return func() (*config.UncorsConfig, error) {
+		reloaded, _, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+
+		return reloaded, err
+	}
 }
