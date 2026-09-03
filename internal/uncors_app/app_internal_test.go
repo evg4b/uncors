@@ -365,7 +365,12 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 	assert.Equal(t, 1, loadCalls)
 	assert.False(t, testutils.IsPortFree(port), "the previous generation must still be bound")
 
-	status := model.service.Status()
+	// The model's own interface is deliberately narrow, so reach for the
+	// concrete service to assert on the state it recorded.
+	service, ok := model.service.(*app.Service)
+	require.True(t, ok)
+
+	status := service.Status()
 	assert.Equal(t, app.StateReloadFailed, status.State)
 	require.ErrorIs(t, status.Err, errBoom)
 }

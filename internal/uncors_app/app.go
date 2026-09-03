@@ -30,7 +30,7 @@ type UncorsApp struct {
 
 	// service owns the application runtime. The model only sends it commands
 	// and renders what comes back.
-	service *app.Service
+	service service
 
 	output   *tuiOutput
 	renderer *render.Renderer
@@ -46,6 +46,18 @@ type UncorsApp struct {
 	trackerWidget *TrackerWidget
 	helpWidget    *HelpWidget
 	memWidget     *MemoryWidget
+}
+
+// service is the whole of the model's dependency on the application. Commands
+// go down (Start, Reload, Shutdown), events come back up; the model reaches
+// for nothing else, which is what keeps application behaviour out of the TUI.
+type service interface {
+	Start(ctx context.Context) error
+	Reload()
+	Shutdown(ctx context.Context) error
+	Close() error
+	Context() context.Context
+	Events() <-chan app.Event
 }
 
 type serviceEventMsg struct{ event app.Event }
