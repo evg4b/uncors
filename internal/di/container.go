@@ -6,7 +6,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
@@ -19,12 +18,11 @@ type Container struct {
 	args    []string
 	version string
 
-	cliOutput            factory[contracts.Output]
-	requestTracker       factory[*server.RequestTracker]
-	generateCertsCommand factory[*commands.GenerateCertsCommand]
-	hostCertManager      factory[*server.HostCertManager]
-	server               factory[*server.Server]
-	proxy                factory[*Proxy]
+	cliOutput       factory[contracts.Output]
+	requestTracker  factory[*server.RequestTracker]
+	hostCertManager factory[*server.HostCertManager]
+	server          factory[*server.Server]
+	proxy           factory[*Proxy]
 
 	closersMu sync.Mutex
 	closers   []io.Closer
@@ -64,16 +62,15 @@ func NewContainer(options ...ContainerOption) *Container {
 		closers: []io.Closer{},
 	}
 
-	container = helpers.ApplyOptions(container, options)
-
+	// Factories first, options second: an option may replace a factory, and
+	// ApplyOptions mutates in place, so the defaults must already be there.
 	container.cliOutput = newFactory(container.newCliOutput)
 	container.requestTracker = newFactory(container.newRequestTracker)
-	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)
 	container.proxy = newFactory(container.newProxy)
 
-	return container
+	return helpers.ApplyOptions(container, options)
 }
 
 // Close releases every process-lifetime resource the container built, in

@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/pflag"
 )
 
@@ -15,7 +16,14 @@ import (
 // proxy until ctx is cancelled or a shutdown signal arrives. The --version and
 // --help flags print their output and return without starting anything.
 func RunUncors(ctx context.Context, container *di.Container) error {
-	uncorsConfig, cfgPath, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+	uncorsConfig, cfgPath, err := config.LoadConfiguration(
+		container.Fs(),
+		container.Version(),
+		container.Args(),
+		// Only the startup parse can reach --help, and drawing it is the CLI's
+		// job, not the config package's.
+		config.WithUsage(tui.PrintUsage),
+	)
 	if err != nil {
 		switch {
 		case errors.Is(err, config.ErrVersionRequested):

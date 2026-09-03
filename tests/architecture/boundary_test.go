@@ -24,14 +24,14 @@ var serviceSide = []string{
 	"github.com/evg4b/uncors/internal/server/...",
 	"github.com/evg4b/uncors/internal/handler/...",
 	"github.com/evg4b/uncors/internal/config/...",
+	"github.com/evg4b/uncors/internal/version/...",
 }
 
-// forbidden are the terminal-interaction libraries. Lip Gloss is deliberately
-// absent for now: internal/di still styles handler prefixes through
-// internal/tui/styles, which Phase 5 of the migration removes.
+// forbidden is every terminal library. The service must not reach for any of
+// them: not the event loop, not the widgets, and not the styling. Rendering
+// belongs to internal/render and internal/tui, which the service never imports.
 var forbidden = []string{
-	"charm.land/bubbletea",
-	"charm.land/bubbles",
+	"charm.land/",
 }
 
 func dependenciesOf(t *testing.T, pattern string) []string {
@@ -62,9 +62,9 @@ func readGuardedSources(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// T10: the service must not depend on the TUI toolkit, directly or through
-// anything it imports.
-func TestServiceDoesNotDependOnBubbleTea(t *testing.T) {
+// T10: the service must not depend on any terminal library, directly or
+// through anything it imports.
+func TestServiceDoesNotDependOnTerminalLibraries(t *testing.T) {
 	readGuardedSources(t)
 
 	for _, pattern := range serviceSide {
@@ -74,7 +74,7 @@ func TestServiceDoesNotDependOnBubbleTea(t *testing.T) {
 			for _, dep := range deps {
 				for _, banned := range forbidden {
 					assert.NotContains(t, dep, banned,
-						"%s must run without a TUI, but depends on %s", pattern, dep)
+						"%s must run without a terminal, but depends on %s", pattern, dep)
 				}
 			}
 		})
@@ -89,8 +89,14 @@ func TestServiceDoesNotDependOnTheTUIPackage(t *testing.T) {
 	for _, pattern := range serviceSide {
 		t.Run(pattern, func(t *testing.T) {
 			for _, dep := range dependenciesOf(t, pattern) {
-				assert.NotEqual(t, "github.com/evg4b/uncors/internal/uncors_app", dep,
-					"%s must not depend on the TUI", pattern)
+				for _, presentation := range []string{
+					"github.com/evg4b/uncors/internal/uncors_app",
+					"github.com/evg4b/uncors/internal/tui",
+					"github.com/evg4b/uncors/internal/render",
+				} {
+					assert.NotEqual(t, presentation, dep,
+						"%s must not depend on the presentation layer", pattern)
+				}
 			}
 		})
 	}

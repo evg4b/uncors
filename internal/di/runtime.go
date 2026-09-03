@@ -14,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 const baseAddress = "127.0.0.1"
@@ -95,7 +94,7 @@ func (r *Runtime) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware 
 			cache.WithCacheStorage(r.Cache()),
 			cache.WithGlobs(globs),
 		),
-		styles.CacheStyle.Render("CACHE"),
+		"CACHE",
 	)
 }
 
