@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/server"
 )
 
 const eventsBufferSize = 1000
@@ -62,6 +63,16 @@ type LogEvent struct {
 }
 
 func (LogEvent) isEvent() {}
+
+// RequestEvent forwards one server request lifecycle event to the presenter.
+// The service is the single consumer of the request tracker, because it keeps
+// the authoritative set of in-flight requests; clients render what it passes
+// on rather than reading the tracker themselves.
+type RequestEvent struct {
+	Event server.RequestEvent
+}
+
+func (RequestEvent) isEvent() {}
 
 // Status is the latest lifecycle state, always readable regardless of whether
 // the notification for it was delivered.

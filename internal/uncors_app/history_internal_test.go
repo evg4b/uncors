@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -91,17 +92,16 @@ func TestHistory_AppendLine(t *testing.T) {
 		assert.Equal(t, styled, lines[0])
 	})
 
-	t.Run("handles large number of lines", func(t *testing.T) {
+	t.Run("caps a large number of lines at the scrollback limit", func(t *testing.T) {
 		history := newHistory()
 
 		defer testutils.Close(t, history)
 
-		count := 20000
-		for i := range count {
+		for i := range historyMaxLines * 2 {
 			history.AppendLine(strings.Repeat("a", i%100))
 		}
 
-		assert.Equal(t, count, history.LineCount())
+		assert.Equal(t, historyMaxLines, history.LineCount())
 	})
 }
 
@@ -156,4 +156,28 @@ func TestHistory_Lines(t *testing.T) {
 		history.AppendLine("two")
 		assert.Len(t, history.Lines(), 2)
 	})
+}
+
+func TestHistoryIsBounded(t *testing.T) {
+	hist := newHistory()
+
+	for i := range historyMaxLines + 500 {
+		hist.AppendLine(strconv.Itoa(i))
+	}
+
+	assert.Equal(t, historyMaxLines, hist.LineCount(), "history must not grow without limit")
+
+	lines := hist.Lines()
+	assert.Equal(t, strconv.Itoa(historyMaxLines+499), lines[len(lines)-1], "the newest line must survive")
+	assert.Equal(t, strconv.Itoa(500), lines[0], "the oldest lines must be the ones dropped")
+}
+
+func TestHistoryBoundsMultiLineAppends(t *testing.T) {
+	hist := newHistory()
+
+	for range historyMaxLines {
+		hist.AppendLine("a\nb\nc")
+	}
+
+	assert.Equal(t, historyMaxLines, hist.LineCount())
 }
