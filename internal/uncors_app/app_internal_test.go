@@ -3,6 +3,7 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -21,7 +22,24 @@ import (
 
 var errBoom = errors.New("boom")
 
+var ansiPattern = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+// stripANSI removes styling so assertions can talk about the text. Lip Gloss
+// styles URLs one character at a time, so the plain string is never a
+// contiguous substring of the rendered line.
+func stripANSI(value string) string {
+	return ansiPattern.ReplaceAllString(value, "")
+}
+
 func newTestApp(t *testing.T) (*UncorsApp, *int) {
+	t.Helper()
+
+	model, loadCalls, _ := newTestAppWithContainer(t)
+
+	return model, loadCalls
+}
+
+func newTestAppWithContainer(t *testing.T) (*UncorsApp, *int, *di.Container) {
 	t.Helper()
 
 	uncorsConfig := &config.UncorsConfig{
@@ -46,7 +64,7 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 		},
 	)
 
-	return app, &loadCalls
+	return app, &loadCalls, container
 }
 
 func cleanupTestApp(t *testing.T, app *UncorsApp) {
@@ -66,7 +84,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	defer cleanupTestApp(t, app)
 
 	assert.NotNil(t, app.output)
-	assert.NotNil(t, app.tracker)
+	assert.NotNil(t, app.renderer)
 	assert.NotNil(t, app.historyWidget.hist)
 	assert.NotNil(t, app.service)
 	assert.NotNil(t, app.done)
@@ -110,7 +128,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 		StartedAt: time.Now().Add(-1500 * time.Millisecond),
 	})
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
+	require.NotNil(t, cmd) // the spinner starts ticking
 	assert.Len(t, app.trackerWidget.pending, 1)
 	assert.True(t, app.trackerWidget.ticking)
 
@@ -121,9 +139,8 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
 
-	model, cmd = app.Update(requestEventMsg{ID: 7, Done: true})
+	model, _ = app.Update(requestEventMsg{ID: 7, Done: true})
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
 
 	model, cmd = app.Update(spinner.TickMsg{})
@@ -167,8 +184,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		// no follow-up command of its own.
 		assert.Nil(t, app.handleServerStarted())
 
-		msg = app.restartCmd()()
-		assert.Equal(t, restartMsg{}, msg)
+		assert.Nil(t, app.restartCmd()())
 		assert.Equal(t, 1, *loadCalls)
 
 		msg = app.shutdownCmd()()
@@ -195,31 +211,36 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
-	t.Run("watchEventsCmd reads from event channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("request activity arrives through the service stream", func(t *testing.T) {
+		model, _, container := newTestAppWithContainer(t)
+		defer cleanupTestApp(t, model)
 
 		requestURL, err := url.Parse("https://example.com/watch")
 		require.NoError(t, err)
 
-		app.tracker.Emit(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL})
+		emitted := server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}
+		container.RequestTracker().Emit(emitted)
 
-		assert.Equal(
-			t,
-			requestEventMsg(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}),
-			app.watchEventsCmd()(),
-		)
+		// The service is the single consumer of the tracker; the model sees
+		// activity only because the service republishes it.
+		msg := model.waitServiceEventCmd()()
 
-		require.NoError(t, app.service.Close())
-		assert.Nil(t, app.watchEventsCmd()())
+		event, ok := msg.(serviceEventMsg)
+		require.True(t, ok)
+
+		request, ok := event.event.(app.RequestEvent)
+		require.True(t, ok)
+		assert.Equal(t, emitted, request.Event)
+
+		assert.Equal(t, requestEventMsg(emitted), widgetMessage(request))
 	})
 
-	t.Run("watchEventsCmd returns nil when event channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("waitServiceEventCmd returns nil once the service is closed", func(t *testing.T) {
+		model, _ := newTestApp(t)
+		defer cleanupTestApp(t, model)
 
-		app.tracker.Close()
-		assert.Nil(t, app.watchEventsCmd()())
+		require.NoError(t, model.service.Close())
+		assert.Nil(t, model.waitServiceEventCmd()())
 	})
 }
 
@@ -256,7 +277,10 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "r", Code: 'r'}))
 	require.NotNil(t, cmd)
-	assert.Equal(t, restartMsg{}, cmd())
+	// Reload is a command, not a result: the widgets learn about it from the
+	// service's StateReloaded event, which is what makes a file-triggered
+	// reload behave identically to this key.
+	assert.Nil(t, cmd())
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "q", Code: 'q'}))
 	require.NotNil(t, cmd)
@@ -310,25 +334,35 @@ func TestServerStartedMsgUpdate(t *testing.T) {
 	assert.Nil(t, app.handleServerStarted())
 }
 
-func TestHandleRequestEventWithData(t *testing.T) {
+func TestRequestEventsAreRenderedIntoHistory(t *testing.T) {
 	requestURL, err := url.Parse("https://example.com/api")
 	require.NoError(t, err)
 
 	data := &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200}
 
-	t.Run("outputs request without prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	testCases := []struct {
+		name   string
+		prefix string
+	}{
+		{name: "without prefix"},
+		{name: "with prefix", prefix: "api"},
+	}
 
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data})
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			model, _ := newTestApp(t)
+			defer cleanupTestApp(t, model)
 
-	t.Run("outputs request with prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+			// Rendering lives in internal/render now; the model just hands the
+			// event over and the line lands on the output channel.
+			model.renderer.Render(app.RequestEvent{
+				Event: server.RequestEvent{Done: true, Data: data, Prefix: testCase.prefix},
+			})
 
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
-	})
+			require.NotEmpty(t, model.outputCh)
+			assert.Contains(t, stripANSI(<-model.outputCh), "example.com/api")
+		})
+	}
 }
 
 // A config that fails to parse or validate must leave the running generation
@@ -357,9 +391,7 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 	require.NoError(t, model.service.Start(model.service.Context()))
 
 	require.NotPanics(t, func() {
-		msg := model.restartCmd()()
-
-		assert.IsType(t, restartMsg{}, msg)
+		assert.Nil(t, model.restartCmd()())
 	})
 
 	assert.Equal(t, 1, loadCalls)

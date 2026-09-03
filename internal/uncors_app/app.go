@@ -15,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/render"
-	"github.com/evg4b/uncors/internal/server"
 )
 
 const (
@@ -34,7 +33,6 @@ type UncorsApp struct {
 
 	output   *tuiOutput
 	renderer *render.Renderer
-	tracker  server.IRequestTracker
 
 	outputCh chan string
 	done     <-chan struct{}
@@ -100,7 +98,6 @@ func NewUncorsApp(
 		service:       service,
 		output:        output,
 		renderer:      render.New(output, container.Version()),
-		tracker:       container.RequestTracker(),
 		outputCh:      outputCh,
 		done:          service.Context().Done(),
 		historyWidget: NewHistoryWidget(keys),
@@ -116,7 +113,6 @@ func (m *UncorsApp) Init() tea.Cmd {
 	return tea.Batch(
 		m.startServerCmd(),
 		m.waitOutputCmd(),
-		m.watchEventsCmd(),
 		m.waitServiceEventCmd(),
 		m.memWidget.Init(),
 		m.trackerWidget.Init(),
@@ -142,15 +138,17 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case outputLineMsg:
 		cmds = append(cmds, m.waitOutputCmd())
 
-	case requestEventMsg:
-		m.handleRequestEvent(typedMsg)
-
-		cmds = append(cmds, m.watchEventsCmd())
-
 	case serviceEventMsg:
 		m.renderer.Render(typedMsg.event)
 
 		cmds = append(cmds, m.waitServiceEventCmd())
+
+		// Widgets react to the service's own account of what happened, so a
+		// reload triggered by a file save reaches them exactly as the restart
+		// key does.
+		if translated := widgetMessage(typedMsg.event); translated != nil {
+			msg = translated
+		}
 
 	case tea.KeyPressMsg:
 		log.Printf("Key pressed: %s", typedMsg.String())
@@ -293,16 +291,20 @@ func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
 	return m.shutdownCmd()
 }
 
-func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
-	if !event.Done || event.Data == nil {
-		return
+// widgetMessage translates a service event into the message the widgets speak,
+// or nil when no widget cares about it.
+func widgetMessage(event app.Event) tea.Msg {
+	switch typed := event.(type) {
+	case app.RequestEvent:
+		return requestEventMsg(typed.Event)
+	case app.LifecycleEvent:
+		if typed.State == app.StateReloaded {
+			return restartMsg{}
+		}
+	case app.LogEvent:
 	}
 
-	if event.Prefix != "" {
-		m.output.NewPrefixOutput(event.Prefix).Request(event.Data)
-	} else {
-		m.output.Request(event.Data)
-	}
+	return nil
 }
 
 func (m *UncorsApp) handleRestart() {
@@ -344,21 +346,6 @@ func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 	}
 }
 
-func (m *UncorsApp) watchEventsCmd() tea.Cmd {
-	return func() tea.Msg {
-		select {
-		case event, ok := <-m.tracker.Events():
-			if !ok {
-				return nil
-			}
-
-			return requestEventMsg(event)
-		case <-m.done:
-			return nil
-		}
-	}
-}
-
 // waitServiceEventCmd pulls one service event and renders it into the history.
 // Re-armed on every serviceEventMsg, the way the other stream readers are.
 func (m *UncorsApp) waitServiceEventCmd() tea.Cmd {
@@ -394,8 +381,10 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
+		// The reload's effects arrive as service events, which is what the
+		// widgets act on; nothing to report from here.
 		m.service.Reload()
 
-		return restartMsg{}
+		return nil
 	}
 }

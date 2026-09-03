@@ -8,7 +8,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/render"
-	"github.com/evg4b/uncors/internal/server"
 )
 
 // runNonInteractive starts the proxy in headless mode and blocks until the
@@ -22,12 +21,11 @@ func runNonInteractive(
 	cfgPath string,
 ) error {
 	output := container.CliOutput()
-
-	// Headless mode has no TUI, so it must drain the request tracker itself;
-	// without a consumer the request path can only drop activity events.
 	tracker := container.RequestTracker()
-	go server.RequestPrinter(tracker, output)
 
+	// The service drains the request tracker and republishes activity on its own
+	// stream, so headless mode renders requests the same way it renders
+	// everything else.
 	service := app.New(container, cfg, cfgPath, configLoader(container))
 	defer func() { _ = service.Close() }()
 

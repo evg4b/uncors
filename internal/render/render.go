@@ -35,7 +35,25 @@ func (r *Renderer) Render(event app.Event) {
 		r.lifecycle(typed)
 	case app.LogEvent:
 		r.log(typed)
+	case app.RequestEvent:
+		r.request(typed)
 	}
+}
+
+// request renders a completed request. Start events carry no result yet, so
+// only the terminal one produces a line - the same rule the console printer
+// has always applied.
+func (r *Renderer) request(event app.RequestEvent) {
+	if !event.Event.Done || event.Event.Data == nil {
+		return
+	}
+
+	output := r.output
+	if event.Event.Prefix != "" {
+		output = output.NewPrefixOutput(event.Event.Prefix)
+	}
+
+	output.Request(event.Event.Data)
 }
 
 func (r *Renderer) lifecycle(event app.LifecycleEvent) {

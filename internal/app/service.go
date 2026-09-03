@@ -8,17 +8,20 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"slices"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/server"
 )
 
 const (
@@ -53,7 +56,15 @@ type Service struct {
 	reloading bool
 	pending   bool
 
-	events      *emitter
+	events  *emitter
+	tracker server.IRequestTracker
+
+	// inFlightMu guards the authoritative set of requests currently being
+	// served. It lives here rather than in a UI widget because it is a fact
+	// about the server, and because a reload has to be able to clear it.
+	inFlightMu sync.RWMutex
+	inFlight   map[uint64]server.RequestEvent
+
 	watcher     *config.Watcher
 	shutdownOne sync.Once
 }
@@ -64,7 +75,7 @@ type Service struct {
 func New(container *di.Container, cfg *config.UncorsConfig, configPath string, load Loader) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &Service{
+	service := &Service{
 		container:  container,
 		proxy:      container.Proxy(),
 		configPath: configPath,
@@ -73,7 +84,34 @@ func New(container *di.Container, cfg *config.UncorsConfig, configPath string, l
 		cancel:     cancel,
 		cfg:        cfg,
 		events:     newEmitter(),
+		tracker:    container.RequestTracker(),
+		inFlight:   map[uint64]server.RequestEvent{},
 	}
+
+	// Start pumping before anything can serve a request, so no activity is
+	// missed between construction and Start.
+	go service.pumpRequests()
+
+	return service
+}
+
+// InFlight returns the requests currently being served, oldest first. A client
+// that connects late, or one that lost track, can rebuild its view from this
+// rather than from the events it happened to witness.
+func (s *Service) InFlight() []server.RequestEvent {
+	s.inFlightMu.RLock()
+	defer s.inFlightMu.RUnlock()
+
+	requests := make([]server.RequestEvent, 0, len(s.inFlight))
+	for _, request := range s.inFlight {
+		requests = append(requests, request)
+	}
+
+	slices.SortFunc(requests, func(a, b server.RequestEvent) int {
+		return cmp.Compare(a.ID, b.ID)
+	})
+
+	return requests
 }
 
 // Events returns the service's event stream. It has a single consumer: the TUI
@@ -219,6 +257,31 @@ func (s *Service) Close() error {
 	return nil
 }
 
+// pumpRequests owns the request tracker. It maintains the in-flight set and
+// forwards every event to the presenter.
+func (s *Service) pumpRequests() {
+	for event := range s.tracker.Events() {
+		s.inFlightMu.Lock()
+
+		if event.Done {
+			delete(s.inFlight, event.ID)
+		} else if event.URL != nil {
+			s.inFlight[event.ID] = event
+		}
+
+		s.inFlightMu.Unlock()
+
+		s.events.send(RequestEvent{Event: event})
+	}
+}
+
+func (s *Service) clearInFlight() {
+	s.inFlightMu.Lock()
+	defer s.inFlightMu.Unlock()
+
+	clear(s.inFlight)
+}
+
 func (s *Service) reloadOnce() {
 	reloaded, err := s.load()
 	if err != nil {
@@ -241,6 +304,11 @@ func (s *Service) reloadOnce() {
 	s.mu.Lock()
 	s.cfg = reloaded
 	s.mu.Unlock()
+
+	// The generation those requests belonged to is gone; anything still tracked
+	// against it would linger forever. This is why a reload triggered by a file
+	// save now clears the view the same way the restart key always did.
+	s.clearInFlight()
 
 	s.events.EmitLifecycle(LifecycleEvent{State: StateReloaded, Mappings: reloaded.Mappings})
 }
