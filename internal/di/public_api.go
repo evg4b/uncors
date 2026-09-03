@@ -104,13 +104,17 @@ func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contrac
 	)
 }
 
-func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
+// ProxyHandler builds the fallthrough handler for a set of mappings. The HTTP
+// client is passed in rather than created here, because its connection pool has
+// a configuration lifetime and must be released with the generation that owns
+// it.
+func (c *Container) ProxyHandler(mappings config.Mappings, client contracts.HTTPClient) contracts.Handler {
 	prefix := "PROXY"
 	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
+		proxy.WithHTTPClient(client),
 		proxy.WithOutput(output.NewPrefixOutput(prefix)),
 	))
 }

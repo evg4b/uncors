@@ -149,7 +149,7 @@ func TestContainer(t *testing.T) {
 		mappings := config.Mappings{
 			{From: hosts.Localhost.HTTP(), To: hosts.Localhost.HTTPS()},
 		}
-		handler := container.ProxyHandler(mappings, "")
+		handler := container.ProxyHandler(mappings, mocks.NewHTTPClientMock(t))
 
 		assert.NotNil(t, handler)
 		assert.Implements(t, (*contracts.Handler)(nil), handler)

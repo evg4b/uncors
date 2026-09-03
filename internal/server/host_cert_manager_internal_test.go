@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"net"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -285,4 +286,21 @@ func TestHostCertManager_Concurrent(t *testing.T) {
 			assert.NoError(t, <-results)
 		}
 	})
+}
+
+// A {placeholder} mapping serves whatever host is requested, so the cache is
+// driven by traffic rather than by configuration and has to be bounded.
+func TestHostCertManagerCacheIsBounded(t *testing.T) {
+	manager := NewHostCertManager(afero.NewMemMapFs())
+
+	for i := range maxCachedCertificates + 20 {
+		manager.store("host-"+strconv.Itoa(i)+".local", &tls.Certificate{})
+	}
+
+	assert.Len(t, manager.cache, maxCachedCertificates, "the cache must not grow without limit")
+	assert.Len(t, manager.order, maxCachedCertificates, "eviction order must stay in step with the cache")
+
+	assert.NotContains(t, manager.cache, "host-0.local", "the oldest entry must be evicted first")
+	assert.Contains(t, manager.cache, "host-"+strconv.Itoa(maxCachedCertificates+19)+".local",
+		"the newest entry must be kept")
 }
