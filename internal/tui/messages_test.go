@@ -13,9 +13,3 @@ func TestDisclaimerMessage(t *testing.T) {
 	assert.Contains(t, tui.DisclaimerMessage, "reverse proxy")
 	assert.Contains(t, tui.DisclaimerMessage, "security")
 }
-
-func TestNewVersionIsAvailable(t *testing.T) {
-	assert.NotEmpty(t, tui.NewVersionIsAvailable)
-	assert.Contains(t, tui.NewVersionIsAvailable, "NEW VERSION IS AVAILABLE")
-	assert.Contains(t, tui.NewVersionIsAvailable, "%s")
-}

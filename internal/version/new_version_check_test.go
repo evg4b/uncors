@@ -136,3 +136,9 @@ func TestCheckNewVersion(t *testing.T) {
 		testutils.MatchSnapshot(t, string(outputData))
 	})
 }
+
+func TestNewVersionIsAvailableMessage(t *testing.T) {
+	assert.NotEmpty(t, version.NewVersionIsAvailable)
+	assert.Contains(t, version.NewVersionIsAvailable, "NEW VERSION IS AVAILABLE")
+	assert.Contains(t, version.NewVersionIsAvailable, "%s")
+}

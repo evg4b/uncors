@@ -4,7 +4,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/mock"
@@ -15,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
@@ -45,10 +43,6 @@ func (c *Container) RequestTracker() *server.RequestTracker {
 	return c.requestTracker.GetOrBuild()
 }
 
-func (c *Container) GenerateCertsCommand() *commands.GenerateCertsCommand {
-	return c.generateCertsCommand.GetOrBuild()
-}
-
 func (c *Container) HostCertManager() *server.HostCertManager {
 	return c.hostCertManager.GetOrBuild()
 }
@@ -59,7 +53,7 @@ func (c *Container) OptionsMiddleware(cfg config.OptionsHandling) contracts.Midd
 			options.WithHeaders(cfg.Headers),
 			options.WithCode(cfg.Code),
 		),
-		styles.OptionsStyle.Render("OPTIONS"),
+		"OPTIONS",
 	)
 }
 
@@ -70,7 +64,7 @@ func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) co
 			static.WithIndex(dir.Index),
 			static.WithPrefix(path),
 		),
-		styles.StaticStyle.Render("STATIC"),
+		"STATIC",
 	)
 }
 
@@ -83,7 +77,7 @@ func (c *Container) VersionChecker(proxy string) *version.Checker {
 }
 
 func (c *Container) MockHandler(response *config.Response) contracts.Handler {
-	prefix := styles.MockStyle.Render("MOCK")
+	prefix := "MOCK"
 
 	return infra.WithPrefix(prefix, mock.NewMockHandler(
 		mock.WithResponse(response),
@@ -93,7 +87,7 @@ func (c *Container) MockHandler(response *config.Response) contracts.Handler {
 }
 
 func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
-	prefix := styles.RewriteStyle.Render("SCRIPT")
+	prefix := "SCRIPT"
 	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, script.NewHandler(
@@ -106,12 +100,12 @@ func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler
 func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
 	return infra.NewPrefixedMiddleware(
 		rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting)),
-		styles.RewriteStyle.Render("REWRITE"),
+		"REWRITE",
 	)
 }
 
 func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
-	prefix := styles.ProxyStyle.Render("PROXY")
+	prefix := "PROXY"
 	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, proxy.NewProxyHandler(

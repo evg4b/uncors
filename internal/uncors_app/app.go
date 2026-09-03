@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/render"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const (
@@ -31,7 +32,7 @@ type UncorsApp struct {
 	// and renders what comes back.
 	service service
 
-	output   *tuiOutput
+	output   contracts.Output
 	renderer *render.Renderer
 
 	outputCh chan string
@@ -81,7 +82,7 @@ func NewUncorsApp(
 	loadConfig app.Loader,
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
-	output := newTuiOutput(outputCh)
+	output := tui.NewCliOutput(newChannelWriter(outputCh))
 
 	// The sink has to be installed before anything resolves CliOutput, because
 	// the container caches it on first use.
