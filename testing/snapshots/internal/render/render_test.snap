@@ -1,0 +1,66 @@
+
+[TestRenderLifecycle/startup_banner - 1]
+[38;2;220;1;0m██    ██ ███    ██ [m[38;2;255;212;0m ██████  ██████  ██████  ███████[m
+[38;2;220;1;0m██    ██ ████   ██ [m[38;2;255;212;0m██      ██    ██ ██   ██ ██     [m
+[38;2;220;1;0m██    ██ ██ ██  ██ [m[38;2;255;212;0m██      ██    ██ ██████  ███████[m
+[38;2;220;1;0m██    ██ ██  ██ ██ [m[38;2;255;212;0m██      ██    ██ ██   ██      ██[m
+[38;2;220;1;0m ██████  ██   ████ [m[38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
+                                    version: v1.2.3
+ 
+[48;2;255;212;0m [m[38;2;0;0;0;48;2;255;212;0mWARN [m[48;2;255;212;0m [m DON'T USE IT FOR PRODUCTION!                                                     
+[48;2;255;212;0m [m[38;2;0;0;0;48;2;255;212;0m[m[48;2;255;212;0m [m[48;2;255;212;0m     [m This is a reverse proxy for use in testing or debugging web applications locally.
+[48;2;255;212;0m [m[38;2;0;0;0;48;2;255;212;0m[m[48;2;255;212;0m [m[48;2;255;212;0m     [m It hasn't been reviewed for security issues.                                     
+ 
+[48;2;0;114;206m [m[38;2;0;0;0;48;2;0;114;206mINFO [m[48;2;0;114;206m [m http://localhost:3000 => https://github.com
+ 
+
+---
+
+[TestRenderLifecycle/started_is_silent,_the_banner_already_said_it - 1]
+
+---
+
+[TestRenderLifecycle/reloading - 1]
+[48;2;0;114;206m [m[1;38;2;0;0;0;48;2;0;114;206mINFO[m[48;2;0;114;206m [m[48;2;0;114;206m  [m Restarting server....
+
+---
+
+[TestRenderLifecycle/reloaded - 1]
+[48;2;0;114;206m [m[38;2;0;0;0;48;2;0;114;206mINFO [m[48;2;0;114;206m [m Server restarted                           
+[48;2;0;114;206m [m[38;2;0;0;0;48;2;0;114;206m[m[48;2;0;114;206m [m[48;2;0;114;206m     [m http://localhost:3000 => https://github.com
+
+---
+
+[TestRenderLifecycle/reload_failed - 1]
+[48;2;220;1;0m [m[1;38;2;0;0;0;48;2;220;1;0mERROR[m[48;2;220;1;0m [m[48;2;220;1;0m [m Failed to reload config: assert.AnError general error for testing
+
+---
+
+[TestRenderLifecycle/start_failed - 1]
+[48;2;220;1;0m [m[1;38;2;0;0;0;48;2;220;1;0mERROR[m[48;2;220;1;0m [m[48;2;220;1;0m [m Failed to start server: assert.AnError general error for testing
+
+---
+
+[TestRenderLifecycle/interrupted_stop_moves_past_the_echoed_^C - 1]
+
+
+---
+
+[TestRenderLifecycle/non-interrupted_stop_prints_nothing - 1]
+
+---
+
+[TestRenderLog/info - 1]
+[48;2;0;114;206m [m[1;38;2;0;0;0;48;2;0;114;206mINFO[m[48;2;0;114;206m [m[48;2;0;114;206m  [m something happened
+
+---
+
+[TestRenderLog/warn - 1]
+[48;2;255;212;0m [m[1;38;2;0;0;0;48;2;255;212;0mWARN[m[48;2;255;212;0m [m[48;2;255;212;0m  [m something happened
+
+---
+
+[TestRenderLog/error - 1]
+[48;2;220;1;0m [m[1;38;2;0;0;0;48;2;220;1;0mERROR[m[48;2;220;1;0m [m[48;2;220;1;0m [m something happened
+
+---

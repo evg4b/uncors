@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/render"
 	"github.com/evg4b/uncors/internal/server"
 )
 
@@ -31,8 +32,9 @@ type UncorsApp struct {
 	// and renders what comes back.
 	service *app.Service
 
-	output  *tuiOutput
-	tracker server.IRequestTracker
+	output   *tuiOutput
+	renderer *render.Renderer
+	tracker  server.IRequestTracker
 
 	outputCh chan string
 	done     <-chan struct{}
@@ -45,6 +47,8 @@ type UncorsApp struct {
 	helpWidget    *HelpWidget
 	memWidget     *MemoryWidget
 }
+
+type serviceEventMsg struct{ event app.Event }
 
 type (
 	serverStartedMsg struct{}
@@ -83,6 +87,7 @@ func NewUncorsApp(
 		keys:          keys,
 		service:       service,
 		output:        output,
+		renderer:      render.New(output, container.Version()),
 		tracker:       container.RequestTracker(),
 		outputCh:      outputCh,
 		done:          service.Context().Done(),
@@ -100,6 +105,7 @@ func (m *UncorsApp) Init() tea.Cmd {
 		m.startServerCmd(),
 		m.waitOutputCmd(),
 		m.watchEventsCmd(),
+		m.waitServiceEventCmd(),
 		m.memWidget.Init(),
 		m.trackerWidget.Init(),
 		m.historyWidget.Init(),
@@ -128,6 +134,11 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.handleRequestEvent(typedMsg)
 
 		cmds = append(cmds, m.watchEventsCmd())
+
+	case serviceEventMsg:
+		m.renderer.Render(typedMsg.event)
+
+		cmds = append(cmds, m.waitServiceEventCmd())
 
 	case tea.KeyPressMsg:
 		log.Printf("Key pressed: %s", typedMsg.String())
@@ -330,6 +341,23 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 			}
 
 			return requestEventMsg(event)
+		case <-m.done:
+			return nil
+		}
+	}
+}
+
+// waitServiceEventCmd pulls one service event and renders it into the history.
+// Re-armed on every serviceEventMsg, the way the other stream readers are.
+func (m *UncorsApp) waitServiceEventCmd() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case event, ok := <-m.service.Events():
+			if !ok {
+				return nil
+			}
+
+			return serviceEventMsg{event: event}
 		case <-m.done:
 			return nil
 		}

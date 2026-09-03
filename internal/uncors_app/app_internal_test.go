@@ -3,12 +3,12 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
@@ -346,18 +346,18 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 	defer testutils.Close(t, container)
 
 	loadCalls := 0
-	app := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
+	model := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
 		loadCalls++
 
 		return nil, errBoom
 	})
 
-	defer cleanupTestApp(t, app)
+	defer cleanupTestApp(t, model)
 
-	require.NoError(t, app.service.Start(app.service.Context()))
+	require.NoError(t, model.service.Start(model.service.Context()))
 
 	require.NotPanics(t, func() {
-		msg := app.restartCmd()()
+		msg := model.restartCmd()()
 
 		assert.IsType(t, restartMsg{}, msg)
 	})
@@ -365,13 +365,7 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 	assert.Equal(t, 1, loadCalls)
 	assert.False(t, testutils.IsPortFree(port), "the previous generation must still be bound")
 
-	var reported bool
-
-	for len(app.outputCh) > 0 {
-		if strings.Contains(<-app.outputCh, "Failed to reload config") {
-			reported = true
-		}
-	}
-
-	assert.True(t, reported, "the load failure must be reported to the user")
+	status := model.service.Status()
+	assert.Equal(t, app.StateReloadFailed, status.State)
+	require.ErrorIs(t, status.Err, errBoom)
 }
