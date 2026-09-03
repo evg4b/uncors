@@ -9,6 +9,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -52,6 +53,7 @@ type Service struct {
 	reloading bool
 	pending   bool
 
+	events      *emitter
 	watcher     *config.Watcher
 	shutdownOne sync.Once
 }
@@ -70,7 +72,26 @@ func New(container *di.Container, cfg *config.UncorsConfig, configPath string, l
 		ctx:        ctx,
 		cancel:     cancel,
 		cfg:        cfg,
+		events:     newEmitter(),
 	}
+}
+
+// Events returns the service's event stream. It has a single consumer: the TUI
+// in interactive mode, the console renderer otherwise.
+func (s *Service) Events() <-chan Event {
+	return s.events.Events()
+}
+
+// Status returns the latest lifecycle state. It is always current, even when
+// the notification carrying it was dropped.
+func (s *Service) Status() Status {
+	return s.events.Status()
+}
+
+// DroppedEvents reports how many events were discarded because the presenter
+// could not keep up.
+func (s *Service) DroppedEvents() uint64 {
+	return s.events.Dropped()
 }
 
 // Context returns the service lifetime context. It is cancelled when the
@@ -91,10 +112,18 @@ func (s *Service) Config() *config.UncorsConfig {
 // the config file and checking for a newer release. It returns when the
 // listeners are bound.
 func (s *Service) Start(ctx context.Context) error {
-	err := s.proxy.Start(ctx, s.Config())
+	cfg := s.Config()
+
+	s.events.EmitLifecycle(LifecycleEvent{State: StateStarting, Mappings: cfg.Mappings})
+
+	err := s.proxy.Start(ctx, cfg)
 	if err != nil {
+		s.events.EmitLifecycle(LifecycleEvent{State: StateStartFailed, Err: err})
+
 		return err
 	}
+
+	s.events.EmitLifecycle(LifecycleEvent{State: StateStarted, Mappings: cfg.Mappings})
 
 	s.startWatching()
 
@@ -170,6 +199,8 @@ func (s *Service) Shutdown(ctx context.Context) error {
 		s.cancel()
 
 		err = s.proxy.Shutdown(ctx)
+
+		s.events.EmitLifecycle(LifecycleEvent{State: StateStopped, Err: err})
 	})
 
 	return err
@@ -179,6 +210,7 @@ func (s *Service) Shutdown(ctx context.Context) error {
 // belong to the container, which closes them in turn.
 func (s *Service) Close() error {
 	s.cancel()
+	s.events.Close()
 
 	if s.watcher != nil {
 		return s.watcher.Close()
@@ -188,18 +220,20 @@ func (s *Service) Close() error {
 }
 
 func (s *Service) reloadOnce() {
-	output := s.container.CliOutput()
-
 	reloaded, err := s.load()
 	if err != nil {
-		output.Errorf("Failed to reload config: %v", err)
+		s.events.EmitLifecycle(LifecycleEvent{State: StateReloadFailed, Err: err})
 
 		return
 	}
 
+	// Announced only once the config is known to be good, so a rejected config
+	// never claims the server is restarting.
+	s.events.EmitLifecycle(LifecycleEvent{State: StateReloading})
+
 	err = s.proxy.Restart(s.ctx, reloaded)
 	if err != nil {
-		output.Errorf("Failed to restart server: %v", err)
+		s.events.EmitLifecycle(LifecycleEvent{State: StateReloadFailed, Err: err})
 
 		return
 	}
@@ -207,6 +241,8 @@ func (s *Service) reloadOnce() {
 	s.mu.Lock()
 	s.cfg = reloaded
 	s.mu.Unlock()
+
+	s.events.EmitLifecycle(LifecycleEvent{State: StateReloaded, Mappings: reloaded.Mappings})
 }
 
 // startWatching begins reloading on config file changes. A missing or
@@ -221,7 +257,7 @@ func (s *Service) startWatching() {
 
 	err := watcher.Watch(s.ctx, s.Reload)
 	if err != nil {
-		s.container.CliOutput().Errorf("Failed to watch config file: %v", err)
+		s.events.EmitLog(LevelError, fmt.Sprintf("Failed to watch config file: %v", err))
 
 		return
 	}
@@ -250,17 +286,20 @@ func (s *Service) awaitSignal(ctx context.Context) {
 
 	defer signal.Stop(stop)
 
+	interrupted := false
+
 	select {
 	case sig := <-stop:
-		if sig == syscall.SIGINT {
-			// Move past the "^C" the terminal echoed.
-			_, _ = s.container.CliOutput().Write([]byte("\n"))
-		}
+		interrupted = sig == syscall.SIGINT
 
 		log.Println("shutdown signal received")
 	case <-ctx.Done():
 	case <-s.ctx.Done():
 	}
+
+	// Interrupted tells the presenter the terminal already echoed "^C"; whether
+	// that needs moving past is its decision, not the service's.
+	s.events.EmitLifecycle(LifecycleEvent{State: StateStopping, Interrupted: interrupted})
 
 	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
 	defer cancel()

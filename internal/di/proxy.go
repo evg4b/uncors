@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/tui"
 )
 
 // Proxy serves one configuration generation on the container's server and owns
-// the transition between generations. Releasing a generation is what flushes
+// the transition between generations. It reports nothing to the console:
+// describing what is happening belongs to whoever is presenting the service. Releasing a generation is what flushes
 // its HAR writers and frees its response cache, so exactly one generation must
 // be alive per running set of targets.
 //
@@ -28,15 +28,6 @@ func (c *Container) newProxy() *Proxy {
 }
 
 func (p *Proxy) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	output := p.container.CliOutput()
-
-	tui.PrintLogo(output, p.container.Version())
-	output.Print("")
-	output.WarnBox(tui.DisclaimerMessage)
-	output.Print("")
-	output.InfoBox(uncorsConfig.Mappings.String())
-	output.Print("")
-
 	runtime, err := p.container.BuildRuntime(uncorsConfig)
 	if err != nil {
 		return err
@@ -56,9 +47,6 @@ func (p *Proxy) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) er
 // config that fails to build leaves the proxy serving the previous generation
 // untouched. The old generation is released only once the new one is live.
 func (p *Proxy) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	output := p.container.CliOutput()
-	output.Info("Restarting server....")
-
 	runtime, err := p.container.BuildRuntime(uncorsConfig)
 	if err != nil {
 		return err
@@ -70,8 +58,6 @@ func (p *Proxy) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 	}
 
 	previous := p.swap(runtime)
-
-	output.InfoBox("Server restarted", uncorsConfig.Mappings.String())
 
 	return closeRuntime(previous)
 }
