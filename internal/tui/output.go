@@ -167,8 +167,10 @@ func (output *CliOutput) renderMessage(msg string) {
 	fmt.Fprint(&output.buffer, msg)
 }
 
+// renderPrefix styles the prefix here rather than expecting a pre-styled one,
+// so that the layers producing prefixes deal only in plain handler names.
 func (output *CliOutput) renderPrefix() {
 	if len(output.prefix) > 0 {
-		output.buffer.WriteString(output.prefix)
+		output.buffer.WriteString(styles.Feature(output.prefix))
 	}
 }

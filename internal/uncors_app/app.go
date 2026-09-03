@@ -9,17 +9,18 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/render"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const (
 	outputChannelSize = 1000
-	shutdownTimeout   = 5 * time.Second
-	versionCheckDelay = 50 * time.Millisecond
+	shutdownTimeout   = 15 * time.Second
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
@@ -27,21 +28,15 @@ const (
 type UncorsApp struct {
 	keys keyMap
 
-	proxy     *di.Proxy
-	output    *tuiOutput
-	tracker   server.IRequestTracker
-	container *di.Container
+	// service owns the application runtime. The model only sends it commands
+	// and renders what comes back.
+	service service
 
-	outputCh   chan string
-	appContext func() context.Context
-	appDone    <-chan struct{}
-	cancel     context.CancelFunc
+	output   contracts.Output
+	renderer *render.Renderer
 
-	cfg        *config.UncorsConfig
-	loadConfig func() *config.UncorsConfig
-	configPath string
-
-	watcher *config.Watcher
+	outputCh chan string
+	done     <-chan struct{}
 
 	termHeight int
 	termWidth  int
@@ -51,6 +46,20 @@ type UncorsApp struct {
 	helpWidget    *HelpWidget
 	memWidget     *MemoryWidget
 }
+
+// service is the whole of the model's dependency on the application. Commands
+// go down (Start, Reload, Shutdown), events come back up; the model reaches
+// for nothing else, which is what keeps application behaviour out of the TUI.
+type service interface {
+	Start(ctx context.Context) error
+	Reload()
+	Shutdown(ctx context.Context) error
+	Close() error
+	Context() context.Context
+	Events() <-chan app.Event
+}
+
+type serviceEventMsg struct{ event app.Event }
 
 type (
 	serverStartedMsg struct{}
@@ -63,42 +72,36 @@ type appUpdateMsg interface {
 	update(app *UncorsApp) tea.Cmd
 }
 
-// NewUncorsApp creates the interactive TUI model. configPath is the active
-// config file path (empty string if no config file is used); when non-empty
-// the app watches it for changes and auto-restarts the proxy on every save.
+// NewUncorsApp creates the interactive TUI model over the application service.
+// configPath is the active config file path (empty when no config file is in
+// use); the service watches it and reloads on every save.
 func NewUncorsApp(
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
-	loadConfig func() *config.UncorsConfig,
+	loadConfig app.Loader,
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
-	output := newTuiOutput(outputCh)
+	output := tui.NewCliOutput(newChannelWriter(outputCh))
 
-	appCtx, cancel := context.WithCancel(context.Background())
-
+	// The sink has to be installed before anything resolves CliOutput, because
+	// the container caches it on first use.
 	container.Override(di.WithCliOutput(func() contracts.Output {
 		return output
 	}))
 
-	keys := newKeyMap()
+	service := app.New(container, cfg, configPath, loadConfig)
 
-	historyWidget := NewHistoryWidget(keys)
+	keys := newKeyMap()
 
 	return &UncorsApp{
 		keys:          keys,
-		proxy:         container.Proxy(),
+		service:       service,
 		output:        output,
-		tracker:       container.RequestTracker(),
-		container:     container,
+		renderer:      render.New(output, container.Version()),
 		outputCh:      outputCh,
-		appContext:    func() context.Context { return appCtx },
-		appDone:       appCtx.Done(),
-		cancel:        cancel,
-		cfg:           cfg,
-		loadConfig:    loadConfig,
-		configPath:    configPath,
-		historyWidget: historyWidget,
+		done:          service.Context().Done(),
+		historyWidget: NewHistoryWidget(keys),
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
 		memWidget:     NewMemoryWidget(),
@@ -111,7 +114,7 @@ func (m *UncorsApp) Init() tea.Cmd {
 	return tea.Batch(
 		m.startServerCmd(),
 		m.waitOutputCmd(),
-		m.watchEventsCmd(),
+		m.waitServiceEventCmd(),
 		m.memWidget.Init(),
 		m.trackerWidget.Init(),
 		m.historyWidget.Init(),
@@ -136,10 +139,17 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case outputLineMsg:
 		cmds = append(cmds, m.waitOutputCmd())
 
-	case requestEventMsg:
-		m.handleRequestEvent(typedMsg)
+	case serviceEventMsg:
+		m.renderer.Render(typedMsg.event)
 
-		cmds = append(cmds, m.watchEventsCmd())
+		cmds = append(cmds, m.waitServiceEventCmd())
+
+		// Widgets react to the service's own account of what happened, so a
+		// reload triggered by a file save reaches them exactly as the restart
+		// key does.
+		if translated := widgetMessage(typedMsg.event); translated != nil {
+			msg = translated
+		}
 
 	case tea.KeyPressMsg:
 		log.Printf("Key pressed: %s", typedMsg.String())
@@ -266,48 +276,36 @@ func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleShutdown()
 }
 
+// handleServerStarted runs once the listeners are bound. Config watching and
+// the version check belong to the service, which started them itself.
 func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	if m.configPath != "" {
-		watcher := config.NewWatcher(m.configPath)
+	log.Println("Server started")
 
-		err := watcher.Watch(m.appContext(), func() {
-			defer helpers.PanicInterceptor(func(value any) {
-				m.output.Errorf("Config reloading error: %v", value)
-			})
-
-			newCfg := m.loadConfig()
-
-			err := m.proxy.Restart(m.appContext(), newCfg)
-			if err != nil {
-				m.output.Errorf("Failed to restart server: %v", err)
-			}
-		})
-		if err != nil {
-			m.output.Errorf("Failed to watch config file: %v", err)
-		} else {
-			m.watcher = watcher
-		}
-	}
-
-	return m.versionCheckCmd()
+	return nil
 }
 
 func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
-	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
+	m.historyWidget, _ = m.historyWidget.Update(outputLineMsg(msg.err.Error()))
 
-	return tea.Quit
+	// Quitting straight away would strand the generation the failed start left
+	// behind, so go through the normal shutdown path instead.
+	return m.shutdownCmd()
 }
 
-func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
-	if !event.Done || event.Data == nil {
-		return
+// widgetMessage translates a service event into the message the widgets speak,
+// or nil when no widget cares about it.
+func widgetMessage(event app.Event) tea.Msg {
+	switch typed := event.(type) {
+	case app.RequestEvent:
+		return requestEventMsg(typed.Event)
+	case app.LifecycleEvent:
+		if typed.State == app.StateReloaded {
+			return restartMsg{}
+		}
+	case app.LogEvent:
 	}
 
-	if event.Prefix != "" {
-		m.output.NewPrefixOutput(event.Prefix).Request(event.Data)
-	} else {
-		m.output.Request(event.Data)
-	}
+	return nil
 }
 
 func (m *UncorsApp) handleRestart() {
@@ -318,10 +316,6 @@ func (m *UncorsApp) handleRestart() {
 func (m *UncorsApp) handleShutdown() tea.Cmd {
 	log.Println("Handling shutdown")
 
-	if m.watcher != nil {
-		_ = m.watcher.Close()
-	}
-
 	_ = m.historyWidget.Close()
 
 	return tea.Quit
@@ -329,7 +323,7 @@ func (m *UncorsApp) handleShutdown() tea.Cmd {
 
 func (m *UncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.proxy.Start(m.appContext(), m.cfg)
+		err := m.service.Start(m.service.Context())
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -347,22 +341,24 @@ func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 			}
 
 			return outputLineMsg(line)
-		case <-m.appDone:
+		case <-m.done:
 			return nil
 		}
 	}
 }
 
-func (m *UncorsApp) watchEventsCmd() tea.Cmd {
+// waitServiceEventCmd pulls one service event and renders it into the history.
+// Re-armed on every serviceEventMsg, the way the other stream readers are.
+func (m *UncorsApp) waitServiceEventCmd() tea.Cmd {
 	return func() tea.Msg {
 		select {
-		case event, ok := <-m.tracker.Events():
+		case event, ok := <-m.service.Events():
 			if !ok {
 				return nil
 			}
 
-			return requestEventMsg(event)
-		case <-m.appDone:
+			return serviceEventMsg{event: event}
+		case <-m.done:
 			return nil
 		}
 	}
@@ -370,12 +366,11 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 
 func (m *UncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
-		m.cancel()
-
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
-		_ = m.proxy.Shutdown(ctx)
+		_ = m.service.Shutdown(ctx)
+		_ = m.service.Close()
 
 		return shutdownMsg{}
 	}
@@ -387,23 +382,9 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
-		newCfg := m.loadConfig()
-
-		err := m.proxy.Restart(m.appContext(), newCfg)
-		if err != nil {
-			m.output.Errorf("Failed to restart: %v", err)
-		}
-
-		return restartMsg{}
-	}
-}
-
-func (m *UncorsApp) versionCheckCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(versionCheckDelay)
-
-		m.container.VersionChecker(m.cfg.Proxy).
-			CheckNewVersion(m.appContext())
+		// The reload's effects arrive as service events, which is what the
+		// widgets act on; nothing to report from here.
+		m.service.Reload()
 
 		return nil
 	}

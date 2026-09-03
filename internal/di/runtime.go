@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"slices"
 	"strconv"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 const baseAddress = "127.0.0.1"
@@ -95,7 +95,7 @@ func (r *Runtime) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware 
 			cache.WithCacheStorage(r.Cache()),
 			cache.WithGlobs(globs),
 		),
-		styles.CacheStyle.Render("CACHE"),
+		"CACHE",
 	)
 }
 
@@ -155,11 +155,35 @@ func (r *Runtime) router(mappings config.Mappings, proxyURL string) (contracts.H
 	muxRouter, err := router.NewRouter(
 		mappings,
 		router.WithDiContainer(r),
-		router.ForRouterWithDefaultHandler(r.container.ProxyHandler(mappings, proxyURL)),
+		router.ForRouterWithDefaultHandler(r.container.ProxyHandler(mappings, r.httpClient(proxyURL))),
 		router.ForRouterWithCacheMiddlewareFactory(r.CacheMiddleware),
 	)
 
 	return infra.CastToContractsHandler(muxRouter), err
+}
+
+// httpClient builds the upstream client for this generation and binds its
+// connection pool to the generation's lifetime. Without this the idle
+// connections of every superseded configuration survive until the process
+// exits.
+func (r *Runtime) httpClient(proxyURL string) *http.Client {
+	client := infra.MakeHTTPClient(proxyURL)
+
+	register(r, transportCloser{client: client})
+
+	return client
+}
+
+// transportCloser releases a client's idle connections. http.Client has no
+// Close, so this adapts the one thing that actually needs releasing.
+type transportCloser struct {
+	client *http.Client
+}
+
+func (t transportCloser) Close() error {
+	t.client.CloseIdleConnections()
+
+	return nil
 }
 
 // register binds a resource to the generation's lifetime.

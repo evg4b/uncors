@@ -20,10 +20,12 @@ func runInteractive(
 		container,
 		cfgPath,
 		cfg,
-		func() *config.UncorsConfig {
-			reloaded, _, _ := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+		// The error matters: a config that fails to parse or validate must leave
+		// the running generation untouched, exactly as headless mode does.
+		func() (*config.UncorsConfig, error) {
+			reloaded, _, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
 
-			return reloaded
+			return reloaded, err
 		},
 	)
 

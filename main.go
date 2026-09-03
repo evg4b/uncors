@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/evg4b/uncors/internal/cli"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -22,6 +23,11 @@ func main() {
 		di.WithStdout(os.Stdout),
 		di.WithVersion(Version),
 		di.WithArgs(os.Args[1:]),
+		// The composition root decides how the application talks to the user.
+		// The container itself knows nothing about terminals.
+		di.WithCliOutput(func() contracts.Output {
+			return tui.NewCliOutput(os.Stdout)
+		}),
 	)
 
 	// A panic anywhere below is a bug, but the user still deserves a readable

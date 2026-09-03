@@ -20,4 +20,9 @@ var (
 
 	// ErrCACertExpiringSoon is returned when the CA certificate is close to expiring.
 	ErrCACertExpiringSoon = errors.New("consider regenerating with: uncors generate-certs --force")
+
+	// ErrRollbackFailed is returned when a restart could not bind the new
+	// targets and could not put the previous ones back either. The server is
+	// serving nothing at that point, which the caller has to act on.
+	ErrRollbackFailed = errors.New("failed to restore the previous listeners after a failed restart")
 )

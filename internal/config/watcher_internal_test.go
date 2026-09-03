@@ -51,7 +51,7 @@ func runAndWait(ctx context.Context, watcher *Watcher, onChange func()) <-chan s
 	go func() {
 		defer close(exited)
 
-		watcher.run(ctx, onChange)
+		watcher.run(ctx, watcher.fsWatcher, onChange)
 	}()
 
 	return exited

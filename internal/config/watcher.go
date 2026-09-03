@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -19,8 +20,10 @@ var errAlreadyWatching = errors.New("watcher is already watching")
 
 type Watcher struct {
 	filePath   string
-	fsWatcher  *fsnotify.Watcher
 	isWatching atomic.Bool
+
+	mu        sync.Mutex
+	fsWatcher *fsnotify.Watcher
 }
 
 func NewWatcher(filePath string) *Watcher {
@@ -29,15 +32,47 @@ func NewWatcher(filePath string) *Watcher {
 	}
 }
 
+// Watch starts delivering debounced change notifications for the configured
+// file. It is a no-op when no config file is in use.
 func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
-	if w.isWatching.Load() {
-		return errAlreadyWatching
-	}
-
 	if w.filePath == "" {
 		return nil
 	}
 
+	// Claim the watcher atomically: two concurrent Watch calls must not both
+	// get past this point and leak an fsnotify watcher between them.
+	if !w.isWatching.CompareAndSwap(false, true) {
+		return errAlreadyWatching
+	}
+
+	err := w.start(ctx, onChange)
+	if err != nil {
+		w.isWatching.Store(false)
+
+		return err
+	}
+
+	return nil
+}
+
+// Close stops the watcher and releases the claim taken by Watch, so a closed
+// Watcher reports its true state rather than staying permanently "watching".
+func (w *Watcher) Close() error {
+	w.isWatching.Store(false)
+
+	w.mu.Lock()
+	fsWatcher := w.fsWatcher
+	w.fsWatcher = nil
+	w.mu.Unlock()
+
+	if fsWatcher != nil {
+		return fsWatcher.Close()
+	}
+
+	return nil
+}
+
+func (w *Watcher) start(ctx context.Context, onChange func()) error {
 	_, err := os.Stat(w.filePath)
 	if err != nil {
 		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
@@ -62,23 +97,18 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 		)
 	}
 
+	w.mu.Lock()
 	w.fsWatcher = fsWatcher
-	w.isWatching.Store(true)
+	w.mu.Unlock()
 
-	go w.run(ctx, onChange)
-
-	return nil
-}
-
-func (w *Watcher) Close() error {
-	if w.fsWatcher != nil {
-		return w.fsWatcher.Close()
-	}
+	// run owns the watcher it was handed rather than reading the field, so a
+	// Close followed by a fresh Watch cannot race the previous run goroutine.
+	go w.run(ctx, fsWatcher, onChange)
 
 	return nil
 }
 
-func (w *Watcher) run(ctx context.Context, onChange func()) {
+func (w *Watcher) run(ctx context.Context, fsWatcher *fsnotify.Watcher, onChange func()) {
 	var debounce *time.Timer
 
 	defer func() {
@@ -92,14 +122,14 @@ func (w *Watcher) run(ctx context.Context, onChange func()) {
 		case <-ctx.Done():
 			return
 
-		case event, ok := <-w.fsWatcher.Events:
+		case event, ok := <-fsWatcher.Events:
 			if !ok {
 				return
 			}
 
 			w.handleEvent(event, &debounce, onChange)
 
-		case err, ok := <-w.fsWatcher.Errors:
+		case err, ok := <-fsWatcher.Errors:
 			if !ok {
 				return
 			}
