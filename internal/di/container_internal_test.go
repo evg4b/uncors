@@ -41,6 +41,27 @@ func TestContainerCloseError(t *testing.T) {
 	})
 }
 
-type closerFunc func() error
+func TestContainerClosesProcessLifetimeResources(t *testing.T) {
+	t.Run("closes the request tracker it built", func(t *testing.T) {
+		container := NewContainer()
+		tracker := container.RequestTracker()
 
-func (f closerFunc) Close() error { return f() }
+		require.NoError(t, container.Close())
+
+		_, open := <-tracker.Events()
+		require.False(t, open, "Close must close the tracker's event channel")
+	})
+
+	t.Run("is idempotent", func(t *testing.T) {
+		container := NewContainer()
+		container.RequestTracker()
+		container.Server()
+
+		require.NoError(t, container.Close())
+		require.NoError(t, container.Close())
+	})
+
+	t.Run("closes nothing it did not build", func(t *testing.T) {
+		require.NoError(t, NewContainer().Close())
+	})
+}

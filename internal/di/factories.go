@@ -31,5 +31,22 @@ func (c *Container) Proxy() *Proxy {
 }
 
 func (c *Container) newServer() *server.Server {
-	return server.New(c.HostCertManager(), c.RequestTracker())
+	// RequestTracker is resolved first and therefore registered first, so the
+	// reverse-order Close stops the server before the sink it emits into.
+	instance := server.New(c.HostCertManager(), c.RequestTracker())
+	c.registerCloser(instance)
+
+	return instance
+}
+
+func (c *Container) newRequestTracker() *server.RequestTracker {
+	tracker := server.NewRequestTracker()
+
+	c.registerCloser(closerFunc(func() error {
+		tracker.Close()
+
+		return nil
+	}))
+
+	return tracker
 }

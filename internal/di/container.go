@@ -3,6 +3,8 @@ package di
 import (
 	"errors"
 	"io"
+	"slices"
+	"sync"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -24,7 +26,8 @@ type Container struct {
 	server               factory[*server.Server]
 	proxy                factory[*Proxy]
 
-	closers []io.Closer
+	closersMu sync.Mutex
+	closers   []io.Closer
 }
 
 type ContainerOption = func(c *Container)
@@ -64,7 +67,7 @@ func NewContainer(options ...ContainerOption) *Container {
 	container = helpers.ApplyOptions(container, options)
 
 	container.cliOutput = newFactory(container.newCliOutput)
-	container.requestTracker = newFactory(server.NewRequestTracker)
+	container.requestTracker = newFactory(container.newRequestTracker)
 	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)
@@ -73,10 +76,18 @@ func NewContainer(options ...ContainerOption) *Container {
 	return container
 }
 
+// Close releases every process-lifetime resource the container built, in
+// reverse creation order so that a resource is never closed before the ones
+// depending on it. It is safe to call more than once.
 func (c *Container) Close() error {
-	var errs []error
+	c.closersMu.Lock()
+	closers := c.closers
+	c.closers = nil
+	c.closersMu.Unlock()
 
-	for _, closer := range c.closers {
+	errs := make([]error, 0, len(closers))
+
+	for _, closer := range slices.Backward(closers) {
 		err := closer.Close()
 		if err != nil {
 			errs = append(errs, err)
@@ -85,3 +96,19 @@ func (c *Container) Close() error {
 
 	return errors.Join(errs...)
 }
+
+// registerCloser binds a process-lifetime resource to the container, so that
+// Close releases it. Factories are built lazily and potentially from different
+// goroutines, so the list is guarded.
+func (c *Container) registerCloser(closer io.Closer) {
+	c.closersMu.Lock()
+	defer c.closersMu.Unlock()
+
+	c.closers = append(c.closers, closer)
+}
+
+// closerFunc adapts a plain shutdown function to io.Closer, for resources whose
+// own Close reports nothing.
+type closerFunc func() error
+
+func (f closerFunc) Close() error { return f() }

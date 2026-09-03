@@ -18,7 +18,7 @@ import (
 
 const (
 	outputChannelSize = 1000
-	shutdownTimeout   = 5 * time.Second
+	shutdownTimeout   = 15 * time.Second
 	versionCheckDelay = 50 * time.Millisecond
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
@@ -38,7 +38,7 @@ type UncorsApp struct {
 	cancel     context.CancelFunc
 
 	cfg        *config.UncorsConfig
-	loadConfig func() *config.UncorsConfig
+	loadConfig func() (*config.UncorsConfig, error)
 	configPath string
 
 	watcher *config.Watcher
@@ -70,7 +70,7 @@ func NewUncorsApp(
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
-	loadConfig func() *config.UncorsConfig,
+	loadConfig func() (*config.UncorsConfig, error),
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
@@ -275,7 +275,12 @@ func (m *UncorsApp) handleServerStarted() tea.Cmd {
 				m.output.Errorf("Config reloading error: %v", value)
 			})
 
-			newCfg := m.loadConfig()
+			newCfg, loadErr := m.loadConfig()
+			if loadErr != nil {
+				m.output.Errorf("Failed to reload config: %v", loadErr)
+
+				return
+			}
 
 			err := m.proxy.Restart(m.appContext(), newCfg)
 			if err != nil {
@@ -293,9 +298,11 @@ func (m *UncorsApp) handleServerStarted() tea.Cmd {
 }
 
 func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
-	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
+	m.historyWidget, _ = m.historyWidget.Update(outputLineMsg(msg.err.Error()))
 
-	return tea.Quit
+	// Quitting straight away would strand the generation the failed start left
+	// behind, so go through the normal shutdown path instead.
+	return m.shutdownCmd()
 }
 
 func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
@@ -387,7 +394,12 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
-		newCfg := m.loadConfig()
+		newCfg, loadErr := m.loadConfig()
+		if loadErr != nil {
+			m.output.Errorf("Failed to reload config: %v", loadErr)
+
+			return restartMsg{}
+		}
 
 		err := m.proxy.Restart(m.appContext(), newCfg)
 		if err != nil {
