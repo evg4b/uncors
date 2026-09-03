@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +23,30 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func addr(port int) string {
+	return net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+}
+
+func okHandler() contracts.Handler {
+	return infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+		w.WriteHeader(http.StatusOK)
+
+		return nil
+	})
+}
+
+// blockPort holds port for the duration of the test so the server cannot bind it.
+func blockPort(t *testing.T, port int) {
+	t.Helper()
+
+	listenConfig := &net.ListenConfig{}
+
+	listener, err := listenConfig.Listen(t.Context(), "tcp4", addr(port))
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = listener.Close() })
+}
 
 func TestServer(t *testing.T) {
 	const porstCount = 5
@@ -353,4 +378,38 @@ func TestServer(t *testing.T) {
 
 		require.Error(t, err)
 	})
+}
+
+// P4: a restart that cannot bind the new targets must put the previous ones
+// back. Before this, Shutdown ran first and a failed Start left the server
+// bound to nothing - which in headless mode also ended the process, because
+// every listener goroutine had exited and Wait returned.
+func TestServerRestartRollsBackWhenTheNewPortIsTaken(t *testing.T) {
+	ports := testutils.GetFreePorts(t, 2)
+	original, contested := ports[0], ports[1]
+
+	instance := server.New(nil, nil)
+
+	require.NoError(t, instance.Start(t.Context(), []server.Target{
+		{Address: addr(original), Handler: okHandler()},
+	}))
+
+	defer testutils.Close(t, instance)
+
+	blockPort(t, contested)
+
+	err := instance.Restart(t.Context(), []server.Target{
+		{Address: addr(contested), Handler: okHandler()},
+	})
+
+	require.Error(t, err, "restart must report that the new target could not be bound")
+	require.NotErrorIs(t, err, server.ErrRollbackFailed, "the previous listeners should have been restored")
+
+	assert.Eventually(t, func() bool { return !testutils.IsPortFree(original) }, 2*time.Second, 10*time.Millisecond,
+		"the previous generation must still be serving after a failed restart")
+
+	response, getErr := http.Get("http://" + addr(original)) //nolint:noctx // liveness probe
+	require.NoError(t, getErr)
+	require.NoError(t, response.Body.Close())
+	assert.Equal(t, http.StatusOK, response.StatusCode)
 }

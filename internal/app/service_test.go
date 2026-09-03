@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -306,4 +307,54 @@ func TestInFlightIsOrderedAndDrains(t *testing.T) {
 
 	require.Eventually(t, func() bool { return len(service.InFlight()) == 2 },
 		time.Second, 5*time.Millisecond, "a completed request must leave the in-flight set")
+}
+
+// T4: the generation model is only worth having if releasing a generation
+// actually releases it. This exercises the whole service lifecycle rather than
+// the runtime alone, so it also covers the config watcher, the request pump
+// and the listener goroutines.
+func TestRepeatedServiceCyclesDoNotLeakGoroutines(t *testing.T) {
+	const cycles = 12
+
+	settle := func() {
+		for range 3 {
+			runtime.GC()
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+
+	cycle := func(t *testing.T) {
+		t.Helper()
+
+		port := testutils.GetFreePort(t)
+		cfg := configFor(port)
+
+		container := di.NewContainer()
+		service := app.New(container, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+
+		require.NoError(t, service.Start(t.Context()))
+
+		service.Reload()
+
+		require.NoError(t, service.Shutdown(t.Context()))
+		service.Wait()
+		require.NoError(t, service.Close())
+		require.NoError(t, container.Close())
+	}
+
+	// One warm-up cycle first: the first run allocates pools and lazily built
+	// singletons that legitimately persist.
+	cycle(t)
+	settle()
+
+	baseline := runtime.NumGoroutine()
+
+	for range cycles {
+		cycle(t)
+	}
+
+	settle()
+
+	assert.LessOrEqual(t, runtime.NumGoroutine(), baseline+cycles/2,
+		"a full start/reload/shutdown cycle must not leak goroutines")
 }
