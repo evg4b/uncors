@@ -3,7 +3,6 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -53,9 +52,8 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 func cleanupTestApp(t *testing.T, app *UncorsApp) {
 	t.Helper()
 
-	app.cancel()
-	err := app.proxy.Close()
-	require.NoError(t, err)
+	require.NoError(t, app.service.Close())
+	require.NoError(t, app.service.Shutdown(t.Context()))
 
 	if app.historyWidget != nil && app.historyWidget.hist != nil {
 		err := app.historyWidget.hist.Close()
@@ -70,8 +68,8 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.tracker)
 	assert.NotNil(t, app.historyWidget.hist)
-	assert.NotNil(t, app.appContext)
-	assert.NotNil(t, app.appDone)
+	assert.NotNil(t, app.service)
+	assert.NotNil(t, app.done)
 	assert.True(t, app.historyWidget.autoScroll)
 	assert.Empty(t, app.trackerWidget.pending)
 	assert.GreaterOrEqual(t, app.memWidget.memMB, 0.0)
@@ -165,8 +163,9 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		msg := app.startServerCmd()()
 		assert.IsType(t, serverStartedMsg{}, msg)
 
-		cmd := app.handleServerStarted()
-		require.NotNil(t, cmd)
+		// Watching and the version check moved to the service, so the model has
+		// no follow-up command of its own.
+		assert.Nil(t, app.handleServerStarted())
 
 		msg = app.restartCmd()()
 		assert.Equal(t, restartMsg{}, msg)
@@ -184,7 +183,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 
 		assert.Equal(t, outputLineMsg("queued"), app.waitOutputCmd()())
 
-		app.cancel()
+		require.NoError(t, app.service.Close())
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
@@ -211,7 +210,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 			app.watchEventsCmd()(),
 		)
 
-		app.cancel()
+		require.NoError(t, app.service.Close())
 		assert.Nil(t, app.watchEventsCmd()())
 	})
 
@@ -293,9 +292,8 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		require.NotNil(t, cmd)
 		assert.Equal(t, tea.Quit(), cmd())
 
-		app.cancel()
-		err := app.proxy.Close()
-		require.NoError(t, err)
+		require.NoError(t, app.service.Close())
+		require.NoError(t, app.service.Shutdown(t.Context()))
 	})
 }
 
@@ -303,72 +301,13 @@ func TestServerStartedMsgUpdate(t *testing.T) {
 	app, _ := newTestApp(t)
 	defer cleanupTestApp(t, app)
 
-	model, cmd := app.Update(serverStartedMsg{})
+	model, _ := app.Update(serverStartedMsg{})
 
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
-}
 
-func TestHandleServerStartedWithConfigPath(t *testing.T) {
-	t.Run("creates watcher when config file exists", func(t *testing.T) {
-		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-		require.NoError(t, err)
-
-		err = tmpFile.Close()
-		require.NoError(t, err)
-
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		require.NotNil(t, app.watcher)
-
-		err = app.watcher.Close()
-		require.NoError(t, err)
-	})
-
-	t.Run("logs error when config file does not exist", func(t *testing.T) {
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		loader := func() (*config.UncorsConfig, error) { return cfg, nil }
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, loader)
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		assert.Nil(t, app.watcher)
-	})
+	// Watching the config file and checking for a new version belong to the
+	// service, so the model has nothing of its own left to do here.
+	assert.Nil(t, app.handleServerStarted())
 }
 
 func TestHandleRequestEventWithData(t *testing.T) {
@@ -390,91 +329,6 @@ func TestHandleRequestEventWithData(t *testing.T) {
 
 		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
 	})
-}
-
-func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-	called := make(chan struct{}, 1)
-
-	container := di.NewContainer()
-	defer testutils.Close(t, container)
-
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
-		select {
-		case called <- struct{}{}:
-		default:
-		}
-
-		return cfg, nil
-	})
-
-	defer func() {
-		// Cancel context first so any in-flight Restart fails fast.
-		// We deliberately skip app.proxy.Close() here: closeAll() writes
-		// app.closers concurrently with the Restart goroutine's read of
-		// app.closers, which would be a data race.
-		app.cancel()
-
-		if app.watcher != nil {
-			err := app.watcher.Close()
-			require.NoError(t, err)
-		}
-
-		if app.historyWidget != nil && app.historyWidget.hist != nil {
-			err := app.historyWidget.hist.Close()
-			require.NoError(t, err)
-		}
-	}()
-
-	cmd := app.handleServerStarted()
-
-	require.NotNil(t, cmd)
-	require.NotNil(t, app.watcher)
-
-	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
-
-	select {
-	case <-called:
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("onChange callback was not invoked within timeout")
-	}
-}
-
-func TestHandleShutdownWithWatcher(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	ctx := t.Context()
-
-	watcher := config.NewWatcher(tmpFile.Name())
-	err = watcher.Watch(ctx, func() {})
-	require.NoError(t, err)
-
-	app, _ := newTestApp(t)
-	app.watcher = watcher
-
-	cmd := app.handleShutdown()
-	require.NotNil(t, cmd)
-	assert.Equal(t, tea.Quit(), cmd())
-
-	app.cancel()
-	err = app.proxy.Close()
-	require.NoError(t, err)
-
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
-	}
 }
 
 // A config that fails to parse or validate must leave the running generation
@@ -500,7 +354,7 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 
 	defer cleanupTestApp(t, app)
 
-	require.NoError(t, app.proxy.Start(app.appContext(), cfg))
+	require.NoError(t, app.service.Start(app.service.Context()))
 
 	require.NotPanics(t, func() {
 		msg := app.restartCmd()()

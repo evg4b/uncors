@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
@@ -19,7 +20,6 @@ import (
 const (
 	outputChannelSize = 1000
 	shutdownTimeout   = 15 * time.Second
-	versionCheckDelay = 50 * time.Millisecond
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
@@ -27,21 +27,15 @@ const (
 type UncorsApp struct {
 	keys keyMap
 
-	proxy     *di.Proxy
-	output    *tuiOutput
-	tracker   server.IRequestTracker
-	container *di.Container
+	// service owns the application runtime. The model only sends it commands
+	// and renders what comes back.
+	service *app.Service
 
-	outputCh   chan string
-	appContext func() context.Context
-	appDone    <-chan struct{}
-	cancel     context.CancelFunc
+	output  *tuiOutput
+	tracker server.IRequestTracker
 
-	cfg        *config.UncorsConfig
-	loadConfig func() (*config.UncorsConfig, error)
-	configPath string
-
-	watcher *config.Watcher
+	outputCh chan string
+	done     <-chan struct{}
 
 	termHeight int
 	termWidth  int
@@ -63,42 +57,36 @@ type appUpdateMsg interface {
 	update(app *UncorsApp) tea.Cmd
 }
 
-// NewUncorsApp creates the interactive TUI model. configPath is the active
-// config file path (empty string if no config file is used); when non-empty
-// the app watches it for changes and auto-restarts the proxy on every save.
+// NewUncorsApp creates the interactive TUI model over the application service.
+// configPath is the active config file path (empty when no config file is in
+// use); the service watches it and reloads on every save.
 func NewUncorsApp(
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
-	loadConfig func() (*config.UncorsConfig, error),
+	loadConfig app.Loader,
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
 
-	appCtx, cancel := context.WithCancel(context.Background())
-
+	// The sink has to be installed before anything resolves CliOutput, because
+	// the container caches it on first use.
 	container.Override(di.WithCliOutput(func() contracts.Output {
 		return output
 	}))
 
-	keys := newKeyMap()
+	service := app.New(container, cfg, configPath, loadConfig)
 
-	historyWidget := NewHistoryWidget(keys)
+	keys := newKeyMap()
 
 	return &UncorsApp{
 		keys:          keys,
-		proxy:         container.Proxy(),
+		service:       service,
 		output:        output,
 		tracker:       container.RequestTracker(),
-		container:     container,
 		outputCh:      outputCh,
-		appContext:    func() context.Context { return appCtx },
-		appDone:       appCtx.Done(),
-		cancel:        cancel,
-		cfg:           cfg,
-		loadConfig:    loadConfig,
-		configPath:    configPath,
-		historyWidget: historyWidget,
+		done:          service.Context().Done(),
+		historyWidget: NewHistoryWidget(keys),
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
 		memWidget:     NewMemoryWidget(),
@@ -266,35 +254,12 @@ func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
 	return app.handleShutdown()
 }
 
+// handleServerStarted runs once the listeners are bound. Config watching and
+// the version check belong to the service, which started them itself.
 func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	if m.configPath != "" {
-		watcher := config.NewWatcher(m.configPath)
+	log.Println("Server started")
 
-		err := watcher.Watch(m.appContext(), func() {
-			defer helpers.PanicInterceptor(func(value any) {
-				m.output.Errorf("Config reloading error: %v", value)
-			})
-
-			newCfg, loadErr := m.loadConfig()
-			if loadErr != nil {
-				m.output.Errorf("Failed to reload config: %v", loadErr)
-
-				return
-			}
-
-			err := m.proxy.Restart(m.appContext(), newCfg)
-			if err != nil {
-				m.output.Errorf("Failed to restart server: %v", err)
-			}
-		})
-		if err != nil {
-			m.output.Errorf("Failed to watch config file: %v", err)
-		} else {
-			m.watcher = watcher
-		}
-	}
-
-	return m.versionCheckCmd()
+	return nil
 }
 
 func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
@@ -325,10 +290,6 @@ func (m *UncorsApp) handleRestart() {
 func (m *UncorsApp) handleShutdown() tea.Cmd {
 	log.Println("Handling shutdown")
 
-	if m.watcher != nil {
-		_ = m.watcher.Close()
-	}
-
 	_ = m.historyWidget.Close()
 
 	return tea.Quit
@@ -336,7 +297,7 @@ func (m *UncorsApp) handleShutdown() tea.Cmd {
 
 func (m *UncorsApp) startServerCmd() tea.Cmd {
 	return func() tea.Msg {
-		err := m.proxy.Start(m.appContext(), m.cfg)
+		err := m.service.Start(m.service.Context())
 		if err != nil {
 			return serverErrMsg{err: err}
 		}
@@ -354,7 +315,7 @@ func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 			}
 
 			return outputLineMsg(line)
-		case <-m.appDone:
+		case <-m.done:
 			return nil
 		}
 	}
@@ -369,7 +330,7 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 			}
 
 			return requestEventMsg(event)
-		case <-m.appDone:
+		case <-m.done:
 			return nil
 		}
 	}
@@ -377,12 +338,11 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 
 func (m *UncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
-		m.cancel()
-
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
-		_ = m.proxy.Shutdown(ctx)
+		_ = m.service.Shutdown(ctx)
+		_ = m.service.Close()
 
 		return shutdownMsg{}
 	}
@@ -394,29 +354,8 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
-		newCfg, loadErr := m.loadConfig()
-		if loadErr != nil {
-			m.output.Errorf("Failed to reload config: %v", loadErr)
-
-			return restartMsg{}
-		}
-
-		err := m.proxy.Restart(m.appContext(), newCfg)
-		if err != nil {
-			m.output.Errorf("Failed to restart: %v", err)
-		}
+		m.service.Reload()
 
 		return restartMsg{}
-	}
-}
-
-func (m *UncorsApp) versionCheckCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(versionCheckDelay)
-
-		m.container.VersionChecker(m.cfg.Proxy).
-			CheckNewVersion(m.appContext())
-
-		return nil
 	}
 }
