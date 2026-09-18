@@ -36,18 +36,6 @@ func okHandler() contracts.Handler {
 	})
 }
 
-// blockPort holds port for the duration of the test so the server cannot bind it.
-func blockPort(t *testing.T, port int) {
-	t.Helper()
-
-	listenConfig := &net.ListenConfig{}
-
-	listener, err := listenConfig.Listen(t.Context(), "tcp4", addr(port))
-	require.NoError(t, err)
-
-	t.Cleanup(func() { _ = listener.Close() })
-}
-
 func TestServer(t *testing.T) {
 	const porstCount = 5
 
@@ -396,7 +384,7 @@ func TestServerRestartRollsBackWhenTheNewPortIsTaken(t *testing.T) {
 
 	defer testutils.Close(t, instance)
 
-	blockPort(t, contested)
+	testutils.OccupyPort(t, contested)
 
 	err := instance.Restart(t.Context(), []server.Target{
 		{Address: addr(contested), Handler: okHandler()},

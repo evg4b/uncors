@@ -2,7 +2,6 @@ package uncorsapp
 
 import (
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/testing/testutils"
@@ -91,18 +90,6 @@ func TestHistory_AppendLine(t *testing.T) {
 		require.Len(t, lines, 1)
 		assert.Equal(t, styled, lines[0])
 	})
-
-	t.Run("caps a large number of lines at the scrollback limit", func(t *testing.T) {
-		history := newHistory()
-
-		defer testutils.Close(t, history)
-
-		for i := range historyMaxLines * 2 {
-			history.AppendLine(strings.Repeat("a", i%100))
-		}
-
-		assert.Equal(t, historyMaxLines, history.LineCount())
-	})
 }
 
 func TestHistory_LineCount(t *testing.T) {
@@ -158,8 +145,12 @@ func TestHistory_Lines(t *testing.T) {
 	})
 }
 
+// A proxy logs a line per request, so an unbounded scrollback grows for as long
+// as the process lives.
 func TestHistoryIsBounded(t *testing.T) {
 	hist := newHistory()
+
+	defer testutils.Close(t, hist)
 
 	for i := range historyMaxLines + 500 {
 		hist.AppendLine(strconv.Itoa(i))
@@ -174,6 +165,8 @@ func TestHistoryIsBounded(t *testing.T) {
 
 func TestHistoryBoundsMultiLineAppends(t *testing.T) {
 	hist := newHistory()
+
+	defer testutils.Close(t, hist)
 
 	for range historyMaxLines {
 		hist.AppendLine("a\nb\nc")

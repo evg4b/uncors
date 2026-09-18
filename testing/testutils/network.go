@@ -44,6 +44,19 @@ func IsPortFree(port int) bool {
 	return true
 }
 
+// OccupyPort binds port for the rest of the test, so whatever is under test
+// cannot bind it and has to report the failure.
+func OccupyPort(t *testing.T, port int) {
+	t.Helper()
+
+	listenConfig := &net.ListenConfig{}
+
+	listener, err := listenConfig.Listen(t.Context(), "tcp4", hosts.Loopback.Port(port).String())
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = listener.Close() })
+}
+
 func JoinPath(base string, elem ...string) string {
 	joined, err := urlt.JoinPath(base, elem...)
 	if err != nil {

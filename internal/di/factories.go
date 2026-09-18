@@ -9,16 +9,8 @@ func (c *Container) newHostCertManager() *server.HostCertManager {
 	return server.NewHostCertManager(c.fs)
 }
 
-func (c *Container) Server() *server.Server {
-	return c.server.GetOrBuild()
-}
-
 func (c *Container) newCliOutput() contracts.Output {
 	return &noopOutput{}
-}
-
-func (c *Container) Proxy() *Proxy {
-	return c.proxy.GetOrBuild()
 }
 
 func (c *Container) newServer() *server.Server {

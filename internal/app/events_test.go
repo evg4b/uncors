@@ -44,7 +44,7 @@ func TestServiceEmitsLifecycle(t *testing.T) {
 		port := testutils.GetFreePort(t)
 		cfg := configFor(port)
 
-		service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+		service := newService(t, cfg, "", staticLoader(cfg))
 
 		require.NoError(t, service.Start(t.Context()))
 
@@ -60,10 +60,10 @@ func TestServiceEmitsLifecycle(t *testing.T) {
 	t.Run("a failed start reports the error", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		occupy(t, port)
+		testutils.OccupyPort(t, port)
 
 		cfg := configFor(port)
-		service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+		service := newService(t, cfg, "", staticLoader(cfg))
 
 		require.Error(t, service.Start(t.Context()))
 		assert.Equal(t, app.StateStartFailed, service.Status().State)
@@ -92,7 +92,7 @@ func TestStatusSurvivesAnUndrainedStream(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	cfg := configFor(port)
 
-	service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+	service := newService(t, cfg, "", staticLoader(cfg))
 
 	require.NoError(t, service.Start(t.Context()))
 
@@ -109,7 +109,7 @@ func TestEmittingNeverBlocks(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	cfg := configFor(port)
 
-	service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+	service := newService(t, cfg, "", staticLoader(cfg))
 
 	require.NoError(t, service.Start(t.Context()))
 
@@ -139,7 +139,7 @@ func TestClosedServiceStopsDelivery(t *testing.T) {
 	cfg := configFor(testutils.GetFreePort(t))
 
 	container := di.NewContainer()
-	service := app.New(container, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+	service := app.New(container, cfg, "", staticLoader(cfg))
 
 	require.NoError(t, service.Close())
 

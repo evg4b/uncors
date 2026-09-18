@@ -20,7 +20,6 @@ import (
 
 const (
 	outputChannelSize = 1000
-	shutdownTimeout   = 15 * time.Second
 	memTickInterval   = 2 * time.Second
 	bytesPerMegabyte  = 1024 * 1024
 )
@@ -41,6 +40,10 @@ type UncorsApp struct {
 	termHeight int
 	termWidth  int
 
+	// historyHeight is the height last applied to the scrollback, so the
+	// viewport is only resized when the footer actually changed size.
+	historyHeight int
+
 	historyWidget *HistoryWidget
 	trackerWidget *TrackerWidget
 	helpWidget    *HelpWidget
@@ -59,18 +62,13 @@ type service interface {
 	Events() <-chan app.Event
 }
 
-type serviceEventMsg struct{ event app.Event }
-
 type (
+	serviceEventMsg  struct{ event app.Event }
 	serverStartedMsg struct{}
 	serverErrMsg     struct{ err error }
 	shutdownMsg      struct{}
 	restartMsg       struct{}
 )
-
-type appUpdateMsg interface {
-	update(app *UncorsApp) tea.Cmd
-}
 
 // NewUncorsApp creates the interactive TUI model over the application service.
 // configPath is the active config file path (empty when no config file is in
@@ -125,31 +123,42 @@ func (m *UncorsApp) Init() tea.Cmd {
 func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
+	// A service event is rendered here and then re-dispatched as the message the
+	// widgets speak, so a reload triggered by a config file save reaches them
+	// exactly as the restart key does.
+	if event, ok := msg.(serviceEventMsg); ok {
+		m.renderer.Render(event.event)
+
+		cmds = append(cmds, m.waitServiceEventCmd())
+
+		if translated := widgetMessage(event.event); translated != nil {
+			msg = translated
+		}
+	}
+
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
 		log.Printf("Window resized to %dx%d", typedMsg.Width, typedMsg.Height)
-		m.termHeight = typedMsg.Height
 		m.termWidth = typedMsg.Width
-		m.updateHistoryHeight()
-
-	case restartMsg:
-		log.Println("Restart message received")
-		m.handleRestart()
+		m.termHeight = typedMsg.Height
 
 	case outputLineMsg:
 		cmds = append(cmds, m.waitOutputCmd())
 
-	case serviceEventMsg:
-		m.renderer.Render(typedMsg.event)
+	case serverStartedMsg:
+		// Watching the config file and checking for a new release belong to the
+		// service, which started both as soon as the listeners were bound.
+		log.Println("Server started")
 
-		cmds = append(cmds, m.waitServiceEventCmd())
+	case serverErrMsg:
+		cmds = append(cmds, m.handleServerError(typedMsg))
 
-		// Widgets react to the service's own account of what happened, so a
-		// reload triggered by a file save reaches them exactly as the restart
-		// key does.
-		if translated := widgetMessage(typedMsg.event); translated != nil {
-			msg = translated
-		}
+	case shutdownMsg:
+		log.Println("Handling shutdown")
+
+		_ = m.historyWidget.Close()
+
+		return m, tea.Quit
 
 	case tea.KeyPressMsg:
 		log.Printf("Key pressed: %s", typedMsg.String())
@@ -159,33 +168,11 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if appMsg, ok := msg.(appUpdateMsg); ok {
-		cmds = append(cmds, appMsg.update(m))
-	}
+	cmds = append(cmds, m.updateWidgets(msg)...)
 
-	// Update widgets
-	hw, hwCmd := m.historyWidget.Update(msg)
-	m.historyWidget = hw
-
-	cmds = append(cmds, hwCmd)
-
-	tw, twCmd := m.trackerWidget.Update(msg)
-	m.trackerWidget = tw
-
-	cmds = append(cmds, twCmd)
-
-	hpw, hpwCmd := m.helpWidget.Update(msg)
-	m.helpWidget = hpw
-
-	cmds = append(cmds, hpwCmd)
-
-	mw, mwCmd := m.memWidget.Update(msg)
-	m.memWidget = mw
-
-	cmds = append(cmds, mwCmd)
-
-	// Re-calculate history height if tracker or help dimensions changed
-	m.updateLayout(msg)
+	// Sized after the widgets have moved, so the scrollback is measured against
+	// the footer as it is now rather than as it was.
+	m.updateHistoryHeight()
 
 	return m, tea.Batch(cmds...)
 }
@@ -221,12 +208,25 @@ func (m *UncorsApp) View() tea.View {
 	return v
 }
 
-func (m *UncorsApp) updateLayout(msg tea.Msg) {
-	if _, isRequest := msg.(requestEventMsg); isRequest {
-		m.updateHistoryHeight()
-	} else if _, isKey := msg.(tea.KeyPressMsg); isKey {
-		m.updateHistoryHeight()
-	}
+// updateWidgets forwards msg to every widget and collects the work they ask for.
+func (m *UncorsApp) updateWidgets(msg tea.Msg) []tea.Cmd {
+	var cmd tea.Cmd
+
+	cmds := make([]tea.Cmd, 0, 4) //nolint:mnd // one per widget below
+
+	m.historyWidget, cmd = m.historyWidget.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.trackerWidget, cmd = m.trackerWidget.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.helpWidget, cmd = m.helpWidget.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.memWidget, cmd = m.memWidget.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return cmds
 }
 
 func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
@@ -241,17 +241,21 @@ func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 	return nil
 }
 
+// updateHistoryHeight gives the scrollback whatever the footer leaves it.
+// Nothing is sized before the first WindowSizeMsg, because the terminal height
+// is not known until then.
 func (m *UncorsApp) updateHistoryHeight() {
-	footerHeight := m.footerHeight()
-	viewportHeight := max(m.termHeight-footerHeight, 1)
+	if m.termHeight == 0 {
+		return
+	}
 
-	log.Printf(
-		"Updating layout: termHeight=%d, footerHeight=%d => viewportHeight=%d",
-		m.termHeight,
-		footerHeight,
-		viewportHeight,
-	)
-	m.historyWidget.SetHeight(viewportHeight)
+	height := max(m.termHeight-m.footerHeight(), 1)
+	if height == m.historyHeight {
+		return
+	}
+
+	m.historyHeight = height
+	m.historyWidget.SetHeight(height)
 }
 
 func (m *UncorsApp) footerHeight() int {
@@ -262,26 +266,6 @@ func (m *UncorsApp) footerHeight() int {
 	}
 
 	return footerHeight
-}
-
-func (msg serverStartedMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleServerStarted()
-}
-
-func (msg serverErrMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleServerError(msg)
-}
-
-func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleShutdown()
-}
-
-// handleServerStarted runs once the listeners are bound. Config watching and
-// the version check belong to the service, which started them itself.
-func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	log.Println("Server started")
-
-	return nil
 }
 
 func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
@@ -306,19 +290,6 @@ func widgetMessage(event app.Event) tea.Msg {
 	}
 
 	return nil
-}
-
-func (m *UncorsApp) handleRestart() {
-	log.Println("Handling restart")
-	m.updateHistoryHeight()
-}
-
-func (m *UncorsApp) handleShutdown() tea.Cmd {
-	log.Println("Handling shutdown")
-
-	_ = m.historyWidget.Close()
-
-	return tea.Quit
 }
 
 func (m *UncorsApp) startServerCmd() tea.Cmd {
@@ -366,10 +337,9 @@ func (m *UncorsApp) waitServiceEventCmd() tea.Cmd {
 
 func (m *UncorsApp) shutdownCmd() tea.Cmd {
 	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-
-		_ = m.service.Shutdown(ctx)
+		// Deliberately not the service context: Shutdown cancels it, and the
+		// shutdown has to outlive that. The grace period is the server's.
+		_ = m.service.Shutdown(context.Background())
 		_ = m.service.Close()
 
 		return shutdownMsg{}

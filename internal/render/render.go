@@ -7,6 +7,7 @@ package render
 
 import (
 	"github.com/evg4b/uncors/internal/app"
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/tui"
 )
@@ -48,18 +49,13 @@ func (r *Renderer) request(event app.RequestEvent) {
 		return
 	}
 
-	output := r.output
-	if event.Event.Prefix != "" {
-		output = output.NewPrefixOutput(event.Event.Prefix)
-	}
-
-	output.Request(event.Event.Data)
+	r.withPrefix(event.Event.Prefix).Request(event.Event.Data)
 }
 
 func (r *Renderer) lifecycle(event app.LifecycleEvent) {
 	switch event.State {
 	case app.StateStarting:
-		r.banner(event)
+		r.banner(event.Mappings)
 	case app.StateStarted:
 	case app.StateStartFailed:
 		r.output.Errorf("Failed to start server: %v", event.Err)
@@ -80,20 +76,28 @@ func (r *Renderer) lifecycle(event app.LifecycleEvent) {
 
 // banner is the startup splash: the logo, the development-only disclaimer and
 // the mappings the server came up with.
-func (r *Renderer) banner(event app.LifecycleEvent) {
+func (r *Renderer) banner(mappings config.Mappings) {
 	tui.PrintLogo(r.output, r.version)
 	r.output.Print("")
 	r.output.WarnBox(tui.DisclaimerMessage)
 	r.output.Print("")
-	r.output.InfoBox(event.Mappings.String())
+	r.output.InfoBox(mappings.String())
 	r.output.Print("")
 }
 
-func (r *Renderer) log(event app.LogEvent) {
-	output := r.output
-	if event.Prefix != "" {
-		output = output.NewPrefixOutput(event.Prefix)
+// withPrefix returns the output a message carrying prefix is written through.
+// An empty prefix renders nothing, so the common case reuses the output rather
+// than building one per line.
+func (r *Renderer) withPrefix(prefix string) contracts.Output {
+	if prefix == "" {
+		return r.output
 	}
+
+	return r.output.NewPrefixOutput(prefix)
+}
+
+func (r *Renderer) log(event app.LogEvent) {
+	output := r.withPrefix(event.Prefix)
 
 	switch event.Level {
 	case app.LevelInfo:

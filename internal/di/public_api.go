@@ -43,6 +43,14 @@ func (c *Container) RequestTracker() *server.RequestTracker {
 	return c.requestTracker.GetOrBuild()
 }
 
+func (c *Container) Server() *server.Server {
+	return c.server.GetOrBuild()
+}
+
+func (c *Container) Proxy() *Proxy {
+	return c.proxy.GetOrBuild()
+}
+
 func (c *Container) HostCertManager() *server.HostCertManager {
 	return c.hostCertManager.GetOrBuild()
 }

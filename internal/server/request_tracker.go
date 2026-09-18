@@ -29,17 +29,10 @@ type RequestSink interface {
 	Emit(event RequestEvent)
 }
 
-type IRequestTracker interface {
-	RequestSink
-
-	Events() <-chan RequestEvent
-	Close()
-}
-
 // RequestTracker is a channel backed RequestSink. Events are delivered to a
-// single consumer (the TUI or RequestPrinter); when the consumer cannot keep up
-// events are dropped and counted rather than delaying the request that produced
-// them.
+// single consumer - the application service, which republishes them to whoever
+// is presenting; when the consumer cannot keep up events are dropped and
+// counted rather than delaying the request that produced them.
 type RequestTracker struct {
 	mu      sync.RWMutex
 	closed  bool

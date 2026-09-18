@@ -2,9 +2,7 @@ package app_test
 
 import (
 	"errors"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -25,24 +22,18 @@ import (
 
 var errLoadFailed = errors.New("config is not valid")
 
-// occupy binds port for the duration of the test so the service cannot.
-func occupy(t *testing.T, port int) {
-	t.Helper()
-
-	listenConfig := &net.ListenConfig{}
-
-	listener, err := listenConfig.Listen(t.Context(), "tcp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
-	require.NoError(t, err)
-
-	t.Cleanup(func() { _ = listener.Close() })
-}
-
 func configFor(port int) *config.UncorsConfig {
 	return &config.UncorsConfig{
 		Mappings: config.Mappings{
 			{From: hosts.Localhost.HTTPPort(port), To: hosts.Localhost.HTTP()},
 		},
 	}
+}
+
+// staticLoader is the loader for a test that reloads the configuration it
+// already has, which is most of them.
+func staticLoader(cfg *config.UncorsConfig) app.Loader {
+	return func() (*config.UncorsConfig, error) { return cfg, nil }
 }
 
 func newService(t *testing.T, cfg *config.UncorsConfig, path string, load app.Loader) *app.Service {
@@ -71,9 +62,7 @@ func TestServiceRunsWithoutAClient(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	cfg := configFor(port)
 
-	service := newService(t, cfg, "", func() (*config.UncorsConfig, error) {
-		return cfg, nil
-	})
+	service := newService(t, cfg, "", staticLoader(cfg))
 
 	require.NoError(t, service.Start(t.Context()))
 	requirePortServing(t, port)
@@ -92,10 +81,10 @@ func TestServiceRunsWithoutAClient(t *testing.T) {
 func TestServiceStartFailsWhenPortIsTaken(t *testing.T) {
 	port := testutils.GetFreePort(t)
 
-	occupy(t, port)
+	testutils.OccupyPort(t, port)
 
 	cfg := configFor(port)
-	service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+	service := newService(t, cfg, "", staticLoader(cfg))
 
 	require.Error(t, service.Start(t.Context()))
 }
@@ -127,9 +116,7 @@ func TestReloadMovesToThePortOfTheNewConfig(t *testing.T) {
 	second := testutils.GetFreePort(t)
 
 	next := configFor(second)
-	service := newService(t, configFor(first), "", func() (*config.UncorsConfig, error) {
-		return next, nil
-	})
+	service := newService(t, configFor(first), "", staticLoader(next))
 
 	require.NoError(t, service.Start(t.Context()))
 	requirePortServing(t, first)
@@ -231,7 +218,7 @@ func TestServiceShutdownIsIdempotent(t *testing.T) {
 	port := testutils.GetFreePort(t)
 	cfg := configFor(port)
 
-	service := newService(t, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+	service := newService(t, cfg, "", staticLoader(cfg))
 
 	require.NoError(t, service.Start(t.Context()))
 
@@ -239,74 +226,6 @@ func TestServiceShutdownIsIdempotent(t *testing.T) {
 	require.NoError(t, service.Shutdown(t.Context()))
 
 	assert.Error(t, service.Context().Err(), "shutdown must cancel the service context")
-}
-
-// T6 / P3: the in-flight set is application state, so a reload clears it no
-// matter what triggered the reload. Previously the TUI cleared its own copy
-// only on the restart key, and a config file save left stale rows on screen.
-func TestReloadClearsInFlightRequests(t *testing.T) {
-	port := testutils.GetFreePort(t)
-	cfg := configFor(port)
-
-	container := di.NewContainer()
-	service := app.New(container, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
-
-	t.Cleanup(func() {
-		require.NoError(t, service.Shutdown(t.Context()))
-		require.NoError(t, service.Close())
-		require.NoError(t, container.Close())
-	})
-
-	require.NoError(t, service.Start(t.Context()))
-
-	requestURL, err := url.Parse("http://localhost/slow")
-	require.NoError(t, err)
-
-	// A request that started but never finished, exactly what a reload strands.
-	container.RequestTracker().Emit(server.RequestEvent{ID: 1, Method: "GET", URL: requestURL})
-
-	require.Eventually(t, func() bool { return len(service.InFlight()) == 1 },
-		time.Second, 5*time.Millisecond, "the service must track the started request")
-
-	service.Reload()
-
-	assert.Empty(t, service.InFlight(), "a reload must not leave requests from the old generation in flight")
-}
-
-func TestInFlightIsOrderedAndDrains(t *testing.T) {
-	port := testutils.GetFreePort(t)
-	cfg := configFor(port)
-
-	container := di.NewContainer()
-	service := app.New(container, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
-
-	t.Cleanup(func() {
-		require.NoError(t, service.Close())
-		require.NoError(t, container.Close())
-	})
-
-	requestURL, err := url.Parse("http://localhost/x")
-	require.NoError(t, err)
-
-	tracker := container.RequestTracker()
-	for id := uint64(3); id >= 1; id-- {
-		tracker.Emit(server.RequestEvent{ID: id, Method: "GET", URL: requestURL})
-	}
-
-	require.Eventually(t, func() bool { return len(service.InFlight()) == 3 },
-		time.Second, 5*time.Millisecond)
-
-	ids := make([]uint64, 0, 3)
-	for _, request := range service.InFlight() {
-		ids = append(ids, request.ID)
-	}
-
-	assert.Equal(t, []uint64{1, 2, 3}, ids, "in-flight requests must be ordered oldest first")
-
-	tracker.Emit(server.RequestEvent{ID: 2, Done: true})
-
-	require.Eventually(t, func() bool { return len(service.InFlight()) == 2 },
-		time.Second, 5*time.Millisecond, "a completed request must leave the in-flight set")
 }
 
 // T4: the generation model is only worth having if releasing a generation
@@ -330,7 +249,7 @@ func TestRepeatedServiceCyclesDoNotLeakGoroutines(t *testing.T) {
 		cfg := configFor(port)
 
 		container := di.NewContainer()
-		service := app.New(container, cfg, "", func() (*config.UncorsConfig, error) { return cfg, nil })
+		service := app.New(container, cfg, "", staticLoader(cfg))
 
 		require.NoError(t, service.Start(t.Context()))
 

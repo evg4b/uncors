@@ -31,57 +31,34 @@ func stripANSI(value string) string {
 	return ansiPattern.ReplaceAllString(value, "")
 }
 
-func newTestApp(t *testing.T) (*UncorsApp, *int) {
+// newTestApp builds the model over a real service and an in-memory container,
+// and reports how many times the configuration was reloaded.
+func newTestApp(t *testing.T) (*UncorsApp, *di.Container, *int) {
 	t.Helper()
 
-	model, loadCalls, _ := newTestAppWithContainer(t)
-
-	return model, loadCalls
-}
-
-func newTestAppWithContainer(t *testing.T) (*UncorsApp, *int, *di.Container) {
-	t.Helper()
-
-	uncorsConfig := &config.UncorsConfig{
-		Mappings: config.Mappings{},
-	}
-
+	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
 	container := di.NewContainer()
 
-	t.Cleanup(func() {
-		container.Close()
+	loadCalls := 0
+	// No config file path, so the service creates no watcher.
+	model := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
+		loadCalls++
+
+		return cfg, nil
 	})
 
-	loadCalls := 0
-	app := NewUncorsApp(
-		container,
-		"", // no config file — watcher is not created
-		uncorsConfig,
-		func() (*config.UncorsConfig, error) {
-			loadCalls++
+	t.Cleanup(func() {
+		require.NoError(t, model.service.Close())
+		require.NoError(t, model.service.Shutdown(t.Context()))
+		require.NoError(t, model.historyWidget.Close())
+		require.NoError(t, container.Close())
+	})
 
-			return uncorsConfig, nil
-		},
-	)
-
-	return app, &loadCalls, container
-}
-
-func cleanupTestApp(t *testing.T, app *UncorsApp) {
-	t.Helper()
-
-	require.NoError(t, app.service.Close())
-	require.NoError(t, app.service.Shutdown(t.Context()))
-
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
-	}
+	return model, container, &loadCalls
 }
 
 func TestNewUncorsAppAndKeyMap(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.renderer)
@@ -103,8 +80,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 }
 
 func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	model, cmd := app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 	require.Same(t, app, model)
@@ -153,36 +129,34 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	require.NotNil(t, cmd)
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
+	// The footer grows with the help pane and the in-flight list, and the
+	// scrollback is sized from whatever it leaves.
 	app.helpWidget.help.ShowAll = true
 	app.trackerWidget.pending[1] = server.RequestEvent{Method: "POST", URL: requestURL, StartedAt: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
-	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
-	// Since we mock manual property setting here, let's call updateHistoryHeight
-	app.updateHistoryHeight()
 
+	app.updateHistoryHeight()
+	assert.Equal(t, max(app.termHeight-app.footerHeight(), 1), app.historyHeight)
+
+	// Nothing is sized before the terminal size is known.
 	app.termHeight = 0
+	app.historyHeight = 0
 	app.updateHistoryHeight()
+	assert.Zero(t, app.historyHeight)
 
-	app.termWidth = 120
-	// renderHelpBar is gone, HelpWidget and MemWidget composite in View()
-	// Let's assert MemWidget produces MB string
 	assert.Contains(t, app.memWidget.View().Content, "MB")
 
+	// Too narrow for the memory readout, so only the help bar is drawn.
 	app.termWidth = 1
 	assert.Equal(t, app.helpWidget.help.View(app.keys), app.helpWidget.View().Content)
 }
 
 func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	t.Run("start and lifecycle commands return expected messages", func(t *testing.T) {
-		app, loadCalls := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, loadCalls := newTestApp(t)
 
 		msg := app.startServerCmd()()
 		assert.IsType(t, serverStartedMsg{}, msg)
-
-		// Watching and the version check moved to the service, so the model has
-		// no follow-up command of its own.
-		assert.Nil(t, app.handleServerStarted())
 
 		assert.Nil(t, app.restartCmd()())
 		assert.Equal(t, 1, *loadCalls)
@@ -192,8 +166,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	})
 
 	t.Run("waitOutputCmd reads from output channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		app.outputCh <- "queued"
 
@@ -204,16 +177,14 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	})
 
 	t.Run("waitOutputCmd returns nil when channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		close(app.outputCh)
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
 	t.Run("request activity arrives through the service stream", func(t *testing.T) {
-		model, _, container := newTestAppWithContainer(t)
-		defer cleanupTestApp(t, model)
+		model, container, _ := newTestApp(t)
 
 		requestURL, err := url.Parse("https://example.com/watch")
 		require.NoError(t, err)
@@ -236,8 +207,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	})
 
 	t.Run("waitServiceEventCmd returns nil once the service is closed", func(t *testing.T) {
-		model, _ := newTestApp(t)
-		defer cleanupTestApp(t, model)
+		model, _, _ := newTestApp(t)
 
 		require.NoError(t, model.service.Close())
 		assert.Nil(t, model.waitServiceEventCmd()())
@@ -245,8 +215,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 }
 
 func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	_, _ = app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 	_, _ = app.Update(outputLineMsg("one\ntwo\nthree\nfour\nfive"))
@@ -289,8 +258,7 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 	t.Run("server error and restart messages update state", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		app.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
 		app.trackerWidget.ticking = true
@@ -307,31 +275,33 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		assert.False(t, app.trackerWidget.ticking)
 	})
 
+	// P3: a reload the user did not trigger has to reach the widgets too. The
+	// service reports it as a lifecycle event, which is translated here into the
+	// same message the restart key produces, so a config file save and the 'r'
+	// key clear the in-flight list identically.
+	t.Run("a reload reported by the service clears the in-flight list", func(t *testing.T) {
+		model, _, _ := newTestApp(t)
+
+		model.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
+		model.trackerWidget.ticking = true
+
+		_, _ = model.Update(serviceEventMsg{
+			event: app.LifecycleEvent{State: app.StateReloaded},
+		})
+
+		assert.Empty(t, model.trackerWidget.pending)
+		assert.False(t, model.trackerWidget.ticking)
+	})
+
 	t.Run("shutdown message quits app", func(t *testing.T) {
-		app, _ := newTestApp(t)
+		app, _, _ := newTestApp(t)
 		app.historyWidget.hist.AppendLine("hello")
 
 		model, cmd := app.Update(shutdownMsg{})
 		require.Same(t, app, model)
 		require.NotNil(t, cmd)
 		assert.Equal(t, tea.Quit(), cmd())
-
-		require.NoError(t, app.service.Close())
-		require.NoError(t, app.service.Shutdown(t.Context()))
 	})
-}
-
-func TestServerStartedMsgUpdate(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
-
-	model, _ := app.Update(serverStartedMsg{})
-
-	require.Same(t, app, model)
-
-	// Watching the config file and checking for a new version belong to the
-	// service, so the model has nothing of its own left to do here.
-	assert.Nil(t, app.handleServerStarted())
 }
 
 func TestRequestEventsAreRenderedIntoHistory(t *testing.T) {
@@ -350,8 +320,7 @@ func TestRequestEventsAreRenderedIntoHistory(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			model, _ := newTestApp(t)
-			defer cleanupTestApp(t, model)
+			model, _, _ := newTestApp(t)
 
 			// Rendering lives in internal/render now; the model just hands the
 			// event over and the line lands on the output channel.
@@ -377,7 +346,6 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 	}
 
 	container := di.NewContainer()
-	defer testutils.Close(t, container)
 
 	loadCalls := 0
 	model := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
@@ -386,7 +354,11 @@ func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
 		return nil, errBoom
 	})
 
-	defer cleanupTestApp(t, model)
+	t.Cleanup(func() {
+		require.NoError(t, model.service.Close())
+		require.NoError(t, model.service.Shutdown(t.Context()))
+		require.NoError(t, container.Close())
+	})
 
 	require.NoError(t, model.service.Start(model.service.Context()))
 

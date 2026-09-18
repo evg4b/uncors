@@ -8,13 +8,11 @@
 package app
 
 import (
-	"cmp"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"slices"
 	"sync"
 	"syscall"
 	"time"
@@ -24,10 +22,9 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 )
 
-const (
-	shutdownTimeout   = 15 * time.Second
-	versionCheckDelay = 50 * time.Millisecond
-)
+// versionCheckDelay keeps the release check off the critical path of a start,
+// so the first requests are served before anything talks to the network.
+const versionCheckDelay = 50 * time.Millisecond
 
 // Loader produces the configuration for a new generation. It reports failure
 // rather than returning a nil config, because a config that fails to parse or
@@ -57,13 +54,7 @@ type Service struct {
 	pending   bool
 
 	events  *emitter
-	tracker server.IRequestTracker
-
-	// inFlightMu guards the authoritative set of requests currently being
-	// served. It lives here rather than in a UI widget because it is a fact
-	// about the server, and because a reload has to be able to clear it.
-	inFlightMu sync.RWMutex
-	inFlight   map[uint64]server.RequestEvent
+	tracker *server.RequestTracker
 
 	watcher     *config.Watcher
 	shutdownOne sync.Once
@@ -85,7 +76,6 @@ func New(container *di.Container, cfg *config.UncorsConfig, configPath string, l
 		cfg:        cfg,
 		events:     newEmitter(),
 		tracker:    container.RequestTracker(),
-		inFlight:   map[uint64]server.RequestEvent{},
 	}
 
 	// Start pumping before anything can serve a request, so no activity is
@@ -93,25 +83,6 @@ func New(container *di.Container, cfg *config.UncorsConfig, configPath string, l
 	go service.pumpRequests()
 
 	return service
-}
-
-// InFlight returns the requests currently being served, oldest first. A client
-// that connects late, or one that lost track, can rebuild its view from this
-// rather than from the events it happened to witness.
-func (s *Service) InFlight() []server.RequestEvent {
-	s.inFlightMu.RLock()
-	defer s.inFlightMu.RUnlock()
-
-	requests := make([]server.RequestEvent, 0, len(s.inFlight))
-	for _, request := range s.inFlight {
-		requests = append(requests, request)
-	}
-
-	slices.SortFunc(requests, func(a, b server.RequestEvent) int {
-		return cmp.Compare(a.ID, b.ID)
-	})
-
-	return requests
 }
 
 // Events returns the service's event stream. It has a single consumer: the TUI
@@ -257,29 +228,13 @@ func (s *Service) Close() error {
 	return nil
 }
 
-// pumpRequests owns the request tracker. It maintains the in-flight set and
-// forwards every event to the presenter.
+// pumpRequests is the single consumer of the request tracker: activity reaches
+// a client only by being republished on the service's own stream, so both run
+// modes see the same events in the same order.
 func (s *Service) pumpRequests() {
 	for event := range s.tracker.Events() {
-		s.inFlightMu.Lock()
-
-		if event.Done {
-			delete(s.inFlight, event.ID)
-		} else if event.URL != nil {
-			s.inFlight[event.ID] = event
-		}
-
-		s.inFlightMu.Unlock()
-
 		s.events.send(RequestEvent{Event: event})
 	}
-}
-
-func (s *Service) clearInFlight() {
-	s.inFlightMu.Lock()
-	defer s.inFlightMu.Unlock()
-
-	clear(s.inFlight)
 }
 
 func (s *Service) reloadOnce() {
@@ -305,11 +260,10 @@ func (s *Service) reloadOnce() {
 	s.cfg = reloaded
 	s.mu.Unlock()
 
-	// The generation those requests belonged to is gone; anything still tracked
-	// against it would linger forever. This is why a reload triggered by a file
-	// save now clears the view the same way the restart key always did.
-	s.clearInFlight()
-
+	// StateReloaded is how a client learns the previous generation is gone, and
+	// therefore when to drop the requests it was still tracking against it. This
+	// is what makes a reload triggered by a file save behave exactly like the
+	// restart key.
 	s.events.EmitLifecycle(LifecycleEvent{State: StateReloaded, Mappings: reloaded.Mappings})
 }
 
@@ -369,8 +323,7 @@ func (s *Service) awaitSignal(ctx context.Context) {
 	// that needs moving past is its decision, not the service's.
 	s.events.EmitLifecycle(LifecycleEvent{State: StateStopping, Interrupted: interrupted})
 
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
-	defer cancel()
-
-	_ = s.Shutdown(shutdownCtx)
+	// ctx may be the very thing that triggered this, and the shutdown still has
+	// to run; server.Shutdown applies the grace period itself.
+	_ = s.Shutdown(context.WithoutCancel(ctx))
 }
