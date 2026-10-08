@@ -1,37 +1,6 @@
-Request rewriting allows you to transform request paths and hosts before they
-are forwarded to the upstream server. This is useful for:
-
- - Adapting client URLs to match server API structure
- - Routing requests to different backend services
- - Versioning API endpoints
- - Migrating between API versions
-
-**Configuration:**
-
-Add a `rewrites` section to your mapping configuration:
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    rewrites:
-      - from: /api
-        to: /api/v1
-        host: external-api.example.com
-```
-
-## Configuration Properties
-
-| Property | Type   | Required | Description                                   |
-| -------- | ------ | -------- | --------------------------------------------- |
-| `from`   | string | Yes      | Path pattern to match (supports wildcards)    |
-| `to`     | string | Yes      | Replacement path pattern (supports wildcards) |
-| `host`   | string | No       | Override upstream host for this rewrite rule  |
-
-## Wildcard Support
-
-Capture parts of the URL using `{variable}` syntax and reference them in the
-target path:
+Rewrites change the request path, and optionally the upstream host, before a
+request is proxied. Use them when the local URLs your client calls don't match
+the paths the server expects, or to send some paths to a different backend.
 
 ```yaml
 mappings:
@@ -39,49 +8,55 @@ mappings:
     to: https://api.example.com
     rewrites:
       - from: /api/{resource}
-        to: /api/v1/{resource}/list
+        to: /api/v1/{resource}
+        host: external-api.example.com
 ```
 
-The `{resource}` placeholder captures part of the incoming path and inserts it
-into the rewritten path:
+## Options
 
-| Incoming Request | Rewritten Request       |
+| Option | Type   | Required | Description                                                     |
+| ------ | ------ | -------- | --------------------------------------------------------------- |
+| `from` | string | Yes      | Path to match. Can contain `{name}` segments.                   |
+| `to`   | string | Yes      | New path. Can reuse the `{name}` values captured by `from`.     |
+| `host` | string | No       | Upstream host (and optional port) for requests matched by this rule. |
+
+## How matching works
+
+A rule matches requests whose path equals `from` or starts with `from`
+followed by `/`. The whole request path is then replaced with `to`, after
+substituting placeholders. Anything after the matched part is dropped, and so
+is the query string.
+
+```yaml
+rewrites:
+  - from: /api/{resource}
+    to: /api/v1/{resource}/list
+```
+
+| Incoming request | Upstream request        |
 | ---------------- | ----------------------- |
 | `/api/users`     | `/api/v1/users/list`    |
 | `/api/posts`     | `/api/v1/posts/list`    |
-| `/api/products`  | `/api/v1/products/list` |
+| `/api/posts/42`  | `/api/v1/posts/list`    |
 
-## Examples
-
-### API Versioning
-
-Redirect old API paths to new versioned endpoints:
+A `{name}` segment matches one path segment. To keep more of the path,
+capture each segment you need:
 
 ```yaml
-mappings:
-  - from: http://localhost
-    to: https://api.example.com
-    rewrites:
-      - from: /v1/{endpoint}
-        to: /api/v2/{endpoint}
+rewrites:
+  - from: /users/{userId}/posts/{postId}
+    to: /api/users/{userId}/content/posts/{postId}
 ```
 
-### Multiple Path Segments
+A rewritten request always goes to the upstream server. It does not reach
+mocks or scripts, even if the new path matches one. Caching and HAR recording
+still apply, and the cache uses the rewritten path. Rewrites are checked after
+static directories, mocks, and scripts, so those win when their paths overlap
+with a rewrite.
 
-Capture multiple URL segments:
+## Changing the upstream host
 
-```yaml
-mappings:
-  - from: http://localhost
-    to: https://api.example.com
-    rewrites:
-      - from: /users/{userId}/posts/{postId}
-        to: /api/users/{userId}/content/posts/{postId}
-```
-
-### Host Rewriting
-
-Route specific paths to different backend services:
+`host` sends matched requests to a different server than the mapping's `to`:
 
 ```yaml
 mappings:
@@ -96,17 +71,18 @@ mappings:
         host: payment-service.example.com
 ```
 
-**Request flow:**
+| Request                 | Upstream request                                   |
+| ----------------------- | -------------------------------------------------- |
+| `GET /auth/login`       | `GET http://auth-service.example.com/v1/login`     |
+| `POST /payment/process` | `POST http://payment-service.example.com/v2/process` |
+| `GET /users`            | `GET https://primary-api.example.com/users` (no rule matched) |
 
- - `GET /auth/login` → `GET https://auth-service.example.com/v1/login`
- - `POST /payment/process` →
-   `POST https://payment-service.example.com/v2/process`
- - `GET /users` → `GET https://primary-api.example.com/users` (no rewrite
-   applied)
+The request to the rewritten host uses the scheme of the incoming request, not
+the scheme of `to`. A scheme written in `host` is ignored. In the example
+above the local side is `http`, so the auth and payment services are called
+over plain HTTP. Use an `https://` source if the rewritten host needs HTTPS.
 
-### Combining Rewrites with Other Features
-
-Rewrites, mocks, and caching can be used together in a single mapping:
+## Combining rewrites with other features
 
 ```yaml
 mappings:
@@ -121,5 +97,11 @@ mappings:
           code: 200
           raw: '{"status": "healthy"}'
     cache:
-      - /v2/api/users/**
+      - /v2/api/users
 ```
+
+- `GET /v2/api/health` returns the mock.
+- `GET /old-api/health` is rewritten to `/v2/api/health` and proxied; the mock
+  does not answer it.
+- `GET /old-api/users` is rewritten to `/v2/api/users`, proxied, and cached
+  under the rewritten path.

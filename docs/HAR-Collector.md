@@ -1,20 +1,12 @@
-The HAR Collector records every request and response that passes through a
-mapping to an [HTTP Archive (HAR
-1.2)](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file. The
-resulting file can be opened in browser DevTools, Postman, or any HAR-compatible
-viewer for offline inspection, debugging, or sharing with teammates.
+The HAR collector writes the traffic of a mapping to an
+[HTTP Archive (HAR 1.2)](https://w3c.github.io/web-performance/specs/HAR/Overview.html)
+file. You can open the file in browser DevTools or other HAR viewers to see
+what your app sent and what the server answered, or share it with someone
+debugging the same problem.
 
-**Benefits:**
+## Quick start
 
- - Capture real API traffic without touching the browser or adding custom
-   scripts
- - Replay or inspect captured traffic in any HAR-compatible tool
- - Share exact request/response sequences as a single portable file
- - Audit what headers and payloads your frontend actually sends
-
-## Quick Start
-
-Add `har` to any mapping with the path to the output file:
+Add `har` to a mapping with the path of the output file:
 
 ```yaml
 mappings:
@@ -22,26 +14,10 @@ mappings:
     to: https://api.example.com
     har: ./recordings/api.har
 ```
-
-UNCORS creates the file on the first request and keeps it updated atomically
-after each subsequent request.
 
 ## Configuration
 
-### Shorthand Syntax
-
-Pass a file path string directly - the most concise form:
-
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har: ./recordings/api.har
-```
-
-### Full Syntax
-
-Use the object form when you need extra control:
+The short form is a file path. The object form adds one option:
 
 ```yaml
 mappings:
@@ -52,98 +28,50 @@ mappings:
       capture-secure-headers: false
 ```
 
-### Configuration Properties
+| Option                   | Type    | Default | Description                                                                         |
+| ------------------------ | ------- | ------- | ----------------------------------------------------------------------------------- |
+| `file`                   | string  | -       | Output file. It must have an extension, such as `.har`. Empty means no recording.   |
+| `capture-secure-headers` | boolean | `false` | Keep the headers listed under [Secure headers](#secure-headers) in the recording.  |
 
-| Property                 | Type    | Default | Description                                                                                  |
-| ------------------------ | ------- | ------- | -------------------------------------------------------------------------------------------- |
-| `file`                   | string  | -       | Path to the output `.har` file. Collector is disabled when this is empty.                    |
-| `capture-secure-headers` | boolean | `false` | Include security-sensitive headers (see [Secure Headers](#secure-headers)) in the HAR entry. |
+The path is relative to the directory you start UNCORS from. Missing parent
+directories are created.
 
-## Secure Headers
+## What is recorded
 
-To prevent credentials from being written to disk, the following headers are
-**stripped from HAR entries by default**:
+The collector sees requests that UNCORS sends to the upstream server, plus the
+responses it produces on that path:
 
-| Header                | Why it is sensitive                            |
-| --------------------- | ---------------------------------------------- |
-| `Cookie`              | Session identifiers sent by the browser        |
-| `Set-Cookie`          | Session identifiers set by the upstream server |
-| `Authorization`       | Bearer tokens, Basic auth credentials          |
-| `WWW-Authenticate`    | Server auth challenges (reveals scheme/realm)  |
-| `Proxy-Authorization` | Proxy credentials                              |
-| `Proxy-Authenticate`  | Proxy auth challenges                          |
+| Request                                                    | Recorded |
+| ---------------------------------------------------------- | -------- |
+| Proxied to the upstream server                             | Yes      |
+| Answered from the [cache](Response-Caching)                | Yes      |
+| `OPTIONS` preflight answered by UNCORS                     | Yes      |
+| Under a [static](Static-File-Serving) path, file not found, proxied | Yes |
+| [Rewritten](Request-Rewriting) and proxied                 | Yes      |
+| Answered by a [mock](Response-Mocking)                     | No       |
+| Answered by a [script](Script-Handler)                     | No       |
+| Served from a static directory                             | No       |
 
-Set `capture-secure-headers: true` to include these headers in the recording:
+Each entry has the request and response headers, cookies, query string,
+bodies, and timings. Bodies compressed with gzip or deflate are stored
+decompressed. Bodies with other encodings, such as Brotli, are stored as
+base64.
 
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har:
-      file: ./recordings/api.har
-      capture-secure-headers: true
-```
+## Secure headers
 
-> [!WARNING]
-> HAR files with `capture-secure-headers: true` contain tokens, cookies, and other
-> credentials in plain text. Do not commit them to version control or share them
-> without scrubbing sensitive values first.
+To keep credentials off the disk, these headers are left out of every entry by
+default, and so are the request and response cookie lists:
 
-## Per-Mapping Isolation
+| Header                | Why it is sensitive                          |
+| --------------------- | -------------------------------------------- |
+| `Cookie`              | Session identifiers sent by the browser      |
+| `Set-Cookie`          | Session identifiers set by the server        |
+| `Authorization`       | Bearer tokens and Basic auth credentials     |
+| `WWW-Authenticate`    | Auth challenges, which reveal scheme and realm |
+| `Proxy-Authorization` | Proxy credentials                            |
+| `Proxy-Authenticate`  | Proxy auth challenges                        |
 
-Each mapping writes to its own independent HAR file. Traffic from different
-mappings never mixes:
-
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har: ./recordings/api.har        # captures api.local traffic only
-
-  - from: http://auth.local:3001
-    to: https://auth.example.com
-    har: ./recordings/auth.har       # captures auth.local traffic only
-```
-
-## File Lifecycle
-
- - **Created** on the first captured request (parent directory must exist).
- - **Updated atomically** after every request - UNCORS writes to a temporary
-   file then renames it, so the `.har` file is always in a valid, complete state
-   even if you open it mid-session.
- - **Flushed and closed** on shutdown or when the configuration is reloaded. All
-   buffered entries are written before the file handle is released.
-
-> [!NOTE]
-> If the internal write buffer (4,096 entries) fills up during a traffic spike,
-> new entries are silently dropped rather than slowing down your requests. This is
-> uncommon in normal development use.
-
-## Viewing Captured HAR Files
-
-Open the generated file with any of these tools:
-
-| Tool                       | How                                                                 |
-| -------------------------- | ------------------------------------------------------------------- |
-| **Chrome / Edge DevTools** | Network tab → Import HAR                                            |
-| **Firefox DevTools**       | Network tab → Import HAR                                            |
-| **Postman**                | File → Import → select `.har`                                       |
-| **HAR Viewer** (online)    | [google.github.io/har-viewer](https://google.github.io/har-viewer/) |
-
-## Examples
-
-### Record All API Traffic
-
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har: ./recordings/session.har
-```
-
-### Debug Authentication Flows
-
-Capture auth headers to see exactly what the browser sends:
+Set `capture-secure-headers: true` to keep them:
 
 ```yaml
 mappings:
@@ -155,11 +83,51 @@ mappings:
 ```
 
 > [!WARNING]
-> Delete `auth-debug.har` when done - it contains your credentials in plain text.
+> Such a file contains tokens and cookies in plain text. Don't commit it or
+> share it without removing them, and delete it when you are done.
 
-### Combine with Other Features
+## File lifecycle
 
-HAR recording works alongside mocking, caching, and static file serving:
+Each mapping writes its own file, so traffic from different mappings never
+mixes:
+
+```yaml
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+    har: ./recordings/api.har
+
+  - from: http://auth.local:3001
+    to: https://auth.example.com
+    har: ./recordings/auth.har
+```
+
+Recording never slows down requests. Entries go to a queue, and a background
+writer rewrites the whole file after each batch of new entries. It writes to a
+temporary file and renames it over the old one, so the `.har` file is always
+complete and valid, even if you open it while UNCORS runs. The file is written
+once more when UNCORS stops.
+
+A recording covers one run of one configuration. When UNCORS starts, and when
+it reloads a changed configuration file, the recording starts empty and the
+next write replaces the existing file. Copy the file first if you want to keep
+an earlier session.
+
+> [!NOTE]
+> The queue holds 4,096 entries. If it fills up during a burst of traffic, new
+> entries are dropped rather than delaying requests. This is rare in normal
+> development.
+
+## Viewing HAR files
+
+| Tool                   | How                                                                 |
+| ---------------------- | ------------------------------------------------------------------- |
+| Chrome or Edge DevTools | Network tab, then Import HAR                                       |
+| Firefox DevTools       | Network tab, then Import HAR                                        |
+| Postman                | File, Import, then select the `.har` file                           |
+| HAR Viewer (online)    | [google.github.io/har-viewer](https://google.github.io/har-viewer/) |
+
+## Example: recording next to other features
 
 ```yaml
 mappings:
@@ -172,9 +140,11 @@ mappings:
       - path: /api/feature-flags
         response:
           code: 200
+          headers:
+            Content-Type: application/json
           raw: '{"newUi": true}'
-    statics:
-      - path: /
-        dir: ./dist
-        index: index.html
 ```
+
+`/api/config` is recorded both when it is fetched and when it comes from the
+cache. `/api/feature-flags` is answered by the mock and does not appear in the
+file.

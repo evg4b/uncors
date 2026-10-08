@@ -8,51 +8,40 @@
   <span>Version: 0.6.1</span>
 </p>
 
+UNCORS is a local HTTP/HTTPS proxy for development. You point a local domain
+at it, it forwards requests to a remote server, and it replaces the CORS headers
+in every response so the browser accepts them. You don't have to change the
+backend.
 
-## Introduction
+On top of plain proxying, each mapping can mock endpoints, serve local files,
+run Lua scripts, cache responses, rewrite paths, and record traffic to a HAR
+file.
 
-UNCORS is a powerful development tool designed to simplify HTTP/HTTPS proxying
-and CORS header management during local development. It provides a comprehensive
-suite of features including HTTPS support, wildcard host mapping,
-request/response mocking, static file serving, response caching, and full proxy
-functionality. UNCORS streamlines your development workflow by eliminating
-common CORS-related obstacles without requiring backend modifications.
+> [!CAUTION]
+> Rewriting CORS headers weakens browser security. UNCORS is meant for local
+> development and testing. Do not run it in production or expose it as a remote
+> proxy. It has not had a security review.
 
-## Quick Start
+## Quick start
 
-Get UNCORS running in 5 minutes:
-
-**1. Install UNCORS:**
-
-Choose your preferred installation method:
+Install UNCORS:
 
 ```bash
 # macOS/Linux with Homebrew
 brew install evg4b/tap/uncors
 
-# or with NPM
+# or with npm
 npm install -g uncors
 ```
 
-**2. Configure your hosts file:**
-
-Add a local domain mapping to your system's hosts file:
-
-**macOS/Linux:**
+Point a local domain at your machine. On macOS and Linux:
 
 ```bash
 echo "127.0.0.1 api.local" | sudo tee -a /etc/hosts
 ```
 
-**Windows (run as Administrator):**
-
-Add this line to `C:\Windows\System32\drivers\etc\hosts`:
-
-```
-127.0.0.1 api.local
-```
-
-**3. Create a configuration file:**
+On Windows, open `C:\Windows\System32\drivers\etc\hosts` as Administrator and
+add the line `127.0.0.1 api.local`.
 
 Create `.uncors.yaml` in your project directory:
 
@@ -62,102 +51,59 @@ mappings:
     to: https://api.github.com
 ```
 
-**4. Start UNCORS:**
+Start UNCORS and send a request:
 
 ```bash
 uncors --config .uncors.yaml
-```
-
-**5. Test it:**
-
-```bash
 curl http://api.local:3000/
-# You should see GitHub's API response
 ```
 
-That's it! UNCORS is now proxying requests from `api.local` to GitHub's API.
+The response comes from `https://api.github.com`, with CORS headers added by
+UNCORS.
 
-**Next steps:**
+From here, [Configuration](Configuration) covers every option,
+[Response Mocking](Response-Mocking) shows how to add fake endpoints, and
+[Static File Serving](Static-File-Serving) shows how to serve a local build.
 
- - Read [Configuration](Configuration) for more options
- - Explore [Response Mocking](Response-Mocking) to add fake endpoints
- - Learn about [Static File Serving](Static-File-Serving) for local development
+## Terms used in these docs
 
-## Key Terminology
-
-Understanding these terms will help you navigate the documentation more
-effectively:
-
-| Term                                | Definition                                                                                                                     |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Host Mapping**                    | A configuration that defines how requests from a source domain are routed to a target domain (defined by `from` and `to` URLs) |
-| **Source Domain**                   | The local domain where UNCORS listens for requests (specified in the `from` URL, e.g., `http://api.local:3000`)                |
-| **Target Domain** (Upstream Server) | The remote server where requests are proxied (specified in the `to` URL, e.g., `https://api.example.com`)                      |
-| **Mapping Configuration**           | Settings specific to individual host mappings, including mocks, statics, scripts, cache, and rewrites                          |
-| **Global Configuration**            | Settings that apply to all mappings, such as proxy settings and SSL certificates                                                |
-| **Scheme**                          | The protocol prefix of a URL (`http://`, `https://`, or `//` for scheme-agnostic)                                              |
-| **Port**                            | The network port number specified in the `from` URL (defaults: 80 for HTTP, 443 for HTTPS)                                     |
-| **Mock**                            | A configuration that intercepts specific requests and returns pre-defined responses without contacting the upstream server     |
-| **Static File**                     | Local files served directly by UNCORS instead of proxying to the upstream server                                               |
-| **Cache**                           | A mechanism that stores responses from the upstream server to reduce latency on subsequent identical requests                  |
-| **Rewrite**                         | A transformation applied to the request path or host before forwarding to the upstream server                                  |
-| **Script Handler**                  | Custom Lua code that generates dynamic responses based on request properties                                                   |
-| **OPTIONS Handling**                | Built-in processing of HTTP OPTIONS requests for CORS preflight checks                                                         |
+| Term           | Meaning                                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------------------- |
+| Mapping        | One entry under `mappings`: a `from` URL where UNCORS listens and a `to` URL it forwards to.              |
+| Source         | The `from` URL, for example `http://api.local:3000`. Its port is the port UNCORS listens on.              |
+| Target         | The `to` URL, the upstream server, for example `https://api.example.com`.                                 |
+| Global options | Top-level keys that apply to all mappings: `proxy` and `cache-config`.                                    |
+| Mock           | A fixed response returned for matching requests without contacting the target.                           |
+| Static         | A local directory served under a URL path prefix.                                                         |
+| Script         | A Lua script that builds the response for matching requests.                                              |
+| Cache          | Stored upstream responses for paths that match a glob pattern.                                            |
+| Rewrite        | A rule that changes the request path (and optionally the upstream host) before the request is proxied.    |
+| OPTIONS handling | UNCORS answering CORS preflight `OPTIONS` requests itself instead of forwarding them.                   |
 
 ## Documentation
 
-### Getting Started
+Getting started:
 
- - [Installation](Installation) - package managers, binaries, Docker, and hosts
-   file setup
- - [Configuration](Configuration) - CLI options, YAML reference, HTTPS, and
-   proxy settings
+- [Installation](Installation): package managers, binaries, Docker, building
+  from source, and hosts file setup.
+- [Configuration](Configuration): CLI flags, the YAML file, host mappings,
+  HTTPS, and upstream proxy settings.
 
-### Features
+Features:
 
- - [Response Mocking](Response-Mocking) - intercept requests and return
-   predefined responses
- - [Static File Serving](Static-File-Serving) - serve local files, SPA mode
- - [Response Caching](Response-Caching) - cache upstream responses with glob
-   patterns
- - [Request Rewriting](Request-Rewriting) - rewrite paths and hosts before
-   proxying
- - [Script Handler](Script-Handler) - dynamic responses via Lua scripting
- - [HAR Recording](HAR-Collector) - record traffic to HAR files for debugging
+- [Response Mocking](Response-Mocking): return predefined responses for
+  matching requests.
+- [Static File Serving](Static-File-Serving): serve local files and single-page
+  apps.
+- [Response Caching](Response-Caching): cache upstream responses by path glob.
+- [Request Rewriting](Request-Rewriting): change paths and upstream hosts
+  before proxying.
+- [Script Handler](Script-Handler): build responses with Lua.
+- [HAR Recording](HAR-Collector): record proxied traffic to a HAR file.
 
-### Reference
+Reference:
 
- - [Real-World Examples](Real-World-Examples) - copy-paste ready configurations
-   for common scenarios
- - [Migration Guide](Migration-Guide) - upgrading between versions
- - [Troubleshooting](Troubleshooting) - diagnosing and resolving common issues
-
-## Core Features
-
- - CORS header replacement
- - [HTTPS support](Configuration#https-configuration)
- - [Wildcard host mapping](Configuration#named-placeholder-mapping)
- - [HTTP/HTTPS proxy support](Configuration#proxy-configuration)
- - [Response mocking](Response-Mocking)
- - [Script handler](Script-Handler) (Lua scripting with JSON support)
- - [Static file serving](Static-File-Serving)
- - [Response caching](Response-Caching)
- - [Request rewriting](Request-Rewriting)
- - [HAR traffic recording](HAR-Collector)
-
-## Overview
-
-UNCORS enables developers to make browser requests to APIs that would typically
-be blocked by CORS (Cross-Origin Resource Sharing) policies. This tool is
-particularly valuable during application development and testing phases, as it
-eliminates the need to run backend services locally or modify server
-configurations. Key capabilities include support for local domain mapping and
-flexible wildcard-based domain matching.
-
-> [!CAUTION]
-> Please be aware that the modification or replacement of CORS headers may
-> introduce potential security vulnerabilities. This tool is specifically
-> engineered to optimize the development and testing workflow and is not intended
-> for use in a production environment or as a remote proxy server. It has not
-> undergone a thorough security review; therefore, caution should be exercised
-> when utilizing it.
+- [Real-World Examples](Real-World-Examples): complete configurations for
+  common setups.
+- [Migration Guide](Migration-Guide): breaking changes between versions.
+- [Troubleshooting](Troubleshooting): common problems and how to fix them.

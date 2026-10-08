@@ -1,239 +1,114 @@
-The script handler allows you to implement custom request handling logic using
-Lua scripts. This provides maximum flexibility for generating dynamic responses,
-implementing custom business logic, or creating complex API simulations during
-development and testing.
-
-## Table of Contents
-
- - [Key Features](#key-features)
- - [Request Matching](#request-matching)
- - [Script Configuration](#script-configuration)
- - [Request Object](#request-object)
- - [Response Object](#response-object)
- - [Available Libraries](#available-libraries)
- - [Complete Examples](#complete-examples)
- - [CORS Headers](#cors-headers)
- - [Error Handling](#error-handling)
- - [Tips and Best Practices](#tips-and-best-practices)
- - [Comparison with Mock Handler](#comparison-with-mock-handler)
-
-## Key Features
-
- - **Inline or file-based scripts**: Define script code directly in
-   configuration or load from external files
- - **Request access**: Full access to request properties (method, URL, headers,
-   body, query parameters)
- - **Response control**: Set status codes, headers, and body content from script
- - **Standard libraries**: Use math, string, table, OS, and JSON libraries
- - **Path-based matching**: Define which URLs to handle with scripts
- - **Method-specific**: Target specific HTTP methods (GET, POST, etc.)
- - **Query parameter filtering**: Match requests with specific query strings
- - **Header matching**: Filter by HTTP headers
-
-**Configuration structure:**
+Scripts build responses with Lua. Use them when a fixed [mock](Response-Mocking)
+is not enough: when the response depends on the request, needs some logic, or
+has to call an external tool. Scripts run on
+[gopher-lua](https://github.com/yuin/gopher-lua), a Lua 5.1 implementation.
 
 ```yaml
 mappings:
-  - from: ...
-    to: ...
+  - from: http://api.local:3000
+    to: https://api.example.com
     scripts:
-      - path: /api/custom
-        method: POST
-        queries:
-          param1: value1
-        headers:
-          Content-Type: application/json
+      - path: /api/greeting
+        method: GET
         script: |
+          local name = request.query_params["name"] or "World"
           response.headers["Content-Type"] = "application/json"
           response:WriteHeader(200)
-          response:WriteString('{"message": "Hello from script"}')
-        file: /path/to/script.lua # Alternative to inline script
+          response:WriteString('{"message": "Hello, ' .. name .. '"}')
 ```
 
-## Request Matching
+## Contents
 
-Configure which requests should be handled by the script:
+- [Request matching](#request-matching)
+- [Inline and file scripts](#inline-and-file-scripts)
+- [The request object](#the-request-object)
+- [The response object](#the-response-object)
+- [Libraries](#libraries)
+- [Examples](#examples)
+- [Errors](#errors)
+- [Scripts or mocks](#scripts-or-mocks)
 
-### Path (Required)
+## Request matching
 
-Defines the URL path to handle. Supports static paths and variable segments.
+Scripts match requests the same way mocks do:
 
-**Examples:**
+| Option    | Required | Description                                                           |
+| --------- | -------- | --------------------------------------------------------------------- |
+| `path`    | Yes      | URL path to match, starting with `/`. `{name}` segments match any value. |
+| `method`  | No       | HTTP method in upper case. Default: any.                              |
+| `queries` | No       | Query parameters that must be present with these values.             |
+| `headers` | No       | Request headers that must be present with these values.              |
 
-```yaml
-path: /api/custom             # Static path
-path: /users/{id}             # Variable segment
-path: /posts/{postId}/data    # Multiple variables
-```
+The path must match the whole request path. Scripts with a method, query, or
+header filter are checked before scripts that match on path alone. Mocks are
+checked before scripts, and static directories before both. See
+[Response Mocking](Response-Mocking#request-matching) for the details, which
+are the same.
 
-Variable segments (e.g., `{id}`) match any value in that position. A request to
-`/users/123` matches `/users/{id}`.
+## Inline and file scripts
 
-### Method (Optional)
-
-Specifies the HTTP method to match.
-
-| Property | Type   | Default | Description                                                |
-| -------- | ------ | ------- | ---------------------------------------------------------- |
-| `method` | string | Any     | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, etc. |
-
-If omitted, the script matches all HTTP methods.
-
-### Query Parameters (Optional)
-
-Match requests with specific query string parameters.
-
-```yaml
-queries:
-  param1: value1
-  param2: value2
-```
-
-If omitted, all query parameter combinations are matched.
-
-### Headers (Optional)
-
-Match requests with specific HTTP headers.
-
-```yaml
-headers:
-  Content-Type: application/json
-  Authorization: Bearer token123
-```
-
-If omitted, all header combinations are matched.
-
-## Script Configuration
-
-Define the script to execute when a request is matched.
-
-### Script Properties
-
-| Property | Type   | Required      | Description                    |
-| -------- | ------ | ------------- | ------------------------------ |
-| `script` | string | Conditional\* | Inline script code             |
-| `file`   | string | Conditional\* | Path to file containing script |
-
-***Either `script` or `file` must be specified, but not both.**
-
-### Inline Script
-
-Define script code directly in the configuration:
+Each script has exactly one of `script` (inline code) or `file` (a path to a
+`.lua` file):
 
 ```yaml
 scripts:
   - path: /api/greeting
-    method: GET
     script: |
-      local name = request.query_params["name"] or "World"
-      response.headers["Content-Type"] = "application/json"
-      response:WriteHeader(200)
-      response:WriteString('{"message": "Hello, ' .. name .. '"}')
-```
+      response:WriteString("Hello")
 
-### File-based Script
-
-Load script code from an external file:
-
-```yaml
-scripts:
   - path: /api/calculate
     method: POST
-    file: ~/scripts/calculator.lua
+    file: ./scripts/calculator.lua
 ```
 
-**File example (`~/scripts/calculator.lua`):**
+`./scripts/calculator.lua`:
 
 ```lua
--- Access request body
-local body = request.body
+local json = require("json")
+local input = json.decode(request.body)
 
--- Parse and process (example)
-local result = 42  -- Your calculation logic here
-
--- Set response
 response.headers["Content-Type"] = "application/json"
 response:WriteHeader(200)
-response:WriteString('{"result": ' .. result .. '}')
+response:WriteString(json.encode({result = input.a + input.b}))
 ```
 
-## Request Object
+File paths are relative to the directory you start UNCORS from. UNCORS checks
+that the file exists at startup and reads it again on every request, so you can
+edit a script without restarting. Every request runs in a fresh Lua state;
+nothing is kept between requests.
 
-The `request` object provides access to incoming HTTP request properties.
+## The request object
 
-### Request Properties
+The global `request` table describes the incoming request.
 
-| Property       | Type   | Description                                     | Example                             |
-| -------------- | ------ | ----------------------------------------------- | ----------------------------------- |
-| `method`       | string | HTTP method                                     | `"GET"`, `"POST"`, etc.             |
-| `url`          | string | Full request URL                                | `"http://localhost/api/users?id=1"` |
-| `path`         | string | URL path                                        | `"/api/users"`                      |
-| `query`        | string | Raw query string                                | `"id=1&name=test"`                  |
-| `host`         | string | Host header value                               | `"localhost:8080"`                  |
-| `remote_addr`  | string | Client IP address                               | `"127.0.0.1:12345"`                 |
-| `body`         | string | Request body content                            | `'{"data": "value"}'`               |
-| `headers`      | table  | Request headers (table with string keys/values) | `request.headers["Content-Type"]`   |
-| `query_params` | table  | Parsed query parameters                         | `request.query_params["id"]`        |
-| `path_params`  | table  | Path parameters from route                      | `request.path_params["id"]`         |
+| Field          | Type   | Description                                       | Example                                 |
+| -------------- | ------ | ------------------------------------------------- | --------------------------------------- |
+| `method`       | string | HTTP method                                       | `"GET"`                                 |
+| `url`          | string | Request URL                                       | `"http://localhost:3000/api/users?id=1"` |
+| `path`         | string | URL path                                          | `"/api/users"`                          |
+| `query`        | string | Raw query string                                  | `"id=1&name=test"`                      |
+| `host`         | string | `Host` header                                     | `"localhost:3000"`                      |
+| `remote_addr`  | string | Client address and port                           | `"127.0.0.1:52345"`                     |
+| `body`         | string | Request body, empty string if there is none       | `'{"data": "value"}'`                   |
+| `headers`      | table  | Request headers                                   | `request.headers["Content-Type"]`       |
+| `query_params` | table  | Parsed query parameters                           | `request.query_params["id"]`            |
+| `path_params`  | table  | Values of the `{name}` segments in `path`         | `request.path_params["id"]`             |
 
-### Accessing Request Data
+Header names use Go's canonical form, so read `request.headers["Content-Type"]`,
+not `request.headers["content-type"]`.
 
-#### HTTP Method
+In `headers` and `query_params`, a name that appears once maps to a string. A
+name that appears several times maps to an array of strings. Check the type if
+a client might repeat a value:
 
 ```lua
-if request.method == "GET" then
-    response:WriteString("This is a GET request")
+local tags = request.query_params["tag"]
+if type(tags) == "string" then
+  tags = {tags}
 end
 ```
 
-#### URL and Path
-
-```lua
-response:WriteString("You accessed: " .. request.path)
-```
-
-#### Headers
-
-```lua
-local contentType = request.headers["Content-Type"]
-local userAgent = request.headers["User-Agent"]
-
-response:WriteString("Content-Type: " .. (contentType or "not set"))
-```
-
-#### Query Parameters
-
-```lua
-local id = request.query_params["id"]
-local filter = request.query_params["filter"]
-
-if id then
-    response:WriteString('{"id": ' .. id .. '}')
-else
-    response:WriteHeader(400)
-    response:WriteString('{"error": "Missing id parameter"}')
-end
-```
-
-#### Path Parameters
-
-Path parameters are extracted from the URL route pattern using wildcards
-(`{param}`). For example, if your route is `/users/{id}/posts/{postId}`, you can
-access these parameters:
-
-```lua
-local userId = request.path_params["id"]
-local postId = request.path_params["postId"]
-
-if userId and postId then
-    response:WriteString('{"user": ' .. userId .. ', "post": ' .. postId .. '}')
-else
-    response:WriteHeader(400)
-    response:WriteString('{"error": "Missing path parameters"}')
-end
-```
-
-**Configuration example:**
+Path parameters come from the `{name}` segments of the script's `path`:
 
 ```yaml
 scripts:
@@ -247,419 +122,111 @@ scripts:
       response:WriteString('{"user": "' .. userId .. '", "post": "' .. postId .. '"}')
 ```
 
-#### Request Body
+## The response object
+
+The global `response` object writes directly to the HTTP response, following
+the rules of Go's `http.ResponseWriter`:
+
+1. Set headers.
+2. Call `response:WriteHeader(code)` once to send the status line and headers.
+3. Write the body with `response:Write` or `response:WriteString`, as many
+   times as you need.
+
+Once the status line is sent, later header changes and later `WriteHeader`
+calls are ignored. If you write body data without calling `WriteHeader` first,
+status 200 is sent automatically. If the script writes nothing, the client gets
+an empty 200 response.
+
+| Member                       | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `response.headers[name]`     | Read or set a response header                     |
+| `response:Header()`          | Returns the headers object, with `Set` and `Get`  |
+| `response:WriteHeader(code)` | Send the status code and headers                  |
+| `response:Write(data)`       | Append data to the body                           |
+| `response:WriteString(str)`  | Append a string to the body (same as `Write`)     |
+
+`Write` and `WriteString` return the number of bytes written and an error
+message, or `nil` if there was no error.
+
+Headers can be set either way:
 
 ```lua
-local body = request.body
-
--- Simple body echo
-response:WriteString("You sent: " .. body)
-
--- Or process the body
-if string.find(body, "error") then
-    response:WriteHeader(500)
-else
-    response:WriteHeader(200)
-end
-```
-
-#### Host Information
-
-```lua
-if request.host == "api.example.com" then
-    response:WriteString("Production API")
-else
-    response:WriteString("Development API")
-end
-```
-
-## Response Object
-
-The `response` object controls the HTTP response returned to the client.
-
-### Response Properties
-
-| Property  | Type  | Access     | Description                                      |
-| --------- | ----- | ---------- | ------------------------------------------------ |
-| `headers` | table | Read/Write | Response headers (table with string keys/values) |
-
-**Note:** `response.status` and `response.body` are not accessible as
-properties. Use methods instead:
-
- - Use `response:WriteHeader(code)` to set status
- - Use `response:Write(data)` or `response:WriteString(str)` to write body
-
-### Response API
-
-The script handler provides a method-based API that mirrors Go's
-`http.ResponseWriter` interface:
-
-```lua
--- Set headers (table access)
 response.headers["Content-Type"] = "application/json"
-
--- Set status (method call)
-response:WriteHeader(200)
-
--- Write body (method call)
-response:WriteString('{"message": "Hello"}')
-```
-
-**Key points:**
-
- - **Headers**: Direct table access (`response.headers["Name"] = "value"`)
- - **Status & Body**: Method-based only (`response:WriteHeader()`,
-   `response:Write()`, `response:WriteString()`)
- - **Cannot read**: `response.status` and `response.body` return `nil` if read
-
-#### Internal Architecture
-
-**ZERO BUFFERING - Direct Write to HTTP Connection:**
-
-All Lua operations write **directly** to Go's `http.ResponseWriter` without any
-intermediate buffering:
-
- - **True streaming**: Data flows immediately to the HTTP connection during
-   script execution
- - **No buffering**: No intermediate storage - what you write in Lua goes
-   straight to the network
- - **Go semantics**: Same rules as Go's `http.ResponseWriter`:
-   
-    - Headers must be set before first write
-    - `WriteHeader()` can only be called once
-    - Headers cannot be modified after first write to body
- - **User responsibility**: You must call methods in correct order (headers →
-   WriteHeader → Write)
-
-```
-Lua Script                   Go Runtime              Network
-   ↓                            ↓                       ↓
-response:WriteString("x") → writer.Write(...) → HTTP Connection
-response:Write("data")    → writer.Write(...) → HTTP Connection
-response:WriteHeader(200) → writer.WriteHeader() → HTTP Headers Sent
-```
-
-#### Important Notes
-
-⚠️ **No direct assignment**: Cannot assign to `response.status` or
-`response.body` (silently ignored) ⚠️ **Cannot read**: `response.status` and
-`response.body` return `nil` if read ⚠️ **Order matters**: Call methods in
-correct HTTP order or behavior is undefined ⚠️ **Auto-header**: If you write
-body without calling `WriteHeader()`, status 200 is sent automatically
-
-### Go-style Methods
-
-| Method                       | Description                    | Example                                      |
-| ---------------------------- | ------------------------------ | -------------------------------------------- |
-| `response:WriteHeader(code)` | Set HTTP status code           | `response:WriteHeader(200)`                  |
-| `response:Write(data)`       | Append data to response body   | `response:Write("Hello")`                    |
-| `response:WriteString(str)`  | Append string to response body | `response:WriteString("World")`              |
-| `response:Header()`          | Get headers object             | `response:Header():Set("X-Custom", "value")` |
-
-#### Header Methods
-
-The `response:Header()` method returns a headers object with these methods:
-
-| Method            | Description        | Example                                                     |
-| ----------------- | ------------------ | ----------------------------------------------------------- |
-| `Set(key, value)` | Set a header value | `response:Header():Set("Content-Type", "application/json")` |
-| `Get(key)`        | Get a header value | `local ct = response:Header():Get("Content-Type")`          |
-
-#### Go-style Examples
-
-**Basic response:**
-
-```lua
-response:WriteHeader(200)
-response:Header():Set("Content-Type", "text/plain")
-response:WriteString("Hello, World!")
-```
-
-**Multiple writes:**
-
-```lua
-response:WriteHeader(200)
-response:Write("Line 1\n")
-response:Write("Line 2\n")
-response:Write("Line 3")
-```
-
-**Working with headers:**
-
-```lua
--- Set multiple headers
-response:Header():Set("Content-Type", "application/json")
-response:Header():Set("X-Custom-Header", "CustomValue")
-response:Header():Set("Cache-Control", "no-cache")
-
--- Read a header
-local customValue = response:Header():Get("X-Custom-Header")
-
--- Write response
-response:WriteHeader(200)
-response:WriteString('{"status": "ok"}')
-```
-
-**Headers table with methods:**
-
-```lua
--- Headers can be set via table or methods
-response:Header():Set("X-Method-Style", "new")
-response.headers["X-Table-Style"] = "old"
-
--- Status and body - methods only
-response:WriteHeader(200)
-response:WriteString("Data flows ")
-response:WriteString("to network immediately")
--- Every write operation above sent data to HTTP connection in real-time
-```
-
-**Correct order example:**
-
-```lua
--- 1. Set headers FIRST (before any writes)
-response:Header():Set("Content-Type", "application/json")
 response:Header():Set("X-Request-ID", "12345")
-
--- 2. Write status code
-response:WriteHeader(200)
-
--- 3. Write body (can call multiple times)
-response:WriteString('{"data": ')
-response:WriteString('"streaming"}')
--- Data is sent to client as we write!
+local contentType = response:Header():Get("Content-Type")
 ```
 
-**Wrong order (will not work as expected):**
+There is no `response.status` or `response.body` field. Assigning to them does
+nothing and reading them returns `nil`; use `WriteHeader` and `Write` instead.
+
+The order matters:
 
 ```lua
--- BAD: Writing body first
-response:WriteString("Hello")  -- This auto-sends WriteHeader(200)
+-- Correct
+response:Header():Set("Content-Type", "application/json")
+response:WriteHeader(201)
+response:WriteString('{"created": true}')
 
--- BAD: Trying to set headers after write - too late!
-response:Header():Set("X-Custom", "value")  -- Headers already sent!
-
--- BAD: Trying to change status after write
-response:WriteHeader(404)  -- Ignored! Header already sent
+-- Wrong: the header is set after the status line was sent and is lost
+response:WriteHeader(201)
+response:Header():Set("Content-Type", "application/json")
 ```
 
-### Setting Response Properties
-
-#### Status Code
+UNCORS adds its CORS headers before the script runs, so a script can replace
+them:
 
 ```lua
-response:WriteHeader(201)  -- Created
-response:WriteHeader(404)  -- Not Found
-response:WriteHeader(500)  -- Internal Server Error
+response.headers["Access-Control-Allow-Origin"] = "https://example.com"
 ```
 
-#### Response Body
+## Libraries
 
-```lua
--- Simple text
-response:WriteString("Hello, World!")
+All standard gopher-lua libraries are loaded, including `string`, `table`,
+`math`, `os`, and `io`. They are available as globals, and `require("math")`
+and similar calls also work.
 
--- JSON (as string)
-response:WriteString('{"message": "Success", "code": 200}')
-
--- Constructed dynamically
-local name = "Alice"
-response:WriteString('{"name": "' .. name .. '"}')
-```
-
-#### Response Headers
-
-```lua
--- Set Content-Type
-response.headers["Content-Type"] = "application/json"
-
--- Set custom headers
-response.headers["X-Custom-Header"] = "CustomValue"
-response.headers["X-Request-ID"] = "12345"
-
--- Set cache control
-response.headers["Cache-Control"] = "no-cache"
-```
-
-#### Complete Example
-
-```lua
-local math = require("math")
-local string = require("string")
-
--- Get query parameters
-local min = tonumber(request.query_params["min"]) or 1
-local max = tonumber(request.query_params["max"]) or 100
-
--- Generate random number
-math.randomseed(os.time())
-local random = math.random(min, max)
-
--- Build response
-response.headers["Content-Type"] = "application/json"
-response.headers["X-Generated-At"] = os.date("%Y-%m-%d %H:%M:%S")
-response:WriteHeader(200)
-response:WriteString('{"random": ' .. random .. ', "min": ' .. min .. ', "max": ' .. max .. '}')
-```
-
-## Available Libraries
-
-The script handler provides access to standard libraries:
-
-### Math Library
-
-Mathematical functions for calculations.
-
-```lua
-local math = require("math")
-
--- Random numbers
-local random = math.random(1, 100)
-math.randomseed(os.time())
-
--- Rounding
-local rounded = math.floor(3.7)  -- 3
-local ceiling = math.ceil(3.2)   -- 4
-
--- Trigonometry
-local sine = math.sin(1.5)
-local cosine = math.cos(1.5)
-
--- Constants
-local pi = math.pi
-local huge = math.huge
-```
-
-### String Library
-
-String manipulation and formatting.
-
-```lua
-local string = require("string")
-
--- Case conversion
-local upper = string.upper("hello")     -- "HELLO"
-local lower = string.lower("WORLD")     -- "world"
-
--- Substring
-local sub = string.sub("Hello", 1, 3)   -- "Hel"
-
--- Find and replace
-local pos = string.find("Hello World", "World")
-local replaced = string.gsub("Hello World", "World", "Lua")
-
--- String length
-local len = string.len("Hello")         -- 5
-
--- Formatting
-local formatted = string.format("Value: %d", 42)
-```
-
-### Table Library
-
-Table (array/dictionary) operations.
-
-```lua
-local table = require("table")
-
--- Array operations
-local items = {"apple", "banana", "cherry"}
-table.insert(items, "date")              -- Add to end
-table.remove(items, 1)                   -- Remove first item
-
--- Concatenation
-local joined = table.concat(items, ", ") -- "banana, cherry, date"
-
--- Sorting
-table.sort(items)
-```
-
-### OS Library
-
-Limited OS and time functions.
-
-```lua
-local os = require("os")
-
--- Time
-local timestamp = os.time()
-local formatted = os.date("%Y-%m-%d %H:%M:%S")
-local utc = os.date("!%Y-%m-%d %H:%M:%S")  -- UTC
-
--- Date components
-local components = os.date("*t")
--- components.year, components.month, components.day, etc.
-```
-
-### JSON Library
-
-JSON encoding and decoding for working with JSON data.
+A JSON module from [gopher-json](https://github.com/layeh/gopher-json) is
+available through `require("json")`:
 
 ```lua
 local json = require("json")
 
--- Encoding (Lua to JSON)
-local data = {
-  name = "Alice",
-  age = 30,
-  active = true,
-  tags = {"developer", "golang"}
-}
-local encoded = json.encode(data)
--- Result: {"name":"Alice","age":30,"active":true,"tags":["developer","golang"]}
-
--- Decoding (JSON to Lua)
-local jsonString = '{"message":"hello","count":42}'
-local decoded = json.decode(jsonString)
-local message = decoded.message  -- "hello"
-local count = decoded.count      -- 42
-
--- Working with request body
-local requestData = json.decode(request.body)
-local userId = requestData.user_id
-
--- Building JSON response
-local responseData = {
-  status = "success",
-  data = {id = userId, name = "User " .. userId}
-}
-response.headers["Content-Type"] = "application/json"
-response:WriteHeader(200)
-response:WriteString(json.encode(responseData))
+local encoded = json.encode({name = "Alice", tags = {"dev", "go"}})
+local decoded = json.decode('{"message": "hello", "count": 42}')
+-- decoded.message == "hello", decoded.count == 42
 ```
 
-**Type mappings:**
+| Lua value             | JSON value |
+| --------------------- | ---------- |
+| `nil`                 | `null`     |
+| number                | number     |
+| string                | string     |
+| boolean               | boolean    |
+| table with string keys | object    |
+| table with array keys  | array     |
 
-| Lua Type               | JSON Type |
-| ---------------------- | --------- |
-| `nil`                  | `null`    |
-| `number`               | `number`  |
-| `string`               | `string`  |
-| `boolean`              | `boolean` |
-| `table` (string keys)  | `object`  |
-| `table` (numeric keys) | `array`   |
-
-**Error handling:**
+On invalid input, `json.decode` does not raise an error. It returns `nil` and
+an error message, so check the result before using it:
 
 ```lua
 local json = require("json")
 
--- Decode with error handling
-local success, result = pcall(json.decode, request.body)
-if not success then
+local data, err = json.decode(request.body)
+if data == nil then
   response:WriteHeader(400)
-  response:WriteString('{"error": "Invalid JSON"}')
+  response:WriteString(json.encode({error = "invalid JSON: " .. tostring(err)}))
   return
 end
-
--- Use decoded data
-response:WriteHeader(200)
-response:WriteString(json.encode({received = result}))
 ```
 
-## Complete Examples
+> [!WARNING]
+> Scripts are not sandboxed. `os.execute`, `io.popen`, and file functions in
+> `io` and `os` run with the permissions of the UNCORS process. Only run
+> scripts you trust.
 
-### Simple API Endpoint
+## Examples
+
+### Health endpoint
 
 ```yaml
 scripts:
@@ -668,100 +235,45 @@ scripts:
     script: |
       response.headers["Content-Type"] = "application/json"
       response:WriteHeader(200)
-      response:WriteString('{"status": "healthy", "timestamp": "' .. os.date("%Y-%m-%d %H:%M:%S") .. '"}')
+      response:WriteString('{"status": "healthy", "time": "' .. os.date("%Y-%m-%d %H:%M:%S") .. '"}')
 ```
 
-### Dynamic User API
+### Random number in a range
 
 ```yaml
 scripts:
-  - path: /api/users/{id}
-    method: GET
+  - path: /api/random
     script: |
-      local userId = request.path_params["id"] or "unknown"
+      local min = tonumber(request.query_params["min"]) or 1
+      local max = tonumber(request.query_params["max"]) or 100
+      math.randomseed(os.time())
 
       response.headers["Content-Type"] = "application/json"
       response:WriteHeader(200)
-      response:WriteString('{' ..
-        '"id": "' .. userId .. '",' ..
-        '"name": "User ' .. userId .. '",' ..
-        '"email": "user' .. userId .. '@example.com"' ..
-      '}')
+      response:WriteString('{"random": ' .. math.random(min, max) .. '}')
 ```
 
-### Calculator API
-
-```yaml
-scripts:
-  - path: /api/calculate
-    method: POST
-    script: |
-      local math = require("math")
-
-      -- Get operation from query params
-      local op = request.query_params["operation"]
-
-      response.headers["Content-Type"] = "application/json"
-
-      if op == "random" then
-        local min = tonumber(request.query_params["min"]) or 1
-        local max = tonumber(request.query_params["max"]) or 100
-        math.randomseed(os.time())
-        local result = math.random(min, max)
-
-        response:WriteHeader(200)
-        response:WriteString('{"result": ' .. result .. '}')
-      elseif op == "sqrt" then
-        local value = tonumber(request.query_params["value"]) or 0
-        local result = math.sqrt(value)
-
-        response:WriteHeader(200)
-        response:WriteString('{"result": ' .. result .. '}')
-      else
-        response:WriteHeader(400)
-        response:WriteString('{"error": "Unknown operation"}')
-      end
-```
-
-### Request Echo Service
-
-```yaml
-scripts:
-  - path: /api/echo
-    script: |
-      response.headers["Content-Type"] = "application/json"
-      response:WriteHeader(200)
-      response:WriteString('{' ..
-        '"method": "' .. request.method .. '",' ..
-        '"path": "' .. request.path .. '",' ..
-        '"query": "' .. request.query .. '",' ..
-        '"body": "' .. request.body .. '",' ..
-        '"host": "' .. request.host .. '"' ..
-      '}')
-```
-
-### Conditional Response Based on Headers
+### Response that depends on a header
 
 ```yaml
 scripts:
   - path: /api/data
     method: GET
     script: |
-      local authHeader = request.headers["Authorization"]
-
+      local auth = request.headers["Authorization"]
       response.headers["Content-Type"] = "application/json"
 
-      if authHeader and string.find(authHeader, "Bearer ") then
+      if auth and string.find(auth, "Bearer ", 1, true) then
         response:WriteHeader(200)
-        response:WriteString('{"data": "Secret information", "authorized": true}')
+        response:WriteString('{"data": "secret", "authorized": true}')
       else
         response.headers["WWW-Authenticate"] = 'Bearer realm="API"'
         response:WriteHeader(401)
-        response:WriteString('{"error": "Unauthorized", "authorized": false}')
+        response:WriteString('{"error": "unauthorized"}')
       end
 ```
 
-### JSON API with Request Body Processing
+### Validating a JSON body
 
 ```yaml
 scripts:
@@ -769,138 +281,69 @@ scripts:
     method: POST
     script: |
       local json = require("json")
-
-      -- Parse JSON request body
-      local success, userData = pcall(json.decode, request.body)
-      if not success then
-        response.headers["Content-Type"] = "application/json"
-        response:WriteHeader(400)
-        response:WriteString(json.encode({
-          error = "Invalid JSON in request body"
-        }))
-        return
-      end
-
-      -- Validate required fields
-      if not userData.name or not userData.email then
-        response.headers["Content-Type"] = "application/json"
-        response:WriteHeader(400)
-        response:WriteString(json.encode({
-          error = "Missing required fields: name and email"
-        }))
-        return
-      end
-
-      -- Create response with JSON
-      local responseData = {
-        id = os.time(),
-        name = userData.name,
-        email = userData.email,
-        created_at = os.date("%Y-%m-%d %H:%M:%S"),
-        status = "active"
-      }
-
       response.headers["Content-Type"] = "application/json"
+
+      local user = json.decode(request.body)
+      if type(user) ~= "table" then
+        response:WriteHeader(400)
+        response:WriteString(json.encode({error = "invalid JSON"}))
+        return
+      end
+
+      if not user.name or not user.email then
+        response:WriteHeader(400)
+        response:WriteString(json.encode({error = "name and email are required"}))
+        return
+      end
+
       response:WriteHeader(201)
-      response:WriteString(json.encode(responseData))
+      response:WriteString(json.encode({
+        id = os.time(),
+        name = user.name,
+        email = user.email,
+        created_at = os.date("%Y-%m-%d %H:%M:%S"),
+      }))
 ```
 
-## CORS Headers
+### Echo
 
-CORS headers are automatically added to all script responses. You can override
-them by setting custom header values in your script:
+`json.encode` takes care of quoting, which string concatenation does not:
 
-```lua
--- CORS headers are added automatically, but you can override them
-response.headers["Access-Control-Allow-Origin"] = "https://example.com"
-response.headers["Access-Control-Allow-Methods"] = "GET, POST"
-response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+```yaml
+scripts:
+  - path: /api/echo
+    script: |
+      local json = require("json")
+      response.headers["Content-Type"] = "application/json"
+      response:WriteHeader(200)
+      response:WriteString(json.encode({
+        method = request.method,
+        path = request.path,
+        query = request.query,
+        body = request.body,
+        host = request.host,
+      }))
 ```
 
-## Error Handling
+## Errors
 
-If your script encounters an error, the handler will return a 500 Internal
-Server Error response automatically. Common errors include:
+Configuration errors are reported at startup: a script entry with neither
+`script` nor `file`, with both, or with a `file` that doesn't exist.
 
- - **Script not defined**: Neither `script` nor `file` is specified
- - **Both script and file defined**: Only one should be specified
- - **File not found**: The specified script file doesn't exist
- - **Script syntax error**: Invalid script syntax in your script
- - **Script runtime error**: Error during script execution (e.g., accessing nil
-   values)
+If a script raises an error at runtime (a syntax error, a call on `nil`, an
+`error(...)` call), UNCORS prints the error to the console and answers with
+status 500, as long as the script had not already sent the status line. Use
+`pcall` around code that can fail when you want to choose the response
+yourself.
 
-**Best practices:**
+## Scripts or mocks
 
-```lua
--- Check for nil values before accessing
-if request.query_params["id"] then
-    local id = request.query_params["id"]
-    -- Use id safely
-else
-    response:WriteHeader(400)
-    response:WriteString('{"error": "Missing id parameter"}')
-end
+| Need                                   | Use    |
+| -------------------------------------- | ------ |
+| The same response every time           | Mock   |
+| A response body stored in a file       | Mock   |
+| A response that depends on the request | Script |
+| Logic, validation, or calling a tool   | Script |
+| A simulated delay                      | Mock (`delay`) |
 
--- Use pcall for error handling
-local success, result = pcall(function()
-    -- Your code that might error
-    return someFunction()
-end)
-
-if not success then
-    response:WriteHeader(500)
-    response:WriteString('{"error": "Internal error"}')
-end
-```
-
-## Tips and Best Practices
-
- 1. **Keep scripts simple**: scripts are executed for each request, so keep
-     logic lightweight
- 2. **Use file-based scripts for complex logic**: Easier to test and maintain
- 3. **Validate input**: Always validate query parameters and headers before
-     using them
- 4. **Set Content-Type**: Always set the appropriate Content-Type header for
-     your response
- 5. **Handle errors gracefully**: Check for nil values and provide meaningful
-     error messages
- 6. **Use libraries**: Leverage math, string, and table libraries for common
-     operations
- 7. **Test scripts separately**: scripts can be tested independently before
-     integration
- 8. **Escape JSON strings**: Be careful with quotes when building JSON strings
-     dynamically
- 9. **⚠️ CRITICAL: Follow HTTP order**: Set headers → WriteHeader → Write body.
-     Headers cannot be modified after first write!
- 10. **Use methods for status/body**: Cannot assign to `response.status` or
-     `response.body` directly - use methods
- 11. **Cannot read status/body**: `response.status` and `response.body` return
-     `nil` if read
- 12. **Streaming-ready**: Every write goes directly to network - perfect for
-     streaming responses
- 13. **Performance**: Zero buffering means minimal memory usage and immediate
-     data transmission
-
-## Comparison with Mock Handler
-
-| Feature             | Script Handler                                | Mock Handler                         |
-| ------------------- | --------------------------------------------- | ------------------------------------ |
-| **Flexibility**     | Full control with script code                 | Pre-defined response types           |
-| **Dynamic content** | Yes, fully programmable                       | Limited to fake data schemas         |
-| **Request access**  | Full access to all request properties         | No request access                    |
-| **Complex logic**   | Yes, use any script code                      | No logic, configuration-only         |
-| **Learning curve**  | Requires scripting knowledge                  | Simple YAML configuration            |
-| **Use case**        | Custom business logic, complex API simulation | Simple mocking, fake data generation |
-
-Choose the **Script Handler** when you need:
-
- - Custom business logic
- - Request-dependent responses
- - Complex data transformations
- - Conditional responses based on request data
-
-Choose the **Mock Handler** when you need:
-
- - Simple static responses
- - Quick fake data generation
- - No custom logic required
+Mocks need no code and are easier to read. Scripts can do anything Lua can.

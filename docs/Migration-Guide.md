@@ -1,39 +1,113 @@
-This guide helps you migrate your UNCORS configuration files when upgrading
-between versions. Breaking changes are documented with before/after examples.
+This page lists breaking changes between UNCORS versions and shows how to
+update your configuration.
 
-## Table of Contents
+## Contents
 
- - [Version 0.5.x to 0.6.x](#version-05x-to-06x)
-   
-    - [TLS Certificate Configuration
-      Changes](#tls-certificate-configuration-changes)
-    - [Port Configuration Changes](#port-configuration-changes)
-    - [Fake Response Feature Removal](#fake-response-feature-removal)
- - [Version 0.4.x to 0.5.x](#version-04x-to-05x)
- - [Older Versions](#older-versions)
+- [Upgrading from 0.6.x](#upgrading-from-06x)
+- [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
+  - [TLS certificates](#tls-certificates)
+  - [Ports](#ports)
+  - [Fake data responses](#fake-data-responses)
 
----
+## Upgrading from 0.6.x
 
-## Version 0.5.x to 0.6.x
+These changes are on the main branch and will ship in the next release after
+0.6.1.
 
-This is a major version with several breaking changes. Review all three sections
-before upgrading.
+### Placeholders replace the `*` wildcard
 
-### TLS Certificate Configuration Changes
+Host wildcards are now written as named placeholders. A `*` in `from` or `to`
+is a configuration error. Give each wildcard a name, and use the same name in
+the target to carry the value over:
 
-**Breaking Change:** Global `cert-file` and `key-file` configuration properties
-have been removed from the root level. TLS certificates must now use
-auto-generated certificates with a local CA.
+In 0.6.x:
 
-#### Why This Change?
+```yaml
+mappings:
+  - from: http://*.local.com:8080
+    to: https://*.example.com
+```
 
-The previous architecture required all HTTPS mappings to share the same
-certificate. The new approach uses auto-generated certificates with a local CA,
-providing greater flexibility, SNI support, and simpler configuration.
+Now:
 
-#### Migration Steps
+```yaml
+mappings:
+  - from: http://{sub}.local.com:8080
+    to: https://{sub}.example.com
+```
 
-**Old Configuration (v0.5.x and earlier):**
+With several placeholders, values are matched by name rather than by position.
+See [Named placeholder mapping](Configuration#named-placeholder-mapping).
+
+### `debug` is replaced by `UNCORS_LOGGING`
+
+The `--debug` flag and the `debug` configuration key are gone. `--debug` now
+fails with an unknown-flag error, and a `debug` key in the file is ignored. To
+get diagnostic logs, set `UNCORS_LOGGING` to a file path:
+
+```bash
+# 0.6.x
+uncors --debug --config .uncors.yaml
+
+# Now
+UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+```
+
+### Cache settings
+
+`cache-config.clear-time` is gone and is ignored if present. A new
+`cache-config.max-size` limits the total size of the cache in bytes (100 MB by
+default):
+
+In 0.6.x:
+
+```yaml
+cache-config:
+  expiration-time: 10m
+  clear-time: 5m
+```
+
+Now:
+
+```yaml
+cache-config:
+  expiration-time: 10m
+  max-size: 52428800
+```
+
+### Durations without spaces
+
+`delay` and `expiration-time` are parsed with Go's duration syntax, which does
+not allow spaces. Values like `1m 30s` now fail with a parse error:
+
+In 0.6.x:
+
+```yaml
+delay: 1m 30s
+```
+
+Now:
+
+```yaml
+delay: 1m30s
+```
+
+### Terminal UI by default
+
+UNCORS now starts an interactive terminal UI. Pass `--interactive=false` to
+get plain log output, for example in scripts, CI, or Docker.
+
+## Upgrading from 0.5.x to 0.6.x
+
+Version 0.6 had three breaking changes.
+
+### TLS certificates
+
+The top-level `cert-file` and `key-file` options were removed. Instead of one
+certificate shared by every HTTPS mapping, UNCORS now creates a certificate
+for each host, signed by a local CA.
+
+In 0.5.x:
 
 ```yaml
 cert-file: ~/certs/server.crt
@@ -41,59 +115,34 @@ key-file: ~/certs/server.key
 mappings:
   - from: https://app.local:8443
     to: https://api.example.com
-  - from: https://admin.local:8443
-    to: https://admin.example.com
 ```
 
-**New Configuration (v0.6.x):**
+In 0.6.x:
 
 ```yaml
 mappings:
   - from: https://app.local:8443
     to: https://api.example.com
-  - from: https://admin.local:8443
-    to: https://admin.example.com
 ```
 
-Before using HTTPS mappings, generate a local CA once:
+To migrate:
 
-```bash
-uncors generate-certs
-```
+1. Remove `cert-file` and `key-file`.
+2. Run `uncors generate-certs` once. It creates `~/.config/uncors/ca.crt` and
+   `~/.config/uncors/ca.key`.
+3. Add `ca.crt` to your system's trusted certificates so browsers accept the
+   generated certificates.
 
-This creates `~/.config/uncors/ca.crt`. Add this certificate to your system's
-trusted certificates to avoid browser warnings.
+Several HTTPS hosts can now share a port, because the certificate is picked by
+SNI.
 
-**Key Changes:**
+### Ports
 
- 1. **Remove** the global `cert-file` and `key-file` properties
- 2. **Run** `uncors generate-certs` to create a local CA
- 3. **Trust** the CA certificate in your system's certificate store
+The top-level `http-port` and `https-port` options and the matching flags were
+removed. Each mapping now sets its own port in the `from` URL. Without a port,
+UNCORS uses 80 for HTTP and 443 for HTTPS.
 
-#### Benefits of Auto-Generated Certificates
-
- - Automatic certificate generation for any host
- - No need to manage certificate files
- - SNI (Server Name Indication) support - multiple hosts on the same port
- - Certificates cached in memory, regenerated only when needed
-
----
-
-### Port Configuration Changes
-
-**Breaking Change:** Global `http-port` and `https-port` configuration
-properties have been removed. Ports are now specified directly in the mapping
-URLs.
-
-#### Why This Change?
-
-The previous architecture required all HTTP mappings to share the same port and
-all HTTPS mappings to share the same port. The new per-mapping port
-configuration allows each mapping to listen on its own port.
-
-#### Migration Steps
-
-**Old Configuration (v0.5.x and earlier):**
+In 0.5.x:
 
 ```yaml
 http-port: 8080
@@ -103,9 +152,10 @@ mappings:
     to: https://api.example.com
   - from: https://secure-app
     to: https://backend.example.com
+  - http://other: https://github.com
 ```
 
-**New Configuration (v0.6.x):**
+In 0.6.x:
 
 ```yaml
 mappings:
@@ -113,17 +163,20 @@ mappings:
     to: https://api.example.com
   - from: https://secure-app:8443
     to: https://backend.example.com
+  - http://other:8080: https://github.com
 ```
 
-**Key Changes:**
+On the command line:
 
- 1. **Remove** the global `http-port` and `https-port` properties
- 2. **Add** the port number directly to the `from` URL: `protocol://host:port`
- 3. Ports default to 80 for HTTP and 443 for HTTPS when omitted
+```bash
+# 0.5.x
+uncors --http-port 8080 --from http://localhost --to https://api.example.com
 
-#### Multiple Ports Example
+# 0.6.x
+uncors --from http://localhost:8080 --to https://api.example.com
+```
 
-The new architecture enables each mapping to use a different port:
+Mappings can now listen on different ports:
 
 ```yaml
 mappings:
@@ -135,73 +188,13 @@ mappings:
     to: https://backend.example.com
 ```
 
-#### Short Syntax Migration
+### Fake data responses
 
-**Old:**
+The `fake` response type for mocks was removed. Generate dynamic data with a
+[script](Script-Handler) instead. A script can call an external generator such
+as [fakedata](https://github.com/lucapette/fakedata):
 
-```yaml
-http-port: 8080
-mappings:
-  - http://localhost: https://github.com
-```
-
-**New:**
-
-```yaml
-mappings:
-  - http://localhost:8080: https://github.com
-```
-
-#### Command-Line Arguments Migration
-
-**Old:**
-
-```bash
-uncors --http-port 8080 --from http://localhost --to https://api.example.com
-```
-
-**New:**
-
-```bash
-uncors --from http://localhost:8080 --to https://api.example.com
-```
-
-#### Wildcard Mapping Migration
-
-**Old:**
-
-```yaml
-http-port: 8080
-mappings:
-  - from: http://*.local.com
-    to: https://*.example.com
-```
-
-**New:**
-
-```yaml
-mappings:
-  - from: http://*.local.com:8080
-    to: https://*.example.com
-```
-
----
-
-### Fake Response Feature Removal
-
-**Breaking Change:** The `fake` field for generating mock responses with fake
-data has been removed. Use Lua script handlers instead for dynamic response
-generation.
-
-#### Why This Change?
-
-The Lua script handler provides a more flexible and powerful way to generate
-dynamic responses. It allows for complex logic, external command execution, and
-better maintainability.
-
-#### Migration Steps
-
-**Old Configuration (v0.5.x and earlier):**
+In 0.5.x:
 
 ```yaml
 mappings:
@@ -221,7 +214,7 @@ mappings:
           seed: 12345
 ```
 
-**New Configuration (v0.6.x) - Using Script Handler:**
+In 0.6.x:
 
 ```yaml
 mappings:
@@ -239,47 +232,7 @@ mappings:
           response:WriteString(output)
 ```
 
-**Key Changes:**
-
- 1. **Remove** the `mocks` section with `fake` and `seed` properties
- 2. **Add** a `scripts` section with a Lua script handler
- 3. **Use** the [fakedata](https://github.com/lucapette/fakedata) CLI tool or
-    any other tool of your choice
-
-#### Installing fakedata
-
-**macOS:**
-
-```bash
-brew install lucapette/tap/fakedata
-```
-
-**Linux/macOS with Go:**
-
-```bash
-go install github.com/lucapette/fakedata@latest
-```
-
-#### Example: Array of Objects
-
-**Old:**
-
-```yaml
-response:
-  code: 200
-  fake:
-    type: array
-    item:
-      type: object
-      properties:
-        name:
-          type: name
-        email:
-          type: email
-    count: 5
-```
-
-**New:**
+For an array, collect the NDJSON lines into a JSON array:
 
 ```yaml
 scripts:
@@ -289,39 +242,27 @@ scripts:
       local output = handle:read("*a")
       handle:close()
 
-      -- Convert NDJSON to JSON array
       local lines = {}
       for line in output:gmatch("[^\n]+") do
-          table.insert(lines, line)
+        table.insert(lines, line)
       end
-      local result = "[" .. table.concat(lines, ",") .. "]"
 
       response.headers["Content-Type"] = "application/json"
       response:WriteHeader(200)
-      response:WriteString(result)
+      response:WriteString("[" .. table.concat(lines, ",") .. "]")
 ```
 
-#### Advantages of the Script Handler Approach
+Install fakedata with Homebrew (`brew install lucapette/tap/fakedata`) or Go
+(`go install github.com/lucapette/fakedata@latest`). `io.popen` runs the
+command on every request, with the permissions of the UNCORS process.
 
- - **More flexible**: Execute any command-line tool, not just fake data
-   generation
- - **Better control**: Use Lua logic for complex data transformations
- - **External tools**: Leverage `fakedata`, `faker-cli`, or custom scripts
- - **Full language**: Access to Lua's complete capabilities for complex
-   scenarios
+## Getting help
 
-For more information, see the [Script Handler documentation](Script-Handler).
+If a migration doesn't work:
 
----
-
-## Need Help?
-
-If you encounter issues during migration:
-
- 1. Check the [Configuration](Configuration) documentation for the current
-    format
- 2. Review the [JSON
-    Schema](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json) for
-    configuration validation
- 3. Enable diagnostic logging: `UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml`
- 4. Report issues at [GitHub Issues](https://github.com/evg4b/uncors/issues)
+1. Compare your file with the [Configuration](Configuration) reference.
+2. Validate it against the
+   [JSON Schema](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json).
+3. Run with diagnostic logging:
+   `UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml`.
+4. Report the problem on [GitHub Issues](https://github.com/evg4b/uncors/issues).

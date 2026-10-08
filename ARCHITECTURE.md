@@ -1,210 +1,153 @@
-# UNCORS Architecture
+# UNCORS architecture
 
-A quick overview of how UNCORS works and how the code is organized.
+How UNCORS handles a request and where the code for each part lives.
 
-## What is UNCORS?
+## Overview
 
-UNCORS is a local development proxy that bypasses CORS restrictions. It sits between your browser and backend servers, modifying CORS headers on the fly.
+UNCORS is a local reverse proxy for development. It listens on the ports named
+in the `from` URLs of its mappings, picks a mapping by the request's host name,
+and either answers the request itself (static file, mock, script) or forwards
+it to the mapping's `to` URL. Responses get permissive CORS headers so the
+browser accepts them.
 
-**How it works:**
+## Packages
 
-- Intercepts HTTP/HTTPS requests
-- Forwards requests to target servers
-- Modifies CORS headers in responses
-- Uses middleware for additional features (caching, mocking, etc.)
+| Package                 | Responsibility                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `main.go`               | Builds the DI container and dispatches to `generate-certs` or the main command.                    |
+| `internal/cli`          | Command entry points: `RunUncors` (interactive or headless mode, config watching, shutdown) and `GenerateCerts`. |
+| `internal/commands`     | The `generate-certs` command implementation.                                                       |
+| `internal/di`           | `Container` (process-lifetime services), `Runtime` (everything built from one config), `Proxy` (serves a `Runtime` and swaps it on reload). |
+| `internal/config`       | Flag parsing, YAML loading, normalisation, validation, and the file watcher.                       |
+| `internal/handler`      | Router, handlers, and middleware (see below).                                                      |
+| `internal/server`       | Listeners, TLS with on-the-fly host certificates, the local CA, and request tracking.              |
+| `internal/infra`        | HTTP client, CORS header helpers, error pages, diagnostic logging setup.                           |
+| `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
+| `internal/tui`, `internal/uncors_app` | Console output and the interactive Bubble Tea UI.                                    |
+| `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
+| `pkg/urlt`              | A fork of `net/url` with placeholder support.                                                      |
+| `testing/`, `tests/`    | Shared test helpers and mocks; integration and schema tests.                                       |
 
-## Core Components
+## Configuration
 
-### Command Entry Points (`internal/cli`)
+`config.LoadConfiguration` parses flags with `pflag`, decodes the YAML file
+with `gopkg.in/yaml.v3`, applies flag overrides, normalises mappings, and
+validates the result in Go code. Validation also checks that referenced files
+and directories exist and that the local CA exists when an HTTPS mapping is
+configured.
 
-Loads the configuration and runs UNCORS in interactive (TUI) or headless mode,
-including graceful shutdown and config watching.
+`schema.json` describes the same format for editors and is checked by the tests
+in `tests/schema`. It is not used at runtime, so changes to the config structs
+must be mirrored there by hand.
 
-### Dependency Container (`internal/di`)
+`config.Watcher` watches the configuration file. On a change, the CLI reloads
+the configuration and calls `di.Proxy.Restart`, which builds a new `Runtime`
+before replacing the old one. If loading fails, the old configuration stays
+active.
 
-Builds the object graph. `Container` holds process-lifetime services; `Runtime`
-holds everything derived from a single configuration (cache, HAR writers,
-routers, server targets); `Proxy` serves one `Runtime` and swaps generations
-when the config file changes.
+## Request flow
 
-### Configuration (`internal/config`)
+Each listener serves the mappings that share its port and scheme. A
+`gorilla/mux` router (`internal/handler/router`) selects the mapping by host
+name and then the first matching route, in this order:
 
-Loads and validates YAML config files using JSON Schema.
+1. Static directories (`statics`), matched by path prefix.
+2. Mocks, then scripts. Within each, entries with a method, query, or header
+   filter come before entries that match on path alone.
+3. Rewrites, matched by path or path prefix.
+4. The mapping's default handler, for everything else.
 
-### Request Handlers (`internal/handler`)
+Requests with a host that no mapping covers get a "host not mapped" error.
 
-Routes requests and builds middleware chains based on configuration.
-
-**Available handlers:**
-
-- **Proxy** - Forwards requests to upstream servers with modified CORS headers
-- **Mock** - Returns predefined responses from files or config
-- **Script** - Runs Lua scripts for dynamic responses
-- **Static** - Serves static files from filesystem
-
-**Middleware:**
-
-- **Cache** - In-memory response caching with TTL
-- **Rewrite** - URL/header/query parameter manipulation
-- **Options** - Handles CORS preflight requests
-- **HAR Collector** - Records all request/response pairs to an HTTP Archive (HAR 1.2) file
-
-### Infrastructure (`internal/infra`)
-
-HTTP client, logger setup, TLS certificate handling.
-
-### Terminal UI (`internal/tui`)
-
-Colored logging and request/response formatting.
-
-## Request Flow
-
-1. **Client sends request** → UNCORS server
-2. **Route matching** - Find mapping by host/port
-3. **Middleware pipeline** - Apply HAR capture → options → cache → static
-4. **Handler selection** - Choose mock, script, or proxy handler
-5. **CORS modification** - Add/modify CORS headers
-6. **Response** - Return to client (HAR entry is enqueued asynchronously)
-
-Example CORS headers added:
+The default handler is a chain of middleware around the proxy handler:
 
 ```
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Access-Control-Allow-Methods: *
-Access-Control-Allow-Headers: *
+HAR collector → cache → OPTIONS handling → proxy
 ```
 
-## Project Structure
+- The HAR collector (if `har` is set) records the request and response.
+- The cache (if `cache` globs are set) answers repeated requests from memory
+  and stores 2xx responses.
+- OPTIONS handling (unless disabled) answers preflight requests.
+- The proxy rewrites the URL, `Origin`, `Referer`, cookies, and `Location`,
+  forwards the request, and adds CORS headers to the response.
 
-```
-uncors/
-├── main.go
-├── internal/
-│   ├── config/           # Config loading & validation
-│   ├── contracts/        # Interfaces (handler, logger, http client)
-│   ├── handler/          # Request handlers & middleware
-│   │   ├── cache/
-│   │   ├── har/          # HAR collector middleware & async writer
-│   │   ├── mock/
-│   │   ├── proxy/
-│   │   ├── script/
-│   │   ├── static/
-│   │   └── ...
-│   ├── infra/            # HTTP client, logger, TLS
-│   ├── tui/              # Terminal UI
-│   ├── cli/              # Command entry points
-│   ├── di/               # Container, config generations, proxy lifecycle
-│   └── helpers/          # Utilities
-├── testing/              # Mocks & test helpers
-└── tests/                # Integration tests
-```
+Static directories and rewrites hand requests they don't serve themselves to
+this same default handler, so those requests are cached and recorded like
+any other proxied request. Mock and script responses don't pass through it:
+they are not cached or recorded, and they add CORS headers themselves. Files
+served from static directories get no CORS headers.
 
-## HAR Collector
+## Middleware and handler contracts
 
-The HAR (HTTP Archive) collector records every proxied request/response pair to
-a [HAR 1.2](https://w3c.github.io/web-performance/specs/HAR/Overview.html) file.
-It is enabled per-mapping via the `har.file` config key and is implemented as a
-standalone middleware (`internal/handler/har`).
-
-**Design goals:**
-- **Non-blocking** - the middleware never blocks the request goroutine. Entries
-  are sent over a buffered channel (capacity 4096). If the channel is full the
-  entry is silently dropped rather than stalling the request.
-- **High throughput writes** - a single background goroutine serialises all
-  disk I/O. After every new entry it atomically replaces the HAR file using a
-  write-to-tmp-then-rename strategy so the file is always in a valid state.
-- **Per-mapping isolation** - each mapping creates its own `Writer` instance and
-  its own output file, so traffic from different mappings can be captured
-  independently.
-- **Lifecycle management** - `Writer` implements `io.Closer`. Each writer is
-  registered with the `di.Runtime` that created it; on shutdown or config reload
-  the runtime calls `Close()`, which drains the channel and flushes outstanding
-  entries before stopping the background goroutine.
-
-**Configuration:**
-
-The simplest form uses a string shorthand - the value is treated as the output file path:
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    har: ./recordings/api.har
-```
-
-For full control, use the object form:
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    har:
-      file: ./recordings/api.har
-      capture-secure-headers: true   # default: false
-```
-
-**Security-sensitive headers:**
-
-By default the following headers are **excluded** from HAR entries to avoid
-persisting credentials on disk. Set `capture-secure-headers: true` to include
-them.
-
-| Header                | Why it is sensitive                        |
-|-----------------------|--------------------------------------------|
-| `Cookie`              | Session identifiers                        |
-| `Set-Cookie`          | Session identifiers set by the server      |
-| `Authorization`       | Bearer tokens, Basic credentials           |
-| `WWW-Authenticate`    | Server auth challenges (reveals scheme)    |
-| `Proxy-Authorization` | Proxy credentials                          |
-| `Proxy-Authenticate`  | Proxy auth challenges                      |
-
-## Key Design Patterns
-
-**Middleware Pattern** - Composable request/response processing
+The contracts live in `internal/contracts`:
 
 ```go
-type Middleware = func(http.Handler) http.Handler
+type Handler interface {
+	ServeHTTP(writer ResponseWriter, request *Request) error
+}
+
+type Next func(writer ResponseWriter, request *Request) error
+
+type Middleware interface {
+	ServeHTTP(writer ResponseWriter, request *Request, next Next) error
+}
 ```
 
-**Factory Pattern** - Creates handlers/middleware with dependency injection
+Handlers return errors instead of writing error pages themselves; the
+infrastructure layer turns them into responses. Components are built with
+functional options (`helpers.ApplyOptions`) and wired in `internal/di`.
 
-```go
-type ProxyHandlerFactory = func() contracts.Handler
-```
+## HAR collector
 
-**Interface-based** - Small interfaces for easy testing and mocking
+`internal/handler/har` records traffic in HAR 1.2 format.
+
+- Requests never wait for disk I/O. The middleware sends each entry over a
+  channel with capacity 4096 and drops the entry if the channel is full.
+- One background goroutine per mapping drains the channel and rewrites the
+  whole file after each batch, writing a temporary file and renaming it over
+  the target, so the file on disk is always valid.
+- Each `Writer` belongs to the `Runtime` that created it. When the runtime is
+  closed on shutdown or reload, `Close` drains the channel and writes the file
+  one last time. A new runtime starts a new, empty recording.
+- `Cookie`, `Set-Cookie`, `Authorization`, `WWW-Authenticate`,
+  `Proxy-Authorization`, and `Proxy-Authenticate` are left out unless
+  `capture-secure-headers` is set.
+
+## HTTPS
+
+`uncors generate-certs` creates a CA in `~/.config/uncors/`. At runtime,
+`server.HostCertManager` loads it on the first TLS handshake, signs a
+certificate for the SNI host name, and caches it in memory.
 
 ## Extending UNCORS
 
-Want to add a new feature? Here's where to start:
+A new request handler:
 
-**New handler:**
+1. Add a package under `internal/handler/`.
+2. Implement `contracts.Handler`.
+3. Add a constructor to the DI layer and register routes for it in
+   `internal/handler/router`.
+4. Add the config struct, validation, and `schema.json` entries.
 
-1. Create package in `internal/handler/`
-2. Implement `contracts.Handler` interface
-3. Add factory to `RequestHandler`
+New middleware:
 
-**New middleware:**
+1. Add a package under `internal/handler/`.
+2. Implement `contracts.Middleware`.
+3. Wire it into the router, usually in `prepareDefaultHandler`.
 
-1. Create middleware package
-2. Implement `func(http.Handler) http.Handler` signature
-3. Add to middleware chain
+A new config option:
 
-**New config option:**
-
-1. Update structs in `internal/config/`
-2. Update `schema.json`
-3. Add validator if needed
+1. Add the field to the structs in `internal/config/`, with validation.
+2. Add it to `schema.json` and a fixture under `tests/schema/`.
+3. Document it in `docs/`.
 
 ## Testing
 
-- Unit tests use mocks (generated with `minimock`)
-- Integration tests in `tests/`
-- Run: `make test` or `go test ./...`
+- Unit tests sit next to the code and use mocks generated with `minimock`.
+- `tests/integration` holds end-to-end tests with real sockets and TLS; run
+  them with `make test-integration`.
+- `tests/schema` validates YAML fixtures against `schema.json`.
+- `make test` runs the unit tests with the race detector.
 
-## Important Notes
-
-**Security:** UNCORS is for local development only. Don't expose it to the internet!
-
-**Performance:** Uses goroutines, connection pooling, and in-memory caching for speed.
+UNCORS is for local development only. Don't expose it to the internet.

@@ -1,124 +1,65 @@
-This guide provides practical, copy-paste ready examples for common UNCORS use
-cases.
+Complete configurations for common setups. Each one lists the hosts file
+entries it needs; see [Hosts file setup](Installation#hosts-file-setup).
 
-## Frontend Development with Backend API
+## Frontend against a remote API
 
-**Scenario:** You're developing a React/Vue/Angular app locally that needs to
-connect to a remote API, but CORS blocks requests.
+You develop a frontend locally and the remote API blocks it with CORS.
 
-**1. Hosts file (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`):**
+Hosts file:
 
 ```
-127.0.0.1 app.local
+127.0.0.1 api.local
 ```
 
-**2. UNCORS configuration (`.uncors.yaml`):**
+`.uncors.yaml`:
 
 ```yaml
 mappings:
-  - from: http://app.local:3000
+  - from: http://api.local:3000
     to: https://api.production.com
 ```
 
-**3. Start UNCORS:**
+Start UNCORS:
 
 ```bash
 uncors --config .uncors.yaml
 ```
 
-**4. Configure your frontend to use the local domain:**
+Point the frontend at the local address, for example in `.env.local`:
 
-```javascript
-// .env.local
-VITE_API_URL=http://app.local:3000
-// or
-REACT_APP_API_URL=http://app.local:3000
+```bash
+VITE_API_URL=http://api.local:3000
+# or
+REACT_APP_API_URL=http://api.local:3000
 ```
 
-**5. Make requests:**
+Requests now go through UNCORS, which adds CORS headers to every response:
 
 ```javascript
-fetch("http://app.local:3000/api/users")
+fetch("http://api.local:3000/api/users")
   .then((res) => res.json())
   .then((data) => console.log(data));
 ```
 
-**Benefits:**
+## Mocking API responses for tests
 
- - No CORS errors
- - No backend modifications needed
- - Works with any frontend framework
+You want to test how the frontend handles specific responses without changing
+the real backend.
 
----
-
-## Microservices Development
-
-**Scenario:** You're working on a microservices architecture and want to route
-different paths to different services locally.
-
-**Hosts file:**
-
-```
-127.0.0.1 gateway.local
-```
-
-**Configuration:**
-
-```yaml
-mappings:
-  - from: http://gateway.local:8000
-    to: https://production-gateway.com
-    rewrites:
-      # Route authentication requests to auth service
-      - from: /auth/{endpoint}
-        to: /v1/{endpoint}
-        host: auth.production.com
-
-      # Route user requests to user service
-      - from: /users/{endpoint}
-        to: /api/{endpoint}
-        host: users.production.com
-
-      # Route payment requests to payment service
-      - from: /payments/{endpoint}
-        to: /v2/payments/{endpoint}
-        host: payments.production.com
-```
-
-**Usage:**
-
-```bash
-# Authentication request → auth.production.com
-curl http://gateway.local:8000/auth/login
-
-# User request → users.production.com
-curl http://gateway.local:8000/users/profile
-
-# Payment request → payments.production.com
-curl http://gateway.local:8000/payments/process
-```
-
----
-
-## API Mocking for Testing
-
-**Scenario:** You need to test frontend behavior with different API responses
-without affecting the real backend.
-
-**Hosts file:**
+Hosts file:
 
 ```
 127.0.0.1 api.test
 ```
 
-**Configuration:**
+Configuration:
 
 ```yaml
 mappings:
   - from: http://api.test:3000
     to: https://api.production.com
     mocks:
-      # Mock successful response
+      # Successful response
       - path: /api/users/{id}
         method: GET
         response:
@@ -133,7 +74,7 @@ mappings:
               "role": "admin"
             }
 
-      # Mock error response
+      # Error response
       - path: /api/users/{id}
         method: DELETE
         response:
@@ -146,7 +87,7 @@ mappings:
               "code": "INSUFFICIENT_PERMISSIONS"
             }
 
-      # Mock slow response (network latency simulation)
+      # Slow response
       - path: /api/slow-endpoint
         method: GET
         response:
@@ -156,7 +97,7 @@ mappings:
             Content-Type: application/json
           raw: '{"status": "completed"}'
 
-      # Mock paginated response
+      # First page of a list; other pages go to the real API
       - path: /api/posts
         method: GET
         queries:
@@ -171,50 +112,38 @@ mappings:
                 {"id": 1, "title": "Post 1"},
                 {"id": 2, "title": "Post 2"}
               ],
-              "pagination": {
-                "page": 1,
-                "total": 10
-              }
+              "pagination": {"page": 1, "total": 10}
             }
 ```
 
-**Test scenarios:**
+Try it:
 
 ```bash
-# Test successful user fetch
 curl http://api.test:3000/api/users/123
-
-# Test permission error
 curl -X DELETE http://api.test:3000/api/users/123
-
-# Test slow network
 curl http://api.test:3000/api/slow-endpoint
-
-# Test pagination
 curl "http://api.test:3000/api/posts?page=1"
 ```
 
----
+## Production API with local overrides
 
-## Local Development with Production APIs
+You use the production API but replace a few endpoints and assets with local
+versions.
 
-**Scenario:** You want to use production APIs but override specific endpoints
-with local data for testing.
-
-**Hosts file:**
+Hosts file:
 
 ```
 127.0.0.1 dev.local
 ```
 
-**Configuration:**
+Configuration:
 
 ```yaml
 mappings:
   - from: http://dev.local:4000
     to: https://api.production.com
 
-    # Override authentication with mock (bypass real auth)
+    # Skip the real login
     mocks:
       - path: /auth/token
         method: POST
@@ -226,63 +155,54 @@ mappings:
             {
               "token": "dev-token-12345",
               "expires_in": 3600,
-              "user": {
-                "id": "dev-user",
-                "email": "dev@example.com"
-              }
+              "user": {"id": "dev-user", "email": "dev@example.com"}
             }
 
-    # Cache expensive endpoints
+    # Cache endpoints that are slow and rarely change
     cache:
       - /api/config/**
       - /api/metadata/**
 
-    # Serve local static assets
+    # Local copies of some assets; missing files come from production
     statics:
       - path: /assets
-        dir: ~/projects/my-app/local-assets
+        dir: ./local-assets
 ```
-
-**Usage:**
 
 ```bash
-# Get mock auth token (no real authentication)
-curl -X POST http://dev.local:4000/auth/token
-
-# Use production API for data
-curl http://dev.local:4000/api/users
-
-# Serve local assets
-curl http://dev.local:4000/assets/logo.png
+curl -X POST http://dev.local:4000/auth/token # mock
+curl http://dev.local:4000/api/users          # production API
+curl http://dev.local:4000/assets/logo.png    # ./local-assets/logo.png if it exists
 ```
 
----
+## Single-page app with an API
 
-## SPA Development with API Proxying
+You serve a local build of a single-page app and its API comes from a remote
+server. A static directory with `index` at `/` answers every request on its
+host, so the app and the API need separate host names.
 
-**Scenario:** You're building a Single-Page Application and need both local file
-serving and API proxying.
-
-**Hosts file:**
+Hosts file:
 
 ```
 127.0.0.1 app.local
+127.0.0.1 api.local
 ```
 
-**Configuration:**
+Configuration:
 
 ```yaml
 mappings:
+  # The app
   - from: http://app.local:3000
-    to: https://api.backend.com
-
-    # Serve SPA files
+    to: https://www.example.com
     statics:
       - path: /
-        dir: ~/projects/spa/dist
-        index: index.html   # Fallback for client-side routing
+        dir: ./dist
+        index: index.html
 
-    # Mock health endpoint
+  # The API
+  - from: http://api.local:3000
+    to: https://api.backend.com
     mocks:
       - path: /api/health
         method: GET
@@ -291,49 +211,89 @@ mappings:
           headers:
             Content-Type: application/json
           raw: '{"status": "ok"}'
-
-    # Cache static API responses
     cache:
       - /api/config
       - /api/static-data/**
 ```
 
-**Build and run:**
+Build the app with its API URL set to `http://api.local:3000`, then start
+UNCORS:
 
 ```bash
-# Build SPA
-npm run build  # Outputs to dist/
-
-# Start UNCORS
+npm run build # writes ./dist
 uncors --config .uncors.yaml
-
-# Access app
-open http://app.local:3000
 ```
 
-**Request routing:**
+| Request                                  | Result                                           |
+| ---------------------------------------- | ------------------------------------------------ |
+| `http://app.local:3000/`                 | `./dist/index.html`                              |
+| `http://app.local:3000/dashboard`        | `./dist/index.html` (client-side route)          |
+| `http://app.local:3000/assets/logo.png`  | `./dist/assets/logo.png`                         |
+| `http://api.local:3000/api/health`       | The mock                                         |
+| `http://api.local:3000/api/users`        | Proxied to `https://api.backend.com/api/users`   |
 
- - `http://app.local:3000/` → Serves `dist/index.html`
- - `http://app.local:3000/dashboard` → Serves `dist/index.html` (SPA routing)
- - `http://app.local:3000/assets/logo.png` → Serves `dist/assets/logo.png`
- - `http://app.local:3000/api/health` → Returns mock response
- - `http://app.local:3000/api/users` → Proxies to
-   `https://api.backend.com/api/users`
+## Several backends behind one local host
 
----
+You want one local host name to send different path prefixes to different
+services.
 
-## Multi-Environment Setup
+Hosts file:
 
-**Scenario:** You need to switch between dev, staging, and production APIs
-easily.
+```
+127.0.0.1 gateway.local
+```
 
-**Hosts file:**
+Configuration:
+
+```yaml
+mappings:
+  - from: https://gateway.local:8443
+    to: https://production-gateway.com
+    rewrites:
+      - from: /auth/{endpoint}
+        to: /v1/{endpoint}
+        host: auth.production.com
+      - from: /users/{endpoint}
+        to: /api/{endpoint}
+        host: users.production.com
+      - from: /payments/{endpoint}
+        to: /v2/payments/{endpoint}
+        host: payments.production.com
+```
+
+The source is HTTPS because a rewritten host is called with the scheme of the
+incoming request. Run `uncors generate-certs` once and trust the CA first; see
+[HTTPS configuration](Configuration#https-configuration).
+
+```bash
+curl https://gateway.local:8443/auth/login       # https://auth.production.com/v1/login
+curl https://gateway.local:8443/users/profile    # https://users.production.com/api/profile
+curl https://gateway.local:8443/payments/process # https://payments.production.com/v2/payments/process
+curl https://gateway.local:8443/status           # https://production-gateway.com/status
+```
+
+Each `{endpoint}` captures one path segment, and the query string is not
+forwarded. See [Request Rewriting](Request-Rewriting).
+
+If the services don't need to share a host name, separate mappings are
+simpler and keep the full path and query string:
+
+```yaml
+mappings:
+  - http://auth.local:8000: https://auth.production.com
+  - http://users.local:8000: https://users.production.com
+  - http://payments.local:8000: https://payments.production.com
+```
+
+## One configuration per environment
+
+You switch between development, staging, and production APIs.
+
+Hosts file:
 
 ```
 127.0.0.1 api.local
 ```
-
-**Configuration files:**
 
 ```yaml
 # .uncors.dev.yaml
@@ -366,205 +326,137 @@ mappings:
       - /api/metadata/**
 ```
 
-**Usage:**
-
 ```bash
-uncors --config .uncors.dev.yaml      # Development
-uncors --config .uncors.staging.yaml  # Staging
-uncors --config .uncors.prod.yaml     # Production-like
+uncors --config .uncors.dev.yaml
+uncors --config .uncors.staging.yaml
+uncors --config .uncors.prod.yaml
 ```
 
-**Shell aliases (optional):**
+Shell aliases save some typing:
 
 ```bash
-# Add to ~/.bashrc or ~/.zshrc
 alias uncors-dev='uncors --config .uncors.dev.yaml'
 alias uncors-staging='uncors --config .uncors.staging.yaml'
 alias uncors-prod='uncors --config .uncors.prod.yaml'
 ```
 
----
+## Mocking a GraphQL API
 
-## GraphQL API Development
+All GraphQL requests go to one path, so a mock can't tell queries apart. A
+script can look at the query instead.
 
-**Scenario:** You're developing a GraphQL client and need to mock GraphQL
-responses.
-
-**Hosts file:**
+Hosts file:
 
 ```
 127.0.0.1 graphql.local
 ```
 
-**Configuration:**
+Configuration:
 
 ```yaml
 mappings:
   - from: http://graphql.local:4000
     to: https://api.production.com
-
     scripts:
       - path: /graphql
         method: POST
         script: |
           local json = require("json")
+          response.headers["Content-Type"] = "application/json"
 
-          -- Parse GraphQL request
           local body = json.decode(request.body)
-          local query = body.query or ""
+          local query = (type(body) == "table" and body.query) or ""
 
-          -- Mock different queries
-          if string.find(query, "query GetUser") then
-            response.headers["Content-Type"] = "application/json"
+          if string.find(query, "query GetUser", 1, true) then
             response:WriteHeader(200)
             response:WriteString(json.encode({
               data = {
-                user = {
-                  id = "123",
-                  name = "Test User",
-                  email = "test@example.com"
-                }
+                user = {id = "123", name = "Test User", email = "test@example.com"}
               }
             }))
-          elseif string.find(query, "mutation CreatePost") then
-            response.headers["Content-Type"] = "application/json"
+          elseif string.find(query, "mutation CreatePost", 1, true) then
             response:WriteHeader(200)
             response:WriteString(json.encode({
               data = {
                 createPost = {
                   id = "new-post-id",
                   title = "New Post",
-                  createdAt = os.date("%Y-%m-%dT%H:%M:%SZ")
+                  createdAt = os.date("!%Y-%m-%dT%H:%M:%SZ")
                 }
               }
             }))
           else
-            -- Forward to real API
-            response:WriteHeader(502)
-            response:WriteString("Query not mocked")
+            response:WriteHeader(400)
+            response:WriteString(json.encode({
+              errors = {{message = "This query is not mocked"}}
+            }))
           end
 ```
 
-**Usage:**
+The script handles every `POST /graphql` request, so queries it doesn't
+recognize are not forwarded to the real API.
 
 ```bash
-# Query
 curl -X POST http://graphql.local:4000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query": "query GetUser { user(id: \"123\") { id name email } }"}'
 
-# Mutation
 curl -X POST http://graphql.local:4000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query": "mutation CreatePost { createPost(title: \"Hello\") { id title } }"}'
 ```
 
----
+## Shared team setup
 
-## WebSocket Proxying
-
-**Scenario:** You need to proxy WebSocket connections during development.
-
-**Hosts file:**
-
-```
-127.0.0.1 ws.local
-```
-
-**Configuration:**
-
-```yaml
-mappings:
-  - from: http://ws.local:8080
-    to: https://websocket.production.com
-```
-
-**Client code:**
-
-```javascript
-const ws = new WebSocket("ws://ws.local:8080/socket");
-
-ws.onopen = () => {
-  console.log("Connected");
-  ws.send("Hello");
-};
-
-ws.onmessage = (event) => {
-  console.log("Received:", event.data);
-};
-```
-
-> [!NOTE]
-> UNCORS transparently proxies WebSocket upgrade requests. No special
-> configuration is needed beyond the standard HTTP mapping.
-
----
-
-## Development Team Setup
-
-**Scenario:** Your team needs a standardized UNCORS setup for consistent
-development environments.
-
-**Project structure:**
+You want everyone on the team to run the same setup.
 
 ```
 my-project/
-├── .uncors.yaml          # Team configuration
-├── .env.example          # Environment template
+├── .uncors.yaml
 └── scripts/
-    └── setup.sh          # Setup script
+    └── setup.sh
 ```
 
-**`.uncors.yaml`:**
+`.uncors.yaml`:
 
 ```yaml
 mappings:
   - from: http://app.local:3000
     to: https://api.staging.company.com
-
     mocks:
-      # Mock slow endpoints for better developer experience
+      # Answer a slow report endpoint right away
       - path: /api/reports/generate
         method: POST
         response:
           code: 202
-          delay: 100ms
           headers:
             Content-Type: application/json
           raw: '{"job_id": "mock-job-123", "status": "processing"}'
-
     cache:
       - /api/config/**
       - /api/constants/**
 ```
 
-**`scripts/setup.sh`:**
+`scripts/setup.sh`:
 
 ```bash
 #!/bin/bash
+set -e
 
-echo "Setting up UNCORS development environment..."
-
-# Check if UNCORS is installed
-if ! command -v uncors &> /dev/null; then
-    echo "Installing UNCORS..."
-    brew install evg4b/tap/uncors
+if ! command -v uncors > /dev/null; then
+  echo "Installing UNCORS..."
+  brew install evg4b/tap/uncors
 fi
 
-# Add hosts file entry
 if ! grep -q "app.local" /etc/hosts; then
-    echo "127.0.0.1 app.local" | sudo tee -a /etc/hosts
-    echo "Added app.local to hosts file"
+  echo "127.0.0.1 app.local" | sudo tee -a /etc/hosts
 fi
 
-# Start UNCORS
-echo "Starting UNCORS..."
-uncors --config .uncors.yaml
-
-echo "Setup complete! Access the app at http://app.local:3000"
+echo "Starting UNCORS. The app is available at http://app.local:3000"
+exec uncors --config .uncors.yaml
 ```
 
-**Team onboarding:**
+New team members run:
 
 ```bash
 git clone https://github.com/company/my-project.git
@@ -572,25 +464,14 @@ cd my-project
 ./scripts/setup.sh
 ```
 
----
+## Not supported: WebSocket
 
-## Best Practices
+UNCORS does not proxy WebSocket connections. Connect to WebSocket endpoints
+directly; browsers don't apply CORS to WebSocket connections.
 
- 1. **Use descriptive domain names** - `app.local`, `api.local`, not
-    `test1.local`
- 2. **Document hosts file entries** - keep a README with required entries
- 3. **Version control configuration** - commit `.uncors.yaml` to git
- 4. **Environment-specific configs** - use separate files for dev/staging/prod
- 5. **Mock slow endpoints** - improve developer experience with instant
-    responses
- 6. **Cache static data** - reduce upstream load and improve speed
- 7. **Use scripts for complex logic** - keep configuration files simple
+## Templates
 
----
-
-## Configuration Templates
-
-### Basic Proxy
+Basic proxy:
 
 ```yaml
 mappings:
@@ -598,7 +479,7 @@ mappings:
     to: https://[TARGET-API]
 ```
 
-### Proxy with Mocking
+Proxy with a mock:
 
 ```yaml
 mappings:
@@ -613,56 +494,57 @@ mappings:
           raw: "[JSON-RESPONSE]"
 ```
 
-### SPA with API
+Single-page app and API:
 
 ```yaml
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
+  - from: http://[APP-DOMAIN]:3000
+    to: https://[APP-ORIGIN]
     statics:
       - path: /
-        dir: [PATH-TO-BUILD]
+        dir: [BUILD-DIR]
         index: index.html
+  - from: http://[API-DOMAIN]:3000
+    to: https://[TARGET-API]
 ```
 
-### Full-Featured
+Most features in one file:
 
 ```yaml
 cache-config:
   expiration-time: 10m
 
 mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
-
+  - from: http://[APP-DOMAIN]:3000
+    to: https://[APP-ORIGIN]
     statics:
       - path: /
         dir: [BUILD-DIR]
         index: index.html
 
+  - from: http://[API-DOMAIN]:3000
+    to: https://[TARGET-API]
     mocks:
       - path: /api/[ENDPOINT]
         response:
           code: 200
           headers:
             Content-Type: application/json
-          file: ./mocks/[FILE].json
-
+          raw: "[JSON-RESPONSE]"
     cache:
       - /api/**
-
     rewrites:
-      - from: /old-api/{path}
-        to: /v2/api/{path}
+      - from: /old-api/{resource}
+        to: /v2/api/{resource}
+    har: ./recordings/api.har
 ```
 
----
+More details on each feature:
 
-For more details on any of these features, see:
-
- - [Configuration](Configuration)
- - [Response Mocking](Response-Mocking)
- - [Static File Serving](Static-File-Serving)
- - [Script Handler](Script-Handler)
- - [Request Rewriting](Request-Rewriting)
- - [Response Caching](Response-Caching)
+- [Configuration](Configuration)
+- [Response Mocking](Response-Mocking)
+- [Static File Serving](Static-File-Serving)
+- [Script Handler](Script-Handler)
+- [Request Rewriting](Request-Rewriting)
+- [Response Caching](Response-Caching)
+- [HAR Collector](HAR-Collector)

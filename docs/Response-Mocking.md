@@ -1,23 +1,15 @@
-The mocking system allows you to simulate API responses for specific endpoints
-during development and testing. Mock responses can be filtered by path, HTTP
-method, query parameters, and headers using the [gorilla/mux route matching
-system](https://github.com/gorilla/mux#matching-routes).
+Mocks return a predefined response for matching requests without contacting
+the upstream server. Use them to fake endpoints that don't exist yet, to force
+error responses, or to simulate slow responses.
 
-**Key features:**
-
- - **Path-based matching** - define which URLs to intercept
- - **Method-specific** - target specific HTTP methods (GET, POST, etc.)
- - **Query parameter filtering** - match requests with specific query strings
- - **Header matching** - filter by HTTP headers
- - **Configurable responses** - control status codes, headers, delays, and
-   content
-
-**Configuration structure:**
+A mock matches on the request path and, optionally, the method, query
+parameters, and headers. Matching uses
+[gorilla/mux](https://github.com/gorilla/mux#matching-routes) routes.
 
 ```yaml
 mappings:
-  - from: ...
-    to: ...
+  - from: http://api.local:3000
+    to: https://api.example.com
     mocks:
       - path: /example-endpoint
         method: POST
@@ -34,136 +26,159 @@ mappings:
           raw: '{ "ok": true }'
 ```
 
-## Request Matching
+## Request matching
 
-Configure which requests should be intercepted by the mock.
+| Option    | Required | Description                                                             |
+| --------- | -------- | ----------------------------------------------------------------------- |
+| `path`    | Yes      | URL path to match. Must start with `/`.                                 |
+| `method`  | No       | HTTP method in upper case, for example `GET` or `POST`. Default: any.   |
+| `queries` | No       | Query parameters that must be present with these values.               |
+| `headers` | No       | Request headers that must be present with these values.                |
 
-### Path (Required)
+### Path
 
-Defines the URL path to mock. Supports static paths and variable segments.
+The path must match the whole request path. `/api/users` matches `/api/users`
+but not `/api/users/` or `/api/users/1`.
 
-**Examples:**
+A segment in braces matches any value in that position:
 
 ```yaml
-path: /api/users              # Static path
-path: /users/{id}             # Variable segment
-path: /posts/{postId}/comments/{commentId}  # Multiple variables
+path: /api/users              # exact path
+path: /users/{id}             # /users/123, /users/abc, ...
+path: /posts/{postId}/comments/{commentId}
 ```
 
-Variable segments (e.g., `{id}`) match any value in that position. A request to
-`/users/123` matches `/users/{id}`.
+gorilla/mux also accepts a regular expression after the name, for example
+`/users/{id:[0-9]+}`.
 
-### Method (Optional)
+### Method
 
-Specifies the HTTP method to match.
+```yaml
+method: DELETE
+```
 
-| Property | Type   | Default | Description                                                |
-| -------- | ------ | ------- | ---------------------------------------------------------- |
-| `method` | string | Any     | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, etc. |
+Without `method`, the mock answers every method. Allowed values are `GET`,
+`HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`, `OPTIONS`, and `TRACE`.
 
-If omitted, the mock matches all HTTP methods.
-
-### Query Parameters (Optional)
-
-Match requests with specific query string parameters.
+### Query parameters and headers
 
 ```yaml
 queries:
-  param1: value1
-  param2: value2
-```
-
-If omitted, all query parameter combinations are matched.
-
-### Headers (Optional)
-
-Match requests with specific HTTP headers.
-
-```yaml
+  page: "1"
 headers:
-  Content-Type: application/json
   Authorization: Bearer token123
 ```
 
-If omitted, all header combinations are matched.
+Every listed parameter and header must be present with the given value. Other
+parameters and headers in the request are ignored.
 
-## Response Configuration
+### Matching order
 
-Define the response returned when a mock is triggered.
+Mocks that filter on method, query parameters, or headers are checked before
+mocks that match on path alone, whatever their order in the file. Among mocks
+of the same kind, the first one in the file wins. This lets you combine a
+specific mock with a catch-all for the same path:
 
-### Response Properties
+```yaml
+mocks:
+  - path: /api/users/{id}
+    response:
+      code: 200
+      raw: '{"id": "123"}'
+  - path: /api/users/{id}
+    method: DELETE
+    response:
+      code: 403
+      raw: '{"error": "forbidden"}'
+```
 
-| Property  | Type    | Required      | Default | Description                                |
-| --------- | ------- | ------------- | ------- | ------------------------------------------ |
-| `code`    | integer | No            | `200`   | HTTP status code (e.g., 200, 404, 500)     |
-| `headers` | object  | No            | -       | Custom HTTP headers to include in response |
-| `delay`   | string  | No            | -       | Response delay (e.g., `1m 30s`, `500ms`)   |
-| `raw`     | string  | Conditional\* | -       | Raw response content                       |
-| `file`    | string  | Conditional\* | -       | Path to file containing response content   |
+Here `DELETE /api/users/1` returns 403 and any other method returns 200.
 
-***One of `raw` or `file` must be specified.**
+Mocks are checked before [scripts](Script-Handler) and
+[rewrites](Request-Rewriting). [Static directories](Static-File-Serving) are
+checked before mocks, so a mock whose path falls under a static `path` prefix is
+never reached.
 
-### Status Code
+## Response
+
+| Option    | Type    | Required | Description                                                  |
+| --------- | ------- | -------- | ------------------------------------------------------------ |
+| `code`    | integer | Yes      | HTTP status code, 100 to 599.                                |
+| `headers` | object  | No       | Response headers.                                            |
+| `delay`   | string  | No       | Wait this long before responding, for example `500ms`.       |
+| `raw`     | string  | One of   | Response body as text.                                       |
+| `file`    | string  | One of   | Path to a file whose content is the response body.          |
+
+Set exactly one of `raw` and `file`.
+
+### Body from `raw`
 
 ```yaml
 response:
-  code: 201
+  code: 200
+  headers:
+    Content-Type: application/json
+  raw: '{"message": "Success", "id": 123}'
 ```
+
+If you don't set `Content-Type`, UNCORS guesses it from the first bytes of the
+body. JSON is not detected and is sent as `text/plain`, so set the header
+yourself for JSON.
+
+### Body from `file`
+
+```yaml
+response:
+  code: 200
+  file: ./mocks/users-response.json
+```
+
+The path is relative to the directory UNCORS was started from. UNCORS checks
+that the file exists at startup and reads it on every request, so edits to the
+file show up without a restart. `Content-Type` is taken from the file
+extension.
+
+> [!NOTE]
+> File responses are currently always sent with status 200, whatever `code`
+> says. Use `raw`, or a [script](Script-Handler), when you need another status
+> code.
 
 ### Headers
 
-Add or override response headers:
-
 ```yaml
 response:
+  code: 200
   headers:
     Content-Type: application/json
     X-Custom-Header: value
 ```
 
+UNCORS adds its CORS headers to mock responses. Headers you list here are set
+after them, so you can override any of them.
+
 ### Delay
 
-Simulate network latency or slow endpoints. Format:
-`<number><unit> [<number><unit> ...]`
+`delay` simulates a slow endpoint. It uses Go duration syntax: a number
+followed by a unit, with several parts written together without spaces.
 
-**Supported units:**
-
-| Unit      | Meaning      |
-| --------- | ------------ |
-| `ns`      | Nanoseconds  |
-| `us`/`µs` | Microseconds |
-| `ms`      | Milliseconds |
-| `s`       | Seconds      |
-| `m`       | Minutes      |
-| `h`       | Hours        |
-
-**Examples:**
+| Unit       | Meaning      |
+| ---------- | ------------ |
+| `ns`       | Nanoseconds  |
+| `us`, `µs` | Microseconds |
+| `ms`       | Milliseconds |
+| `s`        | Seconds      |
+| `m`        | Minutes      |
+| `h`        | Hours        |
 
 ```yaml
-delay: 500ms          # Half a second
-delay: 1m 30s         # 1 minute 30 seconds
-delay: 2s 500ms       # 2.5 seconds
+delay: 500ms
+delay: 1m30s
+delay: 2s500ms
 ```
 
-### Response Content
+If the client disconnects during the delay, UNCORS stops waiting.
 
-Choose one of two methods to provide response content:
+## Dynamic responses
 
-**Raw content** - inline text or JSON:
-
-```yaml
-response:
-  raw: '{"message": "Success", "id": 123}'
-```
-
-**File content** - load response from a file:
-
-```yaml
-response:
-  file: ~/mocks/users-response.json
-```
-
-## Dynamic Responses
-
-For dynamic responses including request-dependent data, use the Script Handler
-(see [Script Handler documentation](Script-Handler) for details).
+Mocks always return the same response. To build a response from the request,
+use the [Script Handler](Script-Handler).

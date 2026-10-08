@@ -1,104 +1,129 @@
-Configure UNCORS to serve static files from local directories. This feature is
-useful for:
-
- - Running local Single-Page Applications (SPAs)
- - Overriding specific assets from remote servers
- - Testing UI changes without deploying
- - Serving custom resources during development
-
-Static file configuration is defined per mapping:
+UNCORS can serve files from a local directory under a URL path. Typical uses
+are running a local build of a single-page app against a remote API, or
+replacing a few remote assets with local copies.
 
 ```yaml
 mappings:
-  - from: ...
-    to: ...
+  - from: http://app.local:3000
+    to: https://example.com
     statics:
       - path: /assets
-        dir: ~/project/assets
+        dir: ./assets
+      - path: /app
+        dir: ./dist
         index: index.html
-      - path: /static
-        dir: ~/project/data
 ```
 
-## Configuration Properties
+## Options
 
-| Property | Type   | Required | Description                                                     |
-| -------- | ------ | -------- | --------------------------------------------------------------- |
-| `path`   | string | Yes      | URL path prefix for serving files (wildcards not supported)     |
-| `dir`    | string | Yes      | Local directory path containing files to serve                  |
-| `index`  | string | No       | Fallback file when requested file not found (relative to `dir`) |
+| Option  | Type   | Required | Description                                                                   |
+| ------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| `path`  | string | Yes      | URL path prefix, starting with `/`. Wildcards and placeholders are not supported. |
+| `dir`   | string | Yes      | Local directory to serve. It must exist when UNCORS starts.                   |
+| `index` | string | No       | Fallback file, relative to `dir`, returned when the requested file is missing. |
 
-**Request handling behavior:**
+Relative `dir` paths are resolved against the directory you start UNCORS from.
+`~` is not expanded.
 
- - Requests matching the `path` prefix are served from the local `dir`
- - If a file exists locally, it is served immediately
- - If a file does not exist and `index` is set, the index file is served (SPA
-   mode)
- - If a file does not exist and `index` is not set, the request is forwarded
-   upstream (proxy mode)
+`statics` can also be written as a map from path to directory. A value can be a
+directory string or an object with `dir` and `index`:
 
-## SPA Mode
+```yaml
+statics:
+  /assets: ./assets
+  /app:
+    dir: ./dist
+    index: index.html
+```
 
-Single-Page Application (SPA) mode serves a fallback file for all unmatched
-requests. This is essential for client-side routing frameworks like React
-Router, Vue Router, or Angular Router.
+## How requests are handled
 
-**How it works:**
+A request whose path starts with `path` is looked up in `dir`, with the prefix
+removed. With `path: /assets` and `dir: ./assets`, a request for
+`/assets/css/site.css` reads `./assets/css/site.css`. A request for exactly
+`/assets` is redirected to `/assets/`.
 
- 1. Requests matching the `path` prefix are checked against local files
- 2. If a file exists (e.g., `/app/bundle.js`), it is served directly
- 3. If no file exists (e.g., `/app/users/123`), the `index` file is returned
- 4. The SPA's JavaScript router handles the URL and renders the appropriate view
+What happens next depends on whether the file exists and whether `index` is
+set:
 
-**Configuration:**
+| Requested file   | `index` set                     | `index` not set                     |
+| ---------------- | ------------------------------- | ----------------------------------- |
+| Exists           | The file is returned            | The file is returned                |
+| Is a directory   | The `index` file is returned    | The request goes to the upstream    |
+| Does not exist   | The `index` file is returned    | The request goes to the upstream    |
+
+"Goes to the upstream" means the request is proxied to `to`, with caching and
+HAR recording if they are configured. It does not fall through to mocks or
+scripts. Static paths are checked before mocks, scripts, and rewrites, so a
+mock under a static prefix is never reached.
+
+Files are served with a `Content-Type` based on their extension, and support
+conditional and range requests. UNCORS does not add CORS headers to files
+served from `dir`.
+
+## Single-page apps
+
+Client-side routers (React Router, Vue Router, Angular Router) use URLs that
+don't match files on disk, such as `/app/users/123`. Set `index` so those URLs
+return `index.html` and the router can take over:
 
 ```yaml
 mappings:
-  - from: ...
-    to: ...
+  - from: http://app.local:3000
+    to: https://example.com
     statics:
       - path: /app
-        dir: ~/project/dist
+        dir: ./dist
         index: index.html
 ```
 
-**Use cases:**
+- `/app/bundle.js` returns `./dist/bundle.js`.
+- `/app/users/123` returns `./dist/index.html`.
+- `/api/users` is outside `/app` and is proxied to `https://example.com`.
 
- - Serving a built React, Vue, or Angular application
- - Local development with client-side routing
- - Testing production builds locally
+With `index` set, every request under `path` is answered locally. If you serve
+the app from `/` with an index, nothing on that host reaches the upstream
+server, including API calls, mocks, and scripts. To serve an app from `/` and
+still proxy its API, put the API on a second host name:
 
-## Proxy Mode
+```yaml
+mappings:
+  - from: http://app.local:3000
+    to: https://example.com
+    statics:
+      - path: /
+        dir: ./dist
+        index: index.html
+  - from: http://api.local:3000
+    to: https://api.example.com
+    mocks:
+      - path: /health
+        response:
+          code: 200
+          raw: ok
+```
 
-Proxy mode serves local files when they exist, but forwards unmatched requests
-to the upstream server or mock handlers.
+The app then calls `http://api.local:3000`. Because UNCORS adds CORS headers to
+those responses, the cross-origin calls work.
 
-**How it works:**
+## Overriding remote assets
 
- 1. Requests matching the `path` prefix are checked against local files
- 2. If a file exists locally, it is served from `dir`
- 3. If no file exists, the request passes to the next handler (mock or upstream)
-
-**Configuration:**
+Without `index`, local files take priority and everything else under `path`
+still comes from the upstream server:
 
 ```yaml
 mappings:
   - from: http://localhost
-    to: https://api.example.com
+    to: https://www.example.com
     statics:
       - path: /assets
-        dir: ~/project/dist
+        dir: ./local-assets
 ```
 
-**Use cases:**
+If `./local-assets/logo.png` exists, `/assets/logo.png` is served locally.
+`/assets/other.png` is fetched from `https://www.example.com/assets/other.png`.
 
- - Overriding specific assets (stylesheets, images, JavaScript)
- - Testing local modifications without deploying
- - Mixing local and remote resources
-
-## Examples
-
-### Serving Multiple Static Directories
+## Several directories
 
 ```yaml
 mappings:
@@ -106,33 +131,10 @@ mappings:
     to: https://example.com
     statics:
       - path: /app
-        dir: ~/project/dist
+        dir: ./dist
         index: index.html
       - path: /docs
-        dir: ~/project/documentation
+        dir: ./documentation
       - path: /images
-        dir: ~/project/assets/img
+        dir: ./assets/img
 ```
-
-### SPA with API Proxying
-
-```yaml
-mappings:
-  - from: http://localhost:3000
-    to: https://api.example.com
-    statics:
-      - path: /
-        dir: ~/my-app/build
-        index: index.html
-    mocks:
-      - path: /api/health
-        response:
-          code: 200
-          raw: '{"status": "ok"}'
-```
-
-In this configuration:
-
- - SPA files are served from the root path `/`
- - The `/api/health` endpoint is mocked
- - All other `/api/*` requests are proxied to `https://api.example.com`

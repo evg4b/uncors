@@ -1,85 +1,86 @@
 # Contributing to UNCORS
 
-Thanks for your interest in contributing! This is a pet project, so contributions are welcome but kept simple.
+Contributions are welcome. UNCORS is a pet project, so the process is kept
+simple.
 
-## How to Contribute
+## Reporting bugs
 
-### Reporting Bugs
+Open an issue with:
 
-Found a bug? Open an issue with:
+- what you expected to happen;
+- what happened instead;
+- steps to reproduce;
+- your UNCORS version (`uncors --version`), operating system, and
+  configuration, if relevant.
 
-- What you expected to happen
-- What actually happened
-- Steps to reproduce
-- Your UNCORS version, OS, and config (if relevant)
+## Suggesting features
 
-### Suggesting Features
+Open an issue that describes the problem you want to solve, the solution you
+have in mind, and why it would be useful.
 
-Have an idea? Open an issue describing:
+## Pull requests
 
-- The problem you're trying to solve
-- Your proposed solution
-- Why it would be useful
+1. Fork the repository and create a branch from `main`.
+2. Make your changes and add tests where it makes sense.
+3. Run `make check`.
+4. Open a pull request.
 
-### Pull Requests
+## Development setup
 
-1. Fork and create a branch from `main`
-2. Make your changes
-3. Add tests if applicable
-4. Make sure tests pass: `make test`
-5. Submit a PR
+You need:
 
-## Development Setup
-
-**Requirements:**
-
-- Go 1.24.1+
-- Make (optional)
-- golangci-lint for linting
-
-**Quick start:**
+- Go, at the version in `go.mod` or newer;
+- Make;
+- [gum](https://github.com/charmbracelet/gum), which the Makefile uses for its
+  output;
+- [gofumpt](https://github.com/mvdan/gofumpt) and
+  [golangci-lint](https://golangci-lint.run/) for `make format`.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/uncors.git
 cd uncors
 go mod download
-make test  # or: go test ./...
+make test
 ```
 
-## Development Commands
+## Make targets
 
 ```bash
-make check       # Run all checks
-make test        # Run tests
-make test-cover  # Test coverage
-make format      # Format code
-make build       # Build binary
+make check            # format, test, build
+make test             # unit tests with the race detector
+make test-integration # end-to-end tests with real sockets and TLS
+make test-cover       # tests with a coverage report in coverage.out
+make format           # gofmt, gofumpt, golangci-lint --fix
+make build            # compile all packages
+make build-release    # build the uncors binary
+make install          # install the binary into GOPATH/bin
+make format-docs      # format Markdown with Prettier
 ```
 
-Or use Go commands directly:
+The same without Make:
 
 ```bash
-go test ./...
-go build ./...
+go test -race ./...
+go build -tags release .
 golangci-lint run
 ```
 
-## Code Style
+## Code style
 
-- Follow standard Go conventions
-- Run `make format` before committing
-- Code is linted with `golangci-lint` (see [.golangci.yml](.golangci.yml))
-- Keep it simple and readable
+- Follow standard Go conventions.
+- Run `make format` before committing.
+- The linter configuration is in [.golangci.yml](.golangci.yml).
+- If you change the configuration format, update `schema.json`, the fixtures
+  in `tests/schema`, and the pages in `docs/`.
 
-## Testing
+## Tests
 
-- Add tests for new features
-- Place tests in `_test.go` files next to the code
-- Run `make test` to verify everything works
+Put unit tests in `_test.go` files next to the code. Integration tests live in
+`tests/integration` and use the `integration` build tag.
 
-## Commit Messages
+## Commit messages
 
-Keep them simple:
+Use a short prefix:
 
 ```
 feat: add new feature
@@ -89,8 +90,8 @@ refactor: improve code structure
 test: add tests
 ```
 
-Reference issues when relevant: `Fixes #123` or `Closes #456`
+Reference issues when relevant, for example `Fixes #123`.
 
-## Questions?
+## Questions
 
-Open an issue or check the [wiki](https://github.com/evg4b/uncors/wiki).
+Open an issue or read the [wiki](https://github.com/evg4b/uncors/wiki).

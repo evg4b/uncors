@@ -1,0 +1,9 @@
+cache-config:
+  expiration-time: 1m30s
+  max-size: 52428800
+  methods: [GET, POST]
+mappings:
+  - from: http://localhost:8080
+    to: https://github.com
+    cache:
+      - /api/**
