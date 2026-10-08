@@ -36,14 +36,14 @@
       ]
     },
     "Duration": {
-      "description": "Duration in human-readable format. Supported units are 'h' (hours), 'm' (minutes), 's' (seconds), 'ms' (milliseconds), 'us' (microseconds), 'ns' (nanoseconds).",
+      "description": "Duration in Go format. Units: 'h', 'm', 's', 'ms', 'us' (or 'µs'), 'ns'. Combine units without spaces.",
       "examples": [
         "3s",
-        "1m 30s",
+        "1m30s",
         "500ms",
-        "1h 30m 15s 500ms 100us 200ns"
+        "1h30m15s500ms100us200ns"
       ],
-      "pattern": "^(\\d+h)?\\s*(\\d+m)?\\s*(\\d+s)?\\s*(\\d+ms)?\\s*(\\d+(us|µs))?\\s*(\\d+(ns))?$",
+      "pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?(\\d+ms)?(\\d+(us|µs))?(\\d+(ns))?$",
       "title": "Duration",
       "type": "string"
     },
@@ -141,12 +141,45 @@
               "type": "array"
             },
             "statics": {
-              "description": "List of paths that will be served from the directory.",
-              "items": {
-                "$ref": "#/definitions/StaticDirectory"
-              },
-              "minItems": 1,
-              "type": "array"
+              "description": "Paths served from local directories. Either a list of entries, or a map from URL path to a directory (string) or to an object with 'dir' and 'index'.",
+              "oneOf": [
+                {
+                  "items": {
+                    "$ref": "#/definitions/StaticDirectory"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "description": "Directory to serve",
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dir": {
+                            "description": "Path to the folder from which the static files will be served",
+                            "type": "string"
+                          },
+                          "index": {
+                            "description": "File returned when the requested file is not found, relative to dir",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "dir"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "minProperties": 1,
+                  "type": "object"
+                }
+              ]
             },
             "to": {
               "description": "The target host and protocol for the resource that needs to be proxied",
@@ -216,6 +249,10 @@
     "OptionsHandling": {
       "description": "OPTIONS request handling configuration",
       "properties": {
+        "code": {
+          "$ref": "#/definitions/StatusCode",
+          "description": "Status code sent in response to OPTIONS requests (default: 200)"
+        },
         "disabled": {
           "default": false,
           "description": "Disable OPTIONS request handling and all requests will be proxied to the target server",
@@ -224,13 +261,10 @@
         "headers": {
           "$ref": "#/definitions/Headers",
           "description": "Custom headers to be sent in response to OPTIONS requests"
-        },
-        "status": {
-          "$ref": "#/definitions/StatusCode",
-          "description": "Custom status code to be sent in response to OPTIONS requests"
         }
       },
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false
     },
     "Queries": {
       "additionalProperties": {
@@ -351,7 +385,7 @@
         },
         "index": {
           "default": "",
-          "description": "The file witch will be returned if the requested file is not found. It should be a relative path within the dir folder",
+          "description": "File returned when the requested file is not found. It is a path relative to dir",
           "type": "string"
         },
         "path": {
@@ -383,19 +417,20 @@
       "additionalProperties": false,
       "description": "Global cache configuration",
       "properties": {
-        "clear-time": {
-          "description": "Expired cache clear time",
-          "type": "string"
-        },
         "expiration-time": {
-          "description": "Cache expiration time",
-          "type": "string"
+          "$ref": "#/definitions/Duration",
+          "description": "How long a cached response is kept (default: 30m)"
+        },
+        "max-size": {
+          "description": "Maximum total size of cached responses in bytes (default: 104857600, 100 MB)",
+          "minimum": 1,
+          "type": "integer"
         },
         "methods": {
           "default": [
             "GET"
           ],
-          "description": "List of http methods with can be cached",
+          "description": "HTTP methods whose responses can be cached",
           "items": {
             "$ref": "#/definitions/Method"
           },

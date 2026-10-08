@@ -1,6 +1,6 @@
 proxy: http://localhost:8080
 cache-config:
-  clear-time: 10m
+  max-size: 10485760
   expiration-time: 1h
   methods: [GET, POST]
 mappings:

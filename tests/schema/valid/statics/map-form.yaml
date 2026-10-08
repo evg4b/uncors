@@ -1,0 +1,8 @@
+mappings:
+  - from: http://localhost:8080
+    to: https://github.com
+    statics:
+      /assets: ./public
+      /app:
+        dir: ./dist
+        index: index.html
