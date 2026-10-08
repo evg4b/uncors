@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **UNCORS** is a lightweight local HTTP/HTTPS proxy that bypasses CORS restrictions by modifying CORS headers in responses. It's designed for development and testing workflows, supporting features like request mocking, response caching, request rewriting, static file serving, and HTTP Archive (HAR) traffic recording.
 
-- Language: Go 1.24.1+
+- Language: Go (version pinned in `go.mod`, currently 1.26.4)
 - Primary Use: Development proxy
 - Key Package: `github.com/evg4b/uncors`
 
@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Build & Run
 ```bash
-make build              # Build binary
+make build-release      # Build the ./uncors binary (make build only compiles packages)
 make install            # Install to GOPATH/bin
 ./uncors --from 'http://localhost:8080' --to 'https://github.com'
 ```
@@ -36,7 +36,7 @@ golangci-lint run       # Manual linting (uses .golangci.yml)
 
 ### Configuration & Generation
 ```bash
-./uncors generate-certs         # Generate TLS certificates
+./uncors generate-certs         # Generate the local CA in ~/.config/uncors
 make format-docs                # Format markdown docs with Prettier
 go mod tidy                     # Tidy dependencies
 make upgrade                    # Upgrade all dependencies and run make all
@@ -47,12 +47,15 @@ make upgrade                    # Upgrade all dependencies and run make all
 UNCORS follows a clean layered architecture with middleware composition:
 
 ### Request Flow
-1. **Server** (`internal/server`) - TCP listener and request routing
-2. **HAR Collector** (first middleware) - Non-blocking traffic recording
-3. **Options Middleware** - CORS preflight request handling
-4. **Cache Middleware** - In-memory response caching with TTL
-5. **Handler Selection** - Route to Proxy, Mock, Script, or Static handler
-6. **CORS Headers** - Add/modify response headers
+1. **Server** (`internal/server`) - one listener per port/scheme group of mappings
+2. **Router** (`internal/handler/router`, gorilla/mux) - picks the mapping by host name, then the first matching route:
+   statics (path prefix) → mocks → scripts → rewrites → mapping default handler
+3. **Default handler chain** - HAR collector → cache → OPTIONS handling → proxy
+4. **CORS Headers** - added by the proxy, mock, and script handlers (not by statics)
+
+Statics and rewrites pass unhandled requests to the default handler, so only
+proxied traffic (including cache hits and OPTIONS) is cached and recorded to HAR;
+mock and script responses are not.
 
 ### Core Packages
 
@@ -67,9 +70,9 @@ UNCORS follows a clean layered architecture with middleware composition:
 - `Proxy`: serves one `Runtime` on the server and swaps generations on reload
 
 **`internal/config`** - Configuration loading & validation
-- `LoadConfiguration()`: Parses CLI flags and YAML config file
-- JSON Schema validation (schema.json)
-- `ConfigWatcher`: File system watcher for live config reloads
+- `LoadConfiguration()`: Parses CLI flags (pflag) and the YAML file (yaml.v3), validates in Go code
+- `schema.json` is for editors and `tests/schema` only; it is not used at runtime, keep it in sync by hand
+- `Watcher`: fsnotify watcher; the CLI reloads config and calls `di.Proxy.Restart` on change
 
 **`internal/handler`** - Request routing and middleware
 - **Proxy** - Forwards requests to upstream servers with modified CORS headers
@@ -79,14 +82,16 @@ UNCORS follows a clean layered architecture with middleware composition:
 - **Middleware**: cache, rewrite, options, HAR collector
 
 **`internal/contracts`** - Small, focused interfaces
-- `Handler`: Interface for request handlers
+- `Handler`: `ServeHTTP(writer, request) error`
+- `Middleware`: `ServeHTTP(writer, request, next) error`
 - `Logger`: Logging abstraction
 - `HTTPClient`: HTTP client contract
 
 **`internal/infra`** - Infrastructure services
 - HTTP client with connection pooling and proxy support
-- Logger setup (logs to stderr or file based on UNCORS_LOGGING env var)
-- TLS certificate generation and handling
+- Logger setup (appends to the file in UNCORS_LOGGING; discarded when unset)
+- CORS header helpers and HTTP error pages
+- (TLS and the local CA live in `internal/server`)
 
 **`internal/tui`** - Terminal UI and logging
 - `CliOutput`: Colored console output with request/response formatting
@@ -97,10 +102,10 @@ UNCORS follows a clean layered architecture with middleware composition:
 - `RequestPrinter`: Goroutine that prints request info
 
 **`main.go`** - Entry point
-- Interactive TUI mode (`-i` flag) via BubbleTea
-- Non-interactive headless mode (default)
-- Config watching and auto-restart
-- Version checking and panic recovery
+- Builds the DI container, dispatches to `generate-certs` or `cli.RunUncors`
+- Panic recovery and error reporting
+- Interactive TUI (BubbleTea) is the default; `--interactive=false` gives headless mode
+  (mode selection, config watching, and version checking live in `internal/cli`)
 
 ### HAR Collector Design
 Located in `internal/handler/har`, implements non-blocking traffic recording:
@@ -108,16 +113,19 @@ Located in `internal/handler/har`, implements non-blocking traffic recording:
 - **Async writes**: Single background goroutine handles disk I/O
 - **Atomic file updates**: Write-to-temp-then-rename for data integrity
 - **Per-mapping isolation**: Each mapping has its own `Writer` instance
-- **Lifecycle**: Implements `io.Closer` for graceful shutdown
+- **Lifecycle**: Implements `io.Closer`; closed with its `di.Runtime` on shutdown/reload, and a new runtime starts an empty recording that overwrites the file
+- **Scope**: Sits in the default handler chain, so mock/script/served-static responses are not recorded
 - **Security**: Excludes sensitive headers by default (Cookie, Authorization, etc.)
 
 ## Key Design Patterns
 
 **Middleware Pattern**
 ```go
-type Middleware = func(http.Handler) http.Handler
+type Middleware interface {
+	ServeHTTP(writer ResponseWriter, request *Request, next Next) error
+}
 ```
-Composable request/response processing layers.
+Composable request/response processing layers (`internal/contracts`).
 
 **Factory Pattern**
 Handlers/middleware created with dependency injection (options pattern in Go).
@@ -144,13 +152,13 @@ Key test flags:
 - CLI flags override YAML file settings
 - YAML is validated against `schema.json` (JSON Schema)
 - Config watcher uses `fsnotify` for file system events
-- Supports hot-reload without server restart
+- Hot reload: a changed file builds a new `di.Runtime` and restarts the server with it; an invalid file keeps the old config
 
 **Key Config Options**
 - `proxy`: Upstream proxy URL (optional)
-- `interactive`: Enable TUI mode (default: true)
-- `port`: Listen port (default: 3000)
-- `mappings`: Array of request mappings (from/to hosts)
+- `cache-config`: `expiration-time`, `max-size`, `methods`
+- `mappings`: Array of request mappings (from/to hosts); the listen port comes from each `from` URL
+- `--interactive` is a CLI flag only (default true), not a YAML key
 
 ## Development Workflow
 
@@ -166,20 +174,20 @@ Key test flags:
 1. Create `internal/handler/myhandler/` package
 2. Implement `contracts.Handler` interface
 3. Update config schema in `schema.json`
-4. Add factory method in request handler routing
+4. Add a DI constructor and register routes in `internal/handler/router`
 5. Add tests in `myhandler_test.go`
 
 **New Middleware:**
 1. Create package in `internal/handler/mymiddleware/`
-2. Implement `func(http.Handler) http.Handler` signature
-3. Update middleware chain in request handler
+2. Implement `contracts.Middleware`
+3. Wire it in `internal/handler/router` (usually `prepareDefaultHandler`)
 4. Add tests
 
 **New Config Option:**
 1. Add field to `internal/config/` struct
 2. Update `schema.json` with validation rules
 3. Add parser/validator if complex
-4. Update CONTRIBUTING.md if user-facing
+4. Add a fixture under `tests/schema/` and document it in `docs/`
 
 ### Debugging
 - Enable logging: Set `UNCORS_LOGGING=/path/to/logfile` environment variable
@@ -193,7 +201,7 @@ Key test flags:
 
 **Performance**: Uses goroutines, connection pooling, in-memory caching, and the ristretto cache library for speed.
 
-**Go Version**: Requires Go 1.24.1+ due to language features and dependency requirements.
+**Go Version**: See `go.mod`.
 
 **Linux Compatibility**: Primarily developed on macOS; runs on Linux and Windows.
 
@@ -225,19 +233,21 @@ uncors/
 │   │   ├── static/              # Static file handler
 │   │   ├── cache/               # Response caching middleware
 │   │   ├── har/                 # HAR traffic recording
-│   │   ├── rewrite/             # URL/header rewriting
-│   │   └── options/             # CORS preflight handling
-│   ├── contracts/               # Interfaces (Handler, Logger, HTTPClient)
-│   ├── infra/                   # HTTP client, logger, TLS
-│   ├── server/                  # Server lifecycle & request tracking
+│   │   ├── rewrite/             # Path and upstream-host rewriting
+│   │   ├── options/             # CORS preflight handling
+│   │   └── router/              # gorilla/mux routing per mapping
+│   ├── contracts/               # Interfaces (Handler, Middleware, Logger, HTTPClient)
+│   ├── infra/                   # HTTP client, CORS helpers, error pages, logging
+│   ├── server/                  # Listeners, TLS/CA, request tracking
 │   ├── tui/                     # Terminal UI & colored output
 │   ├── uncors_app/              # Interactive TUI app (BubbleTea)
 │   ├── commands/                # CLI commands (generate-certs)
 │   ├── version/                 # Version checking
 │   ├── helpers/                 # Utilities
-│   └── urlreplacer/             # URL replacement utility
+│   └── urlreplacer/             # Host matching with {name} placeholders
+├── pkg/urlt/                    # Fork of net/url with placeholder support
 ├── testing/                     # Test mocks & helpers
-├── tests/                       # Integration tests
+├── tests/                       # Integration tests and schema tests
 └── docs/                        # User documentation (features, guides)
 ```
 
@@ -245,7 +255,7 @@ uncors/
 
 - **Testing**: `stretchr/testify` for assertions, `minimock/v3` for mocks
 - **CLI**: `spf13/pflag` for flags
-- **YAML**: `goccy/go-yaml` and `gopkg.in/yaml.v3`
+- **YAML**: `gopkg.in/yaml.v3`
 - **Lua**: `yuin/gopher-lua` and `layeh/gopher-json` for script handler
 - **TUI**: `charm.land/bubbletea/v2`, `charm.land/lipgloss/v2`, `charm.land/bubbles/v2`
 - **Caching**: `dgraph-io/ristretto/v2` for high-performance caching
