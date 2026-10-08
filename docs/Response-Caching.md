@@ -1,61 +1,65 @@
-UNCORS provides response caching to optimize development workflows by reducing
-latency for expensive or frequently repeated requests. Cache entries are matched
-using URL glob patterns.
+UNCORS can keep upstream responses in memory and answer repeated requests from
+that cache. This helps when an API is slow, rate-limited, or returns large data
+that doesn't change while you work.
 
-**Benefits:**
-
- - Faster response times for repeated requests
- - Reduced load on upstream servers during development
- - Improved performance when working with slow APIs
- - Useful for caching heavy computations or large datasets
-
-**Configuration:**
-
-Specify URL patterns to cache for each mapping:
+Caching is turned on per mapping by listing path globs under `cache`:
 
 ```yaml
 mappings:
-  - from: ...
-    to: ...
+  - from: http://api.local:3000
+    to: https://api.example.com
     cache:
       - /api/info
       - /api/users/**
 ```
 
-## Pattern Syntax
+## What gets cached
 
-Cache patterns use glob syntax to match URL paths. The following special
-characters are supported:
+A response is cached when all of these hold:
 
-| Special Term | Meaning                                                                                                                     |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `*`          | Matches any sequence of non-path-separators                                                                                 |
-| `/**/`       | Matches zero or more directories                                                                                            |
-| `?`          | Matches any single non-path-separator character                                                                             |
-| `[class]`    | Matches any single non-path-separator character against a class of characters (see [Character Classes](#character-classes)) |
-| `{alt1,...}` | Matches a sequence of characters if one of the comma-separated alternatives matches                                         |
+- the request is proxied to the upstream server (mock, script, and static
+  responses are never cached);
+- the request method is listed in `cache-config.methods` (`GET` by default);
+- the request path matches one of the mapping's `cache` globs;
+- the upstream status code is in the 2xx range.
 
-**Important notes:**
+The cache key is the method, host name, path, and query string. Query
+parameters are sorted first, so `?a=1&b=2` and `?b=2&a=1` share an entry.
+Request headers are not part of the key.
 
- - Escape special characters with backslash: `\*`, `\?`, `\[`
- - Double star `**` must be surrounded by path separators: `/**/`
- - Incorrect: `path/to/**.txt` (acts like `path/to/*.txt`)
- - Correct: `path/to/**/*.txt` (matches files in subdirectories)
+A cache hit returns the stored status code, headers, and body without
+contacting the upstream server. The cache lives in memory only. It is emptied
+when UNCORS stops or reloads its configuration.
 
-### Character Classes
+## Glob syntax
 
-Character classes match single characters against a set or range:
+Globs are matched against the request path with
+[doublestar](https://github.com/bmatcuk/doublestar):
 
-| Class      | Meaning                                                       |
-| ---------- | ------------------------------------------------------------- |
-| `[abc]`    | Matches any single character within the set                   |
-| `[a-z]`    | Matches any single character in the range                     |
-| `[^class]` | Matches any single character which does *not* match the class |
-| `[!class]` | Same as `^`: negates the class                                |
+| Pattern      | Matches                                                                              |
+| ------------ | ------------------------------------------------------------------------------------ |
+| `*`          | Any sequence of characters except `/`                                                |
+| `**`         | Zero or more path segments, when it is a whole segment (`/api/**`, `/api/**/x.json`) |
+| `?`          | Any single character except `/`                                                      |
+| `[class]`    | One character from a class (see below)                                               |
+| `{alt1,...}` | Any one of the comma-separated alternatives                                          |
 
-## Global Cache Configuration
+`**` only works as a complete path segment. `/data/**.json` behaves like
+`/data/*.json`; write `/data/**/*.json` to include subdirectories. Escape a
+special character with a backslash, for example `\*`.
 
-Configure caching behavior globally using the `cache-config` section:
+Character classes:
+
+| Class      | Matches                                    |
+| ---------- | ------------------------------------------ |
+| `[abc]`    | One of the listed characters               |
+| `[a-z]`    | One character in the range                 |
+| `[^class]` | One character that is not in the class     |
+| `[!class]` | Same as `[^class]`                         |
+
+## Global cache settings
+
+`cache-config` is a top-level section shared by all mappings:
 
 ```yaml
 cache-config:
@@ -64,37 +68,27 @@ cache-config:
   max-size: 104857600
 ```
 
-### Configuration Properties
-
-| Property          | Type     | Default     | Description                                        |
+| Option            | Type     | Default     | Description                                        |
 | ----------------- | -------- | ----------- | -------------------------------------------------- |
-| `methods`         | array    | `[GET]`     | HTTP methods to cache (e.g., `GET`, `POST`, `PUT`) |
-| `expiration-time` | duration | `30m`       | Time until a cached response is evicted            |
-| `max-size`        | integer  | `104857600` | Maximum total cache size in bytes (default 100 MB) |
+| `methods`         | array    | `[GET]`     | HTTP methods whose responses can be cached.        |
+| `expiration-time` | duration | `30m`       | How long an entry is kept.                         |
+| `max-size`        | integer  | `104857600` | Total cache size in bytes (100 MB by default).     |
 
-**Duration format:** `<number><unit>` where unit is `s` (seconds), `m`
-(minutes), or `h` (hours)
-
-**Examples:**
-
- - `30s` - 30 seconds
- - `5m` - 5 minutes
- - `2h` - 2 hours
- - `1h 30m` - 1 hour 30 minutes
-
-### Cache Lifecycle
-
- 1. **Hit** - Response is returned immediately from cache
- 2. **Miss** - Request is forwarded to the upstream server; response is stored
-    in cache
- 3. **Evicted** (after `expiration-time` or when `max-size` is reached) - Cache
-    entry is removed; next request fetches fresh data from upstream
+`expiration-time` uses Go duration syntax without spaces, for example `30s`,
+`5m`, `2h`, or `1h30m`. The cache is built on
+[ristretto](https://github.com/dgraph-io/ristretto). When it reaches
+`max-size`, ristretto evicts entries it considers least useful, and it may
+also decline to store a new entry.
 
 ## Examples
 
-### Cache API Responses
+Cache a few API paths for five minutes:
 
 ```yaml
+cache-config:
+  expiration-time: 5m
+  max-size: 52428800
+
 mappings:
   - from: http://localhost
     to: https://api.example.com
@@ -102,20 +96,14 @@ mappings:
       - /api/users
       - /api/posts/*
       - /api/data/**/*.json
-
-cache-config:
-  methods: [GET]
-  expiration-time: 5m
-  max-size: 52428800
 ```
 
-### Cache Multiple HTTP Methods
+Cache search requests sent with `POST` as well:
 
 ```yaml
 cache-config:
-  methods: [GET, POST, PUT]
+  methods: [GET, POST]
   expiration-time: 2m
-  max-size: 104857600
 
 mappings:
   - from: http://localhost
@@ -124,3 +112,6 @@ mappings:
       - /api/search
       - /api/query/**
 ```
+
+The request body is not part of the cache key, so two `POST` requests to the
+same URL with different bodies share one cache entry.
