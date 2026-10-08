@@ -51,23 +51,21 @@
 # Core features
 
 - CORS header replacement
-- [Wildcard host mapping](https://github.com/evg4b/uncors/wiki/Configuration#wildcard-mapping)
+- [Host mapping with named placeholders](https://github.com/evg4b/uncors/wiki/Configuration#named-placeholder-mapping)
 - [HTTPS support](https://github.com/evg4b/uncors/wiki/Configuration#https-configuration) with auto-generated certificates
-- [Response mocking](https://github.com/evg4b/uncors/wiki/Response-mocking)
-- [Script handler](https://github.com/evg4b/uncors/wiki/Script-Handler) (Lua scripting with JSON support)
+- [Response mocking](https://github.com/evg4b/uncors/wiki/Response-Mocking)
+- [Script handler](https://github.com/evg4b/uncors/wiki/Script-Handler) (Lua with a JSON module)
 - [HTTP/HTTPS proxy support](https://github.com/evg4b/uncors/wiki/Configuration#proxy-configuration)
-- [Static file serving](https://github.com/evg4b/uncors/wiki/Static-file-serving)
-- [Response caching](https://github.com/evg4b/uncors/wiki/Response-caching)
-- [Request rewriting](https://github.com/evg4b/uncors/wiki/Request-rewriting)
+- [Static file serving](https://github.com/evg4b/uncors/wiki/Static-File-Serving)
+- [Response caching](https://github.com/evg4b/uncors/wiki/Response-Caching)
+- [Request rewriting](https://github.com/evg4b/uncors/wiki/Request-Rewriting)
 - [HAR traffic recording](https://github.com/evg4b/uncors/wiki/HAR-Collector)
 
-Full documentation can be found on the [wiki pages](https://github.com/evg4b/uncors/wiki).
+The full documentation is on the [wiki](https://github.com/evg4b/uncors/wiki).
 
-# Quick Install
+# Quick install
 
-You can install the application in one of the following ways:
-
-#### [Homebrew](https://brew.sh/) (macOS | Linux)
+#### [Homebrew](https://brew.sh/) (macOS, Linux)
 
 ```bash
 brew install evg4b/tap/uncors
@@ -80,47 +78,51 @@ scoop bucket add evg4b https://github.com/evg4b/scoop-bucket.git
 scoop install evg4b/uncors
 ```
 
-#### [NPM](https://npmjs.com) (Cross-platform)
+#### [npm](https://npmjs.com) (cross-platform)
 
 ```bash
-# Run as an independent CLI tool
-npx -y uncors ...
-# Or add as dependency in your package
+# Run without installing
+npx -y uncors --from 'http://localhost:8080' --to 'https://github.com'
+# Or add it to your project
 npm install uncors --save-dev
 # yarn add uncors --dev
 # pnpm add -D uncors
 ```
 
-#### [Docker](https://www.docker.com/) (Cross-platform)
+#### [Docker](https://www.docker.com/) (cross-platform)
 
 ```bash
-docker run -p 80:3000 evg4b/uncors --from 'http://local.github.com' --to 'https://github.com'
+docker run -p 80:80 evg4b/uncors --interactive=false --from 'http://local.github.com' --to 'https://github.com'
 ```
 
-#### [Stew](https://github.com/marwanhawari/stew) (Cross-platform)
+#### [Stew](https://github.com/marwanhawari/stew) (cross-platform)
 
 ```bash
 stew install evg4b/uncors
 ```
 
-Or find more installation methods in [uncors wiki](https://github.com/evg4b/uncors/wiki/Installation).
+Other options, including prebuilt binaries and building from source, are
+described on the [Installation](https://github.com/evg4b/uncors/wiki/Installation)
+wiki page.
 
 # Usage
 
-The following command can be used to start the UNCORS proxy server:
+Start a proxy from `http://localhost:8080` to `https://github.com`:
 
-```
+```bash
 uncors --from 'http://localhost:8080' --to 'https://github.com'
 ```
 
-More information about configuration and usage you can find on [UNCORS wiki](https://github.com/evg4b/uncors/wiki).
+For larger setups, put the mappings in a YAML file and run
+`uncors --config .uncors.yaml`. The
+[Configuration](https://github.com/evg4b/uncors/wiki/Configuration) wiki page
+describes every option.
 
 > [!Caution]
 >
-> Please be aware that the modification or replacement of CORS headers may introduce potential security vulnerabilities.
-> This tool is specifically engineered to optimize the development and testing workflow and is not intended for use in a
-> production environment or as a remote proxy server. It has not undergone a thorough security review; therefore, caution
-> should be exercised when utilizing it.
+> Rewriting CORS headers weakens browser security. UNCORS is meant for local
+> development and testing. Do not run it in production or expose it as a remote
+> proxy. It has not had a security review.
 
 # Stargazers over time
 
