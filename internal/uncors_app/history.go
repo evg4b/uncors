@@ -8,9 +8,15 @@ import (
 
 const (
 	historyInitialCapacity = 1024
+
+	// historyMaxLines bounds the scrollback. A long-running proxy logs a line
+	// per request, so an unbounded buffer grows for as long as the process
+	// lives; the oldest lines are the ones a user is least likely to want.
+	historyMaxLines = 10_000
 )
 
-// history stores log lines in memory without a fixed limit.
+// history stores the most recent log lines in memory, discarding the oldest
+// once historyMaxLines is reached.
 type history struct {
 	mu    sync.RWMutex
 	lines []string
@@ -33,6 +39,12 @@ func (h *history) AppendLine(line string) {
 	line = strings.TrimRight(line, "\n")
 	newLines := strings.Split(line, "\n")
 	h.lines = append(h.lines, newLines...)
+
+	if overflow := len(h.lines) - historyMaxLines; overflow > 0 {
+		// Copy down rather than reslicing, so the backing array of the dropped
+		// lines can actually be collected.
+		h.lines = append(h.lines[:0], h.lines[overflow:]...)
+	}
 
 	log.Printf("Appended %d lines to history (total lines: %d)", len(newLines), len(h.lines))
 }

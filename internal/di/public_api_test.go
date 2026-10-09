@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -73,13 +73,6 @@ func TestContainer(t *testing.T) {
 
 		assert.NotNil(t, tracker)
 		assert.IsType(t, &server.RequestTracker{}, tracker)
-	})
-
-	t.Run("generate certs command", func(t *testing.T) {
-		cmd := container.GenerateCertsCommand()
-
-		assert.NotNil(t, cmd)
-		assert.IsType(t, &commands.GenerateCertsCommand{}, cmd)
 	})
 
 	t.Run("host cert manager", func(t *testing.T) {
@@ -156,7 +149,7 @@ func TestContainer(t *testing.T) {
 		mappings := config.Mappings{
 			{From: hosts.Localhost.HTTP(), To: hosts.Localhost.HTTPS()},
 		}
-		handler := container.ProxyHandler(mappings, "")
+		handler := container.ProxyHandler(mappings, mocks.NewHTTPClientMock(t))
 
 		assert.NotNil(t, handler)
 		assert.Implements(t, (*contracts.Handler)(nil), handler)
@@ -176,45 +169,33 @@ func TestContainer(t *testing.T) {
 }
 
 func TestContainerOverride(t *testing.T) {
-	t.Run("Override replaces cli output factory", func(t *testing.T) {
+	t.Run("replaces the cli output when applied before first use", func(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		customOutput := container.CliOutput()
-
-		overrideApplied := false
-
-		container.Override(di.WithCliOutput(func() contracts.Output {
-			overrideApplied = true
-
-			return customOutput
-		}))
-
-		newContainer := di.NewContainer()
-		defer testutils.Close(t, newContainer)
-
-		newContainer.Override(di.WithCliOutput(func() contracts.Output {
-			return customOutput
-		}))
-
-		result := newContainer.CliOutput()
-		assert.Same(t, customOutput, result)
-
-		_ = overrideApplied
-	})
-
-	t.Run("OverrideCliOutput sets custom factory", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		sentinel := container.CliOutput()
+		sentinel := mocks.NewOutputMock(t)
 
 		container.Override(di.WithCliOutput(func() contracts.Output {
 			return sentinel
 		}))
 
-		result := container.CliOutput()
-		assert.Same(t, sentinel, result)
+		assert.Same(t, sentinel, container.CliOutput())
+	})
+
+	// The container caches singletons on first use, so a late override cannot
+	// take effect. In interactive mode that would silently leave output going to
+	// the terminal underneath the TUI, so it must fail loudly.
+	t.Run("panics when applied after the output has been built", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		_ = container.CliOutput()
+
+		assert.PanicsWithValue(t, "di: CliOutput was overridden after it had already been built", func() {
+			container.Override(di.WithCliOutput(func() contracts.Output {
+				return mocks.NewOutputMock(t)
+			}))
+		})
 	})
 }
 

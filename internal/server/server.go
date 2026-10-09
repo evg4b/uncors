@@ -150,16 +150,37 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
+// Restart replaces the running listeners with a new set.
+//
+// The new generation usually wants the same ports, so the old listeners have to
+// be released before the new ones can bind, and a failure at that point would
+// otherwise leave the server bound to nothing. When the new targets cannot be
+// started the previous ones are put back, so a rejected configuration costs a
+// short interruption rather than the whole proxy.
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
+	// Holding the wait group up across the whole restart stops Wait from
+	// returning during the gap when nothing is listening.
 	s.Add(1)
 	defer s.Done()
+
+	previous := s.currentTargets()
 
 	err := s.Shutdown(ctx)
 	if err != nil {
 		return err
 	}
 
-	return s.Start(ctx, targets)
+	err = s.Start(ctx, targets)
+	if err == nil {
+		return nil
+	}
+
+	rollbackErr := errors.Join(s.Shutdown(ctx), s.Start(ctx, previous))
+	if rollbackErr != nil {
+		return errors.Join(err, ErrRollbackFailed, rollbackErr)
+	}
+
+	return err
 }
 
 func (s *Server) Wait() {
@@ -181,6 +202,17 @@ func (s *Server) Close() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+// currentTargets returns the targets currently installed, so a failed restart
+// can restore them.
+func (s *Server) currentTargets() []Target {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return lo.Map(s.listeners, func(listener *PortListener, _ int) Target {
+		return *listener.target
+	})
 }
 
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {

@@ -224,3 +224,22 @@ func TestNewConfigWatcher(t *testing.T) {
 		assert.False(t, waitForCall(called, 100*time.Millisecond), "onChange was called after context cancelled")
 	})
 }
+
+func TestWatcherCanBeRestartedAfterClose(t *testing.T) {
+	ctx := t.Context()
+
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	require.NoError(t, os.WriteFile(path, []byte("mappings: []"), 0o600))
+
+	watcher := config.NewWatcher(path)
+
+	require.NoError(t, watcher.Watch(ctx, func() {}))
+	require.ErrorContains(t, watcher.Watch(ctx, func() {}), "already watching")
+
+	require.NoError(t, watcher.Close())
+
+	// Close releases the claim, so the watcher reports its true state instead of
+	// staying permanently "watching".
+	require.NoError(t, watcher.Watch(ctx, func() {}))
+	require.NoError(t, watcher.Close())
+}

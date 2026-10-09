@@ -3,16 +3,18 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
-	"os"
+	"regexp"
 	"testing"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"github.com/evg4b/uncors/internal/app"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,56 +22,49 @@ import (
 
 var errBoom = errors.New("boom")
 
-func newTestApp(t *testing.T) (*UncorsApp, *int) {
-	t.Helper()
+var ansiPattern = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
-	uncorsConfig := &config.UncorsConfig{
-		Mappings: config.Mappings{},
-	}
-
-	container := di.NewContainer()
-
-	t.Cleanup(func() {
-		container.Close()
-	})
-
-	loadCalls := 0
-	app := NewUncorsApp(
-		container,
-		"", // no config file — watcher is not created
-		uncorsConfig,
-		func() *config.UncorsConfig {
-			loadCalls++
-
-			return uncorsConfig
-		},
-	)
-
-	return app, &loadCalls
+// stripANSI removes styling so assertions can talk about the text. Lip Gloss
+// styles URLs one character at a time, so the plain string is never a
+// contiguous substring of the rendered line.
+func stripANSI(value string) string {
+	return ansiPattern.ReplaceAllString(value, "")
 }
 
-func cleanupTestApp(t *testing.T, app *UncorsApp) {
+// newTestApp builds the model over a real service and an in-memory container,
+// and reports how many times the configuration was reloaded.
+func newTestApp(t *testing.T) (*UncorsApp, *di.Container, *int) {
 	t.Helper()
 
-	app.cancel()
-	err := app.proxy.Close()
-	require.NoError(t, err)
+	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
+	container := di.NewContainer()
 
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
-	}
+	loadCalls := 0
+	// No config file path, so the service creates no watcher.
+	model := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
+		loadCalls++
+
+		return cfg, nil
+	})
+
+	t.Cleanup(func() {
+		require.NoError(t, model.service.Close())
+		require.NoError(t, model.service.Shutdown(t.Context()))
+		require.NoError(t, model.historyWidget.Close())
+		require.NoError(t, container.Close())
+	})
+
+	return model, container, &loadCalls
 }
 
 func TestNewUncorsAppAndKeyMap(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	assert.NotNil(t, app.output)
-	assert.NotNil(t, app.tracker)
+	assert.NotNil(t, app.renderer)
 	assert.NotNil(t, app.historyWidget.hist)
-	assert.NotNil(t, app.appContext)
-	assert.NotNil(t, app.appDone)
+	assert.NotNil(t, app.service)
+	assert.NotNil(t, app.done)
 	assert.True(t, app.historyWidget.autoScroll)
 	assert.Empty(t, app.trackerWidget.pending)
 	assert.GreaterOrEqual(t, app.memWidget.memMB, 0.0)
@@ -85,8 +80,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 }
 
 func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	model, cmd := app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 	require.Same(t, app, model)
@@ -110,7 +104,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 		StartedAt: time.Now().Add(-1500 * time.Millisecond),
 	})
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
+	require.NotNil(t, cmd) // the spinner starts ticking
 	assert.Len(t, app.trackerWidget.pending, 1)
 	assert.True(t, app.trackerWidget.ticking)
 
@@ -121,9 +115,8 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
 
-	model, cmd = app.Update(requestEventMsg{ID: 7, Done: true})
+	model, _ = app.Update(requestEventMsg{ID: 7, Done: true})
 	require.Same(t, app, model)
-	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
 
 	model, cmd = app.Update(spinner.TickMsg{})
@@ -136,38 +129,36 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	require.NotNil(t, cmd)
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
+	// The footer grows with the help pane and the in-flight list, and the
+	// scrollback is sized from whatever it leaves.
 	app.helpWidget.help.ShowAll = true
 	app.trackerWidget.pending[1] = server.RequestEvent{Method: "POST", URL: requestURL, StartedAt: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
-	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
-	// Since we mock manual property setting here, let's call updateHistoryHeight
-	app.updateHistoryHeight()
 
+	app.updateHistoryHeight()
+	assert.Equal(t, max(app.termHeight-app.footerHeight(), 1), app.historyHeight)
+
+	// Nothing is sized before the terminal size is known.
 	app.termHeight = 0
+	app.historyHeight = 0
 	app.updateHistoryHeight()
+	assert.Zero(t, app.historyHeight)
 
-	app.termWidth = 120
-	// renderHelpBar is gone, HelpWidget and MemWidget composite in View()
-	// Let's assert MemWidget produces MB string
 	assert.Contains(t, app.memWidget.View().Content, "MB")
 
+	// Too narrow for the memory readout, so only the help bar is drawn.
 	app.termWidth = 1
 	assert.Equal(t, app.helpWidget.help.View(app.keys), app.helpWidget.View().Content)
 }
 
 func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	t.Run("start and lifecycle commands return expected messages", func(t *testing.T) {
-		app, loadCalls := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, loadCalls := newTestApp(t)
 
 		msg := app.startServerCmd()()
 		assert.IsType(t, serverStartedMsg{}, msg)
 
-		cmd := app.handleServerStarted()
-		require.NotNil(t, cmd)
-
-		msg = app.restartCmd()()
-		assert.Equal(t, restartMsg{}, msg)
+		assert.Nil(t, app.restartCmd()())
 		assert.Equal(t, 1, *loadCalls)
 
 		msg = app.shutdownCmd()()
@@ -175,56 +166,56 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 	})
 
 	t.Run("waitOutputCmd reads from output channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		app.outputCh <- "queued"
 
 		assert.Equal(t, outputLineMsg("queued"), app.waitOutputCmd()())
 
-		app.cancel()
+		require.NoError(t, app.service.Close())
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
 	t.Run("waitOutputCmd returns nil when channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		close(app.outputCh)
 		assert.Nil(t, app.waitOutputCmd()())
 	})
 
-	t.Run("watchEventsCmd reads from event channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("request activity arrives through the service stream", func(t *testing.T) {
+		model, container, _ := newTestApp(t)
 
 		requestURL, err := url.Parse("https://example.com/watch")
 		require.NoError(t, err)
 
-		app.tracker.Emit(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL})
+		emitted := server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}
+		container.RequestTracker().Emit(emitted)
 
-		assert.Equal(
-			t,
-			requestEventMsg(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}),
-			app.watchEventsCmd()(),
-		)
+		// The service is the single consumer of the tracker; the model sees
+		// activity only because the service republishes it.
+		msg := model.waitServiceEventCmd()()
 
-		app.cancel()
-		assert.Nil(t, app.watchEventsCmd()())
+		event, ok := msg.(serviceEventMsg)
+		require.True(t, ok)
+
+		request, ok := event.event.(app.RequestEvent)
+		require.True(t, ok)
+		assert.Equal(t, emitted, request.Event)
+
+		assert.Equal(t, requestEventMsg(emitted), widgetMessage(request))
 	})
 
-	t.Run("watchEventsCmd returns nil when event channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("waitServiceEventCmd returns nil once the service is closed", func(t *testing.T) {
+		model, _, _ := newTestApp(t)
 
-		app.tracker.Close()
-		assert.Nil(t, app.watchEventsCmd()())
+		require.NoError(t, model.service.Close())
+		assert.Nil(t, model.waitServiceEventCmd()())
 	})
 }
 
 func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app, _, _ := newTestApp(t)
 
 	_, _ = app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 	_, _ = app.Update(outputLineMsg("one\ntwo\nthree\nfour\nfive"))
@@ -255,7 +246,10 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "r", Code: 'r'}))
 	require.NotNil(t, cmd)
-	assert.Equal(t, restartMsg{}, cmd())
+	// Reload is a command, not a result: the widgets learn about it from the
+	// service's StateReloaded event, which is what makes a file-triggered
+	// reload behave identically to this key.
+	assert.Nil(t, cmd())
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "q", Code: 'q'}))
 	require.NotNil(t, cmd)
@@ -264,8 +258,7 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 	t.Run("server error and restart messages update state", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+		app, _, _ := newTestApp(t)
 
 		app.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
 		app.trackerWidget.ticking = true
@@ -282,194 +275,106 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		assert.False(t, app.trackerWidget.ticking)
 	})
 
+	// P3: a reload the user did not trigger has to reach the widgets too. The
+	// service reports it as a lifecycle event, which is translated here into the
+	// same message the restart key produces, so a config file save and the 'r'
+	// key clear the in-flight list identically.
+	t.Run("a reload reported by the service clears the in-flight list", func(t *testing.T) {
+		model, _, _ := newTestApp(t)
+
+		model.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
+		model.trackerWidget.ticking = true
+
+		_, _ = model.Update(serviceEventMsg{
+			event: app.LifecycleEvent{State: app.StateReloaded},
+		})
+
+		assert.Empty(t, model.trackerWidget.pending)
+		assert.False(t, model.trackerWidget.ticking)
+	})
+
 	t.Run("shutdown message quits app", func(t *testing.T) {
-		app, _ := newTestApp(t)
+		app, _, _ := newTestApp(t)
 		app.historyWidget.hist.AppendLine("hello")
 
 		model, cmd := app.Update(shutdownMsg{})
 		require.Same(t, app, model)
 		require.NotNil(t, cmd)
 		assert.Equal(t, tea.Quit(), cmd())
-
-		app.cancel()
-		err := app.proxy.Close()
-		require.NoError(t, err)
 	})
 }
 
-func TestServerStartedMsgUpdate(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
-
-	model, cmd := app.Update(serverStartedMsg{})
-
-	require.Same(t, app, model)
-	require.NotNil(t, cmd)
-}
-
-func TestHandleServerStartedWithConfigPath(t *testing.T) {
-	t.Run("creates watcher when config file exists", func(t *testing.T) {
-		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-		require.NoError(t, err)
-
-		err = tmpFile.Close()
-		require.NoError(t, err)
-
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		require.NotNil(t, app.watcher)
-
-		err = app.watcher.Close()
-		require.NoError(t, err)
-	})
-
-	t.Run("logs error when config file does not exist", func(t *testing.T) {
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		assert.Nil(t, app.watcher)
-	})
-}
-
-func TestHandleRequestEventWithData(t *testing.T) {
+func TestRequestEventsAreRenderedIntoHistory(t *testing.T) {
 	requestURL, err := url.Parse("https://example.com/api")
 	require.NoError(t, err)
 
 	data := &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200}
 
-	t.Run("outputs request without prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	testCases := []struct {
+		name   string
+		prefix string
+	}{
+		{name: "without prefix"},
+		{name: "with prefix", prefix: "api"},
+	}
 
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data})
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			model, _, _ := newTestApp(t)
 
-	t.Run("outputs request with prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+			// Rendering lives in internal/render now; the model just hands the
+			// event over and the line lands on the output channel.
+			model.renderer.Render(app.RequestEvent{
+				Event: server.RequestEvent{Done: true, Data: data, Prefix: testCase.prefix},
+			})
 
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
-	})
+			require.NotEmpty(t, model.outputCh)
+			assert.Contains(t, stripANSI(<-model.outputCh), "example.com/api")
+		})
+	}
 }
 
-func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-	called := make(chan struct{}, 1)
+// A config that fails to parse or validate must leave the running generation
+// serving, exactly as headless mode does. Before this was fixed the failing
+// load produced a nil config, which BuildRuntime dereferenced.
+func TestReloadWithFailingConfigLoadKeepsServing(t *testing.T) {
+	port := testutils.GetFreePort(t)
+	cfg := &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Localhost.HTTPPort(port), To: hosts.Localhost.HTTP()},
+		},
+	}
 
 	container := di.NewContainer()
-	defer testutils.Close(t, container)
 
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
-		select {
-		case called <- struct{}{}:
-		default:
-		}
+	loadCalls := 0
+	model := NewUncorsApp(container, "", cfg, func() (*config.UncorsConfig, error) {
+		loadCalls++
 
-		return cfg
+		return nil, errBoom
 	})
 
-	defer func() {
-		// Cancel context first so any in-flight Restart fails fast.
-		// We deliberately skip app.proxy.Close() here: closeAll() writes
-		// app.closers concurrently with the Restart goroutine's read of
-		// app.closers, which would be a data race.
-		app.cancel()
+	t.Cleanup(func() {
+		require.NoError(t, model.service.Close())
+		require.NoError(t, model.service.Shutdown(t.Context()))
+		require.NoError(t, container.Close())
+	})
 
-		if app.watcher != nil {
-			err := app.watcher.Close()
-			require.NoError(t, err)
-		}
+	require.NoError(t, model.service.Start(model.service.Context()))
 
-		if app.historyWidget != nil && app.historyWidget.hist != nil {
-			err := app.historyWidget.hist.Close()
-			require.NoError(t, err)
-		}
-	}()
+	require.NotPanics(t, func() {
+		assert.Nil(t, model.restartCmd()())
+	})
 
-	cmd := app.handleServerStarted()
+	assert.Equal(t, 1, loadCalls)
+	assert.False(t, testutils.IsPortFree(port), "the previous generation must still be bound")
 
-	require.NotNil(t, cmd)
-	require.NotNil(t, app.watcher)
+	// The model's own interface is deliberately narrow, so reach for the
+	// concrete service to assert on the state it recorded.
+	service, ok := model.service.(*app.Service)
+	require.True(t, ok)
 
-	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
-
-	select {
-	case <-called:
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("onChange callback was not invoked within timeout")
-	}
-}
-
-func TestHandleShutdownWithWatcher(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	ctx := t.Context()
-
-	watcher := config.NewWatcher(tmpFile.Name())
-	err = watcher.Watch(ctx, func() {})
-	require.NoError(t, err)
-
-	app, _ := newTestApp(t)
-	app.watcher = watcher
-
-	cmd := app.handleShutdown()
-	require.NotNil(t, cmd)
-	assert.Equal(t, tea.Quit(), cmd())
-
-	app.cancel()
-	err = app.proxy.Close()
-	require.NoError(t, err)
-
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
-	}
+	status := service.Status()
+	assert.Equal(t, app.StateReloadFailed, status.State)
+	require.ErrorIs(t, status.Err, errBoom)
 }

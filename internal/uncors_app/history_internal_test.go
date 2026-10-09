@@ -1,7 +1,7 @@
 package uncorsapp
 
 import (
-	"strings"
+	"strconv"
 	"testing"
 
 	"github.com/evg4b/uncors/testing/testutils"
@@ -90,19 +90,6 @@ func TestHistory_AppendLine(t *testing.T) {
 		require.Len(t, lines, 1)
 		assert.Equal(t, styled, lines[0])
 	})
-
-	t.Run("handles large number of lines", func(t *testing.T) {
-		history := newHistory()
-
-		defer testutils.Close(t, history)
-
-		count := 20000
-		for i := range count {
-			history.AppendLine(strings.Repeat("a", i%100))
-		}
-
-		assert.Equal(t, count, history.LineCount())
-	})
 }
 
 func TestHistory_LineCount(t *testing.T) {
@@ -156,4 +143,34 @@ func TestHistory_Lines(t *testing.T) {
 		history.AppendLine("two")
 		assert.Len(t, history.Lines(), 2)
 	})
+}
+
+// A proxy logs a line per request, so an unbounded scrollback grows for as long
+// as the process lives.
+func TestHistoryIsBounded(t *testing.T) {
+	hist := newHistory()
+
+	defer testutils.Close(t, hist)
+
+	for i := range historyMaxLines + 500 {
+		hist.AppendLine(strconv.Itoa(i))
+	}
+
+	assert.Equal(t, historyMaxLines, hist.LineCount(), "history must not grow without limit")
+
+	lines := hist.Lines()
+	assert.Equal(t, strconv.Itoa(historyMaxLines+499), lines[len(lines)-1], "the newest line must survive")
+	assert.Equal(t, strconv.Itoa(500), lines[0], "the oldest lines must be the ones dropped")
+}
+
+func TestHistoryBoundsMultiLineAppends(t *testing.T) {
+	hist := newHistory()
+
+	defer testutils.Close(t, hist)
+
+	for range historyMaxLines {
+		hist.AppendLine("a\nb\nc")
+	}
+
+	assert.Equal(t, historyMaxLines, hist.LineCount())
 }

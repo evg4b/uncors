@@ -9,23 +9,16 @@ import (
 	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
 )
 
-// runInteractive starts the proxy in interactive TUI mode.
+// runInteractive starts the proxy in interactive TUI mode. It drives the same
+// app.Service headless mode does, including the same reload behaviour; the only
+// difference is that here the events are rendered by the Bubble Tea model.
 func runInteractive(
 	ctx context.Context,
 	container *di.Container,
 	cfg *config.UncorsConfig,
 	cfgPath string,
 ) error {
-	app := uncorsapp.NewUncorsApp(
-		container,
-		cfgPath,
-		cfg,
-		func() *config.UncorsConfig {
-			reloaded, _, _ := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
-
-			return reloaded
-		},
-	)
+	app := uncorsapp.NewUncorsApp(container, cfgPath, cfg, configLoader(container))
 
 	_, err := tea.NewProgram(app, tea.WithContext(ctx)).Run()
 

@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 
+	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/spf13/pflag"
 )
@@ -10,7 +11,10 @@ import (
 const GenerateCertsCmd = "generate-certs"
 
 func GenerateCerts(container *di.Container) error {
-	cmd := container.GenerateCertsCommand()
+	cmd := commands.NewGenerateCertsCommand(
+		commands.WithOutput(container.CliOutput()),
+		commands.WithFs(container.Fs()),
+	)
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
 	cmd.DefineFlags(flags, container.Version())

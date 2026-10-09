@@ -10,12 +10,20 @@ import (
 	"github.com/spf13/afero"
 )
 
+// maxCachedCertificates bounds the per-host certificate cache. A mapping with a
+// {placeholder} host serves any name that matches it, so the set of hosts is
+// driven by whatever is requested rather than by the configuration, and each
+// entry is an RSA-2048 key pair. The limit is far above what a development
+// session needs while keeping the memory bounded.
+const maxCachedCertificates = 128
+
 // HostCertManager manages TLS certificates for HTTPS mappings, generating a
 // certificate per host on the fly signed by the local development CA.
 type HostCertManager struct {
 	fs        afero.Fs
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
+	order     []string
 	mutex     sync.RWMutex
 }
 
@@ -104,10 +112,24 @@ func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, err
 		return nil, fmt.Errorf("failed to generate certificate for %s: %w", host, err)
 	}
 
-	m.cache[host] = cert
+	m.store(host, cert)
 	log.Printf("Generated TLS certificate for host: %s", host)
 
 	return cert, nil
+}
+
+// store caches the certificate, evicting the oldest entry once the cache is
+// full. Callers hold the write lock.
+func (m *HostCertManager) store(host string, cert *tls.Certificate) {
+	if len(m.cache) >= maxCachedCertificates {
+		oldest := m.order[0]
+		m.order = m.order[1:]
+
+		delete(m.cache, oldest)
+	}
+
+	m.cache[host] = cert
+	m.order = append(m.order, host)
 }
 
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
