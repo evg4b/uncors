@@ -188,13 +188,9 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		require.NotPanics(t, func() { msg = app.restartCmd()() })
 		assert.Equal(t, restartMsg{}, msg)
 
-		select {
-		case line := <-app.outputCh:
-			assert.Contains(t, line, "Failed to reload configuration")
-			assert.Contains(t, line, errBoom.Error())
-		default:
-			assert.Fail(t, "the configuration error was not reported")
-		}
+		line := recv(t, app.outputCh)
+		assert.Contains(t, line, "Failed to reload configuration")
+		assert.Contains(t, line, errBoom.Error())
 	})
 
 	t.Run("waitOutputCmd reads from output channel and handles shutdown", func(t *testing.T) {

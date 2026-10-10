@@ -217,28 +217,25 @@ func TestCacheMiddleware(t *testing.T) {
 
 	t.Run("should not share cached responses between ports of one host", func(t *testing.T) {
 		// Mappings on different ports share one store per configuration generation.
-		store := cache.NewRistrettoCache(1024*1024, time.Minute)
-		defer testutils.Close(t, store)
+		middleware := cache.NewMiddleware(
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithMethods([]string{http.MethodGet}),
+			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
+		)
+
+		handler := infra.Mddleware(middleware, infra.HandlerFunc(
+			func(writer contracts.ResponseWriter, request *contracts.Request) error {
+				fmt.Fprint(writer, request.URL.String())
+
+				return nil
+			},
+		))
 
 		for _, url := range []string{
 			"http://localhost:3000/api/test",
 			"http://localhost:4000/api/test",
 			"https://localhost:4000/api/test",
 		} {
-			middleware := cache.NewMiddleware(
-				cache.WithCacheStorage(store),
-				cache.WithMethods([]string{http.MethodGet}),
-				cache.WithGlobs(config.CacheGlobs{cacheGlob}),
-			)
-
-			handler := infra.Mddleware(middleware, infra.HandlerFunc(
-				func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-					fmt.Fprint(writer, url)
-
-					return nil
-				},
-			))
-
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
@@ -246,70 +243,73 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("should not cache a response whose handler failed", func(t *testing.T) {
-		const url = "https://test-host.com:4200/api/partial"
+	t.Run("should not cache an interrupted response", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			url     string
+			wantErr error
+			// serve writes a partial response; cancel cancels the request context.
+			serve func(writer contracts.ResponseWriter, cancel context.CancelFunc) error
+		}{
+			{
+				name:    "handler failed",
+				url:     "https://test-host.com:4200/api/partial",
+				wantErr: errUpstreamReset,
+				serve: func(writer contracts.ResponseWriter, _ context.CancelFunc) error {
+					writer.WriteHeader(http.StatusOK)
+					fmt.Fprint(writer, "partial")
 
-		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
-			cache.WithMethods([]string{http.MethodGet}),
-			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
-		)
-
-		failing := infra.Mddleware(middleware, infra.HandlerFunc(
-			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-				writer.WriteHeader(http.StatusOK)
-				fmt.Fprint(writer, "partial")
-
-				return errUpstreamReset
+					return errUpstreamReset
+				},
 			},
-		))
+			{
+				name: "request cancelled",
+				url:  "https://test-host.com:4200/api/cancelled",
+				serve: func(writer contracts.ResponseWriter, cancel context.CancelFunc) error {
+					fmt.Fprint(writer, "partial")
+					cancel()
 
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
-		err := failing.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
-		require.ErrorIs(t, err, errUpstreamReset)
-
-		testHandler.Reset()
-
-		recorder := httptest.NewRecorder()
-		request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
-		require.NoError(t, infra.Mddleware(middleware, testHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request))
-		assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-		assert.Equal(t, 1, testHandler.Count())
-	})
-
-	t.Run("should not cache a response to a cancelled request", func(t *testing.T) {
-		const url = "https://test-host.com:4200/api/cancelled"
-
-		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
-			cache.WithMethods([]string{http.MethodGet}),
-			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
-		)
-
-		ctx, cancel := context.WithCancel(t.Context())
-		defer cancel()
-
-		cancelling := infra.Mddleware(middleware, infra.HandlerFunc(
-			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-				fmt.Fprint(writer, "partial")
-				cancel()
-
-				return nil
+					return nil
+				},
 			},
-		))
+		}
 
-		request := httptest.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		require.NoError(t, cancelling.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request))
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				middleware := cache.NewMiddleware(
+					cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+					cache.WithMethods([]string{http.MethodGet}),
+					cache.WithGlobs(config.CacheGlobs{cacheGlob}),
+				)
 
-		testHandler.Reset()
+				ctx, cancel := context.WithCancel(t.Context())
+				defer cancel()
 
-		recorder := httptest.NewRecorder()
-		request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
-		require.NoError(t, infra.Mddleware(middleware, testHandler).
-			ServeHTTP(server.NewResponseRecorder(recorder), request))
-		assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-		assert.Equal(t, 1, testHandler.Count())
+				interrupted := infra.Mddleware(middleware, infra.HandlerFunc(
+					func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+						return testCase.serve(writer, cancel)
+					},
+				))
+
+				request := httptest.NewRequestWithContext(ctx, http.MethodGet, testCase.url, nil)
+
+				err := interrupted.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
+				if testCase.wantErr != nil {
+					require.ErrorIs(t, err, testCase.wantErr)
+				} else {
+					require.NoError(t, err)
+				}
+
+				testHandler.Reset()
+
+				recorder := httptest.NewRecorder()
+				request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
+				require.NoError(t, infra.Mddleware(middleware, testHandler).
+					ServeHTTP(server.NewResponseRecorder(recorder), request))
+				assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+				assert.Equal(t, 1, testHandler.Count())
+			})
+		}
 	})
 
 	t.Run("should not cache response between different methods matched by one rule", func(t *testing.T) {

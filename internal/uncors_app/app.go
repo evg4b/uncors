@@ -275,17 +275,7 @@ func (m *UncorsApp) handleServerStarted() tea.Cmd {
 				m.output.Errorf("Config reloading error: %v", value)
 			})
 
-			newCfg, err := m.loadConfig()
-			if err != nil {
-				m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
-
-				return
-			}
-
-			err = m.proxy.Restart(m.appContext(), newCfg)
-			if err != nil {
-				m.output.Errorf("Failed to restart server: %v", err)
-			}
+			m.reload()
 		})
 		if err != nil {
 			m.output.Errorf("Failed to watch config file: %v", err)
@@ -392,19 +382,25 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
-		newCfg, err := m.loadConfig()
-		if err != nil {
-			m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
-
-			return restartMsg{}
-		}
-
-		err = m.proxy.Restart(m.appContext(), newCfg)
-		if err != nil {
-			m.output.Errorf("Failed to restart: %v", err)
-		}
+		m.reload()
 
 		return restartMsg{}
+	}
+}
+
+// reload reads the configuration again and restarts the proxy with it. A
+// configuration that fails to load keeps the previous one running.
+func (m *UncorsApp) reload() {
+	newCfg, err := m.loadConfig()
+	if err != nil {
+		m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
+
+		return
+	}
+
+	err = m.proxy.Restart(m.appContext(), newCfg)
+	if err != nil {
+		m.output.Errorf("Failed to restart server: %v", err)
 	}
 }
 

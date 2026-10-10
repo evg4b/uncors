@@ -233,16 +233,17 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 }
 
-type openRecordingFs struct {
-	afero.Fs
+// serveOnce sends one GET request for requestURL through middleware, with a
+// no-op handler behind it.
+func serveOnce(middleware *static.Middleware, requestURL *url.URL) {
+	handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+		return nil
+	}))
 
-	opened []string
-}
-
-func (f *openRecordingFs) Open(name string) (afero.File, error) {
-	f.opened = append(f.opened, name)
-
-	return f.Fs.Open(name)
+	_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
+		Method: http.MethodGet,
+		URL:    requestURL,
+	})
 }
 
 func TestStaticMiddlewareReleasesFileHandles(t *testing.T) {
@@ -268,17 +269,10 @@ func TestStaticMiddlewareReleasesFileHandles(t *testing.T) {
 				static.WithIndex(testCase.index),
 			)
 
-			handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
-				return nil
-			}))
-
 			requestURI, err := url.Parse(testCase.path)
 			require.NoError(t, err)
 
-			_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
-				Method: http.MethodGet,
-				URL:    requestURI,
-			})
+			serveOnce(middleware, requestURI)
 
 			assert.Zero(t, trackingFs.OpenFiles(), "file handles were left open")
 		})
@@ -295,24 +289,18 @@ func TestStaticMiddlewareStaysInsideRoot(t *testing.T) {
 		"/static/../../etc/passwd",
 	} {
 		t.Run(rawPath, func(t *testing.T) {
-			recording := &openRecordingFs{Fs: fs}
+			trackingFs := testutils.NewTrackingFs(fs)
 			middleware := static.NewStaticMiddleware(
-				static.WithFileSystem(recording),
+				static.WithFileSystem(trackingFs),
 				static.WithPrefix("/static"),
 			)
 
-			handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
-				return nil
-			}))
+			serveOnce(middleware, &url.URL{Path: rawPath})
 
-			_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
-				Method: http.MethodGet,
-				URL:    &url.URL{Path: rawPath},
-			})
+			opened := trackingFs.Opened()
+			require.NotEmpty(t, opened)
 
-			require.NotEmpty(t, recording.opened)
-
-			for _, name := range recording.opened {
+			for _, name := range opened {
 				assert.NotContains(t, name, "..")
 				assert.True(t, strings.HasPrefix(filepath.ToSlash(name), "/"), name)
 			}
