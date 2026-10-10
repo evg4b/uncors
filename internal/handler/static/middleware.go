@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -58,12 +58,9 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 }
 
 func (h *Middleware) extractFilePath(request *http.Request) string {
-	filePath := strings.TrimPrefix(request.URL.Path, h.prefix)
-	if !strings.HasPrefix(filePath, "/") {
-		filePath = "/" + filePath
-	}
-
-	return path.Clean(filePath)
+	// Cleaning a rooted path resolves every ".." segment, so the result cannot
+	// point outside the static directory.
+	return filepath.Clean("/" + strings.TrimPrefix(request.URL.Path, h.prefix))
 }
 
 func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -261,4 +263,49 @@ func TestStaticMiddleware(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("never opens a path outside the root", func(t *testing.T) {
+		for _, rawPath := range []string{
+			"/../../etc/passwd",
+			"/assets/../../../etc/passwd",
+			"../etc/passwd",
+			"/static/../../etc/passwd",
+		} {
+			t.Run(rawPath, func(t *testing.T) {
+				recording := &openRecordingFs{Fs: fs}
+				middleware := static.NewStaticMiddleware(
+					static.WithFileSystem(recording),
+					static.WithPrefix("/static"),
+				)
+
+				handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+					return nil
+				}))
+
+				_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
+					Method: http.MethodGet,
+					URL:    &url.URL{Path: rawPath},
+				})
+
+				require.NotEmpty(t, recording.opened)
+
+				for _, name := range recording.opened {
+					assert.NotContains(t, name, "..")
+					assert.True(t, strings.HasPrefix(filepath.ToSlash(name), "/"), name)
+				}
+			})
+		}
+	})
+}
+
+type openRecordingFs struct {
+	afero.Fs
+
+	opened []string
+}
+
+func (f *openRecordingFs) Open(name string) (afero.File, error) {
+	f.opened = append(f.opened, name)
+
+	return f.Fs.Open(name)
 }
