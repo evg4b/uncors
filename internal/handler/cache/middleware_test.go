@@ -288,6 +288,8 @@ func TestCacheMiddleware(t *testing.T) {
 		)
 
 		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
 		cancelling := infra.Mddleware(middleware, infra.HandlerFunc(
 			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 				fmt.Fprint(writer, "partial")
