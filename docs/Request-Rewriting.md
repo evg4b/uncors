@@ -24,8 +24,8 @@ mappings:
 
 A rule matches requests whose path equals `from` or starts with `from`
 followed by `/`. The whole request path is then replaced with `to`, after
-substituting placeholders. Anything after the matched part is dropped, and so
-is the query string.
+substituting placeholders. Anything after the matched part is dropped. The
+query string is kept and forwarded unchanged.
 
 ```yaml
 rewrites:
@@ -33,11 +33,12 @@ rewrites:
     to: /api/v1/{resource}/list
 ```
 
-| Incoming request | Upstream request        |
-| ---------------- | ----------------------- |
-| `/api/users`     | `/api/v1/users/list`    |
-| `/api/posts`     | `/api/v1/posts/list`    |
-| `/api/posts/42`  | `/api/v1/posts/list`    |
+| Incoming request    | Upstream request            |
+| ------------------- | --------------------------- |
+| `/api/users`        | `/api/v1/users/list`        |
+| `/api/posts`        | `/api/v1/posts/list`        |
+| `/api/posts/42`     | `/api/v1/posts/list`        |
+| `/api/posts?page=2` | `/api/v1/posts/list?page=2` |
 
 A `{name}` segment matches one path segment. To keep more of the path,
 capture each segment you need:

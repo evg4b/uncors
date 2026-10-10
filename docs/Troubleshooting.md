@@ -265,7 +265,7 @@ If headers set in the script are missing, they were set after
 
 ## Rewrites go to the wrong place
 
-A rewrite replaces the whole path with `to` and drops the query string. A
+A rewrite replaces the whole path with `to` and keeps the query string. A
 `{name}` segment captures one path segment only. If the upstream server needs
 more of the path, capture each segment in `from` and use it in `to`.
 

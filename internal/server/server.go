@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -29,11 +30,12 @@ type Target struct {
 type Server struct {
 	sync.WaitGroup
 
-	mu        sync.RWMutex
-	listeners []*PortListener
-	manager   *HostCertManager
-	sink      RequestSink
-	nextID    atomic.Uint64
+	mu              sync.RWMutex
+	listeners       []*PortListener
+	manager         *HostCertManager
+	sink            RequestSink
+	nextID          atomic.Uint64
+	shutdownTimeout time.Duration
 }
 
 // New creates a server that reports request activity to sink. A nil sink is
@@ -44,9 +46,10 @@ func New(manager *HostCertManager, sink RequestSink) *Server {
 	}
 
 	return &Server{
-		listeners: []*PortListener{},
-		manager:   manager,
-		sink:      sink,
+		listeners:       []*PortListener{},
+		manager:         manager,
+		sink:            sink,
+		shutdownTimeout: shutdownTimeout,
 	}
 }
 
@@ -117,7 +120,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
 	defer cancel()
 
 	s.mu.RLock()
@@ -154,9 +157,17 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 	s.Add(1)
 	defer s.Done()
 
+	// Shutdown closes the listeners straight away and then waits for in-flight
+	// requests. A long poll or a stream can outlive that wait; it is cut off
+	// rather than left to keep the server without any listener.
 	err := s.Shutdown(ctx)
 	if err != nil {
-		return err
+		log.Printf("server: in-flight requests did not finish before restart, closing them: %v", err)
+
+		closeErr := s.Close()
+		if closeErr != nil {
+			log.Printf("server: failed to close connections before restart: %v", closeErr)
+		}
 	}
 
 	return s.Start(ctx, targets)

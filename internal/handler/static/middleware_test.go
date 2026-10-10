@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,12 +32,18 @@ const (
 	indexHTMLContent = "<html!></html>"
 )
 
-func TestStaticMiddleware(t *testing.T) {
-	fs := testutils.FsFromMap(t, map[string]string{
+func newStaticFs(t *testing.T) afero.Fs {
+	t.Helper()
+
+	return testutils.FsFromMap(t, map[string]string{
 		indexJS:   indexJSContent,
 		demoJS:    demoJSContent,
 		indexHTML: indexHTMLContent,
 	})
+}
+
+func TestStaticMiddleware(t *testing.T) {
+	fs := newStaticFs(t)
 
 	staticFileTests := []struct {
 		name     string
@@ -223,4 +231,91 @@ func TestStaticMiddleware(t *testing.T) {
 			assert.Error(t, handlerErr)
 		})
 	})
+}
+
+type openRecordingFs struct {
+	afero.Fs
+
+	opened []string
+}
+
+func (f *openRecordingFs) Open(name string) (afero.File, error) {
+	f.opened = append(f.opened, name)
+
+	return f.Fs.Open(name)
+}
+
+func TestStaticMiddlewareReleasesFileHandles(t *testing.T) {
+	fs := newStaticFs(t)
+
+	tests := []struct {
+		name  string
+		index string
+		path  string
+	}{
+		{name: "file", index: indexHTML, path: indexJS},
+		{name: "directory served by index", index: indexHTML, path: "/assets/"},
+		{name: "missing file served by index", index: indexHTML, path: "/missing.js"},
+		{name: "directory without index", index: "", path: "/assets/"},
+		{name: "directory with missing index", index: "/not-exists.html", path: "/assets/"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			trackingFs := testutils.NewTrackingFs(fs)
+			middleware := static.NewStaticMiddleware(
+				static.WithFileSystem(trackingFs),
+				static.WithIndex(testCase.index),
+			)
+
+			handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+				return nil
+			}))
+
+			requestURI, err := url.Parse(testCase.path)
+			require.NoError(t, err)
+
+			_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
+				Method: http.MethodGet,
+				URL:    requestURI,
+			})
+
+			assert.Zero(t, trackingFs.OpenFiles(), "file handles were left open")
+		})
+	}
+}
+
+func TestStaticMiddlewareStaysInsideRoot(t *testing.T) {
+	fs := newStaticFs(t)
+
+	for _, rawPath := range []string{
+		"/../../etc/passwd",
+		"/assets/../../../etc/passwd",
+		"../etc/passwd",
+		"/static/../../etc/passwd",
+	} {
+		t.Run(rawPath, func(t *testing.T) {
+			recording := &openRecordingFs{Fs: fs}
+			middleware := static.NewStaticMiddleware(
+				static.WithFileSystem(recording),
+				static.WithPrefix("/static"),
+			)
+
+			handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+				return nil
+			}))
+
+			_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
+				Method: http.MethodGet,
+				URL:    &url.URL{Path: rawPath},
+			})
+
+			require.NotEmpty(t, recording.opened)
+
+			for _, name := range recording.opened {
+				assert.NotContains(t, name, "..")
+				assert.True(t, strings.HasPrefix(filepath.ToSlash(name), "/"), name)
+			}
+		})
+	}
 }

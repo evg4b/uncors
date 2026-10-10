@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -124,6 +125,45 @@ func TestProxy(t *testing.T) {
 
 			return false
 		}, time.Second, 20*time.Millisecond, "old port is still accepting connections")
+	})
+
+	// The config watcher and the TUI restart key can trigger restarts at the
+	// same time. Each must replace the previous generation completely, never
+	// leave an orphaned listener behind.
+	t.Run("concurrent restarts leave exactly one generation serving", func(t *testing.T) {
+		const restarts = 8
+
+		ports := testutils.GetFreePorts(t, restarts+1)
+
+		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
+		defer testutils.Close(t, container)
+
+		proxy := container.Proxy()
+
+		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
+		defer testutils.Close(t, proxy)
+
+		var waitGroup sync.WaitGroup
+		for _, port := range ports[1:] {
+			waitGroup.Go(func() {
+				assert.NoError(t, proxy.Restart(t.Context(), proxyConfiguration(port)))
+			})
+		}
+
+		waitGroup.Wait()
+
+		listening := 0
+
+		for _, port := range ports {
+			conn, err := dial(t, port)
+			if err == nil {
+				listening++
+
+				_ = conn.Close()
+			}
+		}
+
+		assert.Equal(t, 1, listening, "exactly one generation must be listening")
 	})
 
 	t.Run("restart returns an error when the new port is taken", func(t *testing.T) {

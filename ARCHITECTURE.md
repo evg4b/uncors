@@ -43,7 +43,9 @@ must be mirrored there by hand.
 `config.Watcher` watches the configuration file. On a change, the CLI reloads
 the configuration and calls `di.Proxy.Restart`, which builds a new `Runtime`
 before replacing the old one. If loading fails, the old configuration stays
-active.
+active. `Proxy` runs one start, restart, or shutdown at a time, and a restart
+closes requests that are still running after the shutdown timeout, so the new
+listeners always start.
 
 ## Request flow
 

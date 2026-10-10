@@ -27,7 +27,13 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 }
 
 func (m *Middleware) rewriteURL(request *contracts.Request) {
-	clonedURL := &url.URL{Path: replace(m.rewrite.To, mux.Vars(request))}
+	// A reference with a path resolves to the reference's own query, so the
+	// original query has to be carried over explicitly.
+	clonedURL := &url.URL{
+		Path:       replace(m.rewrite.To, mux.Vars(request)),
+		RawQuery:   request.URL.RawQuery,
+		ForceQuery: request.URL.ForceQuery,
+	}
 	request.URL = urlt.URL_ResolveReference(request.URL, clonedURL)
 }
 

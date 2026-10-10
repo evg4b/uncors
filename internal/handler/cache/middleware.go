@@ -63,10 +63,15 @@ func (m *Middleware) cacheRequest(
 	writer.EnableBodyCapture()
 
 	err := next.ServeHTTP(writer, request)
+	if err != nil || request.Context().Err() != nil {
+		// The captured body may be truncated: an upstream reset or a client
+		// disconnect can interrupt a response whose 2xx status is already sent.
+		return err
+	}
 
 	m.storeResponse(cacheKey, writer.Captured())
 
-	return err
+	return nil
 }
 
 func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
@@ -142,7 +147,10 @@ func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
 
 	sort.Strings(items)
 
-	return fmt.Sprintf("[%s]%s%s?%s", method, urlt.URL_Hostname(url), url.Path, strings.Join(items, ";"))
+	// The store is shared by every mapping of a configuration generation, so the
+	// key must identify the listener (scheme and port), not just the host name.
+	return fmt.Sprintf("[%s]%s://%s%s?%s",
+		method, url.Scheme, strings.ToLower(url.Host), url.Path, strings.Join(items, ";"))
 }
 
 func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedResponse {

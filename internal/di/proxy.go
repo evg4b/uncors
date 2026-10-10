@@ -15,7 +15,10 @@ import (
 // be alive per running set of targets.
 //
 // Start, Restart and Shutdown are driven by independent goroutines - the config
-// watcher, the signal handler, the TUI - so mu guards the active generation.
+// watcher, the signal handler, the TUI - so mu serialises them for their whole
+// duration. Guarding only the generation swap is not enough: two overlapping
+// restarts would race on the server's listeners, orphaning one set of them, and
+// could leave the active generation different from the one being served.
 type Proxy struct {
 	container *Container
 
@@ -28,6 +31,9 @@ func (c *Container) newProxy() *Proxy {
 }
 
 func (p *Proxy) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	output := p.container.CliOutput()
 
 	tui.PrintLogo(output, p.container.Version())
@@ -56,6 +62,9 @@ func (p *Proxy) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) er
 // config that fails to build leaves the proxy serving the previous generation
 // untouched. The old generation is released only once the new one is live.
 func (p *Proxy) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	output := p.container.CliOutput()
 	output.Info("Restarting server....")
 
@@ -77,6 +86,9 @@ func (p *Proxy) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) 
 }
 
 func (p *Proxy) Shutdown(ctx context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	return errors.Join(
 		p.container.Server().Shutdown(ctx),
 		closeRuntime(p.swap(nil)),
@@ -84,6 +96,9 @@ func (p *Proxy) Shutdown(ctx context.Context) error {
 }
 
 func (p *Proxy) Close() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	return errors.Join(
 		p.container.Server().Close(),
 		closeRuntime(p.swap(nil)),
@@ -95,11 +110,8 @@ func (p *Proxy) Wait() {
 }
 
 // swap installs runtime as the active generation and returns the one it
-// replaced, which the caller is responsible for closing.
+// replaced, which the caller is responsible for closing. Callers hold mu.
 func (p *Proxy) swap(runtime *Runtime) *Runtime {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	previous := p.runtime
 	p.runtime = runtime
 

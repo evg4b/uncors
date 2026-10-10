@@ -276,6 +276,65 @@ func TestServer(t *testing.T) {
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
 	})
 
+	t.Run("Restart is not blocked by a request that outlives the shutdown timeout", func(t *testing.T) {
+		initial := testutils.GetFreePort(t)
+		restarted := testutils.GetFreePort(t)
+		manager := server.NewHostCertManager(afero.NewOsFs())
+		instance := server.New(manager, server.NewRequestTracker())
+		server.SetShutdownTimeout(instance, 100*time.Millisecond)
+
+		entered := make(chan struct{})
+		release := make(chan struct{})
+
+		defer close(release)
+
+		// Shutdown cancels request contexts, so only a handler that ignores its
+		// context (a busy Lua script, a write blocked on a slow client) can
+		// outlive it.
+		stuck := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+			close(entered)
+			<-release
+
+			return nil
+		})
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(initial).String(),
+				Handler: stuck,
+			},
+		}))
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		go func() {
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+				hosts.Loopback.HTTPPort(initial).String(), nil)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			resp, err := http.DefaultClient.Do(req)
+			if err == nil {
+				_ = resp.Body.Close()
+			}
+		}()
+
+		<-entered
+
+		err := instance.Restart(t.Context(), []server.Target{
+			{
+				Address: hosts.Loopback.Port(restarted).String(),
+				Handler: handler,
+			},
+		})
+		require.NoError(t, err)
+
+		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
+	})
+
 	t.Run("wait", func(t *testing.T) {
 		queue := testutils.QueueEvents{}
 

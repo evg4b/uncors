@@ -23,8 +23,9 @@ A response is cached when all of these hold:
 - the request path matches one of the mapping's `cache` globs;
 - the upstream status code is in the 2xx range.
 
-The cache key is the method, host name, path, and query string. Query
-parameters are sorted first, so `?a=1&b=2` and `?b=2&a=1` share an entry.
+The cache key is the method, scheme, host name and port, path, and query
+string, so mappings on different ports never share entries. Query parameters
+are sorted first, so `?a=1&b=2` and `?b=2&a=1` share an entry.
 Request headers are not part of the key.
 
 A cache hit returns the stored status code, headers, and body without

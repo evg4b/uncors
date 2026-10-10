@@ -38,10 +38,10 @@ func newTestApp(t *testing.T) (*UncorsApp, *int) {
 		container,
 		"", // no config file — watcher is not created
 		uncorsConfig,
-		func() *config.UncorsConfig {
+		func() (*config.UncorsConfig, error) {
 			loadCalls++
 
-			return uncorsConfig
+			return uncorsConfig, nil
 		},
 	)
 
@@ -172,6 +172,29 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 
 		msg = app.shutdownCmd()()
 		assert.Equal(t, shutdownMsg{}, msg)
+	})
+
+	t.Run("restart with an invalid config reports the error and keeps the proxy", func(t *testing.T) {
+		container := di.NewContainer()
+		defer testutils.Close(t, container)
+
+		app := NewUncorsApp(container, "", &config.UncorsConfig{}, func() (*config.UncorsConfig, error) {
+			return nil, errBoom
+		})
+		defer cleanupTestApp(t, app)
+
+		var msg tea.Msg
+
+		require.NotPanics(t, func() { msg = app.restartCmd()() })
+		assert.Equal(t, restartMsg{}, msg)
+
+		select {
+		case line := <-app.outputCh:
+			assert.Contains(t, line, "Failed to reload configuration")
+			assert.Contains(t, line, errBoom.Error())
+		default:
+			assert.Fail(t, "the configuration error was not reported")
+		}
 	})
 
 	t.Run("waitOutputCmd reads from output channel and handles shutdown", func(t *testing.T) {
@@ -320,7 +343,7 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
 
 		defer func() {
 			app.cancel()
@@ -348,7 +371,9 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 		container := di.NewContainer()
 		defer testutils.Close(t, container)
 
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() *config.UncorsConfig { return cfg })
+		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() (*config.UncorsConfig, error) {
+			return cfg, nil
+		})
 
 		defer func() {
 			app.cancel()
@@ -403,13 +428,13 @@ func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
 	container := di.NewContainer()
 	defer testutils.Close(t, container)
 
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() *config.UncorsConfig {
+	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
 		select {
 		case called <- struct{}{}:
 		default:
 		}
 
-		return cfg
+		return cfg, nil
 	})
 
 	defer func() {

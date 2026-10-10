@@ -272,11 +272,11 @@ curl https://gateway.local:8443/payments/process # https://payments.production.c
 curl https://gateway.local:8443/status           # https://production-gateway.com/status
 ```
 
-Each `{endpoint}` captures one path segment, and the query string is not
-forwarded. See [Request Rewriting](Request-Rewriting).
+Each `{endpoint}` captures one path segment; the rest of the path is not
+forwarded, while the query string is. See [Request Rewriting](Request-Rewriting).
 
 If the services don't need to share a host name, separate mappings are
-simpler and keep the full path and query string:
+simpler and keep the full path:
 
 ```yaml
 mappings:

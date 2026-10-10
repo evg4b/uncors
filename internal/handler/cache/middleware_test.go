@@ -1,6 +1,8 @@
 package cache_test
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var errUpstreamReset = errors.New("upstream reset")
 
 func TestCacheMiddleware(t *testing.T) {
 	const (
@@ -209,6 +213,103 @@ func TestCacheMiddleware(t *testing.T) {
 		})
 
 		assert.Equal(t, count, testHandler.Count())
+	})
+
+	t.Run("should not share cached responses between ports of one host", func(t *testing.T) {
+		// Mappings on different ports share one store per configuration generation.
+		store := cache.NewRistrettoCache(1024*1024, time.Minute)
+		defer testutils.Close(t, store)
+
+		for _, url := range []string{
+			"http://localhost:3000/api/test",
+			"http://localhost:4000/api/test",
+			"https://localhost:4000/api/test",
+		} {
+			middleware := cache.NewMiddleware(
+				cache.WithCacheStorage(store),
+				cache.WithMethods([]string{http.MethodGet}),
+				cache.WithGlobs(config.CacheGlobs{cacheGlob}),
+			)
+
+			handler := infra.Mddleware(middleware, infra.HandlerFunc(
+				func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+					fmt.Fprint(writer, url)
+
+					return nil
+				},
+			))
+
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+			assert.Equal(t, url, testutils.ReadBody(t, recorder))
+		}
+	})
+
+	t.Run("should not cache a response whose handler failed", func(t *testing.T) {
+		const url = "https://test-host.com:4200/api/partial"
+
+		middleware := cache.NewMiddleware(
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithMethods([]string{http.MethodGet}),
+			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
+		)
+
+		failing := infra.Mddleware(middleware, infra.HandlerFunc(
+			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+				writer.WriteHeader(http.StatusOK)
+				fmt.Fprint(writer, "partial")
+
+				return errUpstreamReset
+			},
+		))
+
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		err := failing.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
+		require.ErrorIs(t, err, errUpstreamReset)
+
+		testHandler.Reset()
+
+		recorder := httptest.NewRecorder()
+		request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		require.NoError(t, infra.Mddleware(middleware, testHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request))
+		assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+		assert.Equal(t, 1, testHandler.Count())
+	})
+
+	t.Run("should not cache a response to a cancelled request", func(t *testing.T) {
+		const url = "https://test-host.com:4200/api/cancelled"
+
+		middleware := cache.NewMiddleware(
+			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithMethods([]string{http.MethodGet}),
+			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
+		)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+
+		cancelling := infra.Mddleware(middleware, infra.HandlerFunc(
+			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+				fmt.Fprint(writer, "partial")
+				cancel()
+
+				return nil
+			},
+		))
+
+		request := httptest.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		require.NoError(t, cancelling.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request))
+
+		testHandler.Reset()
+
+		recorder := httptest.NewRecorder()
+		request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		require.NoError(t, infra.Mddleware(middleware, testHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), request))
+		assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+		assert.Equal(t, 1, testHandler.Count())
 	})
 
 	t.Run("should not cache response between different methods matched by one rule", func(t *testing.T) {

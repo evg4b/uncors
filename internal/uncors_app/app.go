@@ -38,7 +38,7 @@ type UncorsApp struct {
 	cancel     context.CancelFunc
 
 	cfg        *config.UncorsConfig
-	loadConfig func() *config.UncorsConfig
+	loadConfig func() (*config.UncorsConfig, error)
 	configPath string
 
 	watcher *config.Watcher
@@ -70,7 +70,7 @@ func NewUncorsApp(
 	container *di.Container,
 	configPath string,
 	cfg *config.UncorsConfig,
-	loadConfig func() *config.UncorsConfig,
+	loadConfig func() (*config.UncorsConfig, error),
 ) *UncorsApp {
 	outputCh := make(chan string, outputChannelSize)
 	output := newTuiOutput(outputCh)
@@ -275,9 +275,14 @@ func (m *UncorsApp) handleServerStarted() tea.Cmd {
 				m.output.Errorf("Config reloading error: %v", value)
 			})
 
-			newCfg := m.loadConfig()
+			newCfg, err := m.loadConfig()
+			if err != nil {
+				m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
 
-			err := m.proxy.Restart(m.appContext(), newCfg)
+				return
+			}
+
+			err = m.proxy.Restart(m.appContext(), newCfg)
 			if err != nil {
 				m.output.Errorf("Failed to restart server: %v", err)
 			}
@@ -387,9 +392,14 @@ func (m *UncorsApp) restartCmd() tea.Cmd {
 			m.output.Errorf("Restart error: %v", value)
 		})
 
-		newCfg := m.loadConfig()
+		newCfg, err := m.loadConfig()
+		if err != nil {
+			m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
 
-		err := m.proxy.Restart(m.appContext(), newCfg)
+			return restartMsg{}
+		}
+
+		err = m.proxy.Restart(m.appContext(), newCfg)
 		if err != nil {
 			m.output.Errorf("Failed to restart: %v", err)
 		}

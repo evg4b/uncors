@@ -97,6 +97,8 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 		return fmt.Errorf("failed to open file %s: %w", fileName, err)
 	}
 
+	defer file.Close()
+
 	stat, err := file.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to receive file information: %w", err)
