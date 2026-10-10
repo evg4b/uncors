@@ -223,4 +223,42 @@ func TestStaticMiddleware(t *testing.T) {
 			assert.Error(t, handlerErr)
 		})
 	})
+
+	t.Run("releases every file handle", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			index string
+			path  string
+		}{
+			{name: "file", index: indexHTML, path: indexJS},
+			{name: "directory served by index", index: indexHTML, path: "/assets/"},
+			{name: "missing file served by index", index: indexHTML, path: "/missing.js"},
+			{name: "directory without index", index: "", path: "/assets/"},
+			{name: "directory with missing index", index: "/not-exists.html", path: "/assets/"},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				trackingFs := testutils.NewTrackingFs(fs)
+				middleware := static.NewStaticMiddleware(
+					static.WithFileSystem(trackingFs),
+					static.WithIndex(testCase.index),
+				)
+
+				handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+					return nil
+				}))
+
+				requestURI, err := url.Parse(testCase.path)
+				require.NoError(t, err)
+
+				_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), &http.Request{
+					Method: http.MethodGet,
+					URL:    requestURI,
+				})
+
+				assert.Zero(t, trackingFs.OpenFiles(), "file handles were left open")
+			})
+		}
+	})
 }

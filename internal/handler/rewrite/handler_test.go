@@ -49,6 +49,32 @@ func TestMiddlewareWrap(t *testing.T) {
 		assert.True(t, nextCalled)
 	})
 
+	t.Run("preserves the query string", func(t *testing.T) {
+		middleware := rewrite.NewMiddleware(
+			rewrite.WithRewritingOptions(&config.RewritingOption{
+				From: "/api/v1/users",
+				To:   "/v2/users",
+			}),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/users?page=2&sort=name", nil)
+		helpers.NormaliseRequest(request)
+
+		var rewritten string
+
+		next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+			rewritten = request.URL.RequestURI()
+
+			return nil
+		})
+
+		handler := infra.Mddleware(middleware, next)
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+		assert.Equal(t, "/v2/users?page=2&sort=name", rewritten)
+	})
+
 	t.Run("preserves original host when no host rewrite specified", func(t *testing.T) {
 		expectedURL := "/rewritten"
 		nextCalled := false

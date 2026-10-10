@@ -84,6 +84,22 @@ func TestHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("file content releases the file handle", func(t *testing.T) {
+		trackingFs := testutils.NewTrackingFs(fileSystem)
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{File: jsonFile}),
+			mock.WithFileSystem(trackingFs),
+			mock.WithAfter(time.After),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+		assert.JSONEq(t, jsonContent, testutils.ReadBody(t, recorder))
+		assert.Zero(t, trackingFs.OpenFiles(), "file handle was left open")
+	})
+
 	t.Run("content type detection", func(t *testing.T) {
 		tests := []struct {
 			name     string

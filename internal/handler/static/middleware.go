@@ -73,12 +73,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 			return nil, nil, fmt.Errorf("failed to open file: %w", err)
 		}
 
-		indexFile, err := h.openIndexFile()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		file = indexFile
+		return h.openIndexFile()
 	}
 
 	stat, err := file.Stat()
@@ -86,35 +81,38 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 		return file, nil, fmt.Errorf("failed to get information about file: %w", err)
 	}
 
-	if stat.IsDir() {
-		indexFile, err := h.openIndexFile()
-		if err != nil {
-			return file, stat, err
-		}
-
-		indexFileStat, err := indexFile.Stat()
-		if err != nil {
-			return file, stat, fmt.Errorf("failed to get information about index file: %w", err)
-		}
-
-		file = indexFile
-		stat = indexFileStat
+	if !stat.IsDir() {
+		return file, stat, nil
 	}
 
-	return file, stat, nil
+	// A directory is served by the index file, so its own handle is released
+	// before the index file takes its place.
+	err = file.Close()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to close directory: %w", err)
+	}
+
+	return h.openIndexFile()
 }
 
-func (h *Middleware) openIndexFile() (afero.File, error) {
+// openIndexFile opens the index file. On error the returned file, when not nil,
+// is still open and must be closed by the caller.
+func (h *Middleware) openIndexFile() (afero.File, os.FileInfo, error) {
 	if len(h.index) == 0 {
-		return nil, errNotHandled
+		return nil, nil, errNotHandled
 	}
 
 	file, err := h.fs.Open(h.index)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open index file: %w", err)
+		return nil, nil, fmt.Errorf("failed to open index file: %w", err)
 	}
 
-	return file, nil
+	stat, err := file.Stat()
+	if err != nil {
+		return file, nil, fmt.Errorf("failed to get information about index file: %w", err)
+	}
+
+	return file, stat, nil
 }
 
 type MiddlewareOption = func(*Middleware)
