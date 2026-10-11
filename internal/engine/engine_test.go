@@ -188,7 +188,7 @@ func TestEngine(t *testing.T) {
 }
 
 func TestEnginePublishesLifecycleEvents(t *testing.T) {
-	ports := testutils.GetFreePorts(t, 2)
+	ports := testutils.GetFreePorts(t, 3)
 
 	bus := events.NewBus()
 	subscription := bus.Subscribe(10)
@@ -204,8 +204,9 @@ func TestEnginePublishesLifecycleEvents(t *testing.T) {
 	require.NoError(t, proxy.Restart(t.Context(), second))
 	assert.Equal(t, events.ServerRestarted{Mappings: second.Mappings}, <-subscription.Events())
 
-	occupy(t, ports[0])
-	require.Error(t, proxy.Restart(t.Context(), proxyConfiguration(ports[0])))
+	// A port the engine never used: the one it just left may not be free yet.
+	occupy(t, ports[2])
+	require.Error(t, proxy.Restart(t.Context(), proxyConfiguration(ports[2])))
 
 	select {
 	case event := <-subscription.Events():

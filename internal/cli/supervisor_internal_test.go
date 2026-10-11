@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"syscall"
 	"testing"
 	"time"
 
@@ -237,4 +238,50 @@ func TestSupervise(t *testing.T) {
 		require.Error(t, supervise(t.Context(), env, uncorsConfig, "", frontend))
 		assert.Equal(t, []string{"stopped"}, eventTypes(received))
 	})
+}
+
+type recordingWriter struct {
+	written []byte
+}
+
+func (w *recordingWriter) Write(p []byte) (int, error) {
+	w.written = append(w.written, p...)
+
+	return len(p), nil
+}
+
+func TestOnSignal(t *testing.T) {
+	t.Run("moves past the echoed ^C in headless mode", func(t *testing.T) {
+		output := &recordingWriter{}
+		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger()}
+
+		supervisor.onSignal(syscall.SIGINT)
+
+		assert.Equal(t, "\n", string(output.written))
+	})
+
+	t.Run("writes nothing in interactive mode", func(t *testing.T) {
+		output := &recordingWriter{}
+		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger(), interactive: true}
+
+		supervisor.onSignal(syscall.SIGINT)
+
+		assert.Empty(t, output.written)
+	})
+
+	t.Run("writes nothing for other signals", func(t *testing.T) {
+		output := &recordingWriter{}
+		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger()}
+
+		supervisor.onSignal(syscall.SIGTERM)
+
+		assert.Empty(t, output.written)
+	})
+}
+
+func TestEnvLogger(t *testing.T) {
+	assert.NotNil(t, Env{}.logger(), "a missing logger discards records")
+
+	logger, _ := testutils.NewBufferLogger()
+	assert.Same(t, logger, Env{Logger: logger}.logger())
 }

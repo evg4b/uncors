@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -88,14 +89,16 @@ func TestNewConfigWatcher(t *testing.T) {
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
 
-		callCount := 0
+		// Debounced callbacks run on timer goroutines.
+		var callCount atomic.Int32
+
 		called := make(chan struct{}, 10)
 
 		ctx := t.Context()
 
 		watcher := config.NewWatcher(configFile)
 		err := watcher.Watch(ctx, func() {
-			callCount++
+			callCount.Add(1)
 
 			called <- struct{}{}
 		})
@@ -114,7 +117,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		// Give any extra calls a chance to arrive.
 		time.Sleep(50 * time.Millisecond)
 
-		assert.LessOrEqual(t, callCount, 3, "too many onChange calls for rapid writes (expected debouncing)")
+		assert.LessOrEqual(t, callCount.Load(), int32(3), "too many onChange calls for rapid writes (expected debouncing)")
 	})
 
 	t.Run("Close returns nil on first call", func(t *testing.T) {
