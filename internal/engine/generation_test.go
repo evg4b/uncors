@@ -106,3 +106,42 @@ func TestBuildGeneration(t *testing.T) {
 			"config reloads must not accumulate goroutines")
 	})
 }
+
+func TestGenerationBuildsEveryHandler(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	require.NoError(t, fs.MkdirAll("/www", 0o755))
+
+	logger, _ := testutils.NewBufferLogger()
+	proxy := engine.New(engine.WithFs(fs), engine.WithLogger(logger))
+
+	generation, err := proxy.BuildGeneration(&config.UncorsConfig{
+		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
+		Mappings: config.Mappings{{
+			From:    hosts.Localhost.HTTP(),
+			To:      hosts.Localhost.HTTPS(),
+			Statics: config.StaticDirectories{{Path: "/assets", Dir: "/www"}},
+			Mocks: config.Mocks{{
+				Matcher:  config.RequestMatcher{Path: "/mock"},
+				Response: config.Response{Code: 200, Raw: "mock"},
+			}},
+			Scripts: config.Scripts{{
+				Matcher: config.RequestMatcher{Path: "/script"},
+				Script:  `response:WriteHeader(200)`,
+			}},
+			Rewrites: config.RewriteOptions{{From: "/old", To: "/new"}},
+		}},
+	})
+	require.NoError(t, err)
+
+	defer testutils.Close(t, generation)
+
+	require.Len(t, generation.Targets(), 1)
+	assert.Implements(t, (*contracts.Middleware)(nil),
+		generation.StaticMiddleware("/assets", config.StaticDirectory{Path: "/assets", Dir: "/www"}))
+	assert.Implements(t, (*contracts.Middleware)(nil),
+		generation.RewriteMiddleware(&config.RewritingOption{From: "/old", To: "/new"}))
+	assert.Implements(t, (*contracts.Handler)(nil),
+		generation.MockHandler(&config.Response{Code: 200, Raw: "mock"}))
+	assert.Implements(t, (*contracts.Handler)(nil),
+		generation.ScriptHandler(&config.Script{Script: `response:WriteHeader(200)`}))
+}
