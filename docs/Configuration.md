@@ -10,7 +10,7 @@ static files apply only to the mapping they are defined in.
 
 - [Quick reference](#quick-reference)
 - [Command-line flags](#command-line-flags)
-- [Diagnostic logging](#diagnostic-logging)
+- [Tracing and diagnostics](#tracing-and-diagnostics)
 - [Configuration file](#configuration-file)
 - [Global options](#global-options)
 - [Mapping options](#mapping-options)
@@ -101,21 +101,68 @@ uncors --from http://localhost:8080 --to https://api.example.com \
 To generate the local CA used for HTTPS mappings, run
 `uncors generate-certs`. See [HTTPS configuration](#https-configuration).
 
-## Diagnostic logging
+## Tracing and diagnostics
 
-UNCORS always prints handled requests to the console. Internal diagnostic logs
-are off by default. To capture them, set the `UNCORS_LOGGING` environment
-variable to a file path:
+UNCORS always prints handled requests to the console. Internal diagnostics are
+off by default. To see them, set `UNCORS_TRACE=true`: UNCORS then exports
+[OpenTelemetry](https://opentelemetry.io/) traces and logs over OTLP/HTTP to a
+collector. Without the variable nothing is collected, and UNCORS makes no
+connection to a collector.
+
+The exporters read the standard `OTEL_EXPORTER_OTLP_*` environment variables.
+The endpoint defaults to `http://localhost:4318`; set
+`OTEL_EXPORTER_OTLP_ENDPOINT` to send elsewhere, or
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` to
+split traces and logs. Headers, timeouts, and TLS settings use the other
+`OTEL_EXPORTER_OTLP_*` variables.
+
+To look at traces locally, run Jaeger and open <http://localhost:16686>:
 
 ```bash
-UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger
+UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none uncors --config .uncors.yaml
 ```
 
-Logs are appended to the file as `key=value` records, one per line, at every
-level from `DEBUG` up. They include errors from the proxy, mock, script, and
-static handlers, HAR write failures, and config watcher errors. Diagnostic
-output never appears in the console. If the variable is unset, empty, or points
-to a path that cannot be opened, diagnostic output is discarded.
+Jaeger stores traces but not logs, so `OTEL_LOGS_EXPORTER=none` turns log
+export off; without it UNCORS warns that logs cannot be exported. To see the
+logs as well, use a receiver that accepts both, such as
+[otel-tui](https://github.com/ymtdzzz/otel-tui) in a second terminal or an
+[OpenTelemetry Collector](https://opentelemetry.io/docs/collector/).
+
+Each request is one trace. Its root span, `HTTP <method>`, carries the URL,
+the response status, and the handler that answered (`uncors.handler`); child
+spans show the work done for it:
+
+| Span                                                       | What it covers                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------- |
+| `static.serve`                                             | Serving a static file, or falling through to the proxy. |
+| `mock.serve`                                               | A mock response, including its delay.                   |
+| `script.serve`, `script.lua.compile`, `script.lua.execute` | A Lua script handler.                                   |
+| `rewrite.apply`                                            | A rewrite, with the original and the new path.          |
+| `har.record`                                               | Recording the request to the HAR file.                  |
+| `cache.lookup`, `cache.store`                              | A cache hit or miss, and storing a response.            |
+| `options.preflight`                                        | An answered `OPTIONS` request.                          |
+| `proxy.forward`, `proxy.upstream`, `proxy.copy_body`       | Forwarding to the target and copying the response.      |
+
+Lifecycle work has its own traces: `engine.start`, `engine.restart`,
+`engine.shutdown`, `supervisor.reload`, `config.load`, `server.listen`,
+`tls.get_certificate`, `tls.generate_certificate`, `har.flush`, and
+`version.check`. Debug logs are exported with the trace and span they belong
+to. Trace context is never added to proxied requests.
+
+Diagnostics never appear in the console. When tracing is on, UNCORS shows one
+notice with the endpoint at startup, and one warning each if spans or logs
+cannot be exported, for example because no collector is listening. When it exits, UNCORS waits up
+to 5 seconds for the last spans to be sent.
+
+Failures that need your attention are shown in the console whether tracing is
+on or not:
+
+- the HAR file cannot be written (shown once until a write succeeds again);
+- the config file watcher reports an error;
+- a TLS certificate cannot be loaded or generated (once for the CA, once per
+  host);
+- in-flight requests are cut off because they did not finish before a restart.
 
 ## Configuration file
 

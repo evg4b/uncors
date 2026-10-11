@@ -14,7 +14,7 @@ browser accepts them.
 
 | Package                 | Responsibility                                                                                     |
 | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `main.go`               | Sets up logging and dispatches to `generate-certs` or the main command.                            |
+| `main.go`               | Sets up telemetry, dispatches to `generate-certs` or the main command, and flushes it on exit.     |
 | `internal/cli`          | Command entry points (`RunUncors`, `GenerateCerts`), the supervisor that owns the engine, and the two frontends. |
 | `internal/commands`     | The `generate-certs` command implementation.                                                       |
 | `internal/engine`       | Runs the proxy without UI: `Engine` (serves a `Generation` and swaps it on reload), `Generation` (everything built from one config). |
@@ -24,7 +24,7 @@ browser accepts them.
 | `internal/infra`        | HTTP client, CORS header helpers, error pages.                                                     |
 | `internal/events`       | Events the engine publishes, commands frontends send, and the non-blocking `Bus`.                |
 | `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
-| `internal/logging`      | The `slog` diagnostic logger (`UNCORS_LOGGING`); never writes to the terminal.                    |
+| `internal/telemetry`    | OpenTelemetry spans and logs, exported over OTLP when `UNCORS_TRACE=true`; free when off.         |
 | `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
 | `internal/tui`, `internal/uncors_app` | Event rendering, console output, and the interactive Bubble Tea UI.                  |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
@@ -74,7 +74,11 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
   (`tui.EventRenderer`) and sends commands. It subscribes before the engine
   starts. `ServerStopped` is the last event; the bus closes after it. If the
   frontend exits on its own, the supervisor shuts down.
-- Diagnostics go to `slog` (`internal/logging`), never to the terminal.
+- Diagnostics are OpenTelemetry spans and logs (`internal/telemetry`), never
+  terminal output. Each request is one trace: `server.handleRequest` starts the
+  root span and every handler and middleware adds a child span. Failures the
+  user must act on (HAR writes, the config watcher, TLS certificates, cut-off
+  requests) are also published as `events.Notice`.
 
 ## Request flow
 

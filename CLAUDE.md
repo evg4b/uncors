@@ -80,7 +80,25 @@ last release in `docs/Migration-Guide.md`.
 
 ## Debugging
 
-`UNCORS_LOGGING=/path/to/file` appends the internal log to that file; otherwise
-it is discarded. Log through `log/slog` (`internal/logging`); components that
-report errors take a `*slog.Logger` option. Never write diagnostics to the
-terminal: only the UI/printer renders there.
+`UNCORS_TRACE=true` exports OpenTelemetry traces and logs over OTLP/HTTP
+(`OTEL_EXPORTER_OTLP_*`, default `localhost:4318`); run
+`docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger` and open
+`localhost:16686` (Jaeger takes no logs: add `OTEL_LOGS_EXPORTER=none`).
+Without it nothing is collected. Never write diagnostics to
+the terminal: only the UI/printer renders there.
+
+- Spans: `telemetry.StartRequest` in handlers and middleware (it returns the
+  request carrying the span), `telemetry.Start` elsewhere,
+  `telemetry.Run` for cold paths that return an error. Record errors with
+  `telemetry.Fail`. Names are `component.operation`; attributes use `semconv`
+  or the `uncors.` prefix.
+- Logs: `telemetry.Debug/Info/Warn/Error(ctx, …)`, correlated to the span in
+  `ctx`.
+- Tracing off must cost nothing on the request path. Variadic and `any`
+  arguments escape even when the callee ignores them, so guard attribute
+  building and log calls there with `if span.IsRecording()` or
+  `if telemetry.Enabled()`. `internal/telemetry` tests allocations and
+  `BenchmarkRequestDisabled` (`internal/server`) measures a proxied request.
+- Failures the user must act on are also published as `events.Notice`.
+- Tests: `testutils.Telemetry(t)` records spans and logs in memory; such tests
+  must not call `t.Parallel()`.
