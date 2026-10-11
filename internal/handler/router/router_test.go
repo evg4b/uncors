@@ -14,7 +14,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/router"
@@ -26,6 +26,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,19 +52,20 @@ var (
 	userIDHeader = "User-Id"
 )
 
-// newRuntime builds a configuration generation to act as the router's factory
-// source; closing it releases everything the router created.
-func newRuntime(t *testing.T, container *di.Container) *di.Runtime {
+// newGeneration builds a configuration generation over fs to act as the
+// router's factory; it is closed, releasing everything the router created,
+// when the test ends.
+func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
 	t.Helper()
 
-	runtime, err := container.BuildRuntime(&config.UncorsConfig{})
+	generation, err := engine.New(engine.WithFs(fs)).BuildGeneration(&config.UncorsConfig{})
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		require.NoError(t, runtime.Close())
+		require.NoError(t, generation.Close())
 	})
 
-	return runtime
+	return generation
 }
 
 func cacheFactory() router.CacheMiddlewareFactory {
@@ -112,8 +114,7 @@ func TestRouter(t *testing.T) {
 		"/mock.json":             mockJSON,
 	})
 
-	container := di.NewContainer(di.WithFs(fs))
-	defer testutils.Close(t, container)
+	generation := newGeneration(t, fs)
 
 	mappings := config.Mappings{
 		{
@@ -189,7 +190,7 @@ func TestRouter(t *testing.T) {
 		mappings,
 		router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
 		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		router.WithDiContainer(newRuntime(t, container)),
+		router.WithFactory(generation),
 	)
 	require.NoError(t, err)
 
@@ -359,8 +360,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouterScriptsAndRewrites(t *testing.T) {
 	t.Run("scripts are registered and served", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		mappings := config.Mappings{
 			{
@@ -379,7 +379,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -393,8 +393,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 	})
 
 	t.Run("rewrites are served via path handler", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		expectedCode := 202
 		expectedBody := "rewritten"
@@ -422,7 +421,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -446,8 +445,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 	})
 
 	t.Run("cache globs enable cache middleware", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		callCount := 0
 		mappings := config.Mappings{
@@ -475,7 +473,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 
 				return cacheFactory()(globs)
 			}),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -491,8 +489,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 	t.Run("HAR config enables HAR middleware", func(t *testing.T) {
 		harFile := filepath.Join(t.TempDir(), "test.har")
 
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		mappings := config.Mappings{
 			{
@@ -512,7 +509,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 			mappings,
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -529,8 +526,7 @@ func TestRouterScriptsAndRewrites(t *testing.T) {
 func TestRouterMockMiddleware(t *testing.T) {
 	t.Run("request method handling", func(t *testing.T) {
 		t.Run("where mock method is not set allow method", func(t *testing.T) {
-			container := di.NewContainer()
-			defer testutils.Close(t, container)
+			generation := newGeneration(t, afero.NewMemMapFs())
 
 			routerInstance, err := router.NewRouter(
 				config.Mappings{
@@ -552,7 +548,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 				},
 				router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithDiContainer(newRuntime(t, container)),
+				router.WithFactory(generation),
 			)
 			require.NoError(t, err)
 
@@ -581,8 +577,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 		})
 
 		t.Run("where method is set", func(t *testing.T) {
-			container := di.NewContainer()
-			defer testutils.Close(t, container)
+			generation := newGeneration(t, afero.NewMemMapFs())
 
 			expectedCode := 299
 			expectedBody := "forwarded"
@@ -611,7 +606,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 						}, nil
 					}))),
 				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithDiContainer(newRuntime(t, container)),
+				router.WithFactory(generation),
 			)
 			require.NoError(t, err)
 
@@ -662,8 +657,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("path handling", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		expectedCode := 299
 		expectedBody := "forwarded"
@@ -720,7 +714,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 					}, nil
 				}))),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -782,8 +776,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("query handling", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		routerInstance, err := router.NewRouter(
 			config.Mappings{
@@ -826,7 +819,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 
@@ -888,8 +881,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 	})
 
 	t.Run("header handling", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+		generation := newGeneration(t, afero.NewMemMapFs())
 
 		routerInstance, err := router.NewRouter(
 			config.Mappings{
@@ -932,7 +924,7 @@ func TestRouterMockMiddleware(t *testing.T) {
 			},
 			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
 			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithDiContainer(newRuntime(t, container)),
+			router.WithFactory(generation),
 		)
 		require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package di_test
+package engine_test
 
 import (
 	"context"
@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/engine"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -47,7 +48,7 @@ func assertListening(t *testing.T, port int) {
 	require.NoError(t, conn.Close())
 }
 
-// occupy binds port for the duration of the test so the proxy cannot.
+// occupy binds port for the duration of the test so the engine cannot.
 func occupy(t *testing.T, port int) {
 	t.Helper()
 
@@ -59,23 +60,11 @@ func occupy(t *testing.T, port int) {
 	t.Cleanup(func() { _ = listener.Close() })
 }
 
-func TestProxy(t *testing.T) {
-	t.Run("is a container singleton", func(t *testing.T) {
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		first := container.Proxy()
-
-		assert.Same(t, first, container.Proxy())
-	})
-
+func TestEngine(t *testing.T) {
 	t.Run("serves the configured mapping", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -87,10 +76,7 @@ func TestProxy(t *testing.T) {
 	t.Run("moves to the port of the reloaded config", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -104,10 +90,7 @@ func TestProxy(t *testing.T) {
 	t.Run("stops serving the port the reloaded config dropped", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -127,18 +110,15 @@ func TestProxy(t *testing.T) {
 		}, time.Second, 20*time.Millisecond, "old port is still accepting connections")
 	})
 
-	// The config watcher and the TUI restart key can trigger restarts at the
-	// same time. Each must replace the previous generation completely, never
-	// leave an orphaned listener behind.
+	// Restarts may be requested from several goroutines at the same time. Each
+	// must replace the previous generation completely, never leave an orphaned
+	// listener behind.
 	t.Run("concurrent restarts leave exactly one generation serving", func(t *testing.T) {
 		const restarts = 8
 
 		ports := testutils.GetFreePorts(t, restarts+1)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 		defer testutils.Close(t, proxy)
@@ -169,10 +149,7 @@ func TestProxy(t *testing.T) {
 	t.Run("restart returns an error when the new port is taken", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -188,19 +165,15 @@ func TestProxy(t *testing.T) {
 
 		occupy(t, port)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		require.Error(t, container.Proxy().Start(t.Context(), proxyConfiguration(port)))
+		require.Error(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 	})
 
 	t.Run("shutdown releases the active generation and is idempotent", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
-
-		proxy := container.Proxy()
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -212,4 +185,31 @@ func TestProxy(t *testing.T) {
 
 		proxy.Wait()
 	})
+}
+
+func TestEnginePublishesLifecycleEvents(t *testing.T) {
+	ports := testutils.GetFreePorts(t, 2)
+
+	bus := events.NewBus()
+	subscription := bus.Subscribe(10)
+
+	proxy := engine.New(engine.WithFs(afero.NewMemMapFs()), engine.WithPublisher(bus))
+	defer testutils.Close(t, proxy)
+
+	first := proxyConfiguration(ports[0])
+	require.NoError(t, proxy.Start(t.Context(), first))
+	assert.Equal(t, events.ServerStarted{Mappings: first.Mappings}, <-subscription.Events())
+
+	second := proxyConfiguration(ports[1])
+	require.NoError(t, proxy.Restart(t.Context(), second))
+	assert.Equal(t, events.ServerRestarted{Mappings: second.Mappings}, <-subscription.Events())
+
+	occupy(t, ports[0])
+	require.Error(t, proxy.Restart(t.Context(), proxyConfiguration(ports[0])))
+
+	select {
+	case event := <-subscription.Events():
+		assert.Failf(t, "unexpected event", "a failed restart published %#v", event)
+	default:
+	}
 }

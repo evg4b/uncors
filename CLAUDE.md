@@ -32,22 +32,29 @@ Statics and rewrites fall through to the default handler, so only proxied
 traffic is cached and recorded to HAR. Proxy, mock, and script handlers add CORS
 headers; statics do not.
 
-Lifetimes (`internal/di`):
+Core and UI are separate (`TestCoreDoesNotImportTheUI` enforces it):
 
-- `Container`: process-lifetime services (fs, output, server, request tracker).
-- `Runtime`: everything built from one `UncorsConfig`. Register anything
-  config-derived that holds resources on it so a reload releases it.
-- `Proxy`: serves one `Runtime` and swaps it on reload; Start, Restart,
-  Shutdown, and Close are serialised.
-
-Interactive mode (`internal/uncors_app`, BubbleTea) is the default;
-`--interactive=false` runs headless (`internal/cli`). Both watch the config file
-and call `Proxy.Restart`; an invalid file keeps the previous configuration.
+- `internal/engine`: runs the proxy headless. `Engine` serves one `Generation`
+  (everything built from one `UncorsConfig`) and swaps it on reload; Start,
+  Restart, Shutdown, and Close are serialised. Register anything
+  config-derived that holds resources on the `Generation` so a reload releases
+  it.
+- `internal/events`: the engine reports only by publishing events on a `Bus`
+  (non-blocking; slow subscribers drop). Each request publishes exactly
+  `RequestStarted` and `RequestCompleted`; the handler that answers calls
+  `tracking.Claim` (`internal/tracking`).
+- `internal/cli` supervisor: owns the engine, the config watcher, signals,
+  and the version check; frontends send it `events.Restart` / `events.Shutdown`.
+  An invalid file publishes `ReloadFailed` and keeps the previous config.
+- Frontends only render events: the TUI (`internal/uncors_app`, BubbleTea, the
+  default) and the headless printer (`--interactive=false`), both through
+  `tui.EventRenderer`.
 
 ## Conventions
 
 - Handlers implement `contracts.Handler`, middleware `contracts.Middleware`;
-  wire new ones in `internal/handler/router` through a DI constructor.
+  build them in `engine.Generation` and wire them in `internal/handler/router`.
+  A handler that produces a response calls `tracking.Claim`.
 - Constructors use functional options (`helpers.ApplyOptions`).
 - Use the injected `afero.Fs`, never `os`.
 - YAML tags are kebab-case.

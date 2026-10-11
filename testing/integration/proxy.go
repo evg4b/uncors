@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"crypto/x509"
+	"io"
 	"net"
 	"strings"
 	"testing"
@@ -12,9 +13,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -52,15 +51,26 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 
 	require.NoError(t, afero.WriteFile(fs, configPath, marshalConfig(t, cfg), configFilePerm))
 
+	stopped := make(chan struct{})
+
+	// t.Context is cancelled just before cleanups run, which stops the proxy;
+	// waiting here lets it flush HAR files before temp dirs are removed.
+	t.Cleanup(func() { <-stopped })
+
 	go func() {
+		defer close(stopped)
+
 		// --interactive=false overrides the default (true) so the proxy runs
 		// in headless mode and actually starts its TCP listeners.
-		container := di.NewContainer(di.WithFs(fs), di.WithArgs([]string{"-c", configPath, "--interactive=false"}))
-		defer testutils.Close(t, container)
+		env := cli.Env{
+			Fs:     fs,
+			Stdout: io.Discard,
+			Args:   []string{"-c", configPath, "--interactive=false"},
+		}
 
 		// The test goroutine may already have finished by the time RunUncors
 		// returns, so failures are logged rather than asserted.
-		runErr := cli.RunUncors(t.Context(), container)
+		runErr := cli.RunUncors(t.Context(), env)
 		if runErr != nil {
 			t.Logf("RunUncors returned: %v", runErr)
 		}

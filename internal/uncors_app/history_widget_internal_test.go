@@ -57,16 +57,6 @@ func TestHistoryWidget(t *testing.T) {
 		assert.Equal(t, 1, widget.hist.LineCount())
 	})
 
-	t.Run("Update handles restartMsg", func(t *testing.T) {
-		widget := NewHistoryWidget(keys)
-
-		defer cleanup(widget)
-
-		newWidget, cmd := widget.Update(restartMsg{})
-		assert.Same(t, widget, newWidget)
-		assert.Nil(t, cmd)
-	})
-
 	t.Run("Update handles key presses", func(t *testing.T) {
 		widget := NewHistoryWidget(keys)
 

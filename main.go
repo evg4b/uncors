@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/evg4b/uncors/internal/cli"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/logging"
 	"github.com/evg4b/uncors/internal/tui"
@@ -20,13 +19,13 @@ func main() {
 	logger, logFile := logging.Setup(fs, os.Getenv(logging.EnvVar))
 	defer helpers.CloseSafe(logFile)
 
-	container := di.NewContainer(
-		di.WithFs(fs),
-		di.WithLogger(logger),
-		di.WithStdout(os.Stdout),
-		di.WithVersion(Version),
-		di.WithArgs(os.Args[1:]),
-	)
+	env := cli.Env{
+		Fs:      fs,
+		Stdout:  os.Stdout,
+		Args:    os.Args[1:],
+		Version: Version,
+		Logger:  logger,
+	}
 
 	// A panic anywhere below is a bug, but the user still deserves a readable
 	// message instead of a raw stack trace.
@@ -35,17 +34,15 @@ func main() {
 		osExit(1)
 	})
 
-	defer func() { handleError(container.Close()) }()
-
 	if len(os.Args) >= 2 && os.Args[1] == cli.GenerateCertsCmd {
-		container.Override(di.WithArgs(os.Args[2:]))
+		env.Args = os.Args[2:]
 
-		handleError(cli.GenerateCerts(container))
+		handleError(cli.GenerateCerts(env))
 
 		return
 	}
 
-	handleError(cli.RunUncors(context.Background(), container))
+	handleError(cli.RunUncors(context.Background(), env))
 }
 
 var osExit = os.Exit
