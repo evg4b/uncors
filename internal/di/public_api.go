@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/handler/mock"
 	"github.com/evg4b/uncors/internal/handler/options"
 	"github.com/evg4b/uncors/internal/handler/proxy"
@@ -16,7 +17,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
-	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
@@ -46,8 +46,9 @@ func (c *Container) CliOutput() contracts.Output {
 	return c.cliOutput.GetOrBuild()
 }
 
-func (c *Container) RequestTracker() *server.RequestTracker {
-	return c.requestTracker.GetOrBuild()
+// Bus carries the events the proxy publishes to the frontends.
+func (c *Container) Bus() *events.Bus {
+	return c.bus.GetOrBuild()
 }
 
 func (c *Container) GenerateCertsCommand() *commands.GenerateCertsCommand {
@@ -59,24 +60,18 @@ func (c *Container) HostCertManager() *server.HostCertManager {
 }
 
 func (c *Container) OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware {
-	return infra.NewPrefixedMiddleware(
-		options.NewMiddleware(
-			options.WithHeaders(cfg.Headers),
-			options.WithCode(cfg.Code),
-		),
-		styles.OptionsStyle.Render("OPTIONS"),
+	return options.NewMiddleware(
+		options.WithHeaders(cfg.Headers),
+		options.WithCode(cfg.Code),
 	)
 }
 
 func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
-	return infra.NewPrefixedMiddleware(
-		static.NewStaticMiddleware(
-			static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
-			static.WithIndex(dir.Index),
-			static.WithPrefix(path),
-			static.WithLogger(c.logger),
-		),
-		styles.StaticStyle.Render("STATIC"),
+	return static.NewStaticMiddleware(
+		static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
+		static.WithIndex(dir.Index),
+		static.WithPrefix(path),
+		static.WithLogger(c.logger),
 	)
 }
 
@@ -89,39 +84,30 @@ func (c *Container) VersionChecker(proxy string) *version.Checker {
 }
 
 func (c *Container) MockHandler(response *config.Response) contracts.Handler {
-	prefix := styles.MockStyle.Render("MOCK")
-
-	return infra.WithPrefix(prefix, mock.NewMockHandler(
+	return mock.NewMockHandler(
 		mock.WithResponse(response),
 		mock.WithFileSystem(c.fs),
 		mock.WithAfter(time.After),
 		mock.WithLogger(c.logger),
-	))
-}
-
-func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
-	prefix := styles.RewriteStyle.Render("SCRIPT")
-
-	return infra.WithPrefix(prefix, script.NewHandler(
-		script.WithLogger(c.logger),
-		script.WithScript(scriptConfig),
-		script.WithFileSystem(c.fs),
-	))
-}
-
-func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
-	return infra.NewPrefixedMiddleware(
-		rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting)),
-		styles.RewriteStyle.Render("REWRITE"),
 	)
 }
 
-func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
-	prefix := styles.ProxyStyle.Render("PROXY")
+func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
+	return script.NewHandler(
+		script.WithLogger(c.logger),
+		script.WithScript(scriptConfig),
+		script.WithFileSystem(c.fs),
+	)
+}
 
-	return infra.WithPrefix(prefix, proxy.NewProxyHandler(
+func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
+	return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+}
+
+func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
+	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
 		proxy.WithLogger(c.logger),
-	))
+	)
 }

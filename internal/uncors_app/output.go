@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
 )
 
@@ -67,8 +68,8 @@ func (o *tuiOutput) Printf(msg string, args ...any) {
 	o.capture(func(out *tui.CliOutput) { out.Printf(msg, args...) })
 }
 
-func (o *tuiOutput) Request(data *contracts.RequestData) {
-	o.capture(func(out *tui.CliOutput) { out.Request(data) })
+func (o *tuiOutput) Request(event events.RequestCompleted) {
+	o.capture(func(out *tui.CliOutput) { out.Request(event) })
 }
 
 func (o *tuiOutput) NewPrefixOutput(prefix string) contracts.Output {

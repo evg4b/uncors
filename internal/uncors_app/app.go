@@ -12,12 +12,13 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/server"
 )
 
 const (
 	outputChannelSize = 1000
+	eventsBufferSize  = 1000
 	shutdownTimeout   = 5 * time.Second
 	versionCheckDelay = 50 * time.Millisecond
 	memTickInterval   = 2 * time.Second
@@ -29,7 +30,7 @@ type UncorsApp struct {
 
 	proxy     *di.Proxy
 	output    *tuiOutput
-	tracker   server.IRequestTracker
+	events    *events.Subscription
 	container *di.Container
 
 	outputCh   chan string
@@ -89,7 +90,7 @@ func NewUncorsApp(
 		keys:          keys,
 		proxy:         container.Proxy(),
 		output:        output,
-		tracker:       container.RequestTracker(),
+		events:        container.Bus().Subscribe(eventsBufferSize),
 		container:     container,
 		outputCh:      outputCh,
 		appContext:    func() context.Context { return appCtx },
@@ -136,8 +137,11 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case outputLineMsg:
 		cmds = append(cmds, m.waitOutputCmd())
 
-	case requestEventMsg:
-		m.handleRequestEvent(typedMsg)
+	case requestStartedMsg:
+		cmds = append(cmds, m.watchEventsCmd())
+
+	case requestCompletedMsg:
+		m.output.Request(events.RequestCompleted(typedMsg))
 
 		cmds = append(cmds, m.watchEventsCmd())
 
@@ -212,9 +216,8 @@ func (m *UncorsApp) View() tea.View {
 }
 
 func (m *UncorsApp) updateLayout(msg tea.Msg) {
-	if _, isRequest := msg.(requestEventMsg); isRequest {
-		m.updateHistoryHeight()
-	} else if _, isKey := msg.(tea.KeyPressMsg); isKey {
+	switch msg.(type) {
+	case requestStartedMsg, requestCompletedMsg, tea.KeyPressMsg:
 		m.updateHistoryHeight()
 	}
 }
@@ -292,18 +295,6 @@ func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
 	return tea.Quit
 }
 
-func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
-	if !event.Done || event.Data == nil {
-		return
-	}
-
-	if event.Prefix != "" {
-		m.output.NewPrefixOutput(event.Prefix).Request(event.Data)
-	} else {
-		m.output.Request(event.Data)
-	}
-}
-
 func (m *UncorsApp) handleRestart() {
 	slog.Debug("Handling restart")
 	m.updateHistoryHeight()
@@ -317,6 +308,8 @@ func (m *UncorsApp) handleShutdown() tea.Cmd {
 	}
 
 	_ = m.historyWidget.Close()
+
+	m.events.Close()
 
 	return tea.Quit
 }
@@ -347,17 +340,26 @@ func (m *UncorsApp) waitOutputCmd() tea.Cmd {
 	}
 }
 
+// watchEventsCmd waits for the next bus event the UI renders. Events it does
+// not render are skipped without a round trip through Update.
 func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case event, ok := <-m.tracker.Events():
-			if !ok {
+		for {
+			select {
+			case event, ok := <-m.events.Events():
+				if !ok {
+					return nil
+				}
+
+				switch typed := event.(type) {
+				case events.RequestStarted:
+					return requestStartedMsg(typed)
+				case events.RequestCompleted:
+					return requestCompletedMsg(typed)
+				}
+			case <-m.appDone:
 				return nil
 			}
-
-			return requestEventMsg(event)
-		case <-m.appDone:
-			return nil
 		}
 	}
 }

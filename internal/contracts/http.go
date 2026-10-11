@@ -5,13 +5,6 @@ import (
 	"net/url"
 )
 
-type contextKey string
-
-const (
-	PrefixKey        contextKey = "uncors-prefix"
-	PrefixUpdaterKey contextKey = "uncors-prefix-updater"
-)
-
 type RequestData struct {
 	Method    string
 	URL       *url.URL

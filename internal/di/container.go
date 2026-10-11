@@ -7,6 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/logging"
 	"github.com/evg4b/uncors/internal/server"
@@ -21,7 +22,7 @@ type Container struct {
 	logger  *slog.Logger
 
 	cliOutput            factory[contracts.Output]
-	requestTracker       factory[*server.RequestTracker]
+	bus                  factory[*events.Bus]
 	generateCertsCommand factory[*commands.GenerateCertsCommand]
 	hostCertManager      factory[*server.HostCertManager]
 	server               factory[*server.Server]
@@ -76,7 +77,7 @@ func NewContainer(options ...ContainerOption) *Container {
 	container = helpers.ApplyOptions(container, options)
 
 	container.cliOutput = newFactory(container.newCliOutput)
-	container.requestTracker = newFactory(server.NewRequestTracker)
+	container.bus = newFactory(events.NewBus)
 	container.generateCertsCommand = newFactory(container.newGenerateCertsCommand)
 	container.hostCertManager = newFactory(container.newHostCertManager)
 	container.server = newFactory(container.newServer)

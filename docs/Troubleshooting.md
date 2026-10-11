@@ -9,6 +9,32 @@ Common problems with UNCORS and how to fix them.
 - The failing request shows up in the UNCORS console. If it doesn't, it never
   reached UNCORS.
 
+## Reading the request log
+
+Every handled request is printed as one line:
+
+```text
+ CACHE     200 GET      http://api.local:3000/users
+ PROXY     200 GET      http://api.local:3000/old → /new
+ PROXY     502 GET      http://api.local:3000/orders
+  ↳ failed to execute request: dial tcp 10.0.0.5:443: connect: connection refused
+```
+
+The label names what produced the response:
+
+| Label     | Response came from                                          |
+| --------- | ----------------------------------------------------------- |
+| `PROXY`   | The upstream server (`to`), including cache misses.         |
+| `CACHE`   | The response cache. The first request for a URL is `PROXY`. |
+| `MOCK`    | A mock.                                                     |
+| `SCRIPT`  | A Lua script.                                               |
+| `STATIC`  | A static directory.                                         |
+| `OPTIONS` | UNCORS's own preflight answer.                              |
+
+A line without a label is a request no mapping took, for example one for a host
+that isn't mapped. `→` shows the path a rewrite sent the request to. A request
+that failed in UNCORS gets a second line with the error.
+
 ## Connection refused
 
 The browser shows "Connection refused", or `curl` says "Failed to connect".
@@ -256,10 +282,9 @@ If the upstream server answers instead of the script, check `path`, `method`,
 and the other filters the same way as for mocks.
 
 If the response is a 500 error, the script failed. The Lua error and line
-number are in the response body and in the
-[diagnostic log](Configuration#diagnostic-logging). Common causes are reading a field of
-`nil`, for example after `json.decode` failed, and concatenating `nil` with
-`..`.
+number are shown under the request in the UNCORS console and in the response
+body. Common causes are reading a field of `nil`, for example after
+`json.decode` failed, and concatenating `nil` with `..`.
 
 If headers set in the script are missing, they were set after
 `response:WriteHeader()` or after the first write. Set headers first.
@@ -275,10 +300,8 @@ source, the rewritten host is called over plain HTTP.
 
 ## Proxy problems
 
-Upstream requests fail with proxy errors. The error page returned by UNCORS
-names the failure, and the
-[diagnostic log](Configuration#diagnostic-logging) records it with the
-request URL.
+Upstream requests fail with proxy errors. The cause is shown under the request
+in the UNCORS console and on the error page UNCORS returns.
 
 The `proxy` option needs a full URL with a scheme:
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,16 +22,15 @@ func TestTrackerWidget(t *testing.T) {
 		assert.Nil(t, widget.Init())
 	})
 
-	t.Run("Update handles requestEventMsg additions", func(t *testing.T) {
+	t.Run("Update adds started requests", func(t *testing.T) {
 		widget := NewTrackerWidget()
 
 		reqURL, _ := url.Parse("http://localhost/test")
-		msg := requestEventMsg{
-			ID:        1,
-			Method:    "GET",
-			URL:       reqURL,
-			StartedAt: time.Now(),
-			Done:      false,
+		msg := requestStartedMsg{
+			ID:     1,
+			Method: "GET",
+			URL:    reqURL,
+			At:     time.Now(),
 		}
 
 		newWidget, cmd := widget.Update(msg)
@@ -42,12 +41,12 @@ func TestTrackerWidget(t *testing.T) {
 		assert.Equal(t, 2, widget.Height()) // header + 1 request
 	})
 
-	t.Run("Update handles requestEventMsg removals", func(t *testing.T) {
+	t.Run("Update removes completed requests", func(t *testing.T) {
 		widget := NewTrackerWidget()
-		widget.pending[1] = server.RequestEvent{ID: 1}
+		widget.pending[1] = events.RequestStarted{ID: 1}
 		widget.ticking = true
 
-		msg := requestEventMsg{ID: 1, Done: true}
+		msg := requestCompletedMsg{ID: 1}
 		newWidget, cmd := widget.Update(msg)
 
 		assert.Same(t, widget, newWidget)
@@ -57,7 +56,7 @@ func TestTrackerWidget(t *testing.T) {
 
 	t.Run("Update handles tickMsg when pending requests exist", func(t *testing.T) {
 		widget := NewTrackerWidget()
-		widget.pending[1] = server.RequestEvent{ID: 1}
+		widget.pending[1] = events.RequestStarted{ID: 1}
 		widget.ticking = true
 
 		newWidget, cmd := widget.Update(spinner.TickMsg{})
@@ -78,7 +77,7 @@ func TestTrackerWidget(t *testing.T) {
 
 	t.Run("Update handles restartMsg", func(t *testing.T) {
 		widget := NewTrackerWidget()
-		widget.pending[1] = server.RequestEvent{ID: 1}
+		widget.pending[1] = events.RequestStarted{ID: 1}
 		widget.ticking = true
 
 		newWidget, cmd := widget.Update(restartMsg{})
@@ -91,16 +90,20 @@ func TestTrackerWidget(t *testing.T) {
 	t.Run("View renders correctly", func(t *testing.T) {
 		widget := NewTrackerWidget()
 		reqURL, _ := url.Parse("http://localhost/test")
-		widget.pending[1] = server.RequestEvent{
-			ID:        1,
-			Method:    "POST",
-			URL:       reqURL,
-			StartedAt: time.Now().Add(-5 * time.Second),
+		widget.pending[1] = events.RequestStarted{
+			ID:      1,
+			Method:  "POST",
+			URL:     reqURL,
+			Handler: events.HandlerScript,
+			Rewrite: &events.Rewrite{From: "/test", To: "/v2/test"},
+			At:      time.Now().Add(-5 * time.Second),
 		}
 
 		view := widget.View()
+		assert.Contains(t, view.Content, "SCRIPT")
 		assert.Contains(t, view.Content, "POST")
 		assert.Contains(t, view.Content, "localhost/test")
+		assert.Contains(t, view.Content, "→ /v2/test")
 	})
 
 	t.Run("View renders empty string when no requests", func(t *testing.T) {

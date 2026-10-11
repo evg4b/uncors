@@ -97,11 +97,16 @@ delay: 1m30s
 UNCORS now starts an interactive terminal UI. Pass `--interactive=false` to
 get plain log output, for example in scripts, CI, or Docker.
 
-### Handler errors go to the diagnostic log
+### Request log labels and errors
 
-Proxy, script, mock, and static handler errors are no longer printed as
-separate console lines. The failing request still shows up with its status
-code, the error page names the failure, and the full error is written to the
+Each request line is labelled with what produced the response: `PROXY`,
+`CACHE`, `MOCK`, `SCRIPT`, `STATIC`, or `OPTIONS`. A cache hit is now labelled
+`CACHE` and a cache miss `PROXY`. Rewrites are no longer a label; the rewritten
+path follows the URL after `→`. See
+[Reading the request log](Troubleshooting#reading-the-request-log).
+
+Handler errors are no longer printed as separate console lines. They appear
+under the failing request instead, and are also written to the
 [diagnostic log](Configuration#diagnostic-logging) when `UNCORS_LOGGING` is
 set.
 

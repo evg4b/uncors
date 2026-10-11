@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -31,6 +34,8 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) error {
+	tracking.Claim(request.Context(), events.HandlerProxy)
+
 	err := h.handle(response, request)
 	if err != nil {
 		if request.Context().Err() != nil {
