@@ -81,11 +81,12 @@ last release in `docs/Migration-Guide.md`.
 ## Debugging
 
 `UNCORS_TRACE=true` exports OpenTelemetry traces and logs over OTLP/HTTP
-(`OTEL_EXPORTER_OTLP_*`, default `localhost:4318`); run
+(`OTEL_EXPORTER_OTLP_*`, default `localhost:4318`); without it nothing is
+collected. `docker compose up --build` runs the working tree with
+`.uncors.yaml` and otelop (UI at `localhost:4319`). For Jaeger, run
 `docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger` and open
-`localhost:16686` (Jaeger takes no logs: add `OTEL_LOGS_EXPORTER=none`).
-Without it nothing is collected. Never write diagnostics to
-the terminal: only the UI/printer renders there.
+`localhost:16686` (Jaeger takes no logs: add `OTEL_LOGS_EXPORTER=none`). Never
+write diagnostics to the terminal: only the UI/printer renders there.
 
 - Spans: `telemetry.StartRequest` in handlers and middleware (it returns the
   request carrying the span), `telemetry.Start` elsewhere,

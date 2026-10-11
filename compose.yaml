@@ -1,0 +1,68 @@
+# Runs UNCORS from source with tracing on, exporting to otelop.
+#
+#   uncors generate-certs     # once, for the https mappings
+#   docker compose up --build
+#
+# Traces and logs: http://localhost:4319
+# The proxy serves the mappings of ./.uncors.yaml on the ports below.
+
+x-ports: &ports "3000 4000 2000" # keep in sync with .uncors.yaml and uncors.ports
+
+services:
+  otelop:
+    image: ghcr.io/mashiro/otelop:latest
+    ports:
+      - "4319:4319"
+    volumes:
+      - otelop-data:/data
+
+  uncors:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM golang:1.26-alpine AS build
+        WORKDIR /src
+        COPY go.mod go.sum ./
+        RUN go mod download
+        COPY . .
+        RUN CGO_ENABLED=0 go build -ldflags="-s -w -X 'main.Version=dev'" -o /out/uncors .
+
+        FROM gcr.io/distroless/static:nonroot
+        WORKDIR /home/nonroot
+        COPY --from=build /out/uncors /usr/local/bin/uncors
+        ENTRYPOINT ["/usr/local/bin/uncors"]
+    command: ["--config", "/home/nonroot/.uncors.yaml", "--interactive=false"]
+    environment:
+      UNCORS_TRACE: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelop:4318
+    volumes:
+      - ./.uncors.yaml:/home/nonroot/.uncors.yaml:ro
+      # The local CA for https mappings, created by `uncors generate-certs`.
+      - ${HOME}/.config/uncors:/home/nonroot/.config/uncors:ro
+    ports:
+      - "3000:3000"
+      - "4000:4000"
+      - "2000:2000"
+    depends_on:
+      - otelop
+
+  # UNCORS listens on 127.0.0.1, which published ports cannot reach. This
+  # sidecar shares its network and forwards the container address to it.
+  uncors-ports:
+    image: alpine/socat:latest
+    network_mode: service:uncors
+    environment:
+      PORTS: *ports
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ip=$$(ip -4 -o addr show eth0 | awk '{print $$4}' | cut -d/ -f1)
+        for port in $$PORTS; do
+          socat TCP-LISTEN:$$port,bind=$$ip,fork,reuseaddr TCP:127.0.0.1:$$port &
+        done
+        wait
+    depends_on:
+      - uncors
+
+volumes:
+  otelop-data:
