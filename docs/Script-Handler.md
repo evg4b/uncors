@@ -331,8 +331,9 @@ Configuration errors are reported at startup: a script entry with neither
 `script` nor `file`, with both, or with a `file` that doesn't exist.
 
 If a script raises an error at runtime (a syntax error, a call on `nil`, an
-`error(...)` call), UNCORS prints the error to the console and answers with
-status 500, as long as the script had not already sent the status line. Use
+`error(...)` call), UNCORS answers with status 500 and the error message in the
+body, as long as the script had not already sent the status line. The error
+is also written to the [diagnostic log](Configuration#diagnostic-logging). Use
 `pcall` around code that can fail when you want to choose the response
 yourself.
 

@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -24,5 +25,11 @@ func WithFileSystem(fs afero.Fs) HandlerOption {
 func WithAfter(after func(duration time.Duration) <-chan time.Time) HandlerOption {
 	return func(h *Handler) {
 		h.after = after
+	}
+}
+
+func WithLogger(logger *slog.Logger) HandlerOption {
+	return func(h *Handler) {
+		h.logger = logger
 	}
 }

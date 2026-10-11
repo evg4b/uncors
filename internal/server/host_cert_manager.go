@@ -3,7 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"sync"
 
@@ -105,7 +105,7 @@ func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, err
 	}
 
 	m.cache[host] = cert
-	log.Printf("Generated TLS certificate for host: %s", host)
+	slog.Debug("generated TLS certificate", "host", host)
 
 	return cert, nil
 }

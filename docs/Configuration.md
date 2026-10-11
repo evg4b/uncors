@@ -111,8 +111,11 @@ variable to a file path:
 UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
 ```
 
-Logs are appended to the file. If the variable is unset, empty, or points to a
-path that cannot be opened, diagnostic output is discarded.
+Logs are appended to the file as `key=value` records, one per line, at every
+level from `DEBUG` up. They include errors from the proxy, mock, script, and
+static handlers, HAR write failures, and config watcher errors. Diagnostic
+output never appears in the console. If the variable is unset, empty, or points
+to a path that cannot be opened, diagnostic output is discarded.
 
 ## Configuration file
 

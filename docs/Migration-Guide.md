@@ -97,6 +97,14 @@ delay: 1m30s
 UNCORS now starts an interactive terminal UI. Pass `--interactive=false` to
 get plain log output, for example in scripts, CI, or Docker.
 
+### Handler errors go to the diagnostic log
+
+Proxy, script, mock, and static handler errors are no longer printed as
+separate console lines. The failing request still shows up with its status
+code, the error page names the failure, and the full error is written to the
+[diagnostic log](Configuration#diagnostic-logging) when `UNCORS_LOGGING` is
+set.
+
 ## Upgrading from 0.5.x to 0.6.x
 
 Version 0.6 had three breaking changes.

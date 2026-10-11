@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -70,7 +70,7 @@ func awaitShutdown(ctx context.Context, proxy *di.Proxy) {
 			_, _ = os.Stdout.WriteString("\n")
 		}
 
-		log.Println("shutdown signal received")
+		slog.Info("shutdown signal received", "signal", sig.String())
 	case <-ctx.Done():
 	}
 

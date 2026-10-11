@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -17,14 +18,13 @@ import (
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	output    contracts.Output
+	logger    *slog.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	middleware := helpers.ApplyOptions(&Handler{}, options)
+	middleware := helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
-	helpers.AssertIsDefined(middleware.output, "ProxyHandler: Output is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
 
 	return middleware
@@ -37,7 +37,7 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 			return err
 		}
 
-		h.output.Errorf("Proxy handler error: %v", err)
+		h.logger.Error("proxy handler error", "url", urlt.URL_String(request.URL), "error", err)
 
 		return err
 	}
@@ -180,8 +180,8 @@ func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	}
 }
 
-func WithOutput(output contracts.Output) HandlerOption {
+func WithLogger(logger *slog.Logger) HandlerOption {
 	return func(m *Handler) {
-		m.output = output
+		m.logger = logger
 	}
 }

@@ -74,4 +74,6 @@ last release in `docs/Migration-Guide.md`.
 ## Debugging
 
 `UNCORS_LOGGING=/path/to/file` appends the internal log to that file; otherwise
-it is discarded.
+it is discarded. Log through `log/slog` (`internal/logging`); components that
+report errors take a `*slog.Logger` option. Never write diagnostics to the
+terminal: only the UI/printer renders there.

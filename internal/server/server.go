@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -162,11 +162,11 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 	// rather than left to keep the server without any listener.
 	err := s.Shutdown(ctx)
 	if err != nil {
-		log.Printf("server: in-flight requests did not finish before restart, closing them: %v", err)
+		slog.Warn("server: in-flight requests did not finish before restart, closing them", "error", err)
 
 		closeErr := s.Close()
 		if closeErr != nil {
-			log.Printf("server: failed to close connections before restart: %v", closeErr)
+			slog.Error("server: failed to close connections before restart", "error", closeErr)
 		}
 	}
 

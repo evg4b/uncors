@@ -256,7 +256,8 @@ If the upstream server answers instead of the script, check `path`, `method`,
 and the other filters the same way as for mocks.
 
 If the response is a 500 error, the script failed. The Lua error and line
-number are printed in the UNCORS console. Common causes are reading a field of
+number are in the response body and in the
+[diagnostic log](Configuration#diagnostic-logging). Common causes are reading a field of
 `nil`, for example after `json.decode` failed, and concatenating `nil` with
 `..`.
 
@@ -274,7 +275,10 @@ source, the rewritten host is called over plain HTTP.
 
 ## Proxy problems
 
-Upstream requests fail with proxy errors.
+Upstream requests fail with proxy errors. The error page returned by UNCORS
+names the failure, and the
+[diagnostic log](Configuration#diagnostic-logging) records it with the
+request URL.
 
 The `proxy` option needs a full URL with a scheme:
 

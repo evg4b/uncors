@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 )
 
@@ -22,10 +23,11 @@ type Middleware struct {
 	fs     afero.Fs
 	index  string
 	prefix string
+	logger *slog.Logger
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{}, options)
+	return helpers.ApplyOptions(&Middleware{logger: slog.Default()}, options)
 }
 
 func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
@@ -39,7 +41,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 			return next(writer, request)
 		}
 
-		log.Printf("ERROR: Static handler error: %v, url: %s", err, request.URL)
+		h.logger.Error("static handler error", "url", urlt.URL_String(request.URL), "error", err)
 
 		return err
 	}
@@ -129,5 +131,11 @@ func WithIndex(index string) MiddlewareOption {
 func WithPrefix(prefix string) MiddlewareOption {
 	return func(h *Middleware) {
 		h.prefix = prefix
+	}
+}
+
+func WithLogger(logger *slog.Logger) MiddlewareOption {
+	return func(m *Middleware) {
+		m.logger = logger
 	}
 }

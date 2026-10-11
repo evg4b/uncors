@@ -2,25 +2,21 @@ package main
 
 import (
 	"errors"
-	"io"
-	"log"
+	"log/slog"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/cli"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-// saveLogger captures the current log writer and restores it after the test.
+// saveLogger restores the slog default, which main replaces, after the test.
 func saveLogger(t *testing.T) {
 	t.Helper()
 
-	orig := log.Writer()
+	orig := slog.Default()
 
-	t.Cleanup(func() { log.SetOutput(orig) })
+	t.Cleanup(func() { slog.SetDefault(orig) })
 }
 
 // setArgs temporarily overrides os.Args and restores it via t.Cleanup.
@@ -31,39 +27,6 @@ func setArgs(t *testing.T, args []string) {
 	os.Args = args
 
 	t.Cleanup(func() { os.Args = orig })
-}
-
-func TestSetupLogging(t *testing.T) {
-	t.Run("discards output when UNCORS_LOGGING is empty", func(t *testing.T) {
-		saveLogger(t)
-		t.Setenv("UNCORS_LOGGING", "")
-
-		infra.SetupLogging()
-
-		assert.Equal(t, io.Discard, log.Writer())
-	})
-
-	t.Run("writes to file when UNCORS_LOGGING points to a valid path", func(t *testing.T) {
-		saveLogger(t)
-		logPath := filepath.Join(t.TempDir(), "test.log")
-		t.Setenv("UNCORS_LOGGING", logPath)
-
-		infra.SetupLogging()
-
-		require.NotEqual(t, io.Discard, log.Writer())
-
-		_, err := os.Stat(logPath)
-		assert.NoError(t, err)
-	})
-
-	t.Run("discards output when log file cannot be opened", func(t *testing.T) {
-		saveLogger(t)
-		t.Setenv("UNCORS_LOGGING", "/no-such-dir/test.log")
-
-		infra.SetupLogging()
-
-		assert.Equal(t, io.Discard, log.Writer())
-	})
 }
 
 var errTest = errors.New("something went wrong")
