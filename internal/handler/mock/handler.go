@@ -8,6 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -33,6 +36,8 @@ func NewMockHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+	tracking.Claim(request.Context(), events.HandlerMock)
+
 	if h.waitDelay(writer, request) {
 		return nil
 	}

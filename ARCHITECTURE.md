@@ -20,8 +20,11 @@ browser accepts them.
 | `internal/di`           | `Container` (process-lifetime services), `Runtime` (everything built from one config), `Proxy` (serves a `Runtime` and swaps it on reload). |
 | `internal/config`       | Flag parsing, YAML loading, normalisation, validation, and the file watcher.                       |
 | `internal/handler`      | Router, handlers, and middleware (see below).                                                      |
-| `internal/server`       | Listeners, TLS with on-the-fly host certificates, the local CA, and request tracking.              |
-| `internal/infra`        | HTTP client, CORS header helpers, error pages, diagnostic logging setup.                           |
+| `internal/server`       | Listeners, TLS with on-the-fly host certificates, and the local CA.                               |
+| `internal/infra`        | HTTP client, CORS header helpers, error pages.                                                     |
+| `internal/events`       | Events the proxy publishes (request started/completed) and the non-blocking `Bus` that carries them to frontends. |
+| `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
+| `internal/logging`      | The `slog` diagnostic logger (`UNCORS_LOGGING`); never writes to the terminal.                    |
 | `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
 | `internal/tui`, `internal/uncors_app` | Console output and the interactive Bubble Tea UI.                                    |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
@@ -79,6 +82,28 @@ this same default handler, so those requests are cached and recorded like
 any other proxied request. Mock and script responses don't pass through it:
 they are not cached or recorded, and they add CORS headers themselves. Files
 served from static directories get no CORS headers.
+
+## Request events
+
+Every request produces exactly two events on the bus: `RequestStarted` and
+`RequestCompleted`. The server opens a `tracking.Scope` per request and puts it
+in the request context. A component calls `tracking.Claim` at the moment it
+decides to produce the response; the first claim publishes `RequestStarted`,
+and `RequestCompleted` reports the last one. Only the component that answers
+claims:
+
+- the cache on a hit (a miss is claimed by the proxy that fetches it),
+- OPTIONS handling when it answers a preflight,
+- a static directory when it serves (or fails to serve) a file,
+- mocks, scripts, and the proxy on entry.
+
+Rewrites don't claim; they call `tracking.Rewrote` so both events carry the
+path change. HAR only observes. A request nobody claimed (an unmapped host)
+gets `HandlerNone`. Handler errors that become error pages are recorded with
+`tracking.Fail` and carried in `RequestCompleted.Err`.
+
+`Bus.Publish` never blocks: each subscriber has its own buffer, and events that
+don't fit are dropped and counted, so a slow UI can't slow down traffic.
 
 ## Middleware and handler contracts
 

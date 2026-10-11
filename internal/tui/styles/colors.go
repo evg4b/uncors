@@ -28,7 +28,7 @@ var (
 	mockColor    = lightDark(lipgloss.Color("#D258DD"), lipgloss.Color("#EE7FF8"))
 	staticColor  = lightDark(lipgloss.Color("#588853"), lipgloss.Color("#A6FC9D"))
 	cacheColor   = lightDark(lipgloss.Color("#CCC906"), lipgloss.Color("#FEFC7F"))
-	rewriteColor = lightDark(lipgloss.Color("#FF7F00"), lipgloss.Color("#FF7F00"))
+	scriptColor  = lightDark(lipgloss.Color("#FF7F00"), lipgloss.Color("#FF7F00"))
 	optionsColor = lightDark(lipgloss.Color("#005BA5"), lipgloss.Color("#0072CE"))
 
 	// Http status colors.

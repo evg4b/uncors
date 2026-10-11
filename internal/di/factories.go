@@ -31,5 +31,5 @@ func (c *Container) Proxy() *Proxy {
 }
 
 func (c *Container) newServer() *server.Server {
-	return server.New(c.HostCertManager(), c.RequestTracker())
+	return server.New(c.HostCertManager(), c.Bus())
 }

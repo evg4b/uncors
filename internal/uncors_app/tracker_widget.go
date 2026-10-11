@@ -7,7 +7,8 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
@@ -22,11 +23,12 @@ var pendingTextStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#8C8C8C"))
 
 type (
-	requestEventMsg server.RequestEvent
+	requestStartedMsg   events.RequestStarted
+	requestCompletedMsg events.RequestCompleted
 )
 
 type TrackerWidget struct {
-	pending map[uint64]server.RequestEvent
+	pending map[uint64]events.RequestStarted
 	ticking bool
 	spinner spinner.Model
 }
@@ -39,7 +41,7 @@ func NewTrackerWidget() *TrackerWidget {
 	loader.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
 
 	return &TrackerWidget{
-		pending: make(map[uint64]server.RequestEvent),
+		pending: make(map[uint64]events.RequestStarted),
 		spinner: loader,
 	}
 }
@@ -50,8 +52,17 @@ func (m *TrackerWidget) Init() tea.Cmd {
 
 func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
-	case requestEventMsg:
-		return m.requestEventMsg(typedMsg)
+	case requestStartedMsg:
+		slog.Debug("TrackerWidget: request started", "id", typedMsg.ID, "method", typedMsg.Method)
+		m.pending[typedMsg.ID] = events.RequestStarted(typedMsg)
+
+		return m, m.startTicking()
+
+	case requestCompletedMsg:
+		slog.Debug("TrackerWidget: request done", "id", typedMsg.ID)
+		delete(m.pending, typedMsg.ID)
+
+		return m, nil
 	case spinner.TickMsg:
 		if len(m.pending) > 0 {
 			var cmd tea.Cmd
@@ -68,7 +79,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	case restartMsg:
 		slog.Debug("TrackerWidget: handling restartMsg")
 
-		m.pending = make(map[uint64]server.RequestEvent)
+		m.pending = make(map[uint64]events.RequestStarted)
 		m.ticking = false
 
 		return m, nil
@@ -106,14 +117,18 @@ func (m *TrackerWidget) View() tea.View {
 
 		url := pendingTextStyle.Render(urlStr)
 
-		if len(req.Prefix) > 0 {
-			viewBuilder.WriteString(req.Prefix)
+		if label := styles.HandlerLabel(req.Handler); label != "" {
+			viewBuilder.WriteString(label)
 		}
 
 		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View()))
 		viewBuilder.WriteString(pendingMethodStyle.Render(req.Method))
 		viewBuilder.WriteRune(' ')
 		viewBuilder.WriteString(url)
+
+		if req.Rewrite != nil {
+			viewBuilder.WriteString(" " + styles.DimTextStyle.Render("→ "+req.Rewrite.To))
+		}
 
 		if index != 0 {
 			viewBuilder.WriteRune('\n')
@@ -125,24 +140,15 @@ func (m *TrackerWidget) View() tea.View {
 	return tea.NewView(viewBuilder.String())
 }
 
-func (m *TrackerWidget) requestEventMsg(msg requestEventMsg) (*TrackerWidget, tea.Cmd) {
-	switch {
-	case msg.Done:
-		slog.Debug("TrackerWidget: request done", "id", msg.ID)
-		delete(m.pending, msg.ID)
-	case msg.URL != nil:
-		slog.Debug("TrackerWidget: request started", "id", msg.ID, "method", msg.Method, "url", urlt.URL_String(msg.URL))
-		m.pending[msg.ID] = server.RequestEvent(msg)
+// startTicking starts the spinner unless it is already running.
+func (m *TrackerWidget) startTicking() tea.Cmd {
+	if len(m.pending) == 0 || m.ticking {
+		return nil
 	}
 
-	var cmd tea.Cmd
+	slog.Debug("TrackerWidget: starting tick")
 
-	if len(m.pending) > 0 && !m.ticking {
-		slog.Debug("TrackerWidget: starting tick")
+	m.ticking = true
 
-		m.ticking = true
-		cmd = m.spinner.Tick
-	}
-
-	return m, cmd
+	return m.spinner.Tick
 }

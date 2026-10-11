@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/gorilla/mux"
 )
@@ -21,7 +22,16 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	from := request.URL.Path
+
 	m.rewriteURL(request)
+
+	to := request.URL.Path
+	if m.rewrite.Host != (urlt.Host{}) {
+		to = m.rewrite.Host.HostPort() + to
+	}
+
+	tracking.Rewrote(request.Context(), from, to)
 
 	return next(writer, m.rewriteRequest(request))
 }

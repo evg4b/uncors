@@ -4,6 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -20,6 +23,7 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
+		tracking.Claim(req.Context(), events.HandlerOptions)
 		m.handle(resp, req)
 
 		return nil

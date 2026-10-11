@@ -68,11 +68,11 @@ func TestContainer(t *testing.T) {
 		assert.Implements(t, (*contracts.Output)(nil), output)
 	})
 
-	t.Run("request tracker", func(t *testing.T) {
-		tracker := container.RequestTracker()
+	t.Run("bus", func(t *testing.T) {
+		bus := container.Bus()
 
-		assert.NotNil(t, tracker)
-		assert.IsType(t, &server.RequestTracker{}, tracker)
+		assert.NotNil(t, bus)
+		assert.Same(t, bus, container.Bus())
 	})
 
 	t.Run("generate certs command", func(t *testing.T) {
@@ -168,10 +168,10 @@ func TestContainer(t *testing.T) {
 
 		assert.Same(t, output1, output2)
 
-		tracker1 := container.RequestTracker()
-		tracker2 := container.RequestTracker()
+		bus1 := container.Bus()
+		bus2 := container.Bus()
 
-		assert.Same(t, tracker1, tracker2)
+		assert.Same(t, bus1, bus2)
 	})
 }
 

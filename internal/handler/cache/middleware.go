@@ -7,6 +7,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
@@ -55,6 +58,7 @@ func (m *Middleware) cacheRequest(
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 
 	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
+		tracking.Claim(request.Context(), events.HandlerCache)
 		m.writeCachedResponse(writer, cachedResponse)
 
 		return nil

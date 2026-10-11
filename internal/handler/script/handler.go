@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/spf13/afero"
 	lua "github.com/yuin/gopher-lua"
 
@@ -25,6 +28,8 @@ func NewHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+	tracking.Claim(request.Context(), events.HandlerScript)
+
 	err := h.executeScript(writer, request)
 	if err != nil {
 		h.logger.Error("script handler error", "url", urlt.URL_String(request.URL), "error", err)

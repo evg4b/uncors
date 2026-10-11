@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -125,14 +126,17 @@ func TestCliOutput_WithPrefix(t *testing.T) {
 }
 
 func TestCliOutput_Request(t *testing.T) {
-	t.Run("includes module prefix in output", func(t *testing.T) {
+	t.Run("includes the handler label in output", func(t *testing.T) {
 		var buf strings.Builder
 
 		out := tui.NewCliOutput(&buf)
-		out.NewPrefixOutput("PROXY").Request(&contracts.RequestData{
-			Method: "GET",
-			URL:    mustParseURL("http://example.com/path"),
-			Code:   200,
+		out.Request(events.RequestCompleted{
+			Handler: events.HandlerProxy,
+			Data: &contracts.RequestData{
+				Method: "GET",
+				URL:    mustParseURL("http://example.com/path"),
+				Code:   200,
+			},
 		})
 		assert.Contains(t, buf.String(), "PROXY")
 		assert.Contains(t, buf.String(), "200")

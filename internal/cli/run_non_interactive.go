@@ -10,7 +10,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const (
@@ -29,10 +29,11 @@ func runNonInteractive(
 	output := container.CliOutput()
 	proxy := container.Proxy()
 
-	// Headless mode has no TUI, so it must drain the request tracker itself;
-	// without a consumer the request path can only drop activity events.
-	tracker := container.RequestTracker()
-	go server.RequestPrinter(tracker, output)
+	// Subscribe before the proxy starts so no request goes unreported.
+	subscription := container.Bus().Subscribe(printerBuffer)
+	defer subscription.Close()
+
+	go printRequests(subscription, tui.NewCliOutput(container.Stdout()))
 
 	err := proxy.Start(ctx, cfg)
 	if err != nil {
@@ -45,7 +46,7 @@ func runNonInteractive(
 
 	proxy.Wait()
 
-	if dropped := tracker.Dropped(); dropped > 0 {
+	if dropped := subscription.Dropped(); dropped > 0 {
 		output.Warnf("%d activity lines were dropped to keep the proxy responsive", dropped)
 	}
 
