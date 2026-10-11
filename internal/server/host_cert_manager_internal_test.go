@@ -1,6 +1,8 @@
 package server
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"net"
@@ -8,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,7 +49,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 		require.NotNil(t, manager)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
@@ -66,7 +70,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "test"})
 
@@ -95,7 +99,7 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		testHost := "example.local"
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: testHost})
 		require.NoError(t, err)
@@ -124,7 +128,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		_, _, err := GenerateCA(caConfig)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 		require.NotNil(t, manager)
 
 		apiCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
@@ -161,7 +165,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
 
@@ -188,7 +192,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs)
+		manager := NewHostCertManager(fs, nil)
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
@@ -211,7 +215,7 @@ func newManagerWithCA(t *testing.T) *HostCertManager {
 	_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
 	require.NoError(t, err)
 
-	return NewHostCertManager(fs)
+	return NewHostCertManager(fs, nil)
 }
 
 func TestHostCertManager_Caching(t *testing.T) {
@@ -276,5 +280,48 @@ func TestHostCertManager_Concurrent(t *testing.T) {
 		for range numGoroutines {
 			assert.NoError(t, <-results)
 		}
+	})
+}
+
+func TestHostCertManager_Notices(t *testing.T) {
+	t.Run("reports a missing CA once", func(t *testing.T) {
+		t.Setenv("HOME", filepath.Join(t.TempDir(), "home"))
+
+		publisher := &testutils.EventRecorder{}
+		manager := NewHostCertManager(afero.NewMemMapFs(), publisher)
+
+		for range 3 {
+			_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+			require.Error(t, err)
+		}
+
+		notices := publisher.Notices()
+		require.Len(t, notices, 1)
+		assert.Equal(t, events.NoticeError, notices[0].Level)
+		assert.Contains(t, notices[0].Text, "TLS: failed to load CA certificate")
+	})
+
+	t.Run("reports a certificate failure once per host", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+		publisher := &testutils.EventRecorder{}
+		manager.publisher = publisher
+
+		require.NoError(t, manager.ensureCA(t.Context()))
+
+		// A key that does not match the CA makes every signature fail.
+		otherKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+
+		manager.generator = NewCertGenerator(manager.generator.caCert, otherKey)
+
+		for _, host := range []string{"one.local", "one.local", "two.local", "one.local"} {
+			_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: host})
+			require.Error(t, err)
+		}
+
+		notices := publisher.Notices()
+		require.Len(t, notices, 2)
+		assert.Contains(t, notices[0].Text, "one.local")
+		assert.Contains(t, notices[1].Text, "two.local")
 	})
 }

@@ -78,7 +78,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -124,7 +124,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs)
+		manager := server.NewHostCertManager(fs, nil)
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -179,7 +179,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs)
+		manager := server.NewHostCertManager(fs, nil)
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
@@ -203,7 +203,7 @@ func TestServer(t *testing.T) {
 	t.Run("shutdown", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -229,7 +229,7 @@ func TestServer(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -253,7 +253,7 @@ func TestServer(t *testing.T) {
 	t.Run("Restart", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
@@ -281,8 +281,9 @@ func TestServer(t *testing.T) {
 	t.Run("Restart is not blocked by a request that outlives the shutdown timeout", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		manager := server.NewHostCertManager(afero.NewOsFs())
-		instance := server.New(manager, events.NewBus())
+		publisher := &testutils.EventRecorder{}
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		instance := server.New(manager, publisher)
 		server.SetShutdownTimeout(instance, 100*time.Millisecond)
 
 		entered := make(chan struct{})
@@ -335,6 +336,10 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
+		assert.Equal(t, []events.Notice{{
+			Level: events.NoticeWarning,
+			Text:  "In-flight requests did not finish before restart and were closed",
+		}}, publisher.Notices())
 	})
 
 	t.Run("wait", func(t *testing.T) {
@@ -342,7 +347,7 @@ func TestServer(t *testing.T) {
 
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 
 		queue.Track("server started")
@@ -403,7 +408,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
-		manager := server.NewHostCertManager(afero.NewOsFs())
+		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
 		instance := server.New(manager, events.NewBus())
 		err = instance.Start(t.Context(), []server.Target{
 			{

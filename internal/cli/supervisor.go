@@ -61,6 +61,13 @@ func supervise(
 	subscription := bus.Subscribe(frontendBuffer)
 	frontendDone := make(chan error, 1)
 
+	telemetry.OnExportError(func(signal string, err error) {
+		bus.Publish(events.Notice{
+			Level: events.NoticeWarning,
+			Text:  "Tracing is enabled but " + signal + " cannot be exported: " + err.Error(),
+		})
+	})
+
 	go func() {
 		frontendDone <- frontend(subscription, supervisor.commands)
 	}()
@@ -74,6 +81,13 @@ func supervise(
 		<-frontendDone
 
 		return errors.Join(err, supervisor.engine.Close())
+	}
+
+	if telemetry.Enabled() {
+		bus.Publish(events.Notice{
+			Level: events.NoticeInfo,
+			Text:  "Tracing is enabled, exporting to " + telemetry.Endpoint(),
+		})
 	}
 
 	go supervisor.checkVersion(ctx, uncorsConfig.Proxy)
@@ -187,6 +201,9 @@ func (s *supervisor) watchConfig(ctx context.Context) {
 		case s.reloads <- struct{}{}:
 		default:
 		}
+	}, func(err error) {
+		telemetry.Error(ctx, "config watcher error", slog.String("error", err.Error()))
+		s.bus.Publish(events.Notice{Level: events.NoticeError, Text: "Config watcher error: " + err.Error()})
 	})
 	if err != nil {
 		telemetry.Error(ctx, "failed to watch config file",

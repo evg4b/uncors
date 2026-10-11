@@ -44,7 +44,7 @@ func New(options ...Option) *Engine {
 		publisher: events.NoopPublisher{},
 	}, options)
 
-	engine.server = server.New(server.NewHostCertManager(engine.fs), engine.publisher)
+	engine.server = server.New(server.NewHostCertManager(engine.fs, engine.publisher), engine.publisher)
 
 	return engine
 }

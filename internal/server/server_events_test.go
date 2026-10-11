@@ -36,7 +36,7 @@ func TestServerPublishesRequestEvents(t *testing.T) {
 	})
 
 	port := testutils.GetFreePorts(t, 1)[0]
-	instance := server.New(server.NewHostCertManager(afero.NewMemMapFs()), bus)
+	instance := server.New(server.NewHostCertManager(afero.NewMemMapFs(), bus), bus)
 	require.NoError(t, instance.Start(t.Context(), []server.Target{{
 		Address: hosts.Loopback.Port(port).String(),
 		Handler: handler,

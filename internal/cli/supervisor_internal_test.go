@@ -14,6 +14,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -162,6 +163,10 @@ func TestSuperviseKeepsServingOnInvalidReload(t *testing.T) {
 
 	require.NoError(t, supervise(t.Context(), env, uncorsConfig, "", frontend))
 	assert.Equal(t, []string{"started", "reload-failed", "stopped"}, eventTypes(received))
+	assert.Contains(t, received, events.Notice{
+		Level: events.NoticeInfo,
+		Text:  "Tracing is enabled, exporting to " + telemetry.Endpoint(),
+	})
 
 	ended := spans.Ended()
 	reload := slices.IndexFunc(ended, func(span sdktrace.ReadOnlySpan) bool {

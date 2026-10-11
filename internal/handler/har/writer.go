@@ -1,11 +1,17 @@
 package har
 
 import (
+	"context"
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -18,21 +24,34 @@ const (
 )
 
 type Writer struct {
-	path    string
-	entries chan Entry
-	done    chan struct{}
-	once    sync.Once
-	wg      sync.WaitGroup
-	mu      sync.Mutex
-	all     []Entry
+	path      string
+	publisher events.Publisher
+	entries   chan Entry
+	done      chan struct{}
+	once      sync.Once
+	wg        sync.WaitGroup
+	mu        sync.Mutex
+	all       []Entry
+
+	// Set after a failed flush, so a failure streak produces one notice.
+	failing bool
 }
 
-func NewWriter(path string) *Writer {
-	writer := &Writer{
-		path:    path,
-		entries: make(chan Entry, entryChanBuffer),
-		done:    make(chan struct{}),
+type WriterOption = func(*Writer)
+
+func WithPublisher(publisher events.Publisher) WriterOption {
+	return func(w *Writer) {
+		w.publisher = publisher
 	}
+}
+
+func NewWriter(path string, options ...WriterOption) *Writer {
+	writer := helpers.ApplyOptions(&Writer{
+		path:      path,
+		publisher: events.NoopPublisher{},
+		entries:   make(chan Entry, entryChanBuffer),
+		done:      make(chan struct{}),
+	}, options)
 
 	writer.wg.Add(1)
 
@@ -96,6 +115,9 @@ func (w *Writer) append(entry Entry) {
 }
 
 func (w *Writer) flush() {
+	_, span := telemetry.Start(context.Background(), "har.flush")
+	defer span.End()
+
 	w.mu.Lock()
 	snapshot := make([]Entry, len(w.all))
 	copy(snapshot, w.all)
@@ -111,28 +133,60 @@ func (w *Writer) flush() {
 
 	data, err := json.MarshalIndent(archive, "", "  ")
 	if err != nil {
+		telemetry.Fail(span, err)
+
 		return
 	}
 
-	err = os.MkdirAll(filepath.Dir(w.path), harDirMode)
+	span.SetAttributes(
+		attribute.String("uncors.har.path", w.path),
+		attribute.Int("uncors.har.entries", len(snapshot)),
+		attribute.Int("uncors.har.bytes", len(data)),
+	)
+
+	err = w.write(data)
 	if err != nil {
-		slog.Error("har: cannot create directory", "path", w.path, "error", err)
+		telemetry.Fail(span, err)
+		w.reportFailure(err)
 
 		return
+	}
+
+	w.failing = false
+}
+
+func (w *Writer) write(data []byte) error {
+	err := os.MkdirAll(filepath.Dir(w.path), harDirMode)
+	if err != nil {
+		return fmt.Errorf("cannot create directory: %w", err)
 	}
 
 	tmp := w.path + ".tmp"
 
 	err = os.WriteFile(tmp, data, harFileMode)
 	if err != nil {
-		slog.Error("har: cannot write temp file", "path", tmp, "error", err)
-
-		return
+		return fmt.Errorf("cannot write temp file: %w", err)
 	}
 
 	err = os.Rename(tmp, w.path)
 	if err != nil {
-		slog.Error("har: cannot rename temp file", "from", tmp, "to", w.path, "error", err)
 		_ = os.Remove(tmp)
+
+		return fmt.Errorf("cannot rename temp file: %w", err)
 	}
+
+	return nil
+}
+
+// Runs on the writer goroutine only, like every flush.
+func (w *Writer) reportFailure(err error) {
+	if w.failing {
+		return
+	}
+
+	w.failing = true
+	w.publisher.Publish(events.Notice{
+		Level: events.NoticeError,
+		Text:  fmt.Sprintf("HAR: cannot write %s: %v", w.path, err),
+	})
 }

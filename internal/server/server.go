@@ -225,10 +225,18 @@ func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	span.AddEvent("uncors.inflight_closed")
 	telemetry.Warn(ctx, "in-flight requests did not finish before restart, closing them",
 		slog.String("error", shutdownErr.Error()))
+	s.publisher.Publish(events.Notice{
+		Level: events.NoticeWarning,
+		Text:  "In-flight requests did not finish before restart and were closed",
+	})
 
 	err := s.Close()
 	if err != nil {
 		telemetry.Fail(span, err)
+		s.publisher.Publish(events.Notice{
+			Level: events.NoticeError,
+			Text:  "Failed to close connections before restart: " + err.Error(),
+		})
 	}
 }
 
