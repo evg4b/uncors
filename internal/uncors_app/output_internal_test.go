@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -146,11 +147,11 @@ func TestTuiOutput_Request(t *testing.T) {
 	t.Run("Request sends formatted request data", func(t *testing.T) {
 		out, outputCh := newTestOutput()
 		u, _ := url.Parse("http://example.com/api/resource")
-		out.Request(&contracts.RequestData{
+		out.Request(events.RequestCompleted{Data: &contracts.RequestData{
 			Method: "GET",
 			URL:    u,
 			Code:   200,
-		})
+		}})
 
 		msg := recv(t, outputCh)
 		assert.NotEmpty(t, msg)

@@ -9,6 +9,7 @@ import (
 
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
 )
@@ -125,8 +126,15 @@ func (output *CliOutput) Printf(msg string, args ...any) {
 	output.print(fmt.Sprintf(msg, args...), defaultOutput)
 }
 
-func (output *CliOutput) Request(data *contracts.RequestData) {
-	output.print(printResponse(data), defaultOutput)
+// Request prints a completed request, see FormatRequest.
+func (output *CliOutput) Request(event events.RequestCompleted) {
+	output.mutex.Lock()
+	defer output.mutex.Unlock()
+
+	output.renderPrefix()
+	output.buffer.WriteString(FormatRequest(event))
+	output.buffer.WriteByte('\n')
+	output.flush()
 }
 
 func (output *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
@@ -144,7 +152,11 @@ func (output *CliOutput) print(msg string, level outputType) {
 	output.renderLevel(level)
 	output.renderMessage(msg)
 	output.buffer.WriteByte('\n')
+	output.flush()
+}
 
+// flush writes the rendered buffer; callers hold the write lock.
+func (output *CliOutput) flush() {
 	_, err := output.output.Write(output.buffer.Bytes())
 	output.buffer.Reset()
 

@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/tracking"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
@@ -41,11 +44,14 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 			return next(writer, request)
 		}
 
+		tracking.Claim(request.Context(), events.HandlerStatic)
+
 		h.logger.Error("static handler error", "url", urlt.URL_String(request.URL), "error", err)
 
 		return err
 	}
 
+	tracking.Claim(request.Context(), events.HandlerStatic)
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
 	return nil

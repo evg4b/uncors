@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/samber/lo"
 )
 
@@ -33,22 +34,23 @@ type Server struct {
 	mu              sync.RWMutex
 	listeners       []*PortListener
 	manager         *HostCertManager
-	sink            RequestSink
+	publisher       tracking.Publisher
 	nextID          atomic.Uint64
 	shutdownTimeout time.Duration
 }
 
-// New creates a server that reports request activity to sink. A nil sink is
-// replaced by NoopRequestSink so the request path is never left without one.
-func New(manager *HostCertManager, sink RequestSink) *Server {
-	if sink == nil {
-		sink = NoopRequestSink{}
+// New creates a server that reports request activity to publisher. A nil
+// publisher is replaced by tracking.NoopPublisher so the request path is never
+// left without one.
+func New(manager *HostCertManager, publisher tracking.Publisher) *Server {
+	if publisher == nil {
+		publisher = tracking.NoopPublisher{}
 	}
 
 	return &Server{
 		listeners:       []*PortListener{},
 		manager:         manager,
-		sink:            sink,
+		publisher:       publisher,
 		shutdownTimeout: shutdownTimeout,
 	}
 }
@@ -198,45 +200,16 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 	helpers.NormaliseRequest(request)
 
 	rec := NewResponseRecorder(writer)
-	requestID := s.nextID.Add(1)
-
-	s.sink.Emit(RequestEvent{
-		ID:        requestID,
-		Method:    request.Method,
-		URL:       request.URL,
-		StartedAt: time.Now(),
-	})
-
-	// The prefix is reported once, with the terminal event. Handlers may set it
-	// from a goroutine of their own, so access is guarded.
-	var (
-		prefixMu   sync.Mutex
-		lastPrefix string
-	)
-
-	ctx := context.WithValue(request.Context(), contracts.PrefixUpdaterKey, func(prefix string) {
-		prefixMu.Lock()
-		defer prefixMu.Unlock()
-
-		lastPrefix = prefix
-	})
+	ctx, scope := tracking.Begin(request.Context(), s.publisher, s.nextID.Add(1), request)
 
 	err := handler.ServeHTTP(rec, request.WithContext(ctx))
 	if err != nil {
+		tracking.Fail(ctx, err)
 		infra.HTTPError(rec, err)
 	}
 
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil
 
-	prefixMu.Lock()
-	prefix := lastPrefix
-	prefixMu.Unlock()
-
-	s.sink.Emit(RequestEvent{
-		ID:     requestID,
-		Done:   true,
-		Prefix: prefix,
-		Data:   data,
-	})
+	scope.Finish(data)
 }

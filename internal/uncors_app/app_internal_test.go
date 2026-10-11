@@ -7,12 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
+
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,7 +68,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	defer cleanupTestApp(t, app)
 
 	assert.NotNil(t, app.output)
-	assert.NotNil(t, app.tracker)
+	assert.NotNil(t, app.events)
 	assert.NotNil(t, app.historyWidget.hist)
 	assert.NotNil(t, app.appContext)
 	assert.NotNil(t, app.appDone)
@@ -103,11 +105,12 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	requestURL, err := url.Parse("https://example.com/demo")
 	require.NoError(t, err)
 
-	model, cmd = app.Update(requestEventMsg{
-		ID:        7,
-		Method:    "GET",
-		URL:       requestURL,
-		StartedAt: time.Now().Add(-1500 * time.Millisecond),
+	model, cmd = app.Update(requestStartedMsg{
+		ID:      7,
+		Method:  "GET",
+		URL:     requestURL,
+		Handler: events.HandlerProxy,
+		At:      time.Now().Add(-1500 * time.Millisecond),
 	})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
@@ -120,8 +123,13 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.Contains(t, view.Content, "world")
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
+	assert.Contains(t, view.Content, "PROXY")
 
-	model, cmd = app.Update(requestEventMsg{ID: 7, Done: true})
+	model, cmd = app.Update(requestCompletedMsg{
+		ID:      7,
+		Handler: events.HandlerProxy,
+		Data:    &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200},
+	})
 	require.Same(t, app, model)
 	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
@@ -137,7 +145,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
 	app.helpWidget.help.ShowAll = true
-	app.trackerWidget.pending[1] = server.RequestEvent{Method: "POST", URL: requestURL, StartedAt: time.Now()}
+	app.trackerWidget.pending[1] = events.RequestStarted{Method: "POST", URL: requestURL, At: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
 	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
 	// Since we mock manual property setting here, let's call updateHistoryHeight
@@ -220,13 +228,15 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		requestURL, err := url.Parse("https://example.com/watch")
 		require.NoError(t, err)
 
-		app.tracker.Emit(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL})
+		started := events.RequestStarted{ID: 9, Method: "GET", URL: requestURL, Handler: events.HandlerCache}
+		completed := events.RequestCompleted{ID: 9, Handler: events.HandlerCache}
 
-		assert.Equal(
-			t,
-			requestEventMsg(server.RequestEvent{ID: 9, Method: "GET", URL: requestURL}),
-			app.watchEventsCmd()(),
-		)
+		bus := app.container.Bus()
+		bus.Publish(started)
+		bus.Publish(completed)
+
+		assert.Equal(t, requestStartedMsg(started), app.watchEventsCmd()())
+		assert.Equal(t, requestCompletedMsg(completed), app.watchEventsCmd()())
 
 		app.cancel()
 		assert.Nil(t, app.watchEventsCmd()())
@@ -236,7 +246,7 @@ func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		app.tracker.Close()
+		app.events.Close()
 		assert.Nil(t, app.watchEventsCmd()())
 	})
 }
@@ -286,7 +296,7 @@ func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
 		app, _ := newTestApp(t)
 		defer cleanupTestApp(t, app)
 
-		app.trackerWidget.pending[1] = server.RequestEvent{Method: "GET", StartedAt: time.Now()}
+		app.trackerWidget.pending[1] = events.RequestStarted{Method: "GET", At: time.Now()}
 		app.trackerWidget.ticking = true
 
 		model, cmd := app.Update(serverErrMsg{err: errBoom})
@@ -389,25 +399,21 @@ func TestHandleServerStartedWithConfigPath(t *testing.T) {
 	})
 }
 
-func TestHandleRequestEventWithData(t *testing.T) {
+func TestRequestCompletedIsWrittenToHistory(t *testing.T) {
 	requestURL, err := url.Parse("https://example.com/api")
 	require.NoError(t, err)
 
-	data := &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200}
+	app, _ := newTestApp(t)
+	defer cleanupTestApp(t, app)
 
-	t.Run("outputs request without prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
-
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data})
+	_, _ = app.Update(requestCompletedMsg{
+		Handler: events.HandlerMock,
+		Data:    &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200},
 	})
 
-	t.Run("outputs request with prefix", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
-
-		app.handleRequestEvent(requestEventMsg{Done: true, Data: data, Prefix: "api"})
-	})
+	line := ansi.Strip(<-app.outputCh)
+	assert.Contains(t, line, "MOCK")
+	assert.Contains(t, line, "example.com/api")
 }
 
 func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {

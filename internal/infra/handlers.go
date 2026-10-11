@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tracking"
 )
 
 var ErrResponseNotCasted = errors.New("received incorrect response writer type")
@@ -31,6 +32,7 @@ func CastToHTTPHandler(handler contracts.Handler) http.Handler {
 
 		err := handler.ServeHTTP(writer, request)
 		if err != nil {
+			tracking.Fail(request.Context(), err)
 			HTTPError(writer, err)
 		}
 	})

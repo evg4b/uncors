@@ -2,15 +2,40 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 const prefixWidth = 13
+
+// FormatRequest renders a completed request as the handler label followed by
+// the status line. A rewritten path is appended, and a handler error goes on a
+// second line unless the client had already gone away.
+func FormatRequest(event events.RequestCompleted) string {
+	var builder strings.Builder
+
+	builder.WriteString(styles.HandlerLabel(event.Handler))
+	builder.WriteByte(' ')
+	builder.WriteString(printResponse(event.Data))
+
+	if event.Rewrite != nil {
+		builder.WriteByte(' ')
+		builder.WriteString(styles.DimTextStyle.Render("→ " + event.Rewrite.To))
+	}
+
+	if event.Err != nil && !event.Data.Cancelled {
+		builder.WriteString("\n  ")
+		builder.WriteString(styles.DimTextStyle.Render("↳ " + event.Err.Error()))
+	}
+
+	return builder.String()
+}
 
 func printResponse(data *contracts.RequestData) string {
 	var (
