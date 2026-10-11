@@ -35,12 +35,29 @@ type Notice struct {
 	Text  string
 }
 
-func (ServerStarted) isEvent()       {}
-func (ServerRestarted) isEvent()     {}
-func (ServerStopped) isEvent()       {}
-func (ReloadFailed) isEvent()        {}
-func (NewVersionAvailable) isEvent() {}
-func (Notice) isEvent()              {}
+func (ServerStarted) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (ServerRestarted) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (ServerStopped) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (ReloadFailed) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (NewVersionAvailable) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (Notice) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
 
 type Publisher interface {
 	Publish(event Event)
@@ -48,4 +65,6 @@ type Publisher interface {
 
 type NoopPublisher struct{}
 
-func (NoopPublisher) Publish(Event) {}
+func (NoopPublisher) Publish(Event) {
+	// Discards the event.
+}

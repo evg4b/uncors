@@ -64,5 +64,10 @@ type RequestCompleted struct {
 	Err      error
 }
 
-func (RequestStarted) isEvent()   {}
-func (RequestCompleted) isEvent() {}
+func (RequestStarted) isEvent() {
+	// Seals Event: only types in this package implement it.
+}
+
+func (RequestCompleted) isEvent() {
+	// Seals Event: only types in this package implement it.
+}

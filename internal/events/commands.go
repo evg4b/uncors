@@ -8,5 +8,10 @@ type Restart struct{}
 
 type Shutdown struct{}
 
-func (Restart) isCommand()  {}
-func (Shutdown) isCommand() {}
+func (Restart) isCommand() {
+	// Seals Command: only types in this package implement it.
+}
+
+func (Shutdown) isCommand() {
+	// Seals Command: only types in this package implement it.
+}
