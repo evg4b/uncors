@@ -14,7 +14,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
 )
 
 type Handler struct {
@@ -32,7 +31,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.executeScript(writer, request)
 	if err != nil {
-		h.logger.Error("script handler error", "url", urlt.URL_String(request.URL), "error", err)
+		h.logger.Error("script handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}

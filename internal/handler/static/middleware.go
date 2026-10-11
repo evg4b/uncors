@@ -16,7 +16,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 )
 
@@ -46,7 +45,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 		tracking.Claim(request.Context(), events.HandlerStatic)
 
-		h.logger.Error("static handler error", "url", urlt.URL_String(request.URL), "error", err)
+		h.logger.Error("static handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}

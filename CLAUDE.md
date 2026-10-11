@@ -9,7 +9,7 @@ requests, and records HAR files. Details: `ARCHITECTURE.md`, `CONTRIBUTING.md`.
 ```bash
 make check              # format + test + build (build only compiles packages)
 make test               # Unit tests with -race
-make test-integration   # tests/integration, -tags integration (real sockets + TLS)
+make test-integration   # tests/integration, -tags integration (engine + real sockets + TLS)
 make test-release       # Unit tests with -tags release
 make build-release      # Build the ./uncors binary
 make format-docs        # Prettier over docs/*.md and root *.md

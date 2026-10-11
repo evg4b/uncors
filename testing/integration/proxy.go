@@ -5,16 +5,17 @@ package integration
 import (
 	"context"
 	"crypto/x509"
-	"io"
 	"net"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/engine"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -22,18 +23,21 @@ import (
 // caValidityDays must stay clear of the proxy's expiration warning threshold
 // (7 days); below it HostCertManager refuses to serve TLS.
 const (
-	caValidityDays   = 30
-	configFilePerm   = 0o600
-	configPath       = "/uncors-config.yaml"
-	proxyReadyWait   = 5 * time.Second
-	proxyPollTick    = 25 * time.Millisecond
-	proxyDialTimeout = 100 * time.Millisecond
+	caValidityDays    = 30
+	configFilePerm    = 0o600
+	configPath        = "/uncors-config.yaml"
+	proxyReadyWait    = 5 * time.Second
+	proxyPollTick     = 25 * time.Millisecond
+	proxyDialTimeout  = 100 * time.Millisecond
+	proxyShutdownWait = 5 * time.Second
 )
 
-// bootProxy generates a fresh dev CA, writes cfg to the test filesystem and
-// starts uncors through the same cli.RunUncors entry point production uses.
+// bootProxy generates a fresh dev CA, writes cfg to the test filesystem, loads
+// it back through config.LoadConfiguration (so it is normalised and validated
+// exactly as in production) and serves it with an engine. No CLI or frontend
+// is involved; everything the engine reports is recorded from the bus.
 // Returns the CA that the client must trust to complete TLS handshakes.
-func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certificate {
+func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certificate, *eventRecorder) {
 	t.Helper()
 
 	caDir, err := server.GetCAPath()
@@ -51,34 +55,30 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) *x509.Certif
 
 	require.NoError(t, afero.WriteFile(fs, configPath, marshalConfig(t, cfg), configFilePerm))
 
-	stopped := make(chan struct{})
+	loaded, _, err := config.LoadConfiguration(fs, nil, []string{"-c", configPath})
+	require.NoError(t, err)
 
-	// t.Context is cancelled just before cleanups run, which stops the proxy;
-	// waiting here lets it flush HAR files before temp dirs are removed.
-	t.Cleanup(func() { <-stopped })
+	bus := events.NewBus()
+	recorder := recordEvents(bus.Subscribe(eventsBuffer))
+	proxy := engine.New(engine.WithFs(fs), engine.WithPublisher(bus))
 
-	go func() {
-		defer close(stopped)
+	require.NoError(t, proxy.Start(t.Context(), loaded))
 
-		// --interactive=false overrides the default (true) so the proxy runs
-		// in headless mode and actually starts its TCP listeners.
-		env := cli.Env{
-			Fs:     fs,
-			Stdout: io.Discard,
-			Args:   []string{"-c", configPath, "--interactive=false"},
-		}
+	// Shutting down closes the generation, which flushes HAR files; cleanups
+	// run in reverse order, so this happens before temp dirs are removed.
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), proxyShutdownWait)
+		defer cancel()
 
-		// The test goroutine may already have finished by the time RunUncors
-		// returns, so failures are logged rather than asserted.
-		runErr := cli.RunUncors(t.Context(), env)
-		if runErr != nil {
-			t.Logf("RunUncors returned: %v", runErr)
-		}
-	}()
+		assert.NoError(t, proxy.Shutdown(ctx))
+		proxy.Wait()
+		bus.Close()
+		<-recorder.done
+	})
 
 	waitForMappings(t, cfg)
 
-	return caCert
+	return caCert, recorder
 }
 
 // marshalConfig serialises cfg to YAML. Inline scripts are trimmed first:

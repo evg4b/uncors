@@ -202,7 +202,12 @@ A new config option:
 
 - Unit tests sit next to the code and use mocks generated with `minimock`.
 - `tests/integration` holds end-to-end tests with real sockets and TLS; run
-  them with `make test-integration`.
+  them with `make test-integration`. The harness (`testing/integration`) loads
+  the config through `config.LoadConfiguration` and serves it with an
+  `engine.Engine` directly, with no CLI or frontend, and records every bus
+  event: `Env.DoTracked` returns a request's `RequestStarted` and
+  `RequestCompleted`, `Env.Events` everything published.
+  `tests/integration/cli` runs the built binary.
 - `tests/schema` validates YAML fixtures against `schema.json`.
 - `make test` runs the unit tests with the race detector.
 
