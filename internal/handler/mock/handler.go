@@ -15,7 +15,6 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
-	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 )
@@ -44,7 +43,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		h.logger.Error("mock handler error", "url", urlt.URL_String(request.URL), "error", err)
+		h.logger.Error("mock handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}

@@ -42,7 +42,7 @@ func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contract
 			return err
 		}
 
-		h.logger.Error("proxy handler error", "url", urlt.URL_String(request.URL), "error", err)
+		h.logger.Error("proxy handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}
