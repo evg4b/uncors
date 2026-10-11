@@ -25,7 +25,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// httpMapping builds a minimal valid UncorsConfig for an HTTP proxy on a free port.
 func httpMapping(t *testing.T) (*config.UncorsConfig, int) {
 	t.Helper()
 
@@ -46,7 +45,6 @@ func httpMapping(t *testing.T) (*config.UncorsConfig, int) {
 	return cfg, port
 }
 
-// waitForPort blocks until the TCP address accepts connections or times out.
 func waitForPort(t *testing.T, addr string) {
 	t.Helper()
 
@@ -74,7 +72,6 @@ func waitForPort(t *testing.T, addr string) {
 	t.Fatal("port did not become ready within 5s: " + addr)
 }
 
-// writeConfig marshals cfg to YAML and writes it to path on the real OS filesystem.
 func writeConfig(t *testing.T, path string, cfg *config.UncorsConfig) {
 	t.Helper()
 
@@ -83,7 +80,6 @@ func writeConfig(t *testing.T, path string, cfg *config.UncorsConfig) {
 	require.NoError(t, os.WriteFile(path, data, 0o600))
 }
 
-// syncBuffer collects console output written from the frontend goroutine.
 type syncBuffer struct {
 	mu     sync.Mutex
 	buffer bytes.Buffer
@@ -107,9 +103,6 @@ func env(fs afero.Fs, args ...string) cli.Env {
 	return cli.Env{Fs: fs, Stdout: io.Discard, Args: args, Version: "x.x.x"}
 }
 
-// startProxy starts RunUncors in a goroutine and returns a channel that
-// receives the error when it exits. The caller must cancel the context and
-// drain the channel to ensure the goroutine has fully stopped.
 func startProxy(ctx context.Context, env cli.Env) <-chan error {
 	errCh := make(chan error, 1)
 
@@ -122,7 +115,6 @@ func startProxy(ctx context.Context, env cli.Env) <-chan error {
 
 func TestRunUncors(t *testing.T) {
 	t.Run("returns error when LoadConfiguration fails", func(t *testing.T) {
-		// No --from/--to flags and no config file → "mappings must not be empty"
 		err := cli.RunUncors(context.Background(), env(afero.NewMemMapFs()))
 		require.Error(t, err)
 	})
@@ -176,7 +168,6 @@ func TestRunUncors(t *testing.T) {
 	t.Run("non-interactive: returns error when port is already in use", func(t *testing.T) {
 		cfg, port := httpMapping(t)
 
-		// Occupy the port so srv.Start fails.
 		lc := &net.ListenConfig{}
 
 		listener, err := lc.Listen(context.Background(), "tcp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
@@ -211,8 +202,6 @@ func TestRunUncors(t *testing.T) {
 
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
-		// Overwrite with same valid config — the watcher fires and the proxy
-		// restarts.
 		writeConfig(t, configPath, cfg)
 
 		assert.Eventually(t, func() bool {
@@ -250,14 +239,12 @@ func TestRunUncors(t *testing.T) {
 
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
-		// Write an invalid config (empty mappings) — the reload fails.
 		require.NoError(t, os.WriteFile(configPath, []byte("mappings: []\n"), 0o600))
 
 		assert.Eventually(t, func() bool {
 			return strings.Contains(output.String(), "Failed to reload configuration, keeping the previous one")
 		}, 5*time.Second, 20*time.Millisecond)
 
-		// The previous configuration keeps serving.
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
 		cancel()

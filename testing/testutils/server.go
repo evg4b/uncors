@@ -18,7 +18,6 @@ type TestServer struct {
 	server   *http.Server
 }
 
-// NewServer binds an IPv4 loopback listener to avoid environments where ::1 is unavailable.
 func NewServer(t *testing.T, handler http.Handler) *TestServer {
 	t.Helper()
 

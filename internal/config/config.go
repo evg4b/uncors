@@ -9,8 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ErrVersionRequested is returned when the --version flag is set so that the
-// caller can exit cleanly after the version has been printed.
 var ErrVersionRequested = errors.New("version requested")
 
 type UncorsConfig struct {
@@ -20,12 +18,8 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-// Usage prints the help for the command line flags. It runs on --help and on
-// a flag parsing error.
 type Usage = func(flags *pflag.FlagSet)
 
-// LoadConfiguration parses args, reads the config file they name, and returns
-// the validated configuration and the config file path. usage may be nil.
 func LoadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, string, error) {
 	flags := defineFlags(usage)
 

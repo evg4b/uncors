@@ -82,9 +82,6 @@ func TestBuildGeneration(t *testing.T) {
 		require.NoError(t, instance.Close())
 	})
 
-	// Reloading the config used to leak a HAR writer, its goroutine and a
-	// ristretto instance per reload, with several writers racing over the same
-	// file. Generation scoped resources make the growth bounded.
 	t.Run("repeated reloads do not leak goroutines", func(t *testing.T) {
 		const reloads = 50
 

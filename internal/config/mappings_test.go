@@ -155,7 +155,7 @@ func TestMappings(t *testing.T) {
 	})
 }
 
-func mapping(from string, to string) string {
+func mapping(from, to string) string {
 	return fmt.Sprintf("%s => %s", from, to)
 }
 

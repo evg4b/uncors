@@ -66,30 +66,22 @@ func TestHistoryWidget(t *testing.T) {
 		widget.vp.SetWidth(80)
 		widget.SetHeight(5)
 
-		// Add some lines so scrolling is possible
 		for range 10 {
 			_, _ = widget.Update(outputLineMsg("line"))
 		}
 
 		widget.autoScroll = true
 
-		// Home key -> GotoTop, autoScroll = false
 		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyHome}))
 		assert.False(t, widget.autoScroll)
 
-		// End key -> GotoBottom, autoScroll = true
 		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnd}))
 		assert.True(t, widget.autoScroll)
 
-		// Up key -> ScrollUp
 		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
-		assert.False(t, widget.autoScroll) // Not at bottom anymore
+		assert.False(t, widget.autoScroll)
 
-		// Down key -> ScrollDown
 		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
-		// Now it should be at bottom again because it scrolled down 1 line and there were only 5
-		// extra lines? Wait, 10 lines total, height 5. GotoBottom = at line 10. ScrollUp = at line 9.
-		// ScrollDown = at line 10 (bottom).
 		assert.True(t, widget.autoScroll)
 	})
 

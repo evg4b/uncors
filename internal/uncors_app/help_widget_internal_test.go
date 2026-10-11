@@ -27,7 +27,6 @@ func TestHelpWidget(t *testing.T) {
 
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
-		// SetWidth is called internally, we trust help.Model handles it correctly.
 	})
 
 	t.Run("Update handles help toggle key", func(t *testing.T) {
@@ -39,14 +38,13 @@ func TestHelpWidget(t *testing.T) {
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
 		assert.True(t, widget.help.ShowAll)
-		assert.Equal(t, 4, widget.Height()) // Expanded height
+		assert.Equal(t, 4, widget.Height())
 
-		// Toggle back
 		newWidget, cmd = widget.Update(msg)
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
 		assert.False(t, widget.help.ShowAll)
-		assert.Equal(t, 1, widget.Height()) // Collapsed height
+		assert.Equal(t, 1, widget.Height())
 	})
 
 	t.Run("Update ignores other keys", func(t *testing.T) {
@@ -65,7 +63,6 @@ func TestHelpWidget(t *testing.T) {
 
 		view := widget.View()
 		assert.NotEmpty(t, view.Content)
-		// Usually contains some short help keys
 		assert.Contains(t, view.Content, "help")
 	})
 }

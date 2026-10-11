@@ -9,7 +9,7 @@ const (
 	defaultHTTPPort       = 80
 	defaultHTTPSPort      = 443
 	DefaultExpirationTime = 30 * time.Minute
-	DefaultMaxSize        = 100 * 1024 * 1024 // 100 MB
+	DefaultMaxSize        = 100 * 1024 * 1024
 )
 
 func defaultConfig() *UncorsConfig {

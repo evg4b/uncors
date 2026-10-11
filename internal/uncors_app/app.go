@@ -18,9 +18,6 @@ const (
 	bytesPerMegabyte = 1024 * 1024
 )
 
-// UncorsApp is the interactive frontend. It only renders what arrives on its
-// event subscription and turns key presses into commands for the supervisor;
-// it never touches the proxy itself.
 type UncorsApp struct {
 	keys keyMap
 
@@ -43,14 +40,10 @@ type UncorsApp struct {
 }
 
 type (
-	// lifecycleMsg carries any event other than the request events.
-	lifecycleMsg struct{ event events.Event }
-	// eventsClosedMsg reports that the subscription has closed.
+	lifecycleMsg    struct{ event events.Event }
 	eventsClosedMsg struct{}
 )
 
-// NewUncorsApp creates the interactive UI. It renders the events from
-// subscription and sends commands to the supervisor through commands.
 func NewUncorsApp(
 	subscription *events.Subscription,
 	commands chan<- events.Command,
@@ -143,7 +136,6 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	cmds = append(cmds, mwCmd)
 
-	// Re-calculate history height if tracker or help dimensions changed
 	m.updateLayout(msg)
 
 	return m, tea.Batch(cmds...)
@@ -152,16 +144,13 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *UncorsApp) View() tea.View {
 	var viewBuilder strings.Builder
 
-	// 1. History
 	viewBuilder.WriteString(m.historyWidget.View().Content)
 
-	// 2. Tracker (In progress requests)
 	if m.trackerWidget.ActiveCount() > 0 {
 		viewBuilder.WriteByte('\n')
 		viewBuilder.WriteString(m.trackerWidget.View().Content)
 	}
 
-	// 3. Help Bar and Memory
 	viewBuilder.WriteByte('\n')
 
 	helpStr := m.helpWidget.View().Content
@@ -221,7 +210,6 @@ func (m *UncorsApp) footerHeight() int {
 	return footerHeight
 }
 
-// render appends what the renderer prints for event to the history.
 func (m *UncorsApp) render(event events.Event) {
 	m.renderer.Render(event)
 
@@ -247,7 +235,6 @@ func (m *UncorsApp) quit() tea.Cmd {
 	return tea.Quit
 }
 
-// sendCmd delivers command to the supervisor without blocking the update loop.
 func (m *UncorsApp) sendCmd(command events.Command) tea.Cmd {
 	return func() tea.Msg {
 		select {
@@ -259,7 +246,6 @@ func (m *UncorsApp) sendCmd(command events.Command) tea.Cmd {
 	}
 }
 
-// watchEventsCmd waits for the next event from the subscription.
 func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 	return func() tea.Msg {
 		event, ok := <-m.events.Events()

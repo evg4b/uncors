@@ -13,21 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Result captures both sides of a single proxy round-trip:
-// the raw request the backend received and the response the client got back.
 type Result struct {
-	// Response is the HTTP response received by the client.
-	// Its body has been drained and buffered; close or re-read it freely.
 	Response *http.Response
 
 	body            []byte
 	backendRequests []string
 }
 
-// Do sends req through the proxy client and captures the backend request(s)
-// that arrived since the previous Do call (or since the last Backend.Reset).
-// It reads and buffers the response body so Result.BodyString and
-// Result.ResponseDump are available without an extra Read.
 func (e *Env) Do(t *testing.T, req *http.Request) *Result {
 	t.Helper()
 
@@ -54,7 +46,6 @@ func (e *Env) Do(t *testing.T, req *http.Request) *Result {
 	}
 }
 
-// NewRequest builds an HTTP request with a background context.
 func NewRequest(t *testing.T, method, url string) *http.Request {
 	t.Helper()
 
@@ -64,20 +55,14 @@ func NewRequest(t *testing.T, method, url string) *http.Request {
 	return req
 }
 
-// BodyString returns the response body as a string.
 func (r *Result) BodyString() string {
 	return string(r.body)
 }
 
-// HasBackendRequest reports whether the backend received at least one new
-// request during this round-trip (i.e. the proxy forwarded rather than mocked).
 func (r *Result) HasBackendRequest() bool {
 	return len(r.backendRequests) > 0
 }
 
-// BackendRequest returns the normalized raw dump of the first backend request
-// received during this round-trip, suitable for snapshot assertions.
-// It fails the test when no backend request was recorded.
 func (r *Result) BackendRequest(t *testing.T) string {
 	t.Helper()
 	require.True(t, r.HasBackendRequest(), "no backend request was recorded for this round-trip")
@@ -85,9 +70,6 @@ func (r *Result) BackendRequest(t *testing.T) string {
 	return Normalize(r.backendRequests[0])
 }
 
-// RawBackendRequest returns the unmodified raw dump of the first backend request
-// (no port scrubbing), for assertions on exact values such as a rewritten
-// Origin/Referer that includes the live backend port.
 func (r *Result) RawBackendRequest(t *testing.T) string {
 	t.Helper()
 	require.True(t, r.HasBackendRequest(), "no backend request was recorded for this round-trip")
@@ -95,8 +77,6 @@ func (r *Result) RawBackendRequest(t *testing.T) string {
 	return r.backendRequests[0]
 }
 
-// ResponseDump returns a normalized full HTTP response dump (status line,
-// headers, body) suitable for snapshot assertions.
 func (r *Result) ResponseDump(t *testing.T) string {
 	t.Helper()
 

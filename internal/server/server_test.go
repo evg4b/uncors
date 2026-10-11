@@ -71,7 +71,7 @@ func TestServer(t *testing.T) {
 	t.Run("multiple http ports", func(t *testing.T) {
 		freePorts := testutils.GetFreePorts(t, porstCount)
 
-		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
+		targets := lo.Map(freePorts, func(port, _ int) server.Target {
 			return server.Target{
 				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
@@ -116,7 +116,7 @@ func TestServer(t *testing.T) {
 		pool := x509.NewCertPool()
 		pool.AddCert(caCert)
 
-		targets := lo.Map(freePorts, func(port int, _ int) server.Target {
+		targets := lo.Map(freePorts, func(port, _ int) server.Target {
 			return server.Target{
 				Address:   hosts.Loopback.Port(port).String(),
 				Handler:   handler,
@@ -164,14 +164,14 @@ func TestServer(t *testing.T) {
 		pool := x509.NewCertPool()
 		pool.AddCert(caCert)
 
-		httpTargets := lo.Map(freeHTTPPorts, func(port int, _ int) server.Target {
+		httpTargets := lo.Map(freeHTTPPorts, func(port, _ int) server.Target {
 			return server.Target{
 				Address: hosts.Loopback.Port(port).String(),
 				Handler: handler,
 			}
 		})
 
-		httpsTargets := lo.Map(freeHTTPSPorts, func(port int, _ int) server.Target {
+		httpsTargets := lo.Map(freeHTTPSPorts, func(port, _ int) server.Target {
 			return server.Target{
 				Address:   hosts.Loopback.Port(port).String(),
 				Handler:   handler,

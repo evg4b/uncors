@@ -24,6 +24,14 @@ func (e *errorWriter) Write(_ []byte) (int, error) {
 	return 0, errWrite
 }
 
+func snapshotOutput(write func(out *tui.CliOutput)) func(t *testing.T) {
+	return testutils.WithTrueColor(func(t *testing.T) {
+		var buf strings.Builder
+		write(tui.NewCliOutput(&buf))
+		testutils.MatchSnapshot(t, buf.String())
+	})
+}
+
 func TestCliOutput_Write(t *testing.T) {
 	var buf strings.Builder
 
@@ -37,59 +45,27 @@ func TestCliOutput_Write(t *testing.T) {
 }
 
 func TestCliOutput_Info(t *testing.T) {
-	t.Run("Info", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Info("test message")
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Info", snapshotOutput(func(out *tui.CliOutput) { out.Info("test message") }))
 
-	t.Run("Infof", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Infof("formatted %s %d", "message", 42)
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Infof", snapshotOutput(func(out *tui.CliOutput) { out.Infof("formatted %s %d", "message", 42) }))
 }
 
 func TestCliOutput_Error(t *testing.T) {
-	t.Run("Error", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Error("test error")
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Error", snapshotOutput(func(out *tui.CliOutput) { out.Error("test error") }))
 
-	t.Run("Errorf", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Errorf("formatted %s %d", "error", 42)
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Errorf", snapshotOutput(func(out *tui.CliOutput) { out.Errorf("formatted %s %d", "error", 42) }))
 }
 
 func TestCliOutput_Warn(t *testing.T) {
-	t.Run("Warn", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Warn("test warning")
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Warn", snapshotOutput(func(out *tui.CliOutput) { out.Warn("test warning") }))
 
-	t.Run("Warnf", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Warnf("formatted %s %d", "warning", 42)
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Warnf", snapshotOutput(func(out *tui.CliOutput) { out.Warnf("formatted %s %d", "warning", 42) }))
 }
 
 func TestCliOutput_Print(t *testing.T) {
-	t.Run("Print", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Print("plain message")
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Print", snapshotOutput(func(out *tui.CliOutput) { out.Print("plain message") }))
 
-	t.Run("Printf", testutils.WithTrueColor(func(t *testing.T) {
-		var buf strings.Builder
-		tui.NewCliOutput(&buf).Printf("formatted %s %d", "plain", 42)
-		testutils.MatchSnapshot(t, buf.String())
-	}))
+	t.Run("Printf", snapshotOutput(func(out *tui.CliOutput) { out.Printf("formatted %s %d", "plain", 42) }))
 }
 
 func TestCliOutput_RenderMessage_StripsTrailingNewline(t *testing.T) {

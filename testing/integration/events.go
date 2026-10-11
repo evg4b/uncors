@@ -14,19 +14,16 @@ import (
 )
 
 const (
-	// eventsBuffer is large enough that no test drops events.
 	eventsBuffer  = 10_000
 	eventWait     = 2 * time.Second
 	eventPollTick = 5 * time.Millisecond
 )
 
-// Request is one request as the engine reported it on the bus.
 type Request struct {
 	Started   events.RequestStarted
 	Completed events.RequestCompleted
 }
 
-// eventRecorder keeps every event the engine published.
 type eventRecorder struct {
 	mu       sync.Mutex
 	received []events.Event
@@ -56,14 +53,10 @@ func (r *eventRecorder) snapshot() []events.Event {
 	return append([]events.Event(nil), r.received...)
 }
 
-// Events returns every event the engine has published so far.
 func (e *Env) Events() []events.Event {
 	return e.events.snapshot()
 }
 
-// DoTracked sends req like Do and also returns the request events the engine
-// published for it. The completion event may be published just after the
-// client has the response, so it waits for it briefly.
 func (e *Env) DoTracked(t *testing.T, req *http.Request) (*Result, Request) {
 	t.Helper()
 
@@ -84,8 +77,6 @@ func (e *Env) DoTracked(t *testing.T, req *http.Request) (*Result, Request) {
 	return result, tracked
 }
 
-// findRequest returns the first completed request for method and url, with
-// the started event of the same request.
 func findRequest(received []events.Event, method, url string) (Request, bool) {
 	started := map[uint64]events.RequestStarted{}
 

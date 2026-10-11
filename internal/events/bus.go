@@ -5,10 +5,6 @@ import (
 	"sync/atomic"
 )
 
-// Bus fans events out to every subscriber. Publish never blocks: each
-// subscriber has its own buffer, and an event that does not fit is dropped and
-// counted for that subscriber only. Reporting is a presentation concern and
-// must never slow down proxied traffic.
 type Bus struct {
 	mu          sync.RWMutex
 	closed      bool
@@ -19,7 +15,6 @@ func NewBus() *Bus {
 	return &Bus{subscribers: map[*Subscription]struct{}{}}
 }
 
-// Publish delivers event to every current subscriber without blocking.
 func (b *Bus) Publish(event Event) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -29,9 +24,6 @@ func (b *Bus) Publish(event Event) {
 	}
 }
 
-// Subscribe registers a subscriber whose channel buffers up to buffer events.
-// Events published before the call are not replayed. Subscribing to a closed
-// bus returns a subscription whose channel is already closed.
 func (b *Bus) Subscribe(buffer int) *Subscription {
 	subscription := &Subscription{
 		bus:    b,
@@ -52,8 +44,6 @@ func (b *Bus) Subscribe(buffer int) *Subscription {
 	return subscription
 }
 
-// Close closes every subscription. Later events are discarded. It is safe to
-// call more than once.
 func (b *Bus) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -83,26 +73,20 @@ func (b *Bus) unsubscribe(subscription *Subscription) {
 	close(subscription.events)
 }
 
-// Subscription is one subscriber's view of the bus.
 type Subscription struct {
 	bus     *Bus
 	events  chan Event
 	dropped atomic.Uint64
 }
 
-// Events returns the channel events arrive on. It is closed when the
-// subscription or the bus is closed.
 func (s *Subscription) Events() <-chan Event {
 	return s.events
 }
 
-// Dropped returns how many events did not fit into the buffer.
 func (s *Subscription) Dropped() uint64 {
 	return s.dropped.Load()
 }
 
-// Close stops delivery and closes the events channel. It is safe to call more
-// than once and after the bus is closed.
 func (s *Subscription) Close() {
 	s.bus.unsubscribe(s)
 }

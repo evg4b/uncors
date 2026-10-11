@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-// TrackingFs wraps an afero.Fs and records the files opened through it, and
-// counts those not closed yet, so tests can detect leaked file handles.
 type TrackingFs struct {
 	afero.Fs
 
@@ -23,12 +21,10 @@ func NewTrackingFs(fs afero.Fs) *TrackingFs {
 	return &TrackingFs{Fs: fs}
 }
 
-// OpenFiles returns the number of files that are still open.
 func (f *TrackingFs) OpenFiles() int64 {
 	return f.open.Load()
 }
 
-// Opened returns the names of every open attempt, successful or not.
 func (f *TrackingFs) Opened() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -12,6 +12,17 @@ import (
 
 const expectedAllowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
 
+func corsHeaders(origin, allowHeaders, allowMethods string) http.Header {
+	return http.Header{
+		headers.AccessControlAllowOrigin:      []string{origin},
+		headers.AccessControlAllowCredentials: []string{"true"},
+		headers.AccessControlAllowHeaders:     []string{allowHeaders},
+		headers.AccessControlAllowMethods:     []string{allowMethods},
+		headers.AccessControlMaxAge:           []string{"86400"},
+		headers.AccessControlExposeHeaders:    []string{"*"},
+	}
+}
+
 func TestWriteCorsHeaders(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -20,30 +31,16 @@ func TestWriteCorsHeaders(t *testing.T) {
 		expected http.Header
 	}{
 		{
-			name:   "Empty headers without origin",
-			header: http.Header{},
-			origin: "",
-			expected: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			name:     "Empty headers without origin",
+			header:   http.Header{},
+			origin:   "",
+			expected: corsHeaders("*", "*", expectedAllowMethods),
 		},
 		{
-			name:   "Empty headers with origin",
-			header: http.Header{},
-			origin: hosts.Localhost.HTTPPort(4000).String(),
-			expected: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000).String()},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			name:     "Empty headers with origin",
+			header:   http.Header{},
+			origin:   hosts.Localhost.HTTPPort(4000).String(),
+			expected: corsHeaders(hosts.Localhost.HTTPPort(4000).String(), "*", expectedAllowMethods),
 		},
 		{
 			name: "Override existing headers",
@@ -52,15 +49,8 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowCredentials: []string{"false"},
 				headers.AccessControlAllowMethods:     []string{"GET, OPTIONS"},
 			},
-			origin: "",
-			expected: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			origin:   "",
+			expected: corsHeaders("*", "*", expectedAllowMethods),
 		},
 		{
 			name: "Do not change existing headers",
@@ -98,58 +88,30 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 		expectedHeaders http.Header
 	}{
 		{
-			name:      "Empty request headers",
-			reqHeader: http.Header{},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			name:            "Empty request headers",
+			reqHeader:       http.Header{},
+			expectedHeaders: corsHeaders("*", "*", expectedAllowMethods),
 		},
 		{
 			name: "With Origin header",
 			reqHeader: http.Header{
 				headers.Origin: []string{hosts.Localhost.HTTPPort(4000).String()},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Localhost.HTTPPort(4000).String()},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders(hosts.Localhost.HTTPPort(4000).String(), "*", expectedAllowMethods),
 		},
 		{
 			name: "With AccessControlRequestHeaders",
 			reqHeader: http.Header{
 				headers.AccessControlRequestHeaders: []string{testAllowHeaders},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{testAllowHeaders},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders("*", testAllowHeaders, expectedAllowMethods),
 		},
 		{
 			name: "With AccessControlRequestMethod",
 			reqHeader: http.Header{
 				headers.AccessControlRequestMethod: []string{"POST"},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"POST"},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders("*", "*", "POST"),
 		},
 		{
 			name: "With all request headers",
@@ -158,14 +120,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.AccessControlRequestHeaders: []string{xCustomHeader},
 				headers.AccessControlRequestMethod:  []string{"PUT"},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Github.HTTPS().String()},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{xCustomHeader},
-				headers.AccessControlAllowMethods:     []string{"PUT"},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders(hosts.Github.HTTPS().String(), xCustomHeader, "PUT"),
 		},
 		{
 			name: "Overwrite existing response headers",
@@ -173,14 +128,7 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.Origin:                     []string{hosts.Example.HTTP().String()},
 				headers.AccessControlRequestMethod: []string{"DELETE"},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{hosts.Example.HTTP().String()},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{"DELETE"},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders(hosts.Example.HTTP().String(), "*", "DELETE"),
 		},
 		{
 			name: "Ignore unrelated request headers",
@@ -190,28 +138,14 @@ func TestWriteCorsHeadersForOptions(t *testing.T) {
 				headers.UserAgent:   []string{"Mozilla/5.0"},
 				headers.ContentType: []string{"application/json"},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"http://localhost:3000"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"*"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders("http://localhost:3000", "*", expectedAllowMethods),
 		},
 		{
 			name: "Partial request headers with some defaults",
 			reqHeader: http.Header{
 				headers.AccessControlRequestHeaders: []string{"Authorization, Content-Type"},
 			},
-			expectedHeaders: http.Header{
-				headers.AccessControlAllowOrigin:      []string{"*"},
-				headers.AccessControlAllowCredentials: []string{"true"},
-				headers.AccessControlAllowHeaders:     []string{"Authorization, Content-Type"},
-				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
-				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"*"},
-			},
+			expectedHeaders: corsHeaders("*", "Authorization, Content-Type", expectedAllowMethods),
 		},
 	}
 

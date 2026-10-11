@@ -99,8 +99,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 	return h.openIndexFile()
 }
 
-// openIndexFile opens the index file. On error the returned file, when not nil,
-// is still open and must be closed by the caller.
+// On error the returned file, when not nil, is still open.
 func (h *Middleware) openIndexFile() (afero.File, os.FileInfo, error) {
 	if len(h.index) == 0 {
 		return nil, nil, errNotHandled

@@ -51,6 +51,18 @@ func TestCacheMiddleware(t *testing.T) {
 		return nil
 	})
 
+	serveFiveTimes := func(t *testing.T, handler contracts.Handler, method, path string) {
+		t.Helper()
+
+		testutils.Times(5, func(_ int) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), method, path, nil)
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+			assert.Equal(t, expectedHeader, recorder.Header())
+			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
+		})
+	}
+
 	t.Run("should not call cached response just one time for", func(t *testing.T) {
 		tests := []struct {
 			name       string
@@ -107,16 +119,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
-				testutils.Times(5, func(_ int) {
-					recorder := httptest.NewRecorder()
-					rec := server.NewResponseRecorder(recorder)
-					require.NoError(t, wrappedHandler.ServeHTTP(
-						rec,
-						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
-					))
-					assert.Equal(t, expectedHeader, recorder.Header())
-					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-				})
+				serveFiveTimes(t, wrappedHandler, testCase.method, testCase.path)
 
 				assert.Equal(t, 1, testHandler.Count())
 			})
@@ -173,16 +176,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
-				testutils.Times(5, func(_ int) {
-					recorder := httptest.NewRecorder()
-					rec := server.NewResponseRecorder(recorder)
-					require.NoError(t, wrappedHandler.ServeHTTP(
-						rec,
-						httptest.NewRequestWithContext(t.Context(), testCase.method, testCase.path, nil),
-					))
-					assert.Equal(t, expectedHeader, recorder.Header())
-					assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-				})
+				serveFiveTimes(t, wrappedHandler, testCase.method, testCase.path)
 
 				assert.Equal(t, 5, testHandler.Count())
 			})
@@ -216,7 +210,6 @@ func TestCacheMiddleware(t *testing.T) {
 	})
 
 	t.Run("should not share cached responses between ports of one host", func(t *testing.T) {
-		// Mappings on different ports share one store per configuration generation.
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
 			cache.WithMethods([]string{http.MethodGet}),
@@ -248,8 +241,7 @@ func TestCacheMiddleware(t *testing.T) {
 			name    string
 			url     string
 			wantErr error
-			// serve writes a partial response; cancel cancels the request context.
-			serve func(writer contracts.ResponseWriter, cancel context.CancelFunc) error
+			serve   func(writer contracts.ResponseWriter, cancel context.CancelFunc) error
 		}{
 			{
 				name:    "handler failed",

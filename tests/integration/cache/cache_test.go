@@ -33,9 +33,7 @@ func TestCacheMiddleware(t *testing.T) {
 	t.Run("cached path is served from cache after warm-up", func(t *testing.T) {
 		url := env.URL("cache.local", "/cached/resource")
 
-		// Ristretto's Set is asynchronous, so the entry becomes visible shortly
-		// after the first miss. Poll until a request is served from cache
-		// (backend count unchanged), proving a cache hit.
+		// Ristretto's Set is asynchronous.
 		require.Eventually(t, func() bool {
 			before := backend.Count()
 

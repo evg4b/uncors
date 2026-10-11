@@ -32,11 +32,6 @@ const (
 	proxyShutdownWait = 5 * time.Second
 )
 
-// bootProxy generates a fresh dev CA, writes cfg to the test filesystem, loads
-// it back through config.LoadConfiguration (so it is normalised and validated
-// exactly as in production) and serves it with an engine. No CLI or frontend
-// is involved; everything the engine reports is recorded from the bus.
-// Returns the CA that the client must trust to complete TLS handshakes.
 func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certificate, *eventRecorder) {
 	t.Helper()
 
@@ -81,9 +76,8 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certi
 	return caCert, recorder
 }
 
-// marshalConfig serialises cfg to YAML. Inline scripts are trimmed first:
-// gopkg.in/yaml.v3 emits a string starting with a newline as a "|4" block
-// scalar whose content indentation does not parse back.
+// Scripts are trimmed: yaml.v3 emits a leading newline as a "|4" block scalar
+// that does not parse back.
 func marshalConfig(t *testing.T, cfg *config.UncorsConfig) []byte {
 	t.Helper()
 
@@ -105,7 +99,6 @@ func marshalConfig(t *testing.T, cfg *config.UncorsConfig) []byte {
 	return data
 }
 
-// waitForMappings blocks until every mapped port is accepting TCP connections.
 func waitForMappings(t *testing.T, cfg *config.UncorsConfig) {
 	t.Helper()
 

@@ -23,8 +23,6 @@ var (
 
 const UncorsTestVersion = "v1.2.3"
 
-// SetupBin builds the uncors binary once per test binary. Call it from TestMain
-// of any package that drives uncors as a subprocess.
 func SetupBin(_ *testing.M) {
 	compile.Do(func() {
 		//nolint:usetesting // intentional: binary lifetime must span all tests, not one subtest

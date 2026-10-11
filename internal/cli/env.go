@@ -10,14 +10,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Env is what a command needs from the process it runs in.
 type Env struct {
 	Fs      afero.Fs
 	Stdout  io.Writer
 	Args    []string
 	Version string
-	// Logger receives diagnostics. Nil discards them.
-	Logger *slog.Logger
+	Logger  *slog.Logger
 }
 
 func (e Env) usage(flags *pflag.FlagSet) {

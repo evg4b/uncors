@@ -25,19 +25,16 @@ const (
 	defaultCommonName   = "UNCORS Local Development Root CA"
 	defaultCountry      = "US"
 
-	expirationWarningThreshold = 7 * 24 * time.Hour // 7 days
+	expirationWarningThreshold = 7 * 24 * time.Hour
 	hoursInDay                 = 24
 )
 
-// CAConfig represents configuration for CA certificate generation.
 type CAConfig struct {
 	ValidityDays int
 	OutputDir    string
 	Fs           afero.Fs
 }
 
-// GenerateCA generates a new CA certificate and private key.
-// Returns the paths to the generated certificate and key files.
 func GenerateCA(config CAConfig) (string, string, error) {
 	privateKey, certDER, err := generateCACertificate(config.ValidityDays)
 	if err != nil {
@@ -62,7 +59,6 @@ func GenerateCA(config CAConfig) (string, string, error) {
 	return certPath, keyPath, nil
 }
 
-// generateCACertificate generates a CA certificate and returns the private key and certificate DER bytes.
 func generateCACertificate(validityDays int) (*rsa.PrivateKey, []byte, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
@@ -100,7 +96,6 @@ func generateCACertificate(validityDays int) (*rsa.PrivateKey, []byte, error) {
 	return privateKey, certDER, nil
 }
 
-// writeCertificateFile writes the certificate to a file in PEM format.
 func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string, error) {
 	certPath := filepath.Join(outputDir, CACertFileName)
 
@@ -118,7 +113,6 @@ func writeCertificateFile(fs afero.Fs, outputDir string, certDER []byte) (string
 	return certPath, nil
 }
 
-// writePrivateKeyFile writes the private key to a file in PEM format.
 func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateKey) (string, error) {
 	keyPath := filepath.Join(outputDir, CAKeyFileName)
 
@@ -143,7 +137,6 @@ func writePrivateKeyFile(fs afero.Fs, outputDir string, privateKey *rsa.PrivateK
 	return keyPath, nil
 }
 
-// LoadCA loads CA certificate and private key from files.
 func LoadCA(fs afero.Fs, certPath, keyPath string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	certPEM, err := afero.ReadFile(fs, certPath)
 	if err != nil {
@@ -178,8 +171,6 @@ func LoadCA(fs afero.Fs, certPath, keyPath string) (*x509.Certificate, *rsa.Priv
 	return cert, privateKey, nil
 }
 
-// CheckExpiration checks if certificate expires within the given duration.
-// Returns true if certificate expires soon, along with the time until expiration.
 func CheckExpiration(cert *x509.Certificate, threshold time.Duration) (bool, time.Duration) {
 	timeLeft := time.Until(cert.NotAfter)
 	expiresSoon := timeLeft < threshold
@@ -187,7 +178,6 @@ func CheckExpiration(cert *x509.Certificate, threshold time.Duration) (bool, tim
 	return expiresSoon, timeLeft
 }
 
-// CheckCAExpiration checks if the CA certificate is expiring soon and logs a warning.
 func CheckCAExpiration(cert *x509.Certificate) error {
 	expiresSoon, timeLeft := CheckExpiration(cert, expirationWarningThreshold)
 	if !expiresSoon {

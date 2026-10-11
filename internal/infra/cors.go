@@ -8,7 +8,7 @@ import (
 
 const (
 	allowMethods = "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
-	maxAge       = "86400" // 24 hours in seconds
+	maxAge       = "86400"
 )
 
 func WriteCorsHeaders(header http.Header, origin string) {
@@ -37,9 +37,7 @@ var defaultValues = map[string]string{
 	headers.AccessControlAllowMethods: allowMethods,
 }
 
-// WriteCorsHeadersForOptions writes CORS headers for OPTIONS preflight requests
-// using request headers with fallback to defaults.
-func WriteCorsHeadersForOptions(respHeader http.Header, reqHeader http.Header) {
+func WriteCorsHeadersForOptions(respHeader, reqHeader http.Header) {
 	for respKey, reqKey := range mapping {
 		if value := reqHeader.Get(reqKey); value != "" {
 			respHeader.Set(respKey, value)

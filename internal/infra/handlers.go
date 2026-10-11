@@ -10,7 +10,6 @@ import (
 
 var ErrResponseNotCasted = errors.New("received incorrect response writer type")
 
-// MiddlewareFunc adapts an ordinary func into a Middleware.
 type MiddlewareFunc func(contracts.Handler) contracts.Handler
 
 func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {

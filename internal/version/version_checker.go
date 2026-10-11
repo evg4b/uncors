@@ -23,8 +23,6 @@ func WithHTTPClient(client contracts.HTTPClient) Option {
 	}
 }
 
-// WithCurrentVersion sets the running version. A development build ("x.x.x")
-// or a version that does not parse disables the check.
 func WithCurrentVersion(rawVersion string) Option {
 	return func(checker *Checker) {
 		if strings.EqualFold(rawVersion, "x.x.x") {
@@ -50,7 +48,6 @@ func NewVersionChecker(options ...Option) *Checker {
 	return helpers.ApplyOptions(&Checker{}, options)
 }
 
-// Current returns the running version as the checker compares it.
 func (checker *Checker) Current() string {
 	if checker.currentVersion == nil {
 		return ""

@@ -12,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,13 +30,11 @@ func TestTLS(t *testing.T) {
 
 	t.Run("client trusting the proxy CA completes the handshake", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/")))
-		defer testutils.Close(t, result.Response.Body)
 
-		body, err := io.ReadAll(result.Response.Body)
-		require.NoError(t, err)
+		body := result.BodyString()
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "secure", string(body))
+		assert.Equal(t, "secure", body)
 		require.NotNil(t, result.Response.TLS, "response must have travelled over TLS")
 		assert.True(t, result.Response.TLS.HandshakeComplete)
 	})

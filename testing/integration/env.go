@@ -15,24 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Env is the wired test environment: a recording backend, an in-process proxy
-// engine (no CLI, no frontend) whose events are recorded, and a client that
-// trusts the proxy's CA and resolves mapped hosts in-memory.
-//
-// Every mapping is reached through its real From hostname (never a raw loopback
-// IP): the harness assigns each mapping a free port, registers the hostname in
-// the in-memory resolver, and the client dials the host transparently to the
-// loopback proxy with the Host header and TLS SNI intact.
 type Env struct {
-	// Client is an HTTP client pre-configured to trust the proxy's dev CA and
-	// to resolve every mapped host to the in-process proxy.
-	Client *http.Client
-	// Backend is the recording upstream server.
+	Client  *http.Client
 	Backend *Backend
-	// Hosts is the in-memory resolver mapping every From host to the loopback
-	// proxy. Use Hosts.DialContext when building a custom client (e.g. one that
-	// does not trust the proxy CA) so it can still reach mapped hosts by name.
-	Hosts *Hosts
+	Hosts   *Hosts
 
 	routes []route
 	events *eventRecorder
@@ -45,15 +31,12 @@ type route struct {
 	scheme  string
 }
 
-// Option customises the Env.
 type Option func(*envOptions)
 
 type envOptions struct {
 	files map[string]string
 }
 
-// WithFile seeds the proxy filesystem with a file at path, used for static
-// file serving, file-backed mocks, or Lua scripts loaded from disk.
 func WithFile(path, content string) Option {
 	return func(o *envOptions) {
 		if o.files == nil {
@@ -64,12 +47,6 @@ func WithFile(path, content string) Option {
 	}
 }
 
-// New wires backend → proxy → client and registers all teardown with t.Cleanup.
-//
-// cfg is the complete proxy configuration. Every Mapping.From must be a named
-// host (exact like "api.example.local" or a {placeholder} pattern) without a
-// port: the harness assigns a free port and registers the host so the client
-// can reach it via Env.URL. Mapping.To is normally backend.AsHost().
 func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Option) *Env {
 	t.Helper()
 
@@ -115,12 +92,6 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 	return env
 }
 
-// URL builds an absolute request URL for the mapping whose From host matches
-// the given concrete hostname. For a {placeholder} mapping pass the resolved
-// subdomain (e.g. "acme.api.local"); for an exact mapping pass that host.
-//
-// Note: the query string is not appended here (the path joiner would encode
-// "?"). Append "?key=value" to the returned URL when a query is needed.
 func (e *Env) URL(host, path string) string {
 	matched := e.routeFor(host)
 
@@ -134,8 +105,6 @@ func (e *Env) URL(host, path string) string {
 	return testutils.JoinPath(scheme+"://"+authority, path)
 }
 
-// PortFor returns the listener port assigned to the mapping whose From host
-// matches the given concrete hostname.
 func (e *Env) PortFor(host string) int {
 	return e.routeFor(host).port
 }

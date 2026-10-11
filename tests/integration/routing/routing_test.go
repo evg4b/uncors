@@ -10,7 +10,6 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,11 +41,9 @@ func TestRouting(t *testing.T) {
 
 	t.Run("forwarded request matches backend and response snapshots", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("routing.local", "/api/users")))
-		defer testutils.Close(t, result.Response.Body)
 
 		require.Equal(t, http.StatusOK, result.Response.StatusCode)
 
-		// Snapshot what the backend received and what the client got back.
 		snaps.MatchSnapshot(t, result.BackendRequest(t))
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
@@ -57,13 +54,11 @@ func TestRouting(t *testing.T) {
 			result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("routing.local", "/ping")))
 			require.Equal(t, http.StatusOK, result.Response.StatusCode)
 			assert.True(t, result.HasBackendRequest())
-			testutils.Close(t, result.Response.Body)
 		}
 	})
 
 	t.Run("mocked route never reaches backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("routing.local", "/health")))
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "healthy", result.BodyString())

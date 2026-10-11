@@ -12,13 +12,6 @@ import (
 
 const loopback = "127.0.0.1"
 
-// Hosts is an in-memory per-test /etc/hosts equivalent. It lets tests send
-// requests to real domain names (so Host and TLS SNI carry that name) while
-// the underlying TCP connection is redirected to the loopback proxy.
-//
-// Patterns follow uncors host syntax: exact ("api.example.local"),
-// "*.suffix" wildcards, or {key} placeholders — both wildcard forms match a
-// single DNS label.
 type Hosts struct {
 	mu      sync.RWMutex
 	entries []hostEntry
@@ -33,7 +26,6 @@ func newHosts() *Hosts {
 	return &Hosts{}
 }
 
-// Set maps a host pattern to an IP address.
 func (h *Hosts) Set(pattern, ip string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -41,8 +33,6 @@ func (h *Hosts) Set(pattern, ip string) {
 	h.entries = append(h.entries, hostEntry{match: compileHostPattern(pattern), ip: ip})
 }
 
-// DialContext rewrites the connection target for registered hosts to their
-// mapped IP, preserving the port. Unregistered hosts dial normally.
 func (h *Hosts) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	dialer := &net.Dialer{}
 

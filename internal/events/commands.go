@@ -1,15 +1,17 @@
 package events
 
-// Command is a request from a frontend to the supervisor that runs the proxy.
 type Command interface {
 	isCommand()
 }
 
-// Restart asks to reload the configuration file and restart the proxy with it.
 type Restart struct{}
 
-// Shutdown asks to stop the proxy and exit.
 type Shutdown struct{}
 
-func (Restart) isCommand()  {}
-func (Shutdown) isCommand() {}
+func (Restart) isCommand() {
+	// Seals Command: only types in this package implement it.
+}
+
+func (Shutdown) isCommand() {
+	// Seals Command: only types in this package implement it.
+}

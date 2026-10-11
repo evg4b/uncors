@@ -28,7 +28,7 @@ type Replacer struct {
 	pattern     string
 	hooks       map[string]hook
 	scheme      string
-	subexpIndex map[string]int // precomputed name→index, built once at construction
+	subexpIndex map[string]int
 }
 
 func NewReplacer(source, target string) (*Replacer, error) {
@@ -71,7 +71,6 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		replacer.hooks["scheme"] = schemeHookFactory(replacer.scheme)
 	}
 
-	// Build name→index map once so Replace doesn't call SubexpIndex (O(n)) per group per call.
 	replacer.subexpIndex = make(map[string]int, len(replacer.regexp.SubexpNames()))
 	for i, name := range replacer.regexp.SubexpNames() {
 		if name != "" {

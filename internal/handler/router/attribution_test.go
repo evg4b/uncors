@@ -1,10 +1,8 @@
 package router_test
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -15,24 +13,18 @@ import (
 	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tracking"
-	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// attributionRouter serves one mapping that exercises every component that can
-// claim a request; the upstream always answers 200.
 func attributionRouter(t *testing.T) http.Handler {
 	t.Helper()
 
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/assets/app.js": "app",
 	})
-
-	generation := newGeneration(t, fs)
 
 	mappings := config.Mappings{
 		{
@@ -52,24 +44,11 @@ func attributionRouter(t *testing.T) http.Handler {
 		},
 	}
 
-	httpClient := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			Request:    req,
-			StatusCode: http.StatusOK,
-			Header:     http.Header{},
-			Body:       io.NopCloser(strings.NewReader("upstream")),
-		}, nil
-	})
-
 	store := cache.NewRistrettoCache(1<<20, time.Minute)
 
 	t.Cleanup(func() { testutils.Close(t, store) })
 
-	routerInstance, err := router.NewRouter(
-		mappings,
-		router.ForRouterWithDefaultHandler(
-			proxyFactory(t, urlreplacer.NewURLReplacerFactory(mappings), httpClient),
-		),
+	return newRouter(t, fs, mappings, upstream(t, http.StatusOK, "upstream"),
 		router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithGlobs(globs),
@@ -77,15 +56,9 @@ func attributionRouter(t *testing.T) http.Handler {
 				cache.WithCacheStorage(store),
 			)
 		}),
-		router.WithFactory(generation),
 	)
-	require.NoError(t, err)
-
-	return routerInstance
 }
 
-// serveTracked serves one request inside a tracking scope, as the server
-// does, and returns the two events it produced.
 func serveTracked(
 	t *testing.T,
 	handler http.Handler,

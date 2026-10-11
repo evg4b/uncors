@@ -9,19 +9,14 @@ import (
 )
 
 const (
-	harVersion     = "1.2"
-	creatorName    = "uncors"
-	creatorVersion = "dev"
-	// entryChanBuffer is the capacity of the entry channel.
-	// Senders never block as long as fewer than this many entries are in-flight.
+	harVersion      = "1.2"
+	creatorName     = "uncors"
+	creatorVersion  = "dev"
 	entryChanBuffer = 4096
-	// harFileMode is the permission bits used when writing the HAR file.
-	harFileMode = 0o600
-	// harDirMode is the permission bits used when creating parent directories.
-	harDirMode = 0o755
+	harFileMode     = 0o600
+	harDirMode      = 0o755
 )
 
-// Writer asynchronously appends HAR entries to a file.
 type Writer struct {
 	path    string
 	entries chan Entry
@@ -32,7 +27,6 @@ type Writer struct {
 	all     []Entry
 }
 
-// NewWriter creates a Writer that records entries to path.
 func NewWriter(path string) *Writer {
 	writer := &Writer{
 		path:    path,
@@ -47,7 +41,6 @@ func NewWriter(path string) *Writer {
 	return writer
 }
 
-// AddEntry enqueues an entry for writing.
 func (w *Writer) AddEntry(entry Entry) {
 	select {
 	case w.entries <- entry:
@@ -56,7 +49,6 @@ func (w *Writer) AddEntry(entry Entry) {
 	}
 }
 
-// Close flushes all pending entries to disk and stops the background goroutine.
 func (w *Writer) Close() error {
 	w.once.Do(func() {
 		close(w.done)
@@ -72,8 +64,6 @@ func (w *Writer) run() {
 	for {
 		select {
 		case entry := <-w.entries:
-			// Batch: append the triggering entry plus everything else already
-			// queued, then rewrite the file once instead of once per entry.
 			w.append(entry)
 			w.drain()
 			w.flush()
@@ -87,7 +77,6 @@ func (w *Writer) run() {
 	}
 }
 
-// drain appends every entry currently queued without blocking.
 func (w *Writer) drain() {
 	for {
 		select {

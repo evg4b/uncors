@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/dustin/go-humanize"
 	"github.com/go-http-utils/headers"
@@ -35,9 +34,6 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	fmt.Fprintln(writer)
 	fmt.Fprintf(writer, "An error occurred: %s\n", err)
 	fmt.Fprintln(writer)
-
-	fmt.Fprint(writer, "Stack trace: ")
-	fmt.Fprintln(writer, string(debug.Stack()))
 
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// saveLogger restores the slog default, which main replaces, after the test.
 func saveLogger(t *testing.T) {
 	t.Helper()
 
@@ -19,7 +18,6 @@ func saveLogger(t *testing.T) {
 	t.Cleanup(func() { slog.SetDefault(orig) })
 }
 
-// setArgs temporarily overrides os.Args and restores it via t.Cleanup.
 func setArgs(t *testing.T, args []string) {
 	t.Helper()
 

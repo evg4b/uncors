@@ -33,35 +33,19 @@ func TestNewGenerateCertsCommand(t *testing.T) {
 }
 
 func TestGenerateCertsCommand_DefineFlags(t *testing.T) {
-	t.Run("should define validity-days flag", func(t *testing.T) {
-		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
-		)
-		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	cmd := commands.NewGenerateCertsCommand(
+		commands.WithFs(afero.NewOsFs()),
+		commands.WithOutput(mocks.NoopOutput()),
+	)
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
-		cmd.DefineFlags(flags, version)
+	cmd.DefineFlags(flags, version)
 
-		flag := flags.Lookup("validity-days")
-		assert.NotNil(t, flag)
-		assert.Equal(t, "365", flag.DefValue)
-	})
-
-	t.Run("should define force flag", func(t *testing.T) {
-		fs := afero.NewOsFs()
-		cmd := commands.NewGenerateCertsCommand(
-			commands.WithFs(fs),
-			commands.WithOutput(mocks.NoopOutput()),
-		)
-		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-
-		cmd.DefineFlags(flags, version)
-
-		flag := flags.Lookup("force")
-		assert.NotNil(t, flag)
-		assert.Equal(t, "false", flag.DefValue)
-	})
+	for name, defValue := range map[string]string{"validity-days": "365", "force": "false"} {
+		flag := flags.Lookup(name)
+		require.NotNil(t, flag, name)
+		assert.Equal(t, defValue, flag.DefValue, name)
+	}
 }
 
 func TestGenerateCertsCommand_Execute(t *testing.T) {

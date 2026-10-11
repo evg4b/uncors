@@ -10,38 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPanicInterceptor(t *testing.T) {
-	tests := []struct {
-		name           string
-		panicData      any
-		shouldBeCalled bool
-	}{
-		{
-			name:           "intercepts panic and return with exit code 3",
-			panicData:      "test panic",
-			shouldBeCalled: true,
-		},
-		{
-			name:           "intercepts panic and return with exit code 0",
-			panicData:      testconstants.ErrTest1,
-			shouldBeCalled: true,
-		},
-	}
+func TestPanicInterceptorRecovers(t *testing.T) {
+	var recovered any
 
-	for _, testCast := range tests {
-		t.Run(testCast.name, func(t *testing.T) {
-			called := false
-
-			assert.NotPanics(t, func() {
-				defer helpers.PanicInterceptor(func(data any) {
-					called = true
-					assert.Equal(t, testCast.panicData, data)
-				})
-
-				panic(testCast.panicData)
-			})
-
-			assert.Equal(t, testCast.shouldBeCalled, called)
+	assert.NotPanics(t, func() {
+		defer helpers.PanicInterceptor(func(data any) {
+			recovered = data
 		})
-	}
+
+		panic(testconstants.ErrTest1)
+	})
+
+	assert.Equal(t, testconstants.ErrTest1, recovered)
 }

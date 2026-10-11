@@ -18,8 +18,6 @@ import (
 
 const closedPort = 1
 
-// newEnv serves one mapping that exercises every component that can answer a
-// request, plus a mapping whose upstream refuses connections.
 func newEnv(t *testing.T) *integration.Env {
 	t.Helper()
 

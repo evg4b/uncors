@@ -40,10 +40,6 @@ func (h host) NoScheme() urlt.Host {
 	return urlt.Host{Hostname: string(h)}
 }
 
-// Parse builds a urlt.Host from a raw string. It is intended for tests that
-// need to construct a mapping host from a literal. Invalid input (including an
-// empty string) yields the zero Host, which is convenient for exercising
-// validation paths.
 func Parse(raw string) urlt.Host {
 	parsed, err := urlt.ParseHost(raw)
 	if err != nil {

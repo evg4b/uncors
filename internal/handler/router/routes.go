@@ -4,8 +4,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 )
 
-// registerMatchedRoutes registers routes in two passes: specific matchers first, path-only matchers second.
-// This ensures specific routes take priority over catch-all path routes in gorilla/mux.
+// gorilla/mux matches in registration order, so path-only routes go last.
 func registerMatchedRoutes[T any](
 	items []T,
 	matcher func(*T) *config.RequestMatcher,

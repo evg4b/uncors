@@ -41,8 +41,6 @@ func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
 	return value.Decode((*mappingAlias)(m))
 }
 
-// isShorthandMapping reports whether the node uses the `from: to` shorthand
-// form (a single key that is not one of the known mapping fields).
 func isShorthandMapping(value *yaml.Node) bool {
 	if value.Kind != yaml.MappingNode || len(value.Content) != 2 {
 		return false
@@ -70,8 +68,6 @@ func ValidateProxy(field, value string) error {
 		return nil
 	}
 
-	// A proxy must be an absolute URL with an explicit scheme and host
-	// (e.g. "http://localhost:8080").
 	parsed, err := url.Parse(value)
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return &ValidationError{fmt.Sprintf("%s is not a valid URL", field)}

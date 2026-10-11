@@ -101,7 +101,7 @@ func (m *TrackerWidget) Height() int {
 		return 0
 	}
 
-	return 1 + len(m.pending) // "In progress:" header + N request lines
+	return 1 + len(m.pending)
 }
 
 func (m *TrackerWidget) View() tea.View {
@@ -144,7 +144,6 @@ func (m *TrackerWidget) View() tea.View {
 	return tea.NewView(viewBuilder.String())
 }
 
-// startTicking starts the spinner unless it is already running.
 func (m *TrackerWidget) startTicking() tea.Cmd {
 	if len(m.pending) == 0 || m.ticking {
 		return nil
