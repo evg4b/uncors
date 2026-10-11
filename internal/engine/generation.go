@@ -104,7 +104,6 @@ func (g *Generation) StaticMiddleware(path string, dir config.StaticDirectory) c
 		static.WithFileSystem(afero.NewBasePathFs(g.engine.fs, dir.Dir)),
 		static.WithIndex(dir.Index),
 		static.WithPrefix(path),
-		static.WithLogger(g.engine.logger),
 	)
 }
 
@@ -124,13 +123,11 @@ func (g *Generation) MockHandler(response *config.Response) contracts.Handler {
 		mock.WithResponse(response),
 		mock.WithFileSystem(g.engine.fs),
 		mock.WithAfter(time.After),
-		mock.WithLogger(g.engine.logger),
 	)
 }
 
 func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
 	return script.NewHandler(
-		script.WithLogger(g.engine.logger),
 		script.WithScript(scriptConfig),
 		script.WithFileSystem(g.engine.fs),
 	)
@@ -140,7 +137,6 @@ func (g *Generation) ProxyHandler(mappings config.Mappings, proxyURL string) con
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
-		proxy.WithLogger(g.engine.logger),
 	)
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/script"
-	"github.com/evg4b/uncors/internal/logging"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
@@ -40,7 +39,6 @@ func serveScript(
 	t.Helper()
 
 	handler := script.NewHandler(
-		script.WithLogger(logging.Discard()),
 		script.WithScript(scriptConfig),
 		script.WithFileSystem(fs),
 	)

@@ -1,8 +1,8 @@
 package script
 
 import (
+	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -14,24 +14,28 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Handler struct {
 	script *config.Script
-	logger *slog.Logger
 	fs     afero.Fs
 }
 
 func NewHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
+	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+	request, span := telemetry.StartRequest(request, "script.serve")
+	defer span.End()
+
 	tracking.Claim(request.Context(), events.HandlerScript)
 
 	err := h.executeScript(writer, request)
 	if err != nil {
-		h.logger.Error("script handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
+		telemetry.Fail(span, err)
 
 		return err
 	}
@@ -52,7 +56,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	err := h.runScript(luaState)
+	err := h.runScript(request.Context(), luaState)
 	if err != nil {
 		return fmt.Errorf("script error: %w", err)
 	}
@@ -60,26 +64,52 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	return nil
 }
 
-func (h *Handler) runScript(luaState *lua.LState) error {
-	if h.script.Script != "" {
-		return luaState.DoString(h.script.Script)
-	}
-
-	scriptContent, err := afero.ReadFile(h.fs, h.script.File)
+func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {
+	function, err := h.compile(ctx, luaState)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrScriptFileNotFound, err.Error())
+		return err
 	}
 
-	return luaState.DoString(string(scriptContent))
+	_, span := telemetry.Start(ctx, "script.lua.execute")
+	defer span.End()
+
+	luaState.Push(function)
+
+	err = luaState.PCall(0, lua.MultRet, nil)
+	telemetry.Fail(span, err)
+
+	return err
+}
+
+func (h *Handler) compile(ctx context.Context, luaState *lua.LState) (*lua.LFunction, error) {
+	_, span := telemetry.Start(ctx, "script.lua.compile")
+	defer span.End()
+
+	source := h.script.Script
+
+	if source == "" {
+		if span.IsRecording() {
+			span.SetAttributes(attribute.String("uncors.script.file", h.script.File))
+		}
+
+		content, err := afero.ReadFile(h.fs, h.script.File)
+		if err != nil {
+			err = fmt.Errorf("%w: %s", ErrScriptFileNotFound, err.Error())
+			telemetry.Fail(span, err)
+
+			return nil, err
+		}
+
+		source = string(content)
+	}
+
+	function, err := luaState.LoadString(source)
+	telemetry.Fail(span, err)
+
+	return function, err
 }
 
 type HandlerOption = func(*Handler)
-
-func WithLogger(logger *slog.Logger) HandlerOption {
-	return func(h *Handler) {
-		h.logger = logger
-	}
-}
 
 func WithScript(script *config.Script) HandlerOption {
 	return func(h *Handler) {

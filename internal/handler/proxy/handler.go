@@ -1,12 +1,13 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -16,16 +17,18 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/go-http-utils/headers"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	logger    *slog.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	middleware := helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
+	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
@@ -34,15 +37,16 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) error {
+	request, span := telemetry.StartRequest(request, "proxy.forward")
+	defer span.End()
+
 	tracking.Claim(request.Context(), events.HandlerProxy)
 
 	err := h.handle(response, request)
 	if err != nil {
-		if request.Context().Err() != nil {
-			return err
+		if request.Context().Err() == nil {
+			telemetry.Fail(span, err)
 		}
-
-		h.logger.Error("proxy handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}
@@ -61,7 +65,7 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return fmt.Errorf("failed to create request to original source: %w", err)
 	}
 
-	originalResponse, err := h.executeQuery(originalRequest)
+	originalResponse, err := h.executeQuery(req.Context(), originalRequest)
 	if err != nil {
 		return err
 	}
@@ -126,9 +130,24 @@ func (h *Handler) makeUncorsResponse(
 
 	target.WriteHeader(original.StatusCode)
 
-	_, err = io.Copy(target, original.Body)
+	return copyBody(req.Context(), target, original.Body)
+}
+
+func copyBody(ctx context.Context, target io.Writer, body io.Reader) error {
+	_, span := telemetry.Start(ctx, "proxy.copy_body")
+	defer span.End()
+
+	written, err := io.Copy(target, body)
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Int64("uncors.proxy.body_bytes", written))
+	}
+
 	if err != nil {
-		return fmt.Errorf("failed to copy body to response: %w", err)
+		err = fmt.Errorf("failed to copy body to response: %w", err)
+		telemetry.Fail(span, err)
+
+		return err
 	}
 
 	return nil
@@ -162,10 +181,27 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 	return target, source, nil
 }
 
-func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
+func (h *Handler) executeQuery(ctx context.Context, request *http.Request) (*http.Response, error) {
+	_, span := telemetry.StartKind(ctx, "proxy.upstream", trace.SpanKindClient)
+	defer span.End()
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			semconv.HTTPRequestMethodKey.String(request.Method),
+			semconv.URLFull(helpers.LogURL(request.URL)),
+		)
+	}
+
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
+		err = fmt.Errorf("failed to execute request: %w", err)
+		telemetry.Fail(span, err)
+
+		return nil, err
+	}
+
+	if span.IsRecording() {
+		span.SetAttributes(semconv.HTTPResponseStatusCode(originalResponse.StatusCode))
 	}
 
 	return originalResponse, nil
@@ -182,11 +218,5 @@ func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) Handler
 func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	return func(m *Handler) {
 		m.http = http
-	}
-}
-
-func WithLogger(logger *slog.Logger) HandlerOption {
-	return func(m *Handler) {
-		m.logger = logger
 	}
 }

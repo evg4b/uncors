@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,7 +15,9 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var errNotHandled = errors.New("request is not handled")
@@ -25,27 +26,41 @@ type Middleware struct {
 	fs     afero.Fs
 	index  string
 	prefix string
-	logger *slog.Logger
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{logger: slog.Default()}, options)
+	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
 func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	original := request
+
+	request, span := telemetry.StartRequest(request, "static.serve")
+	defer span.End()
+
 	filePath := h.extractFilePath(request)
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.String("uncors.static.file", filePath))
+	}
 
 	file, stat, err := h.openFile(filePath)
 	defer helpers.CloseSafe(file)
 
 	if err != nil {
 		if errors.Is(err, errNotHandled) {
-			return next(writer, request)
+			if span.IsRecording() {
+				span.SetAttributes(attribute.Bool("uncors.static.fall_through", true))
+			}
+
+			// The default handler is not part of this span.
+			span.End()
+
+			return next(writer, original)
 		}
 
 		tracking.Claim(request.Context(), events.HandlerStatic)
-
-		h.logger.Error("static handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
+		telemetry.Fail(span, err)
 
 		return err
 	}
@@ -135,11 +150,5 @@ func WithIndex(index string) MiddlewareOption {
 func WithPrefix(prefix string) MiddlewareOption {
 	return func(h *Middleware) {
 		h.prefix = prefix
-	}
-}
-
-func WithLogger(logger *slog.Logger) MiddlewareOption {
-	return func(m *Middleware) {
-		m.logger = logger
 	}
 }

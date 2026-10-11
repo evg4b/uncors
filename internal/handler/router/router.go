@@ -9,6 +9,8 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var errHostNotMapped = errors.New("host not mapped")
@@ -50,7 +52,11 @@ func NewRouter(mappings config.Mappings, options ...Option) (*Router, error) {
 		instance.registerMapping(mapping)
 	}
 
-	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
+	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ contracts.ResponseWriter, request *http.Request) error {
+		if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
+			span.AddEvent("uncors.host_not_mapped", trace.WithAttributes(semconv.ServerAddress(request.Host)))
+		}
+
 		return errHostNotMapped
 	}))
 

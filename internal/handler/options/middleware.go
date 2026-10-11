@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 )
 
 type Middleware struct {
@@ -23,6 +24,9 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 
 func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
 	if strings.EqualFold(req.Method, http.MethodOptions) {
+		req, span := telemetry.StartRequest(req, "options.preflight")
+		defer span.End()
+
 		tracking.Claim(req.Context(), events.HandlerOptions)
 		m.handle(resp, req)
 

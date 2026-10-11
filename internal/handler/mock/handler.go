@@ -3,7 +3,6 @@ package mock
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -15,15 +14,17 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	response *config.Response
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
-	logger   *slog.Logger
 }
 
 const contentTypeSniffLen = 512
@@ -31,10 +32,13 @@ const contentTypeSniffLen = 512
 var ErrResponseIsNotDefined = errors.New("response is not defined")
 
 func NewMockHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
+	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+	request, span := telemetry.StartRequest(request, "mock.serve")
+	defer span.End()
+
 	tracking.Claim(request.Context(), events.HandlerMock)
 
 	if h.waitDelay(writer, request) {
@@ -43,7 +47,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		h.logger.Error("mock handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
+		telemetry.Fail(span, err)
 
 		return err
 	}
@@ -123,6 +127,12 @@ func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.
 
 		return true
 	case <-h.after(h.response.Delay):
+		if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
+			span.AddEvent("uncors.mock.delay_finished", trace.WithAttributes(
+				attribute.String("uncors.mock.delay", h.response.Delay.String()),
+			))
+		}
+
 		return false
 	}
 }

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"slices"
@@ -15,8 +16,10 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Middleware struct {
@@ -57,10 +60,7 @@ func (m *Middleware) cacheRequest(
 ) error {
 	cacheKey := m.extractCacheKey(request.Method, request.URL)
 
-	if cachedResponse := m.getCachedResponse(cacheKey); cachedResponse != nil {
-		tracking.Claim(request.Context(), events.HandlerCache)
-		m.writeCachedResponse(writer, cachedResponse)
-
+	if m.serveCached(writer, request, cacheKey) {
 		return nil
 	}
 
@@ -73,14 +73,41 @@ func (m *Middleware) cacheRequest(
 		return err
 	}
 
-	m.storeResponse(cacheKey, writer.Captured())
+	m.storeResponse(request.Context(), cacheKey, writer.Captured())
 
 	return nil
 }
 
-func (m *Middleware) storeResponse(key string, capture contracts.ResponseCapture) {
+func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contracts.Request, cacheKey string) bool {
+	ctx, span := telemetry.Start(request.Context(), "cache.lookup")
+	defer span.End()
+
+	cachedResponse := m.getCachedResponse(cacheKey)
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Bool("uncors.cache.hit", cachedResponse != nil))
+	}
+
+	if cachedResponse == nil {
+		return false
+	}
+
+	tracking.Claim(ctx, events.HandlerCache)
+	m.writeCachedResponse(writer, cachedResponse)
+
+	return true
+}
+
+func (m *Middleware) storeResponse(ctx context.Context, key string, capture contracts.ResponseCapture) {
 	if !helpers.Is2xxCode(capture.StatusCode) {
 		return
+	}
+
+	_, span := telemetry.Start(ctx, "cache.store")
+	defer span.End()
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Int("uncors.cache.body_bytes", len(capture.Body)))
 	}
 
 	headers := lo.MapToSlice(capture.Header, func(name string, values []string) contracts.CachedHeader {

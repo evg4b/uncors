@@ -10,7 +10,9 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/pkg/urlt"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const nanosecondsPerMillisecond = 1e6
@@ -39,6 +41,9 @@ func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
+	req, span := telemetry.StartRequest(req, "har.record")
+	defer span.End()
+
 	start := time.Now()
 
 	var reqBodySize int64
@@ -60,6 +65,10 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 	elapsed := time.Since(start)
 	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
 	m.writer.AddEntry(entry)
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Int64("uncors.har.request_body_bytes", reqBodySize))
+	}
 
 	return err
 }

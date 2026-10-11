@@ -14,8 +14,11 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
 const (
@@ -195,8 +198,24 @@ func (s *Server) Close() error {
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
+	requestID := s.nextID.Add(1)
 	rec := NewResponseRecorder(writer)
-	ctx, scope := tracking.Begin(request.Context(), s.publisher, s.nextID.Add(1), request)
+
+	// The span is started before the scope so the scope's context carries it.
+	ctx, span := telemetry.StartServer(request.Context(), "HTTP")
+	defer span.End()
+
+	if span.IsRecording() {
+		span.SetName("HTTP " + request.Method)
+		span.SetAttributes(
+			semconv.HTTPRequestMethodKey.String(request.Method),
+			semconv.URLFull(helpers.LogURL(request.URL)),
+			semconv.ServerAddress(request.Host),
+			attribute.Int64("uncors.request.id", int64(requestID)), //nolint:gosec // request ids never reach MaxInt64
+		)
+	}
+
+	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request)
 
 	err := handler.ServeHTTP(rec, request.WithContext(ctx))
 	if err != nil {
@@ -206,6 +225,13 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			semconv.HTTPResponseStatusCode(data.Code),
+			attribute.Bool("uncors.cancelled", data.Cancelled),
+		)
+	}
 
 	scope.Finish(data)
 }

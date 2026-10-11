@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/gorilla/mux"
@@ -22,6 +23,9 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	request, span := telemetry.StartRequest(request, "rewrite.apply")
+	defer span.End()
+
 	from := request.URL.Path
 
 	m.rewriteURL(request)
