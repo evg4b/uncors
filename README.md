@@ -34,9 +34,6 @@
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
     <img alt="Coverage" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=coverage">
   </a>
-  <a href="https://goreportcard.com/report/github.com/evg4b/uncors">
-    <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/evg4b/uncors">
-  </a>
   <a href="https://sonarcloud.io/summary/new_code?id=evg4b_uncors">
     <img alt="Reliability Rating" src="https://sonarcloud.io/api/project_badges/measure?project=evg4b_uncors&metric=reliability_rating">
   </a>
