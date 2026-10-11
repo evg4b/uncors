@@ -7,11 +7,15 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/cli"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/stretchr/testify/assert"
 )
 
-func saveLogger(t *testing.T) {
+// main sets up telemetry, which replaces the default slog logger.
+func saveTelemetry(t *testing.T) {
 	t.Helper()
+
+	t.Setenv(telemetry.EnvVar, "")
 
 	orig := slog.Default()
 
@@ -58,7 +62,7 @@ func TestHandleError_NoopOnNil(t *testing.T) {
 }
 
 func TestMain_RunUncorsVersionPath(t *testing.T) {
-	saveLogger(t)
+	saveTelemetry(t)
 	setArgs(t, []string{"uncors", "--version"})
 
 	assert.NotPanics(t, func() {
@@ -67,7 +71,7 @@ func TestMain_RunUncorsVersionPath(t *testing.T) {
 }
 
 func TestMain_GenerateCertsPath(t *testing.T) {
-	saveLogger(t)
+	saveTelemetry(t)
 	// Point HOME to a temp dir so CA certificates go there, not ~/.config/uncors.
 	t.Setenv("HOME", t.TempDir())
 	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--validity-days=7"})
@@ -78,7 +82,7 @@ func TestMain_GenerateCertsPath(t *testing.T) {
 }
 
 func TestMain_GenerateCertsHelpPath(t *testing.T) {
-	saveLogger(t)
+	saveTelemetry(t)
 	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--help"})
 
 	assert.NotPanics(t, func() {

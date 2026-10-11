@@ -19,6 +19,7 @@ import (
 	"github.com/samber/lo"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -57,6 +58,59 @@ func New(manager *HostCertManager, publisher events.Publisher) *Server {
 }
 
 func (s *Server) Start(ctx context.Context, targets []Target) error {
+	return telemetry.Run(ctx, "server.start", func(spanCtx context.Context) error {
+		return s.start(ctx, spanCtx, targets)
+	})
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return telemetry.Run(ctx, "server.shutdown", s.shutdown)
+}
+
+func (s *Server) Restart(ctx context.Context, targets []Target) error {
+	s.Add(1)
+	defer s.Done()
+
+	return telemetry.Run(ctx, "server.restart", func(ctx context.Context) error {
+		// Shutdown closes the listeners straight away and then waits for in-flight
+		// requests. A long poll or a stream can outlive that wait; it is cut off
+		// rather than left to keep the server without any listener.
+		err := s.Shutdown(ctx)
+		if err != nil {
+			s.closeInFlight(ctx, err)
+		}
+
+		return s.Start(ctx, targets)
+	})
+}
+
+func (s *Server) Wait() {
+	s.WaitGroup.Wait()
+}
+
+func (s *Server) Close() error {
+	s.mu.RLock()
+	listeners := s.listeners
+	s.mu.RUnlock()
+
+	var errs []error
+
+	for _, portListener := range listeners {
+		err := portListener.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+// ctx is the listeners' base context. spanCtx carries the server.start span,
+// which only the listen spans nest under: TLS handshakes and requests derive
+// their contexts from the base one.
+func (s *Server) start(ctx, spanCtx context.Context, targets []Target) error {
+	trace.SpanFromContext(spanCtx).SetAttributes(attribute.Int("uncors.listeners", len(targets)))
+
 	s.mu.Lock()
 	s.listeners = lo.Map(targets, func(target Target, _ int) *PortListener {
 		portCtx, portCtxCancel := context.WithCancel(ctx)
@@ -96,18 +150,30 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 
 			var once sync.Once
 
+			_, span := telemetry.Start(spanCtx, "server.listen")
+			span.SetAttributes(
+				semconv.ServerAddress(srv.target.Address),
+				attribute.Bool("uncors.tls", srv.target.EnableTLS),
+			)
+
+			ready := func() {
+				span.End()
+				launchWaitGroup.Done()
+			}
+
 			err := srv.Listen(ctx, func() {
-				once.Do(launchWaitGroup.Done)
+				once.Do(ready)
 			})
 
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				telemetry.Fail(span, err)
 				launchErrorsMu.Lock()
 
 				launchErrs = append(launchErrs, err)
 				launchErrorsMu.Unlock()
 			}
 			// onReady is never called on bind failure; after it fired this is a no-op.
-			once.Do(launchWaitGroup.Done)
+			once.Do(ready)
 		}(server)
 	}
 
@@ -120,7 +186,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 	return err
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
+func (s *Server) shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
 	defer cancel()
 
@@ -154,45 +220,16 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-func (s *Server) Restart(ctx context.Context, targets []Target) error {
-	s.Add(1)
-	defer s.Done()
+func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("uncors.inflight_closed")
+	telemetry.Warn(ctx, "in-flight requests did not finish before restart, closing them",
+		slog.String("error", shutdownErr.Error()))
 
-	// Shutdown closes the listeners straight away and then waits for in-flight
-	// requests. A long poll or a stream can outlive that wait; it is cut off
-	// rather than left to keep the server without any listener.
-	err := s.Shutdown(ctx)
+	err := s.Close()
 	if err != nil {
-		slog.Warn("server: in-flight requests did not finish before restart, closing them", "error", err)
-
-		closeErr := s.Close()
-		if closeErr != nil {
-			slog.Error("server: failed to close connections before restart", "error", closeErr)
-		}
+		telemetry.Fail(span, err)
 	}
-
-	return s.Start(ctx, targets)
-}
-
-func (s *Server) Wait() {
-	s.WaitGroup.Wait()
-}
-
-func (s *Server) Close() error {
-	s.mu.RLock()
-	listeners := s.listeners
-	s.mu.RUnlock()
-
-	var errs []error
-
-	for _, portListener := range listeners {
-		err := portListener.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errors.Join(errs...)
 }
 
 func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {

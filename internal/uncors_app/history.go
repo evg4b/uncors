@@ -1,9 +1,12 @@
 package uncorsapp
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 	"sync"
+
+	"github.com/evg4b/uncors/internal/telemetry"
 )
 
 const (
@@ -16,7 +19,7 @@ type history struct {
 }
 
 func newHistory() *history {
-	slog.Debug("Initializing new history")
+	telemetry.Debug(context.Background(), "Initializing new history")
 
 	return &history{
 		lines: make([]string, 0, historyInitialCapacity),
@@ -31,7 +34,10 @@ func (h *history) AppendLine(line string) {
 	newLines := strings.Split(line, "\n")
 	h.lines = append(h.lines, newLines...)
 
-	slog.Debug("appended lines to history", "lines", len(newLines), "total", len(h.lines))
+	if telemetry.Enabled() {
+		telemetry.Debug(context.Background(), "appended lines to history",
+			slog.Int("lines", len(newLines)), slog.Int("total", len(h.lines)))
+	}
 }
 
 func (h *history) Lines() []string {
@@ -55,7 +61,7 @@ func (h *history) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	slog.Debug("closing history", "lines", len(h.lines))
+	telemetry.Debug(context.Background(), "closing history", slog.Int("lines", len(h.lines)))
 	h.lines = nil
 
 	return nil

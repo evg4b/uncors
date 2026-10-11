@@ -1,11 +1,14 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel/attribute"
 	"gopkg.in/yaml.v3"
 )
 
@@ -20,7 +23,23 @@ type UncorsConfig struct {
 
 type Usage = func(flags *pflag.FlagSet)
 
-func LoadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, string, error) {
+func LoadConfiguration(ctx context.Context, fs afero.Fs, usage Usage, args []string) (*UncorsConfig, string, error) {
+	_, span := telemetry.Start(ctx, "config.load")
+	defer span.End()
+
+	cfg, configPath, err := loadConfiguration(fs, usage, args)
+	if configPath != "" {
+		span.SetAttributes(attribute.String("uncors.config.path", configPath))
+	}
+
+	if !errors.Is(err, ErrVersionRequested) && !errors.Is(err, pflag.ErrHelp) {
+		telemetry.Fail(span, err)
+	}
+
+	return cfg, configPath, err
+}
+
+func loadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, string, error) {
 	flags := defineFlags(usage)
 
 	err := flags.Parse(args)

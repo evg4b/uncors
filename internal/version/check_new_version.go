@@ -3,11 +3,15 @@ package version
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/hashicorp/go-version"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const lastVersionURL = "https://api.github.com/repos/evg4b/uncors/releases/latest"
@@ -17,53 +21,60 @@ type versionInfo struct {
 }
 
 func (checker *Checker) CheckNewVersion(ctx context.Context) (string, bool) {
-	slog.Debug("checking for a new version")
+	ctx, span := telemetry.StartKind(ctx, "version.check", trace.SpanKindClient)
+	defer span.End()
 
 	if checker.skip {
-		slog.Debug("skipping version check in debug mode")
+		span.SetAttributes(attribute.Bool("uncors.version.skipped", true))
+		telemetry.Debug(ctx, "skipping version check for a development build")
 
 		return "", false
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
+	latest, err := checker.fetchLatest(ctx)
 	if err != nil {
-		slog.Warn("failed to build the version check request", "error", err)
+		telemetry.Fail(span, err)
+		telemetry.Debug(ctx, "version check failed", slog.String("error", err.Error()))
 
 		return "", false
+	}
+
+	span.SetAttributes(
+		attribute.String("uncors.version.current", checker.currentVersion.String()),
+		attribute.String("uncors.version.latest", latest.String()),
+	)
+
+	if !latest.GreaterThan(checker.currentVersion) {
+		return "", false
+	}
+
+	return latest.String(), true
+}
+
+func (checker *Checker) fetchLatest(ctx context.Context) (*version.Version, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build the version check request: %w", err)
 	}
 
 	response, err := checker.http.Do(request)
 	if err != nil {
-		slog.Warn("version check request failed", "error", err)
-
-		return "", false
+		return nil, fmt.Errorf("version check request failed: %w", err)
 	}
 
 	defer helpers.CloseSafe(response.Body)
 
-	decoder := json.NewDecoder(response.Body)
-
 	lastVersionInfo := versionInfo{}
 
-	err = decoder.Decode(&lastVersionInfo)
+	err = json.NewDecoder(response.Body).Decode(&lastVersionInfo)
 	if err != nil {
-		slog.Warn("failed to parse the version check response", "error", err)
-
-		return "", false
+		return nil, fmt.Errorf("failed to parse the version check response: %w", err)
 	}
 
 	lastVersion, err := version.NewVersion(lastVersionInfo.Version)
 	if err != nil {
-		slog.Warn("failed to parse the latest version", "error", err)
-
-		return "", false
+		return nil, fmt.Errorf("failed to parse the latest version: %w", err)
 	}
 
-	if !lastVersion.GreaterThan(checker.currentVersion) {
-		slog.Debug("version is up to date")
-
-		return "", false
-	}
-
-	return lastVersion.String(), true
+	return lastVersion, nil
 }

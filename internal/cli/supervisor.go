@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/version"
 )
 
@@ -28,7 +29,6 @@ type supervisor struct {
 	env         Env
 	cfgPath     string
 	interactive bool
-	logger      *slog.Logger
 	bus         *events.Bus
 	engine      *engine.Engine
 
@@ -48,11 +48,9 @@ func supervise(
 		env:         env,
 		cfgPath:     cfgPath,
 		interactive: uncorsConfig.Interactive,
-		logger:      env.logger(),
 		bus:         bus,
 		engine: engine.New(
 			engine.WithFs(env.Fs),
-			engine.WithLogger(env.logger()),
 			engine.WithPublisher(bus),
 		),
 		commands: make(chan events.Command, commandsBuffer),
@@ -132,7 +130,7 @@ func (s *supervisor) handle(ctx context.Context, command events.Command) bool {
 }
 
 func (s *supervisor) onSignal(sig os.Signal) {
-	s.logger.Info("shutdown signal received", "signal", sig.String())
+	telemetry.Info(context.Background(), "shutdown signal received", slog.String("signal", sig.String()))
 
 	if sig == syscall.SIGINT && !s.interactive {
 		// Move past the "^C" the terminal echoed.
@@ -141,25 +139,32 @@ func (s *supervisor) onSignal(sig os.Signal) {
 }
 
 func (s *supervisor) reload(ctx context.Context) {
-	uncorsConfig, _, err := config.LoadConfiguration(s.env.Fs, nil, s.env.Args)
+	ctx, span := telemetry.Start(ctx, "supervisor.reload")
+	defer span.End()
+
+	uncorsConfig, _, err := config.LoadConfiguration(ctx, s.env.Fs, nil, s.env.Args)
 	if err == nil {
 		err = s.engine.Restart(ctx, uncorsConfig)
 	}
 
 	if err != nil {
-		s.logger.Error("configuration reload failed", "error", err)
+		telemetry.Fail(span, err)
 		s.bus.Publish(events.ReloadFailed{Err: err})
 	}
 }
 
 // Uses a fresh context: ctx may be the one that ended the run.
 func (s *supervisor) shutdown(ctx context.Context) {
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
+	ctx, span := telemetry.Start(context.WithoutCancel(ctx), "supervisor.shutdown")
+	defer span.End()
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	err := s.engine.Shutdown(shutdownCtx)
 	if err != nil {
-		s.logger.Warn("in-flight requests did not finish before shutdown", "error", err)
+		telemetry.Fail(span, err)
+		telemetry.Warn(ctx, "in-flight requests did not finish before shutdown", slog.String("error", err.Error()))
 	}
 
 	s.engine.Wait()
@@ -184,7 +189,8 @@ func (s *supervisor) watchConfig(ctx context.Context) {
 		}
 	})
 	if err != nil {
-		s.logger.Error("failed to watch config file", "path", s.cfgPath, "error", err)
+		telemetry.Error(ctx, "failed to watch config file",
+			slog.String("path", s.cfgPath), slog.String("error", err.Error()))
 		s.bus.Publish(events.Notice{Level: events.NoticeError, Text: "Failed to watch config file: " + err.Error()})
 
 		return

@@ -211,7 +211,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				actual, _, err := config.LoadConfiguration(fs, nil, testCase.args)
+				actual, _, err := config.LoadConfiguration(t.Context(), fs, nil, testCase.args)
 				require.NoError(t, err)
 
 				assert.Equal(t, testCase.expected, actual)
@@ -222,13 +222,13 @@ func TestLoadConfiguration(t *testing.T) {
 	t.Run("returns config file path", func(t *testing.T) {
 		t.Run("empty when no config file flag", func(t *testing.T) {
 			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
-			_, configPath, err := config.LoadConfiguration(afero.NewMemMapFs(), nil, args)
+			_, configPath, err := config.LoadConfiguration(t.Context(), afero.NewMemMapFs(), nil, args)
 			require.NoError(t, err)
 			assert.Empty(t, configPath)
 		})
 
 		t.Run("returns the given config path", func(t *testing.T) {
-			_, configPath, err := config.LoadConfiguration(fs, nil, []string{params.Config, minimalConfigPath})
+			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{params.Config, minimalConfigPath})
 			require.NoError(t, err)
 			assert.Equal(t, minimalConfigPath, configPath)
 		})
@@ -293,7 +293,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				_, _, err := config.LoadConfiguration(fs, nil, testCase.args)
+				_, _, err := config.LoadConfiguration(t.Context(), fs, nil, testCase.args)
 				assert.EqualError(t, err, testCase.expectedErr)
 			})
 		}
@@ -301,7 +301,7 @@ func TestLoadConfiguration(t *testing.T) {
 }
 
 func TestLoadConfiguration_VersionFlag(t *testing.T) {
-	_, _, err := config.LoadConfiguration(afero.NewMemMapFs(), nil, []string{"--version"})
+	_, _, err := config.LoadConfiguration(t.Context(), afero.NewMemMapFs(), nil, []string{"--version"})
 	require.ErrorIs(t, err, config.ErrVersionRequested)
 }
 

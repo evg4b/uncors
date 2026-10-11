@@ -10,7 +10,7 @@ import (
 )
 
 func RunUncors(ctx context.Context, env Env) error {
-	uncorsConfig, cfgPath, err := config.LoadConfiguration(env.Fs, env.usage, env.Args)
+	uncorsConfig, cfgPath, err := config.LoadConfiguration(ctx, env.Fs, env.usage, env.Args)
 	if err != nil {
 		switch {
 		case errors.Is(err, config.ErrVersionRequested):

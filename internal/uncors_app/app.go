@@ -2,6 +2,7 @@ package uncorsapp
 
 import (
 	"bytes"
+	"context"
 	"log/slog"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui"
 )
 
@@ -67,7 +69,7 @@ func NewUncorsApp(
 }
 
 func (m *UncorsApp) Init() tea.Cmd {
-	slog.Debug("Initializing UncorsApp")
+	telemetry.Debug(context.Background(), "Initializing UncorsApp")
 
 	return tea.Batch(
 		m.watchEventsCmd(),
@@ -83,10 +85,7 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
-		slog.Debug("window resized", "width", typedMsg.Width, "height", typedMsg.Height)
-		m.termHeight = typedMsg.Height
-		m.termWidth = typedMsg.Width
-		m.updateHistoryHeight()
+		m.resize(typedMsg)
 
 	case requestStartedMsg:
 		cmds = append(cmds, m.watchEventsCmd())
@@ -109,8 +108,6 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.quit()
 
 	case tea.KeyPressMsg:
-		slog.Debug("key pressed", "key", typedMsg.String())
-
 		if cmd := m.handleKeyPress(typedMsg); cmd != nil {
 			return m, cmd
 		}
@@ -176,7 +173,22 @@ func (m *UncorsApp) updateLayout(msg tea.Msg) {
 	}
 }
 
+func (m *UncorsApp) resize(msg tea.WindowSizeMsg) {
+	if telemetry.Enabled() {
+		telemetry.Debug(context.Background(), "window resized",
+			slog.Int("width", msg.Width), slog.Int("height", msg.Height))
+	}
+
+	m.termHeight = msg.Height
+	m.termWidth = msg.Width
+	m.updateHistoryHeight()
+}
+
 func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
+	if telemetry.Enabled() {
+		telemetry.Debug(context.Background(), "key pressed", slog.String("key", msg.String()))
+	}
+
 	if key.Matches(msg, m.keys.Restart) {
 		return m.sendCmd(events.Restart{})
 	}
@@ -192,11 +204,14 @@ func (m *UncorsApp) updateHistoryHeight() {
 	footerHeight := m.footerHeight()
 	viewportHeight := max(m.termHeight-footerHeight, 1)
 
-	slog.Debug("updating layout",
-		"termHeight", m.termHeight,
-		"footerHeight", footerHeight,
-		"viewportHeight", viewportHeight,
-	)
+	if telemetry.Enabled() {
+		telemetry.Debug(context.Background(), "updating layout",
+			slog.Int("termHeight", m.termHeight),
+			slog.Int("footerHeight", footerHeight),
+			slog.Int("viewportHeight", viewportHeight),
+		)
+	}
+
 	m.historyWidget.SetHeight(viewportHeight)
 }
 
@@ -222,7 +237,7 @@ func (m *UncorsApp) render(event events.Event) {
 }
 
 func (m *UncorsApp) quit() tea.Cmd {
-	slog.Debug("Handling shutdown")
+	telemetry.Debug(context.Background(), "Handling shutdown")
 
 	select {
 	case <-m.stopped:

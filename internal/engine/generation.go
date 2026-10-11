@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
@@ -21,8 +22,10 @@ import (
 	"github.com/evg4b/uncors/internal/handler/static"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const baseAddress = "127.0.0.1"
@@ -39,6 +42,15 @@ type Generation struct {
 var _ router.Factory = (*Generation)(nil)
 
 func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) (*Generation, error) {
+	return e.buildGeneration(context.Background(), uncorsConfig)
+}
+
+func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.UncorsConfig) (*Generation, error) {
+	_, span := telemetry.Start(ctx, "engine.build_generation")
+	defer span.End()
+
+	span.SetAttributes(attribute.Int("uncors.mappings", len(uncorsConfig.Mappings)))
+
 	generation := &Generation{
 		engine:      e,
 		cacheConfig: &uncorsConfig.CacheConfig,
@@ -46,7 +58,10 @@ func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) (*Generation
 
 	targets, err := generation.buildTargets(uncorsConfig)
 	if err != nil {
-		return nil, errors.Join(err, generation.Close())
+		err = errors.Join(err, generation.Close())
+		telemetry.Fail(span, err)
+
+		return nil, err
 	}
 
 	generation.targets = targets
