@@ -16,7 +16,8 @@ import (
 )
 
 // Env is the wired test environment: a recording backend, an in-process proxy
-// and a client that trusts the proxy's CA and resolves mapped hosts in-memory.
+// engine (no CLI, no frontend) whose events are recorded, and a client that
+// trusts the proxy's CA and resolves mapped hosts in-memory.
 //
 // Every mapping is reached through its real From hostname (never a raw loopback
 // IP): the harness assigns each mapping a free port, registers the hostname in
@@ -34,6 +35,7 @@ type Env struct {
 	Hosts *Hosts
 
 	routes []route
+	events *eventRecorder
 }
 
 type route struct {
@@ -106,8 +108,9 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 		})
 	}
 
-	caCert := bootProxy(t, fs, cfg)
+	caCert, recorder := bootProxy(t, fs, cfg)
 	env.Client = newClient(caCert, resolver)
+	env.events = recorder
 
 	return env
 }
