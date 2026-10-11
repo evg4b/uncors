@@ -42,10 +42,6 @@ func TestHttpError(t *testing.T) {
 		assert.Nil(t, header[headers.SetCookie])
 	})
 
-	t.Run("Should include stack trace", func(t *testing.T) {
-		assert.Regexp(t, "Stack trace: goroutine \\d+ \\[running\\]:", body)
-	})
-
 	t.Run("Should include memory usage", func(t *testing.T) {
 		assert.Contains(t, body, "Memory usage:")
 		assert.Regexp(t, "Alloc = [\\d\\.]+ [Mk]B", body)

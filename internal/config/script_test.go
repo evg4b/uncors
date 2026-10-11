@@ -31,7 +31,6 @@ func TestRequestMatcher_Clone(t *testing.T) {
 	assert.Equal(t, original.Queries, cloned.Queries)
 	assert.Equal(t, original.Headers, cloned.Headers)
 
-	// Verify deep copy
 	cloned.Queries["key1"] = "modified"
 	assert.NotEqual(t, original.Queries["key1"], cloned.Queries["key1"])
 
@@ -64,7 +63,6 @@ func TestScript_Clone(t *testing.T) {
 	assert.Equal(t, original.Matcher.Queries, cloned.Matcher.Queries)
 	assert.Equal(t, original.Matcher.Headers, cloned.Matcher.Headers)
 
-	// Verify deep copy
 	cloned.Matcher.Queries["param"] = "modified"
 	assert.NotEqual(t, original.Matcher.Queries["param"], cloned.Matcher.Queries["param"])
 }
@@ -152,7 +150,6 @@ func TestScripts_Clone(t *testing.T) {
 		assert.Equal(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
 		assert.Equal(t, original[1].Matcher.Path, cloned[1].Matcher.Path)
 
-		// Verify deep copy
 		cloned[0].Matcher.Path = "/modified"
 		assert.NotEqual(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
 	})

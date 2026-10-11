@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// The proxy core must run without any user interface, so it may not depend on
-// the UI packages or the terminal libraries, even indirectly.
 func TestCoreDoesNotImportTheUI(t *testing.T) {
 	forbidden := []string{
 		"github.com/evg4b/uncors/internal/tui",

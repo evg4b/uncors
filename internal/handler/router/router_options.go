@@ -6,8 +6,6 @@ import (
 
 type Option = func(*Router)
 
-// WithFactory sets the source of the handlers and middleware the router wires
-// for each mapping.
 func WithFactory(factory Factory) Option {
 	return func(r *Router) {
 		r.factory = factory

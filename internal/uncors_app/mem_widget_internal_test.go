@@ -19,9 +19,6 @@ func TestMemoryWidget(t *testing.T) {
 		widget := NewMemoryWidget()
 		cmd := widget.Init()
 		require.NotNil(t, cmd)
-
-		// A bit tricky to test tea.Tick directly without running it,
-		// but we can ensure it returns a command.
 	})
 
 	t.Run("Update handles memUpdateMsg", func(t *testing.T) {
@@ -60,10 +57,6 @@ func TestMemoryWidget(t *testing.T) {
 		cmd := NewMemoryWidget().memTickCmd()
 		msg := cmd()
 
-		// In tests, tea.Tick returns a function that produces a Msg, but bubbletea handles the timing.
-		// Wait, tea.Tick() returns a tea.Cmd. When called, it might sleep or return immediately if mocked.
-		// Usually, tea.Tick returns a command that we cannot easily invoke synchronously without blocking.
-		// So we just assert it's a valid tea.Cmd.
 		assert.NotNil(t, msg)
 	})
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockConn is a minimal net.Conn implementation for testing.
 type mockConn struct {
 	localAddr net.Addr
 }
@@ -49,7 +48,6 @@ func TestBuildTLSConfig(t *testing.T) {
 		manager := NewHostCertManager(fs)
 		require.NotNil(t, manager)
 
-		// Test SNI by requesting certificate for localhost
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
@@ -99,7 +97,6 @@ func TestBuildTLSConfig(t *testing.T) {
 
 		manager := NewHostCertManager(fs)
 
-		// Test SNI by requesting certificate for the specific host
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: testHost})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
@@ -118,7 +115,6 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		// Generate CA for auto-generated certificates
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
 		caConfig := CAConfig{
 			ValidityDays: 365,
@@ -131,7 +127,6 @@ func TestBuildTLSConfig(t *testing.T) {
 		manager := NewHostCertManager(fs)
 		require.NotNil(t, manager)
 
-		// Test SNI for api.local - should auto-generate cert for this host
 		apiCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
 		require.NoError(t, err)
 		require.NotNil(t, apiCert)
@@ -140,7 +135,6 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, apiX509Cert.DNSNames, "api.local")
 
-		// Test SNI for app.local - should auto-generate cert for this host
 		appCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
 		require.NoError(t, err)
 		require.NotNil(t, appCert)
@@ -149,7 +143,6 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, appX509Cert.DNSNames, "app.local")
 
-		// Verify that each certificate is valid for its respective host
 		assert.NotContains(t, apiX509Cert.DNSNames, "app.local", "api cert should not contain app.local")
 		assert.NotContains(t, appX509Cert.DNSNames, "api.local", "app cert should not contain api.local")
 	})
@@ -170,7 +163,6 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 
 		manager := NewHostCertManager(fs)
 
-		// Mock connection with IP address
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
 
 		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "", Conn: mockConn})

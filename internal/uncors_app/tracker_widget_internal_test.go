@@ -35,10 +35,10 @@ func TestTrackerWidget(t *testing.T) {
 
 		newWidget, cmd := widget.Update(msg)
 		assert.Same(t, widget, newWidget)
-		require.NotNil(t, cmd) // tick command should be returned
+		require.NotNil(t, cmd)
 		assert.True(t, widget.ticking)
 		assert.Equal(t, 1, widget.ActiveCount())
-		assert.Equal(t, 2, widget.Height()) // header + 1 request
+		assert.Equal(t, 2, widget.Height())
 	})
 
 	t.Run("Update removes completed requests", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestTrackerWidget(t *testing.T) {
 		newWidget, cmd := widget.Update(msg)
 
 		assert.Same(t, widget, newWidget)
-		assert.Nil(t, cmd) // No new tick command for removal
+		assert.Nil(t, cmd)
 		assert.Equal(t, 0, widget.ActiveCount())
 	})
 
@@ -61,17 +61,17 @@ func TestTrackerWidget(t *testing.T) {
 
 		newWidget, cmd := widget.Update(spinner.TickMsg{})
 		assert.Same(t, widget, newWidget)
-		assert.NotNil(t, cmd) // Continues ticking
+		assert.NotNil(t, cmd)
 		assert.True(t, widget.ticking)
 	})
 
 	t.Run("Update handles tickMsg when no pending requests exist", func(t *testing.T) {
 		widget := NewTrackerWidget()
-		widget.ticking = true // E.g., just removed last item
+		widget.ticking = true
 
 		newWidget, cmd := widget.Update(spinner.TickMsg{})
 		assert.Same(t, widget, newWidget)
-		assert.Nil(t, cmd) // Stops ticking
+		assert.Nil(t, cmd)
 		assert.False(t, widget.ticking)
 	})
 

@@ -16,7 +16,6 @@ import (
 
 const watcherTimeout = 500 * time.Millisecond
 
-// waitForCall blocks until fn fires or the timeout elapses, returning true on success.
 func waitForCall(ch <-chan struct{}, timeout time.Duration) bool {
 	select {
 	case <-ch:
@@ -89,7 +88,6 @@ func TestNewConfigWatcher(t *testing.T) {
 		configFile := filepath.Join(tmpDir, "config.yaml")
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
 
-		// Debounced callbacks run on timer goroutines.
 		var callCount atomic.Int32
 
 		called := make(chan struct{}, 10)
@@ -106,15 +104,12 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		defer testutils.Close(t, watcher)
 
-		// Write multiple times in quick succession.
 		for range 5 {
 			require.NoError(t, os.WriteFile(configFile, []byte("proxy: change"), 0o600))
 		}
 
-		// Wait for the first (and hopefully only) callback.
 		assert.True(t, waitForCall(called, watcherTimeout), "onChange was never called")
 
-		// Give any extra calls a chance to arrive.
 		time.Sleep(50 * time.Millisecond)
 
 		assert.LessOrEqual(t, callCount.Load(), int32(3), "too many onChange calls for rapid writes (expected debouncing)")
@@ -218,11 +213,9 @@ func TestNewConfigWatcher(t *testing.T) {
 
 		defer testutils.Close(t, watcher)
 
-		// Cancel the context
 		cancel()
 		time.Sleep(50 * time.Millisecond)
 
-		// Write to file after context is cancelled
 		require.NoError(t, os.WriteFile(configFile, []byte("proxy: changed"), 0o600))
 		assert.False(t, waitForCall(called, 100*time.Millisecond), "onChange was called after context cancelled")
 	})

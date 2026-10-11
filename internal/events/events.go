@@ -1,7 +1,3 @@
-// Package events defines what the proxy core reports to the outside world and
-// the bus that carries it. The core publishes; frontends (the interactive UI,
-// the headless printer, tests) subscribe. Nothing here knows how an event is
-// rendered.
 package events
 
 import (
@@ -11,17 +7,13 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 )
 
-// Event is anything published on the Bus.
 type Event interface {
 	isEvent()
 }
 
-// HandlerKind identifies the component that produced a response.
 type HandlerKind uint8
 
 const (
-	// HandlerNone means no component took the request, for example because
-	// its host is not mapped.
 	HandlerNone HandlerKind = iota
 	HandlerProxy
 	HandlerCache
@@ -49,15 +41,11 @@ func (k HandlerKind) String() string {
 	return "UNKNOWN"
 }
 
-// Rewrite records that a rewrite rule changed the request path before it was
-// handled. To includes the host when the rule also replaced it.
 type Rewrite struct {
 	From string
 	To   string
 }
 
-// RequestStarted is published once per request, as soon as the component
-// that will produce the response is known.
 type RequestStarted struct {
 	ID      uint64
 	Method  string
@@ -67,9 +55,6 @@ type RequestStarted struct {
 	At      time.Time
 }
 
-// RequestCompleted is published once per request, after RequestStarted, when
-// the response has been written. Err is the error the handler failed with, if
-// any; the client received an error page for it.
 type RequestCompleted struct {
 	ID       uint64
 	Handler  HandlerKind

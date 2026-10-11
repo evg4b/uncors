@@ -48,7 +48,6 @@ func CreateServerCert(t *testing.T, caCert *x509.Certificate, caKey *rsa.Private
 	derBytes, err := x509.CreateCertificate(rand.Reader, &tmpl, caCert, &serverKey.PublicKey, caKey)
 	require.NoError(t, err)
 
-	// кодируем в PEM для tls.X509KeyPair
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)})
 

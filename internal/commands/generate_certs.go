@@ -18,7 +18,6 @@ const (
 	defaultConfigDir    = ".config/uncors"
 )
 
-// GenerateCertsCommand handles the 'generate-certs' command.
 type GenerateCertsCommand struct {
 	validityDays int
 	force        bool
@@ -27,19 +26,16 @@ type GenerateCertsCommand struct {
 	output       contracts.Output
 }
 
-// NewGenerateCertsCommand creates a new generate-certs command.
 func NewGenerateCertsCommand(options ...Option) *GenerateCertsCommand {
 	return helpers.ApplyOptions(&GenerateCertsCommand{}, options)
 }
 
-// DefineFlags defines command-line flags for the generate-certs command.
 func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet, version string) {
 	flags.Usage = func() { tui.PrintUsage(flags, version) }
 	flags.IntVar(&c.validityDays, "validity-days", defaultValidityDays, "Certificate validity period in days")
 	flags.BoolVar(&c.force, "force", false, "Force overwrite existing CA certificates")
 }
 
-// Execute runs the generate-certs command.
 func (c *GenerateCertsCommand) Execute() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {

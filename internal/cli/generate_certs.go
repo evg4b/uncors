@@ -10,7 +10,6 @@ import (
 
 const GenerateCertsCmd = "generate-certs"
 
-// GenerateCerts runs the generate-certs command with env.Args as its flags.
 func GenerateCerts(env Env) error {
 	cmd := commands.NewGenerateCertsCommand(
 		commands.WithOutput(tui.NewCliOutput(env.Stdout)),

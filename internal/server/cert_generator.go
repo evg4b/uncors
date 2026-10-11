@@ -17,13 +17,11 @@ const (
 	certValidityDays = 365
 )
 
-// CertGenerator manages on-the-fly certificate generation.
 type CertGenerator struct {
 	caCert *x509.Certificate
 	caKey  *rsa.PrivateKey
 }
 
-// NewCertGenerator creates a new certificate generator with the given CA.
 func NewCertGenerator(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertGenerator {
 	return &CertGenerator{
 		caCert: caCert,
@@ -31,8 +29,6 @@ func NewCertGenerator(caCert *x509.Certificate, caKey *rsa.PrivateKey) *CertGene
 	}
 }
 
-// GenerateCertificate generates a new TLS certificate for the given host signed by CA.
-// Returns a tls.Certificate that can be used directly with TLS servers.
 func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
@@ -60,7 +56,6 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 		BasicConstraintsValid: true,
 	}
 
-	// Check if host is an IP address or hostname
 	if ip := net.ParseIP(host); ip != nil {
 		template.IPAddresses = []net.IP{ip}
 	} else {
@@ -72,13 +67,11 @@ func (g *CertGenerator) GenerateCertificate(host string) (*tls.Certificate, erro
 		return nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	// Encode certificate to PEM
 	certPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  pemBlockCertificate,
 		Bytes: certDER,
 	})
 
-	// Encode private key to PEM
 	keyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  pemBlockRSAPrivate,
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),

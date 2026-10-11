@@ -14,9 +14,6 @@ import (
 
 const prefixWidth = 13
 
-// FormatRequest renders a completed request as the handler label followed by
-// the status line. A rewritten path is appended, and a handler error goes on a
-// second line unless the client had already gone away.
 func FormatRequest(event events.RequestCompleted) string {
 	var builder strings.Builder
 

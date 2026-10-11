@@ -10,7 +10,7 @@ import (
 
 func TestContent_Encoding(t *testing.T) {
 	t.Run("unknown encoding stored as base64", func(t *testing.T) {
-		raw := []byte{0x1f, 0x8b, 0x00} // truncated gzip → cannot decode
+		raw := []byte{0x1f, 0x8b, 0x00}
 		b64 := base64.StdEncoding.EncodeToString(raw)
 
 		entry := har.Entry{

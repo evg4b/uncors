@@ -14,8 +14,6 @@ var (
 	OptionsStyle = blockStyle.Background(optionsColor)
 )
 
-// DimTextStyle renders secondary details such as a rewritten path or a
-// handler error.
 var DimTextStyle = lipgloss.NewStyle().Foreground(DebugColor)
 
 var handlerStyles = map[events.HandlerKind]lipgloss.Style{
@@ -27,8 +25,6 @@ var handlerStyles = map[events.HandlerKind]lipgloss.Style{
 	events.HandlerOptions: OptionsStyle,
 }
 
-// HandlerLabel renders the block that names the component that handled a
-// request, or an empty string when no component did.
 func HandlerLabel(kind events.HandlerKind) string {
 	style, ok := handlerStyles[kind]
 	if !ok {

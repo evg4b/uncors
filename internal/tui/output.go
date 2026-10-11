@@ -126,7 +126,6 @@ func (output *CliOutput) Printf(msg string, args ...any) {
 	output.print(fmt.Sprintf(msg, args...), defaultOutput)
 }
 
-// Request prints a completed request, see FormatRequest.
 func (output *CliOutput) Request(event events.RequestCompleted) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
@@ -141,9 +140,7 @@ func (output *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
 	return NewCliOutput(output.output, WithPrefix(prefix), withMutex(output.mutex))
 }
 
-// print holds the exclusive write lock for the full render+write cycle so that
-// the shared buffer and the underlying writer are never accessed concurrently.
-// Write() uses RLock only, which is blocked while print() owns the write lock.
+// Holds the write lock for render and write: Write only takes RLock.
 func (output *CliOutput) print(msg string, level outputType) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
@@ -155,7 +152,6 @@ func (output *CliOutput) print(msg string, level outputType) {
 	output.flush()
 }
 
-// flush writes the rendered buffer; callers hold the write lock.
 func (output *CliOutput) flush() {
 	_, err := output.output.Write(output.buffer.Bytes())
 	output.buffer.Reset()

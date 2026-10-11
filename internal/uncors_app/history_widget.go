@@ -40,7 +40,7 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.termWidth = typedMsg.Width
 		m.vp.SetWidth(typedMsg.Width)
-		// Height is handled by SetHeight() method explicitly since the main app coordinates it.
+
 		if m.autoScroll {
 			m.vp.GotoBottom()
 		}

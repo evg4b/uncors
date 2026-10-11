@@ -3,17 +3,14 @@
 package mock_test
 
 import (
-	"io"
 	"net/http"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
-	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMockHandler(t *testing.T) {
@@ -41,14 +38,12 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("raw response returns configured code, headers and body", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/raw")))
-		defer testutils.Close(t, result.Response.Body)
 
-		body, err := io.ReadAll(result.Response.Body)
-		require.NoError(t, err)
+		body := result.BodyString()
 
 		assert.Equal(t, http.StatusCreated, result.Response.StatusCode)
 		assert.Equal(t, "raw", result.Response.Header.Get("X-Mock"))
-		assert.JSONEq(t, `{"mock":true}`, string(body))
+		assert.JSONEq(t, `{"mock":true}`, body)
 		assert.False(t, result.HasBackendRequest(), "mock must not reach the backend")
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -56,13 +51,11 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("file response serves seeded file content", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/file")))
-		defer testutils.Close(t, result.Response.Body)
 
-		body, err := io.ReadAll(result.Response.Body)
-		require.NoError(t, err)
+		body := result.BodyString()
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.JSONEq(t, `{"from":"file"}`, string(body))
+		assert.JSONEq(t, `{"from":"file"}`, body)
 		assert.False(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -70,13 +63,11 @@ func TestMockHandler(t *testing.T) {
 
 	t.Run("method mismatch falls through to the backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodPost, env.URL("mock.local", "/raw")))
-		defer testutils.Close(t, result.Response.Body)
 
-		body, err := io.ReadAll(result.Response.Body)
-		require.NoError(t, err)
+		body := result.BodyString()
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "ok", string(body))
+		assert.Equal(t, "ok", body)
 		assert.True(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))

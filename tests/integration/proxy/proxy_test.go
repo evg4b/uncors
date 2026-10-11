@@ -20,19 +20,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// backend bundles a recording backend with its own base URL and host, captured
-// after start so the redirect/cookie handlers can reference the backend's real
-// address (not request-controlled data) when emitting Location and cookie domains.
 type backend struct {
 	*integration.Backend
 
-	base string // e.g. http://127.0.0.1:PORT
-	host string // e.g. 127.0.0.1
+	base string
+	host string
 }
 
-// newMuxBackend starts a recording backend serving the shared proxy-test mux.
-// The handlers read the backend's own address through the returned holder, so
-// nothing in a response is derived from attacker-controllable request fields.
 func newMuxBackend(t *testing.T) *backend {
 	t.Helper()
 
@@ -48,9 +42,6 @@ func newMuxBackend(t *testing.T) *backend {
 	return self
 }
 
-// backendMux serves the endpoints the proxy tests forward to. The /redirect and
-// /set-cookie handlers emit the backend's own address (from self), so the test
-// can assert the proxy rewrites it back to the source host.
 func backendMux(t *testing.T, self *backend) http.Handler {
 	mux := http.NewServeMux()
 
@@ -66,14 +57,10 @@ func backendMux(t *testing.T, self *backend) http.Handler {
 		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/redirect", func(writer http.ResponseWriter, _ *http.Request) {
-		// Location points at the backend's own address so the proxy must rewrite
-		// it back to the source host. Built from self, never from request input.
 		writer.Header().Set("Location", self.base+"/target")
 		writer.WriteHeader(http.StatusFound)
 	})
 	mux.HandleFunc("/set-cookie", func(writer http.ResponseWriter, _ *http.Request) {
-		// Domain is the backend's own host so the proxy must rewrite it back to
-		// the source host before the client sees it.
 		//nolint:gosec // G124: test cookie; Secure is added by the proxy on the way out
 		http.SetCookie(writer, &http.Cookie{Name: "sid", Value: "abc", Domain: self.host, Path: "/"})
 		_, err := io.WriteString(writer, "cookie set")
@@ -100,9 +87,6 @@ func backendMux(t *testing.T, self *backend) http.Handler {
 	return mux
 }
 
-// newProxyEnv wires a single named-host mapping (app.example.local -> backend)
-// so host rewriting is observable: source and target hosts differ visibly,
-// unlike a loopback-to-loopback mapping.
 func newProxyEnv(t *testing.T) (*integration.Env, *backend) {
 	t.Helper()
 
@@ -123,12 +107,11 @@ func proxyURL(env *integration.Env, path string) string {
 
 func TestProxyHandler(t *testing.T) {
 	env, back := newProxyEnv(t)
-	backendURL := back.base // e.g. http://127.0.0.1:PORT
+	backendURL := back.base
 
 	t.Run("forwards method, path and query verbatim to the backend", func(t *testing.T) {
 		// Append the query directly: the path joiner would percent-encode "?".
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/echo")+"?limit=10&sort=asc"))
-		defer testutils.Close(t, result.Response.Body)
 
 		require.Equal(t, http.StatusOK, result.Response.StatusCode)
 		require.True(t, result.HasBackendRequest())
@@ -144,7 +127,6 @@ func TestProxyHandler(t *testing.T) {
 		req.ContentLength = int64(len(`{"payload":true}`))
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Contains(t, result.BackendRequest(t), `{"payload":true}`)
 	})
@@ -154,14 +136,12 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set("X-Trace-Id", "trace-123")
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Contains(t, result.BackendRequest(t), "X-Trace-Id: trace-123")
 	})
 
 	t.Run("returns the backend status, headers and body unchanged", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/data")))
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusCreated, result.Response.StatusCode)
 		assert.Equal(t, "served", result.Response.Header.Get("X-Backend"))
@@ -173,7 +153,6 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set("Origin", "https://app.example.local")
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, "https://app.example.local",
 			result.Response.Header.Get("Access-Control-Allow-Origin"))
@@ -185,20 +164,15 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set("Origin", "https://app.example.local")
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
-		// The proxy rewrites Origin from the source host to the backend host
-		// before forwarding, so the upstream sees its own address.
 		assert.Contains(t, result.RawBackendRequest(t), "Origin: "+backendURL)
 	})
 
 	t.Run("rewrites the Location response header back to the source host", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/redirect")))
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusFound, result.Response.StatusCode)
-		// Backend returned Location pointing at itself; the client must see it
-		// rewritten back to the public source host (port included).
+
 		expected := fmt.Sprintf("https://app.example.local:%d/target", env.PortFor("app.example.local"))
 		assert.Equal(t, expected, result.Response.Header.Get("Location"))
 	})
@@ -208,9 +182,7 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set("Referer", "https://app.example.local/from/page")
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
-		// Only the host part is rewritten; the path is preserved.
 		assert.Contains(t, result.RawBackendRequest(t), "Referer: "+backendURL+"/from/page")
 	})
 
@@ -219,7 +191,6 @@ func TestProxyHandler(t *testing.T) {
 		req.AddCookie(&http.Cookie{Name: "token", Value: "xyz"}) //nolint:gosec // G124: test request cookie
 
 		result := env.Do(t, req)
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "token=xyz", result.BodyString())
@@ -227,13 +198,11 @@ func TestProxyHandler(t *testing.T) {
 
 	t.Run("forwards Set-Cookie and marks it Secure, rewriting the backend domain away", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/set-cookie")))
-		defer testutils.Close(t, result.Response.Body)
 
 		cookies := result.Response.Cookies()
 		require.Len(t, cookies, 1)
 		assert.Equal(t, "sid", cookies[0].Name)
 		assert.Equal(t, "abc", cookies[0].Value)
-		// The source mapping is HTTPS, so the forwarded cookie is marked Secure.
 		assert.True(t, cookies[0].Secure)
 		// The backend's own host must not leak to the client. (The proxy currently
 		// rewrites it to a port-bearing domain that the Go client drops as invalid,
@@ -244,15 +213,12 @@ func TestProxyHandler(t *testing.T) {
 
 	t.Run("forwarded request and response both match snapshot", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/echo")))
-		defer testutils.Close(t, result.Response.Body)
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
 
-// TestProxyOverHTTP covers a plain-HTTP mapping: the proxy listener and client
-// hop are unencrypted, yet host routing and forwarding behave identically.
 func TestProxyOverHTTP(t *testing.T) {
 	back := newMuxBackend(t)
 	env := integration.New(t, back.Backend, &config.UncorsConfig{
@@ -264,7 +230,6 @@ func TestProxyOverHTTP(t *testing.T) {
 
 	t.Run("forwards over plain HTTP without TLS", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("plain.local", "/echo")))
-		defer testutils.Close(t, result.Response.Body)
 
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "echo:/echo", result.BodyString())
@@ -276,9 +241,6 @@ func TestProxyOverHTTP(t *testing.T) {
 	})
 }
 
-// TestProxyMultipleMappings covers routing across several mappings that share a
-// single listener port: requests are dispatched to the right upstream purely by
-// their Host header.
 func TestProxyMultipleMappings(t *testing.T) {
 	alpha := integration.NewBackend(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, err := io.WriteString(w, "alpha")
@@ -309,14 +271,11 @@ func TestProxyMultipleMappings(t *testing.T) {
 		assert.Equal(t, "alpha", alphaResult.BodyString())
 		assert.Equal(t, "beta", betaResult.BodyString())
 
-		// alpha's backend saw only alpha's request; beta's saw only beta's.
 		assert.Equal(t, 1, alpha.Count())
 		assert.Equal(t, 1, beta.Count())
 	})
 }
 
-// TestProxyPlaceholderMapping covers a {placeholder} host mapping: one mapping
-// matches every subdomain and forwards each to the backend with the path intact.
 func TestProxyPlaceholderMapping(t *testing.T) {
 	back := newMuxBackend(t)
 	env := integration.New(t, back.Backend, &config.UncorsConfig{
@@ -337,12 +296,9 @@ func TestProxyPlaceholderMapping(t *testing.T) {
 			assert.Equal(t, "echo:/echo", result.BodyString())
 			require.True(t, result.HasBackendRequest(), "tenant %q must reach the backend", tenant)
 
-			// The placeholder label flowed through SNI into a per-host leaf.
 			require.NotNil(t, result.Response.TLS)
 			require.NotEmpty(t, result.Response.TLS.PeerCertificates)
 			assert.Contains(t, result.Response.TLS.PeerCertificates[0].DNSNames, tenant+".api.local")
-
-			testutils.Close(t, result.Response.Body)
 		}
 
 		assert.Equal(t, len(tenants), back.Count())

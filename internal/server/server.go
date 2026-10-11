@@ -40,9 +40,6 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-// New creates a server that reports request activity to publisher. A nil
-// publisher is replaced by events.NoopPublisher so the request path is never
-// left without one.
 func New(manager *HostCertManager, publisher events.Publisher) *Server {
 	if publisher == nil {
 		publisher = events.NoopPublisher{}
@@ -106,9 +103,7 @@ func (s *Server) Start(ctx context.Context, targets []Target) error {
 				launchErrs = append(launchErrs, err)
 				launchErrorsMu.Unlock()
 			}
-			// On bind failure onReady is never called, so we must release the
-			// wait group here (after recording the error). On a clean shutdown
-			// onReady already fired, so this is a no-op.
+			// onReady is never called on bind failure; after it fired this is a no-op.
 			once.Do(launchWaitGroup.Done)
 		}(server)
 	}

@@ -26,15 +26,12 @@ func TestGenerateCA(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Verify files exist
 		assert.FileExists(t, certPath)
 		assert.FileExists(t, keyPath)
 
-		// Verify file paths
 		assert.Equal(t, filepath.Join(tmpDir, "ca.crt"), certPath)
 		assert.Equal(t, filepath.Join(tmpDir, "ca.key"), keyPath)
 
-		// Verify key file permissions
 		keyInfo, err := os.Stat(keyPath)
 		require.NoError(t, err)
 		assert.Equal(t, os.FileMode(0o600), keyInfo.Mode().Perm())
@@ -53,7 +50,6 @@ func TestGenerateCA(t *testing.T) {
 		_, _, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Verify directory was created
 		assert.DirExists(t, outputDir)
 	})
 
@@ -69,25 +65,21 @@ func TestGenerateCA(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Load and verify certificate
 		cert, key, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
 
-		// Verify certificate properties
 		assert.True(t, cert.IsCA)
 		assert.Equal(t, "UNCORS Local Development Root CA", cert.Subject.CommonName)
 		assert.Contains(t, cert.Subject.Organization, "UNCORS Development CA")
 		assert.Contains(t, cert.Subject.Country, "US")
 
-		// Verify validity period (allow some tolerance for test execution time)
 		expectedDuration := time.Duration(730) * 24 * time.Hour
 		actualDuration := cert.NotAfter.Sub(cert.NotBefore)
 		tolerance := 5 * time.Minute
 		assert.InDelta(t, expectedDuration, actualDuration, float64(tolerance))
 
-		// Verify key usage
 		assert.NotEqual(t, 0, cert.KeyUsage&x509.KeyUsageDigitalSignature)
 		assert.NotEqual(t, 0, cert.KeyUsage&x509.KeyUsageCertSign)
 		assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
@@ -106,7 +98,6 @@ func TestLoadCA(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Load CA
 		cert, key, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
@@ -159,7 +150,7 @@ func TestCheckExpiration(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		config := server.CAConfig{
-			ValidityDays: 5, // 5 days
+			ValidityDays: 5,
 			Fs:           afero.NewOsFs(),
 			OutputDir:    tmpDir,
 		}
@@ -169,7 +160,6 @@ func TestCheckExpiration(t *testing.T) {
 		cert, _, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
-		// Check with 7-day threshold
 		expiresSoon, timeLeft := server.CheckExpiration(cert, 7*24*time.Hour)
 		assert.True(t, expiresSoon)
 		assert.Positive(t, timeLeft)
@@ -190,7 +180,6 @@ func TestCheckExpiration(t *testing.T) {
 		cert, _, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
-		// Check with 7-day threshold
 		expiresSoon, timeLeft := server.CheckExpiration(cert, 7*24*time.Hour)
 		assert.False(t, expiresSoon)
 		assert.Greater(t, timeLeft, 7*24*time.Hour)
@@ -210,12 +199,9 @@ func TestCheckExpiration(t *testing.T) {
 		cert, _, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 
-		// Manually modify cert to make it expired (for testing)
-		// In real scenario, this would be naturally expired
-		// We just test the logic works correctly
 		expiresSoon, timeLeft := server.CheckExpiration(cert, 365*24*time.Hour)
 		assert.True(t, expiresSoon)
-		assert.Positive(t, timeLeft) // Still valid as we just created it
+		assert.Positive(t, timeLeft)
 	})
 }
 
@@ -231,7 +217,6 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Overwrite key with invalid data
 		err = os.WriteFile(keyPath, []byte("not a valid key PEM"), 0o600)
 		require.NoError(t, err)
 
@@ -245,7 +230,6 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		certPath := filepath.Join(tmpDir, "invalid.crt")
 		keyPath := filepath.Join(tmpDir, "test.key")
 
-		// Create PEM with invalid certificate data
 		certFile, err := os.Create(certPath)
 		require.NoError(t, err)
 
@@ -282,7 +266,6 @@ func TestLoadCA_ErrorCases(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Create PEM with invalid key data
 		keyFile, err := os.Create(keyPath)
 		require.NoError(t, err)
 
@@ -331,7 +314,6 @@ func TestLoadCA_UseDefaultFilesystem(t *testing.T) {
 		certPath, keyPath, err := server.GenerateCA(config)
 		require.NoError(t, err)
 
-		// Load with nil filesystem
 		cert, key, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
@@ -340,53 +322,27 @@ func TestLoadCA_UseDefaultFilesystem(t *testing.T) {
 }
 
 func TestCheckCAExpiration(t *testing.T) {
-	t.Run("should not return error for valid certificate", func(t *testing.T) {
-		tmpDir := t.TempDir()
+	tests := []struct {
+		name     string
+		validFor time.Duration
+		valid    bool
+	}{
+		{name: "expired", validFor: -24 * time.Hour},
+		{name: "expires in hours", validFor: 12 * time.Hour},
+		{name: "expires in 5 days", validFor: 5 * 24 * time.Hour},
+		{name: "valid for 10 days", validFor: 10 * 24 * time.Hour, valid: true},
+		{name: "valid for a year", validFor: 365 * 24 * time.Hour, valid: true},
+	}
 
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 365,
-			Fs:           afero.NewOsFs(),
-			OutputDir:    tmpDir,
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := server.CheckCAExpiration(&x509.Certificate{NotAfter: time.Now().Add(testCase.validFor)})
+
+			if testCase.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
 		})
-		require.NoError(t, err)
-
-		caCert, _, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
-		require.NoError(t, err)
-
-		require.NoError(t, server.CheckCAExpiration(caCert))
-	})
-
-	t.Run("should return error for soon-expiring certificate", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 5,
-			Fs:           afero.NewOsFs(),
-			OutputDir:    tmpDir,
-		})
-		require.NoError(t, err)
-
-		caCert, _, err := server.LoadCA(afero.NewOsFs(), certPath, keyPath)
-		require.NoError(t, err)
-
-		require.Error(t, server.CheckCAExpiration(caCert))
-	})
-
-	t.Run("should return error for expired certificate", func(t *testing.T) {
-		cert := &x509.Certificate{NotAfter: time.Now().Add(-24 * time.Hour)}
-
-		require.Error(t, server.CheckCAExpiration(cert))
-	})
-
-	t.Run("should return error for certificate expiring in hours", func(t *testing.T) {
-		cert := &x509.Certificate{NotAfter: time.Now().Add(12 * time.Hour)}
-
-		require.Error(t, server.CheckCAExpiration(cert))
-	})
-
-	t.Run("should not return error for certificate valid for more than 7 days", func(t *testing.T) {
-		cert := &x509.Certificate{NotAfter: time.Now().Add(10 * 24 * time.Hour)}
-
-		require.NoError(t, server.CheckCAExpiration(cert))
-	})
+	}
 }

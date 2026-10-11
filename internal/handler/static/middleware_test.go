@@ -110,131 +110,78 @@ func TestStaticMiddleware(t *testing.T) {
 			testHTTPBody       = "this is tests response"
 		)
 
-		middleware := static.NewStaticMiddleware(
-			static.WithFileSystem(fs),
-		)
+		handler := static.NewStaticMiddleware(static.WithFileSystem(fs)).
+			Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+				writer.WriteHeader(testHTTPStatusCode)
+				fmt.Fprint(writer, testHTTPBody)
 
-		nextHandler := infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-			writer.WriteHeader(testHTTPStatusCode)
-			fmt.Fprint(writer, testHTTPBody)
+				return nil
+			}))
 
-			return nil
-		})
+		for _, testCase := range staticFileTests {
+			t.Run(testCase.name, func(t *testing.T) {
+				expectServed(t, handler, testCase.path, http.StatusOK, testCase.expected)
+			})
+		}
 
-		handler := middleware.Wrap(nextHandler)
-
-		t.Run("return static content", func(t *testing.T) {
-			for _, testCase := range staticFileTests {
-				t.Run(testCase.name, func(t *testing.T) {
-					recorder := httptest.NewRecorder()
-					requestURI, err := url.Parse(testCase.path)
-					testutils.CheckNoError(t, err)
-
-					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
-						Method: http.MethodGet,
-						URL:    requestURI,
-					})
-					require.NoError(t, serveErr)
-
-					assert.Equal(t, http.StatusOK, recorder.Code)
-					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
-				})
-			}
-		})
-
-		t.Run("forward request to next middleware", func(t *testing.T) {
-			for _, testCase := range notExistingFilesTests {
-				t.Run(testCase.name, func(t *testing.T) {
-					recorder := httptest.NewRecorder()
-					requestURI, err := url.Parse(testCase.path)
-					testutils.CheckNoError(t, err)
-
-					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
-						Method: http.MethodGet,
-						URL:    requestURI,
-					})
-					require.NoError(t, serveErr)
-
-					assert.Equal(t, testHTTPStatusCode, recorder.Code)
-					assert.Equal(t, testHTTPBody, testutils.ReadBody(t, recorder))
-				})
-			}
-		})
+		for _, testCase := range notExistingFilesTests {
+			t.Run("forward "+testCase.name, func(t *testing.T) {
+				expectServed(t, handler, testCase.path, testHTTPStatusCode, testHTTPBody)
+			})
+		}
 	})
 
 	t.Run("index file is configured", func(t *testing.T) {
-		middleware := static.NewStaticMiddleware(
-			static.WithFileSystem(fs),
-			static.WithIndex(indexHTML),
-		)
+		handler := static.NewStaticMiddleware(static.WithFileSystem(fs), static.WithIndex(indexHTML)).
+			Wrap(mocks.FailNowHandlerMock(t))
 
-		handler := middleware.Wrap(mocks.FailNowHandlerMock(t))
-
-		t.Run("send index file", func(t *testing.T) {
-			for _, testCase := range staticFileTests {
-				t.Run(testCase.name, func(t *testing.T) {
-					recorder := httptest.NewRecorder()
-					requestURI, err := url.Parse(testCase.path)
-					testutils.CheckNoError(t, err)
-
-					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
-						Method: http.MethodGet,
-						URL:    requestURI,
-					})
-					require.NoError(t, serveErr)
-
-					require.Equal(t, http.StatusOK, recorder.Code)
-					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
-				})
-			}
-		})
-
-		t.Run("forward request to next middleware", func(t *testing.T) {
-			for _, testCase := range notExistingFilesTests {
-				t.Run(testCase.name, func(t *testing.T) {
-					recorder := httptest.NewRecorder()
-					requestURI, err := url.Parse(testCase.path)
-					testutils.CheckNoError(t, err)
-
-					serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
-						Method: http.MethodGet,
-						URL:    requestURI,
-					})
-
-					require.NoError(t, serveErr)
-
-					assert.Equal(t, http.StatusOK, recorder.Code)
-					assert.Equal(t, indexHTMLContent, testutils.ReadBody(t, recorder))
-				})
-			}
-		})
-
-		t.Run("index file doesn't exists", func(t *testing.T) {
-			middleware := static.NewStaticMiddleware(
-				static.WithFileSystem(fs),
-				static.WithIndex("/not-exists.html"),
-			)
-
-			handler := middleware.Wrap(mocks.FailNowHandlerMock(t))
-
-			recorder := httptest.NewRecorder()
-			requestURI, err := url.Parse("/options/")
-			testutils.CheckNoError(t, err)
-
-			responseWriter := server.NewResponseRecorder(recorder)
-
-			handlerErr := handler.ServeHTTP(responseWriter, &http.Request{
-				Method: http.MethodGet,
-				URL:    requestURI,
+		for _, testCase := range staticFileTests {
+			t.Run(testCase.name, func(t *testing.T) {
+				expectServed(t, handler, testCase.path, http.StatusOK, testCase.expected)
 			})
+		}
 
-			assert.Error(t, handlerErr)
-		})
+		for _, testCase := range notExistingFilesTests {
+			t.Run("index "+testCase.name, func(t *testing.T) {
+				expectServed(t, handler, testCase.path, http.StatusOK, indexHTMLContent)
+			})
+		}
+	})
+
+	t.Run("index file doesn't exists", func(t *testing.T) {
+		handler := static.NewStaticMiddleware(static.WithFileSystem(fs), static.WithIndex("/not-exists.html")).
+			Wrap(mocks.FailNowHandlerMock(t))
+
+		_, err := serveStatic(t, handler, "/options/")
+
+		assert.Error(t, err)
 	})
 }
 
-// serveOnce sends one GET request for requestURL through middleware, with a
-// no-op handler behind it.
+func serveStatic(t *testing.T, handler contracts.Handler, path string) (*httptest.ResponseRecorder, error) {
+	t.Helper()
+
+	requestURI, err := url.Parse(path)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+
+	return recorder, handler.ServeHTTP(server.NewResponseRecorder(recorder), &http.Request{
+		Method: http.MethodGet,
+		URL:    requestURI,
+	})
+}
+
+func expectServed(t *testing.T, handler contracts.Handler, path string, code int, body string) {
+	t.Helper()
+
+	recorder, err := serveStatic(t, handler, path)
+	require.NoError(t, err)
+
+	assert.Equal(t, code, recorder.Code)
+	assert.Equal(t, body, testutils.ReadBody(t, recorder))
+}
+
 func serveOnce(middleware *static.Middleware, requestURL *url.URL) {
 	handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 		return nil

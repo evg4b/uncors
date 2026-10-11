@@ -20,15 +20,10 @@ import (
 const (
 	shutdownTimeout   = 15 * time.Second
 	versionCheckDelay = 50 * time.Millisecond
-	// frontendBuffer is how many events a frontend can fall behind by before
-	// events are dropped.
-	frontendBuffer = 1000
-	commandsBuffer = 8
+	frontendBuffer    = 1000
+	commandsBuffer    = 8
 )
 
-// supervisor owns the proxy for one run. It is the only goroutine that starts,
-// restarts, and stops the engine; frontends, the config watcher, and OS
-// signals only ask it to.
 type supervisor struct {
 	env         Env
 	cfgPath     string
@@ -41,9 +36,6 @@ type supervisor struct {
 	reloads  chan struct{}
 }
 
-// supervise runs the proxy with uncorsConfig and presents it through frontend
-// until shutdown. The engine starts only after the frontend subscribed, so the
-// frontend sees every event.
 func supervise(
 	ctx context.Context,
 	env Env,
@@ -102,9 +94,6 @@ func supervise(
 	return frontendErr
 }
 
-// run handles commands, config changes, and signals until one of them asks to
-// shut down. It reports whether the frontend exited on its own, and with which
-// error.
 func (s *supervisor) run(ctx context.Context, frontendDone <-chan error) (bool, error) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -131,7 +120,6 @@ func (s *supervisor) run(ctx context.Context, frontendDone <-chan error) (bool, 
 	}
 }
 
-// handle runs command and reports whether it asked to shut down.
 func (s *supervisor) handle(ctx context.Context, command events.Command) bool {
 	switch command.(type) {
 	case events.Restart:
@@ -152,8 +140,6 @@ func (s *supervisor) onSignal(sig os.Signal) {
 	}
 }
 
-// reload reads the configuration again and restarts the engine with it. A
-// configuration that fails to load or start keeps the previous one running.
 func (s *supervisor) reload(ctx context.Context) {
 	uncorsConfig, _, err := config.LoadConfiguration(s.env.Fs, nil, s.env.Args)
 	if err == nil {
@@ -166,9 +152,7 @@ func (s *supervisor) reload(ctx context.Context) {
 	}
 }
 
-// shutdown stops the engine, waiting for in-flight requests for a while. The
-// shutdown runs on a fresh context because ctx may be the one that ended the
-// run.
+// Uses a fresh context: ctx may be the one that ended the run.
 func (s *supervisor) shutdown(ctx context.Context) {
 	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), shutdownTimeout)
 	defer cancel()
@@ -181,15 +165,11 @@ func (s *supervisor) shutdown(ctx context.Context) {
 	s.engine.Wait()
 }
 
-// announceStopped publishes the last event and closes the bus, which ends
-// every subscriber's event stream.
 func (s *supervisor) announceStopped() {
 	s.bus.Publish(events.ServerStopped{})
 	s.bus.Close()
 }
 
-// watchConfig requests a reload on every change to the config file. It is a
-// no-op when no config file is in use.
 func (s *supervisor) watchConfig(ctx context.Context) {
 	if s.cfgPath == "" {
 		return
@@ -217,7 +197,6 @@ func (s *supervisor) watchConfig(ctx context.Context) {
 	}()
 }
 
-// checkVersion publishes NewVersionAvailable when a newer release exists.
 func (s *supervisor) checkVersion(ctx context.Context, proxyURL string) {
 	select {
 	case <-time.After(versionCheckDelay):

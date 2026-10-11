@@ -17,7 +17,6 @@ var (
 	initOnce     sync.Once
 )
 
-// MatchSnapshot matches the given value against a snapshot.
 func MatchSnapshot(t *testing.T, values ...any) {
 	config := snaps.WithConfig(snaps.Dir(getSnapshotDir()))
 	config.MatchSnapshot(t, values...)
@@ -33,7 +32,6 @@ func initDirs() {
 	snapshotsDir = filepath.Join(projectRoot, "testing", "snapshots")
 }
 
-// getSnapshotDir returns the snapshot directory path based on the caller's location.
 func getSnapshotDir() string {
 	initOnce.Do(initDirs)
 

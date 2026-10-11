@@ -16,177 +16,73 @@ const (
 	uncorsDir = "uncors"
 )
 
+func fakeCADir(t *testing.T) string {
+	t.Helper()
+
+	fakeHome := filepath.Join(t.TempDir(), "home")
+	require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+	t.Setenv("HOME", fakeHome)
+
+	return filepath.Join(fakeHome, configDir, uncorsDir)
+}
+
+func generateDefaultCA(t *testing.T, caDir string) {
+	t.Helper()
+
+	_, _, err := server.GenerateCA(server.CAConfig{
+		ValidityDays: 365,
+		Fs:           afero.NewOsFs(),
+		OutputDir:    caDir,
+	})
+	require.NoError(t, err)
+}
+
 func TestGetCAPath(t *testing.T) {
-	t.Run("should return valid CA path", func(t *testing.T) {
-		path, err := server.GetCAPath()
-		require.NoError(t, err)
-		assert.NotEmpty(t, path)
-		assert.Contains(t, path, configDir)
-		assert.Contains(t, path, uncorsDir)
-	})
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
 
-	t.Run("should return path containing user home", func(t *testing.T) {
-		homeDir, err := os.UserHomeDir()
-		require.NoError(t, err)
+	path, err := server.GetCAPath()
+	require.NoError(t, err)
 
-		path, err := server.GetCAPath()
-		require.NoError(t, err)
-		assert.Contains(t, path, homeDir)
-	})
+	assert.Equal(t, filepath.Join(homeDir, configDir, uncorsDir), path)
 }
 
 func TestCAExists(t *testing.T) {
-	t.Run("should return false when CA does not exist", func(_ *testing.T) {
-		// Temporarily override home dir for testing
-		// This is tricky, so we just test the function doesn't panic
-		exists := server.CAExists(afero.NewOsFs())
-		// May be true or false depending on system state
-		// Just verify it doesn't panic
-		_ = exists
-	})
-
-	t.Run("should detect existing CA", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
+	t.Run("detects a generated CA", func(t *testing.T) {
+		caDir := fakeCADir(t)
 
 		assert.False(t, server.CAExists(afero.NewOsFs()))
 
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		config := server.CAConfig{
-			ValidityDays: 365,
-			Fs:           afero.NewOsFs(),
-			OutputDir:    caDir,
-		}
-		_, _, err := server.GenerateCA(config)
-		require.NoError(t, err)
+		generateDefaultCA(t, caDir)
 
-		// CA should exist now
 		assert.True(t, server.CAExists(afero.NewOsFs()))
 	})
+
+	for _, file := range []string{"ca.crt", "ca.key"} {
+		t.Run("false when only "+file+" exists", func(t *testing.T) {
+			caDir := fakeCADir(t)
+			require.NoError(t, os.MkdirAll(caDir, 0o755))
+			require.NoError(t, os.WriteFile(filepath.Join(caDir, file), []byte(file), 0o600))
+
+			assert.False(t, server.CAExists(afero.NewOsFs()))
+		})
+	}
 }
 
 func TestLoadDefaultCA(t *testing.T) {
-	t.Run("should load CA from default location", func(t *testing.T) {
-		tmpDir := t.TempDir()
+	t.Run("loads CA from default location", func(t *testing.T) {
+		generateDefaultCA(t, fakeCADir(t))
 
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		config := server.CAConfig{
-			ValidityDays: 365,
-			Fs:           afero.NewOsFs(),
-			OutputDir:    caDir,
-		}
-		_, _, err := server.GenerateCA(config)
-		require.NoError(t, err)
-
-		// Load default CA
 		cert, key, err := server.LoadDefaultCA(afero.NewOsFs())
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
 	})
 
-	t.Run("should return error when CA does not exist", func(t *testing.T) {
-		tmpDir := t.TempDir()
+	t.Run("returns error when CA does not exist", func(t *testing.T) {
+		fakeCADir(t)
 
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		// Try to load non-existent CA
 		_, _, err := server.LoadDefaultCA(afero.NewOsFs())
 		require.Error(t, err)
-	})
-
-	t.Run("should use provided filesystem", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		fs := afero.NewOsFs()
-
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		config := server.CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := server.GenerateCA(config)
-		require.NoError(t, err)
-
-		// Load with provided filesystem
-		cert, key, err := server.LoadDefaultCA(fs)
-		require.NoError(t, err)
-		assert.NotNil(t, cert)
-		assert.NotNil(t, key)
-	})
-}
-
-func TestCAExists_EdgeCases(t *testing.T) {
-	t.Run("should handle filesystem with only cert file", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		require.NoError(t, os.MkdirAll(caDir, 0o755))
-
-		// Create only cert file, not key
-		certPath := filepath.Join(caDir, "ca.crt")
-		require.NoError(t, os.WriteFile(certPath, []byte("cert"), 0o600))
-
-		exists := server.CAExists(afero.NewOsFs())
-		assert.False(t, exists, "should return false when only cert exists")
-	})
-
-	t.Run("should handle filesystem with only key file", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		require.NoError(t, os.MkdirAll(caDir, 0o755))
-
-		// Create only key file, not cert
-		keyPath := filepath.Join(caDir, "ca.key")
-		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
-
-		exists := server.CAExists(afero.NewOsFs())
-		assert.False(t, exists, "should return false when only key exists")
-	})
-
-	t.Run("should use provided filesystem", func(t *testing.T) {
-		tmpDir := t.TempDir()
-
-		fakeHome := filepath.Join(tmpDir, "home")
-		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
-		t.Setenv("HOME", fakeHome)
-
-		fs := afero.NewOsFs()
-
-		caDir := filepath.Join(fakeHome, configDir, uncorsDir)
-		config := server.CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := server.GenerateCA(config)
-		require.NoError(t, err)
-
-		// Check with provided filesystem
-		exists := server.CAExists(fs)
-		assert.True(t, exists)
 	})
 }

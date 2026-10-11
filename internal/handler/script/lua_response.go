@@ -160,30 +160,7 @@ func addResponseMethods(
 		return luaReturnTwo
 	})
 	respTable.RawSetString("Write", writeMethod)
-
-	writeStringMethod := luaState.NewFunction(func(state *lua.LState) int {
-		str := state.CheckString(luaArgKey)
-
-		if !*headerWritten {
-			writer.WriteHeader(http.StatusOK)
-
-			*headerWritten = true
-		}
-
-		bytesWritten, err := writer.Write([]byte(str))
-		if err != nil {
-			state.Push(lua.LNumber(0))
-			state.Push(lua.LString(err.Error()))
-
-			return luaReturnTwo
-		}
-
-		state.Push(lua.LNumber(bytesWritten))
-		state.Push(lua.LNil)
-
-		return luaReturnTwo
-	})
-	respTable.RawSetString("WriteString", writeStringMethod)
+	respTable.RawSetString("WriteString", writeMethod)
 
 	writeHeaderMethod := luaState.NewFunction(func(state *lua.LState) int {
 		code := state.CheckInt(luaArgKey)

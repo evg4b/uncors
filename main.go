@@ -27,8 +27,6 @@ func main() {
 		Logger:  logger,
 	}
 
-	// A panic anywhere below is a bug, but the user still deserves a readable
-	// message instead of a raw stack trace.
 	defer helpers.PanicInterceptor(func(value any) {
 		report(value)
 		osExit(1)

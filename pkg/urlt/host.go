@@ -96,7 +96,7 @@ func ParseHost(rawURL string) (*Host, error) {
 
 	rest = strings.TrimPrefix(rest, "//")
 
-	if i := strings.Index(rest, "/"); i >= 0 {
+	if strings.Contains(rest, "/") {
 		return nil, errors.New("host must not contain a path")
 	}
 

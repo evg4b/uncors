@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-// HostCertManager manages TLS certificates for HTTPS mappings, generating a
-// certificate per host on the fly signed by the local development CA.
 type HostCertManager struct {
 	fs        afero.Fs
 	generator *CertGenerator
@@ -45,7 +43,6 @@ func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 	return cert, nil
 }
 
-// ensureCA lazily loads the default CA certificate and initialises the generator.
 func (m *HostCertManager) ensureCA() error {
 	m.mutex.RLock()
 
@@ -79,8 +76,6 @@ func (m *HostCertManager) ensureCA() error {
 	return nil
 }
 
-// certificateForHost returns a cached certificate for the host, generating and
-// caching a new one when it does not yet exist.
 func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, error) {
 	m.mutex.RLock()
 

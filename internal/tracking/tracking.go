@@ -1,12 +1,3 @@
-// Package tracking attributes each request to the component that produced its
-// response and reports the request's lifecycle as two events: RequestStarted
-// and RequestCompleted.
-//
-// The server opens a Scope per request. Components report through the request
-// context: Claim when they decide to produce the response, Rewrote when they
-// change the path, Fail when the handler chain ended in an error. Only the
-// component that answers claims, so a cache miss is reported by the proxy that
-// fetched the response and a cache hit by the cache.
 package tracking
 
 import (
@@ -21,8 +12,6 @@ import (
 
 type scopeKey struct{}
 
-// Scope tracks one request. Handlers may report from goroutines of their own,
-// so every method is safe for concurrent use.
 type Scope struct {
 	publisher events.Publisher
 	id        uint64
@@ -38,7 +27,6 @@ type Scope struct {
 	err      error
 }
 
-// Begin opens a scope for request and returns a context that carries it.
 func Begin(
 	ctx context.Context,
 	publisher events.Publisher,
@@ -56,16 +44,12 @@ func Begin(
 	return context.WithValue(ctx, scopeKey{}, scope), scope
 }
 
-// Claim records that kind produces the response for the request in ctx. The
-// first claim publishes RequestStarted; a later one replaces the handler that
-// RequestCompleted reports.
 func Claim(ctx context.Context, kind events.HandlerKind) {
 	if scope := fromContext(ctx); scope != nil {
 		scope.claim(kind)
 	}
 }
 
-// Rewrote records that the request path was rewritten from to to.
 func Rewrote(ctx context.Context, from, to string) {
 	if scope := fromContext(ctx); scope != nil {
 		scope.mu.Lock()
@@ -75,7 +59,6 @@ func Rewrote(ctx context.Context, from, to string) {
 	}
 }
 
-// Fail records the error the handler chain ended with.
 func Fail(ctx context.Context, err error) {
 	if scope := fromContext(ctx); scope != nil {
 		scope.mu.Lock()
@@ -85,8 +68,6 @@ func Fail(ctx context.Context, err error) {
 	}
 }
 
-// Finish publishes RequestCompleted, preceded by RequestStarted when no
-// component claimed the request. Calls after the first are ignored.
 func (s *Scope) Finish(data *contracts.RequestData) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

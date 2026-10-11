@@ -20,8 +20,8 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.L
 	reqTable.RawSetString("host", lua.LString(request.Host))
 	reqTable.RawSetString("remote_addr", lua.LString(request.RemoteAddr))
 
-	reqTable.RawSetString("headers", createHeadersTable(luaState, request.Header))
-	reqTable.RawSetString("query_params", createQueryParamsTable(luaState, urlt.URL_Query(request.URL)))
+	reqTable.RawSetString("headers", createValuesTable(luaState, request.Header))
+	reqTable.RawSetString("query_params", createValuesTable(luaState, urlt.URL_Query(request.URL)))
 	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
 	if request.Body != nil {
@@ -34,42 +34,25 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.L
 	return reqTable
 }
 
-func createHeadersTable(luaState *lua.LState, headers map[string][]string) *lua.LTable {
-	headersTable := luaState.NewTable()
+func createValuesTable(luaState *lua.LState, values map[string][]string) *lua.LTable {
+	table := luaState.NewTable()
 
-	for key, values := range headers {
-		if len(values) == 1 {
-			headersTable.RawSetString(key, lua.LString(values[0]))
-		} else {
-			valuesList := luaState.NewTable()
-			for _, value := range values {
-				valuesList.Append(lua.LString(value))
-			}
+	for key, items := range values {
+		if len(items) == 1 {
+			table.RawSetString(key, lua.LString(items[0]))
 
-			headersTable.RawSetString(key, valuesList)
+			continue
 		}
+
+		list := luaState.NewTable()
+		for _, item := range items {
+			list.Append(lua.LString(item))
+		}
+
+		table.RawSetString(key, list)
 	}
 
-	return headersTable
-}
-
-func createQueryParamsTable(luaState *lua.LState, queryParams map[string][]string) *lua.LTable {
-	queryTable := luaState.NewTable()
-
-	for key, values := range queryParams {
-		if len(values) == 1 {
-			queryTable.RawSetString(key, lua.LString(values[0]))
-		} else {
-			valuesList := luaState.NewTable()
-			for _, value := range values {
-				valuesList.Append(lua.LString(value))
-			}
-
-			queryTable.RawSetString(key, valuesList)
-		}
-	}
-
-	return queryTable
+	return table
 }
 
 func createPathParamsTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {

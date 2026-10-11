@@ -48,7 +48,6 @@ func assertListening(t *testing.T, port int) {
 	require.NoError(t, conn.Close())
 }
 
-// occupy binds port for the duration of the test so the engine cannot.
 func occupy(t *testing.T, port int) {
 	t.Helper()
 
@@ -110,9 +109,6 @@ func TestEngine(t *testing.T) {
 		}, time.Second, 20*time.Millisecond, "old port is still accepting connections")
 	})
 
-	// Restarts may be requested from several goroutines at the same time. Each
-	// must replace the previous generation completely, never leave an orphaned
-	// listener behind.
 	t.Run("concurrent restarts leave exactly one generation serving", func(t *testing.T) {
 		const restarts = 8
 

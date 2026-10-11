@@ -41,8 +41,6 @@ func PrintLogo(out io.Writer, version string) {
 	}
 }
 
-// PrintUsage renders the standard `--help` output for a flag set: the logo,
-// followed by the flag descriptions.
 func PrintUsage(flags *pflag.FlagSet, version string) {
 	out := flags.Output()
 

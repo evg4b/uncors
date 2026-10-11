@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// FsFromMap creates afero.Fs in memory from map.
-// Where key is a filename and value is file context.
 func FsFromMap(t *testing.T, files map[string]string) afero.Fs {
 	t.Helper()
 

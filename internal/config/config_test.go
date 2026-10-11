@@ -81,6 +81,40 @@ func makeTestFs(t *testing.T) afero.Fs {
 	})
 }
 
+func fullConfigExpected(proxy string) *config.UncorsConfig {
+	return &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
+			{
+				From: hosts.Localhost2.HTTPPort(8080),
+				To:   hosts.Stackoverflow.HTTPS(),
+				Mocks: config.Mocks{
+					{
+						Matcher: config.RequestMatcher{
+							Path:    "/demo",
+							Method:  "POST",
+							Queries: map[string]string{"foo": "bar"},
+							Headers: map[string]string{acceptEncoding: "deflate"},
+						},
+						Response: config.Response{
+							Code:    201,
+							Headers: map[string]string{acceptEncoding: "deflate"},
+							Raw:     "demo",
+						},
+					},
+				},
+			},
+		},
+		Proxy: proxy,
+		CacheConfig: config.CacheConfig{
+			ExpirationTime: time.Hour,
+			MaxSize:        52428800,
+			Methods:        []string{http.MethodGet, http.MethodPost},
+		},
+		Interactive: true,
+	}
+}
+
 func TestLoadConfiguration(t *testing.T) {
 	fs := makeTestFs(t)
 
@@ -106,48 +140,9 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 			},
 			{
-				name: "read all fields from config file config is set",
-				args: []string{params.Config, fullConfigPath},
-				expected: &config.UncorsConfig{
-					Mappings: config.Mappings{
-						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
-						{
-							From: hosts.Localhost2.HTTPPort(8080),
-							To:   hosts.Stackoverflow.HTTPS(),
-							Mocks: config.Mocks{
-								{
-									Matcher: config.RequestMatcher{
-										Path:   "/demo",
-										Method: "POST",
-										Queries: map[string]string{
-											"foo": "bar",
-										},
-										Headers: map[string]string{
-											acceptEncoding: "deflate",
-										},
-									},
-									Response: config.Response{
-										Code: 201,
-										Headers: map[string]string{
-											acceptEncoding: "deflate",
-										},
-										Raw: "demo",
-									},
-								},
-							},
-						},
-					},
-					Proxy: hosts.Localhost.HTTPPort(8080).String(),
-					CacheConfig: config.CacheConfig{
-						ExpirationTime: time.Hour,
-						MaxSize:        52428800,
-						Methods: []string{
-							http.MethodGet,
-							http.MethodPost,
-						},
-					},
-					Interactive: true,
-				},
+				name:     "read all fields from config file config is set",
+				args:     []string{params.Config, fullConfigPath},
+				expected: fullConfigExpected("http://localhost:8080"),
 			},
 			{
 				name: "CLI args with default ports",
@@ -192,36 +187,7 @@ func TestLoadConfiguration(t *testing.T) {
 					params.Config, fullConfigPath,
 					"--proxy", "http://newproxy:9999",
 				},
-				expected: &config.UncorsConfig{
-					Mappings: config.Mappings{
-						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
-						{
-							From: hosts.Localhost2.HTTPPort(8080),
-							To:   hosts.Stackoverflow.HTTPS(),
-							Mocks: config.Mocks{
-								{
-									Matcher: config.RequestMatcher{
-										Path:    "/demo",
-										Method:  "POST",
-										Queries: map[string]string{"foo": "bar"},
-										Headers: map[string]string{acceptEncoding: "deflate"},
-									},
-									Response: config.Response{
-										Code:    201,
-										Headers: map[string]string{acceptEncoding: "deflate"},
-										Raw:     "demo",
-									},
-								},
-							},
-						},
-					},
-					Proxy: "http://newproxy:9999",
-					CacheConfig: config.CacheConfig{
-						ExpirationTime: time.Hour, MaxSize: 52428800,
-						Methods: []string{http.MethodGet, http.MethodPost},
-					},
-					Interactive: true,
-				},
+				expected: fullConfigExpected("http://newproxy:9999"),
 			},
 			{
 				name: "CLI from/to updates existing mapping from config file",

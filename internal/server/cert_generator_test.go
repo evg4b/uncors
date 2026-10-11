@@ -56,7 +56,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 
-		// Verify certificate has private key
 		assert.NotNil(t, cert.PrivateKey)
 		assert.NotEmpty(t, cert.Certificate)
 	})
@@ -75,20 +74,16 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 
-		// Verify properties
 		assert.Equal(t, host, x509Cert.Subject.CommonName)
 		assert.Contains(t, x509Cert.DNSNames, host)
 		assert.Contains(t, x509Cert.Subject.Organization, "UNCORS Development CA")
 
-		// Verify key usage
 		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageDigitalSignature)
 		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageKeyEncipherment)
 		assert.Contains(t, x509Cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 
-		// Verify it's not a CA
 		assert.False(t, x509Cert.IsCA)
 
-		// Verify validity period (approximately 365 days)
 		expectedDuration := 365 * 24 * time.Hour
 		actualDuration := x509Cert.NotAfter.Sub(x509Cert.NotBefore)
 		tolerance := 5 * time.Minute
@@ -102,7 +97,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 		require.NoError(t, err)
 
-		// Verify it's signed by our CA
 		roots := x509.NewCertPool()
 		roots.AddCert(caCert)
 
@@ -128,10 +122,8 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		x509Cert2, err := x509.ParseCertificate(cert2.Certificate[0])
 		require.NoError(t, err)
 
-		// Verify different serial numbers
 		assert.NotEqual(t, x509Cert1.SerialNumber, x509Cert2.SerialNumber)
 
-		// Verify different common names
 		assert.NotEqual(t, x509Cert1.Subject.CommonName, x509Cert2.Subject.CommonName)
 	})
 
@@ -139,7 +131,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		cert, err := generator.GenerateCertificate("tls-test.local")
 		require.NoError(t, err)
 
-		// Verify the certificate can be used in TLS config
 		tlsConfig := &tls.Config{
 			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{*cert},
@@ -157,7 +148,6 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 			require.NoError(t, err, "Should generate certificate for %s", host)
 			assert.NotNil(t, cert)
 
-			// Verify certificate is for correct host
 			x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
 			require.NoError(t, err)
 			assert.Equal(t, host, x509Cert.Subject.CommonName)

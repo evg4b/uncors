@@ -16,9 +16,6 @@ type versionInfo struct {
 	Version string `json:"tag_name"` // nolint: tagliatelle
 }
 
-// CheckNewVersion asks GitHub for the latest release. It returns that release
-// and true when it is newer than the running version. Failures are logged and
-// reported as no newer version: the check must never get in the user's way.
 func (checker *Checker) CheckNewVersion(ctx context.Context) (string, bool) {
 	slog.Debug("checking for a new version")
 

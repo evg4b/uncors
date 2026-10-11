@@ -34,41 +34,26 @@ var testCases = []struct {
 	},
 }
 
-func TestPrintWarnBox(t *testing.T) {
+func runBoxTests(t *testing.T, write func(out *tui.CliOutput, messages ...string)) {
+	t.Helper()
+
 	for _, testCase := range testCases {
 		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
 			buffer := strings.Builder{}
-
-			tui.NewCliOutput(&buffer).
-				WarnBox(testCase.message)
-
+			write(tui.NewCliOutput(&buffer), testCase.message)
 			testutils.MatchSnapshot(t, buffer.String())
 		}))
 	}
+}
+
+func TestPrintWarnBox(t *testing.T) {
+	runBoxTests(t, (*tui.CliOutput).WarnBox)
 }
 
 func TestPrintInfoBox(t *testing.T) {
-	for _, testCase := range testCases {
-		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
-			buffer := strings.Builder{}
-
-			tui.NewCliOutput(&buffer).
-				InfoBox(testCase.message)
-
-			testutils.MatchSnapshot(t, buffer.String())
-		}))
-	}
+	runBoxTests(t, (*tui.CliOutput).InfoBox)
 }
 
 func TestPrintErrorBox(t *testing.T) {
-	for _, testCase := range testCases {
-		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
-			buffer := strings.Builder{}
-
-			tui.NewCliOutput(&buffer).
-				ErrorBox(testCase.message)
-
-			testutils.MatchSnapshot(t, buffer.String())
-		}))
-	}
+	runBoxTests(t, (*tui.CliOutput).ErrorBox)
 }

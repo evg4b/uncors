@@ -19,7 +19,6 @@ func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
 	router.MethodNotAllowedHandler = httpHandler
 }
 
-// Factory builds the handlers and middleware for one mapping.
 type Factory interface {
 	StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware
 	RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware
@@ -52,8 +51,6 @@ func NewRouter(mappings config.Mappings, options ...Option) (*Router, error) {
 	}
 
 	setDefaultHandler(instance.Router, infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *http.Request) error {
-		// instance.output.Errorf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host)
-		// log.Printf("Host %s://%s is not mapped", r.URL.Scheme, r.URL.Host) // nolint: gosec
 		return errHostNotMapped
 	}))
 

@@ -1,7 +1,6 @@
 package router_test
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -52,9 +51,6 @@ var (
 	userIDHeader = "User-Id"
 )
 
-// newGeneration builds a configuration generation over fs to act as the
-// router's factory; it is closed, releasing everything the router created,
-// when the test ends.
 func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
 	t.Helper()
 
@@ -104,6 +100,105 @@ func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRec
 	httpRouterHandler.ServeHTTP(wrappedWriter, request)
 }
 
+func serve(t *testing.T, router http.Handler, method, url string, header map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	if strings.HasPrefix(url, "/") {
+		url = "http://localhost" + url
+	}
+
+	request := httptest.NewRequestWithContext(t.Context(), method, url, nil)
+	for key, value := range header {
+		request.Header.Add(key, value)
+	}
+
+	helpers.NormaliseRequest(request)
+
+	recorder := httptest.NewRecorder()
+	serveHTTP(t, router, recorder, request)
+
+	return recorder
+}
+
+func newRouter(
+	t *testing.T,
+	fs afero.Fs,
+	mappings config.Mappings,
+	httpClient contracts.HTTPClient,
+	options ...router.Option,
+) http.Handler {
+	t.Helper()
+
+	var replacerFactory urlreplacer.ReplacerFactory
+	if httpClient != nil {
+		replacerFactory = urlreplacer.NewURLReplacerFactory(mappings)
+	}
+
+	options = append([]router.Option{
+		router.ForRouterWithDefaultHandler(proxyFactory(t, replacerFactory, httpClient)),
+		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+		router.WithFactory(newGeneration(t, fs)),
+	}, options...)
+
+	routerInstance, err := router.NewRouter(mappings, options...)
+	require.NoError(t, err)
+
+	return routerInstance
+}
+
+func upstream(t *testing.T, code int, body string) contracts.HTTPClient {
+	t.Helper()
+
+	return mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			Request:    req,
+			StatusCode: code,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}, nil
+	})
+}
+
+func mockResponse(path string, code int, body string) config.Mock {
+	return config.Mock{
+		Matcher:  config.RequestMatcher{Path: path},
+		Response: config.Response{Code: code, Raw: body},
+	}
+}
+
+type routeCase struct {
+	name       string
+	method     string
+	url        string
+	headers    map[string]string
+	statusCode int
+	expected   string
+}
+
+func (c routeCase) run(t *testing.T, router http.Handler) {
+	t.Helper()
+
+	method := c.method
+	if method == "" {
+		method = http.MethodGet
+	}
+
+	recorder := serve(t, router, method, c.url, c.headers)
+
+	assert.Equal(t, c.statusCode, recorder.Code)
+	assert.Equal(t, c.expected, testutils.ReadBody(t, recorder))
+}
+
+func runRouteCases(t *testing.T, router http.Handler, cases []routeCase) {
+	t.Helper()
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.run(t, router)
+		})
+	}
+}
+
 func TestRouter(t *testing.T) {
 	fs := testutils.FsFromMap(t, map[string]string{
 		"/images/background.png": backgroundPng,
@@ -113,8 +208,6 @@ func TestRouter(t *testing.T) {
 		"/assets/index.html":     indexHTML,
 		"/mock.json":             mockJSON,
 	})
-
-	generation := newGeneration(t, fs)
 
 	mappings := config.Mappings{
 		{
@@ -126,885 +219,321 @@ func TestRouter(t *testing.T) {
 				{Dir: "/images", Path: "/img/"},
 			},
 			Mocks: config.Mocks{
+				mockResponse("/api/mocks/1", http.StatusOK, "mock-1"),
 				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/mocks/1",
-					},
-					Response: config.Response{
-						Code: http.StatusOK,
-						Raw:  "mock-1",
-					},
+					Matcher:  config.RequestMatcher{Path: "/api/mocks/2"},
+					Response: config.Response{Code: http.StatusOK, File: "/mock.json"},
 				},
+				mockResponse("/api/mocks/3", http.StatusMultiStatus, "mock-3"),
 				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/mocks/2",
-					},
-					Response: config.Response{
-						Code: http.StatusOK,
-						File: "/mock.json",
-					},
-				},
-				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/mocks/3",
-					},
-					Response: config.Response{
-						Code: http.StatusMultiStatus,
-						Raw:  "mock-3",
-					},
-				},
-				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/mocks/4",
-					},
-					Response: config.Response{
-						Code: http.StatusOK,
-						File: "/unknown.json",
-					},
+					Matcher:  config.RequestMatcher{Path: "/api/mocks/4"},
+					Response: config.Response{Code: http.StatusOK, File: "/unknown.json"},
 				},
 			},
 		},
 	}
 
-	factory := urlreplacer.NewURLReplacerFactory(mappings)
+	routerInstance := newRouter(t, fs, mappings, upstream(t, http.StatusOK, "original.png"))
 
-	httpResponseMapping := map[string]string{
-		"/img/original.png": "original.png",
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "static index.html", url: "/cc/index.html", statusCode: http.StatusOK, expected: indexHTML},
+		{name: "static index.js", url: "/cc/js/index.js", statusCode: http.StatusOK, expected: indexJS},
+		{name: "static styles.css", url: "/cc/css/styles.css", statusCode: http.StatusOK, expected: styleCSS},
+		{name: "static index fallback", url: "/cc/unknown.html", statusCode: http.StatusOK, expected: indexHTML},
+		{name: "static background.png", url: "/img/background.png", statusCode: http.StatusOK, expected: backgroundPng},
+		{name: "static icons.svg", url: "/img/svg/icons.svg", statusCode: http.StatusOK, expected: iconsSvg},
+		{name: "missing static is proxied", url: "/img/original.png", statusCode: http.StatusOK, expected: "original.png"},
+		{name: "raw content mock", url: "/api/mocks/1", statusCode: http.StatusOK, expected: "mock-1"},
+		{name: "file content mock", url: "/api/mocks/2", statusCode: http.StatusOK, expected: mockJSON},
+		{name: "MultiStatus mock", url: "/api/mocks/3", statusCode: http.StatusMultiStatus, expected: "mock-3"},
+	})
+
+	errorCases := []struct {
+		name    string
+		url     string
+		message string
+	}{
+		{
+			name:    "missing index file",
+			url:     "/pnp/unknown.html",
+			message: "failed to open index file: open /assets/index.php: file does not exist",
+		},
+		{
+			name:    "missing mock file",
+			url:     "/api/mocks/4",
+			message: "failed to open file /unknown.json: open /unknown.json: file does not exist",
+		},
 	}
-
-	httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(request *http.Request) (*http.Response, error) {
-		if response, ok := httpResponseMapping[request.URL.Path]; ok {
-			return &http.Response{
-				Body:       io.NopCloser(strings.NewReader(response)),
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Header:     http.Header{},
-				Request:    request,
-			}, nil
-		}
-
-		panic(fmt.Sprintf("incorrect request: %s", request.URL.Path))
-	})
-
-	router, err := router.NewRouter(
-		mappings,
-		router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
-		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-		router.WithFactory(generation),
-	)
-	require.NoError(t, err)
-
-	t.Run("statics directory", func(t *testing.T) {
-		t.Run("with index file", func(t *testing.T) {
-			t.Run("should return static file", func(t *testing.T) {
-				tests := []struct {
-					name     string
-					url      string
-					expected string
-				}{
-					{
-						name:     indexHTML,
-						url:      "http://localhost/cc/index.html",
-						expected: indexHTML,
-					},
-					{
-						name:     indexJS,
-						url:      "http://localhost/cc/js/index.js",
-						expected: indexJS,
-					},
-					{
-						name:     styleCSS,
-						url:      "http://localhost/cc/css/styles.css",
-						expected: styleCSS,
-					},
-				}
-				for _, testCase := range tests {
-					t.Run(testCase.name, func(t *testing.T) {
-						recorder := httptest.NewRecorder()
-						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-						helpers.NormaliseRequest(request)
-
-						serveHTTP(t, router, recorder, request)
-
-						assert.Equal(t, 200, recorder.Code)
-						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
-					})
-				}
-			})
-
-			t.Run("should return index file by default", func(t *testing.T) {
-				recorder := httptest.NewRecorder()
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/cc/unknown.html", nil)
-				helpers.NormaliseRequest(request)
-
-				serveHTTP(t, router, recorder, request)
-
-				assert.Equal(t, http.StatusOK, recorder.Code)
-				assert.Equal(t, indexHTML, testutils.ReadBody(t, recorder))
-			})
-
-			t.Run("should return error code when index file doesn't exists", func(t *testing.T) {
-				recorder := httptest.NewRecorder()
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/pnp/unknown.html", nil)
-				helpers.NormaliseRequest(request)
-
-				serveHTTP(t, router, recorder, request)
-
-				assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-
-				expectedMessage := "failed to open index file: open /assets/index.php: file does not exist"
-				assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
-			})
-		})
-
-		t.Run("without index file", func(t *testing.T) {
-			t.Run("should return static file", func(t *testing.T) {
-				tests := []struct {
-					name     string
-					url      string
-					expected string
-				}{
-					{
-						name:     backgroundPng,
-						url:      "http://localhost/img/background.png",
-						expected: backgroundPng,
-					},
-					{
-						name:     iconsSvg,
-						url:      "http://localhost/img/svg/icons.svg",
-						expected: iconsSvg,
-					},
-				}
-				for _, testCase := range tests {
-					t.Run(testCase.name, func(t *testing.T) {
-						recorder := httptest.NewRecorder()
-						request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-						helpers.NormaliseRequest(request)
-
-						serveHTTP(t, router, recorder, request)
-
-						assert.Equal(t, http.StatusOK, recorder.Code)
-						assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
-					})
-				}
-			})
-
-			t.Run("should return original file", func(t *testing.T) {
-				recorder := httptest.NewRecorder()
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/img/original.png", nil)
-				helpers.NormaliseRequest(request)
-
-				serveHTTP(t, router, recorder, request)
-
-				assert.Equal(t, http.StatusOK, recorder.Code)
-				assert.Equal(t, "original.png", testutils.ReadBody(t, recorder))
-			})
-		})
-	})
-
-	t.Run("mocks", func(t *testing.T) {
-		t.Run("should return mock with", func(t *testing.T) {
-			tests := []struct {
-				name         string
-				url          string
-				expected     string
-				expectedCode int
-			}{
-				{
-					name:         "raw content mock",
-					url:          "http://localhost/api/mocks/1",
-					expected:     "mock-1",
-					expectedCode: http.StatusOK,
-				},
-				{
-					name:         "file content mock",
-					url:          "http://localhost/api/mocks/2",
-					expected:     mockJSON,
-					expectedCode: http.StatusOK,
-				},
-				{
-					name:         "MultiStatus mock",
-					url:          "http://localhost/api/mocks/3",
-					expected:     "mock-3",
-					expectedCode: http.StatusMultiStatus,
-				},
-			}
-			for _, testCase := range tests {
-				t.Run(testCase.name, func(t *testing.T) {
-					recorder := httptest.NewRecorder()
-					request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-					helpers.NormaliseRequest(request)
-
-					serveHTTP(t, router, recorder, request)
-
-					assert.Equal(t, testCase.expectedCode, recorder.Code)
-					assert.Equal(t, testCase.expected, testutils.ReadBody(t, recorder))
-				})
-			}
-		})
-
-		t.Run("should return error code when mock file doesn't exists", func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/mocks/4", nil)
-			helpers.NormaliseRequest(request)
-
-			serveHTTP(t, router, recorder, request)
+	for _, testCase := range errorCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			recorder := serve(t, routerInstance, http.MethodGet, testCase.url, nil)
 
 			assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+			assert.Contains(t, testutils.ReadBody(t, recorder), testCase.message)
+		})
+	}
+}
 
-			expectedMessage := "failed to open file /unknown.json: open /unknown.json: file does not exist"
-			assert.Contains(t, testutils.ReadBody(t, recorder), expectedMessage)
+func TestRouterScripts(t *testing.T) {
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From: hosts.Parse("{host}"),
+		To:   hosts.Parse("{host}"),
+		Scripts: config.Scripts{{
+			Matcher: config.RequestMatcher{Path: "/api/script"},
+			Script:  "response:WriteHeader(200)\nresponse:WriteString(\"from-script\")",
+		}},
+	}}, nil)
+
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "script", url: "/api/script", statusCode: http.StatusOK, expected: "from-script"},
+	})
+}
+
+func TestRouterRewrites(t *testing.T) {
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From:     hosts.Parse("{host}"),
+		To:       hosts.Parse("{host}"),
+		Rewrites: config.RewriteOptions{{From: "/old", To: "/new"}},
+	}}, upstream(t, http.StatusAccepted, "rewritten"))
+
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "exact path", url: "/old", statusCode: http.StatusAccepted, expected: "rewritten"},
+		{name: "sub path", url: "/old/sub", statusCode: http.StatusAccepted, expected: "rewritten"},
+	})
+}
+
+func TestRouterCacheGlobs(t *testing.T) {
+	callCount := 0
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From:  hosts.Parse("{host}"),
+		To:    hosts.Parse("{host}"),
+		Cache: config.CacheGlobs{"*.json"},
+		Mocks: config.Mocks{mockResponse("/data.json", http.StatusOK, `{"cached": true}`)},
+	}}, nil, router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+		callCount++
+
+		return cacheFactory()(globs)
+	}))
+
+	recorder := serve(t, routerInstance, http.MethodGet, "http://localhost/data.json", nil)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, 1, callCount, "cache middleware factory should be called once for the mapping")
+}
+
+func TestRouterHAR(t *testing.T) {
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From:  hosts.Parse("{host}"),
+		To:    hosts.Parse("{host}"),
+		HAR:   config.HARConfig{File: filepath.Join(t.TempDir(), "test.har")},
+		Mocks: config.Mocks{mockResponse("/api", http.StatusOK, mock1Body)},
+	}}, nil)
+
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "mock", url: api, statusCode: http.StatusOK, expected: mock1Body},
+	})
+}
+
+func TestRouterMockMethods(t *testing.T) {
+	const (
+		forwardedCode = 299
+		forwardedBody = "forwarded"
+	)
+
+	t.Run("any method matches when the mock sets none", func(t *testing.T) {
+		routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+			From:  hosts.Parse("{host}"),
+			To:    hosts.Parse("{host}"),
+			Mocks: config.Mocks{mockResponse("/api", http.StatusOK, mock1Body)},
+		}}, nil)
+
+		for _, method := range []string{
+			http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut,
+			http.MethodPatch, http.MethodDelete, http.MethodTrace,
+		} {
+			t.Run(method, func(t *testing.T) {
+				routeCase{method: method, url: api, statusCode: http.StatusOK, expected: mock1Body}.run(t, routerInstance)
+			})
+		}
+	})
+
+	t.Run("only the set method matches", func(t *testing.T) {
+		mock := mockResponse("/api", http.StatusOK, mock1Body)
+		mock.Matcher.Method = http.MethodPut
+
+		routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+			From:  hosts.Parse("{host}"),
+			To:    hosts.Parse("{host}"),
+			Mocks: config.Mocks{mock},
+		}}, upstream(t, forwardedCode, forwardedBody))
+
+		for _, method := range []string{
+			http.MethodGet, http.MethodHead, http.MethodPost,
+			http.MethodPatch, http.MethodDelete, http.MethodTrace,
+		} {
+			t.Run(method, func(t *testing.T) {
+				routeCase{method: method, url: api, statusCode: forwardedCode, expected: forwardedBody}.run(t, routerInstance)
+			})
+		}
+
+		runRouteCases(t, routerInstance, []routeCase{
+			{name: http.MethodOptions, method: http.MethodOptions, url: api, statusCode: http.StatusOK},
+			{name: http.MethodPut, method: http.MethodPut, url: api, statusCode: http.StatusOK, expected: mock1Body},
 		})
 	})
 }
 
-func TestRouterScriptsAndRewrites(t *testing.T) {
-	t.Run("scripts are registered and served", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
+func TestRouterMockPaths(t *testing.T) {
+	const (
+		forwardedCode = 299
+		forwardedBody = "forwarded"
+	)
 
-		mappings := config.Mappings{
-			{
-				From: hosts.Parse("{host}"),
-				To:   hosts.Parse("{host}"),
-				Scripts: config.Scripts{
-					{
-						Matcher: config.RequestMatcher{Path: "/api/script"},
-						Script:  "response:WriteHeader(200)\nresponse:WriteString(\"from-script\")",
-					},
-				},
-			},
-		}
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From: hosts.Parse("{host}"),
+		To:   hosts.Parse("{host}"),
+		Mocks: config.Mocks{
+			mockResponse(userPath, http.StatusOK, mock1Body),
+			mockResponse("/api/user/{id:[0-9]+}", http.StatusAccepted, mock2Body),
+			mockResponse("/api/{single-path/demo", http.StatusBadRequest, mock3Body),
+			mockResponse(`/api/v2/{multiple-path:[a-z-\/]+}/demo`, http.StatusCreated, mock4Body),
+		},
+	}}, upstream(t, forwardedCode, forwardedBody))
 
-		routerInstance, err := router.NewRouter(
-			mappings,
-			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/script", nil)
-
-		serveHTTP(t, routerInstance, recorder, request)
-
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, "from-script", testutils.ReadBody(t, recorder))
-	})
-
-	t.Run("rewrites are served via path handler", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
-
-		expectedCode := 202
-		expectedBody := "rewritten"
-
-		mappings := config.Mappings{
-			{
-				From: hosts.Parse("{host}"),
-				To:   hosts.Parse("{host}"),
-				Rewrites: config.RewriteOptions{
-					{From: "/old", To: "/new"},
-				},
-			},
-		}
-
-		factory := urlreplacer.NewURLReplacerFactory(mappings)
-		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
-			return &http.Response{
-				Request:    req,
-				StatusCode: expectedCode,
-				Body:       io.NopCloser(strings.NewReader(expectedBody)),
-			}, nil
-		})
-
-		routerInstance, err := router.NewRouter(
-			mappings,
-			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, httpMock)),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		t.Run("exact path", func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old", nil)
-
-			serveHTTP(t, routerInstance, recorder, request)
-
-			assert.Equal(t, expectedCode, recorder.Code)
-		})
-
-		t.Run("path with trailing slash", func(t *testing.T) {
-			recorder := httptest.NewRecorder()
-			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/old/sub", nil)
-
-			serveHTTP(t, routerInstance, recorder, request)
-
-			assert.Equal(t, expectedCode, recorder.Code)
-		})
-	})
-
-	t.Run("cache globs enable cache middleware", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
-
-		callCount := 0
-		mappings := config.Mappings{
-			{
-				From:  hosts.Parse("{host}"),
-				To:    hosts.Parse("{host}"),
-				Cache: config.CacheGlobs{"*.json"},
-				Mocks: config.Mocks{
-					{
-						Matcher: config.RequestMatcher{Path: "/data.json"},
-						Response: config.Response{
-							Code: http.StatusOK,
-							Raw:  `{"cached": true}`,
-						},
-					},
-				},
-			},
-		}
-
-		routerInstance, err := router.NewRouter(
-			mappings,
-			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
-				callCount++
-
-				return cacheFactory()(globs)
-			}),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/data.json", nil)
-
-		serveHTTP(t, routerInstance, recorder, request)
-
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, 1, callCount, "cache middleware factory should be called once for the mapping")
-	})
-
-	t.Run("HAR config enables HAR middleware", func(t *testing.T) {
-		harFile := filepath.Join(t.TempDir(), "test.har")
-
-		generation := newGeneration(t, afero.NewMemMapFs())
-
-		mappings := config.Mappings{
-			{
-				From: hosts.Parse("{host}"),
-				To:   hosts.Parse("{host}"),
-				HAR:  config.HARConfig{File: harFile},
-				Mocks: config.Mocks{
-					{
-						Matcher:  config.RequestMatcher{Path: "/api"},
-						Response: config.Response{Code: http.StatusOK, Raw: mock1Body},
-					},
-				},
-			},
-		}
-
-		routerInstance, err := router.NewRouter(
-			mappings,
-			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api", nil)
-
-		serveHTTP(t, routerInstance, recorder, request)
-
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, mock1Body, testutils.ReadBody(t, recorder))
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "direct path", url: apiUser, statusCode: http.StatusOK, expected: mock1Body},
+		{
+			name:       "direct path with ending slash",
+			url:        "https://localhost/api/user/",
+			statusCode: forwardedCode,
+			expected:   forwardedBody,
+		},
+		{
+			name:       "direct path with parameter",
+			url:        "https://localhost/api/user/23",
+			statusCode: http.StatusAccepted,
+			expected:   mock2Body,
+		},
+		{
+			name:       "direct path with incorrect parameter",
+			url:        "https://localhost/api/user/unknow",
+			statusCode: forwardedCode,
+			expected:   forwardedBody,
+		},
+		{
+			name:       "path with subpath to single matching param",
+			url:        "https://localhost/api/some-path/with-some-subpath/demo",
+			statusCode: forwardedCode,
+			expected:   forwardedBody,
+		},
+		{
+			name:       "path with subpath to multiple matching param",
+			url:        "https://localhost/api/v2/some-path/with-some-subpath/demo",
+			statusCode: http.StatusCreated,
+			expected:   mock4Body,
+		},
 	})
 }
 
-func TestRouterMockMiddleware(t *testing.T) {
-	t.Run("request method handling", func(t *testing.T) {
-		t.Run("where mock method is not set allow method", func(t *testing.T) {
-			generation := newGeneration(t, afero.NewMemMapFs())
+func TestRouterMockQueries(t *testing.T) {
+	const token = "000000000000000000000000000000"
 
-			routerInstance, err := router.NewRouter(
-				config.Mappings{
-					{
-						From: hosts.Parse("{host}"),
-						To:   hosts.Parse("{host}"),
-						Mocks: config.Mocks{
-							{
-								Matcher: config.RequestMatcher{
-									Path: "/api",
-								},
-								Response: config.Response{
-									Code: http.StatusOK,
-									Raw:  mock1Body,
-								},
-							},
-						},
-					},
-				},
-				router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithFactory(generation),
-			)
-			require.NoError(t, err)
+	byID := mockResponse(userPath, http.StatusCreated, mock2Body)
+	byID.Matcher.Queries = map[string]string{"id": "17"}
 
-			methods := []string{
-				http.MethodGet,
-				http.MethodHead,
-				http.MethodPost,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodTrace,
-			}
+	byIDAndToken := mockResponse(userPath, http.StatusAccepted, mock3Body)
+	byIDAndToken.Matcher.Queries = map[string]string{"id": "99", "token": token}
 
-			for _, method := range methods {
-				t.Run(method, func(t *testing.T) {
-					request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
-					recorder := httptest.NewRecorder()
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From:  hosts.Parse("{host}"),
+		To:    hosts.Parse("{host}"),
+		Mocks: config.Mocks{mockResponse(userPath, http.StatusOK, mock1Body), byID, byIDAndToken},
+	}}, nil)
 
-					serveHTTP(t, routerInstance, recorder, request)
-
-					body := testutils.ReadBody(t, recorder)
-					assert.Equal(t, http.StatusOK, recorder.Code)
-					assert.Equal(t, mock1Body, body)
-				})
-			}
-		})
-
-		t.Run("where method is set", func(t *testing.T) {
-			generation := newGeneration(t, afero.NewMemMapFs())
-
-			expectedCode := 299
-			expectedBody := "forwarded"
-			mappings := config.Mappings{
-				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{{
-					Matcher: config.RequestMatcher{
-						Path:   "/api",
-						Method: http.MethodPut,
-					},
-					Response: config.Response{
-						Code: http.StatusOK,
-						Raw:  mock1Body,
-					},
-				}}},
-			}
-			factory := urlreplacer.NewURLReplacerFactory(mappings)
-
-			routerInstance, err := router.NewRouter(
-				mappings,
-				router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
-					Set(func(req *http.Request) (*http.Response, error) {
-						return &http.Response{
-							Request:    req,
-							StatusCode: expectedCode,
-							Body:       io.NopCloser(strings.NewReader(expectedBody)),
-						}, nil
-					}))),
-				router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-				router.WithFactory(generation),
-			)
-			require.NoError(t, err)
-
-			t.Run("method is not matched", func(t *testing.T) {
-				methods := []string{
-					http.MethodGet,
-					http.MethodHead,
-					http.MethodPost,
-					http.MethodPatch,
-					http.MethodDelete,
-					http.MethodTrace,
-				}
-
-				for _, method := range methods {
-					t.Run(method, func(t *testing.T) {
-						request := httptest.NewRequestWithContext(t.Context(), method, api, nil)
-						recorder := httptest.NewRecorder()
-
-						serveHTTP(t, routerInstance, recorder, request)
-
-						assert.Equal(t, expectedCode, recorder.Code)
-						assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
-					})
-				}
-
-				t.Run(http.MethodOptions, func(t *testing.T) {
-					request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, api, nil)
-					recorder := httptest.NewRecorder()
-
-					serveHTTP(t, routerInstance, recorder, request)
-
-					assert.Equal(t, http.StatusOK, recorder.Code)
-					assert.Empty(t, testutils.ReadBody(t, recorder))
-				})
-			})
-
-			t.Run("method is matched", func(t *testing.T) {
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodPut, api, nil)
-				recorder := httptest.NewRecorder()
-
-				serveHTTP(t, routerInstance, recorder, request)
-
-				body := testutils.ReadBody(t, recorder)
-				assert.Equal(t, http.StatusOK, recorder.Code)
-				assert.Equal(t, mock1Body, body)
-			})
-		})
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "queries is not set", url: "/api/user", statusCode: http.StatusOK, expected: mock1Body},
+		{name: "passed unsetted parameter", url: "/api/user?id=16", statusCode: http.StatusOK, expected: mock1Body},
+		{name: "passed parameter", url: "/api/user?id=17", statusCode: http.StatusCreated, expected: mock2Body},
+		{
+			name:       "passed one of multiple parameters",
+			url:        "/api/user?id=99",
+			statusCode: http.StatusOK,
+			expected:   mock1Body,
+		},
+		{
+			name:       "passed all of multiple parameters",
+			url:        "/api/user?id=99&token=" + token,
+			statusCode: http.StatusAccepted,
+			expected:   mock3Body,
+		},
+		{
+			name:       "passed extra parameters",
+			url:        "/api/user?id=99&token=" + token + "&demo=true",
+			statusCode: http.StatusAccepted,
+			expected:   mock3Body,
+		},
 	})
+}
 
-	t.Run("path handling", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
+func TestRouterMockHeaders(t *testing.T) {
+	const (
+		csrfToken = "de4e27987d054577b0edc0e828851724"
+		token     = "000000000000000000000000000000"
+	)
 
-		expectedCode := 299
-		expectedBody := "forwarded"
-		mappings := config.Mappings{
-			{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
-				{
-					Matcher: config.RequestMatcher{
-						Path: userPath,
-					},
-					Response: config.Response{
-						Code: http.StatusOK,
-						Raw:  mock1Body,
-					},
-				},
-				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/user/{id:[0-9]+}",
-					},
-					Response: config.Response{
-						Code: http.StatusAccepted,
-						Raw:  mock2Body,
-					},
-				},
-				{
-					Matcher: config.RequestMatcher{
-						Path: "/api/{single-path/demo",
-					},
-					Response: config.Response{
-						Code: http.StatusBadRequest,
-						Raw:  mock3Body,
-					},
-				},
-				{
-					Matcher: config.RequestMatcher{
-						Path: `/api/v2/{multiple-path:[a-z-\/]+}/demo`,
-					},
-					Response: config.Response{
-						Code: http.StatusCreated,
-						Raw:  mock4Body,
-					},
-				},
-			}},
-		}
-		factory := urlreplacer.NewURLReplacerFactory(mappings)
+	byCSRF := mockResponse(userPath, http.StatusCreated, mock2Body)
+	byCSRF.Matcher.Headers = map[string]string{headers.XCSRFToken: csrfToken}
 
-		routerInstance, err := router.NewRouter(
-			mappings,
-			router.ForRouterWithDefaultHandler(proxyFactory(t, factory, mocks.NewHTTPClientMock(t).DoMock.
-				Set(func(req *http.Request) (*http.Response, error) {
-					return &http.Response{
-						Request:    req,
-						StatusCode: expectedCode,
-						Body:       io.NopCloser(strings.NewReader(expectedBody)),
-					}, nil
-				}))),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
+	byUserAndCSRF := mockResponse(userPath, http.StatusAccepted, mock3Body)
+	byUserAndCSRF.Matcher.Headers = map[string]string{userIDHeader: "99", headers.XCSRFToken: token}
 
-		tests := []struct {
-			name       string
-			url        string
-			expected   string
-			statusCode int
-		}{
-			{
-				name:       "direct path",
-				url:        apiUser,
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name:       "direct path with ending slash",
-				url:        "https://localhost/api/user/",
-				expected:   expectedBody,
-				statusCode: expectedCode,
-			},
-			{
-				name:       "direct path with parameter",
-				url:        "https://localhost/api/user/23",
-				expected:   mock2Body,
-				statusCode: http.StatusAccepted,
-			},
-			{
-				name:       "direct path with incorrect parameter",
-				url:        "https://localhost/api/user/unknow",
-				expected:   expectedBody,
-				statusCode: expectedCode,
-			},
-			{
-				name:       "path with subpath to single matching param",
-				url:        "https://localhost/api/some-path/with-some-subpath/demo",
-				expected:   expectedBody,
-				statusCode: expectedCode,
-			},
-			{
-				name:       "path with subpath to multiple matching param",
-				url:        "https://localhost/api/v2/some-path/with-some-subpath/demo",
-				expected:   mock4Body,
-				statusCode: http.StatusCreated,
-			},
-		}
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-				recorder := httptest.NewRecorder()
+	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
+		From:  hosts.Parse("{host}"),
+		To:    hosts.Parse("{host}"),
+		Mocks: config.Mocks{mockResponse(userPath, http.StatusOK, mock1Body), byCSRF, byUserAndCSRF},
+	}}, nil)
 
-				serveHTTP(t, routerInstance, recorder, request)
-
-				body := testutils.ReadBody(t, recorder)
-				assert.Equal(t, testCase.statusCode, recorder.Code)
-				assert.Equal(t, testCase.expected, body)
-			})
-		}
-	})
-
-	t.Run("query handling", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
-
-		routerInstance, err := router.NewRouter(
-			config.Mappings{
-				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-						},
-						Response: config.Response{
-							Code: http.StatusOK,
-							Raw:  mock1Body,
-						},
-					},
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-							Queries: map[string]string{
-								"id": "17",
-							},
-						},
-						Response: config.Response{
-							Code: http.StatusCreated,
-							Raw:  mock2Body,
-						},
-					},
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-							Queries: map[string]string{
-								"id":    "99",
-								"token": "000000000000000000000000000000",
-							},
-						},
-						Response: config.Response{
-							Code: http.StatusAccepted,
-							Raw:  mock3Body,
-						},
-					},
-				}},
-			},
-			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		tests := []struct {
-			name       string
-			url        string
-			expected   string
-			statusCode int
-		}{
-			{
-				name:       "queries is not set",
-				url:        "http://localhost/api/user",
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name:       "passed unsetted parameter",
-				url:        "http://localhost/api/user?id=16",
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name:       "passed parameter",
-				url:        "http://localhost/api/user?id=17",
-				expected:   mock2Body,
-				statusCode: http.StatusCreated,
-			},
-			{
-				name:       "passed one of multiple parameters",
-				url:        "http://localhost/api/user?id=99",
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name:       "passed all of multiple parameters",
-				url:        "http://localhost/api/user?id=99&token=000000000000000000000000000000",
-				expected:   mock3Body,
-				statusCode: http.StatusAccepted,
-			},
-			{
-				name:       "passed extra parameters",
-				url:        "http://localhost/api/user?id=99&token=000000000000000000000000000000&demo=true",
-				expected:   mock3Body,
-				statusCode: http.StatusAccepted,
-			},
-		}
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-				recorder := httptest.NewRecorder()
-
-				serveHTTP(t, routerInstance, recorder, request)
-
-				body := testutils.ReadBody(t, recorder)
-				assert.Equal(t, testCase.statusCode, recorder.Code)
-				assert.Equal(t, testCase.expected, body)
-			})
-		}
-	})
-
-	t.Run("header handling", func(t *testing.T) {
-		generation := newGeneration(t, afero.NewMemMapFs())
-
-		routerInstance, err := router.NewRouter(
-			config.Mappings{
-				{From: hosts.Parse("{host}"), To: hosts.Parse("{host}"), Mocks: config.Mocks{
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-						},
-						Response: config.Response{
-							Code: http.StatusOK,
-							Raw:  mock1Body,
-						},
-					},
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-							Headers: map[string]string{
-								headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
-							},
-						},
-						Response: config.Response{
-							Code: http.StatusCreated,
-							Raw:  mock2Body,
-						},
-					},
-					{
-						Matcher: config.RequestMatcher{
-							Path: userPath,
-							Headers: map[string]string{
-								userIDHeader:       "99",
-								headers.XCSRFToken: "000000000000000000000000000000",
-							},
-						},
-						Response: config.Response{
-							Code: http.StatusAccepted,
-							Raw:  mock3Body,
-						},
-					},
-				}},
-			},
-			router.ForRouterWithDefaultHandler(proxyFactory(t, nil, nil)),
-			router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
-			router.WithFactory(generation),
-		)
-		require.NoError(t, err)
-
-		tests := []struct {
-			name       string
-			url        string
-			headers    map[string]string
-			expected   string
-			statusCode int
-		}{
-			{
-				name:       "headers is not set",
-				url:        apiUser,
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name: "passed unsetted headers",
-				url:  apiUser,
-				headers: map[string]string{
-					headers.XCSRFToken: "55cc413b96026e833835a2c9a3f39c21",
-				},
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name: "passed defined header",
-				url:  apiUser,
-				headers: map[string]string{
-					headers.XCSRFToken: "de4e27987d054577b0edc0e828851724",
-				},
-				expected:   mock2Body,
-				statusCode: http.StatusCreated,
-			},
-			{
-				name: "passed one of multiple headers",
-				url:  apiUser,
-				headers: map[string]string{
-					userIDHeader: "99",
-				},
-				expected:   mock1Body,
-				statusCode: http.StatusOK,
-			},
-			{
-				name: "passed all of multiple headers",
-				url:  apiUser,
-				headers: map[string]string{
-					userIDHeader:       "99",
-					headers.XCSRFToken: "000000000000000000000000000000",
-				},
-				expected:   mock3Body,
-				statusCode: http.StatusAccepted,
-			},
-			{
-				name: "passed extra headers",
-				url:  apiUser,
-				headers: map[string]string{
-					userIDHeader:           "99",
-					headers.XCSRFToken:     "000000000000000000000000000000",
-					headers.AcceptEncoding: "deflate",
-				},
-				expected:   mock3Body,
-				statusCode: http.StatusAccepted,
-			},
-		}
-		for _, testCase := range tests {
-			t.Run(testCase.name, func(t *testing.T) {
-				request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testCase.url, nil)
-				for key, value := range testCase.headers {
-					request.Header.Add(key, value)
-				}
-
-				recorder := httptest.NewRecorder()
-
-				serveHTTP(t, routerInstance, recorder, request)
-
-				body := testutils.ReadBody(t, recorder)
-				assert.Equal(t, testCase.statusCode, recorder.Code)
-				assert.Equal(t, testCase.expected, body)
-			})
-		}
+	runRouteCases(t, routerInstance, []routeCase{
+		{name: "headers is not set", method: http.MethodPost, url: apiUser, statusCode: http.StatusOK, expected: mock1Body},
+		{
+			name:       "passed unsetted headers",
+			method:     http.MethodPost,
+			url:        apiUser,
+			headers:    map[string]string{headers.XCSRFToken: "55cc413b96026e833835a2c9a3f39c21"},
+			statusCode: http.StatusOK,
+			expected:   mock1Body,
+		},
+		{
+			name:       "passed defined header",
+			method:     http.MethodPost,
+			url:        apiUser,
+			headers:    map[string]string{headers.XCSRFToken: csrfToken},
+			statusCode: http.StatusCreated,
+			expected:   mock2Body,
+		},
+		{
+			name:       "passed one of multiple headers",
+			method:     http.MethodPost,
+			url:        apiUser,
+			headers:    map[string]string{userIDHeader: "99"},
+			statusCode: http.StatusOK,
+			expected:   mock1Body,
+		},
+		{
+			name:       "passed all of multiple headers",
+			method:     http.MethodPost,
+			url:        apiUser,
+			headers:    map[string]string{userIDHeader: "99", headers.XCSRFToken: token},
+			statusCode: http.StatusAccepted,
+			expected:   mock3Body,
+		},
+		{
+			name:       "passed extra headers",
+			method:     http.MethodPost,
+			url:        apiUser,
+			headers:    map[string]string{userIDHeader: "99", headers.XCSRFToken: token, headers.AcceptEncoding: "deflate"},
+			statusCode: http.StatusAccepted,
+			expected:   mock3Body,
+		},
 	})
 }

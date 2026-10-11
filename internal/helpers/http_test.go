@@ -13,15 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testCase struct {
-	code     int
-	expected bool
-}
-
-func describe(c testCase) string {
-	return fmt.Sprintf("should return %t for code %d", c.expected, c.code)
-}
-
 func TestNormaliseRequest(t *testing.T) {
 	url, err := urlt.Parse(hosts.Localhost.HTTP().String())
 	testutils.CheckNoError(t, err)
@@ -64,103 +55,29 @@ func TestNormaliseRequest(t *testing.T) {
 	})
 }
 
-func TestIs1xxCode(t *testing.T) {
-	cases := []testCase{
-		{http.StatusContinue, true},
-		{http.StatusSwitchingProtocols, true},
-		{http.StatusOK, false},
-		{http.StatusMovedPermanently, false},
-		{http.StatusBadRequest, false},
-		{http.StatusInternalServerError, false},
+func TestStatusCodeClasses(t *testing.T) {
+	checks := map[string]func(int) bool{
+		"1xx": helpers.Is1xxCode,
+		"2xx": helpers.Is2xxCode,
+		"3xx": helpers.Is3xxCode,
+		"4xx": helpers.Is4xxCode,
+		"5xx": helpers.Is5xxCode,
 	}
 
-	for _, c := range cases {
-		t.Run(describe(c), func(t *testing.T) {
-			actual := helpers.Is1xxCode(c.code)
-			assert.Equal(t, c.expected, actual)
-		})
-	}
-}
-
-func TestIs2xxCode(t *testing.T) {
-	cases := []testCase{
-		{http.StatusOK, true},
-		{http.StatusCreated, true},
-		{http.StatusAccepted, true},
-		{http.StatusSwitchingProtocols, false},
-		{http.StatusMultipleChoices, false},
-		{http.StatusBadRequest, false},
-		{http.StatusInternalServerError, false},
+	codes := map[string][]int{
+		"1xx": {http.StatusContinue, http.StatusSwitchingProtocols},
+		"2xx": {http.StatusOK, http.StatusCreated, http.StatusAccepted},
+		"3xx": {http.StatusMultipleChoices, http.StatusMovedPermanently, http.StatusFound},
+		"4xx": {http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden},
+		"5xx": {http.StatusInternalServerError, http.StatusHTTPVersionNotSupported, http.StatusNetworkAuthenticationRequired},
 	}
 
-	for _, c := range cases {
-		t.Run(describe(c), func(t *testing.T) {
-			actual := helpers.Is2xxCode(c.code)
-
-			assert.Equal(t, c.expected, actual)
-		})
-	}
-}
-
-func TestIs3xxCode(t *testing.T) {
-	cases := []testCase{
-		{http.StatusMultipleChoices, true},
-		{http.StatusMovedPermanently, true},
-		{http.StatusFound, true},
-		{http.StatusOK, false},
-		{http.StatusSwitchingProtocols, false},
-		{http.StatusBadRequest, false},
-		{http.StatusInternalServerError, false},
-	}
-
-	for _, c := range cases {
-		t.Run(describe(c), func(t *testing.T) {
-			actual := helpers.Is3xxCode(c.code)
-
-			assert.Equal(t, c.expected, actual)
-		})
-	}
-}
-
-func TestIs4xxCode(t *testing.T) {
-	cases := []testCase{
-		{http.StatusBadRequest, true},
-		{http.StatusUnauthorized, true},
-		{http.StatusForbidden, true},
-		{http.StatusOK, false},
-		{http.StatusSwitchingProtocols, false},
-		{http.StatusMultipleChoices, false},
-		{http.StatusInternalServerError, false},
-	}
-
-	for _, c := range cases {
-		t.Run(describe(c), func(t *testing.T) {
-			actual := helpers.Is4xxCode(c.code)
-
-			assert.Equal(t, c.expected, actual)
-		})
-	}
-}
-
-func TestIs5xxCode(t *testing.T) {
-	cases := []testCase{
-		{http.StatusBadRequest, false},
-		{http.StatusUnauthorized, false},
-		{http.StatusForbidden, false},
-		{http.StatusOK, false},
-		{http.StatusSwitchingProtocols, false},
-		{http.StatusMultipleChoices, false},
-		{http.StatusInternalServerError, true},
-		{http.StatusNetworkAuthenticationRequired, true},
-		{http.StatusHTTPVersionNotSupported, true},
-	}
-
-	for _, c := range cases {
-		t.Run(describe(c), func(t *testing.T) {
-			actual := helpers.Is5xxCode(c.code)
-
-			assert.Equal(t, c.expected, actual)
-		})
+	for class, check := range checks {
+		for codeClass, classCodes := range codes {
+			for _, code := range classCodes {
+				assert.Equal(t, class == codeClass, check(code), "%s check for %d", class, code)
+			}
+		}
 	}
 }
 

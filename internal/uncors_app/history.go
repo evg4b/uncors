@@ -10,7 +10,6 @@ const (
 	historyInitialCapacity = 1024
 )
 
-// history stores log lines in memory without a fixed limit.
 type history struct {
 	mu    sync.RWMutex
 	lines []string
@@ -24,8 +23,6 @@ func newHistory() *history {
 	}
 }
 
-// AppendLine writes line to the history.
-// Multi-line strings are split on '\n' so the viewport receives one entry per visual row.
 func (h *history) AppendLine(line string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -37,7 +34,6 @@ func (h *history) AppendLine(line string) {
 	slog.Debug("appended lines to history", "lines", len(newLines), "total", len(h.lines))
 }
 
-// Lines returns a copy of the slice of all stored lines.
 func (h *history) Lines() []string {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -48,7 +44,6 @@ func (h *history) Lines() []string {
 	return res
 }
 
-// LineCount returns the total number of stored lines.
 func (h *history) LineCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -56,7 +51,6 @@ func (h *history) LineCount() int {
 	return len(h.lines)
 }
 
-// Close cleans up the history.
 func (h *history) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()

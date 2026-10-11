@@ -94,35 +94,13 @@ func TestResponseClone(t *testing.T) {
 	})
 
 	t.Run("response type", func(t *testing.T) {
-		t.Run("raw response", func(t *testing.T) {
-			response := config.Response{
-				Code: http.StatusOK,
-				Raw:  "this is plain text",
-			}
+		raw := config.Response{Code: http.StatusOK, Raw: "this is plain text"}
+		file := config.Response{Code: http.StatusOK, File: "~/projects/uncors/response/demo.json"}
 
-			t.Run("IsRaw", func(t *testing.T) {
-				assert.True(t, response.IsRaw())
-			})
-
-			t.Run("IsFile", func(t *testing.T) {
-				assert.False(t, response.IsFile())
-			})
-		})
-
-		t.Run("file response", func(t *testing.T) {
-			response := config.Response{
-				Code: http.StatusOK,
-				File: "~/projects/uncors/response/demo.json",
-			}
-
-			t.Run("IsRaw", func(t *testing.T) {
-				assert.False(t, response.IsRaw())
-			})
-
-			t.Run("IsFile", func(t *testing.T) {
-				assert.True(t, response.IsFile())
-			})
-		})
+		assert.True(t, raw.IsRaw())
+		assert.False(t, raw.IsFile())
+		assert.False(t, file.IsRaw())
+		assert.True(t, file.IsFile())
 	})
 }
 

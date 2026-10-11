@@ -56,7 +56,7 @@ func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 
-				staticDir.Path = path // map key always wins over any inline path field
+				staticDir.Path = path
 			}
 
 			*s = append(*s, staticDir)

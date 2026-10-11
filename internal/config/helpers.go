@@ -73,8 +73,6 @@ func NormaliseMappings(mappings Mappings) Mappings {
 	return processedMappings
 }
 
-// normalizeHost canonicalises a host: it forces the default http scheme when
-// none is set and drops the port when it matches the scheme's default port.
 func normalizeHost(host urlt.Host) urlt.Host {
 	if host.Scheme == "" {
 		host.Scheme = httpScheme

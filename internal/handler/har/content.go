@@ -39,7 +39,6 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 		}
 
 	case "", "identity":
-		// No compression — store as plain text.
 		return Content{
 			Size:     int64(len(raw)),
 			MimeType: mimeType,
@@ -47,7 +46,6 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 		}
 	}
 
-	// Unknown or failed encoding: store as base64 so the HAR remains valid.
 	return Content{
 		Size:     int64(len(raw)),
 		MimeType: mimeType,

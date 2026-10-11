@@ -30,8 +30,6 @@ func runErr(t *testing.T, name, expected string, fn func() error) {
 	})
 }
 
-// ---- ValidateHost --------------------------------------------------------
-
 func TestValidateHost(t *testing.T) {
 	const field = "field"
 
@@ -51,8 +49,6 @@ func TestValidateHost(t *testing.T) {
 			func() error { return config.ValidateHost(field, hosts.Localhost.Scheme("ftp")) })
 	})
 }
-
-// ---- ValidatePath --------------------------------------------------------
 
 func TestValidatePath(t *testing.T) {
 	const field = "field"
@@ -78,8 +74,6 @@ func TestValidatePath(t *testing.T) {
 	})
 }
 
-// ---- ValidateFile --------------------------------------------------------
-
 func TestValidateFile(t *testing.T) {
 	const field = "test"
 
@@ -97,8 +91,6 @@ func TestValidateFile(t *testing.T) {
 	runErr(t, "is a directory", "test /demo is a directory",
 		func() error { return config.ValidateFile(field, "/demo", fs) })
 }
-
-// ---- ValidateDirectory ---------------------------------------------------
 
 func TestValidateDirectory(t *testing.T) {
 	const (
@@ -119,8 +111,6 @@ func TestValidateDirectory(t *testing.T) {
 		func() error { return config.ValidateDirectory(field, "file.go", fs) })
 }
 
-// ---- ValidateStatus ------------------------------------------------------
-
 func TestValidateStatus(t *testing.T) {
 	const field = "status"
 
@@ -133,8 +123,6 @@ func TestValidateStatus(t *testing.T) {
 			func() error { return config.ValidateStatus(field, code) })
 	}
 }
-
-// ---- ValidateDuration ----------------------------------------------------
 
 func TestValidateDuration(t *testing.T) {
 	const field = "test-field"
@@ -153,8 +141,6 @@ func TestValidateDuration(t *testing.T) {
 	runErr(t, "negative with allowZero", "test-field must be greater than or equal to 0",
 		func() error { return config.ValidateDuration(field, -time.Second, true) })
 }
-
-// ---- ValidateMethod ------------------------------------------------------
 
 func TestValidateMethod(t *testing.T) {
 	const field = "test-field"
@@ -180,8 +166,6 @@ func TestValidateMethod(t *testing.T) {
 		func() error { return config.ValidateMethod(field, "invalid", false) })
 }
 
-// ---- ValidatePort --------------------------------------------------------
-
 func TestValidatePort(t *testing.T) {
 	const field = "port-field"
 
@@ -197,8 +181,6 @@ func TestValidatePort(t *testing.T) {
 	}
 }
 
-// ---- ValidateGlobPattern -------------------------------------------------
-
 func TestValidateGlobPattern(t *testing.T) {
 	runOK(t, "valid glob", func() error {
 		return config.ValidateGlobPattern("field", "/api/**")
@@ -206,8 +188,6 @@ func TestValidateGlobPattern(t *testing.T) {
 	runErr(t, "invalid glob", "field is not a valid glob pattern",
 		func() error { return config.ValidateGlobPattern("field", "[invalid") })
 }
-
-// ---- ValidateStringEnum --------------------------------------------------
 
 func TestValidateStringEnum(t *testing.T) {
 	options := []string{"option-1", "option-2"}

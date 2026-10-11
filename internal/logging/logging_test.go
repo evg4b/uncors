@@ -14,8 +14,6 @@ import (
 
 const logPath = "/logs/uncors.log"
 
-// restoreDefault puts back the slog default (and with it the standard log
-// writer) that Setup replaces.
 func restoreDefault(t *testing.T) {
 	t.Helper()
 

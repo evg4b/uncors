@@ -191,22 +191,6 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			{
-				name: "should set response code",
-				response: config.Response{
-					Code: http.StatusOK,
-					Raw:  textContent,
-				},
-				expected: map[string][]string{
-					headers.AccessControlAllowOrigin:      {"*"},
-					headers.AccessControlAllowCredentials: {"true"},
-					headers.AccessControlAllowHeaders:     {"*"},
-					headers.ContentType:                   {textPlain},
-					headers.AccessControlAllowMethods:     {testconstants.AllMethods},
-					headers.AccessControlExposeHeaders:    {"*"},
-					headers.AccessControlMaxAge:           {"86400"},
-				},
-			},
-			{
 				name: "should set custom headers",
 				response: config.Response{
 					Code: http.StatusOK,

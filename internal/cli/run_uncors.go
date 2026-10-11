@@ -9,9 +9,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// RunUncors loads the configuration from env.Args and runs the proxy until ctx
-// is cancelled, a shutdown signal arrives, or the user quits. The --version and
-// --help flags print their output and return without starting anything.
 func RunUncors(ctx context.Context, env Env) error {
 	uncorsConfig, cfgPath, err := config.LoadConfiguration(env.Fs, env.usage, env.Args)
 	if err != nil {

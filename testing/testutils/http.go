@@ -40,7 +40,6 @@ func CopyHeaders(from http.Header, to http.Header) {
 	}
 }
 
-// SetMuxVars sets gorilla/mux route variables for testing.
 func SetMuxVars(req *http.Request, vars map[string]string) *http.Request {
 	return mux.SetURLVars(req, vars)
 }

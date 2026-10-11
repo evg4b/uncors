@@ -15,10 +15,6 @@ import (
 
 const maxHostLength = 255
 
-// ValidateHost validates an already-parsed host. Structural problems (paths,
-// queries, malformed hosts) are rejected earlier by urlt.ParseHost, so only
-// the semantic constraints remain: a non-empty hostname of bounded length and
-// an http/https (or empty) scheme.
 func ValidateHost(field string, value urlt.Host) error {
 	if value.Hostname == "" {
 		return &ValidationError{fmt.Sprintf("%s must not be empty", field)}

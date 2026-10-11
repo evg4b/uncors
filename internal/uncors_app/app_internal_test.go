@@ -257,7 +257,6 @@ func TestUncorsAppKeyHandling(t *testing.T) {
 func TestUncorsAppCommandsDoNotBlockAfterStop(t *testing.T) {
 	app := newTestApp(t)
 
-	// Fill the buffer, as if the supervisor had stopped reading.
 	app.commands <- events.Restart{}
 
 	_, cmd := app.Update(tea.KeyPressMsg(tea.Key{Text: "q", Code: 'q'}))
