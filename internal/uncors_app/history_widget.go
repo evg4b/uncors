@@ -54,11 +54,6 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 			m.vp.GotoBottom()
 		}
 
-	case restartMsg:
-		slog.Debug("HistoryWidget: handling restartMsg")
-
-		return m, nil
-
 	case tea.KeyPressMsg:
 		m.handleKeyPress(typedMsg)
 	}

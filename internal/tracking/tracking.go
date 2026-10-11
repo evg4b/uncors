@@ -19,22 +19,12 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 )
 
-// Publisher receives the request events. Implementations must not block.
-type Publisher interface {
-	Publish(event events.Event)
-}
-
-// NoopPublisher discards every event.
-type NoopPublisher struct{}
-
-func (NoopPublisher) Publish(events.Event) {}
-
 type scopeKey struct{}
 
 // Scope tracks one request. Handlers may report from goroutines of their own,
 // so every method is safe for concurrent use.
 type Scope struct {
-	publisher Publisher
+	publisher events.Publisher
 	id        uint64
 	method    string
 	url       *url.URL
@@ -51,7 +41,7 @@ type Scope struct {
 // Begin opens a scope for request and returns a context that carries it.
 func Begin(
 	ctx context.Context,
-	publisher Publisher,
+	publisher events.Publisher,
 	id uint64,
 	request *contracts.Request,
 ) (context.Context, *Scope) {

@@ -14,19 +14,19 @@ browser accepts them.
 
 | Package                 | Responsibility                                                                                     |
 | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `main.go`               | Builds the DI container and dispatches to `generate-certs` or the main command.                    |
-| `internal/cli`          | Command entry points: `RunUncors` (interactive or headless mode, config watching, shutdown) and `GenerateCerts`. |
+| `main.go`               | Sets up logging and dispatches to `generate-certs` or the main command.                            |
+| `internal/cli`          | Command entry points (`RunUncors`, `GenerateCerts`), the supervisor that owns the engine, and the two frontends. |
 | `internal/commands`     | The `generate-certs` command implementation.                                                       |
-| `internal/di`           | `Container` (process-lifetime services), `Runtime` (everything built from one config), `Proxy` (serves a `Runtime` and swaps it on reload). |
+| `internal/engine`       | Runs the proxy without UI: `Engine` (serves a `Generation` and swaps it on reload), `Generation` (everything built from one config). |
 | `internal/config`       | Flag parsing, YAML loading, normalisation, validation, and the file watcher.                       |
 | `internal/handler`      | Router, handlers, and middleware (see below).                                                      |
 | `internal/server`       | Listeners, TLS with on-the-fly host certificates, and the local CA.                               |
 | `internal/infra`        | HTTP client, CORS header helpers, error pages.                                                     |
-| `internal/events`       | Events the proxy publishes (request started/completed) and the non-blocking `Bus` that carries them to frontends. |
+| `internal/events`       | Events the engine publishes, commands frontends send, and the non-blocking `Bus`.                |
 | `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
 | `internal/logging`      | The `slog` diagnostic logger (`UNCORS_LOGGING`); never writes to the terminal.                    |
 | `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
-| `internal/tui`, `internal/uncors_app` | Console output and the interactive Bubble Tea UI.                                    |
+| `internal/tui`, `internal/uncors_app` | Event rendering, console output, and the interactive Bubble Tea UI.                  |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
 | `pkg/urlt`              | A fork of `net/url` with placeholder support.                                                      |
 | `testing/`, `tests/`    | Shared test helpers and mocks; integration and schema tests.                                       |
@@ -43,12 +43,38 @@ configured.
 in `tests/schema`. It is not used at runtime, so changes to the config structs
 must be mirrored there by hand.
 
-`config.Watcher` watches the configuration file. On a change, the CLI reloads
-the configuration and calls `di.Proxy.Restart`, which builds a new `Runtime`
-before replacing the old one. If loading fails, the old configuration stays
-active. `Proxy` runs one start, restart, or shutdown at a time, and a restart
-closes requests that are still running after the shutdown timeout, so the new
-listeners always start.
+`config.Watcher` watches the configuration file. On a change, the supervisor
+reloads the configuration and calls `engine.Restart`, which builds a new
+`Generation` before replacing the old one. If loading fails, the supervisor
+publishes `ReloadFailed` and the old configuration stays active. `Engine` runs
+one start, restart, or shutdown at a time, and a restart closes requests that
+are still running after the shutdown timeout, so the new listeners always
+start.
+
+## Core, supervisor, and frontends
+
+```
+cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Engine ──► server, router, handlers
+                    ▲   │                                      │
+   Restart/Shutdown │   │ ServerStopped, ReloadFailed,         │ ServerStarted/Restarted,
+                    │   ▼ NewVersionAvailable                  ▼ RequestStarted/Completed
+                 frontend ◄──────────────── events.Bus ◄───────┘
+         (uncors_app TUI or headless printer)
+```
+
+- The engine (`internal/engine`, plus `server`, `handler`, `events`,
+  `tracking`) has no UI dependency; `TestCoreDoesNotImportTheUI` enforces it.
+  It reports only by publishing events, so tests can run it with a bus
+  subscription and no frontend.
+- The supervisor (`internal/cli`) is the only goroutine that starts, restarts,
+  and stops the engine. It reacts to frontend commands (`events.Restart`,
+  `events.Shutdown`), config file changes, OS signals, and context
+  cancellation, and runs the version check.
+- A frontend runs on its own goroutine and only renders events
+  (`tui.EventRenderer`) and sends commands. It subscribes before the engine
+  starts. `ServerStopped` is the last event; the bus closes after it. If the
+  frontend exits on its own, the supervisor shuts down.
+- Diagnostics go to `slog` (`internal/logging`), never to the terminal.
 
 ## Request flow
 
@@ -123,7 +149,7 @@ type Middleware interface {
 
 Handlers return errors instead of writing error pages themselves; the
 infrastructure layer turns them into responses. Components are built with
-functional options (`helpers.ApplyOptions`) and wired in `internal/di`.
+functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 
 ## HAR collector
 
@@ -134,9 +160,10 @@ functional options (`helpers.ApplyOptions`) and wired in `internal/di`.
 - One background goroutine per mapping drains the channel and rewrites the
   whole file after each batch, writing a temporary file and renaming it over
   the target, so the file on disk is always valid.
-- Each `Writer` belongs to the `Runtime` that created it. When the runtime is
-  closed on shutdown or reload, `Close` drains the channel and writes the file
-  one last time. A new runtime starts a new, empty recording.
+- Each `Writer` belongs to the `Generation` that created it. When the
+  generation is closed on shutdown or reload, `Close` drains the channel and
+  writes the file one last time. A new generation starts a new, empty
+  recording.
 - `Cookie`, `Set-Cookie`, `Authorization`, `WWW-Authenticate`,
   `Proxy-Authorization`, and `Proxy-Authenticate` are left out unless
   `capture-secure-headers` is set.
@@ -152,10 +179,12 @@ certificate for the SNI host name, and caches it in memory.
 A new request handler:
 
 1. Add a package under `internal/handler/`.
-2. Implement `contracts.Handler`.
-3. Add a constructor to the DI layer and register routes for it in
-   `internal/handler/router`.
-4. Add the config struct, validation, and `schema.json` entries.
+2. Implement `contracts.Handler`, and call `tracking.Claim` with a new
+   `events.HandlerKind` when it produces a response.
+3. Add a constructor to `engine.Generation` (and `router.Factory`) and register
+   routes for it in `internal/handler/router`.
+4. Give the new kind a label in `tui/styles.HandlerLabel`.
+5. Add the config struct, validation, and `schema.json` entries.
 
 New middleware:
 

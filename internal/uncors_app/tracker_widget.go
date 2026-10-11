@@ -76,11 +76,15 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 
 		return m, nil
 
-	case restartMsg:
-		slog.Debug("TrackerWidget: handling restartMsg")
+	case lifecycleMsg:
+		// Requests of the previous generation finished before the restart, so
+		// anything still pending lost its completion event.
+		if _, restarted := typedMsg.event.(events.ServerRestarted); restarted {
+			slog.Debug("TrackerWidget: clearing pending requests after restart")
 
-		m.pending = make(map[uint64]events.RequestStarted)
-		m.ticking = false
+			m.pending = make(map[uint64]events.RequestStarted)
+			m.ticking = false
+		}
 
 		return m, nil
 	}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -34,17 +35,17 @@ type Server struct {
 	mu              sync.RWMutex
 	listeners       []*PortListener
 	manager         *HostCertManager
-	publisher       tracking.Publisher
+	publisher       events.Publisher
 	nextID          atomic.Uint64
 	shutdownTimeout time.Duration
 }
 
 // New creates a server that reports request activity to publisher. A nil
-// publisher is replaced by tracking.NoopPublisher so the request path is never
+// publisher is replaced by events.NoopPublisher so the request path is never
 // left without one.
-func New(manager *HostCertManager, publisher tracking.Publisher) *Server {
+func New(manager *HostCertManager, publisher events.Publisher) *Server {
 	if publisher == nil {
-		publisher = tracking.NoopPublisher{}
+		publisher = events.NoopPublisher{}
 	}
 
 	return &Server{

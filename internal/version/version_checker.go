@@ -1,6 +1,7 @@
 package version
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -9,7 +10,6 @@ import (
 )
 
 type Checker struct {
-	output         contracts.Output
 	http           contracts.HTTPClient
 	currentVersion *version.Version
 	skip           bool
@@ -17,33 +17,44 @@ type Checker struct {
 
 type Option = func(*Checker)
 
-func WithOutput(output contracts.Output) Option {
-	return func(checker *Checker) {
-		checker.output = output
-	}
-}
-
 func WithHTTPClient(client contracts.HTTPClient) Option {
 	return func(checker *Checker) {
 		checker.http = client
 	}
 }
 
+// WithCurrentVersion sets the running version. A development build ("x.x.x")
+// or a version that does not parse disables the check.
 func WithCurrentVersion(rawVersion string) Option {
 	return func(checker *Checker) {
 		if strings.EqualFold(rawVersion, "x.x.x") {
 			checker.skip = true
-		} else {
-			currentVersion, err := version.NewVersion(rawVersion)
-			if err != nil {
-				panic(err)
-			}
 
-			checker.currentVersion = currentVersion
+			return
 		}
+
+		currentVersion, err := version.NewVersion(rawVersion)
+		if err != nil {
+			slog.Warn("skipping version check for an unparsable version", "version", rawVersion, "error", err)
+
+			checker.skip = true
+
+			return
+		}
+
+		checker.currentVersion = currentVersion
 	}
 }
 
 func NewVersionChecker(options ...Option) *Checker {
 	return helpers.ApplyOptions(&Checker{}, options)
+}
+
+// Current returns the running version as the checker compares it.
+func (checker *Checker) Current() string {
+	if checker.currentVersion == nil {
+		return ""
+	}
+
+	return checker.currentVersion.String()
 }

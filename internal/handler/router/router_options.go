@@ -6,9 +6,11 @@ import (
 
 type Option = func(*Router)
 
-func WithDiContainer(container DI) Option {
+// WithFactory sets the source of the handlers and middleware the router wires
+// for each mapping.
+func WithFactory(factory Factory) Option {
 	return func(r *Router) {
-		r.container = container
+		r.factory = factory
 	}
 }
 

@@ -6,19 +6,18 @@ import (
 	"fmt"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/spf13/pflag"
 )
 
-// RunUncors loads the configuration from the container's args and runs the
-// proxy until ctx is cancelled or a shutdown signal arrives. The --version and
+// RunUncors loads the configuration from env.Args and runs the proxy until ctx
+// is cancelled, a shutdown signal arrives, or the user quits. The --version and
 // --help flags print their output and return without starting anything.
-func RunUncors(ctx context.Context, container *di.Container) error {
-	uncorsConfig, cfgPath, err := config.LoadConfiguration(container.Fs(), container.Version(), container.Args())
+func RunUncors(ctx context.Context, env Env) error {
+	uncorsConfig, cfgPath, err := config.LoadConfiguration(env.Fs, env.usage, env.Args)
 	if err != nil {
 		switch {
 		case errors.Is(err, config.ErrVersionRequested):
-			_, err = fmt.Fprintln(container.Stdout(), container.Version())
+			_, err = fmt.Fprintln(env.Stdout, env.Version)
 
 			return err
 		case errors.Is(err, pflag.ErrHelp):
@@ -28,9 +27,10 @@ func RunUncors(ctx context.Context, container *di.Container) error {
 		}
 	}
 
+	frontend := headless(env)
 	if uncorsConfig.Interactive {
-		return runInteractive(ctx, container, uncorsConfig, cfgPath)
+		frontend = interactive(env)
 	}
 
-	return runNonInteractive(ctx, container, uncorsConfig, cfgPath)
+	return supervise(ctx, env, uncorsConfig, cfgPath, frontend)
 }

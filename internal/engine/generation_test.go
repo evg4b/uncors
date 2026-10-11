@@ -1,4 +1,4 @@
-package di_test
+package engine_test
 
 import (
 	"runtime"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
+	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -29,44 +29,41 @@ func harConfiguration() *config.UncorsConfig {
 	}
 }
 
-func TestBuildRuntime(t *testing.T) {
+func TestBuildGeneration(t *testing.T) {
 	t.Run("builds a target per port group", func(t *testing.T) {
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		runtime, err := container.BuildRuntime(harConfiguration())
+		generation, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 
-		defer testutils.Close(t, runtime)
+		defer testutils.Close(t, generation)
 
-		require.Len(t, runtime.Targets(), 1)
-		assert.NotNil(t, runtime.Targets()[0].Handler)
+		require.Len(t, generation.Targets(), 1)
+		assert.NotNil(t, generation.Targets()[0].Handler)
 	})
 
 	t.Run("cache middleware uses the current cache config", func(t *testing.T) {
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		runtime, err := container.BuildRuntime(harConfiguration())
+		generation, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 
-		defer testutils.Close(t, runtime)
+		defer testutils.Close(t, generation)
 
-		assert.Implements(t, (*contracts.Middleware)(nil), runtime.CacheMiddleware(config.CacheGlobs{"*.json"}))
+		assert.Implements(t, (*contracts.Middleware)(nil), generation.CacheMiddleware(config.CacheGlobs{"*.json"}))
 
-		store := runtime.Cache()
+		store := generation.Cache()
 
-		assert.Same(t, store, runtime.Cache())
+		assert.Same(t, store, generation.Cache())
 	})
 
 	t.Run("every generation gets its own resources", func(t *testing.T) {
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		first, err := container.BuildRuntime(harConfiguration())
+		first, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 
-		second, err := container.BuildRuntime(harConfiguration())
+		second, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 
 		assert.NotSame(t, first.Cache(), second.Cache())
@@ -76,10 +73,9 @@ func TestBuildRuntime(t *testing.T) {
 	})
 
 	t.Run("close is idempotent", func(t *testing.T) {
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		instance, err := container.BuildRuntime(harConfiguration())
+		instance, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 
 		require.NoError(t, instance.Close())
@@ -92,19 +88,18 @@ func TestBuildRuntime(t *testing.T) {
 	t.Run("repeated reloads do not leak goroutines", func(t *testing.T) {
 		const reloads = 50
 
-		container := di.NewContainer(di.WithFs(afero.NewMemMapFs()))
-		defer testutils.Close(t, container)
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
 
-		warmUp, err := container.BuildRuntime(harConfiguration())
+		warmUp, err := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, err)
 		require.NoError(t, warmUp.Close())
 
 		baseline := runtime.NumGoroutine()
 
 		for range reloads {
-			generation, buildErr := container.BuildRuntime(harConfiguration())
+			next, buildErr := proxy.BuildGeneration(harConfiguration())
 			require.NoError(t, buildErr)
-			require.NoError(t, generation.Close())
+			require.NoError(t, next.Close())
 		}
 
 		assert.LessOrEqual(t, runtime.NumGoroutine(), baseline+reloads/2,
