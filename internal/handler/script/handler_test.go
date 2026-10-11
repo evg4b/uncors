@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/logging"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
-	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
@@ -34,7 +35,7 @@ func runScriptTests(t *testing.T, tests []scriptTestCase) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			handler := script.NewHandler(
-				script.WithOutput(mocks.NoopOutput()),
+				script.WithLogger(logging.Discard()),
 				script.WithScript(&config.Script{
 					Script: testCase.script,
 				}),
@@ -224,7 +225,7 @@ response:WriteString("Error response")
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&config.Script{
 						File: testCase.file,
 					}),
@@ -316,7 +317,7 @@ response:WriteString("Body: " .. request.body)
 				testCase.setupRequest(req)
 
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
@@ -334,7 +335,7 @@ response:WriteString("Body: " .. request.body)
 
 	t.Run("path parameters", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
@@ -362,7 +363,7 @@ response:WriteString("id: " .. id .. ", action: " .. action)
 
 	t.Run("CORS headers", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
@@ -422,7 +423,7 @@ response:WriteString(x.field)  -- This will cause an error
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&testCase.script),
 					script.WithFileSystem(testutils.FsFromMap(t, map[string]string{})),
 				)
@@ -441,7 +442,7 @@ response:WriteString(x.field)  -- This will cause an error
 
 	t.Run("default response status", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 -- Don't set status, should default to 200
@@ -463,7 +464,7 @@ response:WriteString("Default status")
 
 	t.Run("empty response body", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(204)
@@ -485,7 +486,7 @@ response:WriteHeader(204)
 
 	t.Run("complex script with table library", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 local table = require("table")
@@ -593,7 +594,7 @@ response:WriteString("old and new")
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&config.Script{
 						Script: testCase.script,
 					}),
@@ -621,7 +622,7 @@ response:WriteString("old and new")
 
 func TestScriptHandlerOptions(t *testing.T) {
 	t.Run("WithOutput", func(t *testing.T) {
-		handler := script.NewHandler(script.WithOutput(mocks.NoopOutput()))
+		handler := script.NewHandler(script.WithLogger(logging.Discard()))
 		require.NotNil(t, handler)
 	})
 
@@ -642,7 +643,7 @@ func TestScriptHandlerOptions(t *testing.T) {
 		fs := testutils.FsFromMap(t, map[string]string{})
 
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(scriptConfig),
 			script.WithFileSystem(fs),
 		)
@@ -714,7 +715,7 @@ end
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&config.Script{Script: testCase.script}),
 				)
 
@@ -793,7 +794,7 @@ end
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				handler := script.NewHandler(
-					script.WithOutput(mocks.NoopOutput()),
+					script.WithLogger(logging.Discard()),
 					script.WithScript(&config.Script{Script: testCase.script}),
 				)
 
@@ -819,7 +820,7 @@ end
 func TestScriptHandler_ResponseMetatableEdgeCases(t *testing.T) {
 	t.Run("response metatable prevents status field writes", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.status = 500
@@ -841,7 +842,7 @@ response:WriteString("Status not writable")
 
 	t.Run("response metatable prevents body field writes", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.body = "This should be ignored"
@@ -863,7 +864,7 @@ response:WriteString("Actual body")
 
 	t.Run("response metatable allows custom fields", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.custom_field = "custom_value"
@@ -885,7 +886,7 @@ response:WriteString("Custom: " .. response.custom_field)
 
 	t.Run("response WriteHeader idempotency", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:WriteHeader(200)
@@ -907,7 +908,7 @@ response:WriteString("First status wins")
 
 	t.Run("response Write without explicit WriteHeader", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:Write("Auto status")
@@ -927,7 +928,7 @@ response:Write("Auto status")
 
 	t.Run("response WriteString without explicit WriteHeader", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response:WriteString("Auto status with string")
@@ -947,7 +948,7 @@ response:WriteString("Auto status with string")
 
 	t.Run("response headers metatable Get method", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.headers["X-Test"] = "TestValue"
@@ -970,7 +971,7 @@ response:WriteString("Value: " .. value)
 
 	t.Run("response headers metatable Set method", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.headers:Set("X-Custom", "CustomValue")
@@ -992,7 +993,7 @@ response:WriteString("Header set")
 
 	t.Run("response headers access via index", func(t *testing.T) {
 		handler := script.NewHandler(
-			script.WithOutput(mocks.NoopOutput()),
+			script.WithLogger(logging.Discard()),
 			script.WithScript(&config.Script{
 				Script: `
 response.headers["Content-Type"] = "text/plain"

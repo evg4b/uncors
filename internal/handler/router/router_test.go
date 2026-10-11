@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/logging"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/di"
@@ -89,7 +91,7 @@ func proxyFactory(
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
-		proxy.WithOutput(mocks.NoopOutput()),
+		proxy.WithLogger(logging.Discard()),
 	)
 }
 

@@ -3,10 +3,12 @@ package di
 import (
 	"errors"
 	"io"
+	"log/slog"
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/logging"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 )
@@ -16,6 +18,7 @@ type Container struct {
 	stdout  io.Writer
 	args    []string
 	version string
+	logger  *slog.Logger
 
 	cliOutput            factory[contracts.Output]
 	requestTracker       factory[*server.RequestTracker]
@@ -41,6 +44,14 @@ func WithVersion(version string) ContainerOption {
 	}
 }
 
+// WithLogger sets the diagnostic logger handed to the components that report
+// errors. The default discards every record.
+func WithLogger(logger *slog.Logger) ContainerOption {
+	return func(c *Container) {
+		c.logger = logger
+	}
+}
+
 func WithFs(fs afero.Fs) ContainerOption {
 	return func(c *Container) {
 		c.fs = fs
@@ -58,6 +69,7 @@ func NewContainer(options ...ContainerOption) *Container {
 		fs:      afero.NewMemMapFs(),
 		stdout:  io.Discard,
 		version: "0.0.0",
+		logger:  logging.Discard(),
 		closers: []io.Closer{},
 	}
 

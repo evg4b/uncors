@@ -2,7 +2,7 @@ package har
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -127,7 +127,7 @@ func (w *Writer) flush() {
 
 	err = os.MkdirAll(filepath.Dir(w.path), harDirMode)
 	if err != nil {
-		log.Printf("har: cannot create directory for %q: %v", w.path, err)
+		slog.Error("har: cannot create directory", "path", w.path, "error", err)
 
 		return
 	}
@@ -136,14 +136,14 @@ func (w *Writer) flush() {
 
 	err = os.WriteFile(tmp, data, harFileMode)
 	if err != nil {
-		log.Printf("har: cannot write temp file %q: %v", tmp, err)
+		slog.Error("har: cannot write temp file", "path", tmp, "error", err)
 
 		return
 	}
 
 	err = os.Rename(tmp, w.path)
 	if err != nil {
-		log.Printf("har: cannot rename %q to %q: %v", tmp, w.path, err)
+		slog.Error("har: cannot rename temp file", "from", tmp, "to", w.path, "error", err)
 		_ = os.Remove(tmp)
 	}
 }

@@ -2,7 +2,7 @@ package uncorsapp
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -106,7 +106,7 @@ func NewUncorsApp(
 }
 
 func (m *UncorsApp) Init() tea.Cmd {
-	log.Println("Initializing UncorsApp")
+	slog.Debug("Initializing UncorsApp")
 
 	return tea.Batch(
 		m.startServerCmd(),
@@ -124,13 +124,13 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
-		log.Printf("Window resized to %dx%d", typedMsg.Width, typedMsg.Height)
+		slog.Debug("window resized", "width", typedMsg.Width, "height", typedMsg.Height)
 		m.termHeight = typedMsg.Height
 		m.termWidth = typedMsg.Width
 		m.updateHistoryHeight()
 
 	case restartMsg:
-		log.Println("Restart message received")
+		slog.Debug("Restart message received")
 		m.handleRestart()
 
 	case outputLineMsg:
@@ -142,7 +142,7 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case tea.KeyPressMsg:
-		log.Printf("Key pressed: %s", typedMsg.String())
+		slog.Debug("key pressed", "key", typedMsg.String())
 
 		if cmd := m.handleKeyPress(typedMsg); cmd != nil {
 			return m, cmd
@@ -235,11 +235,10 @@ func (m *UncorsApp) updateHistoryHeight() {
 	footerHeight := m.footerHeight()
 	viewportHeight := max(m.termHeight-footerHeight, 1)
 
-	log.Printf(
-		"Updating layout: termHeight=%d, footerHeight=%d => viewportHeight=%d",
-		m.termHeight,
-		footerHeight,
-		viewportHeight,
+	slog.Debug("updating layout",
+		"termHeight", m.termHeight,
+		"footerHeight", footerHeight,
+		"viewportHeight", viewportHeight,
 	)
 	m.historyWidget.SetHeight(viewportHeight)
 }
@@ -306,12 +305,12 @@ func (m *UncorsApp) handleRequestEvent(event requestEventMsg) {
 }
 
 func (m *UncorsApp) handleRestart() {
-	log.Println("Handling restart")
+	slog.Debug("Handling restart")
 	m.updateHistoryHeight()
 }
 
 func (m *UncorsApp) handleShutdown() tea.Cmd {
-	log.Println("Handling shutdown")
+	slog.Debug("Handling shutdown")
 
 	if m.watcher != nil {
 		_ = m.watcher.Close()

@@ -2,6 +2,7 @@ package di
 
 import (
 	"io"
+	"log/slog"
 	"time"
 
 	"github.com/evg4b/uncors/internal/commands"
@@ -31,6 +32,10 @@ func (c *Container) Fs() afero.Fs {
 
 func (c *Container) Version() string {
 	return c.version
+}
+
+func (c *Container) Logger() *slog.Logger {
+	return c.logger
 }
 
 func (c *Container) Stdout() io.Writer {
@@ -69,6 +74,7 @@ func (c *Container) StaticMiddleware(path string, dir config.StaticDirectory) co
 			static.WithFileSystem(afero.NewBasePathFs(c.fs, dir.Dir)),
 			static.WithIndex(dir.Index),
 			static.WithPrefix(path),
+			static.WithLogger(c.logger),
 		),
 		styles.StaticStyle.Render("STATIC"),
 	)
@@ -89,15 +95,15 @@ func (c *Container) MockHandler(response *config.Response) contracts.Handler {
 		mock.WithResponse(response),
 		mock.WithFileSystem(c.fs),
 		mock.WithAfter(time.After),
+		mock.WithLogger(c.logger),
 	))
 }
 
 func (c *Container) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
 	prefix := styles.RewriteStyle.Render("SCRIPT")
-	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, script.NewHandler(
-		script.WithOutput(output.NewPrefixOutput(prefix)),
+		script.WithLogger(c.logger),
 		script.WithScript(scriptConfig),
 		script.WithFileSystem(c.fs),
 	))
@@ -112,11 +118,10 @@ func (c *Container) RewriteMiddleware(rewriting *config.RewritingOption) contrac
 
 func (c *Container) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
 	prefix := styles.ProxyStyle.Render("PROXY")
-	output := c.CliOutput()
 
 	return infra.WithPrefix(prefix, proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
-		proxy.WithOutput(output.NewPrefixOutput(prefix)),
+		proxy.WithLogger(c.logger),
 	))
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/logging"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 )
@@ -15,10 +15,14 @@ import (
 var Version = "v0.0.0"
 
 func main() {
-	infra.SetupLogging()
+	fs := afero.NewOsFs()
+
+	logger, logFile := logging.Setup(fs, os.Getenv(logging.EnvVar))
+	defer helpers.CloseSafe(logFile)
 
 	container := di.NewContainer(
-		di.WithFs(afero.NewOsFs()),
+		di.WithFs(fs),
+		di.WithLogger(logger),
 		di.WithStdout(os.Stdout),
 		di.WithVersion(Version),
 		di.WithArgs(os.Args[1:]),

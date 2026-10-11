@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/logging"
+
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
@@ -79,7 +81,7 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithOutput(mocks.NoopOutput()),
+					proxy.WithLogger(logging.Discard()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
@@ -132,7 +134,7 @@ func TestProxyHandler(t *testing.T) {
 				handler := proxy.NewProxyHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
-					proxy.WithOutput(mocks.NoopOutput()),
+					proxy.WithLogger(logging.Discard()),
 				)
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
@@ -168,7 +170,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
@@ -210,7 +212,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
@@ -244,7 +246,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
@@ -282,7 +284,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
@@ -318,7 +320,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/app", nil)
@@ -334,15 +336,17 @@ func TestProxyHandler(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("should return error when http client fails", func(t *testing.T) {
+	t.Run("should return and log error when http client fails", func(t *testing.T) {
 		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(_ *http.Request) (*http.Response, error) {
 			return nil, errNetworkError
 		})
 
+		logger, logs := testutils.NewBufferLogger()
+
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpMock),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logger),
 		)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
@@ -357,7 +361,9 @@ func TestProxyHandler(t *testing.T) {
 
 		handlerErr := handler.ServeHTTP(responseWriter, req)
 
-		assert.ErrorIs(t, handlerErr, errNetworkError)
+		require.ErrorIs(t, handlerErr, errNetworkError)
+		assert.Contains(t, logs.String(), `level=ERROR msg="proxy handler error"`)
+		assert.Contains(t, logs.String(), "network error")
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {
@@ -366,7 +372,7 @@ func TestProxyHandler(t *testing.T) {
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
-			proxy.WithOutput(mocks.NoopOutput()),
+			proxy.WithLogger(logging.Discard()),
 		)
 
 		t.Run("should correctly create response", func(t *testing.T) {

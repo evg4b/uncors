@@ -3,7 +3,7 @@ package mock
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -21,6 +21,7 @@ type Handler struct {
 	response *config.Response
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
+	logger   *slog.Logger
 }
 
 const contentTypeSniffLen = 512
@@ -28,7 +29,7 @@ const contentTypeSniffLen = 512
 var ErrResponseIsNotDefined = errors.New("response is not defined")
 
 func NewMockHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{}, options)
+	return helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -38,9 +39,7 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		log.Printf("ERROR: Mock handler error: %s (URL: %s)",
-			helpers.SanitizeLogValue(err.Error()),
-			helpers.SanitizeLogValue(urlt.URL_String(request.URL)))
+		h.logger.Error("mock handler error", "url", urlt.URL_String(request.URL), "error", err)
 
 		return err
 	}
