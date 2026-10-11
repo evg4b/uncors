@@ -20,8 +20,14 @@ type UncorsConfig struct {
 	Interactive bool        `yaml:"-"`
 }
 
-func LoadConfiguration(fs afero.Fs, version string, args []string) (*UncorsConfig, string, error) {
-	flags := defineFlags(version)
+// Usage prints the help for the command line flags. It runs on --help and on
+// a flag parsing error.
+type Usage = func(flags *pflag.FlagSet)
+
+// LoadConfiguration parses args, reads the config file they name, and returns
+// the validated configuration and the config file path. usage may be nil.
+func LoadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, string, error) {
+	flags := defineFlags(usage)
 
 	err := flags.Parse(args)
 	if err != nil {

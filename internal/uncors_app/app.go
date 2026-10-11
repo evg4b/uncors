@@ -1,7 +1,7 @@
 package uncorsapp
 
 import (
-	"context"
+	"bytes"
 	"log/slog"
 	"strings"
 	"time"
@@ -9,40 +9,29 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const (
-	outputChannelSize = 1000
-	eventsBufferSize  = 1000
-	shutdownTimeout   = 5 * time.Second
-	versionCheckDelay = 50 * time.Millisecond
-	memTickInterval   = 2 * time.Second
-	bytesPerMegabyte  = 1024 * 1024
+	memTickInterval  = 2 * time.Second
+	bytesPerMegabyte = 1024 * 1024
 )
 
+// UncorsApp is the interactive frontend. It only renders what arrives on its
+// event subscription and turns key presses into commands for the supervisor;
+// it never touches the proxy itself.
 type UncorsApp struct {
 	keys keyMap
 
-	proxy     *di.Proxy
-	output    *tuiOutput
-	events    *events.Subscription
-	container *di.Container
+	events   *events.Subscription
+	commands chan<- events.Command
+	// stopped is closed once the proxy has stopped, so a command that can no
+	// longer be delivered does not block forever.
+	stopped chan struct{}
 
-	outputCh   chan string
-	appContext func() context.Context
-	appDone    <-chan struct{}
-	cancel     context.CancelFunc
-
-	cfg        *config.UncorsConfig
-	loadConfig func() (*config.UncorsConfig, error)
-	configPath string
-
-	watcher *config.Watcher
+	rendered *bytes.Buffer
+	renderer *tui.EventRenderer
 
 	termHeight int
 	termWidth  int
@@ -54,52 +43,30 @@ type UncorsApp struct {
 }
 
 type (
-	serverStartedMsg struct{}
-	serverErrMsg     struct{ err error }
-	shutdownMsg      struct{}
-	restartMsg       struct{}
+	// lifecycleMsg carries any event other than the request events.
+	lifecycleMsg struct{ event events.Event }
+	// eventsClosedMsg reports that the subscription has closed.
+	eventsClosedMsg struct{}
 )
 
-type appUpdateMsg interface {
-	update(app *UncorsApp) tea.Cmd
-}
-
-// NewUncorsApp creates the interactive TUI model. configPath is the active
-// config file path (empty string if no config file is used); when non-empty
-// the app watches it for changes and auto-restarts the proxy on every save.
+// NewUncorsApp creates the interactive UI. It renders the events from
+// subscription and sends commands to the supervisor through commands.
 func NewUncorsApp(
-	container *di.Container,
-	configPath string,
-	cfg *config.UncorsConfig,
-	loadConfig func() (*config.UncorsConfig, error),
+	subscription *events.Subscription,
+	commands chan<- events.Command,
+	version string,
 ) *UncorsApp {
-	outputCh := make(chan string, outputChannelSize)
-	output := newTuiOutput(outputCh)
-
-	appCtx, cancel := context.WithCancel(context.Background())
-
-	container.Override(di.WithCliOutput(func() contracts.Output {
-		return output
-	}))
-
 	keys := newKeyMap()
-
-	historyWidget := NewHistoryWidget(keys)
+	rendered := &bytes.Buffer{}
 
 	return &UncorsApp{
 		keys:          keys,
-		proxy:         container.Proxy(),
-		output:        output,
-		events:        container.Bus().Subscribe(eventsBufferSize),
-		container:     container,
-		outputCh:      outputCh,
-		appContext:    func() context.Context { return appCtx },
-		appDone:       appCtx.Done(),
-		cancel:        cancel,
-		cfg:           cfg,
-		loadConfig:    loadConfig,
-		configPath:    configPath,
-		historyWidget: historyWidget,
+		events:        subscription,
+		commands:      commands,
+		stopped:       make(chan struct{}),
+		rendered:      rendered,
+		renderer:      tui.NewEventRenderer(tui.NewCliOutput(rendered), version),
+		historyWidget: NewHistoryWidget(keys),
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
 		memWidget:     NewMemoryWidget(),
@@ -110,8 +77,6 @@ func (m *UncorsApp) Init() tea.Cmd {
 	slog.Debug("Initializing UncorsApp")
 
 	return tea.Batch(
-		m.startServerCmd(),
-		m.waitOutputCmd(),
 		m.watchEventsCmd(),
 		m.memWidget.Init(),
 		m.trackerWidget.Init(),
@@ -130,20 +95,25 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.termWidth = typedMsg.Width
 		m.updateHistoryHeight()
 
-	case restartMsg:
-		slog.Debug("Restart message received")
-		m.handleRestart()
-
-	case outputLineMsg:
-		cmds = append(cmds, m.waitOutputCmd())
-
 	case requestStartedMsg:
 		cmds = append(cmds, m.watchEventsCmd())
 
 	case requestCompletedMsg:
-		m.output.Request(events.RequestCompleted(typedMsg))
+		m.render(events.RequestCompleted(typedMsg))
 
 		cmds = append(cmds, m.watchEventsCmd())
+
+	case lifecycleMsg:
+		m.render(typedMsg.event)
+
+		if _, stopped := typedMsg.event.(events.ServerStopped); stopped {
+			return m, m.quit()
+		}
+
+		cmds = append(cmds, m.watchEventsCmd())
+
+	case eventsClosedMsg:
+		return m, m.quit()
 
 	case tea.KeyPressMsg:
 		slog.Debug("key pressed", "key", typedMsg.String())
@@ -153,11 +123,6 @@ func (m *UncorsApp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if appMsg, ok := msg.(appUpdateMsg); ok {
-		cmds = append(cmds, appMsg.update(m))
-	}
-
-	// Update widgets
 	hw, hwCmd := m.historyWidget.Update(msg)
 	m.historyWidget = hw
 
@@ -217,18 +182,18 @@ func (m *UncorsApp) View() tea.View {
 
 func (m *UncorsApp) updateLayout(msg tea.Msg) {
 	switch msg.(type) {
-	case requestStartedMsg, requestCompletedMsg, tea.KeyPressMsg:
+	case requestStartedMsg, requestCompletedMsg, lifecycleMsg, tea.KeyPressMsg:
 		m.updateHistoryHeight()
 	}
 }
 
 func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 	if key.Matches(msg, m.keys.Restart) {
-		return m.restartCmd()
+		return m.sendCmd(events.Restart{})
 	}
 
 	if key.Matches(msg, m.keys.Quit) {
-		return m.shutdownCmd()
+		return m.sendCmd(events.Shutdown{})
 	}
 
 	return nil
@@ -256,162 +221,59 @@ func (m *UncorsApp) footerHeight() int {
 	return footerHeight
 }
 
-func (msg serverStartedMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleServerStarted()
-}
+// render appends what the renderer prints for event to the history.
+func (m *UncorsApp) render(event events.Event) {
+	m.renderer.Render(event)
 
-func (msg serverErrMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleServerError(msg)
-}
+	text := strings.TrimRight(m.rendered.String(), "\n")
+	m.rendered.Reset()
 
-func (msg shutdownMsg) update(app *UncorsApp) tea.Cmd {
-	return app.handleShutdown()
-}
-
-func (m *UncorsApp) handleServerStarted() tea.Cmd {
-	if m.configPath != "" {
-		watcher := config.NewWatcher(m.configPath)
-
-		err := watcher.Watch(m.appContext(), func() {
-			defer helpers.PanicInterceptor(func(value any) {
-				m.output.Errorf("Config reloading error: %v", value)
-			})
-
-			m.reload()
-		})
-		if err != nil {
-			m.output.Errorf("Failed to watch config file: %v", err)
-		} else {
-			m.watcher = watcher
-		}
+	if text != "" {
+		m.historyWidget.Update(outputLineMsg(text))
 	}
-
-	return m.versionCheckCmd()
 }
 
-func (m *UncorsApp) handleServerError(msg serverErrMsg) tea.Cmd {
-	m.historyWidget.Update(outputLineMsg(msg.err.Error()))
-
-	return tea.Quit
-}
-
-func (m *UncorsApp) handleRestart() {
-	slog.Debug("Handling restart")
-	m.updateHistoryHeight()
-}
-
-func (m *UncorsApp) handleShutdown() tea.Cmd {
+func (m *UncorsApp) quit() tea.Cmd {
 	slog.Debug("Handling shutdown")
 
-	if m.watcher != nil {
-		_ = m.watcher.Close()
+	select {
+	case <-m.stopped:
+	default:
+		close(m.stopped)
 	}
 
 	_ = m.historyWidget.Close()
 
-	m.events.Close()
-
 	return tea.Quit
 }
 
-func (m *UncorsApp) startServerCmd() tea.Cmd {
-	return func() tea.Msg {
-		err := m.proxy.Start(m.appContext(), m.cfg)
-		if err != nil {
-			return serverErrMsg{err: err}
-		}
-
-		return serverStartedMsg{}
-	}
-}
-
-func (m *UncorsApp) waitOutputCmd() tea.Cmd {
+// sendCmd delivers command to the supervisor without blocking the update loop.
+func (m *UncorsApp) sendCmd(command events.Command) tea.Cmd {
 	return func() tea.Msg {
 		select {
-		case line, ok := <-m.outputCh:
-			if !ok {
-				return nil
-			}
-
-			return outputLineMsg(line)
-		case <-m.appDone:
-			return nil
+		case m.commands <- command:
+		case <-m.stopped:
 		}
-	}
-}
-
-// watchEventsCmd waits for the next bus event the UI renders. Events it does
-// not render are skipped without a round trip through Update.
-func (m *UncorsApp) watchEventsCmd() tea.Cmd {
-	return func() tea.Msg {
-		for {
-			select {
-			case event, ok := <-m.events.Events():
-				if !ok {
-					return nil
-				}
-
-				switch typed := event.(type) {
-				case events.RequestStarted:
-					return requestStartedMsg(typed)
-				case events.RequestCompleted:
-					return requestCompletedMsg(typed)
-				}
-			case <-m.appDone:
-				return nil
-			}
-		}
-	}
-}
-
-func (m *UncorsApp) shutdownCmd() tea.Cmd {
-	return func() tea.Msg {
-		m.cancel()
-
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-
-		_ = m.proxy.Shutdown(ctx)
-
-		return shutdownMsg{}
-	}
-}
-
-func (m *UncorsApp) restartCmd() tea.Cmd {
-	return func() tea.Msg {
-		defer helpers.PanicInterceptor(func(value any) {
-			m.output.Errorf("Restart error: %v", value)
-		})
-
-		m.reload()
-
-		return restartMsg{}
-	}
-}
-
-// reload reads the configuration again and restarts the proxy with it. A
-// configuration that fails to load keeps the previous one running.
-func (m *UncorsApp) reload() {
-	newCfg, err := m.loadConfig()
-	if err != nil {
-		m.output.Errorf("Failed to reload configuration, keeping the previous one: %v", err)
-
-		return
-	}
-
-	err = m.proxy.Restart(m.appContext(), newCfg)
-	if err != nil {
-		m.output.Errorf("Failed to restart server: %v", err)
-	}
-}
-
-func (m *UncorsApp) versionCheckCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(versionCheckDelay)
-
-		m.container.VersionChecker(m.cfg.Proxy).
-			CheckNewVersion(m.appContext())
 
 		return nil
+	}
+}
+
+// watchEventsCmd waits for the next event from the subscription.
+func (m *UncorsApp) watchEventsCmd() tea.Cmd {
+	return func() tea.Msg {
+		event, ok := <-m.events.Events()
+		if !ok {
+			return eventsClosedMsg{}
+		}
+
+		switch typed := event.(type) {
+		case events.RequestStarted:
+			return requestStartedMsg(typed)
+		case events.RequestCompleted:
+			return requestCompletedMsg(typed)
+		default:
+			return lifecycleMsg{event: event}
+		}
 	}
 }

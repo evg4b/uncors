@@ -19,7 +19,8 @@ func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
 	router.MethodNotAllowedHandler = httpHandler
 }
 
-type DI interface {
+// Factory builds the handlers and middleware for one mapping.
+type Factory interface {
 	StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware
 	RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware
 	HARMiddleware(harConfig *config.HARConfig) contracts.Middleware
@@ -32,7 +33,7 @@ type Router struct {
 	*mux.Router
 
 	defaultHandler contracts.Handler
-	container      DI
+	factory        Factory
 
 	cacheMiddlewareFactory CacheMiddlewareFactory
 }
@@ -66,24 +67,24 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	defaultHandler := r.prepareDefaultHandler(mapping)
 
 	for _, staticDir := range mapping.Statics {
-		middleware := r.container.StaticMiddleware(staticDir.Path, staticDir)
+		middleware := r.factory.StaticMiddleware(staticDir.Path, staticDir)
 		registerPrefixHandler(router, staticDir.Path, infra.Mddleware(middleware, defaultHandler))
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(def *config.Mock) {
-			registerRoute(createRoute(router, def.Matcher), r.container.MockHandler(&def.Response))
+			registerRoute(createRoute(router, def.Matcher), r.factory.MockHandler(&def.Response))
 		})
 
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(def *config.Script) {
-			registerRoute(createRoute(router, def.Matcher), r.container.ScriptHandler(def))
+			registerRoute(createRoute(router, def.Matcher), r.factory.ScriptHandler(def))
 		})
 
 	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := infra.Mddleware(r.container.RewriteMiddleware(&rewrite), defaultHandler)
+		wrappedHandler := infra.Mddleware(r.factory.RewriteMiddleware(&rewrite), defaultHandler)
 
 		registerPathHandler(router, rewrite.From, wrappedHandler)
 	}
@@ -94,7 +95,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = infra.Mddleware(r.container.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = infra.Mddleware(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 {
@@ -102,7 +103,7 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = infra.Mddleware(r.container.HARMiddleware(&mapping.HAR), defaultHandler)
+		defaultHandler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), defaultHandler)
 	}
 
 	return defaultHandler

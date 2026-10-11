@@ -1,0 +1,202 @@
+package engine
+
+import (
+	"errors"
+	"io"
+	"net"
+	"slices"
+	"strconv"
+	"time"
+
+	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/cache"
+	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/internal/handler/mock"
+	"github.com/evg4b/uncors/internal/handler/options"
+	"github.com/evg4b/uncors/internal/handler/proxy"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
+	"github.com/evg4b/uncors/internal/handler/router"
+	"github.com/evg4b/uncors/internal/handler/script"
+	"github.com/evg4b/uncors/internal/handler/static"
+	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/urlreplacer"
+	"github.com/spf13/afero"
+)
+
+const baseAddress = "127.0.0.1"
+
+// Generation owns everything derived from a single UncorsConfig: the response
+// cache, the HAR writers, the routers built from the mappings and the server
+// targets that serve them.
+//
+// Those resources have a configuration lifetime, not a process lifetime: a hot
+// reload replaces all of them. Closing a Generation releases exactly the
+// resources it created, which is what keeps reloads from leaking goroutines
+// and from leaving several HAR writers racing over the same file.
+type Generation struct {
+	engine      *Engine
+	cacheConfig *config.CacheConfig
+	cacheStore  contracts.Cache
+
+	targets []server.Target
+	closers []io.Closer
+}
+
+var _ router.Factory = (*Generation)(nil)
+
+// BuildGeneration materialises a configuration generation without serving it.
+// The caller owns the result and must Close it once it stops being current.
+func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) (*Generation, error) {
+	generation := &Generation{
+		engine:      e,
+		cacheConfig: &uncorsConfig.CacheConfig,
+	}
+
+	targets, err := generation.buildTargets(uncorsConfig)
+	if err != nil {
+		return nil, errors.Join(err, generation.Close())
+	}
+
+	generation.targets = targets
+
+	return generation, nil
+}
+
+// Targets returns the server targets this generation should be served on.
+func (g *Generation) Targets() []server.Target {
+	return g.targets
+}
+
+// Close releases every resource created for this generation, in reverse
+// creation order. It is safe to call more than once.
+func (g *Generation) Close() error {
+	errs := make([]error, 0, len(g.closers))
+
+	for _, closer := range slices.Backward(g.closers) {
+		err := closer.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	g.closers = nil
+	g.cacheStore = nil
+
+	return errors.Join(errs...)
+}
+
+// Cache lazily creates the response cache for this generation, so that a
+// config without caching never allocates one and a reload always picks up the
+// current cache-config.
+func (g *Generation) Cache() contracts.Cache {
+	if g.cacheStore == nil {
+		g.cacheStore = register(g, cache.NewRistrettoCache(g.cacheConfig.MaxSize, g.cacheConfig.ExpirationTime))
+	}
+
+	return g.cacheStore
+}
+
+func (g *Generation) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware {
+	return cache.NewMiddleware(
+		cache.WithMethods(g.cacheConfig.Methods),
+		cache.WithCacheStorage(g.Cache()),
+		cache.WithGlobs(globs),
+	)
+}
+
+func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
+	writer := register(g, har.NewWriter(harConfig.File))
+
+	return har.NewMiddleware(
+		har.WithWriter(writer),
+		har.WithCaptureSecureHeaders(harConfig.CaptureSecureHeaders),
+	)
+}
+
+func (g *Generation) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
+	return static.NewStaticMiddleware(
+		static.WithFileSystem(afero.NewBasePathFs(g.engine.fs, dir.Dir)),
+		static.WithIndex(dir.Index),
+		static.WithPrefix(path),
+		static.WithLogger(g.engine.logger),
+	)
+}
+
+func (g *Generation) RewriteMiddleware(rewriting *config.RewritingOption) contracts.Middleware {
+	return rewrite.NewMiddleware(rewrite.WithRewritingOptions(rewriting))
+}
+
+func (g *Generation) OptionsMiddleware(cfg config.OptionsHandling) contracts.Middleware {
+	return options.NewMiddleware(
+		options.WithHeaders(cfg.Headers),
+		options.WithCode(cfg.Code),
+	)
+}
+
+func (g *Generation) MockHandler(response *config.Response) contracts.Handler {
+	return mock.NewMockHandler(
+		mock.WithResponse(response),
+		mock.WithFileSystem(g.engine.fs),
+		mock.WithAfter(time.After),
+		mock.WithLogger(g.engine.logger),
+	)
+}
+
+func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
+	return script.NewHandler(
+		script.WithLogger(g.engine.logger),
+		script.WithScript(scriptConfig),
+		script.WithFileSystem(g.engine.fs),
+	)
+}
+
+func (g *Generation) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
+	return proxy.NewProxyHandler(
+		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
+		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
+		proxy.WithLogger(g.engine.logger),
+	)
+}
+
+func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
+	groupedMappings := uncorsConfig.Mappings.GroupByPort()
+	targets := make([]server.Target, 0, len(groupedMappings))
+	errs := make([]error, 0, len(groupedMappings))
+
+	for _, group := range groupedMappings {
+		handler, err := g.router(group.Mappings, uncorsConfig.Proxy)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
+		}
+
+		targets = append(targets, server.Target{
+			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
+			Handler:   handler,
+			EnableTLS: group.Scheme == "https",
+		})
+	}
+
+	return targets, errors.Join(errs...)
+}
+
+func (g *Generation) router(mappings config.Mappings, proxyURL string) (contracts.Handler, error) {
+	muxRouter, err := router.NewRouter(
+		mappings,
+		router.WithFactory(g),
+		router.ForRouterWithDefaultHandler(g.ProxyHandler(mappings, proxyURL)),
+		router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
+	)
+
+	return infra.CastToContractsHandler(muxRouter), err
+}
+
+// register binds a resource to the generation's lifetime.
+func register[T io.Closer](generation *Generation, resource T) T {
+	generation.closers = append(generation.closers, resource)
+
+	return resource
+}

@@ -10,7 +10,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/router"
@@ -33,9 +32,7 @@ func attributionRouter(t *testing.T) http.Handler {
 		"/assets/app.js": "app",
 	})
 
-	container := di.NewContainer(di.WithFs(fs))
-
-	t.Cleanup(func() { testutils.Close(t, container) })
+	generation := newGeneration(t, fs)
 
 	mappings := config.Mappings{
 		{
@@ -80,7 +77,7 @@ func attributionRouter(t *testing.T) http.Handler {
 				cache.WithCacheStorage(store),
 			)
 		}),
-		router.WithDiContainer(newRuntime(t, container)),
+		router.WithFactory(generation),
 	)
 	require.NoError(t, err)
 

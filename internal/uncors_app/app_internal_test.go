@@ -3,75 +3,58 @@ package uncorsapp
 import (
 	"errors"
 	"net/url"
-	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
-
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var errBoom = errors.New("boom")
 
-func newTestApp(t *testing.T) (*UncorsApp, *int) {
-	t.Helper()
+type testApp struct {
+	*UncorsApp
 
-	uncorsConfig := &config.UncorsConfig{
-		Mappings: config.Mappings{},
-	}
-
-	container := di.NewContainer()
-
-	t.Cleanup(func() {
-		container.Close()
-	})
-
-	loadCalls := 0
-	app := NewUncorsApp(
-		container,
-		"", // no config file — watcher is not created
-		uncorsConfig,
-		func() (*config.UncorsConfig, error) {
-			loadCalls++
-
-			return uncorsConfig, nil
-		},
-	)
-
-	return app, &loadCalls
+	bus      *events.Bus
+	commands chan events.Command
 }
 
-func cleanupTestApp(t *testing.T, app *UncorsApp) {
+func newTestApp(t *testing.T) testApp {
 	t.Helper()
 
-	app.cancel()
-	err := app.proxy.Close()
-	require.NoError(t, err)
+	bus := events.NewBus()
+	commands := make(chan events.Command, 1)
+	app := NewUncorsApp(bus.Subscribe(10), commands, "x.x.x")
 
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
-	}
+	t.Cleanup(func() {
+		bus.Close()
+		require.NoError(t, app.historyWidget.Close())
+	})
+
+	return testApp{UncorsApp: app, bus: bus, commands: commands}
+}
+
+func historyText(app testApp) string {
+	return ansi.Strip(strings.Join(app.historyWidget.hist.Lines(), "\n"))
+}
+
+func mappings() config.Mappings {
+	return config.Mappings{{From: hosts.Localhost.HTTPPort(3000), To: hosts.Github.HTTPS()}}
 }
 
 func TestNewUncorsAppAndKeyMap(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app := newTestApp(t)
 
-	assert.NotNil(t, app.output)
 	assert.NotNil(t, app.events)
 	assert.NotNil(t, app.historyWidget.hist)
-	assert.NotNil(t, app.appContext)
-	assert.NotNil(t, app.appDone)
 	assert.True(t, app.historyWidget.autoScroll)
 	assert.Empty(t, app.trackerWidget.pending)
 	assert.GreaterOrEqual(t, app.memWidget.memMB, 0.0)
@@ -87,20 +70,13 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 }
 
 func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+	app := newTestApp(t)
 
 	model, cmd := app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
-	require.Same(t, app, model)
+	require.Same(t, app.UncorsApp, model)
 	assert.Nil(t, cmd)
 	assert.Equal(t, 80, app.termWidth)
 	assert.Equal(t, 12, app.termHeight)
-
-	model, cmd = app.Update(outputLineMsg("hello\nworld"))
-	require.Same(t, app, model)
-	require.NotNil(t, cmd)
-	assert.Equal(t, 2, app.historyWidget.hist.LineCount())
-	assert.Equal(t, []string{"hello", "world"}, app.historyWidget.hist.Lines())
 
 	requestURL, err := url.Parse("https://example.com/demo")
 	require.NoError(t, err)
@@ -112,15 +88,13 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 		Handler: events.HandlerProxy,
 		At:      time.Now().Add(-1500 * time.Millisecond),
 	})
-	require.Same(t, app, model)
+	require.Same(t, app.UncorsApp, model)
 	require.NotNil(t, cmd)
 	assert.Len(t, app.trackerWidget.pending, 1)
 	assert.True(t, app.trackerWidget.ticking)
 
 	view := app.View()
 	assert.True(t, view.AltScreen)
-	assert.Contains(t, view.Content, "hello")
-	assert.Contains(t, view.Content, "world")
 	assert.Contains(t, view.Content, "GET")
 	assert.Contains(t, view.Content, "example.com/demo")
 	assert.Contains(t, view.Content, "PROXY")
@@ -130,130 +104,117 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 		Handler: events.HandlerProxy,
 		Data:    &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200},
 	})
-	require.Same(t, app, model)
+	require.Same(t, app.UncorsApp, model)
 	require.NotNil(t, cmd)
 	assert.Empty(t, app.trackerWidget.pending)
+	assert.Contains(t, historyText(app), "PROXY")
+	assert.Contains(t, historyText(app), "200 GET")
 
 	model, cmd = app.Update(spinner.TickMsg{})
-	require.Same(t, app, model)
+	require.Same(t, app.UncorsApp, model)
 	assert.Nil(t, cmd)
 	assert.False(t, app.trackerWidget.ticking)
 
 	model, cmd = app.Update(memUpdateMsg{mb: 12.5})
-	require.Same(t, app, model)
+	require.Same(t, app.UncorsApp, model)
 	require.NotNil(t, cmd)
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
 	app.helpWidget.help.ShowAll = true
 	app.trackerWidget.pending[1] = events.RequestStarted{Method: "POST", URL: requestURL, At: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
-	// historyHeight is now calculated dynamically and applied to historyWidget in Update/handleRestart.
-	// Since we mock manual property setting here, let's call updateHistoryHeight
-	app.updateHistoryHeight()
 
 	app.termHeight = 0
 	app.updateHistoryHeight()
 
 	app.termWidth = 120
-	// renderHelpBar is gone, HelpWidget and MemWidget composite in View()
-	// Let's assert MemWidget produces MB string
 	assert.Contains(t, app.memWidget.View().Content, "MB")
 
 	app.termWidth = 1
 	assert.Equal(t, app.helpWidget.help.View(app.keys), app.helpWidget.View().Content)
 }
 
-func TestUncorsAppCommandFactoriesAndChannels(t *testing.T) {
-	t.Run("start and lifecycle commands return expected messages", func(t *testing.T) {
-		app, loadCalls := newTestApp(t)
-		defer cleanupTestApp(t, app)
+func TestUncorsAppRendersLifecycleEvents(t *testing.T) {
+	t.Run("server started shows the banner and mappings", func(t *testing.T) {
+		app := newTestApp(t)
 
-		msg := app.startServerCmd()()
-		assert.IsType(t, serverStartedMsg{}, msg)
-
-		cmd := app.handleServerStarted()
+		_, cmd := app.Update(lifecycleMsg{event: events.ServerStarted{Mappings: mappings()}})
 		require.NotNil(t, cmd)
 
-		msg = app.restartCmd()()
-		assert.Equal(t, restartMsg{}, msg)
-		assert.Equal(t, 1, *loadCalls)
-
-		msg = app.shutdownCmd()()
-		assert.Equal(t, shutdownMsg{}, msg)
+		assert.Contains(t, historyText(app), "DON'T USE IT FOR PRODUCTION!")
+		assert.Contains(t, historyText(app), "http://localhost:3000 => https://github.com")
 	})
 
-	t.Run("restart with an invalid config reports the error and keeps the proxy", func(t *testing.T) {
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
+	t.Run("server restarted clears pending requests", func(t *testing.T) {
+		app := newTestApp(t)
+		app.trackerWidget.pending[1] = events.RequestStarted{Method: "GET", At: time.Now()}
+		app.trackerWidget.ticking = true
 
-		app := NewUncorsApp(container, "", &config.UncorsConfig{}, func() (*config.UncorsConfig, error) {
-			return nil, errBoom
-		})
-		defer cleanupTestApp(t, app)
+		_, cmd := app.Update(lifecycleMsg{event: events.ServerRestarted{Mappings: mappings()}})
+		require.NotNil(t, cmd)
 
-		var msg tea.Msg
-
-		require.NotPanics(t, func() { msg = app.restartCmd()() })
-		assert.Equal(t, restartMsg{}, msg)
-
-		line := recv(t, app.outputCh)
-		assert.Contains(t, line, "Failed to reload configuration")
-		assert.Contains(t, line, errBoom.Error())
+		assert.Contains(t, historyText(app), "Server restarted")
+		assert.Empty(t, app.trackerWidget.pending)
+		assert.False(t, app.trackerWidget.ticking)
 	})
 
-	t.Run("waitOutputCmd reads from output channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("a failed reload is reported", func(t *testing.T) {
+		app := newTestApp(t)
 
-		app.outputCh <- "queued"
+		_, _ = app.Update(lifecycleMsg{event: events.ReloadFailed{Err: errBoom}})
 
-		assert.Equal(t, outputLineMsg("queued"), app.waitOutputCmd()())
-
-		app.cancel()
-		assert.Nil(t, app.waitOutputCmd()())
+		assert.Contains(t, historyText(app), "Failed to reload configuration, keeping the previous one: boom")
 	})
 
-	t.Run("waitOutputCmd returns nil when channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("a new version is announced", func(t *testing.T) {
+		app := newTestApp(t)
 
-		close(app.outputCh)
-		assert.Nil(t, app.waitOutputCmd()())
+		_, _ = app.Update(lifecycleMsg{event: events.NewVersionAvailable{Current: "0.6.0", Latest: "0.7.0"}})
+
+		assert.Contains(t, historyText(app), "0.6.0 is not the latest version, you should upgrade to 0.7.0")
 	})
 
-	t.Run("watchEventsCmd reads from event channel and handles shutdown", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("server stopped quits", func(t *testing.T) {
+		app := newTestApp(t)
 
-		requestURL, err := url.Parse("https://example.com/watch")
-		require.NoError(t, err)
-
-		started := events.RequestStarted{ID: 9, Method: "GET", URL: requestURL, Handler: events.HandlerCache}
-		completed := events.RequestCompleted{ID: 9, Handler: events.HandlerCache}
-
-		bus := app.container.Bus()
-		bus.Publish(started)
-		bus.Publish(completed)
-
-		assert.Equal(t, requestStartedMsg(started), app.watchEventsCmd()())
-		assert.Equal(t, requestCompletedMsg(completed), app.watchEventsCmd()())
-
-		app.cancel()
-		assert.Nil(t, app.watchEventsCmd()())
+		_, cmd := app.Update(lifecycleMsg{event: events.ServerStopped{}})
+		require.NotNil(t, cmd)
+		assert.Equal(t, tea.Quit(), cmd())
 	})
 
-	t.Run("watchEventsCmd returns nil when event channel is closed", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+	t.Run("a closed subscription quits", func(t *testing.T) {
+		app := newTestApp(t)
 
-		app.events.Close()
-		assert.Nil(t, app.watchEventsCmd()())
+		_, cmd := app.Update(eventsClosedMsg{})
+		require.NotNil(t, cmd)
+		assert.Equal(t, tea.Quit(), cmd())
 	})
 }
 
-func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
+func TestUncorsAppWatchEvents(t *testing.T) {
+	app := newTestApp(t)
+
+	requestURL, err := url.Parse("https://example.com/watch")
+	require.NoError(t, err)
+
+	started := events.RequestStarted{ID: 9, Method: "GET", URL: requestURL, Handler: events.HandlerCache}
+	completed := events.RequestCompleted{ID: 9, Handler: events.HandlerCache}
+	restarted := events.ServerRestarted{Mappings: mappings()}
+
+	app.bus.Publish(started)
+	app.bus.Publish(completed)
+	app.bus.Publish(restarted)
+
+	assert.Equal(t, requestStartedMsg(started), app.watchEventsCmd()())
+	assert.Equal(t, requestCompletedMsg(completed), app.watchEventsCmd()())
+	assert.Equal(t, lifecycleMsg{event: restarted}, app.watchEventsCmd()())
+
+	app.bus.Close()
+	assert.Equal(t, eventsClosedMsg{}, app.watchEventsCmd()())
+}
+
+func TestUncorsAppKeyHandling(t *testing.T) {
+	app := newTestApp(t)
 
 	_, _ = app.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 	_, _ = app.Update(outputLineMsg("one\ntwo\nthree\nfour\nfive"))
@@ -284,219 +245,36 @@ func TestUncorsAppKeyHandlingAndMessages(t *testing.T) {
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "r", Code: 'r'}))
 	require.NotNil(t, cmd)
-	assert.Equal(t, restartMsg{}, cmd())
+	assert.Nil(t, cmd())
+	assert.Equal(t, events.Restart{}, <-app.commands)
 
 	_, cmd = app.Update(tea.KeyPressMsg(tea.Key{Text: "q", Code: 'q'}))
 	require.NotNil(t, cmd)
-	assert.Equal(t, shutdownMsg{}, cmd())
+	assert.Nil(t, cmd())
+	assert.Equal(t, events.Shutdown{}, <-app.commands)
 }
 
-func TestUncorsAppServerErrorRestartShutdownAndFormatting(t *testing.T) {
-	t.Run("server error and restart messages update state", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		defer cleanupTestApp(t, app)
+func TestUncorsAppCommandsDoNotBlockAfterStop(t *testing.T) {
+	app := newTestApp(t)
 
-		app.trackerWidget.pending[1] = events.RequestStarted{Method: "GET", At: time.Now()}
-		app.trackerWidget.ticking = true
+	// Fill the buffer, as if the supervisor had stopped reading.
+	app.commands <- events.Restart{}
 
-		model, cmd := app.Update(serverErrMsg{err: errBoom})
-		require.Same(t, app, model)
-		require.NotNil(t, cmd)
-		assert.Contains(t, app.historyWidget.hist.Lines()[0], errBoom.Error())
-
-		model, cmd = app.Update(restartMsg{})
-		require.Same(t, app, model)
-		assert.Nil(t, cmd)
-		assert.Empty(t, app.trackerWidget.pending)
-		assert.False(t, app.trackerWidget.ticking)
-	})
-
-	t.Run("shutdown message quits app", func(t *testing.T) {
-		app, _ := newTestApp(t)
-		app.historyWidget.hist.AppendLine("hello")
-
-		model, cmd := app.Update(shutdownMsg{})
-		require.Same(t, app, model)
-		require.NotNil(t, cmd)
-		assert.Equal(t, tea.Quit(), cmd())
-
-		app.cancel()
-		err := app.proxy.Close()
-		require.NoError(t, err)
-	})
-}
-
-func TestServerStartedMsgUpdate(t *testing.T) {
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
-
-	model, cmd := app.Update(serverStartedMsg{})
-
-	require.Same(t, app, model)
+	_, cmd := app.Update(tea.KeyPressMsg(tea.Key{Text: "q", Code: 'q'}))
 	require.NotNil(t, cmd)
-}
 
-func TestHandleServerStartedWithConfigPath(t *testing.T) {
-	t.Run("creates watcher when config file exists", func(t *testing.T) {
-		tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-		require.NoError(t, err)
+	done := make(chan struct{})
 
-		err = tmpFile.Close()
-		require.NoError(t, err)
-
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) { return cfg, nil })
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		require.NotNil(t, app.watcher)
-
-		err = app.watcher.Close()
-		require.NoError(t, err)
-	})
-
-	t.Run("logs error when config file does not exist", func(t *testing.T) {
-		cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-		container := di.NewContainer()
-		defer testutils.Close(t, container)
-
-		app := NewUncorsApp(container, "/nonexistent/path/config.yaml", cfg, func() (*config.UncorsConfig, error) {
-			return cfg, nil
-		})
-
-		defer func() {
-			app.cancel()
-			err := app.proxy.Close()
-			require.NoError(t, err)
-
-			if app.historyWidget != nil && app.historyWidget.hist != nil {
-				err := app.historyWidget.hist.Close()
-				require.NoError(t, err)
-			}
-		}()
-
-		cmd := app.handleServerStarted()
-
-		require.NotNil(t, cmd)
-		assert.Nil(t, app.watcher)
-	})
-}
-
-func TestRequestCompletedIsWrittenToHistory(t *testing.T) {
-	requestURL, err := url.Parse("https://example.com/api")
-	require.NoError(t, err)
-
-	app, _ := newTestApp(t)
-	defer cleanupTestApp(t, app)
-
-	_, _ = app.Update(requestCompletedMsg{
-		Handler: events.HandlerMock,
-		Data:    &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200},
-	})
-
-	line := ansi.Strip(<-app.outputCh)
-	assert.Contains(t, line, "MOCK")
-	assert.Contains(t, line, "example.com/api")
-}
-
-func TestHandleServerStartedCallbackOnFileChange(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	cfg := &config.UncorsConfig{Mappings: config.Mappings{}}
-
-	called := make(chan struct{}, 1)
-
-	container := di.NewContainer()
-	defer testutils.Close(t, container)
-
-	app := NewUncorsApp(container, tmpFile.Name(), cfg, func() (*config.UncorsConfig, error) {
-		select {
-		case called <- struct{}{}:
-		default:
-		}
-
-		return cfg, nil
-	})
-
-	defer func() {
-		// Cancel context first so any in-flight Restart fails fast.
-		// We deliberately skip app.proxy.Close() here: closeAll() writes
-		// app.closers concurrently with the Restart goroutine's read of
-		// app.closers, which would be a data race.
-		app.cancel()
-
-		if app.watcher != nil {
-			err := app.watcher.Close()
-			require.NoError(t, err)
-		}
-
-		if app.historyWidget != nil && app.historyWidget.hist != nil {
-			err := app.historyWidget.hist.Close()
-			require.NoError(t, err)
-		}
+	go func() {
+		cmd()
+		close(done)
 	}()
 
-	cmd := app.handleServerStarted()
-
-	require.NotNil(t, cmd)
-	require.NotNil(t, app.watcher)
-
-	require.NoError(t, os.WriteFile(tmpFile.Name(), []byte("proxy: \"\""), 0o600))
+	_, _ = app.Update(lifecycleMsg{event: events.ServerStopped{}})
 
 	select {
-	case <-called:
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("onChange callback was not invoked within timeout")
-	}
-}
-
-func TestHandleShutdownWithWatcher(t *testing.T) {
-	tmpFile, err := os.CreateTemp(t.TempDir(), "uncors-*.yaml")
-	require.NoError(t, err)
-
-	err = tmpFile.Close()
-	require.NoError(t, err)
-
-	ctx := t.Context()
-
-	watcher := config.NewWatcher(tmpFile.Name())
-	err = watcher.Watch(ctx, func() {})
-	require.NoError(t, err)
-
-	app, _ := newTestApp(t)
-	app.watcher = watcher
-
-	cmd := app.handleShutdown()
-	require.NotNil(t, cmd)
-	assert.Equal(t, tea.Quit(), cmd())
-
-	app.cancel()
-	err = app.proxy.Close()
-	require.NoError(t, err)
-
-	if app.historyWidget != nil && app.historyWidget.hist != nil {
-		err := app.historyWidget.hist.Close()
-		require.NoError(t, err)
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("sending a command blocked after the proxy stopped")
 	}
 }

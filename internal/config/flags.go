@@ -1,13 +1,16 @@
 package config
 
 import (
-	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/pflag"
 )
 
-func defineFlags(version string) *pflag.FlagSet {
+func defineFlags(usage Usage) *pflag.FlagSet {
 	flags := pflag.NewFlagSet("uncors", pflag.ContinueOnError)
-	flags.Usage = func() { tui.PrintUsage(flags, version) }
+	flags.Usage = func() {
+		if usage != nil {
+			usage(flags)
+		}
+	}
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
 	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")

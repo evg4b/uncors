@@ -1,21 +1,26 @@
 package cli_test
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/di"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -78,19 +83,38 @@ func writeConfig(t *testing.T, path string, cfg *config.UncorsConfig) {
 	require.NoError(t, os.WriteFile(path, data, 0o600))
 }
 
+// syncBuffer collects console output written from the frontend goroutine.
+type syncBuffer struct {
+	mu     sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	return b.buffer.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	return ansi.Strip(b.buffer.String())
+}
+
+func env(fs afero.Fs, args ...string) cli.Env {
+	return cli.Env{Fs: fs, Stdout: io.Discard, Args: args, Version: "x.x.x"}
+}
+
 // startProxy starts RunUncors in a goroutine and returns a channel that
 // receives the error when it exits. The caller must cancel the context and
 // drain the channel to ensure the goroutine has fully stopped.
-func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
+func startProxy(ctx context.Context, env cli.Env) <-chan error {
 	errCh := make(chan error, 1)
 
 	go func() {
-		container := di.NewContainer(di.WithFs(fs), di.WithArgs(args))
-		defer func() {
-			errCh <- container.Close()
-		}()
-
-		errCh <- cli.RunUncors(ctx, container)
+		errCh <- cli.RunUncors(ctx, env)
 	}()
 
 	return errCh
@@ -99,26 +123,23 @@ func startProxy(ctx context.Context, fs afero.Fs, args []string) <-chan error {
 func TestRunUncors(t *testing.T) {
 	t.Run("returns error when LoadConfiguration fails", func(t *testing.T) {
 		// No --from/--to flags and no config file → "mappings must not be empty"
-		container := di.NewContainer(di.WithArgs([]string{}))
-		defer testutils.Close(t, container)
-
-		err := cli.RunUncors(context.Background(), container)
+		err := cli.RunUncors(context.Background(), env(afero.NewMemMapFs()))
 		require.Error(t, err)
 	})
 
-	t.Run("returns nil for --version flag", func(t *testing.T) {
-		container := di.NewContainer(di.WithArgs([]string{"--version"}))
-		defer testutils.Close(t, container)
+	t.Run("prints the version for --version flag", func(t *testing.T) {
+		output := &syncBuffer{}
+		versionEnv := env(afero.NewMemMapFs(), "--version")
+		versionEnv.Stdout = output
+		versionEnv.Version = "1.2.3"
 
-		err := cli.RunUncors(context.Background(), container)
+		err := cli.RunUncors(context.Background(), versionEnv)
 		require.NoError(t, err)
+		assert.Equal(t, "1.2.3\n", output.String())
 	})
 
 	t.Run("returns nil for --help flag", func(t *testing.T) {
-		container := di.NewContainer(di.WithArgs([]string{"--help"}))
-		defer testutils.Close(t, container)
-
-		err := cli.RunUncors(context.Background(), container)
+		err := cli.RunUncors(context.Background(), env(afero.NewMemMapFs(), "--help"))
 		require.NoError(t, err)
 	})
 
@@ -132,7 +153,11 @@ func TestRunUncors(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 
-		errCh := startProxy(ctx, fs, []string{"-c", "/config.yaml", "--interactive=false"})
+		output := &syncBuffer{}
+		runEnv := env(fs, "-c", "/config.yaml", "--interactive=false")
+		runEnv.Stdout = output
+
+		errCh := startProxy(ctx, runEnv)
 
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 		cancel()
@@ -143,6 +168,9 @@ func TestRunUncors(t *testing.T) {
 		case <-time.After(10 * time.Second):
 			t.Fatal("RunUncors did not exit after context cancellation")
 		}
+
+		assert.Contains(t, output.String(), "DON'T USE IT FOR PRODUCTION!")
+		assert.Contains(t, output.String(), "Server was stopped")
 	})
 
 	t.Run("non-interactive: returns error when port is already in use", func(t *testing.T) {
@@ -162,10 +190,7 @@ func TestRunUncors(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, afero.WriteFile(fs, "/config.yaml", data, 0o600))
 
-		container := di.NewContainer(di.WithFs(fs), di.WithArgs([]string{"-c", "/config.yaml", "--interactive=false"}))
-		defer testutils.Close(t, container)
-
-		err = cli.RunUncors(context.Background(), container)
+		err = cli.RunUncors(context.Background(), env(fs, "-c", "/config.yaml", "--interactive=false"))
 		require.Error(t, err)
 	})
 
@@ -178,15 +203,21 @@ func TestRunUncors(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 
-		errCh := startProxy(ctx, afero.NewOsFs(), []string{"-c", configPath, "--interactive=false"})
+		output := &syncBuffer{}
+		runEnv := env(afero.NewOsFs(), "-c", configPath, "--interactive=false")
+		runEnv.Stdout = output
+
+		errCh := startProxy(ctx, runEnv)
 
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
-		// Overwrite with same valid config — watcher fires, reloadServer runs.
+		// Overwrite with same valid config — the watcher fires and the proxy
+		// restarts.
 		writeConfig(t, configPath, cfg)
 
-		// Let the debounce + reload settle before stopping.
-		time.Sleep(200 * time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return strings.Contains(output.String(), "Server restarted")
+		}, 5*time.Second, 20*time.Millisecond)
 
 		cancel()
 
@@ -202,7 +233,7 @@ func TestRunUncors(t *testing.T) {
 		}
 	})
 
-	t.Run("non-interactive: logs error when config reload produces invalid config", func(t *testing.T) {
+	t.Run("non-interactive: keeps the previous config when the reload is invalid", func(t *testing.T) {
 		dir := t.TempDir()
 		configPath := filepath.Join(dir, "config.yaml")
 
@@ -211,15 +242,23 @@ func TestRunUncors(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 
-		errCh := startProxy(ctx, afero.NewOsFs(), []string{"-c", configPath, "--interactive=false"})
+		output := &syncBuffer{}
+		runEnv := env(afero.NewOsFs(), "-c", configPath, "--interactive=false")
+		runEnv.Stdout = output
+
+		errCh := startProxy(ctx, runEnv)
 
 		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
-		// Write an invalid config (empty mappings) — reloadServer returns an error.
+		// Write an invalid config (empty mappings) — the reload fails.
 		require.NoError(t, os.WriteFile(configPath, []byte("mappings: []\n"), 0o600))
 
-		// Let the debounce + reload settle before stopping.
-		time.Sleep(200 * time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return strings.Contains(output.String(), "Failed to reload configuration, keeping the previous one")
+		}, 5*time.Second, 20*time.Millisecond)
+
+		// The previous configuration keeps serving.
+		waitForPort(t, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 
 		cancel()
 
