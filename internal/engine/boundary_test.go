@@ -22,6 +22,7 @@ func TestCoreDoesNotImportTheUI(t *testing.T) {
 		"github.com/evg4b/uncors/internal/server",
 		"github.com/evg4b/uncors/internal/events",
 		"github.com/evg4b/uncors/internal/tracking",
+		"github.com/evg4b/uncors/internal/telemetry",
 		"github.com/evg4b/uncors/internal/handler/...",
 	}
 
