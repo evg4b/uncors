@@ -2,7 +2,9 @@ package script
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -16,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
 type Handler struct {
@@ -33,7 +36,21 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	tracking.Claim(request.Context(), events.HandlerScript)
 
+	var startedAt time.Time
+
+	if span.IsRecording() {
+		startedAt = time.Now()
+
+		span.SetAttributes(h.attributes()...)
+	}
+
 	err := h.executeScript(writer, request)
+
+	if span.IsRecording() {
+		span.SetAttributes(semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(writer.StatusCode())))
+		telemetry.ScriptExecuted(request.Context(), time.Since(startedAt), err)
+	}
+
 	if err != nil {
 		telemetry.Fail(span, err)
 
@@ -41,6 +58,20 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	}
 
 	return nil
+}
+
+func (h *Handler) attributes() []attribute.KeyValue {
+	if h.script.Script != "" {
+		return []attribute.KeyValue{
+			attribute.String("uncors.script.source", "inline"),
+			attribute.Int("uncors.script.bytes", len(h.script.Script)),
+		}
+	}
+
+	return []attribute.KeyValue{
+		attribute.String("uncors.script.source", "file"),
+		attribute.String("uncors.script.file", h.script.File),
+	}
 }
 
 func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -76,6 +107,13 @@ func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {
 	luaState.Push(function)
 
 	err = luaState.PCall(0, lua.MultRet, nil)
+	if err != nil && span.IsRecording() {
+		var apiErr *lua.ApiError
+		if errors.As(err, &apiErr) && apiErr.StackTrace != "" {
+			span.SetAttributes(attribute.String("uncors.script.stack_trace", apiErr.StackTrace))
+		}
+	}
+
 	telemetry.Fail(span, err)
 
 	return err
@@ -101,6 +139,10 @@ func (h *Handler) compile(ctx context.Context, luaState *lua.LState) (*lua.LFunc
 		}
 
 		source = string(content)
+
+		if span.IsRecording() {
+			span.SetAttributes(attribute.Int("uncors.script.bytes", len(source)))
+		}
 	}
 
 	function, err := luaState.LoadString(source)

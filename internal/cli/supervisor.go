@@ -161,6 +161,8 @@ func (s *supervisor) reload(ctx context.Context) {
 		err = s.engine.Restart(ctx, uncorsConfig)
 	}
 
+	telemetry.ConfigReloaded(ctx, err)
+
 	if err != nil {
 		telemetry.Fail(span, err)
 		s.bus.Publish(events.ReloadFailed{Err: err})

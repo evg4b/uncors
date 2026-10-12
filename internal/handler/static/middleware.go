@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -18,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
 var errNotHandled = errors.New("request is not handled")
@@ -41,7 +43,10 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 	filePath := h.extractFilePath(request)
 
 	if span.IsRecording() {
-		span.SetAttributes(attribute.String("uncors.static.file", filePath))
+		span.SetAttributes(
+			attribute.String("uncors.static.prefix", h.prefix),
+			attribute.String("uncors.static.file", filePath),
+		)
 	}
 
 	file, stat, err := h.openFile(filePath)
@@ -53,6 +58,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 				span.SetAttributes(attribute.Bool("uncors.static.fall_through", true))
 			}
 
+			telemetry.StaticRequest(request.Context(), telemetry.ResultFallThrough)
 			// The default handler is not part of this span.
 			span.End()
 
@@ -61,12 +67,25 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 		tracking.Claim(request.Context(), events.HandlerStatic)
 		telemetry.Fail(span, err)
+		telemetry.StaticRequest(request.Context(), telemetry.ResultError)
 
 		return err
 	}
 
 	tracking.Claim(request.Context(), events.HandlerStatic)
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.static.served", stat.Name()),
+			attribute.Bool("uncors.static.index_used", stat.Name() != filepath.Base(filePath)),
+			attribute.Int64("uncors.static.file_bytes", stat.Size()),
+			attribute.String("uncors.static.modified", stat.ModTime().UTC().Format(time.RFC3339)),
+			semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(writer.StatusCode())),
+		)
+	}
+
+	telemetry.StaticRequest(request.Context(), telemetry.ResultServed)
 
 	return nil
 }

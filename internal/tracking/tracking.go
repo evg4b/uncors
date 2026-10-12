@@ -96,6 +96,14 @@ func Fail(ctx context.Context, err error) {
 	}
 }
 
+// Handler is the component that claimed the request so far.
+func (s *Scope) Handler() events.HandlerKind {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.handler
+}
+
 func (s *Scope) Finish(data *contracts.RequestData) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

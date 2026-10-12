@@ -3,12 +3,14 @@ package router
 import (
 	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -71,28 +73,50 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 
 	for _, staticDir := range mapping.Statics {
 		middleware := r.factory.StaticMiddleware(staticDir.Path, staticDir)
-		registerPrefixHandler(router, staticDir.Path, infra.Mddleware(middleware, defaultHandler))
+		handler := traced(infra.Mddleware(middleware, defaultHandler), slices.Concat(
+			mappingAttributes(mapping, routeStatic),
+			[]attribute.KeyValue{
+				semconv.HTTPRoute(staticDir.Path),
+				attribute.String("uncors.static.dir", staticDir.Dir),
+				attribute.String("uncors.static.index", staticDir.Index),
+			},
+		)...)
+		registerPrefixHandler(router, staticDir.Path, handler)
 	}
 
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
-		func(def *config.Mock) {
-			registerRoute(createRoute(router, def.Matcher), r.factory.MockHandler(&def.Response))
+		func(index int, def *config.Mock) {
+			handler := traced(r.factory.MockHandler(&def.Response), slices.Concat(
+				mappingAttributes(mapping, routeMock),
+				matcherAttributes(def.Matcher, index),
+			)...)
+			registerRoute(createRoute(router, def.Matcher), handler)
 		})
 
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
-		func(def *config.Script) {
-			registerRoute(createRoute(router, def.Matcher), r.factory.ScriptHandler(def))
+		func(index int, def *config.Script) {
+			handler := traced(r.factory.ScriptHandler(def), slices.Concat(
+				mappingAttributes(mapping, routeScript),
+				matcherAttributes(def.Matcher, index),
+			)...)
+			registerRoute(createRoute(router, def.Matcher), handler)
 		})
 
-	for _, rewrite := range mapping.Rewrites {
-		wrappedHandler := infra.Mddleware(r.factory.RewriteMiddleware(&rewrite), defaultHandler)
+	for index, rewrite := range mapping.Rewrites {
+		handler := traced(infra.Mddleware(r.factory.RewriteMiddleware(&rewrite), defaultHandler), slices.Concat(
+			mappingAttributes(mapping, routeRewrite),
+			[]attribute.KeyValue{
+				semconv.HTTPRoute(rewrite.From),
+				attribute.Int("uncors.route.index", index),
+			},
+		)...)
 
-		registerPathHandler(router, rewrite.From, wrappedHandler)
+		registerPathHandler(router, rewrite.From, handler)
 	}
 
-	setDefaultHandler(router, defaultHandler)
+	setDefaultHandler(router, traced(defaultHandler, mappingAttributes(mapping, routeDefault)...))
 }
 
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {

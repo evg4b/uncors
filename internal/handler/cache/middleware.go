@@ -18,8 +18,9 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/pkg/urlt"
-	"github.com/samber/lo"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Middleware struct {
@@ -43,6 +44,15 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 	}
 
 	if !isCacheable {
+		if telemetry.Enabled() {
+			if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
+				span.AddEvent("uncors.cache.not_cacheable", trace.WithAttributes(
+					attribute.StringSlice("uncors.cache.methods", m.methods),
+					attribute.StringSlice("uncors.cache.globs", m.pathGlobs),
+				))
+			}
+		}
+
 		return next(writer, request)
 	}
 
@@ -84,12 +94,25 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 
 	cachedResponse := m.getCachedResponse(cacheKey)
 
+	telemetry.CacheLookup(ctx, cachedResponse != nil)
+
 	if span.IsRecording() {
-		span.SetAttributes(attribute.Bool("uncors.cache.hit", cachedResponse != nil))
+		span.SetAttributes(
+			attribute.String("uncors.cache.key", cacheKey),
+			attribute.Bool("uncors.cache.hit", cachedResponse != nil),
+		)
 	}
 
 	if cachedResponse == nil {
 		return false
+	}
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			semconv.HTTPResponseStatusCode(cachedResponse.Code),
+			attribute.Int("uncors.cache.body_bytes", len(cachedResponse.Body)),
+			attribute.Int("uncors.cache.headers", len(cachedResponse.Headers)),
+		)
 	}
 
 	tracking.Claim(ctx, events.HandlerCache)
@@ -100,6 +123,14 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 
 func (m *Middleware) storeResponse(ctx context.Context, key string, capture contracts.ResponseCapture) {
 	if !helpers.Is2xxCode(capture.StatusCode) {
+		if telemetry.Enabled() {
+			if span := trace.SpanFromContext(ctx); span.IsRecording() {
+				span.AddEvent("uncors.cache.not_stored", trace.WithAttributes(
+					semconv.HTTPResponseStatusCode(capture.StatusCode),
+				))
+			}
+		}
+
 		return
 	}
 
@@ -107,15 +138,25 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 	defer span.End()
 
 	if span.IsRecording() {
-		span.SetAttributes(attribute.Int("uncors.cache.body_bytes", len(capture.Body)))
+		span.SetAttributes(
+			attribute.String("uncors.cache.key", key),
+			semconv.HTTPResponseStatusCode(capture.StatusCode),
+			attribute.Int("uncors.cache.body_bytes", len(capture.Body)),
+		)
 	}
 
-	headers := lo.MapToSlice(capture.Header, func(name string, values []string) contracts.CachedHeader {
-		return contracts.CachedHeader{
-			Name:  name,
-			Value: values,
+	telemetry.CacheStored(ctx, len(capture.Body))
+
+	headers := make([]contracts.CachedHeader, 0, len(capture.Header))
+
+	for name, values := range capture.Header {
+		// It names the trace of the request that filled the cache.
+		if name == telemetry.TraceIDHeader {
+			continue
 		}
-	})
+
+		headers = append(headers, contracts.CachedHeader{Name: name, Value: values})
+	}
 
 	sort.Slice(headers, func(i, j int) bool {
 		return headers[i].Name < headers[j].Name

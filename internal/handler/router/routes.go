@@ -8,20 +8,19 @@ import (
 func registerMatchedRoutes[T any](
 	items []T,
 	matcher func(*T) *config.RequestMatcher,
-	register func(*T),
+	register func(int, *T),
 ) {
-	var defaults []*T
+	var defaults []int
 
 	for i := range items {
-		item := &items[i]
-		if !matcher(item).IsPathOnly() {
-			register(item)
+		if !matcher(&items[i]).IsPathOnly() {
+			register(i, &items[i])
 		} else {
-			defaults = append(defaults, item)
+			defaults = append(defaults, i)
 		}
 	}
 
-	for _, item := range defaults {
-		register(item)
+	for _, i := range defaults {
+		register(i, &items[i])
 	}
 }

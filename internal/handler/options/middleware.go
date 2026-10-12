@@ -11,6 +11,8 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
 type Middleware struct {
@@ -28,6 +30,14 @@ func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Req
 		defer span.End()
 
 		tracking.Claim(req.Context(), events.HandlerOptions)
+
+		if span.IsRecording() {
+			span.SetAttributes(
+				semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(m.code)),
+				attribute.Int("uncors.options.custom_headers", len(m.headers)),
+			)
+		}
+
 		m.handle(resp, req)
 
 		return nil

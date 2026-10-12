@@ -64,10 +64,17 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 
 	elapsed := time.Since(start)
 	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
-	m.writer.AddEntry(entry)
+	recorded := m.writer.AddEntry(entry)
+	telemetry.HAREntry(req.Context(), recorded)
 
 	if span.IsRecording() {
-		span.SetAttributes(attribute.Int64("uncors.har.request_body_bytes", reqBodySize))
+		span.SetAttributes(
+			attribute.String("uncors.har.file", m.writer.Path()),
+			attribute.Int64("uncors.har.request_body_bytes", reqBodySize),
+			attribute.Int64("uncors.har.response_body_bytes", entry.Response.BodySize),
+			attribute.Bool("uncors.har.recorded", recorded),
+			attribute.Bool("uncors.har.secure_headers", m.captureSecureHeaders),
+		)
 	}
 
 	return err

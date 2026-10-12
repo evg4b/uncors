@@ -60,12 +60,19 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 	return writer
 }
 
-func (w *Writer) AddEntry(entry Entry) {
+// AddEntry queues the entry and reports whether it was queued: when the
+// queue is full the entry is dropped rather than block the request.
+func (w *Writer) AddEntry(entry Entry) bool {
 	select {
 	case w.entries <- entry:
+		return true
 	default:
-		// drop entry rather than block the request goroutine
+		return false
 	}
+}
+
+func (w *Writer) Path() string {
+	return w.path
 }
 
 func (w *Writer) Close() error {
@@ -145,6 +152,8 @@ func (w *Writer) flush() {
 	)
 
 	err = w.write(data)
+	telemetry.HARFlushed(context.Background(), err)
+
 	if err != nil {
 		telemetry.Fail(span, err)
 		w.reportFailure(err)

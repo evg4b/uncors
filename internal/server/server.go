@@ -251,14 +251,11 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 	defer span.End()
 
 	if span.IsRecording() {
-		span.SetName("HTTP " + request.Method)
-		span.SetAttributes(
-			semconv.HTTPRequestMethodKey.String(request.Method),
-			semconv.URLFull(helpers.LogURL(request.URL)),
-			semconv.ServerAddress(request.Host),
-			attribute.Int64("uncors.request.id", int64(requestID)), //nolint:gosec // request ids never reach MaxInt64
-		)
+		annotateRequest(span, request, requestID)
+		rec.Header().Set(telemetry.TraceIDHeader, span.SpanContext().TraceID().String())
 	}
+
+	telemetry.RequestStarted(ctx)
 
 	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request)
 
@@ -272,10 +269,18 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 	data.Cancelled = ctx.Err() != nil
 
 	if span.IsRecording() {
-		span.SetAttributes(
-			semconv.HTTPResponseStatusCode(data.Code),
-			attribute.Bool("uncors.cancelled", data.Cancelled),
-		)
+		annotateResponse(span, data, rec.Header(), rec.Written())
+	}
+
+	if telemetry.Enabled() {
+		telemetry.RequestFinished(ctx, telemetry.RequestMetrics{
+			Method:        request.Method,
+			Handler:       scope.Handler().String(),
+			Status:        data.Code,
+			Cancelled:     data.Cancelled,
+			Duration:      time.Since(rec.startedAt),
+			ResponseBytes: rec.Written(),
+		})
 	}
 
 	scope.Finish(data)

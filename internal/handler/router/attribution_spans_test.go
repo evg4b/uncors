@@ -78,8 +78,10 @@ func rootSpan(t *testing.T, ended []sdktrace.ReadOnlySpan) sdktrace.ReadOnlySpan
 }
 
 func TestRouterAttributionSpans(t *testing.T) {
+	// Route attributes are wired when the router is built, so tracing goes on first.
+	recorded := testutils.Telemetry(t)
+	spans := recorded.Spans
 	handler := attributionRouter(t)
-	spans := testutils.Telemetry(t).Spans
 
 	proxied := []string{
 		"proxy.forward > proxy.copy_body",
@@ -91,6 +93,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 		method  string
 		url     string
 		handler events.HandlerKind
+		route   string
 		tree    []string
 	}{
 		{
@@ -98,6 +101,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/mock",
 			handler: events.HandlerMock,
+			route:   "mock",
 			tree:    []string{"request > mock.serve"},
 		},
 		{
@@ -105,6 +109,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/script",
 			handler: events.HandlerScript,
+			route:   "script",
 			tree: []string{
 				"request > script.serve",
 				"script.serve > script.lua.compile",
@@ -116,6 +121,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/static/app.js",
 			handler: events.HandlerStatic,
+			route:   "static",
 			tree:    []string{"request > static.serve"},
 		},
 		{
@@ -123,6 +129,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/static/missing.js",
 			handler: events.HandlerProxy,
+			route:   "static",
 			tree:    append([]string{"request > proxy.forward", "request > static.serve"}, proxied...),
 		},
 		{
@@ -130,6 +137,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodOptions,
 			url:     "http://localhost/api",
 			handler: events.HandlerOptions,
+			route:   "default",
 			tree:    []string{"request > options.preflight"},
 		},
 		{
@@ -137,6 +145,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/api",
 			handler: events.HandlerProxy,
+			route:   "default",
 			tree:    append([]string{"request > proxy.forward"}, proxied...),
 		},
 		{
@@ -144,6 +153,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/old",
 			handler: events.HandlerProxy,
+			route:   "rewrite",
 			tree:    append([]string{"request > rewrite.apply", "rewrite.apply > proxy.forward"}, proxied...),
 		},
 		{
@@ -151,6 +161,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/cached/spans",
 			handler: events.HandlerProxy,
+			route:   "default",
 			tree: append([]string{
 				"request > cache.lookup",
 				"request > cache.store",
@@ -162,6 +173,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 			method:  http.MethodGet,
 			url:     "http://localhost/cached/spans",
 			handler: events.HandlerCache,
+			route:   "default",
 			tree:    []string{"request > cache.lookup"},
 		},
 	}
@@ -171,10 +183,23 @@ func TestRouterAttributionSpans(t *testing.T) {
 			ended := serveTraced(t, spans, handler, testCase.method, testCase.url)
 
 			assert.ElementsMatch(t, testCase.tree, spanTree(ended))
-			assert.Contains(t, rootSpan(t, ended).Attributes(),
-				attribute.String("uncors.handler", testCase.handler.String()))
+			attrs := rootSpan(t, ended).Attributes()
+			assert.Contains(t, attrs, attribute.String("uncors.handler", testCase.handler.String()))
+			assert.Contains(t, attrs, attribute.String("uncors.route.kind", testCase.route))
+			assert.Contains(t, attrs, attribute.String("uncors.mapping.from", "http://localhost"))
 		})
 	}
+
+	result := attribute.Key("uncors.result")
+
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.cache.lookups", result.String("hit")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.cache.lookups", result.String("miss")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.cache.stores"))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.static.requests", result.String("served")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.static.requests", result.String("fall_through")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.mock.responses", result.String("served")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.script.executions", result.String("ok")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.rewrites"))
 
 	t.Run("unmapped host", func(t *testing.T) {
 		ended := serveTraced(t, spans, handler, http.MethodGet, "http://unknown.local/api")

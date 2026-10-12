@@ -41,7 +41,13 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	tracking.Claim(request.Context(), events.HandlerMock)
 
+	if span.IsRecording() {
+		span.SetAttributes(h.attributes()...)
+	}
+
 	if h.waitDelay(writer, request) {
+		telemetry.MockServed(request.Context(), http.StatusServiceUnavailable, h.response.Delay, true)
+
 		return nil
 	}
 
@@ -52,7 +58,33 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 		return err
 	}
 
+	telemetry.MockServed(request.Context(), helpers.NormaliseStatusCode(h.response.Code), h.response.Delay, false)
+
 	return nil
+}
+
+func (h *Handler) attributes() []attribute.KeyValue {
+	response := h.response
+	attrs := []attribute.KeyValue{
+		attribute.Int("uncors.mock.status", helpers.NormaliseStatusCode(response.Code)),
+		attribute.String("uncors.mock.delay", response.Delay.String()),
+		attribute.Int("uncors.mock.headers", len(response.Headers)),
+	}
+
+	switch {
+	case response.IsFile():
+		attrs = append(attrs,
+			attribute.String("uncors.mock.source", "file"),
+			attribute.String("uncors.mock.file", response.File),
+		)
+	case response.IsRaw():
+		attrs = append(attrs,
+			attribute.String("uncors.mock.source", "raw"),
+			attribute.Int("uncors.mock.raw_bytes", len(response.Raw)),
+		)
+	}
+
+	return attrs
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -111,6 +143,10 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 		return fmt.Errorf("failed to receive file information: %w", err)
 	}
 
+	if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
+		span.SetAttributes(attribute.Int64("uncors.mock.file_bytes", stat.Size()))
+	}
+
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
 	return nil
@@ -121,16 +157,23 @@ func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.
 		return false
 	}
 
+	span := trace.SpanFromContext(request.Context())
+	if span.IsRecording() {
+		span.AddEvent("uncors.mock.delay_started")
+	}
+
 	select {
 	case <-request.Context().Done():
+		if span.IsRecording() {
+			span.AddEvent("uncors.mock.delay_cancelled")
+		}
+
 		writer.WriteHeader(http.StatusServiceUnavailable)
 
 		return true
 	case <-h.after(h.response.Delay):
-		if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
-			span.AddEvent("uncors.mock.delay_finished", trace.WithAttributes(
-				attribute.String("uncors.mock.delay", h.response.Delay.String()),
-			))
+		if span.IsRecording() {
+			span.AddEvent("uncors.mock.delay_finished")
 		}
 
 		return false

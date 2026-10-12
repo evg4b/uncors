@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type HostCertManager struct {
@@ -46,6 +49,10 @@ func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 
 	ctx, span := telemetry.Start(ctx, "tls.get_certificate")
 	defer span.End()
+
+	if span.IsRecording() && clientHello != nil {
+		annotateClientHello(span, clientHello)
+	}
 
 	err := m.ensureCA(ctx)
 	if err != nil {
@@ -99,6 +106,13 @@ func (m *HostCertManager) ensureCA(ctx context.Context) error {
 	defer span.End()
 
 	err := m.loadCA()
+	if err == nil && span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.tls.ca.subject", m.generator.caCert.Subject.String()),
+			attribute.String("uncors.tls.ca.not_after", m.generator.caCert.NotAfter.UTC().Format(time.RFC3339)),
+		)
+	}
+
 	if err != nil {
 		telemetry.Fail(span, err)
 
@@ -157,6 +171,8 @@ func (m *HostCertManager) certificateForHost(ctx context.Context, host string) (
 	span.SetAttributes(attribute.String("uncors.tls.host", host))
 
 	cert, err := m.generator.GenerateCertificate(host)
+	telemetry.TLSCertificate(ctx, err)
+
 	if err != nil {
 		err = fmt.Errorf("failed to generate certificate for %s: %w", host, err)
 		telemetry.Fail(span, err)
@@ -172,6 +188,22 @@ func (m *HostCertManager) certificateForHost(ctx context.Context, host string) (
 	m.cache[host] = cert
 
 	return cert, nil
+}
+
+func annotateClientHello(span trace.Span, clientHello *tls.ClientHelloInfo) {
+	attrs := []attribute.KeyValue{
+		attribute.String("tls.client.server_name", clientHello.ServerName),
+	}
+
+	if len(clientHello.SupportedProtos) > 0 {
+		attrs = append(attrs, attribute.StringSlice("tls.client.supported_protocols", clientHello.SupportedProtos))
+	}
+
+	if clientHello.Conn != nil && clientHello.Conn.RemoteAddr() != nil {
+		attrs = append(attrs, semconv.ClientAddress(clientHello.Conn.RemoteAddr().String()))
+	}
+
+	span.SetAttributes(attrs...)
 }
 
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {

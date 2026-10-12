@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -63,6 +64,10 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 	originalRequest, err := h.makeOriginalRequest(req, targetReplacer)
 	if err != nil {
 		return fmt.Errorf("failed to create request to original source: %w", err)
+	}
+
+	if span := trace.SpanFromContext(req.Context()); span.IsRecording() {
+		annotateTarget(span, req, originalRequest)
 	}
 
 	originalResponse, err := h.executeQuery(req.Context(), originalRequest)
@@ -182,7 +187,7 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 }
 
 func (h *Handler) executeQuery(ctx context.Context, request *http.Request) (*http.Response, error) {
-	_, span := telemetry.StartKind(ctx, "proxy.upstream", trace.SpanKindClient)
+	ctx, span := telemetry.Start(ctx, "proxy.upstream")
 	defer span.End()
 
 	if span.IsRecording() {
@@ -190,21 +195,47 @@ func (h *Handler) executeQuery(ctx context.Context, request *http.Request) (*htt
 			semconv.HTTPRequestMethodKey.String(request.Method),
 			semconv.URLFull(helpers.LogURL(request.URL)),
 		)
+		// The HTTP client span, with its DNS, connection, and TLS spans, nests
+		// under this one.
+		request = request.WithContext(ctx)
 	}
 
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
+		telemetry.UpstreamRequest(ctx, request.Method, request.URL.Host, 0, err)
+
 		err = fmt.Errorf("failed to execute request: %w", err)
 		telemetry.Fail(span, err)
 
 		return nil, err
 	}
 
+	telemetry.UpstreamRequest(ctx, request.Method, request.URL.Host, originalResponse.StatusCode, nil)
+
 	if span.IsRecording() {
-		span.SetAttributes(semconv.HTTPResponseStatusCode(originalResponse.StatusCode))
+		span.SetAttributes(
+			semconv.HTTPResponseStatusCode(originalResponse.StatusCode),
+			attribute.Int64("uncors.proxy.upstream_content_length", originalResponse.ContentLength),
+			attribute.String("uncors.proxy.upstream_content_type", originalResponse.Header.Get(headers.ContentType)),
+			semconv.NetworkProtocolVersion(strconv.Itoa(originalResponse.ProtoMajor)+"."+
+				strconv.Itoa(originalResponse.ProtoMinor)),
+		)
 	}
 
 	return originalResponse, nil
+}
+
+func annotateTarget(span trace.Span, source, target *http.Request) {
+	attrs := []attribute.KeyValue{
+		attribute.String("uncors.proxy.target", helpers.LogURL(target.URL)),
+		attribute.String("uncors.proxy.target_host", target.URL.Host),
+	}
+
+	if rewriteHost, _ := rewrite.GetRewriteHost(source); rewriteHost != "" {
+		attrs = append(attrs, attribute.String("uncors.proxy.rewrite_host", rewriteHost))
+	}
+
+	span.SetAttributes(attrs...)
 }
 
 type HandlerOption = func(*Handler)
