@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var errNotHandled = errors.New("request is not handled")
@@ -54,11 +56,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 	if err != nil {
 		if errors.Is(err, errNotHandled) {
-			if span.IsRecording() {
-				span.SetAttributes(attribute.Bool("uncors.static.fall_through", true))
-			}
-
-			telemetry.StaticRequest(request.Context(), telemetry.ResultFallThrough)
+			h.recordFallThrough(request, span, filePath)
 			// The default handler is not part of this span.
 			span.End()
 
@@ -87,6 +85,15 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 	telemetry.StaticRequest(request.Context(), telemetry.ResultServed)
 
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "served static file",
+			slog.String("file", filePath),
+			slog.String("served", stat.Name()),
+			slog.Int64("bytes", stat.Size()),
+			slog.Int("status", helpers.NormaliseStatusCode(writer.StatusCode())),
+		)
+	}
+
 	return nil
 }
 
@@ -96,6 +103,19 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return next.ServeHTTP(w, r)
 		})
 	})
+}
+
+func (h *Middleware) recordFallThrough(request *contracts.Request, span trace.Span, filePath string) {
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Bool("uncors.static.fall_through", true))
+	}
+
+	telemetry.StaticRequest(request.Context(), telemetry.ResultFallThrough)
+
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "no static file, passing the request on",
+			slog.String("prefix", h.prefix), slog.String("file", filePath))
+	}
 }
 
 func (h *Middleware) extractFilePath(request *http.Request) string {

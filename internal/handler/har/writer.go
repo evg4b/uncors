@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -122,7 +123,7 @@ func (w *Writer) append(entry Entry) {
 }
 
 func (w *Writer) flush() {
-	_, span := telemetry.Start(context.Background(), "har.flush")
+	ctx, span := telemetry.Start(context.Background(), "har.flush")
 	defer span.End()
 
 	w.mu.Lock()
@@ -141,6 +142,7 @@ func (w *Writer) flush() {
 	data, err := json.MarshalIndent(archive, "", "  ")
 	if err != nil {
 		telemetry.Fail(span, err)
+		telemetry.Error(ctx, "cannot encode HAR file", slog.String("file", w.path), telemetry.Err(err))
 
 		return
 	}
@@ -152,14 +154,18 @@ func (w *Writer) flush() {
 	)
 
 	err = w.write(data)
-	telemetry.HARFlushed(context.Background(), err)
+	telemetry.HARFlushed(ctx, err)
 
 	if err != nil {
 		telemetry.Fail(span, err)
+		telemetry.Error(ctx, "cannot write HAR file", slog.String("file", w.path), telemetry.Err(err))
 		w.reportFailure(err)
 
 		return
 	}
+
+	telemetry.Debug(ctx, "HAR file written",
+		slog.String("file", w.path), slog.Int("entries", len(snapshot)), slog.Int("bytes", len(data)))
 
 	w.failing = false
 }

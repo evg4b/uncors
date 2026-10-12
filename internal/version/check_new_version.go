@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/helpers"
@@ -34,7 +33,7 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) (string, bool) {
 	latest, err := checker.fetchLatest(ctx)
 	if err != nil {
 		telemetry.Fail(span, err)
-		telemetry.Debug(ctx, "version check failed", slog.String("error", err.Error()))
+		telemetry.Debug(ctx, "version check failed", telemetry.Err(err))
 
 		return "", false
 	}

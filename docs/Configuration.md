@@ -118,6 +118,11 @@ every 10 seconds unless `OTEL_METRIC_EXPORT_INTERVAL` (in milliseconds) says
 otherwise. `OTEL_LOGS_EXPORTER=none` and `OTEL_METRICS_EXPORTER=none` turn a
 signal off.
 
+`UNCORS_TRACE_CONNECTIONS=true` also records the DNS, connection, TLS, and
+header phases of each upstream request as events on its client span. It is off
+by default because it nearly doubles the cost of tracing an upstream request;
+turn it on to find out why an upstream is slow.
+
 To see everything locally, run [otelop](https://github.com/mashiro/otelop) and
 open <http://localhost:4319>:
 
@@ -169,19 +174,31 @@ Child spans show the work done for the request:
 | `har.record`                                               | The HAR file, body sizes, and whether the entry was dropped because the queue was full.  |
 | `cache.lookup`, `cache.store`                              | The cache key, hit or miss, and the cached status and size.                              |
 | `options.preflight`                                        | An answered `OPTIONS` request and its configured status.                                 |
-| `proxy.forward`, `proxy.upstream`, `proxy.copy_body`       | The upstream URL, its status, content type and length, and the bytes copied.             |
-| `HTTP <method>` (client)                                   | The real upstream request, with DNS, connection, TLS, and header sub-spans.              |
+| `proxy.forward`, `proxy.copy_body`                         | The upstream URL, its content type, length, and protocol, and the bytes copied.          |
+| `HTTP <method>` (client)                                   | The real upstream request; its connection phases with `UNCORS_TRACE_CONNECTIONS`.        |
 
 Requests that skip the cache add a `uncors.cache.not_cacheable` event, and
 responses that are not stored add `uncors.cache.not_stored`. Lifecycle work has
 its own traces: `engine.start`, `engine.restart`, `engine.shutdown`,
 `supervisor.reload`, `config.load`, `server.listen`, `tls.get_certificate`
 (with the SNI name and ALPN protocols), `tls.ensure_ca` (with the CA expiry),
-`tls.generate_certificate`, `har.flush`, and `version.check`. Debug logs are
-exported with the trace and span they belong to.
+`tls.generate_certificate`, `har.flush`, and `version.check`.
 
 Trace context is never added to proxied requests: the upstream server receives
 the request as the client sent it.
+
+### Logs
+
+Logs are exported with the trace and span they belong to, so a trace viewer
+shows them next to the request that produced them.
+
+| Level   | Logged                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ERROR` | A request a handler failed (method, URL, error); a HAR file that cannot be written.                                                                                                               |
+| `WARN`  | An upstream `5xx` response; a Lua script error, with its stack trace; a HAR entry dropped because the write queue is full.                                                                        |
+| `DEBUG` | Each routing decision: the upstream URL and status, cache hits, misses, and stores, answered preflights, rewrites, static files served or passed on, mock responses, script runs, and HAR writes. |
+
+A request the client cancels is logged at `DEBUG`, not as a failure.
 
 ### Metrics
 
@@ -190,8 +207,7 @@ the request as the client sent it.
 | `uncors.requests`                                                          | Requests received, by method, status, and the handler that answered. |
 | `http.server.request.duration`, `http.server.response.body.size`           | Time to serve a request and the size of the response.                |
 | `http.server.active_requests`                                              | Requests being served.                                               |
-| `uncors.upstream.requests`                                                 | Requests sent upstream, by host and status or error type.            |
-| `http.client.request.duration` and the other `http.client.*` metrics       | Upstream request timings and sizes.                                  |
+| `http.client.request.duration` and the other `http.client.*` metrics       | Upstream requests by host and status or error type, timed and sized. |
 | `uncors.cache.lookups`, `uncors.cache.stores`, `uncors.cache.stored_bytes` | Cache hits and misses, and responses stored.                         |
 | `uncors.mock.responses`, `uncors.mock.delay`                               | Mock responses, served or cancelled during their delay.              |
 | `uncors.script.executions`, `uncors.script.duration`                       | Lua script runs, by success or error, and their duration.            |

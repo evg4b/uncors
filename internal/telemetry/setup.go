@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	EnvVar = "UNCORS_TRACE"
+	EnvVar            = "UNCORS_TRACE"
+	ConnectionsEnvVar = "UNCORS_TRACE_CONNECTIONS"
 
 	defaultEndpoint = "http://localhost:4318"
 	envPrefix       = "OTEL_EXPORTER_OTLP_"
@@ -103,7 +104,8 @@ func setupExporters(ctx context.Context, version string) (func(context.Context) 
 		return errors.Join(errs...)
 	}
 
-	providers := Providers{Tracer: tracerProvider}
+	traceConnections, _ := strconv.ParseBool(os.Getenv(ConnectionsEnvVar))
+	providers := Providers{Tracer: tracerProvider, TraceConnections: traceConnections}
 	otel.SetTracerProvider(tracerProvider)
 
 	loggerProvider, err := newLoggerProvider(ctx, res)

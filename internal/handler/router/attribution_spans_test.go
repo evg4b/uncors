@@ -85,7 +85,6 @@ func TestRouterAttributionSpans(t *testing.T) {
 
 	proxied := []string{
 		"proxy.forward > proxy.copy_body",
-		"proxy.forward > proxy.upstream",
 	}
 
 	tests := []struct {

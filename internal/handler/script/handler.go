@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -19,6 +20,7 @@ import (
 	"github.com/evg4b/uncors/internal/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
@@ -38,17 +40,30 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	var startedAt time.Time
 
-	if span.IsRecording() {
+	if telemetry.Enabled() {
 		startedAt = time.Now()
+	}
 
+	if span.IsRecording() {
 		span.SetAttributes(h.attributes()...)
 	}
 
 	err := h.executeScript(writer, request)
 
-	if span.IsRecording() {
-		span.SetAttributes(semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(writer.StatusCode())))
-		telemetry.ScriptExecuted(request.Context(), time.Since(startedAt), err)
+	if telemetry.Enabled() {
+		duration := time.Since(startedAt)
+		status := helpers.NormaliseStatusCode(writer.StatusCode())
+
+		if span.IsRecording() {
+			span.SetAttributes(semconv.HTTPResponseStatusCode(status))
+		}
+
+		telemetry.ScriptExecuted(request.Context(), duration, err)
+
+		if err == nil {
+			telemetry.Debug(request.Context(), "script executed",
+				h.source(), slog.Int("status", status), slog.Duration("duration", duration))
+		}
 	}
 
 	if err != nil {
@@ -58,6 +73,15 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	}
 
 	return nil
+}
+
+// source names the script in logs.
+func (h *Handler) source() slog.Attr {
+	if h.script.Script != "" {
+		return slog.String("script", "inline")
+	}
+
+	return slog.String("script", h.script.File)
 }
 
 func (h *Handler) attributes() []attribute.KeyValue {
@@ -107,16 +131,29 @@ func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {
 	luaState.Push(function)
 
 	err = luaState.PCall(0, lua.MultRet, nil)
-	if err != nil && span.IsRecording() {
-		var apiErr *lua.ApiError
-		if errors.As(err, &apiErr) && apiErr.StackTrace != "" {
-			span.SetAttributes(attribute.String("uncors.script.stack_trace", apiErr.StackTrace))
-		}
+	if err != nil && telemetry.Enabled() {
+		h.recordStackTrace(ctx, span, err)
 	}
 
 	telemetry.Fail(span, err)
 
 	return err
+}
+
+// recordStackTrace keeps the Lua stack trace, which the error returned to the
+// server does not carry.
+func (h *Handler) recordStackTrace(ctx context.Context, span trace.Span, err error) {
+	var apiErr *lua.ApiError
+	if !errors.As(err, &apiErr) || apiErr.StackTrace == "" {
+		return
+	}
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.String("uncors.script.stack_trace", apiErr.StackTrace))
+	}
+
+	telemetry.Warn(ctx, "lua script failed",
+		h.source(), telemetry.Err(err), slog.String("stack_trace", apiErr.StackTrace))
 }
 
 func (h *Handler) compile(ctx context.Context, luaState *lua.LState) (*lua.LFunction, error) {

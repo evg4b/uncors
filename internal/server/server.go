@@ -220,11 +220,33 @@ func (s *Server) shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
+// logFailure records the error a handler returned. Every handler error ends
+// here, so handlers do not log the errors they return.
+func logFailure(ctx context.Context, request *http.Request, err error) {
+	if !telemetry.Enabled() {
+		return
+	}
+
+	attrs := []slog.Attr{
+		slog.String("method", request.Method),
+		slog.String("url", helpers.LogURL(request.URL)),
+		telemetry.Err(err),
+	}
+
+	if ctx.Err() != nil {
+		telemetry.Debug(ctx, "request cancelled by the client", attrs...)
+
+		return
+	}
+
+	telemetry.Error(ctx, "request failed", attrs...)
+}
+
 func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("uncors.inflight_closed")
 	telemetry.Warn(ctx, "in-flight requests did not finish before restart, closing them",
-		slog.String("error", shutdownErr.Error()))
+		telemetry.Err(shutdownErr))
 	s.publisher.Publish(events.Notice{
 		Level: events.NoticeWarning,
 		Text:  "In-flight requests did not finish before restart and were closed",
@@ -261,6 +283,7 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 
 	err := handler.ServeHTTP(rec, request.WithContext(ctx))
 	if err != nil {
+		logFailure(ctx, request, err)
 		tracking.Fail(ctx, err)
 		infra.HTTPError(rec, err)
 	}

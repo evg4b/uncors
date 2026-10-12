@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
-	"strconv"
+	"sync"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -66,11 +67,15 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return fmt.Errorf("failed to create request to original source: %w", err)
 	}
 
-	if span := trace.SpanFromContext(req.Context()); span.IsRecording() {
-		annotateTarget(span, req, originalRequest)
+	// The upstream URL is built once, for the span and the logs.
+	var target string
+
+	if telemetry.Enabled() {
+		target = helpers.LogURL(originalRequest.URL)
+		recordTarget(req, originalRequest, target)
 	}
 
-	originalResponse, err := h.executeQuery(req.Context(), originalRequest)
+	originalResponse, err := h.executeQuery(originalRequest, target)
 	if err != nil {
 		return err
 	}
@@ -138,11 +143,27 @@ func (h *Handler) makeUncorsResponse(
 	return copyBody(req.Context(), target, original.Body)
 }
 
+const copyBufferSize = 32 * 1024
+
+// copyBuffers holds the buffers bodies are copied through. Neither an
+// upstream body nor the response writer offers a fast path, so io.Copy would
+// allocate a buffer for every response.
+var copyBuffers = sync.Pool{
+	New: func() any {
+		buffer := make([]byte, copyBufferSize)
+
+		return &buffer
+	},
+}
+
 func copyBody(ctx context.Context, target io.Writer, body io.Reader) error {
 	_, span := telemetry.Start(ctx, "proxy.copy_body")
 	defer span.End()
 
-	written, err := io.Copy(target, body)
+	buffer, _ := copyBuffers.Get().(*[]byte)
+	defer copyBuffers.Put(buffer)
+
+	written, err := io.CopyBuffer(target, body, *buffer)
 
 	if span.IsRecording() {
 		span.SetAttributes(attribute.Int64("uncors.proxy.body_bytes", written))
@@ -186,56 +207,62 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 	return target, source, nil
 }
 
-func (h *Handler) executeQuery(ctx context.Context, request *http.Request) (*http.Response, error) {
-	ctx, span := telemetry.Start(ctx, "proxy.upstream")
-	defer span.End()
-
-	if span.IsRecording() {
-		span.SetAttributes(
-			semconv.HTTPRequestMethodKey.String(request.Method),
-			semconv.URLFull(helpers.LogURL(request.URL)),
-		)
-		// The HTTP client span, with its DNS, connection, and TLS spans, nests
-		// under this one.
-		request = request.WithContext(ctx)
-	}
-
+// executeQuery sends the request upstream. The request carries the
+// proxy.forward span, so the HTTP client's span nests under it.
+func (h *Handler) executeQuery(request *http.Request, target string) (*http.Response, error) {
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
-		telemetry.UpstreamRequest(ctx, request.Method, request.URL.Host, 0, err)
-
-		err = fmt.Errorf("failed to execute request: %w", err)
-		telemetry.Fail(span, err)
-
-		return nil, err
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
-	telemetry.UpstreamRequest(ctx, request.Method, request.URL.Host, originalResponse.StatusCode, nil)
-
-	if span.IsRecording() {
-		span.SetAttributes(
-			semconv.HTTPResponseStatusCode(originalResponse.StatusCode),
-			attribute.Int64("uncors.proxy.upstream_content_length", originalResponse.ContentLength),
-			attribute.String("uncors.proxy.upstream_content_type", originalResponse.Header.Get(headers.ContentType)),
-			semconv.NetworkProtocolVersion(strconv.Itoa(originalResponse.ProtoMajor)+"."+
-				strconv.Itoa(originalResponse.ProtoMinor)),
-		)
+	if telemetry.Enabled() {
+		recordUpstreamResponse(request.Context(), target, originalResponse)
 	}
 
 	return originalResponse, nil
 }
 
-func annotateTarget(span trace.Span, source, target *http.Request) {
-	attrs := []attribute.KeyValue{
-		attribute.String("uncors.proxy.target", helpers.LogURL(target.URL)),
-		attribute.String("uncors.proxy.target_host", target.URL.Host),
+func recordTarget(source, target *http.Request, targetURL string) {
+	ctx := source.Context()
+
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		attrs := []attribute.KeyValue{
+			attribute.String("uncors.proxy.target", targetURL),
+			attribute.String("uncors.proxy.target_host", target.URL.Host),
+		}
+
+		if rewriteHost, _ := rewrite.GetRewriteHost(source); rewriteHost != "" {
+			attrs = append(attrs, attribute.String("uncors.proxy.rewrite_host", rewriteHost))
+		}
+
+		span.SetAttributes(attrs...)
 	}
 
-	if rewriteHost, _ := rewrite.GetRewriteHost(source); rewriteHost != "" {
-		attrs = append(attrs, attribute.String("uncors.proxy.rewrite_host", rewriteHost))
+	telemetry.Debug(ctx, "forwarding request upstream",
+		slog.String("method", target.Method), slog.String("target", targetURL))
+}
+
+// recordUpstreamResponse adds what the HTTP client's span leaves out, and
+// warns about upstream server errors: the client sees them as uncors
+// responses.
+func recordUpstreamResponse(ctx context.Context, target string, response *http.Response) {
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		span.SetAttributes(
+			attribute.Int64("uncors.proxy.upstream_content_length", response.ContentLength),
+			attribute.String("uncors.proxy.upstream_content_type", response.Header.Get(headers.ContentType)),
+			semconv.NetworkProtocolVersion(telemetry.ProtocolVersion(response.ProtoMajor, response.ProtoMinor)),
+		)
 	}
 
-	span.SetAttributes(attrs...)
+	attrs := []slog.Attr{slog.String("target", target), slog.Int("status", response.StatusCode)}
+
+	if response.StatusCode >= http.StatusInternalServerError {
+		telemetry.Warn(ctx, "upstream responded with a server error", attrs...)
+
+		return
+	}
+
+	telemetry.Debug(ctx, "upstream responded", attrs...)
 }
 
 type HandlerOption = func(*Handler)

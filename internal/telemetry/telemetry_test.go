@@ -66,7 +66,6 @@ func TestDisabledDoesNotAllocate(t *testing.T) {
 			telemetry.HARFlushed(ctx, nil)
 			telemetry.ConfigReloaded(ctx, errTest)
 			telemetry.TLSCertificate(ctx, nil)
-			telemetry.UpstreamRequest(ctx, request.Method, request.Host, http.StatusOK, nil)
 		},
 		"guarded Debug": func() {
 			if telemetry.Enabled() {
@@ -184,7 +183,6 @@ func TestMetrics(t *testing.T) {
 	telemetry.RequestFinished(ctx, telemetry.RequestMetrics{
 		Method: http.MethodGet, Handler: "MOCK", Status: http.StatusOK, Duration: time.Millisecond, ResponseBytes: 4,
 	})
-	telemetry.UpstreamRequest(ctx, http.MethodGet, "example.com", 0, context.DeadlineExceeded)
 
 	result := attribute.Key("uncors.result")
 
@@ -198,5 +196,19 @@ func TestMetrics(t *testing.T) {
 	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.config.reloads", result.String(telemetry.ResultError)))
 	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.requests", attribute.String("uncors.handler", "MOCK")))
 	assert.Equal(t, int64(1), recorded.Sum(t, "http.server.active_requests"))
-	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.upstream.requests", attribute.String("error.type", "timeout")))
+}
+
+func TestProtocolVersion(t *testing.T) {
+	cases := map[string][2]int{
+		"1.0": {1, 0},
+		"1.1": {1, 1},
+		"2":   {2, 0},
+		"3":   {3, 0},
+	}
+
+	for expected, version := range cases {
+		t.Run(expected, func(t *testing.T) {
+			assert.Equal(t, expected, telemetry.ProtocolVersion(version[0], version[1]))
+		})
+	}
 }

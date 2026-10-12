@@ -2,6 +2,7 @@ package rewrite
 
 import (
 	"context"
+	"log/slog"
 	"maps"
 	"net/url"
 	"slices"
@@ -44,6 +45,11 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 	if span.IsRecording() {
 		m.annotate(span, request, from, to)
+	}
+
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "rewrote request",
+			slog.String("pattern", m.rewrite.From), slog.String("from", from), slog.String("to", to))
 	}
 
 	return next(writer, m.rewriteRequest(request))

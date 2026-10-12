@@ -3,6 +3,7 @@ package har
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -66,6 +67,11 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
 	recorded := m.writer.AddEntry(entry)
 	telemetry.HAREntry(req.Context(), recorded)
+
+	if !recorded && telemetry.Enabled() {
+		telemetry.Warn(req.Context(), "HAR entry dropped: the write queue is full",
+			slog.String("file", m.writer.Path()), slog.String("url", helpers.LogURL(req.URL)))
+	}
 
 	if span.IsRecording() {
 		span.SetAttributes(

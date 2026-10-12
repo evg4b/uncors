@@ -355,15 +355,10 @@ func TestProxyHandler(t *testing.T) {
 		require.ErrorIs(t, handlerErr, errNetworkError)
 
 		ended := spans.Ended()
-		require.Len(t, ended, 2)
-		assert.Equal(t, "proxy.upstream", ended[0].Name())
-		assert.Equal(t, "proxy.forward", ended[1].Name())
-		assert.Equal(t, ended[1].SpanContext().SpanID(), ended[0].Parent().SpanID())
-
-		for _, span := range ended {
-			assert.Equal(t, codes.Error, span.Status().Code)
-			assert.Contains(t, span.Status().Description, "network error")
-		}
+		require.Len(t, ended, 1)
+		assert.Equal(t, "proxy.forward", ended[0].Name())
+		assert.Equal(t, codes.Error, ended[0].Status().Code)
+		assert.Contains(t, ended[0].Status().Description, "network error")
 	})
 
 	t.Run("OPTIONS request handling", func(t *testing.T) {

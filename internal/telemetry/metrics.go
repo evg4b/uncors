@@ -2,8 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -44,7 +42,6 @@ type instruments struct {
 	activeRequests   metric.Int64UpDownCounter
 	requestDuration  metric.Float64Histogram
 	responseSize     metric.Int64Histogram
-	upstreamRequests metric.Int64Counter
 	cacheLookups     metric.Int64Counter
 	cacheStores      metric.Int64Counter
 	cacheStoredBytes metric.Int64Counter
@@ -85,7 +82,6 @@ func newInstruments(meter metric.Meter) *instruments {
 		activeRequests:   activeRequests,
 		requestDuration:  seconds("http.server.request.duration", "Time to serve a request."),
 		responseSize:     responseSize,
-		upstreamRequests: counter("uncors.upstream.requests", "{request}", "Requests sent to upstream servers."),
 		cacheLookups:     counter("uncors.cache.lookups", "{lookup}", "Cache lookups, by hit or miss."),
 		cacheStores:      counter("uncors.cache.stores", "{response}", "Responses stored in the cache."),
 		cacheStoredBytes: counter("uncors.cache.stored_bytes", "By", "Bytes of response bodies stored in the cache."),
@@ -128,26 +124,6 @@ func RequestFinished(ctx context.Context, request RequestMetrics) {
 	state.metrics.requests.Add(ctx, 1, attrs)
 	state.metrics.requestDuration.Record(ctx, request.Duration.Seconds(), attrs)
 	state.metrics.responseSize.Record(ctx, request.ResponseBytes, attrs)
-}
-
-func UpstreamRequest(ctx context.Context, method, host string, status int, err error) {
-	state := current.Load()
-	if state == nil {
-		return
-	}
-
-	attrs := []attribute.KeyValue{
-		semconv.HTTPRequestMethodKey.String(method),
-		semconv.ServerAddress(host),
-	}
-
-	if err != nil {
-		attrs = append(attrs, semconv.ErrorTypeKey.String(errorType(err)))
-	} else {
-		attrs = append(attrs, semconv.HTTPResponseStatusCode(status))
-	}
-
-	state.metrics.upstreamRequests.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
 func CacheLookup(ctx context.Context, hit bool) {
@@ -243,19 +219,4 @@ func resultOf(err error) string {
 	}
 
 	return ResultOK
-}
-
-func errorType(err error) string {
-	switch {
-	case errors.Is(err, context.Canceled):
-		return "canceled"
-	case errors.Is(err, context.DeadlineExceeded):
-		return "timeout"
-	default:
-		for next := errors.Unwrap(err); next != nil; next = errors.Unwrap(next) {
-			err = next
-		}
-
-		return fmt.Sprintf("%T", err)
-	}
 }

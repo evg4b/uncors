@@ -1,6 +1,7 @@
 package options
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -39,6 +40,14 @@ func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Req
 		}
 
 		m.handle(resp, req)
+
+		if telemetry.Enabled() {
+			telemetry.Debug(req.Context(), "answered preflight request",
+				slog.String("origin", req.Header.Get("Origin")),
+				slog.String("requested_method", req.Header.Get("Access-Control-Request-Method")),
+				slog.Int("status", helpers.NormaliseStatusCode(m.code)),
+			)
+		}
 
 		return nil
 	}

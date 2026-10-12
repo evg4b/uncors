@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"slices"
 	"sort"
@@ -80,6 +81,11 @@ func (m *Middleware) cacheRequest(
 	if err != nil || request.Context().Err() != nil {
 		// The captured body may be truncated: an upstream reset or a client
 		// disconnect can interrupt a response whose 2xx status is already sent.
+		if telemetry.Enabled() {
+			telemetry.Debug(request.Context(), "response not cached: the request did not complete",
+				slog.String("key", cacheKey))
+		}
+
 		return err
 	}
 
@@ -95,6 +101,15 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 	cachedResponse := m.getCachedResponse(cacheKey)
 
 	telemetry.CacheLookup(ctx, cachedResponse != nil)
+
+	if telemetry.Enabled() {
+		message := "cache miss"
+		if cachedResponse != nil {
+			message = "cache hit"
+		}
+
+		telemetry.Debug(ctx, message, slog.String("key", cacheKey))
+	}
 
 	if span.IsRecording() {
 		span.SetAttributes(
@@ -129,6 +144,9 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 					semconv.HTTPResponseStatusCode(capture.StatusCode),
 				))
 			}
+
+			telemetry.Debug(ctx, "response not cached: the status is not 2xx",
+				slog.String("key", key), slog.Int("status", capture.StatusCode))
 		}
 
 		return
@@ -146,6 +164,11 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 	}
 
 	telemetry.CacheStored(ctx, len(capture.Body))
+
+	if telemetry.Enabled() {
+		telemetry.Debug(ctx, "response cached",
+			slog.String("key", key), slog.Int("status", capture.StatusCode), slog.Int("bytes", len(capture.Body)))
+	}
 
 	headers := make([]contracts.CachedHeader, 0, len(capture.Header))
 

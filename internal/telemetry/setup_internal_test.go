@@ -42,6 +42,7 @@ func startCollector(t *testing.T, status int) *collector {
 	t.Cleanup(server.Close)
 
 	t.Setenv(EnvVar, "true")
+	t.Setenv(ConnectionsEnvVar, "")
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", server.URL)
 	t.Setenv("OTEL_LOGS_EXPORTER", "")
 	t.Setenv("OTEL_METRICS_EXPORTER", "")
@@ -129,4 +130,14 @@ func TestSetupReportsExportErrors(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, []string{SignalSpans, SignalLogs, SignalMetrics}, signals)
+}
+
+func TestSetupReadsTraceConnections(t *testing.T) {
+	startCollector(t, http.StatusOK)
+	t.Setenv(ConnectionsEnvVar, "true")
+
+	_, err := setup(t)
+
+	require.NoError(t, err)
+	assert.True(t, current.Load().providers.TraceConnections)
 }

@@ -37,6 +37,10 @@ type Providers struct {
 	Tracer trace.TracerProvider
 	Logger log.LoggerProvider
 	Meter  metric.MeterProvider
+
+	// TraceConnections records the DNS, connection, and TLS phases of
+	// upstream requests, at a cost to every one of them.
+	TraceConnections bool
 }
 
 var (
@@ -174,6 +178,11 @@ func Warn(ctx context.Context, msg string, attrs ...slog.Attr) {
 
 func Error(ctx context.Context, msg string, attrs ...slog.Attr) {
 	logAttrs(ctx, slog.LevelError, msg, attrs)
+}
+
+// Err is the attribute a log records an error under.
+func Err(err error) slog.Attr {
+	return slog.String("error", err.Error())
 }
 
 func logAttrs(ctx context.Context, level slog.Level, msg string, attrs []slog.Attr) {

@@ -29,7 +29,7 @@ func eventNames(span sdktrace.ReadOnlySpan) []string {
 func TestMockTelemetry(t *testing.T) {
 	response := &config.Response{Code: http.StatusAccepted, Raw: textContent, Delay: time.Second}
 
-	serve := func(t *testing.T, ctx context.Context, after <-chan time.Time) sdktrace.ReadOnlySpan {
+	serve := func(t *testing.T, ctx context.Context, after <-chan time.Time) (sdktrace.ReadOnlySpan, []string) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
@@ -45,28 +45,30 @@ func TestMockTelemetry(t *testing.T) {
 		require.Len(t, ended, 1)
 		assert.Equal(t, "mock.serve", ended[0].Name())
 
-		return ended[0]
+		return ended[0], recorded.Messages()
 	}
 
 	t.Run("delay finished", func(t *testing.T) {
 		after := make(chan time.Time, 1)
 		after <- time.Now()
 
-		span := serve(t, t.Context(), after)
+		span, messages := serve(t, t.Context(), after)
 
 		assert.Equal(t, []string{"uncors.mock.delay_started", "uncors.mock.delay_finished"}, eventNames(span))
 		assert.Contains(t, span.Attributes(), attribute.Int("uncors.mock.status", http.StatusAccepted))
 		assert.Contains(t, span.Attributes(), attribute.String("uncors.mock.delay", "1s"))
 		assert.Contains(t, span.Attributes(), attribute.String("uncors.mock.source", "raw"))
 		assert.Contains(t, span.Attributes(), attribute.Int("uncors.mock.raw_bytes", len(textContent)))
+		assert.Equal(t, []string{"served mock response"}, messages)
 	})
 
 	t.Run("delay cancelled", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
-		span := serve(t, ctx, make(chan time.Time))
+		span, messages := serve(t, ctx, make(chan time.Time))
 
 		assert.Equal(t, []string{"uncors.mock.delay_started", "uncors.mock.delay_cancelled"}, eventNames(span))
+		assert.Equal(t, []string{"mock delay cancelled by the client"}, messages)
 	})
 }

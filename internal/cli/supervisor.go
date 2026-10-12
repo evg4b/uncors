@@ -180,7 +180,7 @@ func (s *supervisor) shutdown(ctx context.Context) {
 	err := s.engine.Shutdown(shutdownCtx)
 	if err != nil {
 		telemetry.Fail(span, err)
-		telemetry.Warn(ctx, "in-flight requests did not finish before shutdown", slog.String("error", err.Error()))
+		telemetry.Warn(ctx, "in-flight requests did not finish before shutdown", telemetry.Err(err))
 	}
 
 	s.engine.Wait()
@@ -204,12 +204,12 @@ func (s *supervisor) watchConfig(ctx context.Context) {
 		default:
 		}
 	}, func(err error) {
-		telemetry.Error(ctx, "config watcher error", slog.String("error", err.Error()))
+		telemetry.Error(ctx, "config watcher error", telemetry.Err(err))
 		s.bus.Publish(events.Notice{Level: events.NoticeError, Text: "Config watcher error: " + err.Error()})
 	})
 	if err != nil {
 		telemetry.Error(ctx, "failed to watch config file",
-			slog.String("path", s.cfgPath), slog.String("error", err.Error()))
+			slog.String("path", s.cfgPath), telemetry.Err(err))
 		s.bus.Publish(events.Notice{Level: events.NoticeError, Text: "Failed to watch config file: " + err.Error()})
 
 		return

@@ -107,8 +107,11 @@ the UI/printer renders there.
 - Tracing off must cost nothing on the request path. Variadic and `any`
   arguments escape even when the callee ignores them, so guard attribute
   building and log calls there with `if span.IsRecording()` or
-  `if telemetry.Enabled()`. `internal/telemetry` tests allocations and
-  `BenchmarkRequestDisabled` (`internal/server`) measures a proxied request.
+  `if telemetry.Enabled()`. `internal/telemetry` tests allocations;
+  `BenchmarkRequestDisabled` and `BenchmarkRequestEnabled` (`internal/server`)
+  measure a proxied request with tracing off and on. Upstream connection phases
+  are traced only with `UNCORS_TRACE_CONNECTIONS=true`: they cost as much as the
+  rest of the upstream span.
 - Failures the user must act on are also published as `events.Notice`.
 - Tests: `testutils.Telemetry(t)` records spans, logs, and metrics (`Sum`) in
   memory; such tests must not call `t.Parallel()`, and must call it before

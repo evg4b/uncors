@@ -16,40 +16,55 @@ import (
 )
 
 func TestHTTPClientTracing(t *testing.T) {
-	recorded := testutils.Telemetry(t)
+	serve := func(t *testing.T, options ...func(*telemetry.Providers)) sdktrace.ReadOnlySpan {
+		t.Helper()
 
-	var received http.Header
+		recorded := testutils.Telemetry(t, options...)
 
-	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		received = request.Header.Clone()
+		var received http.Header
 
-		writer.WriteHeader(http.StatusNoContent)
-	}))
-	defer upstream.Close()
+		upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			received = request.Header.Clone()
 
-	ctx, parent := telemetry.Start(context.Background(), "test.parent")
+			writer.WriteHeader(http.StatusNoContent)
+		}))
+		defer upstream.Close()
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, upstream.URL, nil)
-	require.NoError(t, err)
+		ctx, parent := telemetry.Start(context.Background(), "test.parent")
 
-	response, err := infra.MakeHTTPClient("").Do(request)
-	require.NoError(t, err)
-	require.NoError(t, response.Body.Close())
-	parent.End()
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, upstream.URL, nil)
+		require.NoError(t, err)
 
-	assert.Empty(t, received.Get("Traceparent"), "trace context must not reach the upstream")
-	assert.Empty(t, received.Get("Tracestate"))
-	assert.Empty(t, received.Get("Baggage"))
+		response, err := infra.MakeHTTPClient("").Do(request)
+		require.NoError(t, err)
+		require.NoError(t, response.Body.Close())
+		parent.End()
 
-	ended := recorded.Spans.Ended()
-	client := slices.IndexFunc(ended, func(span sdktrace.ReadOnlySpan) bool {
-		return span.Name() == "HTTP GET"
+		assert.Empty(t, received.Get("Traceparent"), "trace context must not reach the upstream")
+		assert.Empty(t, received.Get("Tracestate"))
+		assert.Empty(t, received.Get("Baggage"))
+
+		ended := recorded.Spans.Ended()
+		client := slices.IndexFunc(ended, func(span sdktrace.ReadOnlySpan) bool {
+			return span.Name() == "HTTP GET"
+		})
+		require.GreaterOrEqual(t, client, 0, "the request has a client span")
+		assert.Equal(t, parent.SpanContext().SpanID(), ended[client].Parent().SpanID())
+
+		return ended[client]
+	}
+
+	connected := func(span sdktrace.ReadOnlySpan) bool {
+		return slices.ContainsFunc(span.Events(), func(event sdktrace.Event) bool {
+			return event.Name == "http.getconn.done"
+		})
+	}
+
+	t.Run("connections are not traced by default", func(t *testing.T) {
+		assert.False(t, connected(serve(t)))
 	})
-	require.GreaterOrEqual(t, client, 0, "the request has a client span")
-	assert.Equal(t, parent.SpanContext().SpanID(), ended[client].Parent().SpanID())
 
-	connect := slices.ContainsFunc(ended, func(span sdktrace.ReadOnlySpan) bool {
-		return span.Name() == "http.connect"
+	t.Run("connections are traced on request", func(t *testing.T) {
+		assert.True(t, connected(serve(t, testutils.TraceConnections)))
 	})
-	assert.True(t, connect, "the connection is traced")
 }

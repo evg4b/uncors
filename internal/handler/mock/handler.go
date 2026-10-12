@@ -3,6 +3,7 @@ package mock
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -48,6 +49,11 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	if h.waitDelay(writer, request) {
 		telemetry.MockServed(request.Context(), http.StatusServiceUnavailable, h.response.Delay, true)
 
+		if telemetry.Enabled() {
+			telemetry.Debug(request.Context(), "mock delay cancelled by the client",
+				slog.Duration("delay", h.response.Delay))
+		}
+
 		return nil
 	}
 
@@ -60,7 +66,24 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 
 	telemetry.MockServed(request.Context(), helpers.NormaliseStatusCode(h.response.Code), h.response.Delay, false)
 
+	if telemetry.Enabled() {
+		h.logServed(request)
+	}
+
 	return nil
+}
+
+func (h *Handler) logServed(request *contracts.Request) {
+	attrs := []slog.Attr{
+		slog.Int("status", helpers.NormaliseStatusCode(h.response.Code)),
+		slog.Duration("delay", h.response.Delay),
+	}
+
+	if h.response.IsFile() {
+		attrs = append(attrs, slog.String("file", h.response.File))
+	}
+
+	telemetry.Debug(request.Context(), "served mock response", attrs...)
 }
 
 func (h *Handler) attributes() []attribute.KeyValue {
