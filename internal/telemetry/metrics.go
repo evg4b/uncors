@@ -22,6 +22,8 @@ const (
 	ResultDropped     = "dropped"
 )
 
+const unitRequest = "{request}"
+
 const (
 	handlerKey = attribute.Key("uncors.handler")
 	resultKey  = attribute.Key("uncors.result")
@@ -73,12 +75,12 @@ func newInstruments(meter metric.Meter) *instruments {
 	}
 
 	activeRequests, _ := meter.Int64UpDownCounter("http.server.active_requests",
-		metric.WithUnit("{request}"), metric.WithDescription("Requests being served."))
+		metric.WithUnit(unitRequest), metric.WithDescription("Requests being served."))
 	responseSize, _ := meter.Int64Histogram("http.server.response.body.size",
 		metric.WithUnit("By"), metric.WithDescription("Size of the response bodies sent to clients."))
 
 	return &instruments{
-		requests:         counter("uncors.requests", "{request}", "Requests received, by the handler that answered."),
+		requests:         counter("uncors.requests", unitRequest, "Requests received, by the handler that answered."),
 		activeRequests:   activeRequests,
 		requestDuration:  seconds("http.server.request.duration", "Time to serve a request."),
 		responseSize:     responseSize,
@@ -89,8 +91,8 @@ func newInstruments(meter metric.Meter) *instruments {
 		mockDelay:        seconds("uncors.mock.delay", "Configured delays of the mock responses served."),
 		scriptRuns:       counter("uncors.script.executions", "{execution}", "Lua script executions."),
 		scriptDuration:   seconds("uncors.script.duration", "Time to compile and run a Lua script."),
-		staticRequests:   counter("uncors.static.requests", "{request}", "Static requests, served or passed on."),
-		rewrites:         counter("uncors.rewrites", "{request}", "Requests rewritten."),
+		staticRequests:   counter("uncors.static.requests", unitRequest, "Static requests, served or passed on."),
+		rewrites:         counter("uncors.rewrites", unitRequest, "Requests rewritten."),
 		harEntries:       counter("uncors.har.entries", "{entry}", "HAR entries, recorded or dropped."),
 		harFlushes:       counter("uncors.har.flushes", "{flush}", "HAR file writes."),
 		configReloads:    counter("uncors.config.reloads", "{reload}", "Configuration reloads."),

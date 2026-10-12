@@ -39,7 +39,10 @@ func Setup(ctx context.Context, version string) func(context.Context) error {
 	// The OTel defaults print to stderr, which would corrupt the TUI. Export
 	// failures are reported by the exporter wrappers below.
 	otel.SetLogger(logr.Discard())
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(error) {}))
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(error) {
+		// Dropped: printing would corrupt the TUI, and export errors reach
+		// the user through exportErrors.
+	}))
 
 	noop := func(context.Context) error { return nil }
 
