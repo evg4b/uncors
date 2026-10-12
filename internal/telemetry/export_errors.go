@@ -3,8 +3,9 @@ package telemetry
 import "sync"
 
 const (
-	SignalSpans = "spans"
-	SignalLogs  = "logs"
+	SignalSpans   = "spans"
+	SignalLogs    = "logs"
+	SignalMetrics = "metrics"
 )
 
 var exportErrors exportErrorHook

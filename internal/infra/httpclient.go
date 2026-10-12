@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/evg4b/uncors/internal/telemetry"
 )
 
 const defaultTimeout = 5 * time.Minute
@@ -27,7 +29,7 @@ func MakeHTTPClient(proxy string) *http.Client {
 		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: transport,
+		Transport: telemetry.WrapTransport(transport),
 		Timeout:   defaultTimeout,
 	}
 }

@@ -6,12 +6,17 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
@@ -22,6 +27,7 @@ const (
 
 	defaultEndpoint = "http://localhost:4318"
 	envPrefix       = "OTEL_EXPORTER_OTLP_"
+	metricInterval  = 10 * time.Second
 )
 
 // Setup turns tracing on when UNCORS_TRACE is true. The returned function
@@ -87,32 +93,51 @@ func setupExporters(ctx context.Context, version string) (func(context.Context) 
 		sdktrace.WithBatcher(spanExporter{traceExporter}),
 		sdktrace.WithResource(res),
 	)
+	shutdowns := []func(context.Context) error{tracerProvider.Shutdown}
+	shutdown := func(ctx context.Context) error {
+		errs := make([]error, 0, len(shutdowns))
+		for _, stop := range shutdowns {
+			errs = append(errs, stop(ctx))
+		}
+
+		return errors.Join(errs...)
+	}
+
+	providers := Providers{Tracer: tracerProvider}
+	otel.SetTracerProvider(tracerProvider)
 
 	loggerProvider, err := newLoggerProvider(ctx, res)
 	if err != nil {
-		return nil, errors.Join(err, tracerProvider.Shutdown(ctx))
+		return nil, errors.Join(err, shutdown(ctx))
 	}
 
-	otel.SetTracerProvider(tracerProvider)
-
-	if loggerProvider == nil {
-		install(tracerProvider, nil)
-	} else {
+	if loggerProvider != nil {
+		providers.Logger = loggerProvider
+		shutdowns = append(shutdowns, loggerProvider.Shutdown)
 		otel.SetLoggerProvider(loggerProvider)
-		install(tracerProvider, loggerProvider)
 	}
 
+	meterProvider, err := newMeterProvider(ctx, res)
+	if err != nil {
+		return nil, errors.Join(err, shutdown(ctx))
+	}
+
+	if meterProvider != nil {
+		providers.Meter = meterProvider
+		shutdowns = append(shutdowns, meterProvider.Shutdown)
+		otel.SetMeterProvider(meterProvider)
+
+		err = runtime.Start(runtime.WithMeterProvider(meterProvider))
+		if err != nil {
+			return nil, errors.Join(err, shutdown(ctx))
+		}
+	}
+
+	install(providers)
 	// The std log package and third-party slog output reach OTel too.
 	slog.SetDefault(Logger())
 
-	return func(ctx context.Context) error {
-		err := tracerProvider.Shutdown(ctx)
-		if loggerProvider != nil {
-			err = errors.Join(err, loggerProvider.Shutdown(ctx))
-		}
-
-		return err
-	}, nil
+	return shutdown, nil
 }
 
 // newLoggerProvider returns nil when OTEL_LOGS_EXPORTER is "none": Jaeger,
@@ -136,6 +161,36 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource) (*sdklog.Log
 	return sdklog.NewLoggerProvider(
 		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter{exporter})),
 		sdklog.WithResource(res),
+	), nil
+}
+
+// newMeterProvider returns nil when OTEL_METRICS_EXPORTER is "none".
+func newMeterProvider(ctx context.Context, res *resource.Resource) (*sdkmetric.MeterProvider, error) {
+	if os.Getenv("OTEL_METRICS_EXPORTER") == "none" {
+		return nil, nil //nolint:nilnil // no provider is a valid outcome
+	}
+
+	var options []otlpmetrichttp.Option
+
+	if !configured("METRICS") {
+		options = append(options, otlpmetrichttp.WithInsecure())
+	}
+
+	exporter, err := otlpmetrichttp.New(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	var readerOptions []sdkmetric.PeriodicReaderOption
+
+	// The SDK default of a minute is long for watching a dev proxy.
+	if os.Getenv("OTEL_METRIC_EXPORT_INTERVAL") == "" {
+		readerOptions = append(readerOptions, sdkmetric.WithInterval(metricInterval))
+	}
+
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter{exporter}, readerOptions...)),
+		sdkmetric.WithResource(res),
 	), nil
 }
 
@@ -177,6 +232,19 @@ func (e logExporter) Export(ctx context.Context, records []sdklog.Record) error 
 	err := e.Exporter.Export(ctx, records)
 	if err != nil {
 		exportErrors.handle(SignalLogs, err)
+	}
+
+	return err
+}
+
+type metricExporter struct {
+	sdkmetric.Exporter
+}
+
+func (e metricExporter) Export(ctx context.Context, metrics *metricdata.ResourceMetrics) error {
+	err := e.Exporter.Export(ctx, metrics)
+	if err != nil {
+		exportErrors.handle(SignalMetrics, err)
 	}
 
 	return err

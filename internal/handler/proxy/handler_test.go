@@ -333,7 +333,7 @@ func TestProxyHandler(t *testing.T) {
 			return nil, errNetworkError
 		})
 
-		spans, _ := testutils.Telemetry(t)
+		spans := testutils.Telemetry(t).Spans
 
 		handler := proxy.NewProxyHandler(
 			proxy.WithHTTPClient(httpMock),

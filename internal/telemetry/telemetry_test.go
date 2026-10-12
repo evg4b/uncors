@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -53,6 +54,20 @@ func TestDisabledDoesNotAllocate(t *testing.T) {
 				span.SetAttributes(attribute.String("key", request.URL.String()))
 			}
 		},
+		"metrics": func() {
+			telemetry.RequestStarted(ctx)
+			telemetry.CacheLookup(ctx, true)
+			telemetry.CacheStored(ctx, 10)
+			telemetry.MockServed(ctx, http.StatusOK, time.Second, false)
+			telemetry.ScriptExecuted(ctx, time.Second, errTest)
+			telemetry.StaticRequest(ctx, telemetry.ResultServed)
+			telemetry.Rewritten(ctx)
+			telemetry.HAREntry(ctx, true)
+			telemetry.HARFlushed(ctx, nil)
+			telemetry.ConfigReloaded(ctx, errTest)
+			telemetry.TLSCertificate(ctx, nil)
+			telemetry.UpstreamRequest(ctx, request.Method, request.Host, http.StatusOK, nil)
+		},
 		"guarded Debug": func() {
 			if telemetry.Enabled() {
 				telemetry.Debug(ctx, "message", slog.String("key", request.URL.String()))
@@ -77,7 +92,8 @@ func TestStartRequestKeepsTheRequestWhenDisabled(t *testing.T) {
 }
 
 func TestEnabledRecordsSpansAndLogs(t *testing.T) {
-	spans, logs := testutils.Telemetry(t)
+	recorded := testutils.Telemetry(t)
+	spans, logs := recorded.Spans, recorded.Logs
 
 	require.True(t, telemetry.Enabled())
 
@@ -111,7 +127,7 @@ func TestEnabledRecordsSpansAndLogs(t *testing.T) {
 }
 
 func TestFailIgnoresCancellation(t *testing.T) {
-	spans, _ := testutils.Telemetry(t)
+	spans := testutils.Telemetry(t).Spans
 
 	_, span := telemetry.Start(context.Background(), "test.span")
 	telemetry.Fail(span, context.Canceled)
@@ -142,4 +158,45 @@ func TestEndpoint(t *testing.T) {
 
 	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces:4318/v1/traces")
 	assert.Equal(t, "http://traces:4318/v1/traces", telemetry.Endpoint())
+}
+
+func TestWrapTransportWhenDisabled(t *testing.T) {
+	transport := &http.Transport{}
+
+	assert.Same(t, transport, telemetry.WrapTransport(transport))
+}
+
+func TestMetrics(t *testing.T) {
+	recorded := testutils.Telemetry(t)
+	ctx := context.Background()
+
+	telemetry.CacheLookup(ctx, true)
+	telemetry.CacheLookup(ctx, false)
+	telemetry.CacheLookup(ctx, false)
+	telemetry.CacheStored(ctx, 128)
+	telemetry.MockServed(ctx, http.StatusOK, time.Second, false)
+	telemetry.MockServed(ctx, http.StatusServiceUnavailable, time.Second, true)
+	telemetry.StaticRequest(ctx, telemetry.ResultFallThrough)
+	telemetry.HAREntry(ctx, false)
+	telemetry.ConfigReloaded(ctx, errTest)
+	telemetry.RequestStarted(ctx)
+	telemetry.RequestStarted(ctx)
+	telemetry.RequestFinished(ctx, telemetry.RequestMetrics{
+		Method: http.MethodGet, Handler: "MOCK", Status: http.StatusOK, Duration: time.Millisecond, ResponseBytes: 4,
+	})
+	telemetry.UpstreamRequest(ctx, http.MethodGet, "example.com", 0, context.DeadlineExceeded)
+
+	result := attribute.Key("uncors.result")
+
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.cache.lookups", result.String(telemetry.ResultHit)))
+	assert.Equal(t, int64(2), recorded.Sum(t, "uncors.cache.lookups", result.String(telemetry.ResultMiss)))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.cache.stores"))
+	assert.Equal(t, int64(128), recorded.Sum(t, "uncors.cache.stored_bytes"))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.mock.responses", result.String(telemetry.ResultCancelled)))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.static.requests", result.String(telemetry.ResultFallThrough)))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.har.entries", result.String(telemetry.ResultDropped)))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.config.reloads", result.String(telemetry.ResultError)))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.requests", attribute.String("uncors.handler", "MOCK")))
+	assert.Equal(t, int64(1), recorded.Sum(t, "http.server.active_requests"))
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.upstream.requests", attribute.String("error.type", "timeout")))
 }

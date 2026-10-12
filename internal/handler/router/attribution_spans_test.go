@@ -79,7 +79,7 @@ func rootSpan(t *testing.T, ended []sdktrace.ReadOnlySpan) sdktrace.ReadOnlySpan
 
 func TestRouterAttributionSpans(t *testing.T) {
 	handler := attributionRouter(t)
-	spans, _ := testutils.Telemetry(t)
+	spans := testutils.Telemetry(t).Spans
 
 	proxied := []string{
 		"proxy.forward > proxy.copy_body",

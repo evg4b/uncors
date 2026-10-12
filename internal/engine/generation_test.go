@@ -109,7 +109,7 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	require.NoError(t, fs.MkdirAll("/www", 0o755))
 
-	spans, _ := testutils.Telemetry(t)
+	spans := testutils.Telemetry(t).Spans
 	proxy := engine.New(engine.WithFs(fs))
 
 	generation, err := proxy.BuildGeneration(&config.UncorsConfig{

@@ -16,6 +16,8 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -23,8 +25,18 @@ import (
 const scope = "github.com/evg4b/uncors"
 
 type state struct {
-	tracer trace.Tracer
-	logger *slog.Logger
+	providers Providers
+	tracer    trace.Tracer
+	logger    *slog.Logger
+	metrics   *instruments
+}
+
+// Providers are the OTel providers telemetry records to. A nil Logger
+// discards logs and a nil Meter discards metrics.
+type Providers struct {
+	Tracer trace.TracerProvider
+	Logger log.LoggerProvider
+	Meter  metric.MeterProvider
 }
 
 var (
@@ -37,26 +49,31 @@ var (
 
 // Use installs the given providers and turns tracing on. It is the test hook:
 // restore puts back what was installed before.
-func Use(tracerProvider trace.TracerProvider, loggerProvider log.LoggerProvider) func() {
+func Use(providers Providers) func() {
 	previous := current.Load()
 
-	install(tracerProvider, loggerProvider)
+	install(providers)
 
 	return func() {
 		current.Store(previous)
 	}
 }
 
-// A nil loggerProvider discards logs.
-func install(tracerProvider trace.TracerProvider, loggerProvider log.LoggerProvider) {
+func install(providers Providers) {
+	if providers.Meter == nil {
+		providers.Meter = metricnoop.NewMeterProvider()
+	}
+
 	logger := discard
-	if loggerProvider != nil {
-		logger = slog.New(otelslog.NewHandler(scope, otelslog.WithLoggerProvider(loggerProvider)))
+	if providers.Logger != nil {
+		logger = slog.New(otelslog.NewHandler(scope, otelslog.WithLoggerProvider(providers.Logger)))
 	}
 
 	current.Store(&state{
-		tracer: tracerProvider.Tracer(scope),
-		logger: logger,
+		providers: providers,
+		tracer:    providers.Tracer.Tracer(scope),
+		logger:    logger,
+		metrics:   newInstruments(providers.Meter.Meter(scope)),
 	})
 }
 

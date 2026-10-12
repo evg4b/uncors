@@ -125,7 +125,7 @@ func TestSuperviseRestartsAndStops(t *testing.T) {
 }
 
 func TestSuperviseKeepsServingOnInvalidReload(t *testing.T) {
-	spans, _ := testutils.Telemetry(t)
+	spans := testutils.Telemetry(t).Spans
 	env, uncorsConfig := supervisedConfig(t)
 	port := uncorsConfig.Mappings[0].From.Port
 
