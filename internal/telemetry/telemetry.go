@@ -11,6 +11,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync/atomic"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -185,11 +186,36 @@ func Err(err error) slog.Attr {
 	return slog.String("error", err.Error())
 }
 
+// inlineAttrs is how many attributes logAttrs escapes without allocating.
+const inlineAttrs = 8
+
 func logAttrs(ctx context.Context, level slog.Level, msg string, attrs []slog.Attr) {
 	state := current.Load()
 	if state == nil {
 		return
 	}
 
-	state.logger.LogAttrs(ctx, level, msg, attrs...)
+	// String values often come from the request: URLs, headers, and errors
+	// that quote them. Their line breaks are escaped so they cannot forge
+	// records in a backend that stores logs as lines.
+	var buffer [inlineAttrs]slog.Attr
+
+	escaped := buffer[:0]
+
+	for _, attr := range attrs {
+		if attr.Value.Kind() == slog.KindString {
+			attr = slog.String(attr.Key, escapeLineBreaks(attr.Value.String()))
+		}
+
+		escaped = append(escaped, attr)
+	}
+
+	state.logger.LogAttrs(ctx, level, msg, escaped...)
+}
+
+// escapeLineBreaks returns value itself when it has no line break.
+func escapeLineBreaks(value string) string {
+	value = strings.ReplaceAll(value, "\n", `\n`)
+
+	return strings.ReplaceAll(value, "\r", `\r`)
 }

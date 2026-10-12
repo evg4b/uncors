@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/log"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -200,6 +202,7 @@ func TestMetrics(t *testing.T) {
 
 func TestProtocolVersion(t *testing.T) {
 	cases := map[string][2]int{
+		"0.9": {0, 9},
 		"1.0": {1, 0},
 		"1.1": {1, 1},
 		"2":   {2, 0},
@@ -211,4 +214,57 @@ func TestProtocolVersion(t *testing.T) {
 			assert.Equal(t, expected, telemetry.ProtocolVersion(version[0], version[1]))
 		})
 	}
+}
+
+func TestLogsEscapeLineBreaks(t *testing.T) {
+	recorded := testutils.Telemetry(t)
+
+	telemetry.Warn(context.Background(), "message",
+		slog.String("url", "http://localhost/a\r\nforged: record"), slog.Int("status", http.StatusOK))
+
+	records := recorded.Records()
+	require.Len(t, records, 1)
+	assert.Equal(t, `http://localhost/a\r\nforged: record`, records[0].Attrs["url"])
+	assert.Equal(t, "200", records[0].Attrs["status"])
+}
+
+func TestWrapTransport(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(upstream.Close)
+
+	serve := func(t *testing.T, options ...func(*telemetry.Providers)) sdktrace.ReadOnlySpan {
+		t.Helper()
+
+		recorded := testutils.Telemetry(t, options...)
+		client := &http.Client{Transport: telemetry.WrapTransport(http.DefaultTransport)}
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, upstream.URL, nil)
+		require.NoError(t, err)
+
+		response, err := client.Do(request)
+		require.NoError(t, err)
+		require.NoError(t, response.Body.Close())
+
+		ended := recorded.Spans.Ended()
+		require.Len(t, ended, 1)
+		assert.Equal(t, "HTTP PUT", ended[0].Name())
+
+		return ended[0]
+	}
+
+	connected := func(span sdktrace.ReadOnlySpan) bool {
+		return slices.ContainsFunc(span.Events(), func(event sdktrace.Event) bool {
+			return event.Name == "http.getconn.done"
+		})
+	}
+
+	t.Run("without connection phases", func(t *testing.T) {
+		assert.False(t, connected(serve(t)))
+	})
+
+	t.Run("with connection phases", func(t *testing.T) {
+		assert.True(t, connected(serve(t, testutils.TraceConnections)))
+	})
 }

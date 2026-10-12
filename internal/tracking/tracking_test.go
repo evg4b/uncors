@@ -9,9 +9,13 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var errHandler = errors.New("handler failed")
@@ -171,4 +175,37 @@ func TestScope(t *testing.T) {
 		assert.IsType(t, events.RequestStarted{}, published[0])
 		assert.IsType(t, events.RequestCompleted{}, published[1])
 	})
+}
+
+func TestScopeRecordsOnTheRootSpan(t *testing.T) {
+	recorded := testutils.Telemetry(t)
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/users", nil)
+	require.NoError(t, err)
+
+	rootCtx, root := telemetry.StartServer(request.Context(), "HTTP GET")
+	ctx, scope := tracking.Begin(rootCtx, &recorder{}, 42, request)
+
+	childCtx, child := telemetry.Start(ctx, "mock.serve")
+	tracking.Claim(childCtx, events.HandlerMock)
+	tracking.Rewrote(ctx, "/users", "/v2/users")
+	tracking.Fail(ctx, errHandler)
+	child.End()
+	root.End()
+
+	assert.Equal(t, events.HandlerMock, scope.Handler())
+
+	ended := recorded.Spans.Ended()
+	require.Len(t, ended, 2)
+
+	claimed, rootSpan := ended[0], ended[1]
+	require.Len(t, claimed.Events(), 1)
+	assert.Equal(t, "claimed", claimed.Events()[0].Name)
+
+	attrs := rootSpan.Attributes()
+	assert.Contains(t, attrs, attribute.String("uncors.handler", events.HandlerMock.String()))
+	assert.Contains(t, attrs, attribute.String("uncors.rewrite.from", "/users"))
+	assert.Contains(t, attrs, attribute.String("uncors.rewrite.to", "/v2/users"))
+	assert.Equal(t, codes.Error, rootSpan.Status().Code)
+	assert.Equal(t, errHandler.Error(), rootSpan.Status().Description)
 }
