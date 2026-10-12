@@ -52,8 +52,9 @@ uncors generate-certs   # once, if the config has https mappings
 docker compose up --build
 ```
 
-Traces and logs are at <http://localhost:4319>. `compose.yaml` publishes ports
-3000, 4000, and 2000; change them there if your mappings use other ports.
+Traces, logs, and metrics are at <http://localhost:4319>. `compose.yaml`
+publishes ports 3000, 4000, and 2000; change them there if your mappings use
+other ports.
 
 ## Make targets
 

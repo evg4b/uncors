@@ -3,7 +3,7 @@
 #   uncors generate-certs     # once, for the https mappings
 #   docker compose up --build
 #
-# Traces and logs: http://localhost:4319
+# Traces, logs, and metrics: http://localhost:4319
 # The proxy serves the mappings of ./.uncors.yaml on the ports below.
 
 x-ports: &ports "3000 4000 2000" # keep in sync with .uncors.yaml and uncors.ports
