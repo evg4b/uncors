@@ -203,14 +203,36 @@ func logAttrs(ctx context.Context, level slog.Level, msg string, attrs []slog.At
 	escaped := buffer[:0]
 
 	for _, attr := range attrs {
-		if attr.Value.Kind() == slog.KindString {
-			attr = slog.String(attr.Key, escapeLineBreaks(attr.Value.String()))
-		}
-
-		escaped = append(escaped, attr)
+		escaped = append(escaped, escapeAttr(attr))
 	}
 
 	state.logger.LogAttrs(ctx, level, msg, escaped...)
+}
+
+// escapeAttr rebuilds attr from its parts, so no value reaches the logger
+// without going through escapeLineBreaks or a type that cannot hold a line
+// break. Groups and other values are logged as their escaped text.
+func escapeAttr(attr slog.Attr) slog.Attr {
+	value := attr.Value
+
+	switch value.Kind() {
+	case slog.KindInt64:
+		return slog.Int64(attr.Key, value.Int64())
+	case slog.KindUint64:
+		return slog.Uint64(attr.Key, value.Uint64())
+	case slog.KindFloat64:
+		return slog.Float64(attr.Key, value.Float64())
+	case slog.KindBool:
+		return slog.Bool(attr.Key, value.Bool())
+	case slog.KindDuration:
+		return slog.Duration(attr.Key, value.Duration())
+	case slog.KindTime:
+		return slog.Time(attr.Key, value.Time())
+	case slog.KindString, slog.KindAny, slog.KindGroup, slog.KindLogValuer:
+		// Logged as escaped text below.
+	}
+
+	return slog.String(escapeLineBreaks(attr.Key), escapeLineBreaks(value.String()))
 }
 
 // escapeLineBreaks returns value itself when it has no line break.

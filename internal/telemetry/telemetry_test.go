@@ -21,7 +21,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var errTest = errors.New("test error")
+var (
+	errTest      = errors.New("test error")
+	errMultiline = errors.New("a\nb")
+)
 
 func TestDisabledDoesNotAllocate(t *testing.T) {
 	require.False(t, telemetry.Enabled())
@@ -219,13 +222,35 @@ func TestProtocolVersion(t *testing.T) {
 func TestLogsEscapeLineBreaks(t *testing.T) {
 	recorded := testutils.Telemetry(t)
 
+	loggedAt := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
+
 	telemetry.Warn(context.Background(), "message",
-		slog.String("url", "http://localhost/a\r\nforged: record"), slog.Int("status", http.StatusOK))
+		slog.String("url", "http://localhost/a\r\nforged: record"),
+		slog.Int("status", http.StatusOK),
+		slog.Uint64("bytes", 7),
+		slog.Float64("ratio", 0.5),
+		slog.Bool("cached", true),
+		slog.Duration("delay", time.Second),
+		slog.Time("at", loggedAt),
+		slog.Any("value", errMultiline),
+	)
 
 	records := recorded.Records()
 	require.Len(t, records, 1)
-	assert.Equal(t, `http://localhost/a\r\nforged: record`, records[0].Attrs["url"])
-	assert.Equal(t, "200", records[0].Attrs["status"])
+
+	attrs := records[0].Attrs
+	assert.NotEmpty(t, attrs["at"], "times keep their type")
+	delete(attrs, "at")
+
+	assert.Equal(t, map[string]string{
+		"url":    `http://localhost/a\r\nforged: record`,
+		"status": "200",
+		"bytes":  "7",
+		"ratio":  "0.5",
+		"cached": "true",
+		"delay":  "1000000000",
+		"value":  `a\nb`,
+	}, attrs)
 }
 
 func TestWrapTransport(t *testing.T) {
