@@ -72,11 +72,11 @@ func serveTracked(
 	request := httptest.NewRequestWithContext(t.Context(), method, url, nil)
 	helpers.NormaliseRequest(request)
 
-	ctx, scope := tracking.Begin(request.Context(), bus, 1, request)
+	ctx, scope := tracking.Begin(request.Context(), bus, 1, request, time.Now())
 	recorder := httptest.NewRecorder()
 
 	serveHTTP(t, handler, recorder, request.WithContext(ctx))
-	scope.Finish(helpers.ToRequestData(request, recorder.Code))
+	scope.Finish(&contracts.RequestData{Method: request.Method, URL: request.URL, Code: recorder.Code})
 	bus.Close()
 
 	var received []events.Event

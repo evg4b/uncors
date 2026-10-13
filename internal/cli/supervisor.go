@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	shutdownTimeout   = 15 * time.Second
 	versionCheckDelay = 50 * time.Millisecond
 	frontendBuffer    = 1000
 	commandsBuffer    = 8
@@ -171,10 +170,7 @@ func (s *supervisor) shutdown(ctx context.Context) {
 	ctx, span := telemetry.Start(context.WithoutCancel(ctx), "supervisor.shutdown")
 	defer span.End()
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
-	defer cancel()
-
-	err := s.engine.Shutdown(shutdownCtx)
+	err := s.engine.Shutdown(ctx)
 	if err != nil {
 		telemetry.Fail(span, err)
 		telemetry.Warn(ctx, "in-flight requests did not finish before shutdown", telemetry.Err(err))

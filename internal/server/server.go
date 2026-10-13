@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -31,7 +32,7 @@ type Target struct {
 }
 
 type Server struct {
-	sync.WaitGroup
+	wg sync.WaitGroup
 
 	mu              sync.RWMutex
 	listeners       []*portListener
@@ -45,10 +46,6 @@ type Server struct {
 // New builds a server that takes the certificates of TLS targets from
 // getCertificate.
 func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), publisher events.Publisher) *Server {
-	if publisher == nil {
-		publisher = events.NoopPublisher{}
-	}
-
 	return &Server{
 		getCertificate:  getCertificate,
 		publisher:       publisher,
@@ -67,8 +64,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
-	s.Add(1)
-	defer s.Done()
+	s.wg.Add(1)
+	defer s.wg.Done()
 
 	return telemetry.Run(ctx, "server.restart", func(ctx context.Context) error {
 		s.mu.RLock()
@@ -95,7 +92,7 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 }
 
 func (s *Server) Wait() {
-	s.WaitGroup.Wait()
+	s.wg.Wait()
 }
 
 func (s *Server) Close() error {
@@ -151,7 +148,7 @@ func (s *Server) start(ctx, spanCtx context.Context, targets []Target) error {
 	s.mu.Unlock()
 
 	for _, listener := range listeners {
-		s.Go(func() {
+		s.wg.Go(func() {
 			err := listener.Serve(listener.listener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				telemetry.Error(ctx, "listener stopped", telemetry.Err(err))
@@ -279,12 +276,17 @@ func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter,
 
 	telemetry.RequestStarted(ctx)
 
-	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request)
+	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request, rec.startedAt)
 
 	handler.ServeHTTP(rec, request.WithContext(ctx))
 
-	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
-	data.Cancelled = ctx.Err() != nil
+	data := &contracts.RequestData{
+		Method:    request.Method,
+		URL:       request.URL,
+		Header:    request.Header,
+		Code:      helpers.NormaliseStatusCode(rec.StatusCode()),
+		Cancelled: ctx.Err() != nil,
+	}
 
 	if span.IsRecording() {
 		annotateResponse(span, data, rec.Header(), rec.Written())

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
@@ -46,7 +47,7 @@ func begin(t *testing.T) (context.Context, *tracking.Scope, *recorder) {
 	require.NoError(t, err)
 
 	publisher := &recorder{}
-	ctx, scope := tracking.Begin(request.Context(), publisher, 42, request)
+	ctx, scope := tracking.Begin(request.Context(), publisher, 42, request, time.Now())
 
 	return ctx, scope, publisher
 }
@@ -184,7 +185,7 @@ func TestScopeRecordsOnTheRootSpan(t *testing.T) {
 	require.NoError(t, err)
 
 	rootCtx, root := telemetry.StartServer(request.Context(), "HTTP GET")
-	ctx, scope := tracking.Begin(rootCtx, &recorder{}, 42, request)
+	ctx, scope := tracking.Begin(rootCtx, &recorder{}, 42, request, time.Now())
 
 	childCtx, child := telemetry.Start(ctx, "mock.serve")
 	tracking.Claim(childCtx, events.HandlerMock)

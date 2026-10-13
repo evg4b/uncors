@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 type ResponseRecorder struct {
@@ -66,17 +67,9 @@ func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 	}
 
 	return contracts.ResponseCapture{
-		StatusCode: normaliseStatusCode(r.statusCode),
+		StatusCode: helpers.NormaliseStatusCode(r.statusCode),
 		Header:     r.Header(),
 		Body:       body,
 		Duration:   time.Since(r.startedAt),
 	}
-}
-
-func normaliseStatusCode(code int) int {
-	if code == 0 {
-		return http.StatusOK
-	}
-
-	return code
 }
