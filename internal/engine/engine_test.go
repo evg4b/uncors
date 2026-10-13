@@ -154,6 +154,28 @@ func TestEngine(t *testing.T) {
 		occupy(t, ports[1])
 
 		require.Error(t, proxy.Restart(t.Context(), proxyConfiguration(ports[1])))
+
+		assertListening(t, ports[0])
+	})
+
+	t.Run("a failed restart binds none of the new ports", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 3)
+
+		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+
+		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
+
+		defer testutils.Close(t, proxy)
+
+		occupy(t, ports[2])
+
+		cfg := proxyConfiguration(ports[1])
+		cfg.Mappings = append(cfg.Mappings, proxyConfiguration(ports[2]).Mappings...)
+
+		require.Error(t, proxy.Restart(t.Context(), cfg))
+
+		assertListening(t, ports[0])
+		assert.True(t, testutils.IsPortFree(ports[1]))
 	})
 
 	t.Run("returns an error when the port is already taken", func(t *testing.T) {

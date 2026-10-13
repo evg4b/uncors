@@ -278,6 +278,43 @@ func TestServer(t *testing.T) {
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
 	})
 
+	t.Run("Start binds nothing when one port is taken", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 2)
+		occupy(t, ports[1])
+
+		instance := server.New(server.NewHostCertManager(afero.NewOsFs(), nil), events.NewBus())
+
+		err := instance.Start(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
+			{Address: hosts.Loopback.Port(ports[1]).String(), Handler: handler},
+		})
+		require.Error(t, err)
+
+		assert.True(t, testutils.IsPortFree(ports[0]))
+	})
+
+	t.Run("Restart onto a taken port serves the previous targets again", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 2)
+		instance := server.New(server.NewHostCertManager(afero.NewOsFs(), nil), events.NewBus())
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
+		}))
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		occupy(t, ports[1])
+
+		err := instance.Restart(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[1]).String(), Handler: handler},
+		})
+		require.Error(t, err)
+
+		assertResponse(t, hosts.Loopback.HTTPPort(ports[0]).String(), nil)
+	})
+
 	t.Run("Restart is not blocked by a request that outlives the shutdown timeout", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
@@ -419,4 +456,15 @@ func TestServer(t *testing.T) {
 
 		require.Error(t, err)
 	})
+}
+
+func occupy(t *testing.T, port int) {
+	t.Helper()
+
+	lc := &net.ListenConfig{}
+
+	listener, err := lc.Listen(t.Context(), "tcp4", hosts.Loopback.Port(port).String())
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = listener.Close() })
 }

@@ -206,8 +206,8 @@ to the directory UNCORS was started from, and `~` is not expanded.
 a space. Write `1m30s` instead.
 
 UNCORS reloads the configuration file when it changes. If the new version is
-invalid, UNCORS prints the error and keeps the previous configuration until you
-fix the file.
+invalid, or one of its ports is already in use, UNCORS prints the error and
+keeps serving the previous configuration until you fix the file.
 
 ## Mocks don't respond
 
