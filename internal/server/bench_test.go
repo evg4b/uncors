@@ -49,7 +49,7 @@ func benchmarkRequest(b *testing.B) {
 
 	mappings := config.Mappings{{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()}}
 
-	generation := engine.New(engine.WithFs(afero.NewMemMapFs())).BuildGeneration(&config.UncorsConfig{})
+	generation := engine.New(afero.NewMemMapFs()).BuildGeneration(&config.UncorsConfig{})
 
 	b.Cleanup(func() { _ = generation.Close() })
 

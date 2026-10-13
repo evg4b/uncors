@@ -51,7 +51,7 @@ var (
 func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
 	t.Helper()
 
-	generation := engine.New(engine.WithFs(fs)).BuildGeneration(&config.UncorsConfig{})
+	generation := engine.New(fs).BuildGeneration(&config.UncorsConfig{})
 
 	t.Cleanup(func() {
 		require.NoError(t, generation.Close())

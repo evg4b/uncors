@@ -55,7 +55,7 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certi
 
 	bus := events.NewBus()
 	recorder := recordEvents(bus.Subscribe(eventsBuffer))
-	proxy := engine.New(engine.WithFs(fs), engine.WithPublisher(bus))
+	proxy := engine.New(fs, engine.WithPublisher(bus))
 
 	require.NoError(t, proxy.Start(t.Context(), loaded))
 

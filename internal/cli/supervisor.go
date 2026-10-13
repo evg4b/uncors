@@ -49,11 +49,8 @@ func supervise(
 		cfgPath:     cfgPath,
 		interactive: uncorsConfig.Interactive,
 		bus:         bus,
-		engine: engine.New(
-			engine.WithFs(env.Fs),
-			engine.WithPublisher(bus),
-		),
-		commands: make(chan events.Command, commandsBuffer),
+		engine:      engine.New(env.Fs, engine.WithPublisher(bus)),
+		commands:    make(chan events.Command, commandsBuffer),
 		// One pending reload is enough: it reads the file as it is then.
 		reloads: make(chan struct{}, 1),
 	}

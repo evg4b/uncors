@@ -65,7 +65,7 @@ func TestEngine(t *testing.T) {
 	t.Run("serves the configured mapping", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -77,7 +77,7 @@ func TestEngine(t *testing.T) {
 	t.Run("moves to the port of the reloaded config", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -91,7 +91,7 @@ func TestEngine(t *testing.T) {
 	t.Run("stops serving the port the reloaded config dropped", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -116,7 +116,7 @@ func TestEngine(t *testing.T) {
 
 		ports := testutils.GetFreePorts(t, restarts+1)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 		defer testutils.Close(t, proxy)
@@ -147,7 +147,7 @@ func TestEngine(t *testing.T) {
 	t.Run("restart returns an error when the new port is taken", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -163,7 +163,7 @@ func TestEngine(t *testing.T) {
 	t.Run("a failed restart binds none of the new ports", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 3)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -185,7 +185,7 @@ func TestEngine(t *testing.T) {
 
 		occupy(t, port)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.Error(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 	})
@@ -193,7 +193,7 @@ func TestEngine(t *testing.T) {
 	t.Run("shutdown releases the active generation and is idempotent", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -228,7 +228,7 @@ func TestEngineClosesIdleUpstreamConnectionsOnRestart(t *testing.T) {
 	cfg := proxyConfiguration(port)
 	cfg.Mappings[0].To = hosts.Parse(upstream.URL)
 
-	proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+	proxy := engine.New(afero.NewMemMapFs())
 	require.NoError(t, proxy.Start(t.Context(), cfg))
 
 	defer testutils.Close(t, proxy)
@@ -257,7 +257,7 @@ func TestEnginePublishesLifecycleEvents(t *testing.T) {
 	bus := events.NewBus()
 	subscription := bus.Subscribe(10)
 
-	proxy := engine.New(engine.WithFs(afero.NewMemMapFs()), engine.WithPublisher(bus))
+	proxy := engine.New(afero.NewMemMapFs(), engine.WithPublisher(bus))
 	defer testutils.Close(t, proxy)
 
 	first := proxyConfiguration(ports[0])

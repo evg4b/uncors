@@ -12,6 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/handler/mock"
@@ -32,7 +33,8 @@ import (
 const baseAddress = "127.0.0.1"
 
 type Generation struct {
-	engine      *Engine
+	fs          afero.Fs
+	publisher   events.Publisher
 	cacheConfig *config.CacheConfig
 	cacheStore  contracts.Cache
 	proxyURL    string
@@ -55,7 +57,8 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 	span.SetAttributes(attribute.Int("uncors.mappings", len(uncorsConfig.Mappings)))
 
 	generation := &Generation{
-		engine:      e,
+		fs:          e.fs,
+		publisher:   e.publisher,
 		cacheConfig: &uncorsConfig.CacheConfig,
 		proxyURL:    uncorsConfig.Proxy,
 	}
@@ -103,7 +106,7 @@ func (g *Generation) CacheMiddleware(globs config.CacheGlobs) contracts.Middlewa
 }
 
 func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
-	writer := register(g, har.NewWriter(harConfig.File, har.WithPublisher(g.engine.publisher)))
+	writer := register(g, har.NewWriter(harConfig.File, har.WithPublisher(g.publisher)))
 
 	return har.NewMiddleware(
 		har.WithWriter(writer),
@@ -113,7 +116,7 @@ func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middle
 
 func (g *Generation) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
 	return static.NewStaticMiddleware(
-		static.WithFileSystem(afero.NewBasePathFs(g.engine.fs, dir.Dir)),
+		static.WithFileSystem(afero.NewBasePathFs(g.fs, dir.Dir)),
 		static.WithIndex(dir.Index),
 		static.WithPrefix(path),
 	)
@@ -133,7 +136,7 @@ func (g *Generation) OptionsMiddleware(cfg config.OptionsHandling) contracts.Mid
 func (g *Generation) MockHandler(response *config.Response) contracts.Handler {
 	return mock.NewMockHandler(
 		mock.WithResponse(response),
-		mock.WithFileSystem(g.engine.fs),
+		mock.WithFileSystem(g.fs),
 		mock.WithAfter(time.After),
 	)
 }
@@ -141,7 +144,7 @@ func (g *Generation) MockHandler(response *config.Response) contracts.Handler {
 func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handler {
 	return script.NewHandler(
 		script.WithScript(scriptConfig),
-		script.WithFileSystem(g.engine.fs),
+		script.WithFileSystem(g.fs),
 	)
 }
 
