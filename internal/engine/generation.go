@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"slices"
 	"strconv"
 	"time"
@@ -34,6 +35,8 @@ type Generation struct {
 	engine      *Engine
 	cacheConfig *config.CacheConfig
 	cacheStore  contracts.Cache
+	proxyURL    string
+	client      *http.Client
 
 	targets []server.Target
 	closers []io.Closer
@@ -54,6 +57,7 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 	generation := &Generation{
 		engine:      e,
 		cacheConfig: &uncorsConfig.CacheConfig,
+		proxyURL:    uncorsConfig.Proxy,
 	}
 
 	targets, err := generation.buildTargets(uncorsConfig)
@@ -85,6 +89,7 @@ func (g *Generation) Close() error {
 
 	g.closers = nil
 	g.cacheStore = nil
+	g.client = nil
 
 	return errors.Join(errs...)
 }
@@ -148,11 +153,26 @@ func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handle
 	)
 }
 
-func (g *Generation) ProxyHandler(mappings config.Mappings, proxyURL string) contracts.Handler {
+func (g *Generation) ProxyHandler(mappings config.Mappings) contracts.Handler {
 	return proxy.NewProxyHandler(
 		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
+		proxy.WithHTTPClient(g.httpClient()),
 	)
+}
+
+// httpClient is shared by every listener of the generation. Closing the
+// generation drops its idle upstream connections.
+func (g *Generation) httpClient() *http.Client {
+	if g.client == nil {
+		g.client = infra.MakeHTTPClient(g.proxyURL)
+		register(g, closerFunc(func() error {
+			g.client.CloseIdleConnections()
+
+			return nil
+		}))
+	}
+
+	return g.client
 }
 
 func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
@@ -161,7 +181,7 @@ func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.T
 	errs := make([]error, 0, len(groupedMappings))
 
 	for _, group := range groupedMappings {
-		handler, err := g.router(group.Mappings, uncorsConfig.Proxy)
+		handler, err := g.router(group.Mappings)
 		if err != nil {
 			errs = append(errs, err)
 
@@ -178,15 +198,21 @@ func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.T
 	return targets, errors.Join(errs...)
 }
 
-func (g *Generation) router(mappings config.Mappings, proxyURL string) (contracts.Handler, error) {
+func (g *Generation) router(mappings config.Mappings) (contracts.Handler, error) {
 	muxRouter, err := router.NewRouter(
 		mappings,
 		router.WithFactory(g),
-		router.ForRouterWithDefaultHandler(g.ProxyHandler(mappings, proxyURL)),
+		router.ForRouterWithDefaultHandler(g.ProxyHandler(mappings)),
 		router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
 	)
 
 	return infra.CastToContractsHandler(muxRouter), err
+}
+
+type closerFunc func() error
+
+func (f closerFunc) Close() error {
+	return f()
 }
 
 func register[T io.Closer](generation *Generation, resource T) T {

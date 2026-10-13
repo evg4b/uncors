@@ -3,6 +3,8 @@ package engine_test
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"sync"
 	"testing"
@@ -203,6 +205,50 @@ func TestEngine(t *testing.T) {
 
 		proxy.Wait()
 	})
+}
+
+func TestEngineClosesIdleUpstreamConnectionsOnRestart(t *testing.T) {
+	closed := make(chan struct{})
+
+	var once sync.Once
+
+	upstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	upstream.Config.ConnState = func(_ net.Conn, state http.ConnState) {
+		if state == http.StateClosed {
+			once.Do(func() { close(closed) })
+		}
+	}
+
+	upstream.Start()
+	defer upstream.Close()
+
+	port := testutils.GetFreePort(t)
+	cfg := proxyConfiguration(port)
+	cfg.Mappings[0].To = hosts.Parse(upstream.URL)
+
+	proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+	require.NoError(t, proxy.Start(t.Context(), cfg))
+
+	defer testutils.Close(t, proxy)
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+		hosts.Localhost.HTTPPort(port).String()+"/", nil)
+	require.NoError(t, err)
+
+	response, err := http.DefaultClient.Do(request)
+	require.NoError(t, err)
+	require.NoError(t, response.Body.Close())
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	require.NoError(t, proxy.Restart(t.Context(), cfg))
+
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("the idle upstream connection of the previous generation was not closed")
+	}
 }
 
 func TestEnginePublishesLifecycleEvents(t *testing.T) {
