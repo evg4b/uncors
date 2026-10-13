@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ import (
 )
 
 // caValidityDays must stay clear of the proxy's expiration warning threshold
-// (7 days); below it HostCertManager refuses to serve TLS.
+// (7 days); below it every run publishes a warning notice.
 const (
 	caValidityDays    = 30
 	configFilePerm    = 0o600
@@ -35,17 +35,13 @@ const (
 func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certificate, *eventRecorder) {
 	t.Helper()
 
-	caDir, err := server.GetCAPath()
+	caDir, err := certs.Dir()
 	require.NoError(t, err)
 
-	certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-		Fs:           fs,
-		ValidityDays: caValidityDays,
-		OutputDir:    caDir,
-	})
+	certPath, keyPath, err := certs.Generate(fs, caDir, caValidityDays)
 	require.NoError(t, err)
 
-	caCert, _, err := server.LoadCA(fs, certPath, keyPath)
+	caCert, _, err := certs.Load(fs, certPath, keyPath)
 	require.NoError(t, err)
 
 	require.NoError(t, afero.WriteFile(fs, configPath, marshalConfig(t, cfg), configFilePerm))

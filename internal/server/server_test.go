@@ -14,6 +14,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/events"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -78,7 +79,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -103,14 +104,10 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 10,
-			Fs:           fs,
-			OutputDir:    caDir,
-		})
+		certPath, keyPath, err := certs.Generate(fs, caDir, 10)
 		require.NoError(t, err)
 
-		caCert, _, err := server.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := certs.Load(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -124,7 +121,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs, nil)
+		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -151,14 +148,10 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 10,
-			Fs:           fs,
-			OutputDir:    caDir,
-		})
+		certPath, keyPath, err := certs.Generate(fs, caDir, 10)
 		require.NoError(t, err)
 
-		caCert, _, err := server.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := certs.Load(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -179,7 +172,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs, nil)
+		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
@@ -203,7 +196,7 @@ func TestServer(t *testing.T) {
 	t.Run("shutdown", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -229,7 +222,7 @@ func TestServer(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -253,7 +246,7 @@ func TestServer(t *testing.T) {
 	t.Run("Restart", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
@@ -282,7 +275,7 @@ func TestServer(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 		occupy(t, ports[1])
 
-		instance := server.New(server.NewHostCertManager(afero.NewOsFs(), nil), events.NewBus())
+		instance := server.New(certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate, events.NewBus())
 
 		err := instance.Start(t.Context(), []server.Target{
 			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
@@ -295,7 +288,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Restart onto a taken port serves the previous targets again", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
-		instance := server.New(server.NewHostCertManager(afero.NewOsFs(), nil), events.NewBus())
+		instance := server.New(certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate, events.NewBus())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
@@ -319,7 +312,7 @@ func TestServer(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
 		publisher := &testutils.EventRecorder{}
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, publisher)
 		server.SetShutdownTimeout(instance, 100*time.Millisecond)
 
@@ -384,7 +377,7 @@ func TestServer(t *testing.T) {
 
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 
 		queue.Track("server started")
@@ -445,7 +438,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		err = instance.Start(t.Context(), []server.Target{
 			{

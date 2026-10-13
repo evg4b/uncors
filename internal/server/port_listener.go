@@ -26,7 +26,7 @@ func (s *Server) bind(ctx context.Context, target Target) (net.Listener, error) 
 	if target.EnableTLS {
 		listener = tls.NewListener(listener, &tls.Config{
 			MinVersion:     tls.VersionTLS12,
-			GetCertificate: s.manager.getCertificate,
+			GetCertificate: s.getCertificate,
 		})
 	}
 

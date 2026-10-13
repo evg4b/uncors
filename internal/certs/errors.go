@@ -1,4 +1,4 @@
-package server
+package certs
 
 import "errors"
 
@@ -8,8 +8,6 @@ var (
 	ErrInvalidPrivateKeyPEM = errors.New("failed to decode private key PEM")
 
 	ErrNoSNIProvided = errors.New("no SNI provided in client hello")
-
-	ErrNoCertificateForHost = errors.New("no certificate available for host")
 
 	ErrCACertExpired = errors.New("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
@@ -76,12 +76,12 @@ func ValidateProxy(field, value string) error {
 	return nil
 }
 
-func ValidateTLS(_ string, mapping Mapping, fs afero.Fs) error {
+func ValidateTLS(mapping Mapping, fs afero.Fs) error {
 	if mapping.From.Scheme != httpsScheme {
 		return nil
 	}
 
-	if !server.CAExists(fs) {
+	if !certs.Exists(fs) {
 		return &TLSError{mapping.From.HostPort()}
 	}
 
@@ -95,7 +95,7 @@ func (m *Mapping) Validate(field string, fs afero.Fs) error {
 	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To))
 	errs = append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
 	errs = append(errs, m.HAR.Validate(joinPath(field, "har")))
-	errs = append(errs, ValidateTLS(field, *m, fs))
+	errs = append(errs, ValidateTLS(*m, fs))
 
 	for i, static := range m.Statics {
 		errs = append(errs, static.Validate(joinPath(field, "statics", index(i)), fs))

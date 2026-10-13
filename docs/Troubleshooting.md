@@ -109,6 +109,10 @@ uncors generate-certs
 
 This creates `~/.config/uncors/ca.crt` and `~/.config/uncors/ca.key`.
 
+Within a week of the CA expiring, UNCORS warns but keeps serving HTTPS. Once it
+has expired, HTTPS stops working until you run
+`uncors generate-certs --force` and trust the new CA.
+
 If the browser still rejects the certificate, the CA is not trusted yet.
 
 macOS:

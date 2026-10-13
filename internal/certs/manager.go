@@ -1,8 +1,11 @@
-package server
+package certs
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -16,24 +19,24 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type HostCertManager struct {
+// Manager loads the CA on the first TLS handshake and signs a certificate
+// for every host name it is asked for, once.
+type Manager struct {
 	fs        afero.Fs
 	publisher events.Publisher
-	generator *CertGenerator
-	cache     map[string]*tls.Certificate
-	mutex     sync.RWMutex
+
+	mu     sync.Mutex
+	caCert *x509.Certificate
+	caKey  *rsa.PrivateKey
+	cache  map[string]*tls.Certificate
 
 	// Each failure is shown once: a browser retries the handshake many times.
 	caReported bool
 	reported   map[string]bool
 }
 
-func NewHostCertManager(fs afero.Fs, publisher events.Publisher) *HostCertManager {
-	if publisher == nil {
-		publisher = events.NoopPublisher{}
-	}
-
-	return &HostCertManager{
+func NewManager(fs afero.Fs, publisher events.Publisher) *Manager {
+	return &Manager{
 		fs:        fs,
 		publisher: publisher,
 		cache:     make(map[string]*tls.Certificate),
@@ -41,18 +44,22 @@ func NewHostCertManager(fs afero.Fs, publisher events.Publisher) *HostCertManage
 	}
 }
 
-func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	ctx := context.Background()
-	if clientHello != nil && clientHello.Context() != nil {
-		ctx = clientHello.Context()
+// GetCertificate is a tls.Config.GetCertificate.
+func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	ctx := clientHello.Context()
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	ctx, span := telemetry.Start(ctx, "tls.get_certificate")
 	defer span.End()
 
-	if span.IsRecording() && clientHello != nil {
+	if span.IsRecording() {
 		annotateClientHello(span, clientHello)
 	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	err := m.ensureCA(ctx)
 	if err != nil {
@@ -84,35 +91,16 @@ func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls
 	return cert, nil
 }
 
-func (m *HostCertManager) ensureCA(ctx context.Context) error {
-	m.mutex.RLock()
-
-	if m.generator != nil {
-		defer m.mutex.RUnlock()
-
+// Runs under mu.
+func (m *Manager) ensureCA(ctx context.Context) error {
+	if m.caCert != nil {
 		return nil
 	}
 
-	m.mutex.RUnlock()
-
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	if m.generator != nil {
-		return nil
-	}
-
-	_, span := telemetry.Start(ctx, "tls.ensure_ca")
+	ctx, span := telemetry.Start(ctx, "tls.ensure_ca")
 	defer span.End()
 
-	err := m.loadCA()
-	if err == nil && span.IsRecording() {
-		span.SetAttributes(
-			attribute.String("uncors.tls.ca.subject", m.generator.caCert.Subject.String()),
-			attribute.String("uncors.tls.ca.not_after", m.generator.caCert.NotAfter.UTC().Format(time.RFC3339)),
-		)
-	}
-
+	err := m.loadCA(ctx)
 	if err != nil {
 		telemetry.Fail(span, err)
 
@@ -127,40 +115,38 @@ func (m *HostCertManager) ensureCA(ctx context.Context) error {
 		return err
 	}
 
+	if span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.tls.ca.subject", m.caCert.Subject.String()),
+			attribute.String("uncors.tls.ca.not_after", m.caCert.NotAfter.UTC().Format(time.RFC3339)),
+		)
+	}
+
 	return nil
 }
 
-// Runs under the write lock.
-func (m *HostCertManager) loadCA() error {
-	caCert, caKey, err := LoadDefaultCA(m.fs)
+// Runs under mu. A CA that expires soon still signs, with a warning.
+func (m *Manager) loadCA(ctx context.Context) error {
+	caCert, caKey, err := LoadDefault(m.fs)
 	if err != nil {
 		return fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
 	}
 
-	err = CheckCAExpiration(caCert)
-	if err != nil {
+	err = CheckExpiration(caCert)
+	if errors.Is(err, ErrCACertExpiringSoon) {
+		telemetry.Warn(ctx, "CA certificate expires soon", telemetry.Err(err))
+		m.publisher.Publish(events.Notice{Level: events.NoticeWarning, Text: "TLS: " + err.Error()})
+	} else if err != nil {
 		return fmt.Errorf("CA certificate validation failed: %w", err)
 	}
 
-	m.generator = NewCertGenerator(caCert, caKey)
+	m.caCert, m.caKey = caCert, caKey
 
 	return nil
 }
 
-func (m *HostCertManager) certificateForHost(ctx context.Context, host string) (*tls.Certificate, error) {
-	m.mutex.RLock()
-
-	if cert, exists := m.cache[host]; exists {
-		defer m.mutex.RUnlock()
-
-		return cert, nil
-	}
-
-	m.mutex.RUnlock()
-
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
+// Runs under mu.
+func (m *Manager) certificateForHost(ctx context.Context, host string) (*tls.Certificate, error) {
 	if cert, exists := m.cache[host]; exists {
 		return cert, nil
 	}
@@ -170,7 +156,7 @@ func (m *HostCertManager) certificateForHost(ctx context.Context, host string) (
 
 	span.SetAttributes(attribute.String("uncors.tls.host", host))
 
-	cert, err := m.generator.GenerateCertificate(host)
+	cert, err := issueHostCertificate(m.caCert, m.caKey, host)
 	telemetry.TLSCertificate(ctx, err)
 
 	if err != nil {
@@ -206,11 +192,9 @@ func annotateClientHello(span trace.Span, clientHello *tls.ClientHelloInfo) {
 	span.SetAttributes(attrs...)
 }
 
+// extractServerHost is the SNI name or, for a client that sends none, the
+// local address it connected to.
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
-	if clientHello == nil {
-		return "", false
-	}
-
 	if clientHello.ServerName != "" {
 		return clientHello.ServerName, true
 	}

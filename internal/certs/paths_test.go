@@ -1,11 +1,11 @@
-package server_test
+package certs_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,33 +29,29 @@ func fakeCADir(t *testing.T) string {
 func generateDefaultCA(t *testing.T, caDir string) {
 	t.Helper()
 
-	_, _, err := server.GenerateCA(server.CAConfig{
-		ValidityDays: 365,
-		Fs:           afero.NewOsFs(),
-		OutputDir:    caDir,
-	})
+	_, _, err := certs.Generate(afero.NewOsFs(), caDir, 365)
 	require.NoError(t, err)
 }
 
-func TestGetCAPath(t *testing.T) {
+func TestDir(t *testing.T) {
 	homeDir, err := os.UserHomeDir()
 	require.NoError(t, err)
 
-	path, err := server.GetCAPath()
+	path, err := certs.Dir()
 	require.NoError(t, err)
 
 	assert.Equal(t, filepath.Join(homeDir, configDir, uncorsDir), path)
 }
 
-func TestCAExists(t *testing.T) {
+func TestExists(t *testing.T) {
 	t.Run("detects a generated CA", func(t *testing.T) {
 		caDir := fakeCADir(t)
 
-		assert.False(t, server.CAExists(afero.NewOsFs()))
+		assert.False(t, certs.Exists(afero.NewOsFs()))
 
 		generateDefaultCA(t, caDir)
 
-		assert.True(t, server.CAExists(afero.NewOsFs()))
+		assert.True(t, certs.Exists(afero.NewOsFs()))
 	})
 
 	for _, file := range []string{"ca.crt", "ca.key"} {
@@ -64,16 +60,16 @@ func TestCAExists(t *testing.T) {
 			require.NoError(t, os.MkdirAll(caDir, 0o755))
 			require.NoError(t, os.WriteFile(filepath.Join(caDir, file), []byte(file), 0o600))
 
-			assert.False(t, server.CAExists(afero.NewOsFs()))
+			assert.False(t, certs.Exists(afero.NewOsFs()))
 		})
 	}
 }
 
-func TestLoadDefaultCA(t *testing.T) {
+func TestLoadDefault(t *testing.T) {
 	t.Run("loads CA from default location", func(t *testing.T) {
 		generateDefaultCA(t, fakeCADir(t))
 
-		cert, key, err := server.LoadDefaultCA(afero.NewOsFs())
+		cert, key, err := certs.LoadDefault(afero.NewOsFs())
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 		assert.NotNil(t, key)
@@ -82,7 +78,7 @@ func TestLoadDefaultCA(t *testing.T) {
 	t.Run("returns error when CA does not exist", func(t *testing.T) {
 		fakeCADir(t)
 
-		_, _, err := server.LoadDefaultCA(afero.NewOsFs())
+		_, _, err := certs.LoadDefault(afero.NewOsFs())
 		require.Error(t, err)
 	})
 }

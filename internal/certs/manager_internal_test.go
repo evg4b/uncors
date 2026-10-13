@@ -1,4 +1,4 @@
-package server
+package certs
 
 import (
 	"crypto/rand"
@@ -30,7 +30,7 @@ func (m *mockConn) SetDeadline(time.Time) error      { return nil }
 func (m *mockConn) SetReadDeadline(time.Time) error  { return nil }
 func (m *mockConn) SetWriteDeadline(time.Time) error { return nil }
 
-func TestBuildTLSConfig(t *testing.T) {
+func TestManager_GetCertificate(t *testing.T) {
 	t.Run("should auto-generate certificate when CA exists", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
@@ -41,18 +41,13 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := GenerateCA(caConfig)
+		_, _, err := Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 		require.NotNil(t, manager)
 
-		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
 
@@ -70,9 +65,9 @@ func TestBuildTLSConfig(t *testing.T) {
 		fs := afero.NewOsFs()
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 
-		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "test"})
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "test"})
 
 		require.Error(t, err)
 		assert.Nil(t, cert)
@@ -89,19 +84,14 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := GenerateCA(caConfig)
+		_, _, err := Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
 		testHost := "example.local"
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 
-		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: testHost})
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: testHost})
 		require.NoError(t, err)
 		require.NotNil(t, cert)
 
@@ -120,18 +110,13 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		caConfig := CAConfig{
-			ValidityDays: 365,
-			OutputDir:    caDir,
-			Fs:           fs,
-		}
-		_, _, err := GenerateCA(caConfig)
+		_, _, err := Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 		require.NotNil(t, manager)
 
-		apiCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
+		apiCert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
 		require.NoError(t, err)
 		require.NotNil(t, apiCert)
 
@@ -139,7 +124,7 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, apiX509Cert.DNSNames, "api.local")
 
-		appCert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
+		appCert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "app.local"})
 		require.NoError(t, err)
 		require.NotNil(t, appCert)
 
@@ -162,14 +147,14 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
 
-		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "", Conn: mockConn})
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "", Conn: mockConn})
 
 		require.NoError(t, err)
 		require.NotNil(t, cert)
@@ -189,12 +174,12 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
-		manager := NewHostCertManager(fs, nil)
+		manager := NewManager(fs, events.NoopPublisher{})
 
-		cert, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: ""})
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: ""})
 
 		require.Error(t, err)
 		assert.Nil(t, cert)
@@ -202,7 +187,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 	})
 }
 
-func newManagerWithCA(t *testing.T) *HostCertManager {
+func newManagerWithCA(t *testing.T) *Manager {
 	t.Helper()
 
 	fakeHome := filepath.Join(t.TempDir(), "home")
@@ -212,20 +197,20 @@ func newManagerWithCA(t *testing.T) *HostCertManager {
 	require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 	caDir := filepath.Join(fakeHome, ".config", "uncors")
-	_, _, err := GenerateCA(CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+	_, _, err := Generate(fs, caDir, 365)
 	require.NoError(t, err)
 
-	return NewHostCertManager(fs, nil)
+	return NewManager(fs, events.NoopPublisher{})
 }
 
-func TestHostCertManager_Caching(t *testing.T) {
+func TestManager_Caching(t *testing.T) {
 	t.Run("should reuse the cached certificate for the same host", func(t *testing.T) {
 		manager := newManagerWithCA(t)
 
-		first, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
+		first, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
 		require.NoError(t, err)
 
-		second, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
+		second, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
 		require.NoError(t, err)
 
 		assert.Same(t, first, second)
@@ -234,17 +219,17 @@ func TestHostCertManager_Caching(t *testing.T) {
 	t.Run("should generate distinct certificates for different hosts", func(t *testing.T) {
 		manager := newManagerWithCA(t)
 
-		first, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "host1.local"})
+		first, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "host1.local"})
 		require.NoError(t, err)
 
-		second, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "host2.local"})
+		second, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "host2.local"})
 		require.NoError(t, err)
 
 		assert.NotSame(t, first, second)
 	})
 }
 
-func TestHostCertManager_Concurrent(t *testing.T) {
+func TestManager_Concurrent(t *testing.T) {
 	t.Run("should handle concurrent requests for the same host", func(t *testing.T) {
 		manager := newManagerWithCA(t)
 
@@ -253,7 +238,7 @@ func TestHostCertManager_Concurrent(t *testing.T) {
 		results := make(chan error, numGoroutines)
 		for range numGoroutines {
 			go func() {
-				_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "concurrent.local"})
+				_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "concurrent.local"})
 				results <- err
 			}()
 		}
@@ -272,7 +257,7 @@ func TestHostCertManager_Concurrent(t *testing.T) {
 		for i := range numGoroutines {
 			host := "host" + string(rune('0'+i)) + ".local"
 			go func(h string) {
-				_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: h})
+				_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: h})
 				results <- err
 			}(host)
 		}
@@ -283,15 +268,15 @@ func TestHostCertManager_Concurrent(t *testing.T) {
 	})
 }
 
-func TestHostCertManager_Notices(t *testing.T) {
+func TestManager_Notices(t *testing.T) {
 	t.Run("reports a missing CA once", func(t *testing.T) {
 		t.Setenv("HOME", filepath.Join(t.TempDir(), "home"))
 
 		publisher := &testutils.EventRecorder{}
-		manager := NewHostCertManager(afero.NewMemMapFs(), publisher)
+		manager := NewManager(afero.NewMemMapFs(), publisher)
 
 		for range 3 {
-			_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+			_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
 			require.Error(t, err)
 		}
 
@@ -299,6 +284,29 @@ func TestHostCertManager_Notices(t *testing.T) {
 		require.Len(t, notices, 1)
 		assert.Equal(t, events.NoticeError, notices[0].Level)
 		assert.Contains(t, notices[0].Text, "TLS: failed to load CA certificate")
+	})
+
+	t.Run("warns once about a CA that expires soon and keeps signing", func(t *testing.T) {
+		fakeHome := filepath.Join(t.TempDir(), "home")
+		t.Setenv("HOME", fakeHome)
+
+		fs := afero.NewOsFs()
+		_, _, err := Generate(fs, filepath.Join(fakeHome, ".config", "uncors"), 3)
+		require.NoError(t, err)
+
+		publisher := &testutils.EventRecorder{}
+		manager := NewManager(fs, publisher)
+
+		for _, host := range []string{"one.local", "two.local"} {
+			cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: host})
+			require.NoError(t, err)
+			assert.NotNil(t, cert)
+		}
+
+		notices := publisher.Notices()
+		require.Len(t, notices, 1)
+		assert.Equal(t, events.NoticeWarning, notices[0].Level)
+		assert.Contains(t, notices[0].Text, "CA certificate expires in")
 	})
 
 	t.Run("reports a certificate failure once per host", func(t *testing.T) {
@@ -312,10 +320,10 @@ func TestHostCertManager_Notices(t *testing.T) {
 		otherKey, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
-		manager.generator = NewCertGenerator(manager.generator.caCert, otherKey)
+		manager.caKey = otherKey
 
 		for _, host := range []string{"one.local", "one.local", "two.local", "one.local"} {
-			_, err := manager.getCertificate(&tls.ClientHelloInfo{ServerName: host})
+			_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: host})
 			require.Error(t, err)
 		}
 

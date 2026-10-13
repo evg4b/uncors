@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -41,7 +42,7 @@ func New(fs afero.Fs, options ...Option) *Engine {
 		publisher: events.NoopPublisher{},
 	}, options)
 
-	engine.server = server.New(server.NewHostCertManager(engine.fs, engine.publisher), engine.publisher)
+	engine.server = server.New(certs.NewManager(engine.fs, engine.publisher).GetCertificate, engine.publisher)
 
 	return engine
 }

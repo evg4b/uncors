@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
@@ -35,19 +36,21 @@ type Server struct {
 	mu              sync.RWMutex
 	listeners       []*portListener
 	targets         []Target
-	manager         *HostCertManager
+	getCertificate  func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 	publisher       events.Publisher
 	nextID          atomic.Uint64
 	shutdownTimeout time.Duration
 }
 
-func New(manager *HostCertManager, publisher events.Publisher) *Server {
+// New builds a server that takes the certificates of TLS targets from
+// getCertificate.
+func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), publisher events.Publisher) *Server {
 	if publisher == nil {
 		publisher = events.NoopPublisher{}
 	}
 
 	return &Server{
-		manager:         manager,
+		getCertificate:  getCertificate,
 		publisher:       publisher,
 		shutdownTimeout: shutdownTimeout,
 	}
