@@ -3,17 +3,14 @@ package server
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 	"go.opentelemetry.io/otel/attribute"
@@ -28,7 +25,7 @@ const (
 
 type Target struct {
 	Address   string
-	Handler   contracts.Handler
+	Handler   http.Handler
 	EnableTLS bool
 }
 
@@ -242,28 +239,6 @@ func (s *Server) release() []*portListener {
 	return listeners
 }
 
-// logFailure records the error a handler returned. Every handler error ends
-// here, so handlers do not log the errors they return.
-func logFailure(ctx context.Context, request *http.Request, err error) {
-	if !telemetry.Enabled() {
-		return
-	}
-
-	attrs := []slog.Attr{
-		slog.String("method", request.Method),
-		slog.String("url", helpers.LogURL(request.URL)),
-		telemetry.Err(err),
-	}
-
-	if ctx.Err() != nil {
-		telemetry.Debug(ctx, "request cancelled by the client", attrs...)
-
-		return
-	}
-
-	telemetry.Error(ctx, "request failed", attrs...)
-}
-
 func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("uncors.inflight_closed")
@@ -284,7 +259,7 @@ func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	}
 }
 
-func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
+func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
 	requestID := s.nextID.Add(1)
@@ -303,12 +278,7 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 
 	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request)
 
-	err := handler.ServeHTTP(rec, request.WithContext(ctx))
-	if err != nil {
-		logFailure(ctx, request, err)
-		tracking.Fail(ctx, err)
-		infra.HTTPError(rec, err)
-	}
+	handler.ServeHTTP(rec, request.WithContext(ctx))
 
 	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
 	data.Cancelled = ctx.Err() != nil

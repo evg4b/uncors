@@ -16,7 +16,6 @@ import (
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/router"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
@@ -52,8 +51,7 @@ var (
 func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
 	t.Helper()
 
-	generation, err := engine.New(engine.WithFs(fs)).BuildGeneration(&config.UncorsConfig{})
-	require.NoError(t, err)
+	generation := engine.New(engine.WithFs(fs)).BuildGeneration(&config.UncorsConfig{})
 
 	t.Cleanup(func() {
 		require.NoError(t, generation.Close())
@@ -91,10 +89,7 @@ func proxyFactory(
 }
 
 func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
-	wrappedWriter := server.NewResponseRecorder(recorder)
-	contractsRouter := infra.CastToContractsHandler(router)
-	httpRouterHandler := infra.CastToHTTPHandler(contractsRouter)
-	httpRouterHandler.ServeHTTP(wrappedWriter, request)
+	router.ServeHTTP(server.NewResponseRecorder(recorder), request)
 }
 
 func serve(t *testing.T, router http.Handler, method, url string, header map[string]string) *httptest.ResponseRecorder {
@@ -137,10 +132,7 @@ func newRouter(
 		router.WithFactory(newGeneration(t, fs)),
 	}, options...)
 
-	routerInstance, err := router.NewRouter(mappings, options...)
-	require.NoError(t, err)
-
-	return routerInstance
+	return router.NewRouter(mappings, options...)
 }
 
 func upstream(t *testing.T, code int, body string) contracts.HTTPClient {

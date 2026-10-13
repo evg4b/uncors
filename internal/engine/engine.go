@@ -54,12 +54,9 @@ func (e *Engine) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) e
 	defer e.mu.Unlock()
 
 	return telemetry.Run(ctx, "engine.start", func(ctx context.Context) error {
-		generation, err := e.buildGeneration(ctx, uncorsConfig)
-		if err != nil {
-			return err
-		}
+		generation := e.buildGeneration(ctx, uncorsConfig)
 
-		err = e.server.Start(ctx, generation.Targets())
+		err := e.server.Start(ctx, generation.Targets())
 		if err != nil {
 			return errors.Join(err, generation.Close())
 		}
@@ -76,12 +73,9 @@ func (e *Engine) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig)
 	defer e.mu.Unlock()
 
 	return telemetry.Run(ctx, "engine.restart", func(ctx context.Context) error {
-		generation, err := e.buildGeneration(ctx, uncorsConfig)
-		if err != nil {
-			return err
-		}
+		generation := e.buildGeneration(ctx, uncorsConfig)
 
-		err = e.server.Restart(ctx, generation.Targets())
+		err := e.server.Restart(ctx, generation.Targets())
 		if err != nil {
 			return errors.Join(err, generation.Close())
 		}

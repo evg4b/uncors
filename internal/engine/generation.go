@@ -44,11 +44,11 @@ type Generation struct {
 
 var _ router.Factory = (*Generation)(nil)
 
-func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) (*Generation, error) {
+func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) *Generation {
 	return e.buildGeneration(context.Background(), uncorsConfig)
 }
 
-func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.UncorsConfig) (*Generation, error) {
+func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.UncorsConfig) *Generation {
 	_, span := telemetry.Start(ctx, "engine.build_generation")
 	defer span.End()
 
@@ -60,17 +60,9 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 		proxyURL:    uncorsConfig.Proxy,
 	}
 
-	targets, err := generation.buildTargets(uncorsConfig)
-	if err != nil {
-		err = errors.Join(err, generation.Close())
-		telemetry.Fail(span, err)
+	generation.targets = generation.buildTargets(uncorsConfig)
 
-		return nil, err
-	}
-
-	generation.targets = targets
-
-	return generation, nil
+	return generation
 }
 
 func (g *Generation) Targets() []server.Target {
@@ -175,38 +167,24 @@ func (g *Generation) httpClient() *http.Client {
 	return g.client
 }
 
-func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
+func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) []server.Target {
 	groupedMappings := uncorsConfig.Mappings.GroupByPort()
 	targets := make([]server.Target, 0, len(groupedMappings))
-	errs := make([]error, 0, len(groupedMappings))
 
 	for _, group := range groupedMappings {
-		handler, err := g.router(group.Mappings)
-		if err != nil {
-			errs = append(errs, err)
-
-			continue
-		}
-
 		targets = append(targets, server.Target{
-			Address:   net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
-			Handler:   handler,
+			Address: net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
+			Handler: router.NewRouter(
+				group.Mappings,
+				router.WithFactory(g),
+				router.ForRouterWithDefaultHandler(g.ProxyHandler(group.Mappings)),
+				router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
+			),
 			EnableTLS: group.Scheme == "https",
 		})
 	}
 
-	return targets, errors.Join(errs...)
-}
-
-func (g *Generation) router(mappings config.Mappings) (contracts.Handler, error) {
-	muxRouter, err := router.NewRouter(
-		mappings,
-		router.WithFactory(g),
-		router.ForRouterWithDefaultHandler(g.ProxyHandler(mappings)),
-		router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
-	)
-
-	return infra.CastToContractsHandler(muxRouter), err
+	return targets
 }
 
 type closerFunc func() error

@@ -41,7 +41,7 @@ type Router struct {
 	cacheMiddlewareFactory CacheMiddlewareFactory
 }
 
-func NewRouter(mappings config.Mappings, options ...Option) (*Router, error) {
+func NewRouter(mappings config.Mappings, options ...Option) *Router {
 	instance := Router{
 		Router: mux.NewRouter(),
 	}
@@ -62,7 +62,7 @@ func NewRouter(mappings config.Mappings, options ...Option) (*Router, error) {
 		return errHostNotMapped
 	}))
 
-	return &instance, nil
+	return &instance
 }
 
 func (r *Router) registerMapping(mapping config.Mapping) {

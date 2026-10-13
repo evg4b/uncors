@@ -1,10 +1,14 @@
 package infra
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 )
 
@@ -31,16 +35,31 @@ func CastToHTTPHandler(handler contracts.Handler) http.Handler {
 
 		err := handler.ServeHTTP(writer, request)
 		if err != nil {
+			logFailure(request.Context(), request, err)
 			tracking.Fail(request.Context(), err)
 			HTTPError(writer, err)
 		}
 	})
 }
 
-func CastToContractsHandler(handler http.Handler) contracts.Handler {
-	return HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		handler.ServeHTTP(writer, request)
+// logFailure records the error a handler returned. Every handler error ends
+// here, so handlers do not log the errors they return.
+func logFailure(ctx context.Context, request *http.Request, err error) {
+	if !telemetry.Enabled() {
+		return
+	}
 
-		return nil
-	})
+	attrs := []slog.Attr{
+		slog.String("method", request.Method),
+		slog.String("url", helpers.LogURL(request.URL)),
+		telemetry.Err(err),
+	}
+
+	if ctx.Err() != nil {
+		telemetry.Debug(ctx, "request cancelled by the client", attrs...)
+
+		return
+	}
+
+	telemetry.Error(ctx, "request failed", attrs...)
 }

@@ -13,13 +13,11 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/router"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/require"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -51,21 +49,17 @@ func benchmarkRequest(b *testing.B) {
 
 	mappings := config.Mappings{{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()}}
 
-	generation, err := engine.New(engine.WithFs(afero.NewMemMapFs())).BuildGeneration(&config.UncorsConfig{})
-	require.NoError(b, err)
+	generation := engine.New(engine.WithFs(afero.NewMemMapFs())).BuildGeneration(&config.UncorsConfig{})
 
 	b.Cleanup(func() { _ = generation.Close() })
 
-	muxRouter, err := router.NewRouter(mappings,
+	handler := router.NewRouter(mappings,
 		router.WithFactory(generation),
 		router.ForRouterWithDefaultHandler(proxy.NewProxyHandler(
 			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
 			proxy.WithHTTPClient(&http.Client{Transport: telemetry.WrapTransport(stubTransport{})}),
 		)),
 	)
-	require.NoError(b, err)
-
-	handler := infra.CastToContractsHandler(muxRouter)
 	instance := server.New(nil, events.NoopPublisher{})
 
 	b.ReportAllocs()

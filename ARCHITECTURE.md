@@ -151,8 +151,9 @@ type Middleware interface {
 }
 ```
 
-Handlers return errors instead of writing error pages themselves; the
-infrastructure layer turns them into responses. Components are built with
+Handlers return errors instead of writing error pages themselves;
+`infra.CastToHTTPHandler`, which wraps every route, logs them and turns them
+into responses. Components are built with
 functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 
 ## HAR collector

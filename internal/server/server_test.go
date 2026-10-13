@@ -29,13 +29,13 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	handler := infra.CastToHTTPHandler(infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
 		assert.NoError(t, err)
 
 		return nil
-	})
+	}))
 
 	assertResponse := func(t *testing.T, url string, pool *x509.CertPool) {
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
@@ -331,12 +331,12 @@ func TestServer(t *testing.T) {
 		// Shutdown cancels request contexts, so only a handler that ignores its
 		// context (a busy Lua script, a write blocked on a slow client) can
 		// outlive it.
-		stuck := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+		stuck := infra.CastToHTTPHandler(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 			close(entered)
 			<-release
 
 			return nil
-		})
+		}))
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -392,7 +392,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port).String(),
-				Handler: infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+				Handler: infra.CastToHTTPHandler(infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
@@ -400,7 +400,7 @@ func TestServer(t *testing.T) {
 					assert.NoError(t, err)
 
 					return nil
-				}),
+				})),
 			},
 		}))
 
