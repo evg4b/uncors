@@ -80,7 +80,39 @@ last release in `docs/Migration-Guide.md`.
 
 ## Debugging
 
-`UNCORS_LOGGING=/path/to/file` appends the internal log to that file; otherwise
-it is discarded. Log through `log/slog` (`internal/logging`); components that
-report errors take a `*slog.Logger` option. Never write diagnostics to the
-terminal: only the UI/printer renders there.
+`UNCORS_TRACE=true` exports OpenTelemetry traces, logs, and metrics over
+OTLP/HTTP (`OTEL_EXPORTER_OTLP_*`, default `localhost:4318`); without it
+nothing is collected. `docker compose up --build` runs the working tree with
+`.uncors.yaml` and otelop (UI at `localhost:4319`). For Jaeger, run
+`docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger` and open
+`localhost:16686` (Jaeger takes only traces: add `OTEL_LOGS_EXPORTER=none` and
+`OTEL_METRICS_EXPORTER=none`). Never write diagnostics to the terminal: only
+the UI/printer renders there.
+
+- Spans: `telemetry.StartRequest` in handlers and middleware (it returns the
+  request carrying the span), `telemetry.Start` elsewhere,
+  `telemetry.Run` for cold paths that return an error. Record errors with
+  `telemetry.Fail`. Names are `component.operation`; attributes use `semconv`
+  or the `uncors.` prefix.
+- Logs: `telemetry.Debug/Info/Warn/Error(ctx, …)`, correlated to the span in
+  `ctx`.
+- Metrics: add an instrument in `internal/telemetry/metrics.go` with a typed
+  recording function (`telemetry.CacheLookup`, …) that returns at once when
+  tracing is off, so call sites need no guard. Keep attributes low-cardinality.
+- Outgoing HTTP goes through `infra.MakeHTTPClient`, whose transport
+  `telemetry.WrapTransport` traces with otelhttp only when tracing is on. No
+  propagator is set: proxied requests must reach the upstream unchanged.
+- Route attributes are built once in the router (`traced`) and attached only
+  when tracing was on when the generation was built.
+- Tracing off must cost nothing on the request path. Variadic and `any`
+  arguments escape even when the callee ignores them, so guard attribute
+  building and log calls there with `if span.IsRecording()` or
+  `if telemetry.Enabled()`. `internal/telemetry` tests allocations;
+  `BenchmarkRequestDisabled` and `BenchmarkRequestEnabled` (`internal/server`)
+  measure a proxied request with tracing off and on. Upstream connection phases
+  are traced only with `UNCORS_TRACE_CONNECTIONS=true`: they cost as much as the
+  rest of the upstream span.
+- Failures the user must act on are also published as `events.Notice`.
+- Tests: `testutils.Telemetry(t)` records spans, logs, and metrics (`Sum`) in
+  memory; such tests must not call `t.Parallel()`, and must call it before
+  building a router.

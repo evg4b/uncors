@@ -1,12 +1,15 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -16,16 +19,18 @@ import (
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/go-http-utils/headers"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	replacers urlreplacer.ReplacerFactory
 	http      contracts.HTTPClient
-	logger    *slog.Logger
 }
 
 func NewProxyHandler(options ...HandlerOption) *Handler {
-	middleware := helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
+	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")
 	helpers.AssertIsDefined(middleware.http, "ProxyHandler: Http client is not configured")
@@ -34,15 +39,16 @@ func NewProxyHandler(options ...HandlerOption) *Handler {
 }
 
 func (h *Handler) ServeHTTP(response contracts.ResponseWriter, request *contracts.Request) error {
+	request, span := telemetry.StartRequest(request, "proxy.forward")
+	defer span.End()
+
 	tracking.Claim(request.Context(), events.HandlerProxy)
 
 	err := h.handle(response, request)
 	if err != nil {
-		if request.Context().Err() != nil {
-			return err
+		if request.Context().Err() == nil {
+			telemetry.Fail(span, err)
 		}
-
-		h.logger.Error("proxy handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
 
 		return err
 	}
@@ -61,7 +67,15 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return fmt.Errorf("failed to create request to original source: %w", err)
 	}
 
-	originalResponse, err := h.executeQuery(originalRequest)
+	// The upstream URL is built once, for the span and the logs.
+	var target string
+
+	if telemetry.Enabled() {
+		target = helpers.LogURL(originalRequest.URL)
+		recordTarget(req, originalRequest, target)
+	}
+
+	originalResponse, err := h.executeQuery(originalRequest, target)
 	if err != nil {
 		return err
 	}
@@ -126,9 +140,40 @@ func (h *Handler) makeUncorsResponse(
 
 	target.WriteHeader(original.StatusCode)
 
-	_, err = io.Copy(target, original.Body)
+	return copyBody(req.Context(), target, original.Body)
+}
+
+const copyBufferSize = 32 * 1024
+
+// copyBuffers holds the buffers bodies are copied through. Neither an
+// upstream body nor the response writer offers a fast path, so io.Copy would
+// allocate a buffer for every response.
+var copyBuffers = sync.Pool{
+	New: func() any {
+		buffer := make([]byte, copyBufferSize)
+
+		return &buffer
+	},
+}
+
+func copyBody(ctx context.Context, target io.Writer, body io.Reader) error {
+	_, span := telemetry.Start(ctx, "proxy.copy_body")
+	defer span.End()
+
+	buffer, _ := copyBuffers.Get().(*[]byte)
+	defer copyBuffers.Put(buffer)
+
+	written, err := io.CopyBuffer(target, body, *buffer)
+
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Int64("uncors.proxy.body_bytes", written))
+	}
+
 	if err != nil {
-		return fmt.Errorf("failed to copy body to response: %w", err)
+		err = fmt.Errorf("failed to copy body to response: %w", err)
+		telemetry.Fail(span, err)
+
+		return err
 	}
 
 	return nil
@@ -162,13 +207,62 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 	return target, source, nil
 }
 
-func (h *Handler) executeQuery(request *http.Request) (*http.Response, error) {
+// executeQuery sends the request upstream. The request carries the
+// proxy.forward span, so the HTTP client's span nests under it.
+func (h *Handler) executeQuery(request *http.Request, target string) (*http.Response, error) {
 	originalResponse, err := h.http.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
+	if telemetry.Enabled() {
+		recordUpstreamResponse(request.Context(), target, originalResponse)
+	}
+
 	return originalResponse, nil
+}
+
+func recordTarget(source, target *http.Request, targetURL string) {
+	ctx := source.Context()
+
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		attrs := []attribute.KeyValue{
+			attribute.String("uncors.proxy.target", targetURL),
+			attribute.String("uncors.proxy.target_host", target.URL.Host),
+		}
+
+		if rewriteHost, _ := rewrite.GetRewriteHost(source); rewriteHost != "" {
+			attrs = append(attrs, attribute.String("uncors.proxy.rewrite_host", rewriteHost))
+		}
+
+		span.SetAttributes(attrs...)
+	}
+
+	telemetry.Debug(ctx, "forwarding request upstream",
+		slog.String("method", target.Method), slog.String("target", targetURL))
+}
+
+// recordUpstreamResponse adds what the HTTP client's span leaves out, and
+// warns about upstream server errors: the client sees them as uncors
+// responses.
+func recordUpstreamResponse(ctx context.Context, target string, response *http.Response) {
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		span.SetAttributes(
+			attribute.Int64("uncors.proxy.upstream_content_length", response.ContentLength),
+			attribute.String("uncors.proxy.upstream_content_type", response.Header.Get(headers.ContentType)),
+			semconv.NetworkProtocolVersion(telemetry.ProtocolVersion(response.ProtoMajor, response.ProtoMinor)),
+		)
+	}
+
+	attrs := []slog.Attr{slog.String("target", target), slog.Int("status", response.StatusCode)}
+
+	if response.StatusCode >= http.StatusInternalServerError {
+		telemetry.Warn(ctx, "upstream responded with a server error", attrs...)
+
+		return
+	}
+
+	telemetry.Debug(ctx, "upstream responded", attrs...)
 }
 
 type HandlerOption = func(*Handler)
@@ -182,11 +276,5 @@ func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) Handler
 func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
 	return func(m *Handler) {
 		m.http = http
-	}
-}
-
-func WithLogger(logger *slog.Logger) HandlerOption {
-	return func(m *Handler) {
-		m.logger = logger
 	}
 }

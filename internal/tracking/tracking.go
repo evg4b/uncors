@@ -8,9 +8,15 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
-type scopeKey struct{}
+type (
+	scopeKey    struct{}
+	rootSpanKey struct{}
+)
 
 type Scope struct {
 	publisher events.Publisher
@@ -41,12 +47,23 @@ func Begin(
 		startedAt: time.Now(),
 	}
 
+	// Attribution is recorded on the request's root span. It is kept apart
+	// from the scope so tracing adds nothing to a request when it is off.
+	if telemetry.Enabled() {
+		ctx = context.WithValue(ctx, rootSpanKey{}, trace.SpanFromContext(ctx))
+	}
+
 	return context.WithValue(ctx, scopeKey{}, scope), scope
 }
 
 func Claim(ctx context.Context, kind events.HandlerKind) {
 	if scope := fromContext(ctx); scope != nil {
 		scope.claim(kind)
+
+		if root := rootSpan(ctx); root != nil {
+			root.SetAttributes(attribute.String("uncors.handler", kind.String()))
+			trace.SpanFromContext(ctx).AddEvent("claimed")
+		}
 	}
 }
 
@@ -56,6 +73,13 @@ func Rewrote(ctx context.Context, from, to string) {
 		defer scope.mu.Unlock()
 
 		scope.rewrite = &events.Rewrite{From: from, To: to}
+
+		if root := rootSpan(ctx); root != nil {
+			root.SetAttributes(
+				attribute.String("uncors.rewrite.from", from),
+				attribute.String("uncors.rewrite.to", to),
+			)
+		}
 	}
 }
 
@@ -65,7 +89,19 @@ func Fail(ctx context.Context, err error) {
 		defer scope.mu.Unlock()
 
 		scope.err = err
+
+		if root := rootSpan(ctx); root != nil {
+			telemetry.Fail(root, err)
+		}
 	}
+}
+
+// Handler is the component that claimed the request so far.
+func (s *Scope) Handler() events.HandlerKind {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.handler
 }
 
 func (s *Scope) Finish(data *contracts.RequestData) {
@@ -116,6 +152,20 @@ func (s *Scope) publishStarted() {
 		Rewrite: s.rewrite,
 		At:      s.startedAt,
 	})
+}
+
+// rootSpan returns nil unless tracing is on and the span is recording.
+func rootSpan(ctx context.Context) trace.Span {
+	if !telemetry.Enabled() {
+		return nil
+	}
+
+	span, _ := ctx.Value(rootSpanKey{}).(trace.Span)
+	if span == nil || !span.IsRecording() {
+		return nil
+	}
+
+	return span
 }
 
 func fromContext(ctx context.Context) *Scope {

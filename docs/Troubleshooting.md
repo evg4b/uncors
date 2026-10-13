@@ -366,10 +366,12 @@ sessions with heavy traffic, turn it off when you don't need it.
 
 ## Getting more help
 
-Capture diagnostic logs:
+Capture traces and diagnostic logs with a local collector (see
+[Tracing and diagnostics](Configuration#tracing-and-diagnostics)):
 
 ```bash
-UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger
+UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none uncors --config .uncors.yaml
 ```
 
 Check your version:
@@ -380,5 +382,5 @@ uncors --version
 
 If the problem remains, open an issue on
 [GitHub](https://github.com/evg4b/uncors/issues) with the UNCORS version, your
-operating system, the configuration file with secrets removed, the diagnostic
-log, and the steps to reproduce.
+operating system, the configuration file with secrets removed, the failing
+trace if you captured one, and the steps to reproduce.

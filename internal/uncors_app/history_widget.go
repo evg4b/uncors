@@ -1,11 +1,13 @@
 package uncorsapp
 
 import (
+	"context"
 	"log/slog"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
+	"github.com/evg4b/uncors/internal/telemetry"
 )
 
 type outputLineMsg string
@@ -19,7 +21,7 @@ type HistoryWidget struct {
 }
 
 func NewHistoryWidget(keys keyMap) *HistoryWidget {
-	slog.Debug("Creating HistoryWidget")
+	telemetry.Debug(context.Background(), "Creating HistoryWidget")
 
 	hist := newHistory()
 
@@ -62,7 +64,10 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 }
 
 func (m *HistoryWidget) SetHeight(height int) {
-	slog.Debug("HistoryWidget: setting height", "height", height)
+	if telemetry.Enabled() {
+		telemetry.Debug(context.Background(), "HistoryWidget: setting height", slog.Int("height", height))
+	}
+
 	m.vp.SetHeight(height)
 }
 
@@ -71,7 +76,7 @@ func (m *HistoryWidget) HasLines() bool {
 }
 
 func (m *HistoryWidget) Close() error {
-	slog.Debug("HistoryWidget: closing")
+	telemetry.Debug(context.Background(), "HistoryWidget: closing")
 
 	return m.hist.Close()
 }

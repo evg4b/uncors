@@ -1,6 +1,7 @@
 package uncorsapp
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
@@ -34,7 +36,7 @@ type TrackerWidget struct {
 }
 
 func NewTrackerWidget() *TrackerWidget {
-	slog.Debug("Creating TrackerWidget")
+	telemetry.Debug(context.Background(), "Creating TrackerWidget")
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
@@ -53,13 +55,20 @@ func (m *TrackerWidget) Init() tea.Cmd {
 func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
 	case requestStartedMsg:
-		slog.Debug("TrackerWidget: request started", "id", typedMsg.ID, "method", typedMsg.Method)
+		if telemetry.Enabled() {
+			telemetry.Debug(context.Background(), "TrackerWidget: request started",
+				slog.Uint64("id", typedMsg.ID), slog.String("method", typedMsg.Method))
+		}
+
 		m.pending[typedMsg.ID] = events.RequestStarted(typedMsg)
 
 		return m, m.startTicking()
 
 	case requestCompletedMsg:
-		slog.Debug("TrackerWidget: request done", "id", typedMsg.ID)
+		if telemetry.Enabled() {
+			telemetry.Debug(context.Background(), "TrackerWidget: request done", slog.Uint64("id", typedMsg.ID))
+		}
+
 		delete(m.pending, typedMsg.ID)
 
 		return m, nil
@@ -80,7 +89,7 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 		// Requests of the previous generation finished before the restart, so
 		// anything still pending lost its completion event.
 		if _, restarted := typedMsg.event.(events.ServerRestarted); restarted {
-			slog.Debug("TrackerWidget: clearing pending requests after restart")
+			telemetry.Debug(context.Background(), "TrackerWidget: clearing pending requests after restart")
 
 			m.pending = make(map[uint64]events.RequestStarted)
 			m.ticking = false
@@ -149,7 +158,7 @@ func (m *TrackerWidget) startTicking() tea.Cmd {
 		return nil
 	}
 
-	slog.Debug("TrackerWidget: starting tick")
+	telemetry.Debug(context.Background(), "TrackerWidget: starting tick")
 
 	m.ticking = true
 

@@ -7,17 +7,21 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"slices"
 	"syscall"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"gopkg.in/yaml.v3"
 )
 
@@ -121,6 +125,7 @@ func TestSuperviseRestartsAndStops(t *testing.T) {
 }
 
 func TestSuperviseKeepsServingOnInvalidReload(t *testing.T) {
+	spans := testutils.Telemetry(t).Spans
 	env, uncorsConfig := supervisedConfig(t)
 	port := uncorsConfig.Mappings[0].From.Port
 
@@ -158,6 +163,23 @@ func TestSuperviseKeepsServingOnInvalidReload(t *testing.T) {
 
 	require.NoError(t, supervise(t.Context(), env, uncorsConfig, "", frontend))
 	assert.Equal(t, []string{"started", "reload-failed", "stopped"}, eventTypes(received))
+	assert.Contains(t, received, events.Notice{
+		Level: events.NoticeInfo,
+		Text:  "Tracing is enabled, exporting to " + telemetry.Endpoint(),
+	})
+
+	ended := spans.Ended()
+	reload := slices.IndexFunc(ended, func(span sdktrace.ReadOnlySpan) bool {
+		return span.Name() == "supervisor.reload"
+	})
+	require.GreaterOrEqual(t, reload, 0)
+	assert.Equal(t, codes.Error, ended[reload].Status().Code)
+
+	load := slices.IndexFunc(ended, func(span sdktrace.ReadOnlySpan) bool {
+		return span.Name() == "config.load" && span.Parent().SpanID() == ended[reload].SpanContext().SpanID()
+	})
+	require.GreaterOrEqual(t, load, 0, "config.load nests under supervisor.reload")
+	assert.Equal(t, codes.Error, ended[load].Status().Code)
 }
 
 func TestSuperviseStopsWhenFrontendExits(t *testing.T) {
@@ -238,7 +260,7 @@ func TestSuperviseReportsFailedStart(t *testing.T) {
 func TestOnSignal(t *testing.T) {
 	t.Run("moves past the echoed ^C in headless mode", func(t *testing.T) {
 		output := &bytes.Buffer{}
-		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger()}
+		supervisor := &supervisor{env: Env{Stdout: output}}
 
 		supervisor.onSignal(syscall.SIGINT)
 
@@ -247,7 +269,7 @@ func TestOnSignal(t *testing.T) {
 
 	t.Run("writes nothing in interactive mode", func(t *testing.T) {
 		output := &bytes.Buffer{}
-		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger(), interactive: true}
+		supervisor := &supervisor{env: Env{Stdout: output}, interactive: true}
 
 		supervisor.onSignal(syscall.SIGINT)
 
@@ -256,17 +278,10 @@ func TestOnSignal(t *testing.T) {
 
 	t.Run("writes nothing for other signals", func(t *testing.T) {
 		output := &bytes.Buffer{}
-		supervisor := &supervisor{env: Env{Stdout: output}, logger: Env{}.logger()}
+		supervisor := &supervisor{env: Env{Stdout: output}}
 
 		supervisor.onSignal(syscall.SIGTERM)
 
 		assert.Empty(t, output.String())
 	})
-}
-
-func TestEnvLogger(t *testing.T) {
-	assert.NotNil(t, Env{}.logger(), "a missing logger discards records")
-
-	logger, _ := testutils.NewBufferLogger()
-	assert.Same(t, logger, Env{Logger: logger}.logger())
 }

@@ -31,7 +31,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		defer cancel()
 
 		watcher := config.NewWatcher("/no/such/file.yaml")
-		err := watcher.Watch(ctx, func() {})
+		err := watcher.Watch(ctx, func() {}, nil)
 		assert.Error(t, err)
 	})
 
@@ -50,7 +50,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			case called <- struct{}{}:
 			default:
 			}
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		defer testutils.Close(t, watcher)
@@ -74,7 +74,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			case called <- struct{}{}:
 			default:
 			}
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		require.NoError(t, watcher.Close())
@@ -99,7 +99,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			callCount.Add(1)
 
 			called <- struct{}{}
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		defer testutils.Close(t, watcher)
@@ -123,7 +123,7 @@ func TestNewConfigWatcher(t *testing.T) {
 		ctx := t.Context()
 
 		watcher := config.NewWatcher(configFile)
-		err := watcher.Watch(ctx, func() {})
+		err := watcher.Watch(ctx, func() {}, nil)
 		require.NoError(t, err)
 
 		assert.NoError(t, watcher.Close())
@@ -144,7 +144,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			case called <- struct{}{}:
 			default:
 			}
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		defer testutils.Close(t, watcher)
@@ -174,18 +174,18 @@ func TestNewConfigWatcher(t *testing.T) {
 		ctx := t.Context()
 
 		watcher := config.NewWatcher(configFile)
-		err := watcher.Watch(ctx, func() {})
+		err := watcher.Watch(ctx, func() {}, nil)
 		require.NoError(t, err)
 
 		defer testutils.Close(t, watcher)
 
-		err = watcher.Watch(ctx, func() {})
+		err = watcher.Watch(ctx, func() {}, nil)
 		require.Error(t, err)
 	})
 
 	t.Run("Watch with empty path returns nil immediately", func(t *testing.T) {
 		watcher := config.NewWatcher("")
-		err := watcher.Watch(context.Background(), func() {})
+		err := watcher.Watch(context.Background(), func() {}, nil)
 		require.NoError(t, err)
 	})
 
@@ -208,7 +208,7 @@ func TestNewConfigWatcher(t *testing.T) {
 			case called <- struct{}{}:
 			default:
 			}
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		defer testutils.Close(t, watcher)

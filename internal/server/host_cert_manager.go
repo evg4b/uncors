@@ -1,49 +1,90 @@
 package server
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
 	"sync"
+	"time"
 
+	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type HostCertManager struct {
 	fs        afero.Fs
+	publisher events.Publisher
 	generator *CertGenerator
 	cache     map[string]*tls.Certificate
 	mutex     sync.RWMutex
+
+	// Each failure is shown once: a browser retries the handshake many times.
+	caReported bool
+	reported   map[string]bool
 }
 
-func NewHostCertManager(fs afero.Fs) *HostCertManager {
+func NewHostCertManager(fs afero.Fs, publisher events.Publisher) *HostCertManager {
+	if publisher == nil {
+		publisher = events.NoopPublisher{}
+	}
+
 	return &HostCertManager{
-		fs:    fs,
-		cache: make(map[string]*tls.Certificate),
+		fs:        fs,
+		publisher: publisher,
+		cache:     make(map[string]*tls.Certificate),
+		reported:  make(map[string]bool),
 	}
 }
 
 func (m *HostCertManager) getCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	err := m.ensureCA()
+	ctx := context.Background()
+	if clientHello != nil && clientHello.Context() != nil {
+		ctx = clientHello.Context()
+	}
+
+	ctx, span := telemetry.Start(ctx, "tls.get_certificate")
+	defer span.End()
+
+	if span.IsRecording() && clientHello != nil {
+		annotateClientHello(span, clientHello)
+	}
+
+	err := m.ensureCA(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load CA certificate: %w", err)
+		err = fmt.Errorf("failed to load CA certificate: %w", err)
+		telemetry.Fail(span, err)
+
+		return nil, err
 	}
 
 	host, ok := extractServerHost(clientHello)
 	if !ok {
+		telemetry.Fail(span, ErrNoSNIProvided)
+
 		return nil, ErrNoSNIProvided
 	}
 
-	cert, err := m.certificateForHost(host)
+	if span.IsRecording() {
+		span.SetAttributes(attribute.String("uncors.tls.host", host))
+	}
+
+	cert, err := m.certificateForHost(ctx, host)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get certificate for %s: %w", host, err)
+		err = fmt.Errorf("failed to get certificate for %s: %w", host, err)
+		telemetry.Fail(span, err)
+
+		return nil, err
 	}
 
 	return cert, nil
 }
 
-func (m *HostCertManager) ensureCA() error {
+func (m *HostCertManager) ensureCA(ctx context.Context) error {
 	m.mutex.RLock()
 
 	if m.generator != nil {
@@ -61,6 +102,36 @@ func (m *HostCertManager) ensureCA() error {
 		return nil
 	}
 
+	_, span := telemetry.Start(ctx, "tls.ensure_ca")
+	defer span.End()
+
+	err := m.loadCA()
+	if err == nil && span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.tls.ca.subject", m.generator.caCert.Subject.String()),
+			attribute.String("uncors.tls.ca.not_after", m.generator.caCert.NotAfter.UTC().Format(time.RFC3339)),
+		)
+	}
+
+	if err != nil {
+		telemetry.Fail(span, err)
+
+		if !m.caReported {
+			m.caReported = true
+			m.publisher.Publish(events.Notice{
+				Level: events.NoticeError,
+				Text:  "TLS: " + err.Error(),
+			})
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// Runs under the write lock.
+func (m *HostCertManager) loadCA() error {
 	caCert, caKey, err := LoadDefaultCA(m.fs)
 	if err != nil {
 		return fmt.Errorf("failed to load CA certificate for auto-generation: %w", err)
@@ -76,7 +147,7 @@ func (m *HostCertManager) ensureCA() error {
 	return nil
 }
 
-func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, error) {
+func (m *HostCertManager) certificateForHost(ctx context.Context, host string) (*tls.Certificate, error) {
 	m.mutex.RLock()
 
 	if cert, exists := m.cache[host]; exists {
@@ -94,15 +165,45 @@ func (m *HostCertManager) certificateForHost(host string) (*tls.Certificate, err
 		return cert, nil
 	}
 
+	_, span := telemetry.Start(ctx, "tls.generate_certificate")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("uncors.tls.host", host))
+
 	cert, err := m.generator.GenerateCertificate(host)
+	telemetry.TLSCertificate(ctx, err)
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate certificate for %s: %w", host, err)
+		err = fmt.Errorf("failed to generate certificate for %s: %w", host, err)
+		telemetry.Fail(span, err)
+
+		if !m.reported[host] {
+			m.reported[host] = true
+			m.publisher.Publish(events.Notice{Level: events.NoticeError, Text: "TLS: " + err.Error()})
+		}
+
+		return nil, err
 	}
 
 	m.cache[host] = cert
-	slog.Debug("generated TLS certificate", "host", host)
 
 	return cert, nil
+}
+
+func annotateClientHello(span trace.Span, clientHello *tls.ClientHelloInfo) {
+	attrs := []attribute.KeyValue{
+		attribute.String("tls.client.server_name", clientHello.ServerName),
+	}
+
+	if len(clientHello.SupportedProtos) > 0 {
+		attrs = append(attrs, attribute.StringSlice("tls.client.supported_protocols", clientHello.SupportedProtos))
+	}
+
+	if clientHello.Conn != nil && clientHello.Conn.RemoteAddr() != nil {
+		attrs = append(attrs, semconv.ClientAddress(clientHello.Conn.RemoteAddr().String()))
+	}
+
+	span.SetAttributes(attrs...)
 }
 
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {

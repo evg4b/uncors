@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func harConfiguration() *config.UncorsConfig {
@@ -108,8 +109,8 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	require.NoError(t, fs.MkdirAll("/www", 0o755))
 
-	logger, _ := testutils.NewBufferLogger()
-	proxy := engine.New(engine.WithFs(fs), engine.WithLogger(logger))
+	spans := testutils.Telemetry(t).Spans
+	proxy := engine.New(engine.WithFs(fs))
 
 	generation, err := proxy.BuildGeneration(&config.UncorsConfig{
 		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
@@ -141,4 +142,9 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 		generation.MockHandler(&config.Response{Code: 200, Raw: "mock"}))
 	assert.Implements(t, (*contracts.Handler)(nil),
 		generation.ScriptHandler(&config.Script{Script: `response:WriteHeader(200)`}))
+
+	ended := spans.Ended()
+	require.Len(t, ended, 1)
+	assert.Equal(t, "engine.build_generation", ended[0].Name())
+	assert.Contains(t, ended[0].Attributes(), attribute.Int("uncors.mappings", 1))
 }

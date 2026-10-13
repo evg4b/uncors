@@ -10,7 +10,7 @@ static files apply only to the mapping they are defined in.
 
 - [Quick reference](#quick-reference)
 - [Command-line flags](#command-line-flags)
-- [Diagnostic logging](#diagnostic-logging)
+- [Tracing and diagnostics](#tracing-and-diagnostics)
 - [Configuration file](#configuration-file)
 - [Global options](#global-options)
 - [Mapping options](#mapping-options)
@@ -101,21 +101,138 @@ uncors --from http://localhost:8080 --to https://api.example.com \
 To generate the local CA used for HTTPS mappings, run
 `uncors generate-certs`. See [HTTPS configuration](#https-configuration).
 
-## Diagnostic logging
+## Tracing and diagnostics
 
-UNCORS always prints handled requests to the console. Internal diagnostic logs
-are off by default. To capture them, set the `UNCORS_LOGGING` environment
-variable to a file path:
+UNCORS always prints handled requests to the console. Internal diagnostics are
+off by default. To see them, set `UNCORS_TRACE=true`: UNCORS then exports
+[OpenTelemetry](https://opentelemetry.io/) traces, logs, and metrics over
+OTLP/HTTP to a collector. Without the variable nothing is collected, and UNCORS
+makes no connection to a collector.
+
+The exporters read the standard `OTEL_EXPORTER_OTLP_*` environment variables.
+The endpoint defaults to `http://localhost:4318`; set
+`OTEL_EXPORTER_OTLP_ENDPOINT` to send elsewhere, or the `_TRACES_`, `_LOGS_`,
+and `_METRICS_` variants to split the signals. Headers, timeouts, and TLS
+settings use the other `OTEL_EXPORTER_OTLP_*` variables. Metrics are exported
+every 10 seconds unless `OTEL_METRIC_EXPORT_INTERVAL` (in milliseconds) says
+otherwise. `OTEL_LOGS_EXPORTER=none` and `OTEL_METRICS_EXPORTER=none` turn a
+signal off.
+
+`UNCORS_TRACE_CONNECTIONS=true` also records the DNS, connection, TLS, and
+header phases of each upstream request as events on its client span. It is off
+by default because it nearly doubles the cost of tracing an upstream request;
+turn it on to find out why an upstream is slow.
+
+To see everything locally, run [otelop](https://github.com/mashiro/otelop) and
+open <http://localhost:4319>:
 
 ```bash
-UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+docker run --rm -p 4318:4318 -p 4319:4319 ghcr.io/mashiro/otelop
+UNCORS_TRACE=true uncors --config .uncors.yaml
 ```
 
-Logs are appended to the file as `key=value` records, one per line, at every
-level from `DEBUG` up. They include errors from the proxy, mock, script, and
-static handlers, HAR write failures, and config watcher errors. Diagnostic
-output never appears in the console. If the variable is unset, empty, or points
-to a path that cannot be opened, diagnostic output is discarded.
+Jaeger works too, for traces only:
+
+```bash
+docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger
+UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none OTEL_METRICS_EXPORTER=none \
+  uncors --config .uncors.yaml
+```
+
+Without the two `none` settings UNCORS warns that Jaeger rejects logs and
+metrics.
+
+### Traces
+
+Each request is one trace. Its root span, `HTTP <method>`, records:
+
+- the request: `uncors.request.id` (the number shown in the request log), URL,
+  scheme, path, host and port, client address, protocol version, user agent,
+  body size, and the `Origin`, `Referer`, `Content-Type`,
+  `Access-Control-Request-*`, `X-Request-Id`, and `X-Correlation-Id` headers;
+- the route that matched: the mapping (`uncors.mapping.from` and `.to`), the
+  route kind (`static`, `mock`, `script`, `rewrite`, or `default`), the route
+  pattern (`http.route`) and its position in the configuration, and the method,
+  query, and header filters;
+- the result: the handler that answered (`uncors.handler`), the rewrite, the
+  status, the response body size, the `Content-Type`, `Location`,
+  `Cache-Control`, and `Access-Control-Allow-*` response headers, and the
+  error, if any.
+
+Credentials and cookies are never recorded. While tracing is on, every
+response carries an `X-Uncors-Trace-Id` header with the trace ID, so a request
+seen in the browser's developer tools can be looked up in the trace viewer.
+
+Child spans show the work done for the request:
+
+| Span                                                       | What it records                                                                          |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `static.serve`                                             | The file asked for and the file served, its size, the index fallback, or a fall-through. |
+| `mock.serve`                                               | The configured status, delay, and source; events when the delay starts and ends.         |
+| `script.serve`, `script.lua.compile`, `script.lua.execute` | The script source and size, the status it wrote, and the Lua stack trace of an error.    |
+| `rewrite.apply`                                            | The pattern, template, path variables, original and new path, and target host.           |
+| `har.record`                                               | The HAR file, body sizes, and whether the entry was dropped because the queue was full.  |
+| `cache.lookup`, `cache.store`                              | The cache key, hit or miss, and the cached status and size.                              |
+| `options.preflight`                                        | An answered `OPTIONS` request and its configured status.                                 |
+| `proxy.forward`, `proxy.copy_body`                         | The upstream URL, its content type, length, and protocol, and the bytes copied.          |
+| `HTTP <method>` (client)                                   | The real upstream request; its connection phases with `UNCORS_TRACE_CONNECTIONS`.        |
+
+Requests that skip the cache add a `uncors.cache.not_cacheable` event, and
+responses that are not stored add `uncors.cache.not_stored`. Lifecycle work has
+its own traces: `engine.start`, `engine.restart`, `engine.shutdown`,
+`supervisor.reload`, `config.load`, `server.listen`, `tls.get_certificate`
+(with the SNI name and ALPN protocols), `tls.ensure_ca` (with the CA expiry),
+`tls.generate_certificate`, `har.flush`, and `version.check`.
+
+Trace context is never added to proxied requests: the upstream server receives
+the request as the client sent it.
+
+### Logs
+
+Logs are exported with the trace and span they belong to, so a trace viewer
+shows them next to the request that produced them.
+
+| Level   | Logged                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ERROR` | A request a handler failed (method, URL, error); a HAR file that cannot be written.                                                                                                               |
+| `WARN`  | An upstream `5xx` response; a Lua script error, with its stack trace; a HAR entry dropped because the write queue is full.                                                                        |
+| `DEBUG` | Each routing decision: the upstream URL and status, cache hits, misses, and stores, answered preflights, rewrites, static files served or passed on, mock responses, script runs, and HAR writes. |
+
+A request the client cancels is logged at `DEBUG`, not as a failure.
+
+### Metrics
+
+| Metric                                                                     | What it counts                                                       |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `uncors.requests`                                                          | Requests received, by method, status, and the handler that answered. |
+| `http.server.request.duration`, `http.server.response.body.size`           | Time to serve a request and the size of the response.                |
+| `http.server.active_requests`                                              | Requests being served.                                               |
+| `http.client.request.duration` and the other `http.client.*` metrics       | Upstream requests by host and status or error type, timed and sized. |
+| `uncors.cache.lookups`, `uncors.cache.stores`, `uncors.cache.stored_bytes` | Cache hits and misses, and responses stored.                         |
+| `uncors.mock.responses`, `uncors.mock.delay`                               | Mock responses, served or cancelled during their delay.              |
+| `uncors.script.executions`, `uncors.script.duration`                       | Lua script runs, by success or error, and their duration.            |
+| `uncors.static.requests`                                                   | Static requests served, passed on to the proxy, or failed.           |
+| `uncors.rewrites`                                                          | Requests rewritten.                                                  |
+| `uncors.har.entries`, `uncors.har.flushes`                                 | HAR entries recorded or dropped, and HAR file writes.                |
+| `uncors.config.reloads`, `uncors.tls.certificates`                         | Configuration reloads and host certificates generated.               |
+| `go.memory.*`, `go.goroutine.count`, and the other Go runtime metrics      | The UNCORS process itself.                                           |
+
+### Console output
+
+Diagnostics never appear in the console. When tracing is on, UNCORS shows one
+notice with the endpoint at startup, and one warning for each signal (spans,
+logs, or metrics) that cannot be exported, for example because no collector is
+listening. When it exits, UNCORS waits up to 5 seconds for the last data to be
+sent.
+
+Failures that need your attention are shown in the console whether tracing is
+on or not:
+
+- the HAR file cannot be written (shown once until a write succeeds again);
+- the config file watcher reports an error;
+- a TLS certificate cannot be loaded or generated (once for the CA, once per
+  host);
+- in-flight requests are cut off because they did not finish before a restart.
 
 ## Configuration file
 

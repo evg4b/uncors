@@ -1,11 +1,13 @@
 package version
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/hashicorp/go-version"
 )
 
@@ -33,7 +35,8 @@ func WithCurrentVersion(rawVersion string) Option {
 
 		currentVersion, err := version.NewVersion(rawVersion)
 		if err != nil {
-			slog.Warn("skipping version check for an unparsable version", "version", rawVersion, "error", err)
+			telemetry.Warn(context.Background(), "skipping version check for an unparsable version",
+				slog.String("version", rawVersion), telemetry.Err(err))
 
 			checker.skip = true
 

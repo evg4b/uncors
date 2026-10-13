@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -16,7 +17,11 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var errNotHandled = errors.New("request is not handled")
@@ -25,33 +30,69 @@ type Middleware struct {
 	fs     afero.Fs
 	index  string
 	prefix string
-	logger *slog.Logger
 }
 
 func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{logger: slog.Default()}, options)
+	return helpers.ApplyOptions(&Middleware{}, options)
 }
 
 func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	original := request
+
+	request, span := telemetry.StartRequest(request, "static.serve")
+	defer span.End()
+
 	filePath := h.extractFilePath(request)
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.static.prefix", h.prefix),
+			attribute.String("uncors.static.file", filePath),
+		)
+	}
 
 	file, stat, err := h.openFile(filePath)
 	defer helpers.CloseSafe(file)
 
 	if err != nil {
 		if errors.Is(err, errNotHandled) {
-			return next(writer, request)
+			h.recordFallThrough(request, span, filePath)
+			// The default handler is not part of this span.
+			span.End()
+
+			return next(writer, original)
 		}
 
 		tracking.Claim(request.Context(), events.HandlerStatic)
-
-		h.logger.Error("static handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
+		telemetry.Fail(span, err)
+		telemetry.StaticRequest(request.Context(), telemetry.ResultError)
 
 		return err
 	}
 
 	tracking.Claim(request.Context(), events.HandlerStatic)
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			attribute.String("uncors.static.served", stat.Name()),
+			attribute.Bool("uncors.static.index_used", stat.Name() != filepath.Base(filePath)),
+			attribute.Int64("uncors.static.file_bytes", stat.Size()),
+			attribute.String("uncors.static.modified", stat.ModTime().UTC().Format(time.RFC3339)),
+			semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(writer.StatusCode())),
+		)
+	}
+
+	telemetry.StaticRequest(request.Context(), telemetry.ResultServed)
+
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "served static file",
+			slog.String("file", filePath),
+			slog.String("served", stat.Name()),
+			slog.Int64("bytes", stat.Size()),
+			slog.Int("status", helpers.NormaliseStatusCode(writer.StatusCode())),
+		)
+	}
 
 	return nil
 }
@@ -62,6 +103,19 @@ func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
 			return next.ServeHTTP(w, r)
 		})
 	})
+}
+
+func (h *Middleware) recordFallThrough(request *contracts.Request, span trace.Span, filePath string) {
+	if span.IsRecording() {
+		span.SetAttributes(attribute.Bool("uncors.static.fall_through", true))
+	}
+
+	telemetry.StaticRequest(request.Context(), telemetry.ResultFallThrough)
+
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "no static file, passing the request on",
+			slog.String("prefix", h.prefix), slog.String("file", filePath))
+	}
 }
 
 func (h *Middleware) extractFilePath(request *http.Request) string {
@@ -135,11 +189,5 @@ func WithIndex(index string) MiddlewareOption {
 func WithPrefix(prefix string) MiddlewareOption {
 	return func(h *Middleware) {
 		h.prefix = prefix
-	}
-}
-
-func WithLogger(logger *slog.Logger) MiddlewareOption {
-	return func(m *Middleware) {
-		m.logger = logger
 	}
 }

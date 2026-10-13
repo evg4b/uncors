@@ -15,15 +15,17 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
 	response *config.Response
 	fs       afero.Fs
 	after    func(duration time.Duration) <-chan time.Time
-	logger   *slog.Logger
 }
 
 const contentTypeSniffLen = 512
@@ -31,24 +33,81 @@ const contentTypeSniffLen = 512
 var ErrResponseIsNotDefined = errors.New("response is not defined")
 
 func NewMockHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{logger: slog.Default()}, options)
+	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
+	request, span := telemetry.StartRequest(request, "mock.serve")
+	defer span.End()
+
 	tracking.Claim(request.Context(), events.HandlerMock)
 
+	if span.IsRecording() {
+		span.SetAttributes(h.attributes()...)
+	}
+
 	if h.waitDelay(writer, request) {
+		telemetry.MockServed(request.Context(), http.StatusServiceUnavailable, h.response.Delay, true)
+
+		if telemetry.Enabled() {
+			telemetry.Debug(request.Context(), "mock delay cancelled by the client",
+				slog.Duration("delay", h.response.Delay))
+		}
+
 		return nil
 	}
 
 	err := h.writeResponse(writer, request)
 	if err != nil {
-		h.logger.Error("mock handler error", "url", helpers.LogURL(request.URL), "error", helpers.LogError(err))
+		telemetry.Fail(span, err)
 
 		return err
 	}
 
+	telemetry.MockServed(request.Context(), helpers.NormaliseStatusCode(h.response.Code), h.response.Delay, false)
+
+	if telemetry.Enabled() {
+		h.logServed(request)
+	}
+
 	return nil
+}
+
+func (h *Handler) logServed(request *contracts.Request) {
+	attrs := []slog.Attr{
+		slog.Int("status", helpers.NormaliseStatusCode(h.response.Code)),
+		slog.Duration("delay", h.response.Delay),
+	}
+
+	if h.response.IsFile() {
+		attrs = append(attrs, slog.String("file", h.response.File))
+	}
+
+	telemetry.Debug(request.Context(), "served mock response", attrs...)
+}
+
+func (h *Handler) attributes() []attribute.KeyValue {
+	response := h.response
+	attrs := []attribute.KeyValue{
+		attribute.Int("uncors.mock.status", helpers.NormaliseStatusCode(response.Code)),
+		attribute.String("uncors.mock.delay", response.Delay.String()),
+		attribute.Int("uncors.mock.headers", len(response.Headers)),
+	}
+
+	switch {
+	case response.IsFile():
+		attrs = append(attrs,
+			attribute.String("uncors.mock.source", "file"),
+			attribute.String("uncors.mock.file", response.File),
+		)
+	case response.IsRaw():
+		attrs = append(attrs,
+			attribute.String("uncors.mock.source", "raw"),
+			attribute.Int("uncors.mock.raw_bytes", len(response.Raw)),
+		)
+	}
+
+	return attrs
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -107,6 +166,10 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 		return fmt.Errorf("failed to receive file information: %w", err)
 	}
 
+	if span := trace.SpanFromContext(request.Context()); span.IsRecording() {
+		span.SetAttributes(attribute.Int64("uncors.mock.file_bytes", stat.Size()))
+	}
+
 	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
 
 	return nil
@@ -117,12 +180,25 @@ func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.
 		return false
 	}
 
+	span := trace.SpanFromContext(request.Context())
+	if span.IsRecording() {
+		span.AddEvent("uncors.mock.delay_started")
+	}
+
 	select {
 	case <-request.Context().Done():
+		if span.IsRecording() {
+			span.AddEvent("uncors.mock.delay_cancelled")
+		}
+
 		writer.WriteHeader(http.StatusServiceUnavailable)
 
 		return true
 	case <-h.after(h.response.Delay):
+		if span.IsRecording() {
+			span.AddEvent("uncors.mock.delay_finished")
+		}
+
 		return false
 	}
 }

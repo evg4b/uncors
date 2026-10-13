@@ -50,7 +50,7 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certi
 
 	require.NoError(t, afero.WriteFile(fs, configPath, marshalConfig(t, cfg), configFilePerm))
 
-	loaded, _, err := config.LoadConfiguration(fs, nil, []string{"-c", configPath})
+	loaded, _, err := config.LoadConfiguration(t.Context(), fs, nil, []string{"-c", configPath})
 	require.NoError(t, err)
 
 	bus := events.NewBus()

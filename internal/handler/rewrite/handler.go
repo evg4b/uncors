@@ -2,15 +2,21 @@ package rewrite
 
 import (
 	"context"
+	"log/slog"
+	"maps"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Middleware struct {
@@ -22,6 +28,9 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {
+	request, span := telemetry.StartRequest(request, "rewrite.apply")
+	defer span.End()
+
 	from := request.URL.Path
 
 	m.rewriteURL(request)
@@ -32,8 +41,42 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 	}
 
 	tracking.Rewrote(request.Context(), from, to)
+	telemetry.Rewritten(request.Context())
+
+	if span.IsRecording() {
+		m.annotate(span, request, from, to)
+	}
+
+	if telemetry.Enabled() {
+		telemetry.Debug(request.Context(), "rewrote request",
+			slog.String("pattern", m.rewrite.From), slog.String("from", from), slog.String("to", to))
+	}
 
 	return next(writer, m.rewriteRequest(request))
+}
+
+func (m *Middleware) annotate(span trace.Span, request *contracts.Request, from, to string) {
+	attrs := []attribute.KeyValue{
+		attribute.String("uncors.rewrite.pattern", m.rewrite.From),
+		attribute.String("uncors.rewrite.template", m.rewrite.To),
+		attribute.String("uncors.rewrite.from", from),
+		attribute.String("uncors.rewrite.to", to),
+	}
+
+	if m.rewrite.Host != (urlt.Host{}) {
+		attrs = append(attrs, attribute.String("uncors.rewrite.host", m.rewrite.Host.HostPort()))
+	}
+
+	if vars := mux.Vars(request); len(vars) > 0 {
+		pairs := make([]string, 0, len(vars))
+		for _, key := range slices.Sorted(maps.Keys(vars)) {
+			pairs = append(pairs, key+"="+vars[key])
+		}
+
+		attrs = append(attrs, attribute.StringSlice("uncors.rewrite.vars", pairs))
+	}
+
+	span.SetAttributes(attrs...)
 }
 
 func (m *Middleware) rewriteURL(request *contracts.Request) {

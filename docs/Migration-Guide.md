@@ -39,18 +39,21 @@ mappings:
 With several placeholders, values are matched by name rather than by position.
 See [Named placeholder mapping](Configuration#named-placeholder-mapping).
 
-### `debug` is replaced by `UNCORS_LOGGING`
+### `debug` is replaced by `UNCORS_TRACE`
 
 The `--debug` flag and the `debug` configuration key are gone. `--debug` now
 fails with an unknown-flag error, and a `debug` key in the file is ignored. To
-get diagnostic logs, set `UNCORS_LOGGING` to a file path:
+get diagnostics, set `UNCORS_TRACE=true` and run an OpenTelemetry collector
+such as Jaeger. UNCORS exports traces and logs to it over OTLP/HTTP
+(`localhost:4318` by default). See
+[Tracing and diagnostics](Configuration#tracing-and-diagnostics).
 
 ```bash
 # 0.6.x
 uncors --debug --config .uncors.yaml
 
 # Now
-UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml
+UNCORS_TRACE=true uncors --config .uncors.yaml
 ```
 
 ### Cache settings
@@ -106,9 +109,8 @@ path follows the URL after `→`. See
 [Reading the request log](Troubleshooting#reading-the-request-log).
 
 Handler errors are no longer printed as separate console lines. They appear
-under the failing request instead, and are also written to the
-[diagnostic log](Configuration#diagnostic-logging) when `UNCORS_LOGGING` is
-set.
+under the failing request instead, and are also recorded on the request's trace
+when [tracing](Configuration#tracing-and-diagnostics) is on.
 
 ## Upgrading from 0.5.x to 0.6.x
 
@@ -276,6 +278,6 @@ If a migration doesn't work:
 1. Compare your file with the [Configuration](Configuration) reference.
 2. Validate it against the
    [JSON Schema](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json).
-3. Run with diagnostic logging:
-   `UNCORS_LOGGING=uncors.log uncors --config .uncors.yaml`.
+3. Run with [tracing](Configuration#tracing-and-diagnostics):
+   `UNCORS_TRACE=true uncors --config .uncors.yaml`.
 4. Report the problem on [GitHub Issues](https://github.com/evg4b/uncors/issues).

@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sync/atomic"
 	"time"
 
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/fsnotify/fsnotify"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const debounceDelay = 10 * time.Millisecond
@@ -29,7 +30,7 @@ func NewWatcher(filePath string) *Watcher {
 	}
 }
 
-func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
+func (w *Watcher) Watch(ctx context.Context, onChange func(), onError func(error)) error {
 	if w.isWatching.Load() {
 		return errAlreadyWatching
 	}
@@ -65,7 +66,7 @@ func (w *Watcher) Watch(ctx context.Context, onChange func()) error {
 	w.fsWatcher = fsWatcher
 	w.isWatching.Store(true)
 
-	go w.run(ctx, onChange)
+	go w.run(ctx, w.traced(ctx, onChange), onError)
 
 	return nil
 }
@@ -78,7 +79,18 @@ func (w *Watcher) Close() error {
 	return nil
 }
 
-func (w *Watcher) run(ctx context.Context, onChange func()) {
+func (w *Watcher) traced(ctx context.Context, onChange func()) func() {
+	return func() {
+		_, span := telemetry.Start(context.WithoutCancel(ctx), "config.watcher.event")
+		defer span.End()
+
+		span.SetAttributes(attribute.String("uncors.config.path", w.filePath))
+
+		onChange()
+	}
+}
+
+func (w *Watcher) run(ctx context.Context, onChange func(), onError func(error)) {
 	var debounce *time.Timer
 
 	defer func() {
@@ -104,7 +116,9 @@ func (w *Watcher) run(ctx context.Context, onChange func()) {
 				return
 			}
 
-			slog.Error("config watcher error", "error", err)
+			if onError != nil {
+				onError(err)
+			}
 		}
 	}
 }

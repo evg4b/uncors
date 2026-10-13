@@ -16,6 +16,7 @@ type ResponseRecorder struct {
 	buf        *bytes.Buffer
 	output     io.Writer
 	startedAt  time.Time
+	written    int64
 }
 
 func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
@@ -34,7 +35,15 @@ func (r *ResponseRecorder) WriteHeader(statusCode int) {
 }
 
 func (r *ResponseRecorder) Write(b []byte) (int, error) {
-	return r.output.Write(b)
+	n, err := r.output.Write(b)
+	r.written += int64(n)
+
+	return n, err
+}
+
+// Written is the number of body bytes sent to the client.
+func (r *ResponseRecorder) Written() int64 {
+	return r.written
 }
 
 func (r *ResponseRecorder) StatusCode() int {

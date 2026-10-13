@@ -43,6 +43,19 @@ go mod download
 make test
 ```
 
+To run a build of your working tree with tracing, put a config in
+`.uncors.yaml` (it is git-ignored) and start it with
+[otelop](https://github.com/mashiro/otelop) as the trace viewer:
+
+```bash
+uncors generate-certs   # once, if the config has https mappings
+docker compose up --build
+```
+
+Traces, logs, and metrics are at <http://localhost:4319>. `compose.yaml`
+publishes ports 3000, 4000, and 2000; change them there if your mappings use
+other ports.
+
 ## Make targets
 
 ```bash

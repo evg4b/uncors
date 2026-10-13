@@ -34,13 +34,13 @@ func newIsolatedWatcher(t *testing.T) (*Watcher, chan fsnotify.Event, chan error
 	return watcher, eventsCh, errsCh
 }
 
-func runAndWait(ctx context.Context, watcher *Watcher, onChange func()) <-chan struct{} {
+func runAndWait(ctx context.Context, watcher *Watcher, onChange func(), onError func(error)) <-chan struct{} {
 	exited := make(chan struct{})
 
 	go func() {
 		defer close(exited)
 
-		watcher.run(ctx, onChange)
+		watcher.run(ctx, onChange, onError)
 	}()
 
 	return exited
@@ -61,7 +61,7 @@ func awaitExit(t *testing.T, watcher *Watcher, exited <-chan struct{}) {
 func TestWatcherRunStopsWhenChannelCloses(t *testing.T) {
 	t.Run("events", func(t *testing.T) {
 		watcher, events, _ := newIsolatedWatcher(t)
-		exited := runAndWait(t.Context(), watcher, func() {})
+		exited := runAndWait(t.Context(), watcher, func() {}, nil)
 
 		close(events)
 
@@ -70,7 +70,7 @@ func TestWatcherRunStopsWhenChannelCloses(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		watcher, _, errs := newIsolatedWatcher(t)
-		exited := runAndWait(t.Context(), watcher, func() {})
+		exited := runAndWait(t.Context(), watcher, func() {}, nil)
 
 		close(errs)
 
@@ -84,7 +84,30 @@ func TestWatcherRunErrorPath(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	exited := runAndWait(ctx, watcher, func() {})
+	reported := make(chan error, 1)
+	exited := runAndWait(ctx, watcher, func() {}, func(err error) { reported <- err })
+
+	errs <- errSyntheticWatcher
+
+	select {
+	case err := <-reported:
+		require.ErrorIs(t, err, errSyntheticWatcher)
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("onError was not called")
+	}
+
+	cancel()
+
+	awaitExit(t, watcher, exited)
+}
+
+func TestWatcherRunErrorWithoutHandler(t *testing.T) {
+	watcher, _, errs := newIsolatedWatcher(t)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	exited := runAndWait(ctx, watcher, func() {}, nil)
 
 	errs <- errSyntheticWatcher
 

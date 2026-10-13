@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"context"
 	"errors"
 
 	"github.com/evg4b/uncors/internal/commands"
+	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/pflag"
 )
@@ -28,5 +30,11 @@ func GenerateCerts(env Env) error {
 		return nil
 	}
 
-	return cmd.Execute()
+	_, span := telemetry.Start(context.Background(), "certs.generate")
+	defer span.End()
+
+	err = cmd.Execute()
+	telemetry.Fail(span, err)
+
+	return err
 }
