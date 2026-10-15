@@ -14,6 +14,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/events"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
@@ -29,13 +30,13 @@ func TestServer(t *testing.T) {
 	const porstCount = 5
 
 	expectedContent := "Test"
-	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+	handler := infra.CastToHTTPHandler(infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, expectedContent)
 		assert.NoError(t, err)
 
 		return nil
-	})
+	}))
 
 	assertResponse := func(t *testing.T, url string, pool *x509.CertPool) {
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
@@ -78,7 +79,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -103,14 +104,10 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 10,
-			Fs:           fs,
-			OutputDir:    caDir,
-		})
+		certPath, keyPath, err := certs.Generate(fs, caDir, 10)
 		require.NoError(t, err)
 
-		caCert, _, err := server.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := certs.Load(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -124,7 +121,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs, nil)
+		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
@@ -151,14 +148,10 @@ func TestServer(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		certPath, keyPath, err := server.GenerateCA(server.CAConfig{
-			ValidityDays: 10,
-			Fs:           fs,
-			OutputDir:    caDir,
-		})
+		certPath, keyPath, err := certs.Generate(fs, caDir, 10)
 		require.NoError(t, err)
 
-		caCert, _, err := server.LoadCA(fs, certPath, keyPath)
+		caCert, _, err := certs.Load(fs, certPath, keyPath)
 		require.NoError(t, err)
 
 		pool := x509.NewCertPool()
@@ -179,7 +172,7 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := server.NewHostCertManager(fs, nil)
+		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
@@ -203,7 +196,7 @@ func TestServer(t *testing.T) {
 	t.Run("shutdown", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -229,7 +222,7 @@ func TestServer(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -253,7 +246,7 @@ func TestServer(t *testing.T) {
 	t.Run("Restart", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
@@ -278,11 +271,48 @@ func TestServer(t *testing.T) {
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
 	})
 
+	t.Run("Start binds nothing when one port is taken", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 2)
+		occupy(t, ports[1])
+
+		instance := server.New(certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate, events.NewBus())
+
+		err := instance.Start(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
+			{Address: hosts.Loopback.Port(ports[1]).String(), Handler: handler},
+		})
+		require.Error(t, err)
+
+		assert.True(t, testutils.IsPortFree(ports[0]))
+	})
+
+	t.Run("Restart onto a taken port serves the previous targets again", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 2)
+		instance := server.New(certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate, events.NewBus())
+
+		require.NoError(t, instance.Start(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[0]).String(), Handler: handler},
+		}))
+
+		defer func() {
+			require.NoError(t, instance.Close())
+		}()
+
+		occupy(t, ports[1])
+
+		err := instance.Restart(t.Context(), []server.Target{
+			{Address: hosts.Loopback.Port(ports[1]).String(), Handler: handler},
+		})
+		require.Error(t, err)
+
+		assertResponse(t, hosts.Loopback.HTTPPort(ports[0]).String(), nil)
+	})
+
 	t.Run("Restart is not blocked by a request that outlives the shutdown timeout", func(t *testing.T) {
 		initial := testutils.GetFreePort(t)
 		restarted := testutils.GetFreePort(t)
 		publisher := &testutils.EventRecorder{}
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, publisher)
 		server.SetShutdownTimeout(instance, 100*time.Millisecond)
 
@@ -294,12 +324,12 @@ func TestServer(t *testing.T) {
 		// Shutdown cancels request contexts, so only a handler that ignores its
 		// context (a busy Lua script, a write blocked on a slow client) can
 		// outlive it.
-		stuck := infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+		stuck := infra.CastToHTTPHandler(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 			close(entered)
 			<-release
 
 			return nil
-		})
+		}))
 
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
@@ -347,7 +377,7 @@ func TestServer(t *testing.T) {
 
 		port := testutils.GetFreePort(t)
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 
 		queue.Track("server started")
@@ -355,7 +385,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, instance.Start(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(port).String(),
-				Handler: infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
+				Handler: infra.CastToHTTPHandler(infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
 					queue.Track("handler trigered")
 
 					w.WriteHeader(http.StatusOK)
@@ -363,7 +393,7 @@ func TestServer(t *testing.T) {
 					assert.NoError(t, err)
 
 					return nil
-				}),
+				})),
 			},
 		}))
 
@@ -408,7 +438,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { ln.Close() })
 
-		manager := server.NewHostCertManager(afero.NewOsFs(), nil)
+		manager := certs.NewManager(afero.NewOsFs(), events.NoopPublisher{}).GetCertificate
 		instance := server.New(manager, events.NewBus())
 		err = instance.Start(t.Context(), []server.Target{
 			{
@@ -419,4 +449,15 @@ func TestServer(t *testing.T) {
 
 		require.Error(t, err)
 	})
+}
+
+func occupy(t *testing.T, port int) {
+	t.Helper()
+
+	lc := &net.ListenConfig{}
+
+	listener, err := lc.Listen(t.Context(), "tcp4", hosts.Loopback.Port(port).String())
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = listener.Close() })
 }

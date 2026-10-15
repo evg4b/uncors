@@ -1,4 +1,4 @@
-package server_test
+package certs
 
 import (
 	"crypto/tls"
@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,45 +13,17 @@ import (
 
 const testTmpDir = "/tmp/test"
 
-func TestNewCertGenerator(t *testing.T) {
-	t.Run("should create cert generator with valid CA", func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		tmpDir := testTmpDir
-
-		config := server.CAConfig{
-			ValidityDays: 365,
-			Fs:           fs,
-			OutputDir:    tmpDir,
-		}
-		certPath, keyPath, err := server.GenerateCA(config)
-		require.NoError(t, err)
-
-		caCert, caKey, err := server.LoadCA(fs, certPath, keyPath)
-		require.NoError(t, err)
-
-		generator := server.NewCertGenerator(caCert, caKey)
-		assert.NotNil(t, generator)
-	})
-}
-
-func TestCertGenerator_GenerateCertificate(t *testing.T) {
+func TestIssueHostCertificate(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	tmpDir := testTmpDir
-	config := server.CAConfig{
-		ValidityDays: 365,
-		Fs:           fs,
-		OutputDir:    tmpDir,
-	}
-	certPath, keyPath, err := server.GenerateCA(config)
+	certPath, keyPath, err := Generate(fs, tmpDir, 365)
 	require.NoError(t, err)
 
-	caCert, caKey, err := server.LoadCA(fs, certPath, keyPath)
+	caCert, caKey, err := Load(fs, certPath, keyPath)
 	require.NoError(t, err)
-
-	generator := server.NewCertGenerator(caCert, caKey)
 
 	t.Run("should generate certificate for localhost", func(t *testing.T) {
-		cert, err := generator.GenerateCertificate("localhost")
+		cert, err := issueHostCertificate(caCert, caKey, "localhost")
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 
@@ -61,14 +32,14 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate certificate for custom domain", func(t *testing.T) {
-		cert, err := generator.GenerateCertificate("example.local")
+		cert, err := issueHostCertificate(caCert, caKey, "example.local")
 		require.NoError(t, err)
 		assert.NotNil(t, cert)
 	})
 
 	t.Run("should generate valid certificate with correct properties", func(t *testing.T) {
 		host := "test.local"
-		cert, err := generator.GenerateCertificate(host)
+		cert, err := issueHostCertificate(caCert, caKey, host)
 		require.NoError(t, err)
 
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
@@ -91,7 +62,7 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate certificate signed by CA", func(t *testing.T) {
-		cert, err := generator.GenerateCertificate("verify.local")
+		cert, err := issueHostCertificate(caCert, caKey, "verify.local")
 		require.NoError(t, err)
 
 		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
@@ -111,10 +82,10 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate unique certificates for different hosts", func(t *testing.T) {
-		cert1, err := generator.GenerateCertificate("host1.local")
+		cert1, err := issueHostCertificate(caCert, caKey, "host1.local")
 		require.NoError(t, err)
 
-		cert2, err := generator.GenerateCertificate("host2.local")
+		cert2, err := issueHostCertificate(caCert, caKey, "host2.local")
 		require.NoError(t, err)
 
 		x509Cert1, err := x509.ParseCertificate(cert1.Certificate[0])
@@ -128,7 +99,7 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 	})
 
 	t.Run("should generate usable TLS certificate", func(t *testing.T) {
-		cert, err := generator.GenerateCertificate("tls-test.local")
+		cert, err := issueHostCertificate(caCert, caKey, "tls-test.local")
 		require.NoError(t, err)
 
 		tlsConfig := &tls.Config{
@@ -144,7 +115,7 @@ func TestCertGenerator_GenerateCertificate(t *testing.T) {
 		hosts := []string{"host1.local", "host2.local", "host3.local", "host4.local", "host5.local"}
 
 		for _, host := range hosts {
-			cert, err := generator.GenerateCertificate(host)
+			cert, err := issueHostCertificate(caCert, caKey, host)
 			require.NoError(t, err, "Should generate certificate for %s", host)
 			assert.NotNil(t, cert)
 

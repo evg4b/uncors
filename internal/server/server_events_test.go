@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/infra"
@@ -23,7 +24,7 @@ func TestServerPublishesRequestEvents(t *testing.T) {
 	bus := events.NewBus()
 	subscription := bus.Subscribe(10)
 
-	handler := infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+	claiming := infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
 		tracking.Claim(request.Context(), events.HandlerMock)
 
 		if request.URL.Path == "/fail" {
@@ -34,9 +35,10 @@ func TestServerPublishesRequestEvents(t *testing.T) {
 
 		return nil
 	})
+	handler := infra.CastToHTTPHandler(claiming)
 
 	port := testutils.GetFreePorts(t, 1)[0]
-	instance := server.New(server.NewHostCertManager(afero.NewMemMapFs(), bus), bus)
+	instance := server.New(certs.NewManager(afero.NewMemMapFs(), bus).GetCertificate, bus)
 	require.NoError(t, instance.Start(t.Context(), []server.Target{{
 		Address: hosts.Loopback.Port(port).String(),
 		Handler: handler,

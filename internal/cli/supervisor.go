@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	shutdownTimeout   = 15 * time.Second
 	versionCheckDelay = 50 * time.Millisecond
 	frontendBuffer    = 1000
 	commandsBuffer    = 8
@@ -49,11 +48,8 @@ func supervise(
 		cfgPath:     cfgPath,
 		interactive: uncorsConfig.Interactive,
 		bus:         bus,
-		engine: engine.New(
-			engine.WithFs(env.Fs),
-			engine.WithPublisher(bus),
-		),
-		commands: make(chan events.Command, commandsBuffer),
+		engine:      engine.New(env.Fs, engine.WithPublisher(bus)),
+		commands:    make(chan events.Command, commandsBuffer),
 		// One pending reload is enough: it reads the file as it is then.
 		reloads: make(chan struct{}, 1),
 	}
@@ -174,10 +170,7 @@ func (s *supervisor) shutdown(ctx context.Context) {
 	ctx, span := telemetry.Start(context.WithoutCancel(ctx), "supervisor.shutdown")
 	defer span.End()
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
-	defer cancel()
-
-	err := s.engine.Shutdown(shutdownCtx)
+	err := s.engine.Shutdown(ctx)
 	if err != nil {
 		telemetry.Fail(span, err)
 		telemetry.Warn(ctx, "in-flight requests did not finish before shutdown", telemetry.Err(err))

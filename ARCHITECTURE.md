@@ -20,7 +20,8 @@ browser accepts them.
 | `internal/engine`       | Runs the proxy without UI: `Engine` (serves a `Generation` and swaps it on reload), `Generation` (everything built from one config). |
 | `internal/config`       | Flag parsing, YAML loading, normalisation, validation, and the file watcher.                       |
 | `internal/handler`      | Router, handlers, and middleware (see below).                                                      |
-| `internal/server`       | Listeners, TLS with on-the-fly host certificates, and the local CA.                               |
+| `internal/server`       | Listeners and the per-request scope, trace, and metrics.                                           |
+| `internal/certs`        | The local CA and the host certificates signed with it on the first TLS handshake.                  |
 | `internal/infra`        | HTTP client, CORS header helpers, error pages.                                                     |
 | `internal/events`       | Events the engine publishes, commands frontends send, and the non-blocking `Bus`.                |
 | `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
@@ -151,8 +152,9 @@ type Middleware interface {
 }
 ```
 
-Handlers return errors instead of writing error pages themselves; the
-infrastructure layer turns them into responses. Components are built with
+Handlers return errors instead of writing error pages themselves;
+`infra.CastToHTTPHandler`, which wraps every route, logs them and turns them
+into responses. Components are built with
 functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 
 ## HAR collector
@@ -175,7 +177,7 @@ functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 ## HTTPS
 
 `uncors generate-certs` creates a CA in `~/.config/uncors/`. At runtime,
-`server.HostCertManager` loads it on the first TLS handshake, signs a
+`certs.Manager` loads it on the first TLS handshake, signs a
 certificate for the SNI host name, and caches it in memory.
 
 ## Extending UNCORS

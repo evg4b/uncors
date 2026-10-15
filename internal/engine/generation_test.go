@@ -32,10 +32,9 @@ func harConfiguration() *config.UncorsConfig {
 
 func TestBuildGeneration(t *testing.T) {
 	t.Run("builds a target per port group", func(t *testing.T) {
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
-		generation, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		generation := proxy.BuildGeneration(harConfiguration())
 
 		defer testutils.Close(t, generation)
 
@@ -44,10 +43,9 @@ func TestBuildGeneration(t *testing.T) {
 	})
 
 	t.Run("cache middleware uses the current cache config", func(t *testing.T) {
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
-		generation, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		generation := proxy.BuildGeneration(harConfiguration())
 
 		defer testutils.Close(t, generation)
 
@@ -59,13 +57,11 @@ func TestBuildGeneration(t *testing.T) {
 	})
 
 	t.Run("every generation gets its own resources", func(t *testing.T) {
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
-		first, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		first := proxy.BuildGeneration(harConfiguration())
 
-		second, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		second := proxy.BuildGeneration(harConfiguration())
 
 		assert.NotSame(t, first.Cache(), second.Cache())
 
@@ -74,10 +70,9 @@ func TestBuildGeneration(t *testing.T) {
 	})
 
 	t.Run("close is idempotent", func(t *testing.T) {
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
-		instance, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		instance := proxy.BuildGeneration(harConfiguration())
 
 		require.NoError(t, instance.Close())
 		require.NoError(t, instance.Close())
@@ -86,17 +81,15 @@ func TestBuildGeneration(t *testing.T) {
 	t.Run("repeated reloads do not leak goroutines", func(t *testing.T) {
 		const reloads = 50
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
-		warmUp, err := proxy.BuildGeneration(harConfiguration())
-		require.NoError(t, err)
+		warmUp := proxy.BuildGeneration(harConfiguration())
 		require.NoError(t, warmUp.Close())
 
 		baseline := runtime.NumGoroutine()
 
 		for range reloads {
-			next, buildErr := proxy.BuildGeneration(harConfiguration())
-			require.NoError(t, buildErr)
+			next := proxy.BuildGeneration(harConfiguration())
 			require.NoError(t, next.Close())
 		}
 
@@ -110,9 +103,9 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 	require.NoError(t, fs.MkdirAll("/www", 0o755))
 
 	spans := testutils.Telemetry(t).Spans
-	proxy := engine.New(engine.WithFs(fs))
+	proxy := engine.New(fs)
 
-	generation, err := proxy.BuildGeneration(&config.UncorsConfig{
+	generation := proxy.BuildGeneration(&config.UncorsConfig{
 		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
 		Mappings: config.Mappings{{
 			From:    hosts.Localhost.HTTP(),
@@ -129,7 +122,6 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 			Rewrites: config.RewriteOptions{{From: "/old", To: "/new"}},
 		}},
 	})
-	require.NoError(t, err)
 
 	defer testutils.Close(t, generation)
 

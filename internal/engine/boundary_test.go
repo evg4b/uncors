@@ -20,6 +20,7 @@ func TestCoreDoesNotImportTheUI(t *testing.T) {
 	core := []string{
 		"github.com/evg4b/uncors/internal/engine",
 		"github.com/evg4b/uncors/internal/server",
+		"github.com/evg4b/uncors/internal/certs",
 		"github.com/evg4b/uncors/internal/events",
 		"github.com/evg4b/uncors/internal/tracking",
 		"github.com/evg4b/uncors/internal/telemetry",

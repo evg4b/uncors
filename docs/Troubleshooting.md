@@ -109,6 +109,10 @@ uncors generate-certs
 
 This creates `~/.config/uncors/ca.crt` and `~/.config/uncors/ca.key`.
 
+Within a week of the CA expiring, UNCORS warns but keeps serving HTTPS. Once it
+has expired, HTTPS stops working until you run
+`uncors generate-certs --force` and trust the new CA.
+
 If the browser still rejects the certificate, the CA is not trusted yet.
 
 macOS:
@@ -206,8 +210,8 @@ to the directory UNCORS was started from, and `~` is not expanded.
 a space. Write `1m30s` instead.
 
 UNCORS reloads the configuration file when it changes. If the new version is
-invalid, UNCORS prints the error and keeps the previous configuration until you
-fix the file.
+invalid, or one of its ports is already in use, UNCORS prints the error and
+keeps serving the previous configuration until you fix the file.
 
 ## Mocks don't respond
 

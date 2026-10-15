@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -13,10 +13,8 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
-	"github.com/samber/lo"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
@@ -29,29 +27,25 @@ const (
 
 type Target struct {
 	Address   string
-	Handler   contracts.Handler
+	Handler   http.Handler
 	EnableTLS bool
 }
 
 type Server struct {
-	sync.WaitGroup
+	wg sync.WaitGroup
 
 	mu              sync.RWMutex
-	listeners       []*PortListener
-	manager         *HostCertManager
+	listeners       []*portListener
+	targets         []Target
+	getCertificate  func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 	publisher       events.Publisher
 	nextID          atomic.Uint64
 	shutdownTimeout time.Duration
 }
 
-func New(manager *HostCertManager, publisher events.Publisher) *Server {
-	if publisher == nil {
-		publisher = events.NoopPublisher{}
-	}
-
+func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), publisher events.Publisher) *Server {
 	return &Server{
-		listeners:       []*PortListener{},
-		manager:         manager,
+		getCertificate:  getCertificate,
 		publisher:       publisher,
 		shutdownTimeout: shutdownTimeout,
 	}
@@ -68,10 +62,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) Restart(ctx context.Context, targets []Target) error {
-	s.Add(1)
-	defer s.Done()
+	s.wg.Add(1)
+	defer s.wg.Done()
 
 	return telemetry.Run(ctx, "server.restart", func(ctx context.Context) error {
+		s.mu.RLock()
+		previous := s.targets
+		s.mu.RUnlock()
+
 		// Shutdown closes the listeners straight away and then waits for in-flight
 		// requests. A long poll or a stream can outlive that wait; it is cut off
 		// rather than left to keep the server without any listener.
@@ -80,18 +78,23 @@ func (s *Server) Restart(ctx context.Context, targets []Target) error {
 			s.closeInFlight(ctx, err)
 		}
 
-		return s.Start(ctx, targets)
+		err = s.Start(ctx, targets)
+		if err != nil && len(previous) > 0 {
+			// The engine keeps the previous generation when a restart fails, so
+			// it is served again rather than leaving the proxy down.
+			err = errors.Join(err, s.Start(ctx, previous))
+		}
+
+		return err
 	})
 }
 
 func (s *Server) Wait() {
-	s.WaitGroup.Wait()
+	s.wg.Wait()
 }
 
 func (s *Server) Close() error {
-	s.mu.RLock()
-	listeners := s.listeners
-	s.mu.RUnlock()
+	listeners := s.release()
 
 	var errs []error
 
@@ -108,91 +111,93 @@ func (s *Server) Close() error {
 // ctx is the listeners' base context. spanCtx carries the server.start span,
 // which only the listen spans nest under: TLS handshakes and requests derive
 // their contexts from the base one.
+//
+// Every target is bound before any is served, so a start that fails leaves
+// nothing listening.
 func (s *Server) start(ctx, spanCtx context.Context, targets []Target) error {
 	trace.SpanFromContext(spanCtx).SetAttributes(attribute.Int("uncors.listeners", len(targets)))
 
-	s.mu.Lock()
-	s.listeners = lo.Map(targets, func(target Target, _ int) *PortListener {
-		portCtx, portCtxCancel := context.WithCancel(ctx)
+	listeners := make([]*portListener, 0, len(targets))
 
-		portListener := &PortListener{
-			Server: http.Server{
-				BaseContext: func(_ net.Listener) context.Context {
-					return portCtx
-				},
-				ReadHeaderTimeout: readHeaderTimeout,
-				Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-					s.handleRequest(target.Handler, writer, request)
-				}),
-			},
-			target:  &target,
-			manager: s.manager,
+	var errs []error
+
+	for _, target := range targets {
+		listener, err := s.listen(ctx, spanCtx, target)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
 		}
 
-		portListener.RegisterOnShutdown(portCtxCancel)
-
-		return portListener
-	})
-	s.mu.Unlock()
-
-	var launchWaitGroup sync.WaitGroup
-	launchWaitGroup.Add(len(s.listeners))
-
-	var (
-		launchErrorsMu sync.Mutex
-		launchErrs     []error
-	)
-
-	for _, server := range s.listeners {
-		s.Add(1)
-		go func(srv *PortListener) {
-			defer s.Done()
-
-			var once sync.Once
-
-			_, span := telemetry.Start(spanCtx, "server.listen")
-			span.SetAttributes(
-				semconv.ServerAddress(srv.target.Address),
-				attribute.Bool("uncors.tls", srv.target.EnableTLS),
-			)
-
-			ready := func() {
-				span.End()
-				launchWaitGroup.Done()
-			}
-
-			err := srv.Listen(ctx, func() {
-				once.Do(ready)
-			})
-
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				telemetry.Fail(span, err)
-				launchErrorsMu.Lock()
-
-				launchErrs = append(launchErrs, err)
-				launchErrorsMu.Unlock()
-			}
-			// onReady is never called on bind failure; after it fired this is a no-op.
-			once.Do(ready)
-		}(server)
+		listeners = append(listeners, listener)
 	}
 
-	launchWaitGroup.Wait()
+	if len(errs) > 0 {
+		for _, listener := range listeners {
+			_ = listener.closeListener()
+		}
 
-	launchErrorsMu.Lock()
-	err := errors.Join(launchErrs...)
-	launchErrorsMu.Unlock()
+		return errors.Join(errs...)
+	}
 
-	return err
+	s.mu.Lock()
+	s.listeners = listeners
+	s.targets = targets
+	s.mu.Unlock()
+
+	for _, listener := range listeners {
+		s.wg.Go(func() {
+			err := listener.Serve(listener.listener)
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				telemetry.Error(ctx, "listener stopped", telemetry.Err(err))
+			}
+		})
+	}
+
+	return nil
+}
+
+func (s *Server) listen(ctx, spanCtx context.Context, target Target) (*portListener, error) {
+	_, span := telemetry.Start(spanCtx, "server.listen")
+	defer span.End()
+
+	span.SetAttributes(
+		semconv.ServerAddress(target.Address),
+		attribute.Bool("uncors.tls", target.EnableTLS),
+	)
+
+	listener, err := s.bind(ctx, target)
+	if err != nil {
+		telemetry.Fail(span, err)
+
+		return nil, err
+	}
+
+	portCtx, portCtxCancel := context.WithCancel(ctx)
+
+	portListener := &portListener{
+		Server: http.Server{
+			BaseContext: func(_ net.Listener) context.Context {
+				return portCtx
+			},
+			ReadHeaderTimeout: readHeaderTimeout,
+			Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				s.handleRequest(target.Handler, writer, request)
+			}),
+		},
+		listener: listener,
+	}
+
+	portListener.RegisterOnShutdown(portCtxCancel)
+
+	return portListener, nil
 }
 
 func (s *Server) shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
 	defer cancel()
 
-	s.mu.RLock()
-	listeners := s.listeners
-	s.mu.RUnlock()
+	listeners := s.release()
 
 	var (
 		waitGroup sync.WaitGroup
@@ -202,7 +207,7 @@ func (s *Server) shutdown(ctx context.Context) error {
 
 	for _, server := range listeners {
 		waitGroup.Add(1)
-		go func(srv *PortListener) {
+		go func(srv *portListener) {
 			defer waitGroup.Done()
 
 			err := srv.Shutdown(ctx)
@@ -220,26 +225,15 @@ func (s *Server) shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// logFailure records the error a handler returned. Every handler error ends
-// here, so handlers do not log the errors they return.
-func logFailure(ctx context.Context, request *http.Request, err error) {
-	if !telemetry.Enabled() {
-		return
-	}
+// release also forgets the targets: a stopped server has nothing to fall back to.
+func (s *Server) release() []*portListener {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	attrs := []slog.Attr{
-		slog.String("method", request.Method),
-		slog.String("url", helpers.LogURL(request.URL)),
-		telemetry.Err(err),
-	}
+	listeners := s.listeners
+	s.targets = nil
 
-	if ctx.Err() != nil {
-		telemetry.Debug(ctx, "request cancelled by the client", attrs...)
-
-		return
-	}
-
-	telemetry.Error(ctx, "request failed", attrs...)
+	return listeners
 }
 
 func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
@@ -262,7 +256,7 @@ func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	}
 }
 
-func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWriter, request *http.Request) {
+func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
 	helpers.NormaliseRequest(request)
 
 	requestID := s.nextID.Add(1)
@@ -279,17 +273,17 @@ func (s *Server) handleRequest(handler contracts.Handler, writer http.ResponseWr
 
 	telemetry.RequestStarted(ctx)
 
-	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request)
+	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request, rec.startedAt)
 
-	err := handler.ServeHTTP(rec, request.WithContext(ctx))
-	if err != nil {
-		logFailure(ctx, request, err)
-		tracking.Fail(ctx, err)
-		infra.HTTPError(rec, err)
+	handler.ServeHTTP(rec, request.WithContext(ctx))
+
+	data := &contracts.RequestData{
+		Method:    request.Method,
+		URL:       request.URL,
+		Header:    request.Header,
+		Code:      helpers.NormaliseStatusCode(rec.StatusCode()),
+		Cancelled: ctx.Err() != nil,
 	}
-
-	data := helpers.ToRequestData(request, helpers.NormaliseStatusCode(rec.StatusCode()))
-	data.Cancelled = ctx.Err() != nil
 
 	if span.IsRecording() {
 		annotateResponse(span, data, rec.Header(), rec.Written())

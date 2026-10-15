@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -284,7 +284,6 @@ func TestMappingValidator(t *testing.T) {
 func TestValidateTLS(t *testing.T) {
 	t.Run("skip validation for invalid URL", func(t *testing.T) {
 		err := config.ValidateTLS(
-			"test",
 			config.Mapping{From: hosts.Parse("://invalid-url"), To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
 		)
@@ -293,7 +292,6 @@ func TestValidateTLS(t *testing.T) {
 
 	t.Run("skip validation for non-HTTPS", func(t *testing.T) {
 		err := config.ValidateTLS(
-			"test",
 			config.Mapping{From: hosts.Parse("http://localhost:8080"), To: hosts.Example.HTTP()},
 			afero.NewMemMapFs(),
 		)
@@ -306,7 +304,7 @@ func TestValidateTLS(t *testing.T) {
 		require.NoError(t, os.MkdirAll(fakeHome, 0o755))
 		t.Setenv("HOME", fakeHome)
 
-		err := config.ValidateTLS("test",
+		err := config.ValidateTLS(
 			config.Mapping{From: hosts.Parse("https://localhost:8443"), To: hosts.Example.HTTP()},
 			afero.NewOsFs())
 
@@ -323,10 +321,10 @@ func TestValidateTLS(t *testing.T) {
 
 		fs := afero.NewOsFs()
 		caDir := filepath.Join(fakeHome, ".config", "uncors")
-		_, _, err := server.GenerateCA(server.CAConfig{ValidityDays: 365, OutputDir: caDir, Fs: fs})
+		_, _, err := certs.Generate(fs, caDir, 365)
 		require.NoError(t, err)
 
-		err = config.ValidateTLS("test",
+		err = config.ValidateTLS(
 			config.Mapping{From: hosts.Parse("https://localhost:8443"), To: hosts.Example.HTTP()},
 			fs)
 

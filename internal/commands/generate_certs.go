@@ -2,21 +2,16 @@ package commands
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
 
-const (
-	defaultValidityDays = 365
-	defaultConfigDir    = ".config/uncors"
-)
+const defaultValidityDays = 365
 
 type GenerateCertsCommand struct {
 	validityDays int
@@ -37,15 +32,13 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet, version string)
 }
 
 func (c *GenerateCertsCommand) Execute() error {
-	homeDir, err := os.UserHomeDir()
+	outputDir, err := certs.Dir()
 	if err != nil {
-		return fmt.Errorf("failed to get user home directory: %w", err)
+		return err
 	}
 
-	c.outputDir = filepath.Join(homeDir, defaultConfigDir)
-
-	certPath := filepath.Join(c.outputDir, server.CACertFileName)
-	keyPath := filepath.Join(c.outputDir, server.CAKeyFileName)
+	c.outputDir = outputDir
+	certPath, keyPath := certs.Paths(c.outputDir)
 
 	if !c.force {
 		_, err := c.fs.Stat(certPath)
@@ -71,11 +64,7 @@ func (c *GenerateCertsCommand) Execute() error {
 
 	c.output.Info("Generating CA certificate...")
 
-	certPath, keyPath, err = server.GenerateCA(server.CAConfig{
-		ValidityDays: c.validityDays,
-		OutputDir:    c.outputDir,
-		Fs:           c.fs,
-	})
+	certPath, keyPath, err = certs.Generate(c.fs, c.outputDir, c.validityDays)
 	if err != nil {
 		return fmt.Errorf("failed to generate CA certificate: %w", err)
 	}

@@ -9,7 +9,6 @@ type RequestData struct {
 	Method    string
 	URL       *url.URL
 	Header    http.Header
-	Body      []byte
 	Code      int
 	Cancelled bool
 }

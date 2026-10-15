@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/commands"
-	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -73,7 +73,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		assert.FileExists(t, filepath.Join(caDir, caCertFile))
 		assert.FileExists(t, filepath.Join(caDir, caKeyFile))
 
-		cert, key, err := server.LoadCA(fs,
+		cert, key, err := certs.Load(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
@@ -106,7 +106,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		cert, _, err := server.LoadCA(fs,
+		cert, _, err := certs.Load(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
@@ -163,7 +163,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		caDir := filepath.Join(fakeHome, configDir, "uncors")
-		cert1, _, err := server.LoadCA(fs,
+		cert1, _, err := certs.Load(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)
@@ -181,7 +181,7 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 		err = cmd2.Execute()
 		require.NoError(t, err)
 
-		cert2, _, err := server.LoadCA(fs,
+		cert2, _, err := certs.Load(fs,
 			filepath.Join(caDir, caCertFile),
 			filepath.Join(caDir, caKeyFile),
 		)

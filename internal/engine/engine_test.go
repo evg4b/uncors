@@ -3,6 +3,8 @@ package engine_test
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"sync"
 	"testing"
@@ -63,7 +65,7 @@ func TestEngine(t *testing.T) {
 	t.Run("serves the configured mapping", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -75,7 +77,7 @@ func TestEngine(t *testing.T) {
 	t.Run("moves to the port of the reloaded config", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -89,7 +91,7 @@ func TestEngine(t *testing.T) {
 	t.Run("stops serving the port the reloaded config dropped", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -114,7 +116,7 @@ func TestEngine(t *testing.T) {
 
 		ports := testutils.GetFreePorts(t, restarts+1)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 		defer testutils.Close(t, proxy)
@@ -145,7 +147,7 @@ func TestEngine(t *testing.T) {
 	t.Run("restart returns an error when the new port is taken", func(t *testing.T) {
 		ports := testutils.GetFreePorts(t, 2)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
 
@@ -154,6 +156,28 @@ func TestEngine(t *testing.T) {
 		occupy(t, ports[1])
 
 		require.Error(t, proxy.Restart(t.Context(), proxyConfiguration(ports[1])))
+
+		assertListening(t, ports[0])
+	})
+
+	t.Run("a failed restart binds none of the new ports", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 3)
+
+		proxy := engine.New(afero.NewMemMapFs())
+
+		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
+
+		defer testutils.Close(t, proxy)
+
+		occupy(t, ports[2])
+
+		cfg := proxyConfiguration(ports[1])
+		cfg.Mappings = append(cfg.Mappings, proxyConfiguration(ports[2]).Mappings...)
+
+		require.Error(t, proxy.Restart(t.Context(), cfg))
+
+		assertListening(t, ports[0])
+		assert.True(t, testutils.IsPortFree(ports[1]))
 	})
 
 	t.Run("returns an error when the port is already taken", func(t *testing.T) {
@@ -161,7 +185,7 @@ func TestEngine(t *testing.T) {
 
 		occupy(t, port)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.Error(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 	})
@@ -169,7 +193,7 @@ func TestEngine(t *testing.T) {
 	t.Run("shutdown releases the active generation and is idempotent", func(t *testing.T) {
 		port := testutils.GetFreePort(t)
 
-		proxy := engine.New(engine.WithFs(afero.NewMemMapFs()))
+		proxy := engine.New(afero.NewMemMapFs())
 
 		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(port)))
 
@@ -183,13 +207,57 @@ func TestEngine(t *testing.T) {
 	})
 }
 
+func TestEngineClosesIdleUpstreamConnectionsOnRestart(t *testing.T) {
+	closed := make(chan struct{})
+
+	var once sync.Once
+
+	upstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	upstream.Config.ConnState = func(_ net.Conn, state http.ConnState) {
+		if state == http.StateClosed {
+			once.Do(func() { close(closed) })
+		}
+	}
+
+	upstream.Start()
+	defer upstream.Close()
+
+	port := testutils.GetFreePort(t)
+	cfg := proxyConfiguration(port)
+	cfg.Mappings[0].To = hosts.Parse(upstream.URL)
+
+	proxy := engine.New(afero.NewMemMapFs())
+	require.NoError(t, proxy.Start(t.Context(), cfg))
+
+	defer testutils.Close(t, proxy)
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+		hosts.Localhost.HTTPPort(port).String()+"/", nil)
+	require.NoError(t, err)
+
+	response, err := http.DefaultClient.Do(request)
+	require.NoError(t, err)
+	require.NoError(t, response.Body.Close())
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	require.NoError(t, proxy.Restart(t.Context(), cfg))
+
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("the idle upstream connection of the previous generation was not closed")
+	}
+}
+
 func TestEnginePublishesLifecycleEvents(t *testing.T) {
 	ports := testutils.GetFreePorts(t, 3)
 
 	bus := events.NewBus()
 	subscription := bus.Subscribe(10)
 
-	proxy := engine.New(engine.WithFs(afero.NewMemMapFs()), engine.WithPublisher(bus))
+	proxy := engine.New(afero.NewMemMapFs(), engine.WithPublisher(bus))
 	defer testutils.Close(t, proxy)
 
 	first := proxyConfiguration(ports[0])

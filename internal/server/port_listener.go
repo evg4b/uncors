@@ -3,33 +3,50 @@ package server
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
 )
 
-type PortListener struct {
+type portListener struct {
 	http.Server
 
-	target  *Target
-	manager *HostCertManager
+	listener net.Listener
 }
 
-func (ps *PortListener) Listen(ctx context.Context, onReady func()) error {
+func (s *Server) bind(ctx context.Context, target Target) (net.Listener, error) {
 	var listenConfig net.ListenConfig
 
-	listener, err := listenConfig.Listen(ctx, "tcp", ps.target.Address)
+	listener, err := listenConfig.Listen(ctx, "tcp", target.Address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if ps.target.EnableTLS {
+	if target.EnableTLS {
 		listener = tls.NewListener(listener, &tls.Config{
 			MinVersion:     tls.VersionTLS12,
-			GetCertificate: ps.manager.getCertificate,
+			GetCertificate: s.getCertificate,
 		})
 	}
 
-	onReady()
+	return listener, nil
+}
 
-	return ps.Serve(listener)
+// Shutdown and Close also close the listener itself: Serve runs on its own
+// goroutine and may not have taken the listener over yet.
+func (l *portListener) Shutdown(ctx context.Context) error {
+	return errors.Join(l.Server.Shutdown(ctx), l.closeListener())
+}
+
+func (l *portListener) Close() error {
+	return errors.Join(l.Server.Close(), l.closeListener())
+}
+
+func (l *portListener) closeListener() error {
+	err := l.listener.Close()
+	if errors.Is(err, net.ErrClosed) {
+		return nil
+	}
+
+	return err
 }

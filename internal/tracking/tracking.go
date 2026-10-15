@@ -36,15 +36,16 @@ type Scope struct {
 func Begin(
 	ctx context.Context,
 	publisher events.Publisher,
-	id uint64,
+	requestID uint64,
 	request *contracts.Request,
+	startedAt time.Time,
 ) (context.Context, *Scope) {
 	scope := &Scope{
 		publisher: publisher,
-		id:        id,
+		id:        requestID,
 		method:    request.Method,
 		url:       request.URL,
-		startedAt: time.Now(),
+		startedAt: startedAt,
 	}
 
 	// Attribution is recorded on the request's root span. It is kept apart

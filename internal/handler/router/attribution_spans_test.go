@@ -5,7 +5,9 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
+	"time"
 
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -34,11 +36,11 @@ func serveTraced(
 	helpers.NormaliseRequest(request)
 
 	ctx, root := telemetry.StartServer(request.Context(), rootSpanName)
-	ctx, scope := tracking.Begin(ctx, events.NoopPublisher{}, 1, request)
+	ctx, scope := tracking.Begin(ctx, events.NoopPublisher{}, 1, request, time.Now())
 	recorder := httptest.NewRecorder()
 
 	serveHTTP(t, handler, recorder, request.WithContext(ctx))
-	scope.Finish(helpers.ToRequestData(request, recorder.Code))
+	scope.Finish(&contracts.RequestData{Method: request.Method, URL: request.URL, Code: recorder.Code})
 	root.End()
 
 	traceID := root.SpanContext().TraceID()
