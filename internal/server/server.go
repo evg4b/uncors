@@ -43,8 +43,6 @@ type Server struct {
 	shutdownTimeout time.Duration
 }
 
-// New builds a server that takes the certificates of TLS targets from
-// getCertificate.
 func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), publisher events.Publisher) *Server {
 	return &Server{
 		getCertificate:  getCertificate,
@@ -227,8 +225,7 @@ func (s *Server) shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// release hands over the listeners to stop. The targets are forgotten too:
-// a stopped server has nothing to fall back to.
+// release also forgets the targets: a stopped server has nothing to fall back to.
 func (s *Server) release() []*portListener {
 	s.mu.Lock()
 	defer s.mu.Unlock()

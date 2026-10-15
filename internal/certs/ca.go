@@ -33,7 +33,6 @@ const (
 	hoursInDay                 = 24
 )
 
-// Dir is where the CA lives: ~/.config/uncors.
 func Dir() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -43,7 +42,6 @@ func Dir() (string, error) {
 	return filepath.Join(homeDir, ".config", "uncors"), nil
 }
 
-// Paths returns the certificate and key files of the CA in dir.
 func Paths(dir string) (string, string) {
 	return filepath.Join(dir, CertFileName), filepath.Join(dir, KeyFileName)
 }
@@ -62,8 +60,6 @@ func Exists(fs afero.Fs) bool {
 	return certErr == nil && keyErr == nil
 }
 
-// Generate creates a CA valid for validityDays in dir and returns the paths
-// of its certificate and key.
 func Generate(fs afero.Fs, dir string, validityDays int) (string, string, error) {
 	notBefore := time.Now()
 	template := &x509.Certificate{
@@ -105,8 +101,7 @@ func Generate(fs afero.Fs, dir string, validityDays int) (string, string, error)
 	return certPath, keyPath, nil
 }
 
-// writePEM creates the file with its final permissions, so a key is never
-// readable by others, not even for a moment.
+// The file is created with its final permissions, so a key is never readable by others.
 func writePEM(fs afero.Fs, path string, perm os.FileMode, blockType string, data []byte) (err error) {
 	file, err := fs.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, perm)
 	if err != nil {
@@ -165,9 +160,8 @@ func LoadDefault(fs afero.Fs) (*x509.Certificate, *rsa.PrivateKey, error) {
 	return Load(fs, certPath, keyPath)
 }
 
-// CheckExpiration returns ErrCACertExpired for an expired CA, and an error
-// wrapping ErrCACertExpiringSoon for one that expires within a week: the
-// CA still works then, so that error is a warning.
+// CheckExpiration returns ErrCACertExpired for an expired CA. ErrCACertExpiringSoon
+// (within a week) is only a warning: the CA still works.
 func CheckExpiration(cert *x509.Certificate) error {
 	timeLeft := time.Until(cert.NotAfter)
 

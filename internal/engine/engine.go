@@ -34,8 +34,6 @@ func WithPublisher(publisher events.Publisher) Option {
 	}
 }
 
-// New builds an engine that reads static files, mocks, scripts, and the CA
-// from fs.
 func New(fs afero.Fs, options ...Option) *Engine {
 	engine := helpers.ApplyOptions(&Engine{
 		fs:        fs,
@@ -73,9 +71,8 @@ func (e *Engine) Wait() {
 	e.server.Wait()
 }
 
-// apply serves a generation built from uncorsConfig in place of the current
-// one. When serve fails the new generation is released and the current one
-// is kept.
+// When serve fails the new generation is released and the current one is
+// kept: server.Restart relies on it to serve the previous targets again.
 func (e *Engine) apply(
 	ctx context.Context,
 	span string,
@@ -101,7 +98,6 @@ func (e *Engine) apply(
 	})
 }
 
-// stop releases the server with release, then the current generation.
 func (e *Engine) stop(ctx context.Context, span string, release func(context.Context) error) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

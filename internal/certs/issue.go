@@ -18,8 +18,7 @@ const (
 	certValidityDays = 365
 )
 
-// issue signs template with a new key and serial number. A nil parent
-// makes the certificate self-signed.
+// A nil parent makes the certificate self-signed.
 func issue(template, parent *x509.Certificate, parentKey *rsa.PrivateKey) ([]byte, *rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
@@ -43,8 +42,6 @@ func issue(template, parent *x509.Certificate, parentKey *rsa.PrivateKey) ([]byt
 	return certDER, privateKey, nil
 }
 
-// issueHostCertificate signs a certificate for host, a name or an IP
-// address, with the CA.
 func issueHostCertificate(caCert *x509.Certificate, caKey *rsa.PrivateKey, host string) (*tls.Certificate, error) {
 	notBefore := time.Now()
 	template := &x509.Certificate{

@@ -14,7 +14,6 @@ type portListener struct {
 	listener net.Listener
 }
 
-// bind listens on the target's address, behind TLS when the target asks for it.
 func (s *Server) bind(ctx context.Context, target Target) (net.Listener, error) {
 	var listenConfig net.ListenConfig
 

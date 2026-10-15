@@ -155,8 +155,7 @@ func (g *Generation) ProxyHandler(mappings config.Mappings) contracts.Handler {
 	)
 }
 
-// httpClient is shared by every listener of the generation. Closing the
-// generation drops its idle upstream connections.
+// Shared by every listener of the generation; closing it drops idle upstream connections.
 func (g *Generation) httpClient() *http.Client {
 	if g.client == nil {
 		g.client = infra.MakeHTTPClient(g.proxyURL)

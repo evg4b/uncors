@@ -20,11 +20,12 @@ import (
 )
 
 // Manager loads the CA on the first TLS handshake and signs a certificate
-// for every host name it is asked for, once.
+// for every host name once.
 type Manager struct {
 	fs        afero.Fs
 	publisher events.Publisher
 
+	// Guards everything below; ensureCA, loadCA and certificateForHost run under it.
 	mu     sync.Mutex
 	caCert *x509.Certificate
 	caKey  *rsa.PrivateKey
@@ -44,7 +45,6 @@ func NewManager(fs afero.Fs, publisher events.Publisher) *Manager {
 	}
 }
 
-// GetCertificate is a tls.Config.GetCertificate.
 func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	ctx := clientHello.Context()
 	if ctx == nil {
@@ -91,7 +91,6 @@ func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certifi
 	return cert, nil
 }
 
-// Runs under mu.
 func (m *Manager) ensureCA(ctx context.Context) error {
 	if m.caCert != nil {
 		return nil
@@ -125,7 +124,6 @@ func (m *Manager) ensureCA(ctx context.Context) error {
 	return nil
 }
 
-// Runs under mu. A CA that expires soon still signs, with a warning.
 func (m *Manager) loadCA(ctx context.Context) error {
 	caCert, caKey, err := LoadDefault(m.fs)
 	if err != nil {
@@ -145,7 +143,6 @@ func (m *Manager) loadCA(ctx context.Context) error {
 	return nil
 }
 
-// Runs under mu.
 func (m *Manager) certificateForHost(ctx context.Context, host string) (*tls.Certificate, error) {
 	if cert, exists := m.cache[host]; exists {
 		return cert, nil
@@ -192,8 +189,7 @@ func annotateClientHello(span trace.Span, clientHello *tls.ClientHelloInfo) {
 	span.SetAttributes(attrs...)
 }
 
-// extractServerHost is the SNI name or, for a client that sends none, the
-// local address it connected to.
+// Without SNI the local address the client connected to is used.
 func extractServerHost(clientHello *tls.ClientHelloInfo) (string, bool) {
 	if clientHello.ServerName != "" {
 		return clientHello.ServerName, true
