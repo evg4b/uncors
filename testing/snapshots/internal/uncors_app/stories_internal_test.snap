@@ -1,0 +1,960 @@
+
+[TestStories/help/short/40 - 1]
+? toggle help • r reload • q quit
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+---
+
+[TestStories/help/short/80 - 1]
+? toggle help • r reload • q quit
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+---
+
+[TestStories/help/short/120 - 1]
+? toggle help • r reload • q quit
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+---
+
+[TestStories/help/full/40 - 1]
+↑/k    scroll up      home/g top    …
+↓/j    scroll down    end/G  bottom
+pgup/b page up
+pgdn/f page down
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m    [38;2;60;60;60m…[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m
+---
+
+[TestStories/help/full/80 - 1]
+↑/k    scroll up      home/g top       ? toggle help
+↓/j    scroll down    end/G  bottom    r reload
+pgup/b page up                         q quit
+pgdn/f page down
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m
+---
+
+[TestStories/help/full/120 - 1]
+↑/k    scroll up      home/g top       ? toggle help
+↓/j    scroll down    end/G  bottom    r reload
+pgup/b page up                         q quit
+pgdn/f page down
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m
+---
+
+[TestStories/memory/small/40 - 1]
+[ 42.5 MB ]
+[38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/memory/small/80 - 1]
+[ 42.5 MB ]
+[38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/memory/small/120 - 1]
+[ 42.5 MB ]
+[38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/memory/large/40 - 1]
+[ 2048.2 MB ]
+[38;2;119;119;119m[ 2048.2 MB ][m
+---
+
+[TestStories/memory/large/80 - 1]
+[ 2048.2 MB ]
+[38;2;119;119;119m[ 2048.2 MB ][m
+---
+
+[TestStories/memory/large/120 - 1]
+[ 2048.2 MB ]
+[38;2;119;119;119m[ 2048.2 MB ][m
+---
+
+[TestStories/tracker/single/40 - 1]
+ PROXY     ▱▱▱ GET      https://api.exam
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+---
+
+[TestStories/tracker/single/80 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+---
+
+[TestStories/tracker/single/120 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+---
+
+[TestStories/tracker/many/40 - 1]
+ PROXY     ▱▱▱ GET      https://api.exam
+ MOCK      ▱▱▱ POST     http://localhost
+ SCRIPT    ▱▱▱ PUT      http://localhost
+ CACHE     ▱▱▱ GET      https://api.exam
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+---
+
+[TestStories/tracker/many/80 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+ MOCK      ▱▱▱ POST     http://localhost:3000/api/login
+ SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+---
+
+[TestStories/tracker/many/120 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+ MOCK      ▱▱▱ POST     http://localhost:3000/api/login
+ SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+---
+
+[TestStories/tracker/long-url/40 - 1]
+ PROXY     ▱▱▱ GET      https://api.exam
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+---
+
+[TestStories/tracker/long-url/80 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/search?query=very+long+search
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search[m
+---
+
+[TestStories/tracker/long-url/120 - 1]
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-5
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-5[m
+---
+
+[TestStories/history/short/40 - 1]
+ PROXY     200 GET      https://api.exam
+ MOCK      201 POST     http://localhost
+ STATIC    200 GET      http://localhost
+ CACHE     304 GET      https://api.exam
+ OPTIONS   204 OPTIONS  https://api.exam
+ PROXY     404 GET      https://api.exam
+ SCRIPT    500 DELETE   https://api.exam
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+
+
+
+---
+
+[TestStories/history/short/80 - 1]
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+
+
+
+---
+
+[TestStories/history/short/120 - 1]
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+
+
+
+---
+
+[TestStories/history/overflow/40 - 1]
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+---
+
+[TestStories/history/overflow/80 - 1]
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+---
+
+[TestStories/history/overflow/120 - 1]
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+line 07
+line 08
+line 09
+line 10
+line 11
+line 12
+line 13
+line 14
+line 15
+line 16
+---
+
+[TestStories/history/scrolled-top/40 - 1]
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+---
+
+[TestStories/history/scrolled-top/80 - 1]
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+---
+
+[TestStories/history/scrolled-top/120 - 1]
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+line 01
+line 02
+line 03
+line 04
+line 05
+line 06
+line 07
+line 08
+line 09
+line 10
+---
+
+[TestStories/app/started/40 - 1]
+██    ██ ███    ██  ██████  ██████  ████
+██    ██ ████   ██ ██      ██    ██ ██  
+██    ██ ██ ██  ██ ██      ██    ██ ████
+██    ██ ██  ██ ██ ██      ██    ██ ██  
+ ██████  ██   ████  ██████  ██████  ██  
+                               version:
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use
+        It hasn't been reviewed for secu
+
+ INFO   http://localhost:3000 => https:/
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https:
+
+ PROXY     200 GET      https://api.exam
+ MOCK      201 POST     http://localhost
+ STATIC    200 GET      http://localhost
+ CACHE     304 GET      https://api.exam
+ OPTIONS   204 OPTIONS  https://api.exam
+ PROXY     404 GET      https://api.exam
+ SCRIPT    500 DELETE   https://api.exam
+? toggle help • r reload • q quit
+[38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ████[m
+[38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██  [m
+[38;2;220;1;0m██    ██ ██ ██  ██ [38;2;255;212;0m██      ██    ██ ████[m
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██  [m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██  [m
+                               version:
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use
+[48;2;255;212;0m       [m It hasn't been reviewed for secu
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+---
+
+[TestStories/app/started/80 - 1]
+██    ██ ███    ██  ██████  ██████  ██████  ███████
+██    ██ ████   ██ ██      ██    ██ ██   ██ ██     
+██    ██ ██ ██  ██ ██      ██    ██ ██████  ███████
+██    ██ ██  ██ ██ ██      ██    ██ ██   ██      ██
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+? toggle help • r reload • q quit                                    [ 42.5 MB ]
+[38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ██████  ███████[m
+[38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██   ██ ██     [m
+[38;2;220;1;0m██    ██ ██ ██  ██ [38;2;255;212;0m██      ██    ██ ██████  ███████[m
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██   ██      ██[m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/app/started/120 - 1]
+██    ██ ███    ██  ██████  ██████  ██████  ███████
+██    ██ ████   ██ ██      ██    ██ ██   ██ ██     
+██    ██ ██ ██  ██ ██      ██    ██ ██████  ███████
+██    ██ ██  ██ ██ ██      ██    ██ ██   ██      ██
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications locally.
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
+[38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ██████  ███████[m
+[38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██   ██ ██     [m
+[38;2;220;1;0m██    ██ ██ ██  ██ [38;2;255;212;0m██      ██    ██ ██████  ███████[m
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██   ██      ██[m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/app/busy/40 - 1]
+                               version:
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use
+        It hasn't been reviewed for secu
+
+ INFO   http://localhost:3000 => https:/
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https:
+
+ PROXY     200 GET      https://api.exam
+ MOCK      201 POST     http://localhost
+ STATIC    200 GET      http://localhost
+ CACHE     304 GET      https://api.exam
+ OPTIONS   204 OPTIONS  https://api.exam
+ PROXY     404 GET      https://api.exam
+ SCRIPT    500 DELETE   https://api.exam
+ PROXY     ▱▱▱ GET      https://api.exam
+ MOCK      ▱▱▱ POST     http://localhost
+ SCRIPT    ▱▱▱ PUT      http://localhost
+ CACHE     ▱▱▱ GET      https://api.exam
+? toggle help • r reload • q quit
+
+                               version:
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use
+[48;2;255;212;0m       [m It hasn't been reviewed for secu
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+
+---
+
+[TestStories/app/busy/80 - 1]
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+ MOCK      ▱▱▱ POST     http://localhost:3000/api/login
+ SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+? toggle help • r reload • q quit                                    [ 42.5 MB ]
+
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
+
+---
+
+[TestStories/app/busy/120 - 1]
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications locally.
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY     ▱▱▱ GET      https://api.example.com/v1/users
+ MOCK      ▱▱▱ POST     http://localhost:3000/api/login
+ SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
+
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
+
+---
+
+[TestStories/app/full-help/40 - 1]
+██    ██ ██  ██ ██ ██      ██    ██ ██  
+ ██████  ██   ████  ██████  ██████  ██  
+                               version:
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use
+        It hasn't been reviewed for secu
+
+ INFO   http://localhost:3000 => https:/
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https:
+
+ PROXY     200 GET      https://api.exam
+ MOCK      201 POST     http://localhost
+ STATIC    200 GET      http://localhost
+ CACHE     304 GET      https://api.exam
+ OPTIONS   204 OPTIONS  https://api.exam
+ PROXY     404 GET      https://api.exam
+ SCRIPT    500 DELETE   https://api.exam
+↑/k    scroll up      home/g top    …
+↓/j    scroll down    end/G  bottom
+pgup/b page up
+pgdn/f page down
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██  [m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██  [m
+                               version:
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use
+[48;2;255;212;0m       [m It hasn't been reviewed for secu
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m    [38;2;60;60;60m…[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m
+---
+
+[TestStories/app/full-help/80 - 1]
+██    ██ ██  ██ ██ ██      ██    ██ ██   ██      ██
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+↑/k    scroll up      home/g top       ? toggle help
+↓/j    scroll down    end/G  bottom    r reload
+pgup/b page up                         q quit
+pgdn/f page down                                                     [ 42.5 MB ]
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██   ██      ██[m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                     [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/app/full-help/120 - 1]
+██    ██ ██  ██ ██ ██      ██    ██ ██   ██      ██
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
+                               version: 0.0.0-story
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications locally.
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ PROXY     200 GET      https://api.example.com/v1/users
+ MOCK      201 POST     http://localhost:3000/api/login
+ STATIC    200 GET      http://localhost:3000/assets/app.js
+ CACHE     304 GET      https://api.example.com/v1/catalog
+ OPTIONS   204 OPTIONS  https://api.example.com/v1/users
+ PROXY     404 GET      https://api.example.com/v1/missing
+ SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+↑/k    scroll up      home/g top       ? toggle help
+↓/j    scroll down    end/G  bottom    r reload
+pgup/b page up                         q quit
+pgdn/f page down                                                                                             [ 42.5 MB ]
+[38;2;220;1;0m██    ██ ██  ██ ██ [38;2;255;212;0m██      ██    ██ ██   ██      ██[m
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
+                               version: 0.0.0-story
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
+[38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
+[38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                                                             [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/app/notices/40 - 1]
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use
+        It hasn't been reviewed for secu
+
+ INFO   http://localhost:3000 => https:/
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https:
+
+ INFO   Recording HAR to ./traffic.har
+ WARN   Cache directory is not writable,
+ ERROR  script mocks/login.lua: attempt
+ ERROR  Failed to reload configuration,
+ INFO   Server restarted
+        http://localhost:3000 => https:/
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https:
+ INFO   NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version,
+        See more information at https://
+
+? toggle help • r reload • q quit
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use
+[48;2;255;212;0m       [m It hasn't been reviewed for secu
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable,
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration,
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version,
+        See more information at https://
+
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
+---
+
+[TestStories/app/notices/80 - 1]
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ INFO   Recording HAR to ./traffic.har
+ WARN   Cache directory is not writable, caching in memory
+ ERROR  script mocks/login.lua: attempt to index a nil value
+ ERROR  Failed to reload configuration, keeping the previous one: mappings[0].fr
+ INFO   Server restarted
+        http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+ INFO   NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version, you should upgrade to 0.6.0.
+        See more information at https://github.com/evg4b/uncors/releases
+
+? toggle help • r reload • q quit                                    [ 42.5 MB ]
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable, caching in memory
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt to index a nil value
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration, keeping the previous one: mappings[0].fr
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version, you should upgrade to 0.6.0.
+        See more information at https://github.com/evg4b/uncors/releases
+
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/app/notices/120 - 1]
+
+ WARN   DON'T USE IT FOR PRODUCTION!
+        This is a reverse proxy for use in testing or debugging web applications locally.
+        It hasn't been reviewed for security issues.
+
+ INFO   http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+
+ INFO   Recording HAR to ./traffic.har
+ WARN   Cache directory is not writable, caching in memory
+ ERROR  script mocks/login.lua: attempt to index a nil value
+ ERROR  Failed to reload configuration, keeping the previous one: mappings[0].from: invalid URL
+ INFO   Server restarted
+        http://localhost:3000 => https://api.example.com
+            mock: [GET] /v1/health
+            static: /assets => ./public
+        https://localhost:3443 => https://cdn.example.com
+ INFO   NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version, you should upgrade to 0.6.0.
+        See more information at https://github.com/evg4b/uncors/releases
+
+? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
+
+[48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
+[48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
+[48;2;255;212;0m       [m It hasn't been reviewed for security issues.
+
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable, caching in memory
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt to index a nil value
+[48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration, keeping the previous one: mappings[0].from: invalid URL
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+        0.5.0 is not the latest version, you should upgrade to 0.6.0.
+        See more information at https://github.com/evg4b/uncors/releases
+
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
+---
