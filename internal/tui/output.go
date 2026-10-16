@@ -23,7 +23,8 @@ const (
 	errorOutput
 )
 
-var boxLength = 8
+// Fits " ERROR ", so every level label is as wide.
+const boxLength = 7
 
 var levelStyles = map[outputType]lipgloss.Style{
 	infoOutput:    styles.InfoBlockStyle.Width(boxLength).Bold(true),
@@ -170,9 +171,14 @@ func (output *CliOutput) renderLevel(level outputType) {
 	output.buffer.WriteByte(' ')
 }
 
+// Indents the lines after the first to the column where the first one starts.
 func (output *CliOutput) renderMessage(msg string) {
 	msg = strings.TrimSuffix(msg, "\n")
-	fmt.Fprint(&output.buffer, msg)
+
+	lastLine := output.buffer.Bytes()[bytes.LastIndexByte(output.buffer.Bytes(), '\n')+1:]
+	indent := "\n" + strings.Repeat(" ", lipgloss.Width(string(lastLine)))
+
+	fmt.Fprint(&output.buffer, strings.ReplaceAll(msg, "\n", indent))
 }
 
 func (output *CliOutput) renderPrefix() {
