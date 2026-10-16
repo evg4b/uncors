@@ -27,6 +27,7 @@ import (
 const (
 	defaultWidth = 80
 	statePerm    = 0o600
+	stateDirPerm = 0o700
 )
 
 var errUnknownStory = errors.New("unknown story")
@@ -58,8 +59,8 @@ func run(args []string, out io.Writer) error {
 	flags.BoolVar(&opts.plain, "plain", false, "with -render: strip colours")
 	flags.BoolVar(&opts.list, "list", false, "print the story names and exit")
 	flags.BoolVar(&opts.watch, "watch", true, "rebuild and reopen the story when a Go file changes")
-	flags.StringVar(&opts.state, "state", filepath.Join(os.TempDir(), "uncors-tuiplay.json"),
-		"file that remembers the last story for the picker")
+	flags.StringVar(&opts.state, "state", defaultStatePath(),
+		"file that remembers the last story for the picker; empty to forget")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -139,8 +140,23 @@ type savedState struct {
 	Story string `json:"story"`
 }
 
+// defaultStatePath is in the user's own cache directory, not a shared temp
+// directory, or "" when there is none.
+func defaultStatePath() string {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Join(dir, "uncors", "tuiplay.json")
+}
+
 func loadState(fs afero.Fs, path string) savedState {
 	state := savedState{}
+
+	if path == "" {
+		return state
+	}
 
 	data, err := afero.ReadFile(fs, path)
 	if err == nil {
@@ -151,6 +167,10 @@ func loadState(fs afero.Fs, path string) savedState {
 }
 
 func saveState(fs afero.Fs, path string, state savedState) {
+	if path == "" || fs.MkdirAll(filepath.Dir(path), stateDirPerm) != nil {
+		return
+	}
+
 	data, err := json.Marshal(state)
 	if err == nil {
 		_ = afero.WriteFile(fs, path, data, statePerm)

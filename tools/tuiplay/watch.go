@@ -47,8 +47,23 @@ func watch(story string) error {
 
 	defer signal.Stop(signals)
 
+	// A fresh private directory, so nobody else can plant the binary we run.
+	buildDir, err := os.MkdirTemp("", "uncors-tuiplay-")
+	if err != nil {
+		return fmt.Errorf("failed to create build directory: %w", err)
+	}
+
+	defer os.RemoveAll(buildDir)
+
+	restartOnChange(filepath.Join(buildDir, "tuiplay"), root, story, changes, signals)
+
+	return nil
+}
+
+// restartOnChange runs the story until it is quit, restarting it on every
+// change.
+func restartOnChange(binary, root, story string, changes <-chan string, signals <-chan os.Signal) {
 	ctx := context.Background()
-	binary := filepath.Join(os.TempDir(), "uncors-tuiplay-story")
 
 	for {
 		drain(changes)
@@ -58,7 +73,7 @@ func watch(story string) error {
 		select {
 		case err := <-running.done():
 			if err == nil {
-				return nil
+				return
 			}
 
 			logf("the story stopped: %v; waiting for changes", err)
@@ -66,7 +81,7 @@ func watch(story string) error {
 			select {
 			case <-changes:
 			case <-signals:
-				return nil
+				return
 			}
 		case file := <-changes:
 			running.stop()
@@ -74,7 +89,7 @@ func watch(story string) error {
 		case <-signals:
 			running.stop()
 
-			return nil
+			return
 		}
 	}
 }
@@ -87,7 +102,8 @@ type runningStory struct {
 // startStory builds tuiplay and runs it on the story. It returns nil, and
 // prints why, when either step fails.
 func startStory(ctx context.Context, root, binary, story string) *runningStory {
-	build := exec.CommandContext(ctx, "go", "build", "-o", binary, "./tools/tuiplay")
+	// The developer's own go from PATH, as the Go docs advise for locating it.
+	build := exec.CommandContext(ctx, "go", "build", "-o", binary, "./tools/tuiplay") // NOSONAR
 	build.Dir = root
 	build.Stdout = os.Stderr
 	build.Stderr = os.Stderr
