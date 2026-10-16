@@ -19,7 +19,7 @@ CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE)
 .DEFAULT_GOAL := all
 
 # Phony targets (targets that don't represent files)
-.PHONY: all help clean format upgrade test test-integration test-cover build build-release install check colors
+.PHONY: all help clean format upgrade test test-integration test-cover build build-release install check colors playground stories
 
 # Target descriptions and implementations
 
@@ -72,6 +72,18 @@ test-cover:
 	@gum style --foreground 11 "Running tests with coverage..."
 	@$(GOTEST) -tags release -timeout 1m -race -v -coverprofile=$(COVERAGE_FILE) ./...
 	@printf "$$(gum style --foreground 10 'Coverage report saved to') $$(gum style --foreground 190 '$(COVERAGE_FILE)')\n"
+
+# TUI stories (internal/uncors_app/stories.go)
+STORY ?=
+
+## playground: Pick a TUI story and show it, rebuilding on every Go change (STORY= skips the picker)
+playground:
+	@$(GO) run ./tools/tuiplay $(if $(STORY),-story $(STORY))
+
+## stories: Update the TUI story snapshots
+stories:
+	@gum style --foreground 11 "Updating story snapshots..."
+	@UPDATE_SNAPS=true $(GOTEST) ./internal/uncors_app/ -run TestStories
 
 ## build: Build all packages
 build:

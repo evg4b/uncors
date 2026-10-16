@@ -68,6 +68,8 @@ make build            # compile all packages
 make build-release    # build the uncors binary
 make install          # install the binary into GOPATH/bin
 make format-docs      # format Markdown with Prettier
+make playground       # pick a TUI story and watch it while you edit
+make stories          # update the TUI story snapshots
 ```
 
 The same without Make:
@@ -90,6 +92,27 @@ golangci-lint run
 
 Put unit tests in `_test.go` files next to the code. Integration tests live in
 `tests/integration` and use the `integration` build tag.
+
+## TUI stories
+
+`internal/uncors_app/stories.go` holds stories: each widget, and the whole app,
+in one state with fixed data (`tracker/many`, `app/notices`, …). They work
+like Storybook stories:
+
+- `make playground` asks which story to show (type to filter), then shows it
+  across the whole terminal. Keys go to the story; `q` quits. Every saved Go
+  file under `internal`, `pkg`, or `tools` rebuilds it and reopens the same
+  story; resize the terminal to see other widths. Pass `STORY=tracker/many`
+  to skip the question.
+- `TestStories` snapshots every story at 40, 80, and 120 columns, cut the way
+  Bubble Tea cuts long lines. Each snapshot has the plain text, for a readable
+  diff, and the same frame with its colours. Run `make stories` after a
+  deliberate change to the look, and review the diff.
+- `go run ./tools/tuiplay -render tracker/many -width 60` prints one frame;
+  `-plain` drops the colours.
+
+When you add a widget or a new state, add a story for it. Stories must not
+depend on the clock, the machine, or map order, or the snapshots will flake.
 
 ## Commit messages
 
