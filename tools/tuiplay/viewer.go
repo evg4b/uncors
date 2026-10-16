@@ -3,7 +3,7 @@ package main
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/testing/stories"
 )
 
 // statusRows is the blank line and the status line under the story.
@@ -12,17 +12,17 @@ const statusRows = 2
 // viewer shows one story across the whole terminal, with a status line under
 // it. Keys go to the story, except q and ctrl+c, which quit.
 type viewer struct {
-	story  uncorsapp.Story
+	story  stories.Story
 	model  tea.Model
 	width  int
 	height int
 }
 
-func newViewer(story uncorsapp.Story) *viewer {
+func newViewer(story stories.Story) *viewer {
 	return &viewer{story: story, model: story.New()}
 }
 
-func show(story uncorsapp.Story) error {
+func show(story stories.Story) error {
 	_, err := tea.NewProgram(newViewer(story)).Run()
 
 	return err
@@ -61,7 +61,7 @@ func (v *viewer) View() tea.View {
 	height = min(height, v.storyHeight())
 
 	status := dimStyle.Render(v.story.Name + " · q quit")
-	frame := uncorsapp.DrawFrame(content, max(v.width, 1), max(height, 1))
+	frame := stories.DrawFrame(content, max(v.width, 1), max(height, 1))
 
 	view := tea.NewView(lipgloss.JoinVertical(lipgloss.Left, frame, "", status))
 	view.AltScreen = true

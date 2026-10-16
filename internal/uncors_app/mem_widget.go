@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/evg4b/uncors/internal/helpers"
 )
 
 var memWidgetStyle = lipgloss.NewStyle().
@@ -26,11 +27,20 @@ type MemoryWidget struct {
 	getMemUsage func() float64
 }
 
-func NewMemoryWidget() *MemoryWidget {
-	return &MemoryWidget{
-		memMB:       getMemUsage(),
-		getMemUsage: getMemUsage,
+type MemoryWidgetOption = func(*MemoryWidget)
+
+// WithMemoryUsage replaces the source of the shown memory, in megabytes.
+func WithMemoryUsage(usage func() float64) MemoryWidgetOption {
+	return func(widget *MemoryWidget) {
+		widget.getMemUsage = usage
 	}
+}
+
+func NewMemoryWidget(options ...MemoryWidgetOption) *MemoryWidget {
+	widget := helpers.ApplyOptions(&MemoryWidget{getMemUsage: getMemUsage}, options)
+	widget.memMB = widget.getMemUsage()
+
+	return widget
 }
 
 func (m *MemoryWidget) Init() tea.Cmd {

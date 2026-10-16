@@ -15,6 +15,12 @@ func TestMemoryWidget(t *testing.T) {
 		assert.GreaterOrEqual(t, widget.memMB, 0.0)
 	})
 
+	t.Run("WithMemoryUsage sets where the memory comes from", func(t *testing.T) {
+		widget := NewMemoryWidget(WithMemoryUsage(func() float64 { return 7 }))
+
+		assert.Contains(t, widget.View().Content, "[ 7.0 MB ]")
+	})
+
 	t.Run("Init returns memory tick command", func(t *testing.T) {
 		widget := NewMemoryWidget()
 		cmd := widget.Init()

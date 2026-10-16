@@ -73,7 +73,7 @@ test-cover:
 	@$(GOTEST) -tags release -timeout 1m -race -v -coverprofile=$(COVERAGE_FILE) ./...
 	@printf "$$(gum style --foreground 10 'Coverage report saved to') $$(gum style --foreground 190 '$(COVERAGE_FILE)')\n"
 
-# TUI stories (internal/uncors_app/stories.go)
+# TUI stories (testing/stories)
 STORY ?=
 
 ## playground: Pick a TUI story and show it, rebuilding on every Go change (STORY= skips the picker)
@@ -83,7 +83,7 @@ playground:
 ## stories: Update the TUI story snapshots
 stories:
 	@gum style --foreground 11 "Updating story snapshots..."
-	@UPDATE_SNAPS=true $(GOTEST) ./internal/uncors_app/ -run TestStories
+	@UPDATE_SNAPS=true $(GOTEST) ./testing/stories/ -run TestStories
 
 ## build: Build all packages
 build:

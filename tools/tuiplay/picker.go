@@ -5,7 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/testing/stories"
 )
 
 var (
@@ -25,22 +25,22 @@ type picker struct {
 	done    bool
 }
 
-func newPicker(stories []uncorsapp.Story, last string) *picker {
-	names := make([]string, 0, len(stories))
-	for _, story := range stories {
+func newPicker(catalog []stories.Story, last string) *picker {
+	names := make([]string, 0, len(catalog))
+	for _, story := range catalog {
 		names = append(names, story.Name)
 	}
 
 	chooser := &picker{names: names}
 	chooser.applyFilter()
-	chooser.cursor = max(findStory(stories, last), 0)
+	chooser.cursor = max(findStory(catalog, last), 0)
 
 	return chooser
 }
 
 // pick asks for a story and returns its name, or "" when cancelled.
-func pick(stories []uncorsapp.Story, last string) (string, error) {
-	chooser := newPicker(stories, last)
+func pick(catalog []stories.Story, last string) (string, error) {
+	chooser := newPicker(catalog, last)
 
 	_, err := tea.NewProgram(chooser).Run()
 

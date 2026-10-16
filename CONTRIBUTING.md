@@ -95,7 +95,7 @@ Put unit tests in `_test.go` files next to the code. Integration tests live in
 
 ## TUI stories
 
-`internal/uncors_app/stories.go` holds stories: each widget, and the whole app,
+`testing/stories` holds stories: each widget, and the whole app,
 in one state with fixed data (`tracker/many`, `app/notices`, …). They work
 like Storybook stories:
 

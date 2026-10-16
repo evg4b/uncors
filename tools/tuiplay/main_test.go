@@ -10,7 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/testing/stories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +47,7 @@ func special(code rune) tea.KeyPressMsg {
 
 func TestPicker(t *testing.T) {
 	t.Run("starts on the last story", func(t *testing.T) {
-		chooser := newPicker(uncorsapp.Stories(), "tracker/many")
+		chooser := newPicker(stories.Stories(), "tracker/many")
 
 		chooser.Update(special(tea.KeyEnter))
 
@@ -55,7 +55,7 @@ func TestPicker(t *testing.T) {
 	})
 
 	t.Run("filters as you type", func(t *testing.T) {
-		chooser := newPicker(uncorsapp.Stories(), "")
+		chooser := newPicker(stories.Stories(), "")
 
 		for _, char := range "hist" {
 			chooser.Update(key(string(char)))
@@ -73,7 +73,7 @@ func TestPicker(t *testing.T) {
 	})
 
 	t.Run("esc cancels", func(t *testing.T) {
-		chooser := newPicker(uncorsapp.Stories(), "")
+		chooser := newPicker(stories.Stories(), "")
 
 		_, cmd := chooser.Update(special(tea.KeyEscape))
 
@@ -83,10 +83,10 @@ func TestPicker(t *testing.T) {
 }
 
 func TestViewer(t *testing.T) {
-	stories := uncorsapp.Stories()
+	catalog := stories.Stories()
 
 	t.Run("shows the story with a status line", func(t *testing.T) {
-		view := newViewer(stories[findStory(stories, "help/short")])
+		view := newViewer(catalog[findStory(catalog, "help/short")])
 		view.Update(tea.WindowSizeMsg{Width: 60, Height: 20})
 
 		content := ansi.Strip(view.View().Content)
@@ -96,14 +96,14 @@ func TestViewer(t *testing.T) {
 	})
 
 	t.Run("gives full-height stories the terminal minus the status line", func(t *testing.T) {
-		view := newViewer(stories[findStory(stories, "app/started")])
+		view := newViewer(catalog[findStory(catalog, "app/started")])
 		view.Update(tea.WindowSizeMsg{Width: 80, Height: 12})
 
 		assert.Len(t, strings.Split(view.View().Content, "\n"), 12)
 	})
 
 	t.Run("sends keys to the story", func(t *testing.T) {
-		view := newViewer(stories[findStory(stories, "help/short")])
+		view := newViewer(catalog[findStory(catalog, "help/short")])
 		view.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
 
 		_, cmd := view.Update(key("?"))
@@ -113,7 +113,7 @@ func TestViewer(t *testing.T) {
 	})
 
 	t.Run("q quits", func(t *testing.T) {
-		view := newViewer(stories[0])
+		view := newViewer(catalog[0])
 
 		_, cmd := view.Update(key("q"))
 

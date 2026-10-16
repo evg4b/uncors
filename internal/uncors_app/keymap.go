@@ -2,7 +2,7 @@ package uncorsapp
 
 import "charm.land/bubbles/v2/key"
 
-type keyMap struct {
+type KeyMap struct {
 	Help       key.Binding
 	Restart    key.Binding
 	Quit       key.Binding
@@ -14,8 +14,8 @@ type keyMap struct {
 	GotoBottom key.Binding
 }
 
-func newKeyMap() keyMap {
-	return keyMap{
+func NewKeyMap() KeyMap {
+	return KeyMap{
 		Quit: key.NewBinding(
 			key.WithKeys("q", "ctrl+c"),
 			key.WithHelp("q", "quit"),
@@ -55,11 +55,11 @@ func newKeyMap() keyMap {
 	}
 }
 
-func (k keyMap) ShortHelp() []key.Binding {
+func (k KeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Restart, k.Quit}
 }
 
-func (k keyMap) FullHelp() [][]key.Binding {
+func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.ScrollUp, k.ScrollDown, k.PageUp, k.PageDown},
 		{k.GotoTop, k.GotoBottom},

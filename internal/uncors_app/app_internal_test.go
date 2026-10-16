@@ -60,7 +60,7 @@ func TestNewUncorsAppAndKeyMap(t *testing.T) {
 	assert.GreaterOrEqual(t, app.memWidget.memMB, 0.0)
 	require.NotNil(t, app.Init())
 
-	keys := newKeyMap()
+	keys := NewKeyMap()
 	assert.Len(t, keys.ShortHelp(), 3)
 	fullHelp := keys.FullHelp()
 	require.Len(t, fullHelp, 3)
@@ -276,4 +276,18 @@ func TestUncorsAppCommandsDoNotBlockAfterStop(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("sending a command blocked after the proxy stopped")
 	}
+}
+
+func TestEventMsg(t *testing.T) {
+	assert.IsType(t, requestStartedMsg{}, EventMsg(events.RequestStarted{ID: 1}))
+	assert.IsType(t, requestCompletedMsg{}, EventMsg(events.RequestCompleted{ID: 1}))
+	assert.Equal(t, lifecycleMsg{event: events.ServerStopped{}}, EventMsg(events.ServerStopped{}))
+}
+
+func TestWithMemoryWidget(t *testing.T) {
+	widget := NewMemoryWidget(WithMemoryUsage(func() float64 { return 3 }))
+
+	app := NewUncorsApp(events.NewBus().Subscribe(1), make(chan events.Command, 1), "test", WithMemoryWidget(widget))
+
+	assert.Same(t, widget, app.memWidget)
 }

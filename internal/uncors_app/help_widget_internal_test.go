@@ -8,7 +8,7 @@ import (
 )
 
 func TestHelpWidget(t *testing.T) {
-	keys := newKeyMap()
+	keys := NewKeyMap()
 
 	t.Run("NewHelpWidget initializes correctly", func(t *testing.T) {
 		widget := NewHelpWidget(keys)

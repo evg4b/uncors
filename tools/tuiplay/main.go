@@ -1,4 +1,4 @@
-// Command tuiplay shows one TUI story from internal/uncors_app on its own,
+// Command tuiplay shows one TUI story from testing/stories on its own,
 // without starting the proxy.
 //
 //	go run ./tools/tuiplay                        # pick a story, show it, rebuild on every change
@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/x/ansi"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/testing/stories"
 	"github.com/spf13/afero"
 )
 
@@ -67,28 +67,28 @@ func run(args []string, out io.Writer) error {
 		return err
 	}
 
-	stories := uncorsapp.Stories()
+	catalog := stories.Stories()
 
 	switch {
 	case opts.list:
-		for _, story := range stories {
+		for _, story := range catalog {
 			fmt.Fprintln(out, story.Name)
 		}
 
 		return nil
 	case opts.render != "":
-		return render(out, stories, opts)
+		return render(out, catalog, opts)
 	}
 
-	return play(stories, opts)
+	return play(catalog, opts)
 }
 
-func play(stories []uncorsapp.Story, opts options) error {
+func play(catalog []stories.Story, opts options) error {
 	fs := afero.NewOsFs()
 
 	name := opts.story
 	if name == "" {
-		picked, err := pick(stories, loadState(fs, opts.state).Story)
+		picked, err := pick(catalog, loadState(fs, opts.state).Story)
 		if err != nil || picked == "" {
 			return err
 		}
@@ -96,7 +96,7 @@ func play(stories []uncorsapp.Story, opts options) error {
 		name = picked
 	}
 
-	index := findStory(stories, name)
+	index := findStory(catalog, name)
 	if index < 0 {
 		return fmt.Errorf("%w %q, see -list", errUnknownStory, name)
 	}
@@ -107,16 +107,16 @@ func play(stories []uncorsapp.Story, opts options) error {
 		return watch(name)
 	}
 
-	return show(stories[index])
+	return show(catalog[index])
 }
 
-func render(out io.Writer, stories []uncorsapp.Story, opts options) error {
-	index := findStory(stories, opts.render)
+func render(out io.Writer, catalog []stories.Story, opts options) error {
+	index := findStory(catalog, opts.render)
 	if index < 0 {
 		return fmt.Errorf("%w %q, see -list", errUnknownStory, opts.render)
 	}
 
-	frame := uncorsapp.RenderStory(stories[index], opts.width)
+	frame := stories.Render(catalog[index], opts.width)
 	if opts.plain {
 		frame = ansi.Strip(frame)
 	}
@@ -126,8 +126,8 @@ func render(out io.Writer, stories []uncorsapp.Story, opts options) error {
 	return err
 }
 
-func findStory(stories []uncorsapp.Story, name string) int {
-	for i, story := range stories {
+func findStory(catalog []stories.Story, name string) int {
+	for i, story := range catalog {
 		if story.Name == name {
 			return i
 		}

@@ -60,7 +60,7 @@ Core and UI are separate (`TestCoreDoesNotImportTheUI` enforces it):
 - Use the injected `afero.Fs`, never `os`.
 - YAML tags are kebab-case.
 - Mocks: minimock into `testing/mocks`. Snapshots: go-snaps. Helpers:
-  `testing/testutils`.
+  `testing/testutils`. TUI stories: `testing/stories`.
 - Commit prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`.
 
 ## Configuration

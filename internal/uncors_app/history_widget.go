@@ -15,12 +15,12 @@ type outputLineMsg string
 type HistoryWidget struct {
 	hist       *history
 	vp         viewport.Model
-	keys       keyMap
+	keys       KeyMap
 	autoScroll bool
 	termWidth  int
 }
 
-func NewHistoryWidget(keys keyMap) *HistoryWidget {
+func NewHistoryWidget(keys KeyMap) *HistoryWidget {
 	telemetry.Debug(context.Background(), "Creating HistoryWidget")
 
 	hist := newHistory()
@@ -48,19 +48,24 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 		}
 
 	case outputLineMsg:
-		atBottom := m.autoScroll
-		m.hist.AppendLine(string(typedMsg))
-		m.vp.SetContentLines(m.hist.Lines())
-
-		if atBottom {
-			m.vp.GotoBottom()
-		}
+		m.AppendLine(string(typedMsg))
 
 	case tea.KeyPressMsg:
 		m.handleKeyPress(typedMsg)
 	}
 
 	return m, nil
+}
+
+// AppendLine adds output to the history and keeps it scrolled to the bottom
+// unless the user scrolled up.
+func (m *HistoryWidget) AppendLine(line string) {
+	m.hist.AppendLine(line)
+	m.vp.SetContentLines(m.hist.Lines())
+
+	if m.autoScroll {
+		m.vp.GotoBottom()
+	}
 }
 
 func (m *HistoryWidget) SetHeight(height int) {
