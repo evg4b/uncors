@@ -3,6 +3,8 @@ package uncorsapp
 import (
 	"context"
 	"log/slog"
+	"maps"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/spinner"
@@ -118,11 +120,13 @@ func (m *TrackerWidget) View() tea.View {
 		return tea.NewView("")
 	}
 
-	var viewBuilder strings.Builder
+	lines := make([]string, 0, len(m.pending))
 
-	index := 0
+	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
+		req := m.pending[id]
 
-	for _, req := range m.pending {
+		var viewBuilder strings.Builder
+
 		urlStr := ""
 		if req.URL != nil {
 			urlStr = urlt.URL_String(req.URL)
@@ -143,14 +147,10 @@ func (m *TrackerWidget) View() tea.View {
 			viewBuilder.WriteString(" " + styles.DimTextStyle.Render("→ "+req.Rewrite.To))
 		}
 
-		if index != 0 {
-			viewBuilder.WriteRune('\n')
-		}
-
-		index++
+		lines = append(lines, viewBuilder.String())
 	}
 
-	return tea.NewView(viewBuilder.String())
+	return tea.NewView(strings.Join(lines, "\n"))
 }
 
 func (m *TrackerWidget) startTicking() tea.Cmd {
