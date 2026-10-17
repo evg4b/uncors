@@ -352,8 +352,73 @@ func TestScriptHandlerCORS(t *testing.T) {
 
 	assert.Equal(t, origin, recorder.Header().Get(headers.AccessControlAllowOrigin))
 	assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
-	assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
+	assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowHeaders))
 	assert.Equal(t, testconstants.AllMethods, recorder.Header().Get(headers.AccessControlAllowMethods))
+	assert.Equal(t, []string{headers.Origin}, recorder.Header().Values(headers.Vary))
+}
+
+func TestScriptHandlerExposeHeaders(t *testing.T) {
+	origin := hosts.Example.HTTP().String()
+
+	tests := []struct {
+		name     string
+		script   string
+		origin   string
+		expected string
+	}{
+		{
+			name: "headers set before the status",
+			script: `response.headers["X-Total-Count"] = "10"
+response.headers["Content-Type"] = "application/json"
+response:WriteHeader(201)
+response.headers["X-Late"] = "1"
+response:WriteString("{}")`,
+			origin:   origin,
+			expected: "Vary, X-Total-Count",
+		},
+		{
+			name: "headers set before the body",
+			script: `response.headers:Set("X-Request-Id", "42")
+response:WriteString("OK")`,
+			origin:   origin,
+			expected: "Vary, X-Request-Id",
+		},
+		{
+			name:     "response without a body",
+			script:   `response.headers["X-Empty"] = "1"`,
+			origin:   origin,
+			expected: "Vary, X-Empty",
+		},
+		{
+			name: "headers exposed by the script",
+			script: `response.headers["X-Total-Count"] = "10"
+response.headers["Access-Control-Expose-Headers"] = "X-Custom"
+response:WriteString("OK")`,
+			origin:   origin,
+			expected: "X-Custom",
+		},
+		{
+			name: "request without an origin",
+			script: `response.headers["X-Total-Count"] = "10"
+response:WriteString("OK")`,
+			expected: "*",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+			if testCase.origin != "" {
+				request.Header.Set(headers.Origin, testCase.origin)
+			}
+
+			recorder, err := serveScript(t, &config.Script{Script: testCase.script}, afero.NewMemMapFs(), request)
+			require.NoError(t, err)
+
+			header := testutils.ReadHeader(t, recorder)
+			assert.Equal(t, testCase.expected, header.Get(headers.AccessControlExposeHeaders))
+		})
+	}
 }
 
 func TestScriptHandlerErrors(t *testing.T) {

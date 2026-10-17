@@ -111,11 +111,9 @@ func (h *Handler) attributes() []attribute.KeyValue {
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
+	writer = infra.NewCorsWriter(writer, request.Header.Get(headers.Origin))
 	header := writer.Header()
 	response := h.response
-
-	origin := request.Header.Get("Origin")
-	infra.WriteCorsHeaders(header, origin)
 
 	for key, value := range response.Headers {
 		header.Set(key, value)

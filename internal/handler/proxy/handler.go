@@ -128,8 +128,11 @@ func (h *Handler) makeUncorsResponse(
 		headers.Location: replacer.ReplaceSoft,
 	})
 
-	origin := req.Header.Get(headers.Origin)
-	infra.WriteCorsHeaders(target.Header(), origin)
+	if strings.EqualFold(req.Method, http.MethodOptions) {
+		infra.WriteCorsHeadersForOptions(target.Header(), req.Header)
+	} else {
+		infra.WriteCorsHeaders(target.Header(), req.Header.Get(headers.Origin))
+	}
 
 	target.WriteHeader(original.StatusCode)
 
