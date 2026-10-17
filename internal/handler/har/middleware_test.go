@@ -110,7 +110,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
+		err := infra.Wrap(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/path"))
 		require.NoError(t, err)
 
 		assert.True(t, called)
@@ -130,7 +130,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
+		err := infra.Wrap(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/"))
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -150,7 +150,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 		req := makeHARRequest(t, "http://example.com/search?q=foo&page=2")
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := infra.Wrap(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -183,7 +183,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		serveErr := infra.Wrap(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, serveErr)
 
 		assert.Equal(t, body, received)
@@ -206,7 +206,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := infra.Wrap(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -246,7 +246,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		err := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		err := infra.Wrap(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, err)
 
 		require.NoError(t, harWriter.Close())
@@ -276,7 +276,7 @@ func TestMiddleware_Wrap(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		rr := server.NewResponseRecorder(rec)
-		serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, req)
+		serveErr := infra.Wrap(mdlw, next).ServeHTTP(rr, req)
 		require.NoError(t, serveErr)
 
 		require.NoError(t, harWriter.Close())
@@ -336,7 +336,7 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			rr := server.NewResponseRecorder(rec)
-			serveErr := infra.Mddleware(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
+			serveErr := infra.Wrap(mdlw, next).ServeHTTP(rr, makeHARRequest(t, "http://example.com/api"))
 			require.NoError(t, serveErr)
 
 			require.NoError(t, harWriter.Close())
@@ -360,7 +360,7 @@ func serveHAR(t *testing.T, mdlw *har.Middleware, req *http.Request) {
 		return nil
 	})
 
-	err := infra.Mddleware(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+	err := infra.Wrap(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
 	require.NoError(t, err)
 }
 
@@ -444,7 +444,7 @@ func TestMiddleware_RequestBodyReadError(t *testing.T) {
 		return nil
 	})
 
-	serveErr := infra.Mddleware(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+	serveErr := infra.Wrap(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
 
 	require.ErrorIs(t, serveErr, readErr)
 	assert.False(t, called)

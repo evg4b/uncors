@@ -23,7 +23,7 @@ func TestMiddlewareLogs(t *testing.T) {
 		To:   "/rewritten",
 		Host: urlt.Host{Hostname: "example.com"},
 	}))
-	handler := infra.Mddleware(middleware, infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error {
+	handler := infra.Wrap(middleware, infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error {
 		return nil
 	}))
 

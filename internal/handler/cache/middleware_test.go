@@ -118,7 +118,7 @@ func TestCacheMiddleware(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				testHandler.Reset()
 
-				wrappedHandler := infra.Mddleware(middleware, testHandler)
+				wrappedHandler := infra.Wrap(middleware, testHandler)
 
 				serveFiveTimes(t, wrappedHandler, testCase.method, testCase.path)
 
@@ -169,7 +169,7 @@ func TestCacheMiddleware(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				testHandler := testutils.NewCounter(proxyLike(testCase.statusCode, responseHeader, expectedBody))
 
-				wrappedHandler := infra.Mddleware(middleware, testHandler)
+				wrappedHandler := infra.Wrap(middleware, testHandler)
 
 				serveFiveTimes(t, wrappedHandler, testCase.method, testCase.path)
 
@@ -189,7 +189,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		wrappedHandler := infra.Mddleware(middleware, testHandler)
+		wrappedHandler := infra.Wrap(middleware, testHandler)
 
 		testutils.Times(count, func(index int) {
 			recorder := httptest.NewRecorder()
@@ -211,7 +211,7 @@ func TestCacheMiddleware(t *testing.T) {
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
 
-		handler := infra.Mddleware(middleware, infra.HandlerFunc(
+		handler := infra.Wrap(middleware, infra.HandlerFunc(
 			func(writer contracts.ResponseWriter, request *contracts.Request) error {
 				fmt.Fprint(writer, request.URL.String())
 
@@ -272,7 +272,7 @@ func TestCacheMiddleware(t *testing.T) {
 				ctx, cancel := context.WithCancel(t.Context())
 				defer cancel()
 
-				interrupted := infra.Mddleware(middleware, infra.HandlerFunc(
+				interrupted := infra.Wrap(middleware, infra.HandlerFunc(
 					func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 						return testCase.serve(writer, cancel)
 					},
@@ -291,7 +291,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 				recorder := httptest.NewRecorder()
 				request = httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.url, nil)
-				require.NoError(t, infra.Mddleware(middleware, testHandler).
+				require.NoError(t, infra.Wrap(middleware, testHandler).
 					ServeHTTP(server.NewResponseRecorder(recorder), request))
 				assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 				assert.Equal(t, 1, testHandler.Count())
@@ -319,7 +319,7 @@ func TestCacheMiddleware(t *testing.T) {
 			return nil
 		})
 
-		wrappedHandler := infra.Mddleware(middleware, testHandler)
+		wrappedHandler := infra.Wrap(middleware, testHandler)
 
 		for _, method := range methods {
 			recorder := httptest.NewRecorder()
@@ -364,7 +364,7 @@ func TestCacheMiddlewareTruncatedCapture(t *testing.T) {
 				cache.WithGlobs(config.CacheGlobs{"/**"}),
 			)
 
-			handler := infra.Mddleware(middleware, infra.HandlerFunc(
+			handler := infra.Wrap(middleware, infra.HandlerFunc(
 				func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 					writer.WriteHeader(http.StatusOK)
 					_, err := writer.Write(body)

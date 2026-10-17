@@ -43,7 +43,7 @@ func newCachedServer(t *testing.T, serve func(contracts.ResponseWriter, *contrac
 	)
 
 	return &cachedServer{
-		handler: infra.Mddleware(middleware, counter),
+		handler: infra.Wrap(middleware, counter),
 		store:   store,
 		counter: counter,
 	}
@@ -116,7 +116,7 @@ func TestCacheMiddlewareStoredHeaders(t *testing.T) {
 		cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 	)
 
-	handler := infra.Mddleware(middleware, infra.HandlerFunc(
+	handler := infra.Wrap(middleware, infra.HandlerFunc(
 		proxyLike(http.StatusOK, http.Header{"X-Custom": {"value"}}, "body"),
 	))
 

@@ -70,7 +70,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 
 	for _, staticDir := range mapping.Statics {
 		middleware := r.factory.StaticMiddleware(staticDir.Path, staticDir)
-		handler := traced(infra.Mddleware(middleware, defaultHandler), slices.Concat(
+		handler := traced(infra.Wrap(middleware, defaultHandler), slices.Concat(
 			mappingAttributes(mapping, routeStatic),
 			[]attribute.KeyValue{
 				semconv.HTTPRoute(staticDir.Path),
@@ -102,7 +102,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 		})
 
 	for index, rewrite := range mapping.Rewrites {
-		handler := traced(infra.Mddleware(r.factory.RewriteMiddleware(&rewrite), defaultHandler), slices.Concat(
+		handler := traced(infra.Wrap(r.factory.RewriteMiddleware(&rewrite), defaultHandler), slices.Concat(
 			mappingAttributes(mapping, routeRewrite),
 			[]attribute.KeyValue{
 				semconv.HTTPRoute(rewrite.From),
@@ -119,7 +119,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
 	defaultHandler := r.defaultHandler
 	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = infra.Mddleware(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
+		defaultHandler = infra.Wrap(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
 	if len(mapping.Cache) > 0 || mapping.HAR.Enabled() {
@@ -131,11 +131,11 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 
 func (r *Router) recordedHandler(mapping config.Mapping, handler contracts.Handler) contracts.Handler {
 	if len(mapping.Cache) > 0 {
-		handler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), handler)
+		handler = infra.Wrap(r.cacheMiddlewareFactory(mapping.Cache), handler)
 	}
 
 	if mapping.HAR.Enabled() {
-		handler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), handler)
+		handler = infra.Wrap(r.factory.HARMiddleware(&mapping.HAR), handler)
 	}
 
 	return handler

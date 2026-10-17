@@ -226,8 +226,8 @@ func (g *Generation) build(uncorsConfig *config.UncorsConfig) ([]server.Target, 
 			Handler: router.NewRouter(
 				group.Mappings,
 				router.WithFactory(g),
-				router.ForRouterWithDefaultHandler(g.ProxyHandler(replacers)),
-				router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
+				router.WithDefaultHandler(g.ProxyHandler(replacers)),
+				router.WithCacheMiddlewareFactory(g.CacheMiddleware),
 			),
 			EnableTLS: group.Scheme == "https",
 		})
