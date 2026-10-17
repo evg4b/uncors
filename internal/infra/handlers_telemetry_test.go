@@ -23,18 +23,29 @@ func TestCastToHTTPHandlerLogsFailures(t *testing.T) {
 		return errHandler
 	})
 
-	serve := func(t *testing.T, ctx context.Context) []testutils.LogRecord {
+	serve := func(t *testing.T, ctx context.Context) ([]testutils.LogRecord, any) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
 		request := httptest.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:8080/api", nil)
-		infra.CastToHTTPHandler(failing).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
 
-		return recorded.Records()
+		var recovered any
+
+		func() {
+			defer func() {
+				recovered = recover()
+			}()
+
+			infra.CastToHTTPHandler(failing).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
+		}()
+
+		return recorded.Records(), recovered
 	}
 
 	t.Run("handler error", func(t *testing.T) {
-		records := serve(t, t.Context())
+		records, recovered := serve(t, t.Context())
+
+		assert.Nil(t, recovered)
 
 		require.Len(t, records, 1)
 		assert.Equal(t, log.SeverityError, records[0].Severity)
@@ -50,8 +61,9 @@ func TestCastToHTTPHandlerLogsFailures(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
-		records := serve(t, ctx)
+		records, recovered := serve(t, ctx)
 
+		assert.Equal(t, http.ErrAbortHandler, recovered)
 		require.Len(t, records, 1)
 		assert.Equal(t, log.SeverityDebug, records[0].Severity)
 		assert.Equal(t, "request cancelled by the client", records[0].Message)

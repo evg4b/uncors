@@ -129,9 +129,10 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
 
 - `os.exit` raises an error instead of stopping the UNCORS process. A script
   that called it to end early should `return` from the top level instead.
-- A script that runs longer than 30 seconds is stopped, and so is a script
-  whose client disconnects or whose server shuts down. The request fails with
-  status 500. Set `timeout` on a script that needs longer.
+- A script that runs longer than 30 seconds is stopped, and the request fails
+  with status 500. Set `timeout` on a script that needs longer. A script whose
+  client disconnects or whose server shuts down is stopped too, and the
+  connection is closed.
 - A request body larger than 10 MiB fails with status 500 before the script
   runs. Set `max-body-size` on a script that needs larger bodies. Before, a
   body that failed to read reached the script as `nil`.
@@ -148,6 +149,23 @@ mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
 
 Before, both mappings rewrote the same file, and one of them overwrote the
 entries of the other or failed to write it. Give each mapping its own file.
+
+### Error page status codes
+
+UNCORS error pages used to have status 500 for every failure. The status now
+depends on the cause:
+
+- `404` when no mapping matches the host.
+- `502` when the upstream server cannot be reached.
+- `504` when the upstream request times out.
+- `500` for other failures, as before.
+
+Error pages now carry CORS headers, so the browser shows the error instead of a
+CORS error, and they no longer include memory usage. When the response has
+already started, or the client cancelled the request, UNCORS closes the
+connection instead of writing an error page. Code that checks for status 500
+from UNCORS should accept the new codes. See
+[Error pages](Troubleshooting#error-pages).
 
 ### HTTPS certificates only for mapped hosts
 

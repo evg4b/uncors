@@ -131,7 +131,7 @@ func TestRequestAttribution(t *testing.T) {
 	t.Run("an unreachable upstream reports the proxy error", func(t *testing.T) {
 		result, tracked := env.DoTracked(t, integration.NewRequest(t, http.MethodGet, env.URL("broken.local", "/api")))
 
-		assert.Equal(t, http.StatusInternalServerError, result.Response.StatusCode)
+		assert.Equal(t, http.StatusBadGateway, result.Response.StatusCode)
 		assert.Equal(t, events.HandlerProxy, tracked.Completed.Handler)
 		require.Error(t, tracked.Completed.Err)
 		assert.Contains(t, tracked.Completed.Err.Error(), "connection refused")
@@ -144,7 +144,7 @@ func TestRequestAttribution(t *testing.T) {
 
 		result, tracked := env.DoTracked(t, integration.NewRequest(t, http.MethodGet, url))
 
-		assert.Equal(t, http.StatusInternalServerError, result.Response.StatusCode)
+		assert.Equal(t, http.StatusNotFound, result.Response.StatusCode)
 		assert.Equal(t, events.HandlerNone, tracked.Started.Handler)
 		assert.Equal(t, events.HandlerNone, tracked.Completed.Handler)
 		require.Error(t, tracked.Completed.Err)
