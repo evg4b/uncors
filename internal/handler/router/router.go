@@ -43,7 +43,7 @@ type Router struct {
 
 func NewRouter(mappings config.Mappings, options ...Option) *Router {
 	instance := Router{
-		Router: mux.NewRouter(),
+		Router: mux.NewRouter().SkipClean(true),
 	}
 
 	for _, option := range options {

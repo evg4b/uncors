@@ -7,13 +7,13 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-type modificationsMap = map[string]func(string) (string, error)
+type modificationsMap = map[string]func(string) string
 
-func noop(s string) (string, error) { return s, nil }
+func noop(s string) string { return s }
 
-func copyHeaders(source, dest http.Header, modifications modificationsMap) error {
+func copyHeaders(source, dest http.Header, modifications modificationsMap) {
 	for key, values := range source {
-		if key == headers.Cookie || key == headers.SetCookie || key == headers.ContentLength {
+		if key == headers.SetCookie || key == headers.ContentLength {
 			continue
 		}
 
@@ -23,16 +23,9 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) error
 		}
 
 		for _, value := range values {
-			modifiedValue, err := modificationFunc(value)
-			if err != nil {
-				return err
-			}
-
-			dest.Add(key, modifiedValue)
+			dest.Add(key, modificationFunc(value))
 		}
 	}
-
-	return nil
 }
 
 func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
@@ -40,13 +33,5 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 		cookie.Secure = replacer.IsTargetSecure()
 		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 		http.SetCookie(source, cookie)
-	}
-}
-
-func copyCookiesToTarget(source *http.Request, replacer *urlreplacer.Replacer, target *http.Request) {
-	for _, cookie := range source.Cookies() {
-		cookie.Secure = replacer.IsTargetSecure()
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-		target.AddCookie(cookie)
 	}
 }

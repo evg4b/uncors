@@ -101,6 +101,51 @@ func TestReplacerReplace(t *testing.T) {
 	}
 }
 
+func TestReplacerPlaceholderMatchesOneLabel(t *testing.T) {
+	replacer, err := urlreplacer.NewReplacer("http://{tenant}.local.dev:3000", "https://{tenant}.api.com")
+	require.NoError(t, err)
+
+	t.Run("replaces only the host", func(t *testing.T) {
+		cases := map[string]string{
+			"http://acme.local.dev:3000":                          "https://acme.api.com",
+			"http://acme.local.dev:3000/api/v1?page=2":            "https://acme.api.com/api/v1?page=2",
+			"http://acme.local.dev:3000/files/report.local.dev":   "https://acme.api.com/files/report.local.dev",
+			"http://acme.local.dev:3000/?q=.local.dev":            "https://acme.api.com/?q=.local.dev",
+			"http://acme.local.dev:3000/a.local.dev?b=.local.dev": "https://acme.api.com/a.local.dev?b=.local.dev",
+			"acme.local.dev": "acme.api.com",
+		}
+
+		for source, expected := range cases {
+			actual, err := replacer.Replace(source)
+
+			require.NoError(t, err, source)
+			assert.Equal(t, expected, actual, source)
+		}
+	})
+
+	t.Run("does not match a placeholder across labels or into the url", func(t *testing.T) {
+		urls := []string{
+			"http://a.b.local.dev:3000",
+			"http://other.host/x.local.dev",
+			"http://other.host:3000?q=.local.dev",
+			"http://user@other.host/.local.dev",
+			"http://.local.dev:3000",
+		}
+
+		for _, url := range urls {
+			assert.False(t, replacer.IsMatched(url), url)
+		}
+	})
+
+	t.Run("keeps the leading dot of a cookie domain", func(t *testing.T) {
+		reverse, err := urlreplacer.NewReplacer("https://{tenant}.api.com", "http://{tenant}.local.dev")
+		require.NoError(t, err)
+
+		assert.Equal(t, ".acme.local.dev", reverse.ReplaceSoft(".acme.api.com"))
+		assert.Equal(t, "acme.local.dev", reverse.ReplaceSoft("acme.api.com"))
+	})
+}
+
 var schemelessCases = map[string]string{
 	"http://test.localhost.com":                        "http://api.test.com",
 	"https://test.localhost.com":                       "https://api.test.com",
@@ -193,17 +238,17 @@ func TestReplacerIsMatched(t *testing.T) {
 		},
 		{
 			name:     "matched domain with https scheme",
-			url:      "https//test.my.cc:3000",
+			url:      "https://test.my.cc:3000",
 			expected: true,
 		},
 		{
 			name:     "matched domain with http scheme",
-			url:      "http//test.my.cc:3000",
+			url:      "http://test.my.cc:3000",
 			expected: true,
 		},
 		{
 			name:     "not matched to different domain",
-			url:      "http//localhost",
+			url:      "http://localhost",
 			expected: false,
 		},
 	}
