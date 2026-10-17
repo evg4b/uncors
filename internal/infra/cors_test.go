@@ -76,7 +76,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			name:     "Empty headers with origin",
 			header:   http.Header{},
 			origin:   origin,
-			expected: corsHeaders(origin, "Vary"),
+			expected: corsHeaders(origin, "Date, Vary"),
 		},
 		{
 			name: "Override existing headers",
@@ -122,7 +122,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"Content-Encoding, Vary, X-Request-Id, X-Total-Count"},
+				headers.AccessControlExposeHeaders:    []string{"Content-Encoding, Date, Vary, X-Request-Id, X-Total-Count"},
 				headers.Vary:                          []string{headers.Origin},
 				"X-Total-Count":                       []string{"10"},
 				"X-Request-Id":                        []string{"42"},
@@ -144,7 +144,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "Accept-Encoding", headers.Origin,
 			),
 		},
@@ -155,7 +155,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "Accept-Encoding, ORIGIN",
 			),
 		},
@@ -166,7 +166,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "*",
 			),
 		},
@@ -179,6 +179,22 @@ func TestWriteCorsHeaders(t *testing.T) {
 		})
 	}
 
+	t.Run("Exposes Date written by the server later", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteCorsHeaders(header, origin)
+
+		assert.Equal(t, "Date, Vary", header.Get(headers.AccessControlExposeHeaders))
+	})
+
+	t.Run("Exposes Date once", func(t *testing.T) {
+		header := http.Header{"Date": []string{"Wed, 21 Oct 2015 07:28:00 GMT"}}
+
+		infra.WriteCorsHeaders(header, origin)
+
+		assert.Equal(t, "Date, Vary", header.Get(headers.AccessControlExposeHeaders))
+	})
+
 	t.Run("Is idempotent", func(t *testing.T) {
 		header := http.Header{"X-Total-Count": []string{"10"}}
 
@@ -186,7 +202,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 		infra.WriteCorsHeaders(header, origin)
 
 		assert.Equal(t, withHeader(
-			corsHeaders(origin, "Vary, X-Total-Count"),
+			corsHeaders(origin, "Date, Vary, X-Total-Count"),
 			"X-Total-Count", "10",
 		), header)
 	})
@@ -305,7 +321,7 @@ func TestCorsWriter(t *testing.T) {
 		require.NoError(t, response.Body.Close())
 
 		assert.Equal(t, http.StatusCreated, response.StatusCode)
-		assert.Equal(t, "Vary, X-Total-Count", response.Header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-Total-Count", response.Header.Get(headers.AccessControlExposeHeaders))
 		assert.Equal(t, []string{headers.Origin}, response.Header.Values(headers.Vary))
 		assert.Equal(t, http.StatusCreated, writer.StatusCode())
 	})
@@ -320,7 +336,7 @@ func TestCorsWriter(t *testing.T) {
 		response := recorder.Result()
 		require.NoError(t, response.Body.Close())
 
-		assert.Equal(t, "Vary, X-Request-Id", response.Header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-Request-Id", response.Header.Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("keeps exposed headers set by the handler", func(t *testing.T) {
@@ -351,7 +367,7 @@ func TestCorsWriter(t *testing.T) {
 		writer.Header().Set("X-Second", "2")
 		writer.ExposeHeaders()
 
-		assert.Equal(t, "Vary, X-First", recorder.Header().Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-First", recorder.Header().Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("replaces upstream CORS headers", func(t *testing.T) {
@@ -363,7 +379,7 @@ func TestCorsWriter(t *testing.T) {
 		writer.WriteHeader(http.StatusOK)
 
 		assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowHeaders))
-		assert.Equal(t, "Vary", recorder.Header().Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary", recorder.Header().Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("unwraps to the underlying writer", func(t *testing.T) {

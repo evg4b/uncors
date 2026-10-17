@@ -80,6 +80,15 @@ func TestHttpErrorCorsHeaders(t *testing.T) {
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 	})
 
+	t.Run("exposes Date to the request origin", func(t *testing.T) {
+		request := newRequest(t)
+		request.Header.Set(headers.Origin, "http://localhost:3000")
+
+		recorder := writeError(t, request, errHandler)
+
+		assert.Contains(t, recorder.Header().Get(headers.AccessControlExposeHeaders), "Date")
+	})
+
 	t.Run("allows any origin without an Origin header", func(t *testing.T) {
 		recorder := writeError(t, newRequest(t), errHandler)
 

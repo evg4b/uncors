@@ -374,20 +374,20 @@ response:WriteHeader(201)
 response.headers["X-Late"] = "1"
 response:WriteString("{}")`,
 			origin:   origin,
-			expected: "Vary, X-Total-Count",
+			expected: "Date, Vary, X-Total-Count",
 		},
 		{
 			name: "headers set before the body",
 			script: `response.headers:Set("X-Request-Id", "42")
 response:WriteString("OK")`,
 			origin:   origin,
-			expected: "Vary, X-Request-Id",
+			expected: "Date, Vary, X-Request-Id",
 		},
 		{
 			name:     "response without a body",
 			script:   `response.headers["X-Empty"] = "1"`,
 			origin:   origin,
-			expected: "Vary, X-Empty",
+			expected: "Date, Vary, X-Empty",
 		},
 		{
 			name: "headers exposed by the script",

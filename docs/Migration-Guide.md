@@ -253,8 +253,8 @@ an error instead of creating an expired CA.
 UNCORS changed the CORS headers it adds to proxied, mock, and script
 responses:
 
-- `Access-Control-Expose-Headers` now lists the names of the response headers
-  when the request has an `Origin`, instead of `*`. Browsers read `*` literally
+- `Access-Control-Expose-Headers` now lists `Date` and the names of the
+  response headers when the request has an `Origin`, instead of `*`. Browsers read `*` literally
   for requests sent with credentials, so custom headers were hidden from
   JavaScript. Without an `Origin` it is still `*`.
 - `Access-Control-Allow-Headers` is no longer sent with these responses. It is

@@ -564,7 +564,7 @@ For requests forwarded to the upstream server, UNCORS:
 | `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                                                  |
 | `Access-Control-Allow-Credentials` | `true`                                                                                           |
 | `Access-Control-Allow-Methods`     | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`                                                   |
-| `Access-Control-Expose-Headers`    | The names of the other response headers if the request has an `Origin`, or `*`                   |
+| `Access-Control-Expose-Headers`    | `Date` and the names of the other response headers if the request has an `Origin`, or `*`        |
 | `Access-Control-Max-Age`           | `86400`                                                                                          |
 | `Vary`                             | `Origin` is added when the request has an `Origin`; the upstream server's `Vary` values are kept |
 

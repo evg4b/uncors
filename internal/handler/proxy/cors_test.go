@@ -66,7 +66,7 @@ func TestProxyHandlerCors(t *testing.T) {
 		assert.Equal(t, origin, header.Get(headers.AccessControlAllowOrigin))
 		assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, testconstants.AllMethods, header.Get(headers.AccessControlAllowMethods))
-		assert.Equal(t, "Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
 		assert.Empty(t, header.Values(headers.AccessControlAllowHeaders))
 		assert.Equal(t, []string{headers.Origin}, header.Values(headers.Vary))
 	})

@@ -13,6 +13,7 @@ const (
 	allowMethods = "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
 	maxAge       = "86400"
 	anyValue     = "*"
+	dateHeader   = "Date"
 
 	corsHeaderPrefix       = "Access-Control-"
 	exposedHeadersCapacity = 32
@@ -45,26 +46,18 @@ func writeExposeHeaders(header http.Header, origin string) {
 		return
 	}
 
-	if value := exposedHeaders(header); value != "" {
-		header.Set(headers.AccessControlExposeHeaders, value)
-	} else {
-		header.Del(headers.AccessControlExposeHeaders)
-	}
+	header.Set(headers.AccessControlExposeHeaders, exposedHeaders(header))
 }
 
 func exposedHeaders(header http.Header) string {
-	names := make([]string, 0, exposedHeadersCapacity)
-	size := 0
+	names := append(make([]string, 0, exposedHeadersCapacity), dateHeader)
+	size := len(dateHeader)
 
 	for name := range header {
-		if isExposedHeader(name) {
+		if name != dateHeader && isExposedHeader(name) {
 			names = append(names, name)
 			size += len(name) + len(", ")
 		}
-	}
-
-	if len(names) == 0 {
-		return ""
 	}
 
 	slices.Sort(names)
