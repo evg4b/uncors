@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -103,6 +104,10 @@ func (e *Env) URL(host, path string) string {
 	authority := net.JoinHostPort(host, strconv.Itoa(matched.port))
 
 	return testutils.JoinPath(scheme+"://"+authority, path)
+}
+
+func (e *Env) RawURL(host, pathAndQuery string) string {
+	return strings.TrimSuffix(e.URL(host, "/"), "/") + pathAndQuery
 }
 
 func (e *Env) PortFor(host string) int {

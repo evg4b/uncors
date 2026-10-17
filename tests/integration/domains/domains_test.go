@@ -140,3 +140,54 @@ func TestSharedPortDistinctRemotes(t *testing.T) {
 		assert.Equal(t, shopBefore, shopRemote.Count(), "blog request must not reach the shop remote")
 	})
 }
+
+func TestPlaceholderDoesNotReachIntoTheURL(t *testing.T) {
+	echo := func(w http.ResponseWriter, r *http.Request) {
+		_, err := io.WriteString(w, r.URL.RequestURI()) //nolint:gosec
+		assert.NoError(t, err)
+	}
+	tenantRemote := integration.NewBackend(t, echo)
+	otherRemote := integration.NewBackend(t, echo)
+
+	port := strconv.Itoa(testutils.GetFreePort(t))
+	env := integration.New(t, tenantRemote, &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Parse("https://{tenant}.example.local:" + port), To: tenantRemote.AsHost()},
+			{From: hosts.Parse("https://other.local:" + port), To: otherRemote.AsHost()},
+		},
+	})
+
+	paths := []string{
+		"/files/report.example.local",
+		"/?q=.example.local",
+		"/a.example.local?b=.example.local",
+	}
+
+	t.Run("path and query reach the backend unchanged", func(t *testing.T) {
+		for _, path := range paths {
+			result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.RawURL("acme.example.local", path)))
+
+			assert.Equal(t, http.StatusOK, result.Response.StatusCode, path)
+			assert.Equal(t, path, result.BodyString())
+		}
+	})
+
+	t.Run("a host suffix in the path does not pick another mapping", func(t *testing.T) {
+		tenantBefore := tenantRemote.Count()
+
+		for _, path := range paths {
+			response, err := env.Client.Do(integration.NewRequest(t, http.MethodGet, env.RawURL("other.local", path)))
+			require.NoError(t, err)
+
+			body, err := io.ReadAll(response.Body)
+			require.NoError(t, err)
+			testutils.Close(t, response.Body)
+
+			assert.Equal(t, http.StatusOK, response.StatusCode, path)
+			assert.Equal(t, path, string(body))
+		}
+
+		assert.Equal(t, len(paths), otherRemote.Count())
+		assert.Equal(t, tenantBefore, tenantRemote.Count(), "other.local requests must not reach the tenant remote")
+	})
+}
