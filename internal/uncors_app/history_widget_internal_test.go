@@ -1,6 +1,8 @@
 package uncorsapp
 
 import (
+	"strconv"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -74,7 +76,7 @@ func TestHistoryWidget(t *testing.T) {
 		defer cleanup(widget)
 
 		widget.termWidth = 80
-		widget.vp.SetWidth(80)
+		widget.Update(tea.WindowSizeMsg{Width: 80})
 		widget.SetHeight(5)
 
 		for range 10 {
@@ -102,7 +104,7 @@ func TestHistoryWidget(t *testing.T) {
 		defer cleanup(widget)
 
 		widget.termWidth = 80
-		widget.vp.SetWidth(80)
+		widget.Update(tea.WindowSizeMsg{Width: 80})
 		widget.SetHeight(10)
 		_, _ = widget.Update(outputLineMsg("line 1"))
 		_, _ = widget.Update(outputLineMsg("line 2"))
@@ -110,5 +112,43 @@ func TestHistoryWidget(t *testing.T) {
 		view := widget.View()
 		assert.Contains(t, view.Content, "line 1")
 		assert.Contains(t, view.Content, "line 2")
+	})
+
+	t.Run("keeps the scrolled position while history is evicted", func(t *testing.T) {
+		widget := NewHistoryWidget(keys)
+
+		defer cleanup(widget)
+
+		widget.Update(tea.WindowSizeMsg{Width: 40, Height: 3})
+		widget.SetHeight(3)
+
+		for index := range historyCapacity {
+			widget.AppendLine(strconv.Itoa(index))
+		}
+
+		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+		assert.False(t, widget.autoScroll)
+		assert.Equal(t, []string{"9996", "9997", "9998"}, strings.Fields(widget.View().Content))
+
+		widget.AppendLine("next")
+		widget.AppendLine("last")
+
+		assert.Equal(t, historyCapacity, widget.hist.LineCount())
+		assert.Equal(t, []string{"9996", "9997", "9998"}, strings.Fields(widget.View().Content))
+
+		_, _ = widget.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnd}))
+		assert.Equal(t, []string{"9999", "next", "last"}, strings.Fields(widget.View().Content))
+	})
+
+	t.Run("cuts lines wider than the terminal", func(t *testing.T) {
+		widget := NewHistoryWidget(keys)
+
+		defer cleanup(widget)
+
+		widget.Update(tea.WindowSizeMsg{Width: 5, Height: 1})
+		widget.SetHeight(1)
+		widget.AppendLine("0123456789")
+
+		assert.Equal(t, "01234", widget.View().Content)
 	})
 }
