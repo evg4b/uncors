@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
+	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui"
 )
@@ -21,7 +22,7 @@ const (
 )
 
 type UncorsApp struct {
-	keys keyMap
+	keys KeyMap
 
 	events   *events.Subscription
 	commands chan<- events.Command
@@ -46,15 +47,25 @@ type (
 	eventsClosedMsg struct{}
 )
 
+type AppOption = func(*UncorsApp)
+
+// WithMemoryWidget replaces the memory widget, for example to show a fixed value.
+func WithMemoryWidget(widget *MemoryWidget) AppOption {
+	return func(app *UncorsApp) {
+		app.memWidget = widget
+	}
+}
+
 func NewUncorsApp(
 	subscription *events.Subscription,
 	commands chan<- events.Command,
 	version string,
+	options ...AppOption,
 ) *UncorsApp {
-	keys := newKeyMap()
+	keys := NewKeyMap()
 	rendered := &bytes.Buffer{}
 
-	return &UncorsApp{
+	return helpers.ApplyOptions(&UncorsApp{
 		keys:          keys,
 		events:        subscription,
 		commands:      commands,
@@ -65,7 +76,7 @@ func NewUncorsApp(
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
 		memWidget:     NewMemoryWidget(),
-	}
+	}, options)
 }
 
 func (m *UncorsApp) Init() tea.Cmd {
@@ -232,7 +243,7 @@ func (m *UncorsApp) render(event events.Event) {
 	m.rendered.Reset()
 
 	if text != "" {
-		m.historyWidget.Update(outputLineMsg(text))
+		m.historyWidget.AppendLine(text)
 	}
 }
 
@@ -268,13 +279,18 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 			return eventsClosedMsg{}
 		}
 
-		switch typed := event.(type) {
-		case events.RequestStarted:
-			return requestStartedMsg(typed)
-		case events.RequestCompleted:
-			return requestCompletedMsg(typed)
-		default:
-			return lifecycleMsg{event: event}
-		}
+		return EventMsg(event)
+	}
+}
+
+// EventMsg is the message the app and its widgets receive for an engine event.
+func EventMsg(event events.Event) tea.Msg {
+	switch typed := event.(type) {
+	case events.RequestStarted:
+		return requestStartedMsg(typed)
+	case events.RequestCompleted:
+		return requestCompletedMsg(typed)
+	default:
+		return lifecycleMsg{event: event}
 	}
 }

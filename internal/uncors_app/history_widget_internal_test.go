@@ -9,7 +9,7 @@ import (
 )
 
 func TestHistoryWidget(t *testing.T) {
-	keys := newKeyMap()
+	keys := NewKeyMap()
 
 	cleanup := func(widget *HistoryWidget) {
 		if widget != nil && widget.hist != nil {
@@ -41,6 +41,17 @@ func TestHistoryWidget(t *testing.T) {
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
 		assert.Equal(t, 100, widget.termWidth)
+	})
+
+	t.Run("AppendLine adds the lines to the view", func(t *testing.T) {
+		widget := NewHistoryWidget(keys)
+		widget.Update(tea.WindowSizeMsg{Width: 40, Height: 5})
+		widget.SetHeight(5)
+
+		widget.AppendLine("first\nsecond")
+
+		assert.True(t, widget.HasLines())
+		assert.Contains(t, widget.View().Content, "second")
 	})
 
 	t.Run("Update handles outputLineMsg", func(t *testing.T) {

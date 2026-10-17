@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
@@ -74,6 +75,27 @@ func TestCliOutput_RenderMessage_StripsTrailingNewline(t *testing.T) {
 	output := buf.String()
 	assert.Contains(t, output, "hello")
 	assert.NotContains(t, output, "hello\n\n")
+}
+
+func TestCliOutput_RenderMessage_IndentsContinuationLines(t *testing.T) {
+	t.Run("aligns lines under the text column", func(t *testing.T) {
+		var buf strings.Builder
+		tui.NewCliOutput(&buf).Error("first\nsecond")
+		assert.Equal(t, " ERROR  first\n        second\n", ansi.Strip(buf.String()))
+	})
+
+	t.Run("counts the prefix", func(t *testing.T) {
+		var buf strings.Builder
+		tui.NewCliOutput(&buf, tui.WithPrefix("[pfx]")).Info("first\nsecond")
+		assert.Equal(t, "[pfx] INFO   first\n             second\n", ansi.Strip(buf.String()))
+	})
+
+	t.Run("matches the box text column", func(t *testing.T) {
+		var single, box strings.Builder
+		tui.NewCliOutput(&single).Warn("text")
+		tui.NewCliOutput(&box).WarnBox("text", "more")
+		assert.Equal(t, strings.Index(ansi.Strip(single.String()), "text"), strings.Index(ansi.Strip(box.String()), "text"))
+	})
 }
 
 func TestCliOutput_WithPrefix(t *testing.T) {

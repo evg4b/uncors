@@ -9,10 +9,10 @@ import (
 
 type HelpWidget struct {
 	help help.Model
-	keys keyMap
+	keys KeyMap
 }
 
-func NewHelpWidget(keys keyMap) *HelpWidget {
+func NewHelpWidget(keys KeyMap) *HelpWidget {
 	return &HelpWidget{
 		help: help.New(),
 		keys: keys,

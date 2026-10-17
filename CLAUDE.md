@@ -14,6 +14,7 @@ make test-release       # Unit tests with -tags release
 make build-release      # Build the ./uncors binary
 make format-docs        # Prettier over docs/*.md and root *.md
 ./uncors generate-certs # Local CA in ~/.config/uncors (needed for https mappings)
+make playground         # Show one TUI story, rebuilt on change; see .claude/skills/tui-stories
 ```
 
 `make format-docs` also realigns tables in untouched files; revert those before
@@ -59,7 +60,7 @@ Core and UI are separate (`TestCoreDoesNotImportTheUI` enforces it):
 - Use the injected `afero.Fs`, never `os`.
 - YAML tags are kebab-case.
 - Mocks: minimock into `testing/mocks`. Snapshots: go-snaps. Helpers:
-  `testing/testutils`.
+  `testing/testutils`. TUI stories: `testing/stories`.
 - Commit prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`.
 
 ## Configuration

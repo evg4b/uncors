@@ -2,10 +2,13 @@ package uncorsapp
 
 import (
 	"net/url"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -112,6 +115,22 @@ func TestTrackerWidget(t *testing.T) {
 		assert.Contains(t, view.Content, "POST")
 		assert.Contains(t, view.Content, "localhost/test")
 		assert.Contains(t, view.Content, "→ /v2/test")
+	})
+
+	t.Run("View renders one request per line in ID order", func(t *testing.T) {
+		widget := NewTrackerWidget()
+
+		for _, id := range []uint64{3, 1, 2} {
+			reqURL, _ := url.Parse("http://localhost/" + strconv.FormatUint(id, 10))
+			widget.pending[id] = events.RequestStarted{ID: id, Method: "GET", URL: reqURL}
+		}
+
+		lines := strings.Split(ansi.Strip(widget.View().Content), "\n")
+
+		require.Len(t, lines, 3)
+		assert.True(t, strings.HasSuffix(lines[0], "localhost/1"), lines[0])
+		assert.True(t, strings.HasSuffix(lines[1], "localhost/2"), lines[1])
+		assert.True(t, strings.HasSuffix(lines[2], "localhost/3"), lines[2])
 	})
 
 	t.Run("View renders empty string when no requests", func(t *testing.T) {

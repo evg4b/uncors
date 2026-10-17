@@ -3,6 +3,8 @@ package uncorsapp
 import (
 	"context"
 	"log/slog"
+	"maps"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/spinner"
@@ -10,6 +12,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
+	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
@@ -19,6 +22,7 @@ var pendingMethodStyle = lipgloss.NewStyle().
 	Background(lipgloss.Color("#8C8C8C")).
 	PaddingLeft(1).
 	PaddingRight(1).
+	Width(tui.RequestPrefixWidth).
 	Bold(true)
 
 var pendingTextStyle = lipgloss.NewStyle().
@@ -40,7 +44,8 @@ func NewTrackerWidget() *TrackerWidget {
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
-	loader.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
+	// Plain: pendingMethodStyle styles the frame together with the method.
+	loader.Style = lipgloss.NewStyle()
 
 	return &TrackerWidget{
 		pending: make(map[uint64]events.RequestStarted),
@@ -118,11 +123,13 @@ func (m *TrackerWidget) View() tea.View {
 		return tea.NewView("")
 	}
 
-	var viewBuilder strings.Builder
+	lines := make([]string, 0, len(m.pending))
 
-	index := 0
+	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
+		req := m.pending[id]
 
-	for _, req := range m.pending {
+		var viewBuilder strings.Builder
+
 		urlStr := ""
 		if req.URL != nil {
 			urlStr = urlt.URL_String(req.URL)
@@ -130,12 +137,9 @@ func (m *TrackerWidget) View() tea.View {
 
 		url := pendingTextStyle.Render(urlStr)
 
-		if label := styles.HandlerLabel(req.Handler); label != "" {
-			viewBuilder.WriteString(label)
-		}
-
-		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View()))
-		viewBuilder.WriteString(pendingMethodStyle.Render(req.Method))
+		viewBuilder.WriteString(styles.HandlerLabel(req.Handler))
+		viewBuilder.WriteRune(' ')
+		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View() + " " + req.Method))
 		viewBuilder.WriteRune(' ')
 		viewBuilder.WriteString(url)
 
@@ -143,14 +147,10 @@ func (m *TrackerWidget) View() tea.View {
 			viewBuilder.WriteString(" " + styles.DimTextStyle.Render("→ "+req.Rewrite.To))
 		}
 
-		if index != 0 {
-			viewBuilder.WriteRune('\n')
-		}
-
-		index++
+		lines = append(lines, viewBuilder.String())
 	}
 
-	return tea.NewView(viewBuilder.String())
+	return tea.NewView(strings.Join(lines, "\n"))
 }
 
 func (m *TrackerWidget) startTicking() tea.Cmd {

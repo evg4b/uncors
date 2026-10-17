@@ -11,10 +11,10 @@ func (output *CliOutput) printMessageBox(message, prefix string, blockStyles lip
 	height := lipgloss.Height(message)
 	space := strings.Repeat("\n", height-1)
 
-	blockStyles = blockStyles.Margin(0, 1, 0, 0)
+	blockStyles = blockStyles.Width(boxLength).Margin(0, 1, 0, 0)
 	block := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		blockStyles.Render(prefix, space),
+		blockStyles.Render(prefix+space),
 		message,
 	)
 
