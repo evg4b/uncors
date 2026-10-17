@@ -316,8 +316,6 @@ func TestProxyHandler(t *testing.T) {
 	})
 
 	t.Run("should forward the Cookie header unchanged", func(t *testing.T) {
-		// Values a cookie parser would reject or reformat: quotes, spaces,
-		// commas, and a pair without "=".
 		const cookie = `quoted="a b"; list=x,y; spaced=with space; flag; session=abc123`
 
 		var forwarded *http.Request
@@ -524,7 +522,6 @@ func premiumRequest(t *testing.T, method string, body io.Reader) *http.Request {
 	return req
 }
 
-// capturingClient answers 200 and stores the request it was given.
 func capturingClient(forwarded **http.Request) contracts.HTTPClient {
 	return testutils.NewTestClient(func(req *http.Request) *http.Response {
 		*forwarded = req

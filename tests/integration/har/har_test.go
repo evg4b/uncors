@@ -75,8 +75,6 @@ func TestHARMiddleware(t *testing.T) {
 }
 
 func TestHARMiddlewareKeepsContentLength(t *testing.T) {
-	// The HAR middleware buffers the request body and replaces it with a
-	// reader of unknown length; the proxy must still send Content-Length.
 	type received struct {
 		contentLength    int64
 		transferEncoding []string

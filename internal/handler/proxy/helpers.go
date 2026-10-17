@@ -11,9 +11,6 @@ type modificationsMap = map[string]func(string) string
 
 func noop(s string) string { return s }
 
-// copyHeaders copies headers except Set-Cookie, which copyCookiesToSource
-// rewrites, and Content-Length, which net/http sets from the body. The Cookie
-// header is copied unchanged.
 func copyHeaders(source, dest http.Header, modifications modificationsMap) {
 	for key, values := range source {
 		if key == headers.SetCookie || key == headers.ContentLength {

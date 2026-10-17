@@ -105,13 +105,8 @@ func (h *Handler) makeOriginalRequest(
 		return nil, fmt.Errorf("failed to make request to original server: %w", err)
 	}
 
-	// The body is an opaque reader, so NewRequestWithContext cannot know its
-	// length: without this every request with a body would go upstream
-	// chunked.
 	originalRequest.ContentLength = req.ContentLength
 
-	// Origin and Referer of other hosts (another local frontend, "null") are
-	// forwarded as they are.
 	copyHeaders(req.Header, originalRequest.Header, modificationsMap{
 		headers.Origin:  replacer.ReplaceSoft,
 		headers.Referer: replacer.ReplaceSoft,
