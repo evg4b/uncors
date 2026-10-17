@@ -55,6 +55,8 @@ A cache hit returns the stored status code, headers, and body without
 contacting the upstream server. `Access-Control-*` headers are not stored.
 Each hit gets the CORS headers written for its own `Origin`, as a proxied
 response would, so a response cached for one page can be served to another.
+When the mapping has [`allowed-origins`](Configuration#allowed-origins) and the
+origin does not match, the hit has no CORS headers, as with any other response.
 
 The cache lives in memory only. It is emptied when UNCORS stops or reloads its
 configuration.

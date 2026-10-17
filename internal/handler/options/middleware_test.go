@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -229,6 +230,27 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, "86400", recorder.Header().Get(headers.AccessControlMaxAge))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlExposeHeaders))
 		assert.Equal(t, []string{headers.Origin}, recorder.Header().Values(headers.Vary))
+	})
+
+	t.Run("for OPTIONS request with a rejected origin", func(t *testing.T) {
+		mockedNextHandler := mocks.FailNowHandlerMock(t)
+
+		middleware := options.NewMiddleware(
+			options.WithHeaders(map[string]string{"X-Custom": "value"}),
+			options.WithCode(http.StatusNoContent),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+
+		err := infra.Mddleware(middleware, mockedNextHandler).
+			ServeHTTP(server.NewResponseRecorder(recorder), testutils.RejectOrigin(t, request))
+
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusForbidden, recorder.Code)
+		assert.Equal(t, http.Header{headers.Vary: []string{headers.Origin}}, recorder.Header())
 	})
 
 	t.Run("for OPTIONS request with empty origin", func(t *testing.T) {

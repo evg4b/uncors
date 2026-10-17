@@ -66,7 +66,7 @@ func TestProxyHandlerCors(t *testing.T) {
 		assert.Equal(t, origin, header.Get(headers.AccessControlAllowOrigin))
 		assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, testconstants.AllMethods, header.Get(headers.AccessControlAllowMethods))
-		assert.Equal(t, "Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
 		assert.Empty(t, header.Values(headers.AccessControlAllowHeaders))
 		assert.Equal(t, []string{headers.Origin}, header.Values(headers.Vary))
 	})
@@ -122,5 +122,33 @@ func TestProxyHandlerCors(t *testing.T) {
 			headers.AccessControlRequestMethod,
 			headers.AccessControlRequestHeaders,
 		}, header.Values(headers.Vary))
+	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		request := premiumRequest(t, http.MethodGet, nil)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+
+		header := serve(t, testutils.RejectOrigin(t, request), http.Header{
+			"X-Total-Count":                       []string{"10"},
+			headers.AccessControlAllowOrigin:      []string{"*"},
+			headers.AccessControlAllowCredentials: []string{"true"},
+		})
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, header)
+	})
+
+	t.Run("withholds CORS headers from a rejected forwarded preflight", func(t *testing.T) {
+		request := premiumRequest(t, http.MethodOptions, nil)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+		request.Header.Set(headers.AccessControlRequestMethod, http.MethodPut)
+
+		header := serve(t, testutils.RejectOrigin(t, request), http.Header{
+			headers.AccessControlAllowMethods: []string{http.MethodPut},
+		})
+
+		assert.Equal(t, http.Header{headers.Vary: []string{headers.Origin}}, header)
 	})
 }

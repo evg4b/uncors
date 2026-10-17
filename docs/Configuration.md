@@ -19,6 +19,7 @@ static files apply only to the mapping they are defined in.
   - [Named placeholder mapping](#named-placeholder-mapping)
   - [Simplified syntax](#simplified-syntax)
   - [OPTIONS request handling](#options-request-handling)
+  - [Allowed origins](#allowed-origins)
 - [What UNCORS changes in proxied traffic](#what-uncors-changes-in-proxied-traffic)
 - [HAR recording](#har-recording)
 - [HTTPS configuration](#https-configuration)
@@ -338,6 +339,7 @@ Each entry under `mappings` has a source and a target, plus optional features:
 | `cache`            | array of strings | Path globs whose upstream responses are cached. See [Response Caching](Response-Caching). |
 | `rewrites`         | array            | Path and host rewrites. See [Request Rewriting](Request-Rewriting).                 |
 | `options-handling` | object           | How `OPTIONS` requests are answered. See [below](#options-request-handling).        |
+| `allowed-origins`  | array of strings | Origins that get CORS headers. See [below](#allowed-origins).                       |
 | `har`              | string or object | Record traffic to a HAR file. See [HAR Collector](HAR-Collector).                   |
 
 `from` and `to` contain only a scheme, a host, and an optional port. A path or
@@ -535,6 +537,55 @@ mappings:
       disabled: true
 ```
 
+### Allowed origins
+
+By default UNCORS copies any `Origin` into `Access-Control-Allow-Origin` and
+sends `Access-Control-Allow-Credentials: true`. Any page open in your browser
+can then call the mapping with your cookies and read the response. See
+[Any website can read responses through UNCORS](Troubleshooting#any-website-can-read-responses-through-uncors).
+
+`allowed-origins` limits the origins that get CORS headers. Each entry is a
+glob pattern matched against the whole `Origin` header:
+
+| Pattern                        | Matches                                                 |
+| ------------------------------ | ------------------------------------------------------- |
+| `http://localhost:*`           | `http://localhost` on any port                          |
+| `https://*.example.test`       | Any subdomain of `example.test` over HTTPS              |
+| `http://127.0.0.1:{3000,5173}` | `http://127.0.0.1:3000` and `http://127.0.0.1:5173`     |
+| `null`                         | The `null` origin of sandboxed frames and `file:` pages |
+
+`*` matches any characters except `/`, `?` matches one character, `[abc]` one
+of the listed characters, and `{a,b}` one of the alternatives. Browsers send
+the origin as scheme, host, and port only, in lowercase, so a pattern with a
+path or a trailing slash never matches; UNCORS rejects a pattern that ends with
+`/`.
+
+When `allowed-origins` is set and a request has an `Origin` that matches none
+of the patterns:
+
+- the request is still handled: it is proxied, mocked, scripted, or served
+  from the cache as usual;
+- the response has no `Access-Control-*` headers, including those sent by the
+  upstream server, a mock, or a script, so the browser does not let the page
+  read it. `Vary: Origin` is added;
+- a preflight request answered by UNCORS gets `403 Forbidden` without CORS
+  headers or the `options-handling.headers`. With `options-handling.disabled`,
+  the preflight is forwarded and the upstream response loses its CORS headers.
+
+The rule covers proxied, mock, script, and cached responses, preflight
+responses, and error pages. Requests without an `Origin` header, such as
+navigations and same-origin `GET` requests, get CORS headers as before. Without
+`allowed-origins` any origin gets CORS headers.
+
+```yaml
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+    allowed-origins:
+      - http://localhost:*
+      - http://app.local:3000
+```
+
 ## What UNCORS changes in proxied traffic
 
 For requests forwarded to the upstream server, UNCORS:
@@ -558,15 +609,16 @@ For requests forwarded to the upstream server, UNCORS:
   those cookies follows the scheme of the local host;
 - rewrites `Location` headers in redirects back to the local host;
 - adds the CORS headers listed below to every response, replacing any the
-  upstream server sent. `Access-Control-Allow-Headers` from the upstream server
-  is removed: it only matters in preflight responses.
+  upstream server sent, unless the origin is not in
+  [`allowed-origins`](#allowed-origins). `Access-Control-Allow-Headers` from
+  the upstream server is removed: it only matters in preflight responses.
 
 | Header                             | Value                                                                                            |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                                                  |
 | `Access-Control-Allow-Credentials` | `true`                                                                                           |
 | `Access-Control-Allow-Methods`     | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`                                                   |
-| `Access-Control-Expose-Headers`    | The names of the other response headers if the request has an `Origin`, or `*`                   |
+| `Access-Control-Expose-Headers`    | `Date` and the names of the other response headers if the request has an `Origin`, or `*`        |
 | `Access-Control-Max-Age`           | `86400`                                                                                          |
 | `Vary`                             | `Origin` is added when the request has an `Origin`; the upstream server's `Vary` values are kept |
 

@@ -271,9 +271,12 @@ func (m *Middleware) writeCachedResponse(
 		}
 	}
 
-	if request.Method == http.MethodOptions {
+	switch {
+	case tracking.OriginRejected(request.Context()):
+		infra.WithholdCorsHeaders(header)
+	case request.Method == http.MethodOptions:
 		infra.WriteCorsHeadersForOptions(header, request.Header)
-	} else {
+	default:
 		infra.WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 	}
 
