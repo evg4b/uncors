@@ -32,6 +32,10 @@ func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet, version string)
 }
 
 func (c *GenerateCertsCommand) Execute() error {
+	if c.validityDays <= 0 {
+		return fmt.Errorf("%w: got %d", ErrInvalidValidityDays, c.validityDays)
+	}
+
 	outputDir, err := certs.Dir()
 	if err != nil {
 		return err

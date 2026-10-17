@@ -66,6 +66,34 @@ func TestGenerate(t *testing.T) {
 		assert.NotEqual(t, 0, cert.KeyUsage&x509.KeyUsageCertSign)
 		assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 	})
+
+	t.Run("should forbid intermediate CAs", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		certPath, keyPath, err := certs.Generate(fs, "/ca", 365)
+		require.NoError(t, err)
+
+		cert, _, err := certs.Load(fs, certPath, keyPath)
+		require.NoError(t, err)
+
+		assert.True(t, cert.MaxPathLenZero)
+		assert.Equal(t, 0, cert.MaxPathLen)
+	})
+
+	t.Run("should restrict the permissions of an existing key file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		keyPath := filepath.Join(tmpDir, certs.KeyFileName)
+
+		require.NoError(t, os.WriteFile(keyPath, []byte("old key"), 0o600))
+		require.NoError(t, os.Chmod(keyPath, 0o644))
+
+		_, _, err := certs.Generate(afero.NewOsFs(), tmpDir, 365)
+		require.NoError(t, err)
+
+		keyInfo, err := os.Stat(keyPath)
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0o600), keyInfo.Mode().Perm())
+	})
 }
 
 func TestLoad(t *testing.T) {

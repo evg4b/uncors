@@ -147,9 +147,16 @@ openssl x509 -in ~/.config/uncors/ca.crt -noout -dates
 uncors generate-certs --force
 ```
 
+If UNCORS shows "TLS: no https mapping for host", the client asked for a host
+name that no `https://` mapping covers. UNCORS signs certificates only for the
+hosts of its `https://` mappings, so add a mapping for that host or connect
+with a host name that has one. See
+[Use HTTPS mappings](Configuration#use-https-mappings).
+
 Connect by host name, not by IP address. UNCORS picks the certificate from the
 host name the client sends (SNI), and a client that connects to an IP address
-sends none.
+sends none. Then UNCORS uses `127.0.0.1`, which works only if a mapping uses
+that address, such as `https://127.0.0.1:8443`.
 
 To test without trusting the CA, `curl -k https://api.local:8443/` skips
 certificate checks.
