@@ -32,6 +32,10 @@ func TestMockHandler(t *testing.T) {
 					Matcher:  config.RequestMatcher{Path: "/file"},
 					Response: config.Response{Code: http.StatusOK, File: "/responses/data.json"},
 				},
+				{
+					Matcher:  config.RequestMatcher{Path: "/missing"},
+					Response: config.Response{Code: http.StatusNotFound, File: "/responses/data.json"},
+				},
 			},
 		}},
 	}, integration.WithFile("/responses/data.json", `{"from":"file"}`))
@@ -59,6 +63,17 @@ func TestMockHandler(t *testing.T) {
 		assert.False(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
+	})
+
+	t.Run("file response returns configured code", func(t *testing.T) {
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/missing")))
+
+		body := result.BodyString()
+
+		assert.Equal(t, http.StatusNotFound, result.Response.StatusCode)
+		assert.Equal(t, "application/json", result.Response.Header.Get("Content-Type"))
+		assert.JSONEq(t, `{"from":"file"}`, body)
+		assert.False(t, result.HasBackendRequest())
 	})
 
 	t.Run("method mismatch falls through to the backend", func(t *testing.T) {

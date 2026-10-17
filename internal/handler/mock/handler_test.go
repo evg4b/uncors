@@ -36,6 +36,7 @@ const (
 	jsonFile = "test.json"
 	htmlFile = "test.html"
 	pngFile  = "test.png"
+	bareFile = "test"
 )
 
 func TestHandler(t *testing.T) {
@@ -44,6 +45,7 @@ func TestHandler(t *testing.T) {
 		jsonFile: jsonContent,
 		htmlFile: htmlContent,
 		pngFile:  pngContent,
+		bareFile: htmlContent,
 	})
 
 	t.Run("mock content", func(t *testing.T) {
@@ -302,6 +304,116 @@ func TestHandler(t *testing.T) {
 				assert.Equal(t, testCase.expected, recorder.Code)
 			})
 		}
+	})
+
+	t.Run("file status code", func(t *testing.T) {
+		tests := []struct {
+			name        string
+			response    config.Response
+			code        int
+			contentType string
+			body        string
+		}{
+			{
+				name:        "provide 404 code",
+				response:    config.Response{Code: http.StatusNotFound, File: jsonFile},
+				code:        http.StatusNotFound,
+				contentType: "application/json",
+				body:        jsonContent,
+			},
+			{
+				name:        "provide 201 code",
+				response:    config.Response{Code: http.StatusCreated, File: textFile},
+				code:        http.StatusCreated,
+				contentType: textPlain,
+				body:        textContent,
+			},
+			{
+				name:        "sniff content type of a file without extension",
+				response:    config.Response{Code: http.StatusAccepted, File: bareFile},
+				code:        http.StatusAccepted,
+				contentType: "text/html; charset=utf-8",
+				body:        htmlContent,
+			},
+			{
+				name: "content type from config wins",
+				response: config.Response{
+					Code:    http.StatusNotFound,
+					File:    jsonFile,
+					Headers: map[string]string{headers.ContentType: "application/problem+json"},
+				},
+				code:        http.StatusNotFound,
+				contentType: "application/problem+json",
+				body:        jsonContent,
+			},
+			{
+				name:        "provide 204 code without body",
+				response:    config.Response{Code: http.StatusNoContent, File: jsonFile},
+				code:        http.StatusNoContent,
+				contentType: "application/json",
+				body:        "",
+			},
+			{
+				name:        "automatically provide 200 code",
+				response:    config.Response{File: jsonFile},
+				code:        http.StatusOK,
+				contentType: "application/json",
+				body:        jsonContent,
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				trackingFs := testutils.NewTrackingFs(fileSystem)
+				handler := mock.NewMockHandler(
+					mock.WithResponse(&testCase.response),
+					mock.WithFileSystem(trackingFs),
+					mock.WithAfter(time.After),
+				)
+
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+				require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+				assert.Equal(t, testCase.code, recorder.Code)
+				assert.Equal(t, testCase.contentType, recorder.Header().Get(headers.ContentType))
+				assert.Equal(t, testCase.body, testutils.ReadBody(t, recorder))
+				assert.Zero(t, trackingFs.OpenFiles(), "file handle was left open")
+			})
+		}
+	})
+
+	t.Run("file with 200 code supports range requests", func(t *testing.T) {
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{Code: http.StatusOK, File: textFile}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(time.After),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+		request.Header.Set(headers.Range, "bytes=0-5")
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+		assert.Equal(t, http.StatusPartialContent, recorder.Code)
+		assert.Equal(t, "bytes 0-5/10", recorder.Header().Get(headers.ContentRange))
+		assert.Equal(t, textContent[:6], testutils.ReadBody(t, recorder))
+	})
+
+	t.Run("file with other code ignores range requests", func(t *testing.T) {
+		handler := mock.NewMockHandler(
+			mock.WithResponse(&config.Response{Code: http.StatusNotFound, File: textFile}),
+			mock.WithFileSystem(fileSystem),
+			mock.WithAfter(time.After),
+		)
+
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+		request.Header.Set(headers.Range, "bytes=0-5")
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+		assert.Equal(t, http.StatusNotFound, recorder.Code)
+		assert.Empty(t, recorder.Header().Get(headers.ContentRange))
+		assert.Equal(t, textContent, testutils.ReadBody(t, recorder))
 	})
 
 	t.Run("undefined response error", func(t *testing.T) {

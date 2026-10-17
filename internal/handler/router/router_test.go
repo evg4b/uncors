@@ -640,3 +640,59 @@ func TestRouterStaticRedirect(t *testing.T) {
 		})
 	}
 }
+
+func TestRouterStaticAtRoot(t *testing.T) {
+	const origin = "http://localhost"
+
+	httpClient := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			Request:    req,
+			StatusCode: http.StatusCreated,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader("proxied " + req.URL.RequestURI())),
+		}, nil
+	})
+
+	fs := testutils.FsFromMap(t, map[string]string{
+		"/dist/index.js":        indexJS,
+		"/dist/css/styles.css":  styleCSS,
+		"/dist/index.html":      indexHTML,
+		"/dist/icons/icons.svg": iconsSvg,
+	})
+
+	tests := []struct {
+		name   string
+		index  string
+		path   string
+		status int
+		body   string
+	}{
+		{name: "file", path: "/index.js", status: http.StatusOK, body: indexJS},
+		{name: "nested file", path: "/css/styles.css?v=2", status: http.StatusOK, body: styleCSS},
+		{name: "missing file", path: "/missing.js", status: http.StatusCreated, body: "proxied /missing.js"},
+		{name: "root", path: "/", status: http.StatusCreated, body: "proxied /"},
+		{name: "empty path", path: origin, status: http.StatusCreated, body: "proxied /"},
+		{name: "root with query", path: "/?lang=en", status: http.StatusCreated, body: "proxied /?lang=en"},
+		{name: "directory", path: "/icons", status: http.StatusCreated, body: "proxied /icons"},
+		{name: "file with index", index: "/index.html", path: "/index.js", status: http.StatusOK, body: indexJS},
+		{name: "root with index", index: "/index.html", path: "/", status: http.StatusOK, body: indexHTML},
+		{name: "empty path with index", index: "/index.html", path: origin, status: http.StatusOK, body: indexHTML},
+		{name: "missing file with index", index: "/index.html", path: "/users/1", status: http.StatusOK, body: indexHTML},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			routerInstance := newRouter(t, fs, config.Mappings{{
+				From:    hosts.Localhost.HTTP(),
+				To:      hosts.Parse("https://api.example.com"),
+				Statics: []config.StaticDirectory{{Dir: "/dist", Path: "/", Index: testCase.index}},
+			}}, httpClient)
+
+			recorder := serve(t, routerInstance, http.MethodGet, testCase.path, nil)
+
+			assert.Equal(t, testCase.status, recorder.Code)
+			assert.Empty(t, recorder.Header().Get(headers.Location))
+			assert.Equal(t, testCase.body, testutils.ReadBody(t, recorder))
+		})
+	}
+}

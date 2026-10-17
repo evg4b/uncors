@@ -52,6 +52,39 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 }
 
+func TestStaticAtRoot(t *testing.T) {
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://static.local"),
+			To:   backend.AsHost(),
+			Statics: config.StaticDirectories{
+				{Path: "/", Dir: "/www"},
+			},
+		}},
+	},
+		integration.WithFile("/www/app.js", "console.log('hi')"),
+	)
+
+	t.Run("serves an existing static file", func(t *testing.T) {
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", "/app.js")))
+
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "console.log('hi')", result.BodyString())
+		assert.False(t, result.HasBackendRequest())
+	})
+
+	for _, path := range []string{"/", "/missing.js", "/app.js/missing"} {
+		t.Run("proxies "+path, func(t *testing.T) {
+			result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", path)))
+
+			assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+			assert.Equal(t, "ok", result.BodyString())
+			assert.True(t, result.HasBackendRequest())
+		})
+	}
+}
+
 func TestStaticPrefixRedirect(t *testing.T) {
 	backend := integration.NewBackend(t, nil)
 	env := integration.New(t, backend, &config.UncorsConfig{

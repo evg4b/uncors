@@ -41,7 +41,9 @@ statics:
 A request whose path starts with `path` is looked up in `dir`, with the prefix
 removed. With `path: /assets` and `dir: ./assets`, a request for
 `/assets/css/site.css` reads `./assets/css/site.css`. A request for exactly
-`/assets` is redirected to `/assets/`, keeping the query string.
+`/assets` is redirected to `/assets/`, keeping the query string. With
+`path: /`, every path on the host is looked up in `dir` and nothing is
+redirected.
 
 What happens next depends on whether the file exists and whether `index` is
 set:
@@ -51,6 +53,9 @@ set:
 | Exists           | The file is returned            | The file is returned                |
 | Is a directory   | The `index` file is returned    | The request goes to the upstream    |
 | Does not exist   | The `index` file is returned    | The request goes to the upstream    |
+
+A path that continues past a file, such as `/assets/app.js/extra`, counts as a
+file that does not exist.
 
 "Goes to the upstream" means the request is proxied to `to`, with caching and
 HAR recording if they are configured. It does not fall through to mocks or

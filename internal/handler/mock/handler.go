@@ -1,11 +1,16 @@
 package mock
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -168,9 +173,60 @@ func (h *Handler) serveFileContent(writer http.ResponseWriter, request *http.Req
 		span.SetAttributes(attribute.Int64("uncors.mock.file_bytes", stat.Size()))
 	}
 
-	http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+	code := helpers.NormaliseStatusCode(h.response.Code)
+	if code == http.StatusOK {
+		http.ServeContent(writer, request, stat.Name(), stat.ModTime(), file)
+
+		return nil
+	}
+
+	return writeFileWithStatus(writer, file, stat, code)
+}
+
+func writeFileWithStatus(writer http.ResponseWriter, file io.Reader, stat os.FileInfo, code int) error {
+	header := writer.Header()
+
+	body := file
+
+	if len(header.Get(headers.ContentType)) == 0 {
+		contentType := mime.TypeByExtension(filepath.Ext(stat.Name()))
+		if len(contentType) == 0 {
+			sniff := make([]byte, contentTypeSniffLen)
+
+			read, err := io.ReadFull(file, sniff)
+			if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+				return fmt.Errorf("failed to read file: %w", err)
+			}
+
+			contentType = http.DetectContentType(sniff[:read])
+			body = io.MultiReader(bytes.NewReader(sniff[:read]), file)
+		}
+
+		header.Set(headers.ContentType, contentType)
+	}
+
+	if !bodyAllowed(code) {
+		writer.WriteHeader(code)
+
+		return nil
+	}
+
+	if len(header.Get(headers.ContentLength)) == 0 {
+		header.Set(headers.ContentLength, strconv.FormatInt(stat.Size(), 10))
+	}
+
+	writer.WriteHeader(code)
+
+	_, err := io.Copy(writer, body)
+	if err != nil {
+		return fmt.Errorf("failed to write file content: %w", err)
+	}
 
 	return nil
+}
+
+func bodyAllowed(code int) bool {
+	return code >= http.StatusOK && code != http.StatusNoContent && code != http.StatusNotModified
 }
 
 func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {
