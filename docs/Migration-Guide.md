@@ -112,6 +112,18 @@ Handler errors are no longer printed as separate console lines. They appear
 under the failing request instead, and are also recorded on the request's trace
 when [tracing](Configuration#tracing-and-diagnostics) is on.
 
+### Script limits and `os.exit`
+
+Lua scripts now have limits. See [Limits](Script-Handler#limits).
+
+- `os.exit` raises an error instead of stopping the UNCORS process. A script
+  that called it to end early should `return` from the top level instead.
+- A script that runs longer than 30 seconds is stopped, and so is a script
+  whose client disconnects or whose server shuts down. The request fails with
+  status 500.
+- A request body larger than 10 MiB fails with status 500 before the script
+  runs. Before, a body that failed to read reached the script as `nil`.
+
 ## Upgrading from 0.5.x to 0.6.x
 
 Version 0.6 had three breaking changes.

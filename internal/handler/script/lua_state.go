@@ -5,18 +5,28 @@ import (
 	luajson "layeh.com/gopher-json"
 )
 
+// newLuaState opens every gopher-lua standard library (lua.NewState does
+// that) and preloads the json module.
 func newLuaState() *lua.LState {
 	luaState := lua.NewState()
-	loadStandardLibraries(luaState)
+	luajson.Preload(luaState)
+	replaceOsExit(luaState)
 
 	return luaState
 }
 
-func loadStandardLibraries(luaState *lua.LState) {
-	luaState.SetGlobal("_G", luaState.Get(lua.GlobalsIndex))
-	luaState.PreloadModule("math", lua.OpenMath)
-	luaState.PreloadModule("string", lua.OpenString)
-	luaState.PreloadModule("table", lua.OpenTable)
-	luaState.PreloadModule("os", lua.OpenOs)
-	luajson.Preload(luaState)
+// replaceOsExit makes os.exit end the script with an error: the original calls
+// os.Exit and would stop UNCORS itself. The global os table is the one
+// require("os") returns, so this covers both.
+func replaceOsExit(luaState *lua.LState) {
+	osTable, ok := luaState.GetGlobal(lua.OsLibName).(*lua.LTable)
+	if !ok {
+		return
+	}
+
+	osTable.RawSetString("exit", luaState.NewFunction(func(state *lua.LState) int {
+		state.RaiseError("%s", ErrOsExit.Error())
+
+		return 0
+	}))
 }

@@ -24,6 +24,7 @@ mappings:
 - [The request object](#the-request-object)
 - [The response object](#the-response-object)
 - [Libraries](#libraries)
+- [Limits](#limits)
 - [Examples](#examples)
 - [Errors](#errors)
 - [Scripts or mocks](#scripts-or-mocks)
@@ -181,9 +182,11 @@ response.headers["Access-Control-Allow-Origin"] = "https://example.com"
 
 ## Libraries
 
-All standard gopher-lua libraries are loaded, including `string`, `table`,
-`math`, `os`, and `io`. They are available as globals, and `require("math")`
-and similar calls also work.
+All standard gopher-lua libraries are loaded: the base functions, `package`,
+`string`, `table`, `math`, `os`, `io`, `coroutine`, `debug`, and gopher-lua's
+`channel`. They are available as globals, and `require("math")` and similar
+calls also work. The one exception is `os.exit`, which raises an error instead
+of stopping the process (see [Limits](#limits)).
 
 A JSON module from [gopher-json](https://github.com/layeh/gopher-json) is
 available through `require("json")`:
@@ -223,6 +226,30 @@ end
 > Scripts are not sandboxed. `os.execute`, `io.popen`, and file functions in
 > `io` and `os` run with the permissions of the UNCORS process. Only run
 > scripts you trust.
+
+## Limits
+
+| Limit             | Value      | What happens                                              |
+| ----------------- | ---------- | --------------------------------------------------------- |
+| Running time      | 30 seconds | The script is stopped with a `script timed out` error.    |
+| Request body size | 10 MiB     | The script does not run; the request fails with an error. |
+
+A script is also stopped when its client disconnects or UNCORS shuts down. In
+all of these cases the request fails as described in [Errors](#errors).
+
+Scripts are checked between Lua instructions, so a call that blocks inside a
+library function, such as `os.execute("sleep 60")` or `io.read()`, is stopped
+only once that call returns.
+
+`os.exit` raises an error: it would otherwise stop the UNCORS process itself.
+To end a script early, `return` from the top level:
+
+```lua
+if request.method ~= "POST" then
+  response:WriteHeader(405)
+  return
+end
+```
 
 ## Examples
 
@@ -333,8 +360,9 @@ Configuration errors are reported at startup: a script entry with neither
 If a script raises an error at runtime (a syntax error, a call on `nil`, an
 `error(...)` call), UNCORS shows the error under the request in the console and
 answers with status 500, as long as the script had not already sent the status
-line. Use `pcall` around code that can fail when you want to choose the
-response yourself.
+line. The same applies when a script is stopped by one of its
+[limits](#limits). Use `pcall` around code that can fail when you want to
+choose the response yourself.
 
 ## Scripts or mocks
 

@@ -23,13 +23,17 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// DefaultTimeout is how long a script may run before it is stopped.
+const DefaultTimeout = 30 * time.Second
+
 type Handler struct {
-	script *config.Script
-	fs     afero.Fs
+	script  *config.Script
+	fs      afero.Fs
+	timeout time.Duration
 }
 
 func NewHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{}, options)
+	return helpers.ApplyOptions(&Handler{timeout: DefaultTimeout}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -102,17 +106,34 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState := newLuaState()
 	defer luaState.Close()
 
+	reqTable, err := createRequestTable(luaState, request)
+	if err != nil {
+		return err
+	}
+
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(writer.Header(), origin)
 
-	reqTable := createRequestTable(luaState, request)
 	respTable := createResponseTable(luaState, writer)
 
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	err := h.runScript(request.Context(), luaState)
+	// The VM checks the context between instructions, so a client that goes
+	// away, a server shutdown, or the timeout stops a looping script. A Go
+	// function that blocks (os.execute, io.read) is not interrupted.
+	ctx, cancel := context.WithTimeoutCause(request.Context(), h.timeout, ErrScriptTimeout)
+	defer cancel()
+
+	luaState.SetContext(ctx)
+
+	err = h.runScript(ctx, luaState)
 	if err != nil {
+		cause := context.Cause(ctx)
+		if cause != nil {
+			return fmt.Errorf("script error: %w: %w", cause, err)
+		}
+
 		return fmt.Errorf("script error: %w", err)
 	}
 
@@ -199,5 +220,12 @@ func WithScript(script *config.Script) HandlerOption {
 func WithFileSystem(fs afero.Fs) HandlerOption {
 	return func(h *Handler) {
 		h.fs = fs
+	}
+}
+
+// WithTimeout overrides DefaultTimeout.
+func WithTimeout(timeout time.Duration) HandlerOption {
+	return func(h *Handler) {
+		h.timeout = timeout
 	}
 }

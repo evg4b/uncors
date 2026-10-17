@@ -1,6 +1,7 @@
 package script
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/gorilla/mux"
@@ -10,7 +11,10 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.LTable {
+// MaxRequestBodySize is the largest request body a script receives.
+const MaxRequestBodySize = 10 << 20
+
+func createRequestTable(luaState *lua.LState, request *contracts.Request) (*lua.LTable, error) {
 	reqTable := luaState.NewTable()
 
 	reqTable.RawSetString("method", lua.LString(request.Method))
@@ -24,14 +28,31 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) *lua.L
 	reqTable.RawSetString("query_params", createValuesTable(luaState, urlt.URL_Query(request.URL)))
 	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
-	if request.Body != nil {
-		body, err := io.ReadAll(request.Body)
-		if err == nil {
-			reqTable.RawSetString("body", lua.LString(string(body)))
-		}
+	body, err := readBody(request)
+	if err != nil {
+		return nil, err
 	}
 
-	return reqTable
+	reqTable.RawSetString("body", lua.LString(body))
+
+	return reqTable, nil
+}
+
+func readBody(request *contracts.Request) (string, error) {
+	if request.Body == nil {
+		return "", nil
+	}
+
+	body, err := io.ReadAll(io.LimitReader(request.Body, MaxRequestBodySize+1))
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrRequestBodyNotRead, err)
+	}
+
+	if len(body) > MaxRequestBodySize {
+		return "", fmt.Errorf("%w: limit is %d bytes", ErrRequestBodyTooLarge, MaxRequestBodySize)
+	}
+
+	return string(body), nil
 }
 
 func createValuesTable(luaState *lua.LState, values map[string][]string) *lua.LTable {
