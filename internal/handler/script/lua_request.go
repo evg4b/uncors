@@ -11,7 +11,6 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-// MaxRequestBodySize is the largest request body a script receives.
 const MaxRequestBodySize = 10 << 20
 
 func createRequestTable(luaState *lua.LState, request *contracts.Request) (*lua.LTable, error) {

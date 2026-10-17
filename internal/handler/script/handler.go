@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// DefaultTimeout is how long a script may run before it is stopped.
 const DefaultTimeout = 30 * time.Second
 
 type Handler struct {
@@ -119,9 +118,6 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	// The VM checks the context between instructions, so a client that goes
-	// away, a server shutdown, or the timeout stops a looping script. A Go
-	// function that blocks (os.execute, io.read) is not interrupted.
 	ctx, cancel := context.WithTimeoutCause(request.Context(), h.timeout, ErrScriptTimeout)
 	defer cancel()
 
@@ -223,7 +219,6 @@ func WithFileSystem(fs afero.Fs) HandlerOption {
 	}
 }
 
-// WithTimeout overrides DefaultTimeout.
 func WithTimeout(timeout time.Duration) HandlerOption {
 	return func(h *Handler) {
 		h.timeout = timeout
