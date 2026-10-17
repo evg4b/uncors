@@ -19,9 +19,6 @@ var (
 	errURLHasQuery        = errors.New("url must not have query parameters")
 )
 
-// labelPattern matches one host label, like the {name} variables of the
-// router's Host matcher, so a placeholder never reaches into the port, path,
-// query, or userinfo.
 const labelPattern = `[^./:?#@]+`
 
 func extractKeys(raw string) []string {
@@ -83,7 +80,6 @@ func rawHost(hostport string) (string, error) {
 func wildCardToRegexp(rawSource string) (*regexp.Regexp, error) {
 	var result strings.Builder
 
-	// A leading dot is kept so that cookie domains like ".acme.api.com" match.
 	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?(?P<_dot>\.)?`)
 
 	hp := rawHostPort(rawSource)

@@ -42,13 +42,6 @@ type Router struct {
 }
 
 func NewRouter(mappings config.Mappings, options ...Option) *Router {
-	// A proxy must pass the path on as it came: by default mux answers paths
-	// like "//api//v1" with a 301 to the cleaned path, which skips the
-	// mapping's handlers and CORS headers and turns a POST into a GET.
-	// Routes still match the decoded path, so "%2F" reads as "/" there, while
-	// the proxied request keeps its escaped form; matching the escaped path
-	// instead would stop mock paths with spaces or non-ASCII characters from
-	// matching.
 	instance := Router{
 		Router: mux.NewRouter().SkipClean(true),
 	}
