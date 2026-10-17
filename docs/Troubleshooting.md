@@ -278,9 +278,6 @@ its path.
 A [rewrite](Request-Rewriting) sends the request straight to the upstream
 server; mocks only see the original path.
 
-If the mock answers but with the wrong status code, check whether it uses
-`file`. File responses are currently always sent with status 200.
-
 ## Static files are not served
 
 Check the directory path, relative to where you started UNCORS:

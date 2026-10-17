@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -127,7 +128,7 @@ func (h *Middleware) extractFilePath(request *http.Request) string {
 func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
 	file, err := h.fs.Open(filePath)
 	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
+		if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
 			return nil, nil, fmt.Errorf("failed to open file: %w", err)
 		}
 
