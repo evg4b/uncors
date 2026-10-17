@@ -254,3 +254,55 @@ func TestStaticMiddlewareStaysInsideRoot(t *testing.T) {
 		})
 	}
 }
+
+func TestStaticMiddlewarePathUnderFile(t *testing.T) {
+	const (
+		forwardCode = 999
+		forwardBody = "forwarded"
+	)
+
+	osFs := afero.NewBasePathFs(afero.NewOsFs(), t.TempDir())
+	for name, content := range map[string]string{
+		indexJS:   indexJSContent,
+		demoJS:    demoJSContent,
+		indexHTML: indexHTMLContent,
+	} {
+		require.NoError(t, osFs.MkdirAll(filepath.Dir(name), 0o755))
+		require.NoError(t, afero.WriteFile(osFs, name, []byte(content), 0o644))
+	}
+
+	fileSystems := map[string]afero.Fs{
+		"MemMapFs":       newStaticFs(t),
+		"OsFs in a base": osFs,
+	}
+
+	paths := []string{
+		indexHTML + "/foo",
+		indexJS + "/foo/bar",
+	}
+
+	for fsName, fileSystem := range fileSystems {
+		t.Run(fsName, func(t *testing.T) {
+			forward := static.NewStaticMiddleware(static.WithFileSystem(fileSystem)).
+				Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+					writer.WriteHeader(forwardCode)
+					fmt.Fprint(writer, forwardBody)
+
+					return nil
+				}))
+
+			index := static.NewStaticMiddleware(static.WithFileSystem(fileSystem), static.WithIndex(indexHTML)).
+				Wrap(mocks.FailNowHandlerMock(t))
+
+			for _, path := range paths {
+				t.Run("forward "+path, func(t *testing.T) {
+					expectServed(t, forward, path, forwardCode, forwardBody)
+				})
+
+				t.Run("index "+path, func(t *testing.T) {
+					expectServed(t, index, path, http.StatusOK, indexHTMLContent)
+				})
+			}
+		})
+	}
+}

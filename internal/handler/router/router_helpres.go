@@ -41,6 +41,11 @@ func registerPathHandler(router *mux.Router, path string, handler contracts.Hand
 
 func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.Handler) {
 	clearPrefix, fullPrefix := normalizePath(prefix)
+	if clearPrefix == "" {
+		registerPathHandler(router, prefix, handler)
+
+		return
+	}
 
 	router.NewRoute().
 		Path(clearPrefix).

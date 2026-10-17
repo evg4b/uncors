@@ -136,12 +136,19 @@ response:
 The path is relative to the directory UNCORS was started from. UNCORS checks
 that the file exists at startup and reads it on every request, so edits to the
 file show up without a restart. `Content-Type` is taken from the file
-extension.
+extension. For a file without a known extension, it is guessed from the first
+bytes, as for `raw`.
 
-> [!NOTE]
-> File responses are currently always sent with status 200, whatever `code`
-> says. Use `raw`, or a [script](Script-Handler), when you need another status
-> code.
+The response has the status set in `code`. With `code: 200`, UNCORS also
+answers conditional and range requests, so a client can get `304 Not Modified`
+or `206 Partial Content`. With any other code, the whole file is sent with that
+status. With `204` or `304`, the file is not sent.
+
+```yaml
+response:
+  code: 404
+  file: ./mocks/not-found.json
+```
 
 ### Headers
 

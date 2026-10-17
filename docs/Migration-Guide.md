@@ -185,6 +185,14 @@ than the CA does. Existing CAs keep working.
 `uncors generate-certs --validity-days` with zero or a negative number is now
 an error instead of creating an expired CA.
 
+### Status codes of file mocks
+
+A mock with a `file` response used to be sent with status 200 whatever its
+`code` was. It now has the status set in `code`. A mock that has a `code` other
+than 200 and relied on getting 200 should set `code: 200`. Range and
+conditional requests are answered only for mocks with `code: 200`. See
+[Body from `file`](Response-Mocking#body-from-file).
+
 ## Upgrading from 0.5.x to 0.6.x
 
 Version 0.6 had three breaking changes.
