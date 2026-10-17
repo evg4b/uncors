@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 	"time"
 
@@ -10,24 +9,23 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 )
 
+const maxCapturedBody = 10 << 20
+
 type ResponseRecorder struct {
 	http.ResponseWriter
 
 	statusCode int
 	buf        *bytes.Buffer
-	output     io.Writer
+	truncated  bool
 	startedAt  time.Time
 	written    int64
 }
 
 func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
-	rec := &ResponseRecorder{
+	return &ResponseRecorder{
 		ResponseWriter: w,
 		startedAt:      time.Now(),
 	}
-	rec.output = w
-
-	return rec
 }
 
 func (r *ResponseRecorder) WriteHeader(statusCode int) {
@@ -36,10 +34,26 @@ func (r *ResponseRecorder) WriteHeader(statusCode int) {
 }
 
 func (r *ResponseRecorder) Write(b []byte) (int, error) {
-	n, err := r.output.Write(b)
-	r.written += int64(n)
+	written, err := r.ResponseWriter.Write(b)
+	r.written += int64(written)
 
-	return n, err
+	if r.buf != nil {
+		r.capture(b[:written])
+	}
+
+	return written, err
+}
+
+func (r *ResponseRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
+}
+
+func (r *ResponseRecorder) Flush() {
+	_ = r.FlushError()
+}
+
+func (r *ResponseRecorder) FlushError() error {
+	return http.NewResponseController(r.ResponseWriter).Flush()
 }
 
 // Written is the number of body bytes sent to the client.
@@ -57,7 +71,6 @@ func (r *ResponseRecorder) EnableBodyCapture() {
 	}
 
 	r.buf = &bytes.Buffer{}
-	r.output = io.MultiWriter(r.buf, r.ResponseWriter)
 }
 
 func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
@@ -70,6 +83,22 @@ func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 		StatusCode: helpers.NormaliseStatusCode(r.statusCode),
 		Header:     r.Header(),
 		Body:       body,
+		Truncated:  r.truncated,
 		Duration:   time.Since(r.startedAt),
 	}
+}
+
+func (r *ResponseRecorder) capture(chunk []byte) {
+	if r.truncated {
+		return
+	}
+
+	if free := maxCapturedBody - r.buf.Len(); len(chunk) > free {
+		r.buf.Write(chunk[:free])
+		r.truncated = true
+
+		return
+	}
+
+	r.buf.Write(chunk)
 }

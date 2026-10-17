@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -109,5 +110,101 @@ func TestResponseRecorder_ImplementsInterfaces(t *testing.T) {
 
 	t.Run("implements BodyCapturer", func(_ *testing.T) {
 		var _ contracts.BodyCapturer = rec
+	})
+}
+
+func TestResponseRecorder_CaptureLimit(t *testing.T) {
+	t.Run("captures a body up to the limit", func(t *testing.T) {
+		rec := server.NewResponseRecorder(httptest.NewRecorder())
+		rec.EnableBodyCapture()
+
+		_, err := rec.Write(bytes.Repeat([]byte("x"), server.MaxCapturedBody))
+		require.NoError(t, err)
+
+		captured := rec.Captured()
+		assert.Len(t, captured.Body, server.MaxCapturedBody)
+		assert.False(t, captured.Truncated)
+	})
+
+	t.Run("stops capturing and marks the capture truncated over the limit", func(t *testing.T) {
+		underlying := httptest.NewRecorder()
+		rec := server.NewResponseRecorder(underlying)
+		rec.EnableBodyCapture()
+
+		chunk := bytes.Repeat([]byte("x"), server.MaxCapturedBody/2+1)
+		for range 3 {
+			_, err := rec.Write(chunk)
+			require.NoError(t, err)
+		}
+
+		captured := rec.Captured()
+		assert.True(t, captured.Truncated)
+		assert.Len(t, captured.Body, server.MaxCapturedBody)
+		assert.Equal(t, 3*len(chunk), underlying.Body.Len())
+		assert.Equal(t, int64(3*len(chunk)), rec.Written())
+	})
+}
+
+type flushCounter struct {
+	http.ResponseWriter
+
+	flushes int
+}
+
+func (f *flushCounter) Flush() {
+	f.flushes++
+}
+
+type deadlineWriter struct {
+	http.ResponseWriter
+
+	deadline time.Time
+}
+
+func (d *deadlineWriter) SetWriteDeadline(deadline time.Time) error {
+	d.deadline = deadline
+
+	return nil
+}
+
+type plainWriter struct {
+	http.ResponseWriter
+}
+
+func TestResponseRecorder_Flush(t *testing.T) {
+	t.Run("flushes the underlying writer", func(t *testing.T) {
+		underlying := &flushCounter{ResponseWriter: httptest.NewRecorder()}
+		rec := server.NewResponseRecorder(underlying)
+
+		var flusher http.Flusher = rec
+
+		flusher.Flush()
+		require.NoError(t, http.NewResponseController(rec).Flush())
+
+		assert.Equal(t, 2, underlying.flushes)
+	})
+
+	t.Run("reports that the underlying writer cannot flush", func(t *testing.T) {
+		rec := server.NewResponseRecorder(plainWriter{ResponseWriter: httptest.NewRecorder()})
+
+		assert.NotPanics(t, rec.Flush)
+		require.ErrorIs(t, http.NewResponseController(rec).Flush(), http.ErrNotSupported)
+	})
+
+	t.Run("unwraps to the underlying writer", func(t *testing.T) {
+		underlying := httptest.NewRecorder()
+		rec := server.NewResponseRecorder(underlying)
+
+		assert.Same(t, underlying, rec.Unwrap())
+	})
+
+	t.Run("reaches the underlying writer through a response controller", func(t *testing.T) {
+		underlying := &deadlineWriter{ResponseWriter: httptest.NewRecorder()}
+		rec := server.NewResponseRecorder(underlying)
+		deadline := time.Now().Add(time.Minute)
+
+		require.NoError(t, http.NewResponseController(rec).SetWriteDeadline(deadline))
+
+		assert.Equal(t, deadline, underlying.deadline)
 	})
 }

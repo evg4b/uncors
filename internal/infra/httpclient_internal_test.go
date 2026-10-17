@@ -14,7 +14,7 @@ func TestMakeHTTPClient(t *testing.T) {
 
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Transport)
-		assert.Equal(t, defaultTimeout, client.Timeout)
+		assertStreamingTimeouts(t, client)
 	})
 
 	t.Run("check redirect should return error", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestMakeHTTPClient(t *testing.T) {
 
 		assert.NotNil(t, client)
 		assert.NotNil(t, client.Transport)
-		assert.Equal(t, defaultTimeout, client.Timeout)
+		assertStreamingTimeouts(t, client)
 	})
 
 	t.Run("return error where url is incorrect", func(t *testing.T) {
@@ -47,4 +47,18 @@ func TestMakeHTTPClient(t *testing.T) {
 			MakeHTTPClient("http://loca^host:8000")
 		})
 	})
+}
+
+func assertStreamingTimeouts(t *testing.T, client *http.Client) {
+	t.Helper()
+
+	assert.Zero(t, client.Timeout)
+
+	transport, ok := client.Transport.(*http.Transport)
+	require.True(t, ok)
+
+	assert.Equal(t, responseHeaderTimeout, transport.ResponseHeaderTimeout)
+	assert.Equal(t, tlsHandshakeTimeout, transport.TLSHandshakeTimeout)
+	assert.NotNil(t, transport.DialContext)
+	assert.True(t, transport.ForceAttemptHTTP2)
 }
