@@ -133,6 +133,14 @@ any other proxied request. Mock and script responses don't pass through it:
 they are not cached or recorded, and they add CORS headers themselves. Files
 served from static directories get no CORS headers.
 
+When a mapping has `allowed-origins`, the router wraps its default handler,
+mocks, and scripts in a check that calls `tracking.RejectOrigin` for an
+`Origin` the patterns don't match. Every place that writes CORS headers (the
+proxy, `infra.CorsWriter` for mocks and scripts, OPTIONS handling, cache hits,
+and error pages) reads `tracking.OriginRejected` and withholds them instead;
+OPTIONS handling answers `403`. The flag lives on the request's scope, so it
+costs no allocation, and without `allowed-origins` there is no wrapper.
+
 ## Request events
 
 Every request produces exactly two events on the bus: `RequestStarted` and

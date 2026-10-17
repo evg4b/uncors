@@ -84,7 +84,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(index int, def *config.Mock) {
-			handler := traced(r.factory.MockHandler(&def.Response), slices.Concat(
+			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.MockHandler(&def.Response)), slices.Concat(
 				mappingAttributes(mapping, routeMock),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -94,7 +94,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(index int, def *config.Script) {
-			handler := traced(r.factory.ScriptHandler(def), slices.Concat(
+			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.ScriptHandler(def)), slices.Concat(
 				mappingAttributes(mapping, routeScript),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -130,5 +130,5 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 		defaultHandler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), defaultHandler)
 	}
 
-	return defaultHandler
+	return checkOrigin(mapping.AllowedOrigins, defaultHandler)
 }

@@ -14,6 +14,8 @@ import (
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func TestCacheMiddlewareLogs(t *testing.T) {
@@ -21,8 +23,9 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
+		store := lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
+			cache.WithCacheStorage(store),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 		)
@@ -37,6 +40,8 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 		testutils.Times(times, func(_ int) {
 			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/data", nil)
 			_ = handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
+
+			store.Wait()
 		})
 
 		return recorded.Messages()
@@ -55,4 +60,39 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 		assert.Equal(t, []string{"cache miss", "response not cached: the request did not complete"},
 			serve(t, http.StatusOK, errUpstreamReset, 1))
 	})
+}
+
+func TestCacheMiddlewareRejectedStore(t *testing.T) {
+	recorded := testutils.Telemetry(t)
+	store := lo.Must(cache.NewRistrettoCache(16, time.Minute))
+	middleware := cache.NewMiddleware(
+		cache.WithCacheStorage(store),
+		cache.WithMethods([]string{http.MethodGet}),
+		cache.WithGlobs(config.CacheGlobs{"/api/**"}),
+	)
+	handler := infra.Mddleware(middleware, infra.HandlerFunc(
+		func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+			_, err := writer.Write([]byte("a body larger than the whole cache"))
+
+			return err
+		},
+	))
+
+	testutils.Times(2, func(_ int) {
+		request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/data", nil)
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request))
+		store.Wait()
+	})
+
+	assert.Equal(t, []string{
+		"cache miss", "response not cached: the cache storage rejected it",
+		"cache miss", "response not cached: the cache storage rejected it",
+	}, recorded.Messages())
+	assert.Equal(t, int64(2), recorded.Sum(t, "uncors.cache.rejections"))
+
+	for _, span := range recorded.Spans.Ended() {
+		if span.Name() == "cache.store" {
+			assert.Contains(t, span.Attributes(), attribute.Bool("uncors.cache.rejected", true))
+		}
+	}
 }

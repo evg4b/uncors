@@ -32,13 +32,16 @@ func TestCacheMiddleware(t *testing.T) {
 		constantEndpoint = "/api/constants"
 	)
 
-	expectedHeader := http.Header{
+	responseHeader := http.Header{
 		headers.ContentType:     {"text/html; charset=iso-8859-1"},
 		headers.ContentEncoding: {"deflate, gzip"},
 	}
 
+	expectedHeader := withCors(responseHeader, "")
+
+	store := lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
+		cache.WithCacheStorage(store),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{
 			"/translations",
@@ -46,13 +49,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}),
 	)
 
-	testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-		writer.WriteHeader(http.StatusOK)
-		testutils.CopyHeaders(expectedHeader, writer.Header())
-		fmt.Fprint(writer, expectedBody)
-
-		return nil
-	})
+	testHandler := testutils.NewCounter(proxyLike(http.StatusOK, responseHeader, expectedBody))
 
 	serveFiveTimes := func(t *testing.T, handler contracts.Handler, method, path string) {
 		t.Helper()
@@ -61,6 +58,7 @@ func TestCacheMiddleware(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequestWithContext(t.Context(), method, path, nil)
 			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+			store.Wait()
 			assert.Equal(t, expectedHeader, recorder.Header())
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
@@ -169,13 +167,7 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
-					writer.WriteHeader(testCase.statusCode)
-					testutils.CopyHeaders(expectedHeader, writer.Header())
-					fmt.Fprint(writer, expectedBody)
-
-					return nil
-				})
+				testHandler := testutils.NewCounter(proxyLike(testCase.statusCode, responseHeader, expectedBody))
 
 				wrappedHandler := infra.Mddleware(middleware, testHandler)
 
@@ -319,8 +311,9 @@ func TestCacheMiddleware(t *testing.T) {
 		)
 
 		testHandler := testutils.NewCounter(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+			testutils.CopyHeaders(responseHeader, writer.Header())
+			infra.WriteCorsHeaders(writer.Header(), request.Header.Get(headers.Origin))
 			writer.WriteHeader(http.StatusOK)
-			testutils.CopyHeaders(expectedHeader, writer.Header())
 			fmt.Fprint(writer, request.Method)
 
 			return nil
@@ -358,8 +351,10 @@ func TestCacheMiddlewareTruncatedCapture(t *testing.T) {
 			storage := mocks.NewCacheMock(t).
 				GetMock.Return(contracts.CachedResponse{}, false)
 			if testCase.stored {
-				storage.SetMock.Set(func(_ string, value contracts.CachedResponse) {
+				storage.SetMock.Set(func(_ string, value contracts.CachedResponse) bool {
 					assert.Equal(t, body, value.Body)
+
+					return true
 				})
 			}
 
@@ -384,5 +379,23 @@ func TestCacheMiddlewareTruncatedCapture(t *testing.T) {
 
 			assert.Equal(t, testCase.size, recorder.Body.Len())
 		})
+	}
+}
+
+func withCors(header http.Header, origin string) http.Header {
+	result := header.Clone()
+	infra.WriteCorsHeaders(result, origin)
+
+	return result
+}
+
+func proxyLike(status int, header http.Header, body string) func(contracts.ResponseWriter, *contracts.Request) error {
+	return func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		testutils.CopyHeaders(header, writer.Header())
+		infra.WriteCorsHeaders(writer.Header(), request.Header.Get(headers.Origin))
+		writer.WriteHeader(status)
+		fmt.Fprint(writer, body)
+
+		return nil
 	}
 }

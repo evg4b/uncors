@@ -1,0 +1,7 @@
+mappings:
+  - from: http://localhost:8080
+    to: https://github.com
+    allowed-origins:
+      - http://localhost:*
+      - https://*.example.test
+      - http://127.0.0.1:{3000,5173}

@@ -85,7 +85,7 @@ func TestRistrettoCache(t *testing.T) {
 			},
 		}
 
-		cache.Set(key, value)
+		assert.True(t, cache.Set(key, value))
 		cache.Wait()
 
 		got, ok := cache.Get(key)
@@ -93,6 +93,16 @@ func TestRistrettoCache(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, value.Body, got.Body)
 		assert.Equal(t, value.Headers, got.Headers)
+	})
+
+	t.Run("Set rejects a value larger than the cache", func(t *testing.T) {
+		key := "large-key"
+
+		assert.False(t, cache.Set(key, contracts.CachedResponse{Body: make([]byte, 2048)}))
+		cache.Wait()
+
+		_, ok := cache.Get(key)
+		assert.False(t, ok)
 	})
 
 	t.Run("Wait call", func(t *testing.T) {

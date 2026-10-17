@@ -83,7 +83,7 @@ func TestRouterAttributionSpans(t *testing.T) {
 	// Route attributes are wired when the router is built, so tracing goes on first.
 	recorded := testutils.Telemetry(t)
 	spans := recorded.Spans
-	handler := attributionRouter(t)
+	handler, store := attributionRouter(t)
 
 	proxied := []string{
 		"proxy.forward > proxy.copy_body",
@@ -182,6 +182,8 @@ func TestRouterAttributionSpans(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			ended := serveTraced(t, spans, handler, testCase.method, testCase.url)
+
+			store.Wait()
 
 			assert.ElementsMatch(t, testCase.tree, spanTree(ended))
 			attrs := rootSpan(t, ended).Attributes()

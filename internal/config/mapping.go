@@ -24,6 +24,7 @@ type Mapping struct {
 	Cache           CacheGlobs        `yaml:"cache"`
 	Rewrites        RewriteOptions    `yaml:"rewrites"`
 	OptionsHandling OptionsHandling   `yaml:"options-handling"`
+	AllowedOrigins  AllowedOrigins    `yaml:"allowed-origins"`
 	HAR             HARConfig         `yaml:"har"`
 }
 
@@ -57,6 +58,7 @@ func (m *Mapping) Clone() Mapping {
 		Cache:           m.Cache.Clone(),
 		Rewrites:        m.Rewrites.Clone(),
 		OptionsHandling: m.OptionsHandling.Clone(),
+		AllowedOrigins:  m.AllowedOrigins.Clone(),
 		HAR:             m.HAR.Clone(),
 	}
 }
@@ -87,11 +89,12 @@ func ValidateTLS(mapping Mapping, fs afero.Fs) error {
 }
 
 func (m *Mapping) Validate(field string, fs afero.Fs) error {
-	errs := make([]error, 0, 5+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
+	errs := make([]error, 0, 6+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
 
 	errs = append(errs, ValidateHost(joinPath(field, "from"), m.From))
 	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To))
 	errs = append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
+	errs = append(errs, m.AllowedOrigins.Validate(joinPath(field, "allowed-origins")))
 	errs = append(errs, m.HAR.Validate(joinPath(field, "har")))
 	errs = append(errs, ValidateTLS(*m, fs))
 
