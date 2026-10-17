@@ -180,6 +180,7 @@ func (s *Server) listen(ctx, spanCtx context.Context, target Target) (*portListe
 	}
 
 	portCtx, portCtxCancel := context.WithCancel(ctx)
+	hijacked := &hijackedConns{}
 
 	portListener := &portListener{
 		Server: http.Server{
@@ -188,10 +189,11 @@ func (s *Server) listen(ctx, spanCtx context.Context, target Target) (*portListe
 			},
 			ReadHeaderTimeout: readHeaderTimeout,
 			Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-				s.handleRequest(target.Handler, writer, request)
+				s.handleRequest(target.Handler, hijacked, writer, request)
 			}),
 		},
 		listener: listener,
+		hijacked: hijacked,
 	}
 
 	portListener.RegisterOnShutdown(portCtxCancel)
@@ -262,11 +264,17 @@ func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
 	}
 }
 
-func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
+func (s *Server) handleRequest(
+	handler http.Handler,
+	hijacked *hijackedConns,
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
 	helpers.NormaliseRequest(request)
 
 	requestID := s.nextID.Add(1)
 	rec := NewResponseRecorder(writer)
+	rec.conns = hijacked
 
 	// The span is started before the scope so the scope's context carries it.
 	ctx, span := telemetry.StartServer(request.Context(), "HTTP")
@@ -286,6 +294,7 @@ func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter,
 		abort := recoverHandler(rec, request, recover())
 
 		finishRequest(span, scope, rec, request)
+		rec.releaseHijacked()
 
 		if abort {
 			panic(http.ErrAbortHandler)

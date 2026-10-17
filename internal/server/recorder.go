@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
+	"net"
 	"net/http"
 	"time"
 
@@ -19,6 +21,8 @@ type ResponseRecorder struct {
 	truncated  bool
 	startedAt  time.Time
 	written    int64
+	conns      *hijackedConns
+	hijacked   net.Conn
 }
 
 func NewResponseRecorder(w http.ResponseWriter) *ResponseRecorder {
@@ -56,6 +60,20 @@ func (r *ResponseRecorder) FlushError() error {
 	return http.NewResponseController(r.ResponseWriter).Flush()
 }
 
+func (r *ResponseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, buffered, err := http.NewResponseController(r.ResponseWriter).Hijack()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if r.conns != nil {
+		r.hijacked = conn
+		r.conns.track(conn)
+	}
+
+	return conn, buffered, nil
+}
+
 // Written is the number of body bytes sent to the client.
 func (r *ResponseRecorder) Written() int64 {
 	return r.written
@@ -85,6 +103,12 @@ func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 		Body:       body,
 		Truncated:  r.truncated,
 		Duration:   time.Since(r.startedAt),
+	}
+}
+
+func (r *ResponseRecorder) releaseHijacked() {
+	if r.hijacked != nil {
+		r.conns.release(r.hijacked)
 	}
 }
 

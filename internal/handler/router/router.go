@@ -122,6 +122,12 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 		defaultHandler = infra.Mddleware(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
+	if len(mapping.Cache) == 0 && !mapping.HAR.Enabled() {
+		return defaultHandler
+	}
+
+	upgradeHandler := defaultHandler
+
 	if len(mapping.Cache) > 0 {
 		defaultHandler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
 	}
@@ -130,5 +136,15 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 		defaultHandler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), defaultHandler)
 	}
 
-	return defaultHandler
+	return bypassOnUpgrade(defaultHandler, upgradeHandler)
+}
+
+func bypassOnUpgrade(handler, upgradeHandler contracts.Handler) contracts.Handler {
+	return infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		if infra.IsUpgrade(request.Header) {
+			return upgradeHandler.ServeHTTP(writer, request)
+		}
+
+		return handler.ServeHTTP(writer, request)
+	})
 }

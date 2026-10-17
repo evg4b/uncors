@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -24,6 +26,7 @@ type Env struct {
 
 	routes []route
 	events *eventRecorder
+	proxy  *engine.Engine
 }
 
 type route struct {
@@ -87,11 +90,21 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 		})
 	}
 
-	caCert, recorder := bootProxy(t, fs, cfg)
+	caCert, recorder, proxy := bootProxy(t, fs, cfg)
 	env.Client = newClient(caCert, resolver)
 	env.events = recorder
+	env.proxy = proxy
 
 	return env
+}
+
+func (e *Env) Shutdown(t *testing.T) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), proxyShutdownWait)
+	defer cancel()
+
+	require.NoError(t, e.proxy.Shutdown(ctx))
 }
 
 func (e *Env) URL(host, path string) string {

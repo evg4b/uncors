@@ -555,6 +555,16 @@ For requests forwarded to the upstream server, UNCORS:
   cookies set by the upstream server to the local host. The `Secure` flag of
   those cookies follows the scheme of the local host;
 - rewrites `Location` headers in redirects back to the local host;
+- proxies WebSocket connections and other requests that ask to switch
+  protocols (`Connection: Upgrade` with an `Upgrade` header). The handshake is
+  forwarded with its headers, `Origin` and `Referer` rewritten as above. When
+  the upstream server answers `101 Switching Protocols`, UNCORS passes that
+  response and its headers on to the client and then copies data both ways
+  until either side closes the connection. Any other answer is returned as a
+  regular response. Use `ws://` with an `http` mapping and `wss://` with an
+  `https` mapping. These connections are never cached or recorded to HAR, and
+  they are closed when UNCORS stops or reloads its configuration. A mock or a
+  script whose route matches the handshake answers it like any other request;
 - adds the CORS headers listed below to every response, replacing any the
   upstream server sent. `Access-Control-Allow-Headers` from the upstream server
   is removed: it only matters in preflight responses.

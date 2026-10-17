@@ -81,6 +81,10 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
+	if isProtocolSwitch(req, originalResponse) {
+		return h.switchProtocols(originalResponse, resp, sourceReplacer, req)
+	}
+
 	defer helpers.CloseSafe(originalResponse.Body)
 
 	err = h.makeUncorsResponse(originalResponse, resp, sourceReplacer, req)
