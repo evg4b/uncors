@@ -2,6 +2,7 @@ package infra
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -9,11 +10,23 @@ import (
 	"github.com/evg4b/uncors/internal/telemetry"
 )
 
-const defaultTimeout = 5 * time.Minute
+const (
+	dialTimeout           = 30 * time.Second
+	keepAlive             = 30 * time.Second
+	tlsHandshakeTimeout   = 10 * time.Second
+	responseHeaderTimeout = 5 * time.Minute
+	idleConnTimeout       = 90 * time.Second
+)
 
 func MakeHTTPClient(proxy string) *http.Client {
+	dialer := &net.Dialer{Timeout: dialTimeout, KeepAlive: keepAlive}
 	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		TLSHandshakeTimeout:   tlsHandshakeTimeout,
+		ResponseHeaderTimeout: responseHeaderTimeout,
+		IdleConnTimeout:       idleConnTimeout,
 	}
 
 	if proxy != "" {
@@ -30,6 +43,5 @@ func MakeHTTPClient(proxy string) *http.Client {
 			return http.ErrUseLastResponse
 		},
 		Transport: telemetry.WrapTransport(transport),
-		Timeout:   defaultTimeout,
 	}
 }

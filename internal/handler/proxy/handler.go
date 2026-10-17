@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -132,7 +133,40 @@ func (h *Handler) makeUncorsResponse(
 
 	target.WriteHeader(original.StatusCode)
 
-	return copyBody(req.Context(), target, original.Body)
+	if !isStreaming(original) {
+		return copyBody(req.Context(), target, original.Body)
+	}
+
+	controller := http.NewResponseController(target)
+	_ = controller.Flush()
+
+	return copyBody(req.Context(), flushWriter{writer: target, controller: controller}, original.Body)
+}
+
+func isStreaming(response *http.Response) bool {
+	if response.ContentLength == -1 {
+		return true
+	}
+
+	mediaType, _, _ := strings.Cut(response.Header.Get(headers.ContentType), ";")
+
+	return strings.EqualFold(strings.TrimSpace(mediaType), "text/event-stream")
+}
+
+type flushWriter struct {
+	writer     io.Writer
+	controller *http.ResponseController
+}
+
+func (w flushWriter) Write(data []byte) (int, error) {
+	written, err := w.writer.Write(data)
+	if err != nil {
+		return written, err
+	}
+
+	_ = w.controller.Flush()
+
+	return written, nil
 }
 
 const copyBufferSize = 32 * 1024

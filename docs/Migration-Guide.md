@@ -136,6 +136,19 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
   runs. Set `max-body-size` on a script that needs larger bodies. Before, a
   body that failed to read reached the script as `nil`.
 
+### One HAR file per mapping
+
+Two mappings can no longer record to the same [HAR](HAR-Collector) file.
+UNCORS compares the absolute paths, so `./api.har` and `recordings/../api.har`
+count as the same file. Such a configuration fails to load with an error like:
+
+```text
+mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
+```
+
+Before, both mappings rewrote the same file, and one of them overwrote the
+entries of the other or failed to write it. Give each mapping its own file.
+
 ### HTTPS certificates only for mapped hosts
 
 UNCORS used to sign a certificate for any host name a client asked for. It now

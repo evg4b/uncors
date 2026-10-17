@@ -12,3 +12,5 @@ func SetShutdownTimeout(server *Server, timeout time.Duration) {
 func HandleRequest(server *Server, handler http.Handler, writer http.ResponseWriter, request *http.Request) {
 	server.handleRequest(handler, writer, request)
 }
+
+const MaxCapturedBody = maxCapturedBody

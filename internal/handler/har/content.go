@@ -6,52 +6,70 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"io"
 	"strings"
+	"sync"
+	"unicode/utf8"
+
+	"github.com/andybalholm/brotli"
+	"github.com/klauspost/compress/zstd"
 )
+
+var errUnsupportedEncoding = errors.New("unsupported content encoding")
+
+var zstdDecoder = sync.OnceValues(func() (*zstd.Decoder, error) {
+	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
+})
 
 func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 	if len(raw) == 0 {
 		return Content{Size: 0, MimeType: mimeType}
 	}
 
-	encoding := strings.ToLower(strings.TrimSpace(contentEncoding))
+	decoded, err := decodeBody(raw, strings.ToLower(strings.TrimSpace(contentEncoding)))
+	if err != nil {
+		decoded = raw
+	}
 
+	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
+	if err != nil || !utf8.Valid(decoded) {
+		content.Text = base64.StdEncoding.EncodeToString(decoded)
+		content.Encoding = "base64"
+
+		return content
+	}
+
+	content.Text = string(decoded)
+
+	return content
+}
+
+func decodeBody(raw []byte, encoding string) ([]byte, error) {
 	switch encoding {
-	case "gzip", "x-gzip":
-		decoded, err := decodeGzip(raw)
-		if err == nil {
-			return Content{
-				Size:     int64(len(decoded)),
-				MimeType: mimeType,
-				Text:     string(decoded),
-			}
-		}
-
-	case "deflate":
-		decoded, err := decodeDeflate(raw)
-		if err == nil {
-			return Content{
-				Size:     int64(len(decoded)),
-				MimeType: mimeType,
-				Text:     string(decoded),
-			}
-		}
-
 	case "", "identity":
-		return Content{
-			Size:     int64(len(raw)),
-			MimeType: mimeType,
-			Text:     string(raw),
-		}
+		return raw, nil
+	case "gzip", "x-gzip":
+		return decodeGzip(raw)
+	case "deflate":
+		return decodeDeflate(raw)
+	case "br":
+		return io.ReadAll(brotli.NewReader(bytes.NewReader(raw)))
+	case "zstd":
+		return decodeZstd(raw)
+	default:
+		return nil, fmt.Errorf("%w: %q", errUnsupportedEncoding, encoding)
+	}
+}
+
+func decodeZstd(data []byte) ([]byte, error) {
+	decoder, err := zstdDecoder()
+	if err != nil {
+		return nil, err
 	}
 
-	return Content{
-		Size:     int64(len(raw)),
-		MimeType: mimeType,
-		Text:     base64.StdEncoding.EncodeToString(raw),
-		Encoding: "base64",
-	}
+	return decoder.DecodeAll(data, nil)
 }
 
 func decodeGzip(data []byte) ([]byte, error) {

@@ -53,9 +53,40 @@ responses it produces on that path:
 | Served from a static directory                             | No       |
 
 Each entry has the request and response headers, cookies, query string,
-bodies, and timings. Bodies compressed with gzip or deflate are stored
-decompressed. Bodies with other encodings, such as Brotli, are stored as
-base64.
+bodies, and timings. `httpVersion` is the protocol the client used, such as
+`HTTP/1.1` or `HTTP/2.0`, for both the request and the response.
+
+### Request bodies
+
+A request with a body gets a `postData` object, as described in HAR 1.2:
+
+| Field      | Value                                                       |
+| ---------- | ----------------------------------------------------------- |
+| `mimeType` | The request's `Content-Type` header                         |
+| `text`     | The body, if it is valid UTF-8. Left out for binary bodies. |
+
+`bodySize` is the size of the body in bytes, so a binary upload such as an
+image is recorded by its size only. Requests without a body have no `postData`.
+
+If the request body cannot be read, for example because the client
+disconnected in the middle of an upload, the request fails and is not sent to
+the upstream server, so the upstream never gets a truncated body.
+
+### Response bodies
+
+Response bodies are stored decompressed. UNCORS decodes these
+`Content-Encoding` values: `gzip`, `deflate`, `br` (Brotli), and `zstd`.
+Browsers usually ask for Brotli or zstd, and UNCORS forwards the browser's
+`Accept-Encoding`, so most responses arrive compressed.
+
+| Body                                             | `text`                          | `encoding` |
+| ------------------------------------------------ | ------------------------------- | ---------- |
+| Valid UTF-8 after decoding                       | The body                        | -          |
+| Binary after decoding, such as an image          | Base64 of the decoded body      | `base64`   |
+| Unknown encoding, or a body that fails to decode | Base64 of the bytes as received | `base64`   |
+
+`content.size` is the size of the decoded body, and `bodySize` is the size as
+it came over the wire.
 
 ## Secure headers
 
@@ -102,11 +133,19 @@ mappings:
     har: ./recordings/auth.har
 ```
 
+Two mappings cannot share a file. UNCORS compares the absolute paths and
+refuses to load such a configuration:
+
+```text
+mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
+```
+
 Recording never slows down requests. Entries go to a queue, and a background
-writer rewrites the whole file after each batch of new entries. It writes to a
-temporary file and renames it over the old one, so the `.har` file is always
+writer adds them to the file at most once a second, so a new request shows up
+in the file within about a second. It writes to a temporary file next to the
+`.har` file and renames it over the old one, so the `.har` file is always
 complete and valid, even if you open it while UNCORS runs. The file is written
-once more when UNCORS stops.
+once more when UNCORS stops or reloads its configuration.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads a changed configuration file, the recording starts empty and the

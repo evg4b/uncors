@@ -523,6 +523,13 @@ For requests forwarded to the upstream server, UNCORS:
   frontend served from `127.0.0.1` or another local domain), and
   `Origin: null`, is forwarded unchanged;
 - forwards the request body with its `Content-Length`;
+- waits up to 5 minutes for the upstream server to start its response (30
+  seconds to connect, 10 seconds for the TLS handshake). The response body has
+  no time limit: it is forwarded until the upstream server finishes it or the
+  client disconnects;
+- passes event streams (`text/event-stream`) and responses without a
+  `Content-Length` on to the client as each chunk arrives, so server-sent events
+  and long downloads are not held back;
 - forwards the `Cookie` request header unchanged, and rewrites the `Domain` of
   cookies set by the upstream server to the local host. The `Secure` flag of
   those cookies follows the scheme of the local host;
