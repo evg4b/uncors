@@ -3,10 +3,12 @@ package uncorsapp
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/telemetry"
 )
 
@@ -14,10 +16,11 @@ type outputLineMsg string
 
 type HistoryWidget struct {
 	hist       *history
-	vp         viewport.Model
 	keys       KeyMap
 	autoScroll bool
 	termWidth  int
+	height     int
+	offset     int
 }
 
 func NewHistoryWidget(keys KeyMap) *HistoryWidget {
@@ -27,7 +30,6 @@ func NewHistoryWidget(keys KeyMap) *HistoryWidget {
 
 	return &HistoryWidget{
 		hist:       hist,
-		vp:         viewport.New(),
 		keys:       keys,
 		autoScroll: true,
 	}
@@ -41,10 +43,9 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.termWidth = typedMsg.Width
-		m.vp.SetWidth(typedMsg.Width)
 
 		if m.autoScroll {
-			m.vp.GotoBottom()
+			m.gotoBottom()
 		}
 
 	case outputLineMsg:
@@ -60,11 +61,12 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 // AppendLine adds output to the history and keeps it scrolled to the bottom
 // unless the user scrolled up.
 func (m *HistoryWidget) AppendLine(line string) {
-	m.hist.AppendLine(line)
-	m.vp.SetContentLines(m.hist.Lines())
+	evicted := m.hist.AppendLine(line)
 
 	if m.autoScroll {
-		m.vp.GotoBottom()
+		m.gotoBottom()
+	} else {
+		m.scrollTo(m.offset - evicted)
 	}
 }
 
@@ -73,7 +75,7 @@ func (m *HistoryWidget) SetHeight(height int) {
 		telemetry.Debug(context.Background(), "HistoryWidget: setting height", slog.Int("height", height))
 	}
 
-	m.vp.SetHeight(height)
+	m.height = height
 }
 
 func (m *HistoryWidget) HasLines() bool {
@@ -87,28 +89,60 @@ func (m *HistoryWidget) Close() error {
 }
 
 func (m *HistoryWidget) View() tea.View {
-	return tea.NewView(m.vp.View())
+	if m.termWidth <= 0 || m.height <= 0 {
+		return tea.NewView("")
+	}
+
+	lines := m.hist.Window(m.offset, m.offset+m.height)
+	for index, line := range lines {
+		if ansi.StringWidth(line) > m.termWidth {
+			lines[index] = ansi.Cut(line, 0, m.termWidth)
+		}
+	}
+
+	content := lipgloss.NewStyle().
+		Width(m.termWidth).
+		Height(m.height).
+		Render(strings.Join(lines, "\n"))
+
+	return tea.NewView(content)
+}
+
+func (m *HistoryWidget) maxOffset() int {
+	return max(0, m.hist.LineCount()-m.height)
+}
+
+func (m *HistoryWidget) scrollTo(offset int) {
+	m.offset = max(0, min(offset, m.maxOffset()))
+}
+
+func (m *HistoryWidget) gotoBottom() {
+	m.offset = m.maxOffset()
+}
+
+func (m *HistoryWidget) atBottom() bool {
+	return m.offset >= m.maxOffset()
 }
 
 func (m *HistoryWidget) handleKeyPress(msg tea.KeyPressMsg) {
 	switch {
 	case key.Matches(msg, m.keys.ScrollUp):
-		m.vp.ScrollUp(1)
-		m.autoScroll = m.vp.AtBottom()
+		m.scrollTo(m.offset - 1)
+		m.autoScroll = m.atBottom()
 	case key.Matches(msg, m.keys.ScrollDown):
-		m.vp.ScrollDown(1)
-		m.autoScroll = m.vp.AtBottom()
+		m.scrollTo(m.offset + 1)
+		m.autoScroll = m.atBottom()
 	case key.Matches(msg, m.keys.PageUp):
-		m.vp.PageUp()
-		m.autoScroll = m.vp.AtBottom()
+		m.scrollTo(m.offset - m.height)
+		m.autoScroll = m.atBottom()
 	case key.Matches(msg, m.keys.PageDown):
-		m.vp.PageDown()
-		m.autoScroll = m.vp.AtBottom()
+		m.scrollTo(m.offset + m.height)
+		m.autoScroll = m.atBottom()
 	case key.Matches(msg, m.keys.GotoTop):
-		m.vp.GotoTop()
+		m.offset = 0
 		m.autoScroll = false
 	case key.Matches(msg, m.keys.GotoBottom):
-		m.vp.GotoBottom()
+		m.gotoBottom()
 		m.autoScroll = true
 	}
 }

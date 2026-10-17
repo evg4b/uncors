@@ -29,7 +29,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		history.AppendLine("hello world")
 
 		assert.Equal(t, 1, history.LineCount())
-		assert.Equal(t, []string{"hello world"}, history.Lines())
+		assert.Equal(t, []string{"hello world"}, history.Window(0, historyCapacity))
 	})
 
 	t.Run("appends multiple independent lines", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		history.AppendLine("third")
 
 		assert.Equal(t, 3, history.LineCount())
-		assert.Equal(t, []string{"first", "second", "third"}, history.Lines())
+		assert.Equal(t, []string{"first", "second", "third"}, history.Window(0, historyCapacity))
 	})
 
 	t.Run("splits embedded newlines into separate viewport rows", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		history.AppendLine("line A\nline B\nline C")
 
 		assert.Equal(t, 3, history.LineCount())
-		assert.Equal(t, []string{"line A", "line B", "line C"}, history.Lines())
+		assert.Equal(t, []string{"line A", "line B", "line C"}, history.Window(0, historyCapacity))
 	})
 
 	t.Run("strips trailing newlines before splitting", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		history.AppendLine("alpha\nbeta\n")
 
 		assert.Equal(t, 2, history.LineCount())
-		assert.Equal(t, []string{"alpha", "beta"}, history.Lines())
+		assert.Equal(t, []string{"alpha", "beta"}, history.Window(0, historyCapacity))
 	})
 
 	t.Run("stores empty line", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		history.AppendLine("")
 
 		assert.Equal(t, 1, history.LineCount())
-		assert.Equal(t, []string{""}, history.Lines())
+		assert.Equal(t, []string{""}, history.Window(0, historyCapacity))
 	})
 
 	t.Run("stores ANSI-styled strings", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestHistory_AppendLine(t *testing.T) {
 		styled := "\x1b[31mred text\x1b[0m"
 		history.AppendLine(styled)
 
-		lines := history.Lines()
+		lines := history.Window(0, historyCapacity)
 		require.Len(t, lines, 1)
 		assert.Equal(t, styled, lines[0])
 	})
@@ -101,7 +101,9 @@ func TestHistory_AppendLine(t *testing.T) {
 			history.AppendLine(strings.Repeat("a", i%100))
 		}
 
-		assert.Equal(t, count, history.LineCount())
+		assert.Equal(t, historyCapacity, history.LineCount())
+		assert.Equal(t, []string{strings.Repeat("a", (count-historyCapacity)%100)}, history.Window(0, 1))
+		assert.Len(t, history.Window(historyCapacity-5, historyCapacity+5), 5)
 	})
 }
 
@@ -142,7 +144,7 @@ func TestHistory_Lines(t *testing.T) {
 
 		defer testutils.Close(t, history)
 
-		assert.Empty(t, history.Lines())
+		assert.Empty(t, history.Window(0, historyCapacity))
 	})
 
 	t.Run("returned slice grows as lines are appended", func(t *testing.T) {
@@ -151,9 +153,9 @@ func TestHistory_Lines(t *testing.T) {
 		defer testutils.Close(t, history)
 
 		history.AppendLine("one")
-		assert.Len(t, history.Lines(), 1)
+		assert.Len(t, history.Window(0, historyCapacity), 1)
 
 		history.AppendLine("two")
-		assert.Len(t, history.Lines(), 2)
+		assert.Len(t, history.Window(0, historyCapacity), 2)
 	})
 }

@@ -43,7 +43,7 @@ func newTestApp(t *testing.T) testApp {
 }
 
 func historyText(app testApp) string {
-	return ansi.Strip(strings.Join(app.historyWidget.hist.Lines(), "\n"))
+	return ansi.Strip(strings.Join(app.historyWidget.hist.Window(0, historyCapacity), "\n"))
 }
 
 func mappings() config.Mappings {
@@ -211,6 +211,42 @@ func TestUncorsAppWatchEvents(t *testing.T) {
 
 	app.bus.Close()
 	assert.Equal(t, eventsClosedMsg{}, app.watchEventsCmd()())
+}
+
+func TestUncorsAppOverflowedSubscription(t *testing.T) {
+	app := newTestApp(t)
+	app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	requestURL, err := url.Parse("https://example.com/overflow")
+	require.NoError(t, err)
+
+	for id := range uint64(30) {
+		app.bus.Publish(events.RequestStarted{ID: id, Method: "GET", URL: requestURL, Handler: events.HandlerProxy})
+	}
+
+	app.bus.Publish(events.ReloadFailed{Err: errBoom})
+
+	for id := range uint64(30) {
+		app.bus.Publish(events.RequestCompleted{
+			ID:      id,
+			Handler: events.HandlerProxy,
+			Data:    &contracts.RequestData{Method: "GET", URL: requestURL, Code: 200},
+		})
+	}
+
+	app.bus.Publish(events.ServerStopped{})
+	app.bus.Close()
+
+	for msg := app.watchEventsCmd()(); msg != (lifecycleMsg{event: events.ServerStopped{}}); msg = app.watchEventsCmd()() {
+		require.NotEqual(t, eventsClosedMsg{}, msg)
+		app.Update(msg)
+	}
+
+	assert.Equal(t, eventsClosedMsg{}, app.watchEventsCmd()())
+	assert.Empty(t, app.trackerWidget.pending)
+	assert.Contains(t, historyText(app), "Failed to reload configuration")
+	assert.Equal(t, 10, strings.Count(historyText(app), "200 GET"))
+	assert.Equal(t, uint64(40), app.events.Dropped())
 }
 
 func TestUncorsAppKeyHandling(t *testing.T) {
