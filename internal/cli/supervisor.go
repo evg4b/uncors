@@ -108,6 +108,11 @@ func (s *supervisor) run(ctx context.Context, frontendDone <-chan error) (bool, 
 
 	defer signal.Stop(signals)
 
+	reloadCtx, cancelReload := context.WithCancel(ctx)
+	defer cancelReload()
+
+	reloads := &reloader{reload: s.reload, done: make(chan struct{}, 1)}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -119,24 +124,58 @@ func (s *supervisor) run(ctx context.Context, frontendDone <-chan error) (bool, 
 		case err := <-frontendDone:
 			return true, err
 		case <-s.reloads:
-			s.reload(ctx)
+			reloads.request(reloadCtx)
+		case <-reloads.done:
+			reloads.finished(reloadCtx)
 		case command := <-s.commands:
-			if s.handle(ctx, command) {
+			if s.handle(reloadCtx, command, reloads) {
 				return false, nil
 			}
 		}
 	}
 }
 
-func (s *supervisor) handle(ctx context.Context, command events.Command) bool {
+func (s *supervisor) handle(ctx context.Context, command events.Command, reloads *reloader) bool {
 	switch command.(type) {
 	case events.Restart:
-		s.reload(ctx)
+		reloads.request(ctx)
 	case events.Shutdown:
 		return true
 	}
 
 	return false
+}
+
+type reloader struct {
+	reload  func(context.Context)
+	done    chan struct{}
+	running bool
+	pending bool
+}
+
+func (r *reloader) request(ctx context.Context) {
+	if r.running {
+		r.pending = true
+
+		return
+	}
+
+	r.running = true
+
+	go func() {
+		r.reload(ctx)
+
+		r.done <- struct{}{}
+	}()
+}
+
+func (r *reloader) finished(ctx context.Context) {
+	r.running = false
+
+	if r.pending {
+		r.pending = false
+		r.request(ctx)
+	}
 }
 
 func (s *supervisor) onSignal(sig os.Signal) {
@@ -159,7 +198,7 @@ func (s *supervisor) reload(ctx context.Context) {
 
 	telemetry.ConfigReloaded(ctx, err)
 
-	if err != nil {
+	if err != nil && ctx.Err() == nil {
 		telemetry.Fail(span, err)
 		s.bus.Publish(events.ReloadFailed{Err: err})
 	}
@@ -222,8 +261,15 @@ func (s *supervisor) checkVersion(ctx context.Context, proxyURL string) {
 		return
 	}
 
+	client, err := infra.MakeHTTPClient(proxyURL)
+	if err != nil {
+		telemetry.Warn(ctx, "version check skipped", telemetry.Err(err))
+
+		return
+	}
+
 	checker := version.NewVersionChecker(
-		version.WithHTTPClient(infra.MakeHTTPClient(proxyURL)),
+		version.WithHTTPClient(client),
 		version.WithCurrentVersion(s.env.Version),
 	)
 

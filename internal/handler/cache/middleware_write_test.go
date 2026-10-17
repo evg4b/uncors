@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +30,7 @@ func (disconnectedWriter) Write([]byte) (int, error) {
 
 func TestCacheMiddlewareClientDisconnect(t *testing.T) {
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+		cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 	)

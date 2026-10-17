@@ -9,6 +9,7 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMappings(t *testing.T) {
@@ -270,7 +271,8 @@ func TestMappings_GroupByPort(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			groups := testCase.mappings.GroupByPort()
+			groups, err := testCase.mappings.GroupByPort()
+			require.NoError(t, err)
 
 			assert.Len(t, groups, len(testCase.expected), "number of port groups should match")
 
@@ -285,17 +287,17 @@ func TestMappings_GroupByPort(t *testing.T) {
 	t.Run("empty mappings", func(t *testing.T) {
 		var mappings config.Mappings
 
-		groups := mappings.GroupByPort()
+		groups, err := mappings.GroupByPort()
+		require.NoError(t, err)
 		assert.Empty(t, groups)
 	})
 
-	t.Run("panic on invalid port in GroupByPort", func(t *testing.T) {
+	t.Run("error on invalid port in GroupByPort", func(t *testing.T) {
 		mappings := config.Mappings{
 			{From: urlt.Host{Hostname: "localhost", Port: "invalid-port"}, To: hosts.Github.HTTPS()},
 		}
 
-		assert.Panics(t, func() {
-			_ = mappings.GroupByPort()
-		})
+		_, err := mappings.GroupByPort()
+		require.ErrorContains(t, err, "invalid port number")
 	})
 }

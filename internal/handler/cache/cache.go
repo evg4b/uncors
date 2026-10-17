@@ -29,20 +29,20 @@ type RistrettoCache struct {
 	ttl     time.Duration
 }
 
-func NewRistrettoCache(maxSize int64, ttl time.Duration) *RistrettoCache {
+func NewRistrettoCache(maxSize int64, ttl time.Duration) (*RistrettoCache, error) {
 	storage, err := ristretto.NewCache(&ristretto.Config[string, contracts.CachedResponse]{
 		NumCounters: numCounters,
 		MaxCost:     maxSize,
 		BufferItems: bufferItems,
 	})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &RistrettoCache{
 		storage: storage,
 		ttl:     ttl,
-	}
+	}, nil
 }
 
 func (cs *RistrettoCache) Get(key string) (contracts.CachedResponse, bool) {

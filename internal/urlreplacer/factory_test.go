@@ -37,27 +37,29 @@ func TestNewUrlReplacerFactory(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				assert.Panics(t, func() {
-					urlreplacer.NewURLReplacerFactory(testCase.mapping)
-				})
+				factory, err := urlreplacer.NewURLReplacerFactory(testCase.mapping)
+				require.Error(t, err)
+				assert.Nil(t, factory)
 			})
 		}
 	})
 
 	t.Run("should return replacers", func(t *testing.T) {
-		actual := urlreplacer.NewURLReplacerFactory(config.Mappings{
+		actual, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
 			{From: hosts.Localhost.Host(), To: hosts.Github.HTTPS()},
 		})
+		require.NoError(t, err)
 
 		assert.NotNil(t, actual)
 	})
 }
 
 func TestFactoryMake(t *testing.T) {
-	factory := urlreplacer.NewURLReplacerFactory(config.Mappings{
+	factory, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: hosts.Parse("http://server1.com"), To: hosts.Parse("https://mappedserver1.com")},
 		{From: hosts.Parse("https://server2.com"), To: hosts.Parse("https://mappedserver2.com")},
 	})
+	require.NoError(t, err)
 
 	tests := []struct {
 		name string
@@ -98,10 +100,11 @@ func TestFactoryMake(t *testing.T) {
 }
 
 func TestFactoryMakeIgnoresHostSuffixInPath(t *testing.T) {
-	factory := urlreplacer.NewURLReplacerFactory(config.Mappings{
+	factory, err := urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: hosts.Parse("http://{tenant}.local.dev"), To: hosts.Parse("https://{tenant}.api.com")},
 		{From: hosts.Parse("http://other.host"), To: hosts.Parse("https://other.com")},
 	})
+	require.NoError(t, err)
 
 	requestURL, err := urlt.Parse("http://other.host/files/x.local.dev?q=.local.dev")
 	require.NoError(t, err)

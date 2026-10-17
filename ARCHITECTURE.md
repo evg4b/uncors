@@ -46,11 +46,28 @@ must be mirrored there by hand.
 
 `config.Watcher` watches the configuration file. On a change, the supervisor
 reloads the configuration and calls `engine.Restart`, which builds a new
-`Generation` before replacing the old one. If loading fails, the supervisor
-publishes `ReloadFailed` and the old configuration stays active. `Engine` runs
-one start, restart, or shutdown at a time, and a restart closes requests that
-are still running after the shutdown timeout, so the new listeners always
-start.
+`Generation` before replacing the old one. If loading the file or building the
+generation fails (constructors return errors instead of panicking), the
+supervisor publishes `ReloadFailed` and the old configuration stays active.
+`Engine` runs one start, restart, or shutdown at a time.
+
+A reload does not close the proxy:
+
+- `server.Server` keeps one listener per address and TLS flag. A listener whose
+  address and flag are unchanged stays open, and its handler is swapped
+  atomically, so connections, including keep-alive ones, are never refused.
+- New addresses are bound before anything changes; if one cannot be bound, the
+  restart fails and the previous generation keeps serving. Removed addresses
+  stop accepting at once and finish their requests in the background. An
+  address that switches between http and https is closed and bound again with
+  the new scheme.
+- Every request counts against the generation that accepted it. The previous
+  generation is closed only after its last request finishes. Requests still
+  running after the shutdown timeout (15 seconds) are cut off, with a warning
+  notice. Shutdown and Close do not wait for that timeout.
+- The reload runs off the supervisor loop, so a signal or a `Shutdown` command
+  during a reload is handled at once; a reload that has not reached the engine
+  by then is dropped.
 
 ## Core, supervisor, and frontends
 
@@ -67,10 +84,12 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
   `tracking`) has no UI dependency; `TestCoreDoesNotImportTheUI` enforces it.
   It reports only by publishing events, so tests can run it with a bus
   subscription and no frontend.
-- The supervisor (`internal/cli`) is the only goroutine that starts, restarts,
+- The supervisor (`internal/cli`) is the only component that starts, restarts,
   and stops the engine. It reacts to frontend commands (`events.Restart`,
   `events.Shutdown`), config file changes, OS signals, and context
-  cancellation, and runs the version check.
+  cancellation, and runs the version check. Reloads run one at a time on their
+  own goroutine; requests that arrive during one are merged into a single
+  follow-up reload.
 - A frontend runs on its own goroutine and only renders events
   (`tui.EventRenderer`) and sends commands. It subscribes before the engine
   starts. `ServerStopped` is the last event; the bus closes after it. If the

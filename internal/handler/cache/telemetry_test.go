@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,7 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 
 		recorded := testutils.Telemetry(t)
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 		)

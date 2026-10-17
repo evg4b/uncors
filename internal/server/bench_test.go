@@ -17,6 +17,7 @@ import (
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -49,14 +50,14 @@ func benchmarkRequest(b *testing.B) {
 
 	mappings := config.Mappings{{From: hosts.Localhost.HTTP(), To: hosts.Github.HTTPS()}}
 
-	generation := engine.New(afero.NewMemMapFs()).BuildGeneration(&config.UncorsConfig{})
+	generation := lo.Must(engine.New(afero.NewMemMapFs()).BuildGeneration(&config.UncorsConfig{}))
 
 	b.Cleanup(func() { _ = generation.Close() })
 
 	handler := router.NewRouter(mappings,
 		router.WithFactory(generation),
 		router.ForRouterWithDefaultHandler(proxy.NewProxyHandler(
-			proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
+			proxy.WithURLReplacerFactory(lo.Must(urlreplacer.NewURLReplacerFactory(mappings))),
 			proxy.WithHTTPClient(&http.Client{Transport: telemetry.WrapTransport(stubTransport{})}),
 		)),
 	)

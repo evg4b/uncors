@@ -37,12 +37,30 @@ type Target struct {
 	EnableTLS bool
 }
 
+type listenerKey struct {
+	address string
+	tls     bool
+}
+
+func (t Target) key() listenerKey {
+	return listenerKey{address: t.Address, tls: t.EnableTLS}
+}
+
+type route struct {
+	handler  http.Handler
+	requests *requests
+}
+
+type connKey struct{}
+
 type Server struct {
 	wg sync.WaitGroup
 
-	mu              sync.RWMutex
-	listeners       []*portListener
-	targets         []Target
+	mu              sync.Mutex
+	listeners       map[listenerKey]*portListener
+	requests        *requests
+	retiring        map[*requests]struct{}
+	closing         map[*portListener]struct{}
 	getCertificate  func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 	publisher       events.Publisher
 	nextID          atomic.Uint64
@@ -51,6 +69,9 @@ type Server struct {
 
 func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), publisher events.Publisher) *Server {
 	return &Server{
+		listeners:       map[listenerKey]*portListener{},
+		retiring:        map[*requests]struct{}{},
+		closing:         map[*portListener]struct{}{},
 		getCertificate:  getCertificate,
 		publisher:       publisher,
 		shutdownTimeout: shutdownTimeout,
@@ -59,7 +80,9 @@ func New(getCertificate func(*tls.ClientHelloInfo) (*tls.Certificate, error), pu
 
 func (s *Server) Start(ctx context.Context, targets []Target) error {
 	return telemetry.Run(ctx, "server.start", func(spanCtx context.Context) error {
-		return s.start(ctx, spanCtx, targets)
+		_, err := s.apply(ctx, spanCtx, targets)
+
+		return err
 	})
 }
 
@@ -67,32 +90,21 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return telemetry.Run(ctx, "server.shutdown", s.shutdown)
 }
 
-func (s *Server) Restart(ctx context.Context, targets []Target) error {
+func (s *Server) Restart(ctx context.Context, targets []Target) (<-chan struct{}, error) {
 	s.wg.Add(1)
 	defer s.wg.Done()
 
-	return telemetry.Run(ctx, "server.restart", func(ctx context.Context) error {
-		s.mu.RLock()
-		previous := s.targets
-		s.mu.RUnlock()
+	var retired <-chan struct{}
 
-		// Shutdown closes the listeners straight away and then waits for in-flight
-		// requests. A long poll or a stream can outlive that wait; it is cut off
-		// rather than left to keep the server without any listener.
-		err := s.Shutdown(ctx)
-		if err != nil {
-			s.closeInFlight(ctx, err)
-		}
+	err := telemetry.Run(ctx, "server.restart", func(spanCtx context.Context) error {
+		var err error
 
-		err = s.Start(ctx, targets)
-		if err != nil && len(previous) > 0 {
-			// The engine keeps the previous generation when a restart fails, so
-			// it is served again rather than leaving the proxy down.
-			err = errors.Join(err, s.Start(ctx, previous))
-		}
+		retired, err = s.apply(ctx, spanCtx, targets)
 
 		return err
 	})
+
+	return retired, err
 }
 
 func (s *Server) Wait() {
@@ -100,7 +112,7 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) Close() error {
-	listeners := s.release()
+	listeners, retiring := s.release()
 
 	var errs []error
 
@@ -111,6 +123,8 @@ func (s *Server) Close() error {
 		}
 	}
 
+	abort(retiring)
+
 	return errors.Join(errs...)
 }
 
@@ -120,47 +134,136 @@ func (s *Server) Close() error {
 //
 // Every target is bound before any is served, so a start that fails leaves
 // nothing listening.
-func (s *Server) start(ctx, spanCtx context.Context, targets []Target) error {
+func (s *Server) apply(ctx, spanCtx context.Context, targets []Target) (<-chan struct{}, error) {
 	trace.SpanFromContext(spanCtx).SetAttributes(attribute.Int("uncors.listeners", len(targets)))
 
-	listeners := make([]*portListener, 0, len(targets))
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	held := make(map[string]*portListener, len(s.listeners))
+	for _, portListener := range s.listeners {
+		held[portListener.target.Address] = portListener
+	}
+
+	fresh := make(map[listenerKey]*portListener, len(targets))
+	switched := make([]Target, 0, len(targets))
 
 	var errs []error
 
 	for _, target := range targets {
-		listener, err := s.listen(ctx, spanCtx, target)
+		if _, ok := s.listeners[target.key()]; ok {
+			continue
+		}
+
+		if _, ok := held[target.Address]; ok {
+			switched = append(switched, target)
+
+			continue
+		}
+
+		err := s.bindFresh(ctx, spanCtx, target, fresh)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		closeListeners(fresh)
+
+		return nil, errors.Join(errs...)
+	}
+
+	released := make([]*portListener, 0, len(switched))
+
+	for _, target := range switched {
+		previous := held[target.Address]
+		released = append(released, previous)
+		s.retireListener(ctx, previous)
+
+		err := s.bindFresh(ctx, spanCtx, target, fresh)
+		if err != nil {
+			closeListeners(fresh)
+
+			return nil, errors.Join(err, s.restore(ctx, spanCtx, released))
+		}
+	}
+
+	return s.swap(ctx, targets, fresh), nil
+}
+
+func (s *Server) bindFresh(ctx, spanCtx context.Context, target Target, fresh map[listenerKey]*portListener) error {
+	portListener, err := s.listen(ctx, spanCtx, target)
+	if err != nil {
+		return err
+	}
+
+	fresh[target.key()] = portListener
+
+	return nil
+}
+
+func (s *Server) swap(ctx context.Context, targets []Target, fresh map[listenerKey]*portListener) <-chan struct{} {
+	current := newRequests()
+	wanted := make(map[listenerKey]struct{}, len(targets))
+
+	for _, target := range targets {
+		wanted[target.key()] = struct{}{}
+
+		portListener, ok := fresh[target.key()]
+		if !ok {
+			portListener = s.listeners[target.key()]
+		}
+
+		portListener.route.Store(&route{handler: target.Handler, requests: current})
+	}
+
+	for key, portListener := range s.listeners {
+		if _, ok := wanted[key]; !ok {
+			s.retireListener(ctx, portListener)
+		}
+	}
+
+	for key, portListener := range fresh {
+		s.listeners[key] = portListener
+		s.serve(ctx, portListener)
+	}
+
+	previous := s.requests
+	s.requests = current
+
+	if previous == nil {
+		return nil
+	}
+
+	return s.retire(ctx, previous)
+}
+
+func (s *Server) restore(ctx, spanCtx context.Context, released []*portListener) error {
+	var errs []error
+
+	for _, previous := range released {
+		portListener, err := s.listen(ctx, spanCtx, previous.target)
 		if err != nil {
 			errs = append(errs, err)
 
 			continue
 		}
 
-		listeners = append(listeners, listener)
+		portListener.route.Store(previous.route.Load())
+		s.listeners[previous.target.key()] = portListener
+		s.serve(ctx, portListener)
 	}
 
-	if len(errs) > 0 {
-		for _, listener := range listeners {
-			_ = listener.closeListener()
+	return errors.Join(errs...)
+}
+
+func (s *Server) serve(ctx context.Context, portListener *portListener) {
+	s.wg.Go(func() {
+		err := portListener.Serve(portListener.listener)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) && !errors.Is(err, net.ErrClosed) {
+			telemetry.Error(ctx, "listener stopped", telemetry.Err(err))
 		}
-
-		return errors.Join(errs...)
-	}
-
-	s.mu.Lock()
-	s.listeners = listeners
-	s.targets = targets
-	s.mu.Unlock()
-
-	for _, listener := range listeners {
-		s.wg.Go(func() {
-			err := listener.Serve(listener.listener)
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				telemetry.Error(ctx, "listener stopped", telemetry.Err(err))
-			}
-		})
-	}
-
-	return nil
+	})
 }
 
 func (s *Server) listen(ctx, spanCtx context.Context, target Target) (*portListener, error) {
@@ -179,31 +282,116 @@ func (s *Server) listen(ctx, spanCtx context.Context, target Target) (*portListe
 		return nil, err
 	}
 
-	portCtx, portCtxCancel := context.WithCancel(ctx)
+	portCtx, portCtxCancel := context.WithCancel(context.WithoutCancel(ctx))
 
 	portListener := &portListener{
-		Server: http.Server{
-			BaseContext: func(_ net.Listener) context.Context {
-				return portCtx
-			},
-			ReadHeaderTimeout: readHeaderTimeout,
-			Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-				s.handleRequest(target.Handler, writer, request)
-			}),
-		},
+		target:   target,
 		listener: listener,
+		cancel:   portCtxCancel,
 	}
-
-	portListener.RegisterOnShutdown(portCtxCancel)
+	portListener.BaseContext = func(_ net.Listener) context.Context {
+		return portCtx
+	}
+	portListener.ConnContext = withConn
+	portListener.ReadHeaderTimeout = readHeaderTimeout
+	portListener.Handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		s.dispatch(portListener, writer, request)
+	})
 
 	return portListener, nil
+}
+
+func withConn(ctx context.Context, conn net.Conn) context.Context {
+	if tlsConn, ok := conn.(*tls.Conn); ok {
+		conn = tlsConn.NetConn()
+	}
+
+	return context.WithValue(ctx, connKey{}, conn)
+}
+
+func (s *Server) dispatch(portListener *portListener, writer http.ResponseWriter, request *http.Request) {
+	conn, _ := request.Context().Value(connKey{}).(net.Conn)
+
+	current := portListener.route.Load()
+	for !current.requests.acquire(conn) {
+		next := portListener.route.Load()
+		if next == current {
+			s.handleRequest(unavailable, writer, request)
+
+			return
+		}
+
+		current = next
+	}
+
+	defer current.requests.release(conn)
+
+	s.handleRequest(current.handler, writer, request)
+}
+
+var unavailable = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	infra.WriteCorsHeaders(writer.Header(), request.Header.Get("Origin"))
+	writer.Header().Set("Connection", "close")
+	writer.WriteHeader(http.StatusServiceUnavailable)
+})
+
+func (s *Server) retireListener(ctx context.Context, portListener *portListener) {
+	delete(s.listeners, portListener.target.key())
+	_ = portListener.closeListener()
+	s.closing[portListener] = struct{}{}
+
+	ctx = context.WithoutCancel(ctx)
+
+	s.wg.Go(func() {
+		shutdownCtx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
+		defer cancel()
+
+		err := portListener.drain(shutdownCtx)
+		if err != nil {
+			_ = portListener.Close()
+		}
+
+		portListener.cancel()
+
+		s.mu.Lock()
+		delete(s.closing, portListener)
+		s.mu.Unlock()
+	})
+}
+
+func (s *Server) retire(ctx context.Context, previous *requests) <-chan struct{} {
+	retired := make(chan struct{})
+	idle := previous.retire()
+	s.retiring[previous] = struct{}{}
+
+	ctx = context.WithoutCancel(ctx)
+
+	s.wg.Go(func() {
+		defer close(retired)
+
+		timer := time.NewTimer(s.shutdownTimeout)
+		defer timer.Stop()
+
+		select {
+		case <-idle:
+		case <-previous.aborted:
+		case <-timer.C:
+			s.closeInFlight(ctx, previous)
+		}
+
+		s.mu.Lock()
+		delete(s.retiring, previous)
+		s.mu.Unlock()
+	})
+
+	return retired
 }
 
 func (s *Server) shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
 	defer cancel()
 
-	listeners := s.release()
+	listeners, retiring := s.release()
 
 	var (
 		waitGroup sync.WaitGroup
@@ -227,32 +415,59 @@ func (s *Server) shutdown(ctx context.Context) error {
 	}
 
 	waitGroup.Wait()
+	abort(retiring)
 
 	return errors.Join(errs...)
 }
 
-// release also forgets the targets: a stopped server has nothing to fall back to.
-func (s *Server) release() []*portListener {
+func (s *Server) release() ([]*portListener, []*requests) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	listeners := s.listeners
-	s.targets = nil
+	listeners := make([]*portListener, 0, len(s.listeners)+len(s.closing))
+	for _, portListener := range s.listeners {
+		listeners = append(listeners, portListener)
+	}
 
-	return listeners
+	for portListener := range s.closing {
+		listeners = append(listeners, portListener)
+	}
+
+	retiring := make([]*requests, 0, len(s.retiring))
+	for previous := range s.retiring {
+		retiring = append(retiring, previous)
+	}
+
+	clear(s.listeners)
+	s.requests = nil
+
+	return listeners, retiring
 }
 
-func (s *Server) closeInFlight(ctx context.Context, shutdownErr error) {
-	span := trace.SpanFromContext(ctx)
+func abort(retiring []*requests) {
+	for _, previous := range retiring {
+		previous.abort()
+	}
+}
+
+func closeListeners(listeners map[listenerKey]*portListener) {
+	for _, portListener := range listeners {
+		_ = portListener.closeListener()
+	}
+}
+
+func (s *Server) closeInFlight(ctx context.Context, previous *requests) {
+	ctx, span := telemetry.Start(ctx, "server.close_in_flight")
+	defer span.End()
+
 	span.AddEvent("uncors.inflight_closed")
-	telemetry.Warn(ctx, "in-flight requests did not finish before restart, closing them",
-		telemetry.Err(shutdownErr))
+	telemetry.Warn(ctx, "in-flight requests did not finish before restart, closing them")
 	s.publisher.Publish(events.Notice{
 		Level: events.NoticeWarning,
 		Text:  "In-flight requests did not finish before restart and were closed",
 	})
 
-	err := s.Close()
+	err := previous.closeConns()
 	if err != nil {
 		telemetry.Fail(span, err)
 		s.publisher.Publish(events.Notice{

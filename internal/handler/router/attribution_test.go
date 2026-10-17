@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,7 +45,7 @@ func attributionRouter(t *testing.T) http.Handler {
 		},
 	}
 
-	store := cache.NewRistrettoCache(1<<20, time.Minute)
+	store := lo.Must(cache.NewRistrettoCache(1<<20, time.Minute))
 
 	t.Cleanup(func() { testutils.Close(t, store) })
 

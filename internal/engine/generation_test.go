@@ -8,8 +8,10 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/engine"
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +36,7 @@ func TestBuildGeneration(t *testing.T) {
 	t.Run("builds a target per port group", func(t *testing.T) {
 		proxy := engine.New(afero.NewMemMapFs())
 
-		generation := proxy.BuildGeneration(harConfiguration())
+		generation := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
 		defer testutils.Close(t, generation)
 
@@ -45,7 +47,7 @@ func TestBuildGeneration(t *testing.T) {
 	t.Run("cache middleware uses the current cache config", func(t *testing.T) {
 		proxy := engine.New(afero.NewMemMapFs())
 
-		generation := proxy.BuildGeneration(harConfiguration())
+		generation := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
 		defer testutils.Close(t, generation)
 
@@ -59,9 +61,9 @@ func TestBuildGeneration(t *testing.T) {
 	t.Run("every generation gets its own resources", func(t *testing.T) {
 		proxy := engine.New(afero.NewMemMapFs())
 
-		first := proxy.BuildGeneration(harConfiguration())
+		first := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
-		second := proxy.BuildGeneration(harConfiguration())
+		second := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
 		assert.NotSame(t, first.Cache(), second.Cache())
 
@@ -72,7 +74,7 @@ func TestBuildGeneration(t *testing.T) {
 	t.Run("close is idempotent", func(t *testing.T) {
 		proxy := engine.New(afero.NewMemMapFs())
 
-		instance := proxy.BuildGeneration(harConfiguration())
+		instance := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
 		require.NoError(t, instance.Close())
 		require.NoError(t, instance.Close())
@@ -83,13 +85,13 @@ func TestBuildGeneration(t *testing.T) {
 
 		proxy := engine.New(afero.NewMemMapFs())
 
-		warmUp := proxy.BuildGeneration(harConfiguration())
+		warmUp := lo.Must(proxy.BuildGeneration(harConfiguration()))
 		require.NoError(t, warmUp.Close())
 
 		baseline := runtime.NumGoroutine()
 
 		for range reloads {
-			next := proxy.BuildGeneration(harConfiguration())
+			next := lo.Must(proxy.BuildGeneration(harConfiguration()))
 			require.NoError(t, next.Close())
 		}
 
@@ -105,7 +107,7 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 	spans := testutils.Telemetry(t).Spans
 	proxy := engine.New(fs)
 
-	generation := proxy.BuildGeneration(&config.UncorsConfig{
+	generation := lo.Must(proxy.BuildGeneration(&config.UncorsConfig{
 		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
 		Mappings: config.Mappings{{
 			From:    hosts.Localhost.HTTP(),
@@ -121,7 +123,7 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 			}},
 			Rewrites: config.RewriteOptions{{From: "/old", To: "/new"}},
 		}},
-	})
+	}))
 
 	defer testutils.Close(t, generation)
 
@@ -139,4 +141,49 @@ func TestGenerationBuildsEveryHandler(t *testing.T) {
 	require.Len(t, ended, 1)
 	assert.Equal(t, "engine.build_generation", ended[0].Name())
 	assert.Contains(t, ended[0].Attributes(), attribute.Int("uncors.mappings", 1))
+}
+
+func TestBuildGenerationReportsConstructorErrors(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*config.UncorsConfig)
+		err    string
+	}{
+		{
+			name:   "invalid proxy url",
+			mutate: func(cfg *config.UncorsConfig) { cfg.Proxy = "http://loca^host:8000" },
+			err:    "failed to create http client",
+		},
+		{
+			name:   "cache without size",
+			mutate: func(cfg *config.UncorsConfig) { cfg.CacheConfig.MaxSize = 0 },
+			err:    "MaxCost can't be zero",
+		},
+		{
+			name: "invalid port",
+			mutate: func(cfg *config.UncorsConfig) {
+				cfg.Mappings[0].From = urlt.Host{Scheme: "http", Hostname: "localhost", Port: "port"}
+			},
+			err: "invalid port number",
+		},
+		{
+			name: "duplicate placeholder",
+			mutate: func(cfg *config.UncorsConfig) {
+				cfg.Mappings[0].From = hosts.Parse("http://{x}.{x}.local")
+			},
+			err: "duplicate placeholder key",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			cfg := harConfiguration()
+			testCase.mutate(cfg)
+
+			generation, err := engine.New(afero.NewMemMapFs()).BuildGeneration(cfg)
+
+			require.ErrorContains(t, err, testCase.err)
+			assert.Nil(t, generation)
+		})
+	}
 }

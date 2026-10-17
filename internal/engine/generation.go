@@ -46,11 +46,11 @@ type Generation struct {
 
 var _ router.Factory = (*Generation)(nil)
 
-func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) *Generation {
+func (e *Engine) BuildGeneration(uncorsConfig *config.UncorsConfig) (*Generation, error) {
 	return e.buildGeneration(context.Background(), uncorsConfig)
 }
 
-func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.UncorsConfig) *Generation {
+func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.UncorsConfig) (*Generation, error) {
 	_, span := telemetry.Start(ctx, "engine.build_generation")
 	defer span.End()
 
@@ -63,9 +63,16 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 		proxyURL:    uncorsConfig.Proxy,
 	}
 
-	generation.targets = generation.buildTargets(uncorsConfig)
+	targets, err := generation.build(uncorsConfig)
+	if err != nil {
+		telemetry.Fail(span, err)
 
-	return generation
+		return nil, errors.Join(err, generation.Close())
+	}
+
+	generation.targets = targets
+
+	return generation, nil
 }
 
 func (g *Generation) Targets() []server.Target {
@@ -91,7 +98,7 @@ func (g *Generation) Close() error {
 
 func (g *Generation) Cache() contracts.Cache {
 	if g.cacheStore == nil {
-		g.cacheStore = register(g, cache.NewRistrettoCache(g.cacheConfig.MaxSize, g.cacheConfig.ExpirationTime))
+		_ = g.openCache()
 	}
 
 	return g.cacheStore
@@ -151,45 +158,82 @@ func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handle
 	)
 }
 
-func (g *Generation) ProxyHandler(mappings config.Mappings) contracts.Handler {
+func (g *Generation) ProxyHandler(replacers urlreplacer.ReplacerFactory) contracts.Handler {
 	return proxy.NewProxyHandler(
-		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(mappings)),
-		proxy.WithHTTPClient(g.httpClient()),
+		proxy.WithURLReplacerFactory(replacers),
+		proxy.WithHTTPClient(g.client),
 	)
 }
 
-// Shared by every listener of the generation; closing it drops idle upstream connections.
-func (g *Generation) httpClient() *http.Client {
-	if g.client == nil {
-		g.client = infra.MakeHTTPClient(g.proxyURL)
-		register(g, closerFunc(func() error {
-			g.client.CloseIdleConnections()
-
-			return nil
-		}))
+func (g *Generation) openCache() error {
+	store, err := cache.NewRistrettoCache(g.cacheConfig.MaxSize, g.cacheConfig.ExpirationTime)
+	if err != nil {
+		return err
 	}
 
-	return g.client
+	g.cacheStore = register(g, store)
+
+	return nil
 }
 
-func (g *Generation) buildTargets(uncorsConfig *config.UncorsConfig) []server.Target {
-	groupedMappings := uncorsConfig.Mappings.GroupByPort()
+// Shared by every listener of the generation; closing it drops idle upstream connections.
+func (g *Generation) openClient() error {
+	client, err := infra.MakeHTTPClient(g.proxyURL)
+	if err != nil {
+		return err
+	}
+
+	g.client = client
+	register(g, closerFunc(func() error {
+		client.CloseIdleConnections()
+
+		return nil
+	}))
+
+	return nil
+}
+
+func (g *Generation) build(uncorsConfig *config.UncorsConfig) ([]server.Target, error) {
+	err := g.openClient()
+	if err != nil {
+		return nil, err
+	}
+
+	if slices.ContainsFunc(uncorsConfig.Mappings, func(mapping config.Mapping) bool {
+		return len(mapping.Cache) > 0
+	}) {
+		err = g.openCache()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	groupedMappings, err := uncorsConfig.Mappings.GroupByPort()
+	if err != nil {
+		return nil, err
+	}
+
 	targets := make([]server.Target, 0, len(groupedMappings))
 
 	for _, group := range groupedMappings {
+		replacers, err := urlreplacer.NewURLReplacerFactory(group.Mappings)
+		if err != nil {
+			return nil, err
+		}
+
 		targets = append(targets, server.Target{
 			Address: net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
 			Handler: router.NewRouter(
 				group.Mappings,
 				router.WithFactory(g),
-				router.ForRouterWithDefaultHandler(g.ProxyHandler(group.Mappings)),
+				router.ForRouterWithDefaultHandler(g.ProxyHandler(replacers)),
 				router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
 			),
 			EnableTLS: group.Scheme == "https",
 		})
 	}
 
-	return targets
+	return targets, nil
 }
 
 type closerFunc func() error
