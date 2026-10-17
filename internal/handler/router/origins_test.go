@@ -19,6 +19,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +60,7 @@ func originsRouter(t *testing.T) http.Handler {
 	forwarded := mapping("http://forwarded.local")
 	forwarded.OptionsHandling.Disabled = true
 
-	store := cache.NewRistrettoCache(1<<20, time.Minute)
+	store := lo.Must(cache.NewRistrettoCache(1<<20, time.Minute))
 
 	t.Cleanup(func() { testutils.Close(t, store) })
 

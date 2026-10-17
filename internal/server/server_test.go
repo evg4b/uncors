@@ -263,7 +263,7 @@ func TestServer(t *testing.T) {
 		assertResponse(t, hosts.Loopback.HTTPPort(initial).String(), nil)
 		require.True(t, testutils.IsPortFree(restarted))
 
-		err := instance.Restart(t.Context(), []server.Target{
+		_, err := instance.Restart(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(restarted).String(),
 				Handler: handler,
@@ -304,7 +304,7 @@ func TestServer(t *testing.T) {
 
 		occupy(t, ports[1])
 
-		err := instance.Restart(t.Context(), []server.Target{
+		_, err := instance.Restart(t.Context(), []server.Target{
 			{Address: hosts.Loopback.Port(ports[1]).String(), Handler: handler},
 		})
 		require.Error(t, err)
@@ -361,7 +361,7 @@ func TestServer(t *testing.T) {
 
 		<-entered
 
-		err := instance.Restart(t.Context(), []server.Target{
+		retired, err := instance.Restart(t.Context(), []server.Target{
 			{
 				Address: hosts.Loopback.Port(restarted).String(),
 				Handler: handler,
@@ -370,6 +370,7 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 
 		assertResponse(t, hosts.Loopback.HTTPPort(restarted).String(), nil)
+		testutils.WaitClosed(t, retired)
 		assert.Equal(t, []events.Notice{{
 			Level: events.NoticeWarning,
 			Text:  "In-flight requests did not finish before restart and were closed",
@@ -407,13 +408,18 @@ func TestServer(t *testing.T) {
 
 		var waitGroup sync.WaitGroup
 
+		waiting := make(chan struct{})
+
 		waitGroup.Go(func() {
 			queue.Track("waiting started")
+			close(waiting)
 
 			instance.Wait()
 
 			queue.Track("waiting finished")
 		})
+
+		<-waiting
 
 		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 

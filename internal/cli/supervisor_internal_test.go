@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	"slices"
+	"strconv"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -255,6 +257,83 @@ func TestSuperviseReportsFailedStart(t *testing.T) {
 
 	require.Error(t, supervise(t.Context(), env, uncorsConfig, "", frontend))
 	assert.Equal(t, []string{"stopped"}, eventTypes(received))
+}
+
+type blockingFs struct {
+	afero.Fs
+
+	armed   atomic.Bool
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (f *blockingFs) Open(name string) (afero.File, error) {
+	if name == configPath && f.armed.CompareAndSwap(true, false) {
+		close(f.entered)
+		<-f.release
+	}
+
+	return f.Fs.Open(name)
+}
+
+func TestSuperviseDoesNotWaitForReload(t *testing.T) {
+	stops := map[string]func(t *testing.T, commands chan<- events.Command){
+		"shutdown command": func(_ *testing.T, commands chan<- events.Command) {
+			commands <- events.Shutdown{}
+		},
+		"SIGINT": func(t *testing.T, _ chan<- events.Command) {
+			assert.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
+		},
+	}
+
+	for name, stop := range stops {
+		t.Run(name, func(t *testing.T) {
+			env, uncorsConfig := supervisedConfig(t)
+			fs := &blockingFs{Fs: env.Fs, entered: make(chan struct{}), release: make(chan struct{})}
+			env.Fs = fs
+
+			defer close(fs.release)
+
+			var received []events.Event
+
+			frontend := func(subscription *events.Subscription, commands chan<- events.Command) error {
+				if !waitFor[events.ServerStarted](t, subscription, &received) {
+					return errFrontend
+				}
+
+				fs.armed.Store(true)
+
+				commands <- events.Restart{}
+
+				<-fs.entered
+
+				stop(t, commands)
+
+				received = append(received, collect(subscription)...)
+
+				return nil
+			}
+
+			done := make(chan error, 1)
+
+			go func() {
+				done <- supervise(t.Context(), env, uncorsConfig, "", frontend)
+			}()
+
+			select {
+			case err := <-done:
+				require.NoError(t, err)
+			case <-time.After(5 * time.Second):
+				t.Fatal("supervise waited for the reload to finish")
+			}
+
+			assert.Equal(t, []string{"started", "stopped"}, eventTypes(received))
+
+			port, err := strconv.Atoi(uncorsConfig.Mappings[0].From.Port)
+			require.NoError(t, err)
+			assert.True(t, testutils.IsPortFree(port))
+		})
+	}
 }
 
 func TestOnSignal(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,7 +23,7 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
-		store := cache.NewRistrettoCache(1024*1024, time.Minute)
+		store := lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))
 		middleware := cache.NewMiddleware(
 			cache.WithCacheStorage(store),
 			cache.WithMethods([]string{http.MethodGet}),
@@ -63,7 +64,7 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 
 func TestCacheMiddlewareRejectedStore(t *testing.T) {
 	recorded := testutils.Telemetry(t)
-	store := cache.NewRistrettoCache(16, time.Minute)
+	store := lo.Must(cache.NewRistrettoCache(16, time.Minute))
 	middleware := cache.NewMiddleware(
 		cache.WithCacheStorage(store),
 		cache.WithMethods([]string{http.MethodGet}),

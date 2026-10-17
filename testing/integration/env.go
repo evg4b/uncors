@@ -107,6 +107,14 @@ func (e *Env) Shutdown(t *testing.T) {
 	require.NoError(t, e.proxy.Shutdown(ctx))
 }
 
+func (e *Env) Reload(t *testing.T) {
+	t.Helper()
+
+	loaded, _, err := config.LoadConfiguration(t.Context(), e.FS, nil, []string{"-c", configPath})
+	require.NoError(t, err)
+	require.NoError(t, e.proxy.Restart(t.Context(), loaded))
+}
+
 func (e *Env) URL(host, path string) string {
 	matched := e.routeFor(host)
 

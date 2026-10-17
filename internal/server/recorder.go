@@ -21,7 +21,7 @@ type ResponseRecorder struct {
 	truncated  bool
 	startedAt  time.Time
 	written    int64
-	conns      *hijackedConns
+	requests   *requests
 	hijacked   net.Conn
 }
 
@@ -66,9 +66,9 @@ func (r *ResponseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return nil, nil, err
 	}
 
-	if r.conns != nil {
+	if r.requests != nil {
 		r.hijacked = conn
-		r.conns.track(conn)
+		r.requests.hijack(conn)
 	}
 
 	return conn, buffered, nil
@@ -108,7 +108,7 @@ func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 
 func (r *ResponseRecorder) releaseHijacked() {
 	if r.hijacked != nil {
-		r.conns.release(r.hijacked)
+		r.requests.releaseHijacked(r.hijacked)
 	}
 }
 

@@ -22,6 +22,7 @@ import (
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/codes"
@@ -35,9 +36,9 @@ const (
 var errNetworkError = errors.New("network error")
 
 func TestProxyHandler(t *testing.T) {
-	replacerFactory := urlreplacer.NewURLReplacerFactory(config.Mappings{
+	replacerFactory := lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
 		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
-	})
+	}))
 
 	t.Run("should correctly replace headers in request to target resource", func(t *testing.T) {
 		tests := []struct {

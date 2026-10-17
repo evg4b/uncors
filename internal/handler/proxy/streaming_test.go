@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,9 +46,9 @@ func streamingHandler(response *http.Response) *proxy.Handler {
 
 			return response
 		})),
-		proxy.WithURLReplacerFactory(urlreplacer.NewURLReplacerFactory(config.Mappings{
+		proxy.WithURLReplacerFactory(lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
 			{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
-		})),
+		}))),
 	)
 }
 

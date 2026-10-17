@@ -35,7 +35,10 @@ func TestHTTPClientTracing(t *testing.T) {
 		request, err := http.NewRequestWithContext(ctx, http.MethodGet, upstream.URL, nil)
 		require.NoError(t, err)
 
-		response, err := infra.MakeHTTPClient("").Do(request)
+		httpClient, err := infra.MakeHTTPClient("")
+		require.NoError(t, err)
+
+		response, err := httpClient.Do(request)
 		require.NoError(t, err)
 		require.NoError(t, response.Body.Close())
 		parent.End()

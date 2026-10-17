@@ -183,7 +183,8 @@ Requests that skip the cache add a `uncors.cache.not_cacheable` event, and
 responses that are not stored add `uncors.cache.not_stored`, or
 `uncors.cache.rejected` when the cache storage declined them. Lifecycle work has
 its own traces: `engine.start`, `engine.restart`, `engine.shutdown`,
-`supervisor.reload`, `config.load`, `server.listen`, `tls.get_certificate`
+`supervisor.reload`, `config.load`, `server.listen`, `server.close_in_flight`,
+`tls.get_certificate`
 (with the SNI name and ALPN protocols), `tls.ensure_ca` (with the CA expiry),
 `tls.generate_certificate`, `har.flush`, and `version.check`.
 
@@ -316,6 +317,14 @@ loads and validates the new version and restarts the server with it. If the new
 version is invalid, UNCORS prints the error and keeps running with the previous
 configuration. A restart clears the response cache and starts new HAR
 recordings.
+
+A restart does not interrupt the proxy. Ports that stay in the configuration
+with the same scheme keep accepting connections, and new requests use the new
+configuration at once. Requests that are already running finish with the
+previous configuration; those still running after 15 seconds are cut off with
+a warning. Ports removed from the file stop accepting connections, and a port
+that switches between `http://` and `https://` is opened again with the new
+scheme.
 
 ## Global options
 

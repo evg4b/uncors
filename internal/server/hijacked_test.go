@@ -187,13 +187,20 @@ func TestServerHijackedConnections(t *testing.T) {
 		instance, address := startHijacking(t, target, events.NoopPublisher{})
 		conn := upgrade(t, address, target)
 
-		require.NoError(t, instance.Restart(t.Context(), []server.Target{{
+		retired, err := instance.Restart(t.Context(), []server.Target{{
 			Address: address,
 			Handler: target.handler(t),
-		}}))
+		}})
+		require.NoError(t, err)
 
 		waitFor(t, target.finished, "finished handler")
 		assertClosedByServer(t, conn)
+
+		select {
+		case <-retired:
+		case <-time.After(hijackWait):
+			t.Fatalf("previous generation did not retire within %s", hijackWait)
+		}
 	})
 
 	t.Run("shutdown reports handlers that outlive it", func(t *testing.T) {

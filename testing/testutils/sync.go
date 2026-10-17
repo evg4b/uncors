@@ -1,6 +1,12 @@
 package testutils
 
-import "sync"
+import (
+	"sync"
+	"testing"
+	"time"
+)
+
+const waitClosedTimeout = 5 * time.Second
 
 type QueueEvents struct {
 	mutex  sync.Mutex
@@ -22,4 +28,14 @@ func (q *QueueEvents) List() []string {
 	copy(cloned, q.events)
 
 	return cloned
+}
+
+func WaitClosed[T any](t *testing.T, channel <-chan T) {
+	t.Helper()
+
+	select {
+	case <-channel:
+	case <-time.After(waitClosedTimeout):
+		t.Fatalf("channel was not closed within %s", waitClosedTimeout)
+	}
 }

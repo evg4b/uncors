@@ -18,7 +18,7 @@ const (
 	idleConnTimeout       = 90 * time.Second
 )
 
-func MakeHTTPClient(proxy string) *http.Client {
+func MakeHTTPClient(proxy string) (*http.Client, error) {
 	dialer := &net.Dialer{Timeout: dialTimeout, KeepAlive: keepAlive}
 	transport := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
@@ -32,7 +32,7 @@ func MakeHTTPClient(proxy string) *http.Client {
 	if proxy != "" {
 		parsedURL, err := url.Parse(proxy)
 		if err != nil {
-			panic(fmt.Errorf("failed to create http client: %w", err))
+			return nil, fmt.Errorf("failed to create http client: %w", err)
 		}
 
 		transport.Proxy = http.ProxyURL(parsedURL)
@@ -43,5 +43,5 @@ func MakeHTTPClient(proxy string) *http.Client {
 			return http.ErrUseLastResponse
 		},
 		Transport: telemetry.WrapTransport(transport),
-	}
+	}, nil
 }

@@ -5,7 +5,9 @@ package websocket_test
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -362,16 +364,56 @@ func TestWebSocketServerShutdown(t *testing.T) {
 
 	env.Shutdown(t)
 
-	for _, socket := range []*websocket.Conn{plain, secure} {
-		var reply string
-
-		require.Error(t, websocket.Message.Receive(socket, &reply))
-	}
+	requireClosedByProxy(t, plain)
+	requireClosedByProxy(t, secure)
 
 	echo.waitClosed(t, "/plain", 1)
 	echo.waitClosed(t, "/secure", 1)
 	assertTunnelCompleted(t, env, "ws.local", "/plain", 1)
 	assertTunnelCompleted(t, env, "wss.local", "/secure", 1)
+}
+
+func TestWebSocketReload(t *testing.T) {
+	echo := newEchoServer(t)
+	env := integration.New(t, echo.Backend, &config.UncorsConfig{
+		Mappings: config.Mappings{
+			{From: hosts.Parse("http://ws.local"), To: echo.AsHost()},
+			{From: hosts.Parse("https://wss.local"), To: echo.AsHost()},
+		},
+	})
+
+	plain := dial(t, env, "ws.local", "/plain")
+	secure := dial(t, env, "wss.local", "/secure")
+
+	exchange(t, plain, "hello")
+	exchange(t, secure, "hello")
+
+	env.Reload(t)
+
+	requireClosedByProxy(t, plain)
+	requireClosedByProxy(t, secure)
+
+	echo.waitClosed(t, "/plain", 1)
+	echo.waitClosed(t, "/secure", 1)
+	assertTunnelCompleted(t, env, "ws.local", "/plain", 1)
+	assertTunnelCompleted(t, env, "wss.local", "/secure", 1)
+
+	exchange(t, dial(t, env, "ws.local", "/after"), "again")
+	exchange(t, dial(t, env, "wss.local", "/after"), "again")
+}
+
+func requireClosedByProxy(t *testing.T, socket *websocket.Conn) {
+	t.Helper()
+
+	var reply string
+
+	err := websocket.Message.Receive(socket, &reply)
+	require.Error(t, err)
+
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		require.False(t, netErr.Timeout(), "the proxy did not close the connection: %v", err)
+	}
 }
 
 func TestWebSocketOutsideAllowedOrigins(t *testing.T) {

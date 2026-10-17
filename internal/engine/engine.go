@@ -27,6 +27,7 @@ type Engine struct {
 	mu         sync.Mutex
 	generation *Generation
 	tlsHosts   []string
+	retiring   sync.WaitGroup
 }
 
 type Option = func(*Engine)
@@ -50,7 +51,11 @@ func New(fs afero.Fs, options ...Option) *Engine {
 }
 
 func (e *Engine) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	return e.apply(ctx, "engine.start", uncorsConfig, e.server.Start, func(mappings fmt.Stringer) events.Event {
+	start := func(ctx context.Context, targets []server.Target) (<-chan struct{}, error) {
+		return nil, e.server.Start(ctx, targets)
+	}
+
+	return e.apply(ctx, "engine.start", uncorsConfig, start, func(mappings fmt.Stringer) events.Event {
 		return events.ServerStarted{Mappings: mappings}
 	})
 }
@@ -73,6 +78,7 @@ func (e *Engine) Close() error {
 
 func (e *Engine) Wait() {
 	e.server.Wait()
+	e.retiring.Wait()
 }
 
 // When serve fails the new generation is released and the current one is
@@ -81,18 +87,27 @@ func (e *Engine) apply(
 	ctx context.Context,
 	span string,
 	uncorsConfig *config.UncorsConfig,
-	serve func(context.Context, []server.Target) error,
+	serve func(context.Context, []server.Target) (<-chan struct{}, error),
 	served func(fmt.Stringer) events.Event,
 ) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	err := ctx.Err()
+	if err != nil {
+		return err
+	}
+
 	return telemetry.Run(ctx, span, func(ctx context.Context) error {
-		generation := e.buildGeneration(ctx, uncorsConfig)
+		generation, err := e.buildGeneration(ctx, uncorsConfig)
+		if err != nil {
+			return err
+		}
+
 		tlsHosts := httpsHosts(uncorsConfig.Mappings)
 		e.certs.SetHosts(slices.Concat(e.tlsHosts, tlsHosts))
 
-		err := serve(ctx, generation.Targets())
+		retired, err := serve(ctx, generation.Targets())
 		if err != nil {
 			e.certs.SetHosts(e.tlsHosts)
 
@@ -104,7 +119,30 @@ func (e *Engine) apply(
 		e.certs.SetHosts(tlsHosts)
 		e.publisher.Publish(served(uncorsConfig.Mappings))
 
-		return closeGeneration(ctx, previous)
+		if retired == nil {
+			return closeGeneration(ctx, previous)
+		}
+
+		e.retire(ctx, previous, retired)
+
+		return nil
+	})
+}
+
+func (e *Engine) retire(ctx context.Context, previous *Generation, retired <-chan struct{}) {
+	ctx = context.WithoutCancel(ctx)
+
+	e.retiring.Go(func() {
+		<-retired
+
+		err := closeGeneration(ctx, previous)
+		if err != nil {
+			telemetry.Error(ctx, "failed to release the previous configuration", telemetry.Err(err))
+			e.publisher.Publish(events.Notice{
+				Level: events.NoticeError,
+				Text:  "Failed to release the previous configuration: " + err.Error(),
+			})
+		}
 	})
 }
 
@@ -113,10 +151,11 @@ func (e *Engine) stop(ctx context.Context, span string, release func(context.Con
 	defer e.mu.Unlock()
 
 	return telemetry.Run(ctx, span, func(ctx context.Context) error {
-		return errors.Join(
-			release(ctx),
-			closeGeneration(ctx, e.swap(nil)),
-		)
+		err := release(ctx)
+
+		e.retiring.Wait()
+
+		return errors.Join(err, closeGeneration(ctx, e.swap(nil)))
 	})
 }
 

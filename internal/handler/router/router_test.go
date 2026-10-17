@@ -22,6 +22,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,7 +52,7 @@ var (
 func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
 	t.Helper()
 
-	generation := engine.New(fs).BuildGeneration(&config.UncorsConfig{})
+	generation := lo.Must(engine.New(fs).BuildGeneration(&config.UncorsConfig{}))
 
 	t.Cleanup(func() {
 		require.NoError(t, generation.Close())
@@ -64,7 +65,7 @@ func cacheFactory() router.CacheMiddlewareFactory {
 	return func(globs config.CacheGlobs) contracts.Middleware {
 		return cache.NewMiddleware(
 			cache.WithGlobs(globs),
-			cache.WithCacheStorage(cache.NewRistrettoCache(100, time.Minute)),
+			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(100, time.Minute))),
 		)
 	}
 }
@@ -123,7 +124,7 @@ func newRouter(
 
 	var replacerFactory urlreplacer.ReplacerFactory
 	if httpClient != nil {
-		replacerFactory = urlreplacer.NewURLReplacerFactory(mappings)
+		replacerFactory = lo.Must(urlreplacer.NewURLReplacerFactory(mappings))
 	}
 
 	options = append([]router.Option{
