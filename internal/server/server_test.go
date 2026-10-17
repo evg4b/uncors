@@ -408,13 +408,18 @@ func TestServer(t *testing.T) {
 
 		var waitGroup sync.WaitGroup
 
+		waiting := make(chan struct{})
+
 		waitGroup.Go(func() {
 			queue.Track("waiting started")
+			close(waiting)
 
 			instance.Wait()
 
 			queue.Track("waiting finished")
 		})
+
+		<-waiting
 
 		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 
