@@ -67,7 +67,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
+				handler := mock.NewHandler(
 					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -88,7 +88,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("file content releases the file handle", func(t *testing.T) {
 		trackingFs := testutils.NewTrackingFs(fileSystem)
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&config.Response{File: jsonFile}),
 			mock.WithFileSystem(trackingFs),
 			mock.WithAfter(time.After),
@@ -151,7 +151,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
+				handler := mock.NewHandler(
 					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -233,7 +233,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
+				handler := mock.NewHandler(
 					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -287,7 +287,7 @@ func TestHandler(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				handler := mock.NewMockHandler(
+				handler := mock.NewHandler(
 					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(fileSystem),
 					mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -364,7 +364,7 @@ func TestHandler(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				trackingFs := testutils.NewTrackingFs(fileSystem)
-				handler := mock.NewMockHandler(
+				handler := mock.NewHandler(
 					mock.WithResponse(&testCase.response),
 					mock.WithFileSystem(trackingFs),
 					mock.WithAfter(time.After),
@@ -383,7 +383,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("file with 200 code supports range requests", func(t *testing.T) {
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&config.Response{Code: http.StatusOK, File: textFile}),
 			mock.WithFileSystem(fileSystem),
 			mock.WithAfter(time.After),
@@ -400,7 +400,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("file with other code ignores range requests", func(t *testing.T) {
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&config.Response{Code: http.StatusNotFound, File: textFile}),
 			mock.WithFileSystem(fileSystem),
 			mock.WithAfter(time.After),
@@ -417,7 +417,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("undefined response error", func(t *testing.T) {
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&config.Response{}),
 			mock.WithFileSystem(fileSystem),
 			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -435,7 +435,7 @@ func TestHandler(t *testing.T) {
 
 	t.Run("raw content longer than sniff limit gets truncated for detection", func(t *testing.T) {
 		longRaw := string(make([]byte, 600))
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&config.Response{Raw: longRaw}),
 			mock.WithFileSystem(fileSystem),
 			mock.WithAfter(func(_ time.Duration) <-chan time.Time {
@@ -510,7 +510,7 @@ func TestHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					called := false
-					handler := mock.NewMockHandler(
+					handler := mock.NewHandler(
 						mock.WithResponse(&testCase.response),
 						mock.WithFileSystem(fileSystem),
 						mock.WithAfter(func(duration time.Duration) <-chan time.Time {
@@ -534,7 +534,7 @@ func TestHandler(t *testing.T) {
 		})
 
 		t.Run("correctly cancel delay", func(t *testing.T) {
-			handler := mock.NewMockHandler(
+			handler := mock.NewHandler(
 				mock.WithResponse(&config.Response{
 					Code:  http.StatusOK,
 					Delay: 1 * time.Hour,

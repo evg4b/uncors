@@ -76,5 +76,5 @@ func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
 		return styles.HTTPStatus5xxBlockStyle, styles.HTTPStatus5xxTextStyle
 	}
 
-	panic(fmt.Sprintf("status code %d is not supported", statusCode))
+	return styles.HTTPStatusOtherBlockStyle, styles.HTTPStatusOtherTextStyle
 }

@@ -70,9 +70,7 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 		done:      make(chan struct{}),
 	}, options)
 
-	if writer.fs == nil {
-		panic("har: NewWriter requires WithFileSystem option")
-	}
+	helpers.AssertIsDefined(writer.fs, "HARWriter: File system is not configured")
 
 	writer.wg.Add(1)
 

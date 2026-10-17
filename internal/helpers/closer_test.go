@@ -24,8 +24,8 @@ func TestCloseSafe(t *testing.T) {
 		})
 	})
 
-	t.Run("panics when resource close return error", func(t *testing.T) {
-		assert.Panics(t, func() {
+	t.Run("does not panic when resource close returns error", func(t *testing.T) {
+		assert.NotPanics(t, func() {
 			resource := mocks.NewCloserMock(t).CloseMock.Return(testconstants.ErrTest1)
 
 			helpers.CloseSafe(resource)

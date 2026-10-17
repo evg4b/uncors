@@ -30,7 +30,7 @@ type Handler struct {
 	http      contracts.HTTPClient
 }
 
-func NewProxyHandler(options ...HandlerOption) *Handler {
+func NewHandler(options ...HandlerOption) *Handler {
 	middleware := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(middleware.replacers, "ProxyHandler: ReplacerFactory is not configured")

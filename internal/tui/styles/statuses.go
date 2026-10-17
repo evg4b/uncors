@@ -26,6 +26,11 @@ var (
 				Background(httpStatus5xxColor).
 				Foreground(ContrastColor)
 
+	HTTPStatusOtherTextStyle  = underlineStyle
+	HTTPStatusOtherBlockStyle = PaddedStyle.
+					Background(httpStatusOtherColor).
+					Foreground(ContrastColor)
+
 	HTTPStatusCancelledTextStyle  = underlineStyle
 	HTTPStatusCancelledBlockStyle = PaddedStyle.
 					Background(httpStatusCancelledColor).

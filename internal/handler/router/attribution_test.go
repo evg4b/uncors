@@ -50,7 +50,7 @@ func attributionRouter(t *testing.T) (http.Handler, *cache.RistrettoCache) {
 	t.Cleanup(func() { testutils.Close(t, store) })
 
 	return newRouter(t, fs, mappings, upstream(t, http.StatusOK, "upstream"),
-		router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+		router.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 			return cache.NewMiddleware(
 				cache.WithGlobs(globs),
 				cache.WithMethods([]string{http.MethodGet}),

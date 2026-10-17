@@ -31,4 +31,5 @@ var (
 	httpStatus4xxColor       = ErrorColor
 	httpStatus5xxColor       = ErrorColor
 	httpStatusCancelledColor = DebugColor
+	httpStatusOtherColor     = DebugColor
 )

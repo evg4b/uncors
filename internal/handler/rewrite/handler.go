@@ -24,7 +24,11 @@ type Middleware struct {
 }
 
 func NewMiddleware(options ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{}, options)
+	middleware := helpers.ApplyOptions(&Middleware{}, options)
+
+	helpers.AssertIsDefined(middleware.rewrite, "RewriteMiddleware: Rewriting options are not configured")
+
+	return middleware
 }
 
 func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {

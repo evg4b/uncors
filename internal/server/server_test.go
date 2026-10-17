@@ -391,7 +391,7 @@ func TestServer(t *testing.T) {
 			{
 				Address: hosts.Loopback.Port(port).String(),
 				Handler: infra.CastToHTTPHandler(infra.HandlerFunc(func(w contracts.ResponseWriter, _ *contracts.Request) error {
-					queue.Track("handler trigered")
+					queue.Track("handler triggered")
 
 					w.WriteHeader(http.StatusOK)
 					_, err := fmt.Fprint(w, expectedContent)
@@ -424,7 +424,7 @@ func TestServer(t *testing.T) {
 		assertResponse(t, hosts.Loopback.HTTPPort(port).String(), nil)
 
 		waitGroup.Go(func() {
-			queue.Track("shutdown trigered")
+			queue.Track("shutdown triggered")
 
 			err := instance.Shutdown(t.Context())
 			assert.NoError(t, err)
@@ -435,8 +435,8 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, []string{
 			"server started",
 			"waiting started",
-			"handler trigered",
-			"shutdown trigered",
+			"handler triggered",
+			"shutdown triggered",
 			"waiting finished",
 		}, queue.List())
 	})

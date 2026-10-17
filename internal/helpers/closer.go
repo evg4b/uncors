@@ -7,8 +7,5 @@ func CloseSafe(resource io.Closer) {
 		return
 	}
 
-	err := resource.Close()
-	if err != nil {
-		panic(err)
-	}
+	_ = resource.Close()
 }

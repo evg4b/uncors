@@ -31,7 +31,11 @@ type Handler struct {
 }
 
 func NewHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{}, options)
+	handler := helpers.ApplyOptions(&Handler{}, options)
+
+	helpers.AssertIsDefined(handler.script, "ScriptHandler: Script is not configured")
+
+	return handler
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
