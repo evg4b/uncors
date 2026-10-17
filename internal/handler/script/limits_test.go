@@ -25,9 +25,8 @@ func serveWithTimeout(t *testing.T, source string, timeout time.Duration, reques
 	t.Helper()
 
 	handler := script.NewHandler(
-		script.WithScript(&config.Script{Script: source}),
+		script.WithScript(&config.Script{Script: source, Timeout: timeout}),
 		script.WithFileSystem(afero.NewMemMapFs()),
-		script.WithTimeout(timeout),
 	)
 
 	return handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)

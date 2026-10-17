@@ -120,7 +120,7 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
   that called it to end early should `return` from the top level instead.
 - A script that runs longer than 30 seconds is stopped, and so is a script
   whose client disconnects or whose server shuts down. The request fails with
-  status 500.
+  status 500. Set `timeout` on a script that needs longer.
 - A request body larger than 10 MiB fails with status 500 before the script
   runs. Before, a body that failed to read reached the script as `nil`.
 

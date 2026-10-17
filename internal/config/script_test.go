@@ -2,12 +2,14 @@ package config_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestRequestMatcher_Clone(t *testing.T) {
@@ -50,12 +52,14 @@ func TestScript_Clone(t *testing.T) {
 				"X-Custom": "header",
 			},
 		},
-		Script: "print('hello')",
-		File:   "/path/to/script.lua",
+		Script:  "print('hello')",
+		File:    "/path/to/script.lua",
+		Timeout: 2 * time.Minute,
 	}
 
 	cloned := original.Clone()
 
+	assert.Equal(t, original.Timeout, cloned.Timeout)
 	assert.Equal(t, original.Matcher.Path, cloned.Matcher.Path)
 	assert.Equal(t, original.Matcher.Method, cloned.Matcher.Method)
 	assert.Equal(t, original.Script, cloned.Script)
@@ -65,6 +69,38 @@ func TestScript_Clone(t *testing.T) {
 
 	cloned.Matcher.Queries["param"] = "modified"
 	assert.NotEqual(t, original.Matcher.Queries["param"], cloned.Matcher.Queries["param"])
+}
+
+func TestScriptUnmarshalYAML(t *testing.T) {
+	t.Run("decodes timeout", func(t *testing.T) {
+		const input = `
+path: /api/slow
+script: response:WriteString("ok")
+timeout: 2m30s
+`
+
+		var actual config.Script
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Equal(t, 150*time.Second, actual.Timeout)
+	})
+
+	t.Run("zero timeout when field is absent", func(t *testing.T) {
+		const input = `script: response:WriteString("ok")`
+
+		var actual config.Script
+
+		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
+		assert.Zero(t, actual.Timeout)
+	})
+
+	t.Run("returns error for invalid timeout", func(t *testing.T) {
+		const input = `timeout: not-a-duration`
+
+		var actual config.Script
+
+		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
+	})
 }
 
 func TestScript_String(t *testing.T) {
@@ -277,6 +313,25 @@ func TestScriptValidator(t *testing.T) {
 		}).Validate("script", noFS)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), scriptFileField)
+	})
+
+	t.Run("valid timeout", func(t *testing.T) {
+		err := (&config.Script{
+			Matcher: config.RequestMatcher{Path: testAPIPath},
+			Script:  testScriptContent,
+			Timeout: 2 * time.Minute,
+		}).Validate("script", noFS)
+		assert.NoError(t, err)
+	})
+
+	t.Run("negative timeout", func(t *testing.T) {
+		err := (&config.Script{
+			Matcher: config.RequestMatcher{Path: testAPIPath},
+			Script:  testScriptContent,
+			Timeout: -time.Second,
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "script.timeout must be greater than or equal to 0")
 	})
 
 	t.Run("multiple errors", func(t *testing.T) {

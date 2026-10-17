@@ -229,10 +229,21 @@ end
 
 ## Limits
 
-| Limit             | Value      | What happens                                              |
-| ----------------- | ---------- | --------------------------------------------------------- |
-| Running time      | 30 seconds | The script is stopped with a `script timed out` error.    |
-| Request body size | 10 MiB     | The script does not run; the request fails with an error. |
+| Limit             | Value                        | What happens                                              |
+| ----------------- | ---------------------------- | --------------------------------------------------------- |
+| Running time      | 30 seconds, or the `timeout` | The script is stopped with a `script timed out` error.    |
+| Request body size | 10 MiB                       | The script does not run; the request fails with an error. |
+
+Set `timeout` on a script to give it more (or less) time. It uses Go duration
+syntax without spaces, such as `90s` or `2m30s`, like a mock's
+[`delay`](Response-Mocking#delay). `0` or no value means the 30-second default:
+
+```yaml
+scripts:
+  - path: /api/report
+    file: ./scripts/report.lua
+    timeout: 2m
+```
 
 A script is also stopped when its client disconnects or UNCORS shuts down. In
 all of these cases the request fails as described in [Errors](#errors).

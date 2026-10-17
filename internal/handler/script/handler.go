@@ -26,13 +26,12 @@ import (
 const DefaultTimeout = 30 * time.Second
 
 type Handler struct {
-	script  *config.Script
-	fs      afero.Fs
-	timeout time.Duration
+	script *config.Script
+	fs     afero.Fs
 }
 
 func NewHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{timeout: DefaultTimeout}, options)
+	return helpers.ApplyOptions(&Handler{}, options)
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {
@@ -118,7 +117,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	ctx, cancel := context.WithTimeoutCause(request.Context(), h.timeout, ErrScriptTimeout)
+	ctx, cancel := context.WithTimeoutCause(request.Context(), h.timeout(), ErrScriptTimeout)
 	defer cancel()
 
 	luaState.SetContext(ctx)
@@ -134,6 +133,14 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	}
 
 	return nil
+}
+
+func (h *Handler) timeout() time.Duration {
+	if h.script.Timeout > 0 {
+		return h.script.Timeout
+	}
+
+	return DefaultTimeout
 }
 
 func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {
@@ -216,11 +223,5 @@ func WithScript(script *config.Script) HandlerOption {
 func WithFileSystem(fs afero.Fs) HandlerOption {
 	return func(h *Handler) {
 		h.fs = fs
-	}
-}
-
-func WithTimeout(timeout time.Duration) HandlerOption {
-	return func(h *Handler) {
-		h.timeout = timeout
 	}
 }

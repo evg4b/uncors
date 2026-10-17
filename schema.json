@@ -368,6 +368,11 @@
         "script": {
           "description": "Inline script code",
           "type": "string"
+        },
+        "timeout": {
+          "$ref": "#/definitions/Duration",
+          "default": "30s",
+          "description": "How long the script may run before it is stopped"
         }
       },
       "required": [

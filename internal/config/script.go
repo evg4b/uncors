@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
@@ -12,6 +13,7 @@ type Script struct {
 	Matcher RequestMatcher `yaml:",inline"`
 	Script  string         `yaml:"script"`
 	File    string         `yaml:"file"`
+	Timeout time.Duration  `yaml:"timeout"`
 }
 
 func (s *Script) Clone() Script {
@@ -19,6 +21,7 @@ func (s *Script) Clone() Script {
 		Matcher: s.Matcher.Clone(),
 		Script:  s.Script,
 		File:    s.File,
+		Timeout: s.Timeout,
 	}
 }
 
@@ -52,6 +55,7 @@ func (s *Script) Validate(field string, fs afero.Fs) error {
 	var errs []error
 
 	errs = append(errs, s.Matcher.Validate(field))
+	errs = append(errs, ValidateDuration(joinPath(field, "timeout"), s.Timeout, true))
 
 	switch {
 	case s.Script == "" && s.File == "":
