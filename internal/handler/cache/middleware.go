@@ -136,7 +136,7 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 	return true
 }
 
-func (m *Middleware) storeResponse(ctx context.Context, key string, capture contracts.ResponseCapture) {
+func isStorable(ctx context.Context, key string, capture contracts.ResponseCapture) bool {
 	if !helpers.Is2xxCode(capture.StatusCode) {
 		if telemetry.Enabled() {
 			if span := trace.SpanFromContext(ctx); span.IsRecording() {
@@ -149,6 +149,29 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 				slog.String("key", key), slog.Int("status", capture.StatusCode))
 		}
 
+		return false
+	}
+
+	if capture.Truncated {
+		if telemetry.Enabled() {
+			if span := trace.SpanFromContext(ctx); span.IsRecording() {
+				span.AddEvent("uncors.cache.not_stored", trace.WithAttributes(
+					attribute.Bool("uncors.cache.truncated", true),
+				))
+			}
+
+			telemetry.Debug(ctx, "response not cached: the body is too large",
+				slog.String("key", key), slog.Int("bytes", len(capture.Body)))
+		}
+
+		return false
+	}
+
+	return true
+}
+
+func (m *Middleware) storeResponse(ctx context.Context, key string, capture contracts.ResponseCapture) {
+	if !isStorable(ctx, key, capture) {
 		return
 	}
 

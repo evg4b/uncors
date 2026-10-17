@@ -9,6 +9,7 @@ type ResponseCapture struct {
 	StatusCode int
 	Header     http.Header
 	Body       []byte
+	Truncated  bool
 	Duration   time.Duration
 }
 
