@@ -7,6 +7,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,7 +66,7 @@ func TestCalcCost(t *testing.T) {
 
 func TestRistrettoCache(t *testing.T) {
 	ttl := 1 * time.Minute
-	cache := cache.NewRistrettoCache(1024, ttl)
+	cache := lo.Must(cache.NewRistrettoCache(1024, ttl))
 
 	assert.NotNil(t, cache)
 

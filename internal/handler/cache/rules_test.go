@@ -15,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +31,7 @@ type cachedServer struct {
 func newCachedServer(t *testing.T, serve func(contracts.ResponseWriter, *contracts.Request) error) *cachedServer {
 	t.Helper()
 
-	store := cache.NewRistrettoCache(1024*1024, time.Minute)
+	store := lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))
 
 	t.Cleanup(func() { testutils.Close(t, store) })
 

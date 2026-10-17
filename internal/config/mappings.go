@@ -51,7 +51,7 @@ func extractHost(item Mapping) string {
 	return item.From.Hostname
 }
 
-func (m Mappings) GroupByPort() PortGroups {
+func (m Mappings) GroupByPort() (PortGroups, error) {
 	type portKey struct {
 		port   int
 		scheme string
@@ -62,7 +62,7 @@ func (m Mappings) GroupByPort() PortGroups {
 	for _, mapping := range m {
 		port, err := listenPort(mapping.From)
 		if err != nil {
-			panic(fmt.Errorf("invalid port number: %w", err))
+			return nil, fmt.Errorf("invalid port number: %w", err)
 		}
 
 		key := portKey{port: port, scheme: mapping.From.Scheme}
@@ -86,7 +86,7 @@ func (m Mappings) GroupByPort() PortGroups {
 		return result[i].Scheme < result[j].Scheme
 	})
 
-	return result
+	return result, nil
 }
 
 func listenPort(host urlt.Host) (int, error) {

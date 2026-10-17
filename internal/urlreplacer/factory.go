@@ -27,10 +27,10 @@ var (
 	ErrMappingNotSpecified = errors.New("you must specify at least one mapping")
 )
 
-func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
+func NewURLReplacerFactory(urlMappings config.Mappings) (*Factory, error) {
 	mappingsCount := len(urlMappings)
 	if mappingsCount < 1 {
-		panic(ErrMappingNotSpecified)
+		return nil, ErrMappingNotSpecified
 	}
 
 	mappings := make([]mapping, 0, mappingsCount)
@@ -38,7 +38,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 	for _, urlMapping := range urlMappings {
 		target, source, err := replacers(urlMapping.From.String(), urlMapping.To.String())
 		if err != nil {
-			panic(fmt.Errorf("failed to configure url mappings: %w", err))
+			return nil, fmt.Errorf("failed to configure url mappings: %w", err)
 		}
 
 		mappings = append(mappings, mapping{
@@ -47,7 +47,7 @@ func NewURLReplacerFactory(urlMappings config.Mappings) *Factory {
 		})
 	}
 
-	return &Factory{mappings}
+	return &Factory{mappings}, nil
 }
 
 func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {

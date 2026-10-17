@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -352,4 +353,133 @@ func TestEngineIssuesCertificatesOnlyForMappedHosts(t *testing.T) {
 
 	require.NoError(t, handshake(t, pool, ports[1], "two.local"))
 	require.Error(t, handshake(t, pool, ports[1], "three.local"))
+}
+
+func TestEngineReportsConstructorErrors(t *testing.T) {
+	invalid := func(port int) *config.UncorsConfig {
+		cfg := proxyConfiguration(port)
+		cfg.Proxy = "http://loca^host:8000"
+
+		return cfg
+	}
+
+	t.Run("on start", func(t *testing.T) {
+		port := testutils.GetFreePort(t)
+		proxy := engine.New(afero.NewMemMapFs())
+
+		defer testutils.Close(t, proxy)
+
+		require.ErrorContains(t, proxy.Start(t.Context(), invalid(port)), "failed to create http client")
+		assert.True(t, testutils.IsPortFree(port))
+	})
+
+	t.Run("on restart, keeping the previous generation", func(t *testing.T) {
+		ports := testutils.GetFreePorts(t, 2)
+		bus := events.NewBus()
+		subscription := bus.Subscribe(10)
+		proxy := engine.New(afero.NewMemMapFs(), engine.WithPublisher(bus))
+
+		defer testutils.Close(t, proxy)
+
+		require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
+		<-subscription.Events()
+
+		require.ErrorContains(t, proxy.Restart(t.Context(), invalid(ports[1])), "failed to create http client")
+
+		assertListening(t, ports[0])
+		assert.True(t, testutils.IsPortFree(ports[1]))
+
+		select {
+		case event := <-subscription.Events():
+			assert.Failf(t, "unexpected event", "a failed restart published %#v", event)
+		default:
+		}
+	})
+}
+
+func TestEngineRestartIgnoresCancelledContext(t *testing.T) {
+	ports := testutils.GetFreePorts(t, 2)
+	proxy := engine.New(afero.NewMemMapFs())
+
+	defer testutils.Close(t, proxy)
+
+	require.NoError(t, proxy.Start(t.Context(), proxyConfiguration(ports[0])))
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	require.ErrorIs(t, proxy.Restart(ctx, proxyConfiguration(ports[1])), context.Canceled)
+
+	assertListening(t, ports[0])
+	assert.True(t, testutils.IsPortFree(ports[1]))
+}
+
+func TestEngineRestartOnTheSamePort(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+
+	var once sync.Once
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/slow" {
+			_, _ = io.WriteString(writer, "fast")
+
+			return
+		}
+
+		once.Do(func() { close(entered) })
+		<-release
+
+		_, _ = io.WriteString(writer, "slow")
+	}))
+	defer upstream.Close()
+
+	port := testutils.GetFreePort(t)
+	cfg := proxyConfiguration(port)
+	cfg.Mappings[0].To = hosts.Parse(upstream.URL)
+
+	proxy := engine.New(afero.NewMemMapFs())
+	require.NoError(t, proxy.Start(t.Context(), cfg))
+
+	defer testutils.Close(t, proxy)
+
+	fetch := func(path string) (string, error) {
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+			hosts.Localhost.HTTPPort(port).String()+path, nil)
+		if err != nil {
+			return "", err
+		}
+
+		response, err := (&http.Client{Transport: &http.Transport{}}).Do(request)
+		if err != nil {
+			return "", err
+		}
+
+		defer response.Body.Close()
+
+		body, err := io.ReadAll(response.Body)
+
+		return string(body), err
+	}
+
+	slow := make(chan string, 1)
+
+	go func() {
+		body, err := fetch("/slow")
+		assert.NoError(t, err)
+
+		slow <- body
+	}()
+
+	<-entered
+
+	require.NoError(t, proxy.Restart(t.Context(), cfg))
+
+	body, err := fetch("/fast")
+	require.NoError(t, err)
+	assert.Equal(t, "fast", body)
+
+	close(release)
+
+	assert.Equal(t, "slow", <-slow)
 }

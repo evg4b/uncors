@@ -18,6 +18,7 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +39,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 	expectedHeader := withCors(responseHeader, "")
 
-	store := cache.NewRistrettoCache(1024*1024, time.Minute)
+	store := lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))
 	middleware := cache.NewMiddleware(
 		cache.WithCacheStorage(store),
 		cache.WithMethods([]string{http.MethodGet}),
@@ -183,7 +184,7 @@ func TestCacheMiddleware(t *testing.T) {
 		testHandler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
@@ -205,7 +206,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 	t.Run("should not share cached responses between ports of one host", func(t *testing.T) {
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
@@ -263,7 +264,7 @@ func TestCacheMiddleware(t *testing.T) {
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
 				middleware := cache.NewMiddleware(
-					cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+					cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 					cache.WithMethods([]string{http.MethodGet}),
 					cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 				)
@@ -304,7 +305,7 @@ func TestCacheMiddleware(t *testing.T) {
 		testHandler.Reset()
 
 		middleware := cache.NewMiddleware(
-			cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+			cache.WithCacheStorage(lo.Must(cache.NewRistrettoCache(1024*1024, time.Minute))),
 			cache.WithMethods(methods),
 			cache.WithGlobs(config.CacheGlobs{cacheGlob}),
 		)
