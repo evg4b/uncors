@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -307,7 +308,7 @@ func TestCorsWriter(t *testing.T) {
 	newWriter := func(origin string) (*httptest.ResponseRecorder, *infra.CorsWriter) {
 		recorder := httptest.NewRecorder()
 
-		return recorder, infra.NewCorsWriter(server.NewResponseRecorder(recorder), origin)
+		return recorder, infra.NewCorsWriter(server.NewResponseRecorder(recorder), originRequest(t, origin))
 	}
 
 	t.Run("exposes the headers set before WriteHeader", func(t *testing.T) {
@@ -375,7 +376,7 @@ func TestCorsWriter(t *testing.T) {
 		recorder.Header().Set(headers.AccessControlAllowHeaders, "*")
 		recorder.Header().Set(headers.AccessControlExposeHeaders, "*")
 
-		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), origin)
+		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), originRequest(t, origin))
 		writer.WriteHeader(http.StatusOK)
 
 		assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowHeaders))
@@ -386,6 +387,85 @@ func TestCorsWriter(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		inner := server.NewResponseRecorder(recorder)
 
-		assert.Same(t, inner, infra.NewCorsWriter(inner, origin).Unwrap())
+		assert.Same(t, inner, infra.NewCorsWriter(inner, originRequest(t, origin)).Unwrap())
 	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		recorder.Header().Set(headers.AccessControlAllowOrigin, "*")
+
+		request := testutils.RejectOrigin(t, originRequest(t, origin))
+		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), request)
+
+		writer.Header().Set("X-Total-Count", "10")
+		writer.Header().Set(headers.AccessControlAllowCredentials, "true")
+		writer.WriteHeader(http.StatusOK)
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, recorder.Header())
+	})
+}
+
+func TestWriteRequestCorsHeaders(t *testing.T) {
+	origin := hosts.Localhost.HTTPPort(4000).String()
+
+	t.Run("writes CORS headers for the request origin", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteRequestCorsHeaders(header, originRequest(t, origin))
+
+		assert.Equal(t, corsHeaders(origin, "Date, Vary"), header)
+	})
+
+	t.Run("writes CORS headers without an origin", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteRequestCorsHeaders(header, originRequest(t, ""))
+
+		assert.Equal(t, corsHeaders("*", "*"), header)
+	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		header := corsHeaders(origin, "X-Total-Count")
+		header.Set("X-Total-Count", "10")
+
+		infra.WriteRequestCorsHeaders(header, testutils.RejectOrigin(t, originRequest(t, origin)))
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, header)
+	})
+}
+
+func TestWithholdCorsHeaders(t *testing.T) {
+	header := http.Header{
+		headers.AccessControlAllowOrigin:   []string{"*"},
+		headers.AccessControlExposeHeaders: []string{"*"},
+		"access-control-max-age":           []string{"86400"},
+		"Access-Control":                   []string{"kept"},
+		headers.Vary:                       []string{"Accept-Encoding, Origin"},
+		headers.ContentType:                []string{"text/plain"},
+	}
+
+	infra.WithholdCorsHeaders(header)
+
+	assert.Equal(t, http.Header{
+		"Access-Control":    []string{"kept"},
+		headers.Vary:        []string{"Accept-Encoding, Origin"},
+		headers.ContentType: []string{"text/plain"},
+	}, header)
+}
+
+func originRequest(t *testing.T, origin string) *http.Request {
+	t.Helper()
+
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/data", nil)
+	if origin != "" {
+		request.Header.Set(headers.Origin, origin)
+	}
+
+	return request
 }

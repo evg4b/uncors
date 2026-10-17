@@ -132,7 +132,7 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 
 	tracking.Claim(ctx, events.HandlerCache)
 
-	err := m.writeCachedResponse(writer, cachedResponse)
+	err := m.writeCachedResponse(writer, request, cachedResponse)
 	if err != nil {
 		telemetry.Fail(span, err)
 	}
@@ -221,6 +221,7 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 
 func (m *Middleware) writeCachedResponse(
 	writer contracts.ResponseWriter,
+	request *contracts.Request,
 	cachedResponse *contracts.CachedResponse,
 ) error {
 	header := writer.Header()
@@ -229,6 +230,10 @@ func (m *Middleware) writeCachedResponse(
 		for _, value := range cachedHeader.Value {
 			header.Add(cachedHeader.Name, value)
 		}
+	}
+
+	if tracking.OriginRejected(request.Context()) {
+		infra.WithholdCorsHeaders(header)
 	}
 
 	writer.WriteHeader(cachedResponse.Code)

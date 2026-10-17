@@ -101,6 +101,15 @@
           "additionalProperties": false,
           "description": "Host mapping definition",
           "properties": {
+            "allowed-origins": {
+              "description": "Glob patterns of the origins allowed to read responses (e.g., http://localhost:*). When set, a request from any other origin gets no CORS headers and its preflight gets 403. When omitted, any origin is allowed.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
             "cache": {
               "description": "List the paths that will be cached.",
               "items": {

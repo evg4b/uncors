@@ -123,4 +123,32 @@ func TestProxyHandlerCors(t *testing.T) {
 			headers.AccessControlRequestHeaders,
 		}, header.Values(headers.Vary))
 	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		request := premiumRequest(t, http.MethodGet, nil)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+
+		header := serve(t, testutils.RejectOrigin(t, request), http.Header{
+			"X-Total-Count":                       []string{"10"},
+			headers.AccessControlAllowOrigin:      []string{"*"},
+			headers.AccessControlAllowCredentials: []string{"true"},
+		})
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, header)
+	})
+
+	t.Run("withholds CORS headers from a rejected forwarded preflight", func(t *testing.T) {
+		request := premiumRequest(t, http.MethodOptions, nil)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+		request.Header.Set(headers.AccessControlRequestMethod, http.MethodPut)
+
+		header := serve(t, testutils.RejectOrigin(t, request), http.Header{
+			headers.AccessControlAllowMethods: []string{http.MethodPut},
+		})
+
+		assert.Equal(t, http.Header{headers.Vary: []string{headers.Origin}}, header)
+	})
 }

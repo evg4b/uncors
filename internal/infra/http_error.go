@@ -36,7 +36,7 @@ func HTTPError(writer contracts.ResponseWriter, request *http.Request, err error
 	header.Del(headers.SetCookie)
 	header.Del(headers.ContentLength)
 
-	WriteCorsHeaders(header, request.Header.Get(headers.Origin))
+	WriteRequestCorsHeaders(header, request)
 
 	writer.WriteHeader(errorStatus(err))
 

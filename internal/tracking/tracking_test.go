@@ -178,6 +178,31 @@ func TestScope(t *testing.T) {
 	})
 }
 
+func TestOriginRejection(t *testing.T) {
+	t.Run("is not rejected by default", func(t *testing.T) {
+		ctx, _, _ := begin(t)
+
+		assert.False(t, tracking.OriginRejected(ctx))
+	})
+
+	t.Run("is rejected for the whole request", func(t *testing.T) {
+		ctx, _, _ := begin(t)
+
+		childCtx, child := telemetry.Start(ctx, "router.route")
+		tracking.RejectOrigin(childCtx)
+		child.End()
+
+		assert.True(t, tracking.OriginRejected(ctx))
+		assert.True(t, tracking.OriginRejected(childCtx))
+	})
+
+	t.Run("is ignored without a scope", func(t *testing.T) {
+		tracking.RejectOrigin(t.Context())
+
+		assert.False(t, tracking.OriginRejected(t.Context()))
+	})
+}
+
 func TestScopeRecordsOnTheRootSpan(t *testing.T) {
 	recorded := testutils.Telemetry(t)
 
@@ -191,6 +216,7 @@ func TestScopeRecordsOnTheRootSpan(t *testing.T) {
 	tracking.Claim(childCtx, events.HandlerMock)
 	tracking.Rewrote(ctx, "/users", "/v2/users")
 	tracking.Fail(ctx, errHandler)
+	tracking.RejectOrigin(childCtx)
 	child.End()
 	root.End()
 
@@ -207,6 +233,7 @@ func TestScopeRecordsOnTheRootSpan(t *testing.T) {
 	assert.Contains(t, attrs, attribute.String("uncors.handler", events.HandlerMock.String()))
 	assert.Contains(t, attrs, attribute.String("uncors.rewrite.from", "/users"))
 	assert.Contains(t, attrs, attribute.String("uncors.rewrite.to", "/v2/users"))
+	assert.Contains(t, attrs, attribute.Bool("uncors.origin_rejected", true))
 	assert.Equal(t, codes.Error, rootSpan.Status().Code)
 	assert.Equal(t, errHandler.Error(), rootSpan.Status().Description)
 }

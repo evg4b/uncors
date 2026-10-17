@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/go-http-utils/headers"
 )
 
@@ -18,6 +19,26 @@ const (
 	corsHeaderPrefix       = "Access-Control-"
 	exposedHeadersCapacity = 32
 )
+
+func WriteRequestCorsHeaders(header http.Header, request *http.Request) {
+	if tracking.OriginRejected(request.Context()) {
+		WithholdCorsHeaders(header)
+
+		return
+	}
+
+	WriteCorsHeaders(header, request.Header.Get(headers.Origin))
+}
+
+func WithholdCorsHeaders(header http.Header) {
+	for name := range header {
+		if isCorsHeader(name) {
+			delete(header, name)
+		}
+	}
+
+	addVary(header, headers.Origin)
+}
 
 func WriteCorsHeaders(header http.Header, origin string) {
 	writeCorsHeaders(header, origin)
@@ -91,7 +112,11 @@ func isExposedHeader(name string) bool {
 		return false
 	}
 
-	return len(name) < len(corsHeaderPrefix) || !strings.EqualFold(name[:len(corsHeaderPrefix)], corsHeaderPrefix)
+	return !isCorsHeader(name)
+}
+
+func isCorsHeader(name string) bool {
+	return len(name) >= len(corsHeaderPrefix) && strings.EqualFold(name[:len(corsHeaderPrefix)], corsHeaderPrefix)
 }
 
 func addVary(header http.Header, name string) {
@@ -137,14 +162,23 @@ func WriteCorsHeadersForOptions(respHeader, reqHeader http.Header) {
 type CorsWriter struct {
 	contracts.ResponseWriter
 
-	origin  string
-	exposed bool
+	origin   string
+	rejected bool
+	exposed  bool
 }
 
-func NewCorsWriter(writer contracts.ResponseWriter, origin string) *CorsWriter {
-	writeCorsHeaders(writer.Header(), origin)
+func NewCorsWriter(writer contracts.ResponseWriter, request *http.Request) *CorsWriter {
+	corsWriter := &CorsWriter{
+		ResponseWriter: writer,
+		origin:         request.Header.Get(headers.Origin),
+		rejected:       tracking.OriginRejected(request.Context()),
+	}
 
-	return &CorsWriter{ResponseWriter: writer, origin: origin}
+	if !corsWriter.rejected {
+		writeCorsHeaders(writer.Header(), corsWriter.origin)
+	}
+
+	return corsWriter
 }
 
 func (w *CorsWriter) WriteHeader(statusCode int) {
@@ -166,6 +200,12 @@ func (w *CorsWriter) ExposeHeaders() {
 	w.exposed = true
 
 	header := w.Header()
+	if w.rejected {
+		WithholdCorsHeaders(header)
+
+		return
+	}
+
 	if len(header[headers.AccessControlExposeHeaders]) == 0 {
 		writeExposeHeaders(header, w.origin)
 	}

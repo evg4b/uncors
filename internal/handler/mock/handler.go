@@ -116,7 +116,7 @@ func (h *Handler) attributes() []attribute.KeyValue {
 }
 
 func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contracts.Request) error {
-	writer = infra.NewCorsWriter(writer, request.Header.Get(headers.Origin))
+	writer = infra.NewCorsWriter(writer, request)
 	header := writer.Header()
 	response := h.response
 

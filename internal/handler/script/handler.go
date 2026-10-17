@@ -18,7 +18,6 @@ import (
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
-	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
@@ -110,7 +109,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 		return err
 	}
 
-	corsWriter := infra.NewCorsWriter(writer, request.Header.Get(headers.Origin))
+	corsWriter := infra.NewCorsWriter(writer, request)
 
 	respTable := createResponseTable(luaState, corsWriter)
 

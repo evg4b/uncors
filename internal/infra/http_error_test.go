@@ -89,6 +89,18 @@ func TestHttpErrorCorsHeaders(t *testing.T) {
 		assert.Contains(t, recorder.Header().Get(headers.AccessControlExposeHeaders), "Date")
 	})
 
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		request := newRequest(t)
+		request.Header.Set(headers.Origin, "http://attacker.test")
+
+		recorder := writeError(t, testutils.RejectOrigin(t, request), errHandler)
+
+		assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowOrigin))
+		assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowCredentials))
+		assert.Equal(t, []string{headers.Origin}, recorder.Header().Values(headers.Vary))
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	})
+
 	t.Run("allows any origin without an Origin header", func(t *testing.T) {
 		recorder := writeError(t, newRequest(t), errHandler)
 

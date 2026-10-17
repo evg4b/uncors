@@ -33,6 +33,8 @@ mappings:
   - http://localhost:8080: https://github.com
   - from: http://localhost2:8080
     to: https://stackoverflow.com
+    allowed-origins:
+      - http://localhost:*
     mocks:
       - path: /demo
         method: POST
@@ -86,8 +88,9 @@ func fullConfigExpected(proxy string) *config.UncorsConfig {
 		Mappings: config.Mappings{
 			{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
 			{
-				From: hosts.Localhost2.HTTPPort(8080),
-				To:   hosts.Stackoverflow.HTTPS(),
+				From:           hosts.Localhost2.HTTPPort(8080),
+				To:             hosts.Stackoverflow.HTTPS(),
+				AllowedOrigins: config.AllowedOrigins{"http://localhost:*"},
 				Mocks: config.Mocks{
 					{
 						Matcher: config.RequestMatcher{
