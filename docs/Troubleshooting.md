@@ -35,6 +35,26 @@ A line without a label is a request no mapping took, for example one for a host
 that isn't mapped. `→` shows the path a rewrite sent the request to. A request
 that failed in UNCORS gets a second line with the error.
 
+## Error pages
+
+When a request fails in UNCORS, the client gets a plain-text error page with
+the error message. Its status tells what went wrong:
+
+| Status | Cause                                                                 |
+| ------ | --------------------------------------------------------------------- |
+| `404`  | No mapping on that port matches the host.                             |
+| `502`  | UNCORS could not reach the upstream server, or the connection failed. |
+| `504`  | The upstream server or its connection timed out.                      |
+| `500`  | Anything else, such as a failed script, a missing file, or a crash.   |
+
+The error page carries the same CORS headers as other responses, so the
+browser shows its status and text instead of a CORS error.
+
+There is no error page when the response has already started, for example when
+the upstream server drops the connection in the middle of the body. UNCORS then
+closes the connection, and the client sees a network error. There is none
+either when the client cancelled the request.
+
 ## Connection refused
 
 The browser shows "Connection refused", or `curl` says "Failed to connect".
@@ -90,10 +110,11 @@ ipconfig /flushdns
 
 ## "host not mapped" error page
 
-UNCORS received the request but no mapping on that port matches its host name.
-Check that the host in the browser's address bar is spelled exactly like the
-host in `from`. A `{name}` placeholder matches a single label, so
-`{name}.local.com` matches `api.local.com` but not `v2.api.local.com`.
+UNCORS received the request but no mapping on that port matches its host name,
+so it answered with status 404. Check that the host in the browser's address
+bar is spelled exactly like the host in `from`. A `{name}` placeholder matches
+a single label, so `{name}.local.com` matches `api.local.com` but not
+`v2.api.local.com`.
 
 ## HTTPS certificate errors
 
@@ -180,6 +201,10 @@ default behavior back.
 Check static files. Files served from a [static directory](Static-File-Serving)
 come without CORS headers. Load them from the same origin as the page, or serve
 them through a mapping without `statics`.
+
+Check the status. An error page from UNCORS has CORS headers, so a failed
+request shows up in the browser's network tab with its status and the error
+text. See [Error pages](#error-pages).
 
 Clear the browser cache, or try a private window, in case the browser kept an
 old preflight result.

@@ -37,7 +37,7 @@ func CastToHTTPHandler(handler contracts.Handler) http.Handler {
 		if err != nil {
 			logFailure(request.Context(), request, err)
 			tracking.Fail(request.Context(), err)
-			HTTPError(writer, err)
+			HTTPError(writer, request, err)
 		}
 	})
 }

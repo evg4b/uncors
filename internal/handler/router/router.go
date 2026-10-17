@@ -1,7 +1,6 @@
 package router
 
 import (
-	"errors"
 	"net/http"
 	"slices"
 
@@ -14,8 +13,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
-
-var errHostNotMapped = errors.New("host not mapped")
 
 func setDefaultHandler(router *mux.Router, handler contracts.Handler) {
 	httpHandler := infra.CastToHTTPHandler(handler)
@@ -59,7 +56,7 @@ func NewRouter(mappings config.Mappings, options ...Option) *Router {
 			span.AddEvent("uncors.host_not_mapped", trace.WithAttributes(semconv.ServerAddress(request.Host)))
 		}
 
-		return errHostNotMapped
+		return infra.ErrHostNotMapped
 	}))
 
 	return &instance

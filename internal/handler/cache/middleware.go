@@ -131,7 +131,11 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 	}
 
 	tracking.Claim(ctx, events.HandlerCache)
-	m.writeCachedResponse(writer, cachedResponse)
+
+	err := m.writeCachedResponse(writer, cachedResponse)
+	if err != nil {
+		telemetry.Fail(span, err)
+	}
 
 	return true
 }
@@ -192,7 +196,10 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 	})
 }
 
-func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cachedResponse *contracts.CachedResponse) {
+func (m *Middleware) writeCachedResponse(
+	writer contracts.ResponseWriter,
+	cachedResponse *contracts.CachedResponse,
+) error {
 	header := writer.Header()
 
 	for _, cachedHeader := range cachedResponse.Headers {
@@ -203,12 +210,13 @@ func (m *Middleware) writeCachedResponse(writer contracts.ResponseWriter, cached
 
 	writer.WriteHeader(cachedResponse.Code)
 
-	if len(cachedResponse.Body) > 0 {
-		_, err := writer.Write(cachedResponse.Body)
-		if err != nil {
-			panic(err)
-		}
+	if len(cachedResponse.Body) == 0 {
+		return nil
 	}
+
+	_, err := writer.Write(cachedResponse.Body)
+
+	return err
 }
 
 func (m *Middleware) isCacheableRequest(request *contracts.Request) (bool, error) {

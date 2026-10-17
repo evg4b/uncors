@@ -4,8 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,12 +16,15 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
+
+var errHandlerPanicked = errors.New("handler panicked")
 
 const (
 	readHeaderTimeout = 30 * time.Second
@@ -274,8 +280,56 @@ func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter,
 	telemetry.RequestStarted(ctx)
 
 	ctx, scope := tracking.Begin(ctx, s.publisher, requestID, request, rec.startedAt)
+	request = request.WithContext(ctx)
 
-	handler.ServeHTTP(rec, request.WithContext(ctx))
+	defer func() {
+		abort := recoverHandler(rec, request, recover())
+
+		finishRequest(span, scope, rec, request)
+
+		if abort {
+			panic(http.ErrAbortHandler)
+		}
+	}()
+
+	handler.ServeHTTP(rec, request)
+}
+
+func recoverHandler(rec *ResponseRecorder, request *http.Request, recovered any) bool {
+	if recovered == nil {
+		return false
+	}
+
+	recoveredErr, isErr := recovered.(error)
+	if isErr && errors.Is(recoveredErr, http.ErrAbortHandler) {
+		return true
+	}
+
+	err := fmt.Errorf("%w: %v", errHandlerPanicked, recovered)
+	ctx := request.Context()
+
+	if telemetry.Enabled() {
+		telemetry.Error(ctx, "handler panicked",
+			slog.String("method", request.Method),
+			slog.String("url", helpers.LogURL(request.URL)),
+			telemetry.Err(err),
+			slog.String("stack", string(debug.Stack())),
+		)
+	}
+
+	tracking.Fail(ctx, err)
+
+	if ctx.Err() != nil || infra.ResponseStarted(rec) {
+		return true
+	}
+
+	infra.HTTPError(rec, request, err)
+
+	return false
+}
+
+func finishRequest(span trace.Span, scope *tracking.Scope, rec *ResponseRecorder, request *http.Request) {
+	ctx := request.Context()
 
 	data := &contracts.RequestData{
 		Method:    request.Method,

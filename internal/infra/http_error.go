@@ -1,13 +1,18 @@
 package infra
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
-	"runtime"
+	"net/url"
 
-	"github.com/dustin/go-humanize"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/go-http-utils/headers"
 )
+
+var ErrHostNotMapped = errors.New("host not mapped")
 
 const errorHeader = `
 ███████  ██████   ██████      ███████ ██████  ██████   ██████  ██████  
@@ -16,7 +21,11 @@ const errorHeader = `
      ██ ████  ██ ████  ██     ██      ██   ██ ██   ██ ██    ██ ██   ██ 
 ███████  ██████   ██████      ███████ ██   ██ ██   ██  ██████  ██   ██ `
 
-func HTTPError(writer http.ResponseWriter, err error) {
+func HTTPError(writer contracts.ResponseWriter, request *http.Request, err error) {
+	if request.Context().Err() != nil || ResponseStarted(writer) {
+		panic(http.ErrAbortHandler)
+	}
+
 	header := writer.Header()
 	header.Set(headers.ContentType, "text/plain; charset=utf-8")
 	header.Set(headers.ContentEncoding, "identity")
@@ -25,21 +34,53 @@ func HTTPError(writer http.ResponseWriter, err error) {
 	header.Set(headers.XContentTypeOptions, "nosniff")
 
 	header.Del(headers.SetCookie)
+	header.Del(headers.ContentLength)
 
-	writer.WriteHeader(http.StatusInternalServerError)
+	WriteCorsHeaders(header, request.Header.Get(headers.Origin))
+
+	writer.WriteHeader(errorStatus(err))
 
 	fmt.Fprintln(writer)
 	fmt.Fprintln(writer, errorHeader)
 	fmt.Fprintln(writer)
 	fmt.Fprintln(writer)
 	fmt.Fprintf(writer, "An error occurred: %s\n", err)
-	fmt.Fprintln(writer)
+}
 
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-	fmt.Fprintln(writer, "Memory usage:")
-	fmt.Fprintf(writer, "Alloc = %v\n", humanize.Bytes(memStats.Alloc))
-	fmt.Fprintf(writer, "TotalAlloc = %v\n", humanize.Bytes(memStats.TotalAlloc))
-	fmt.Fprintf(writer, "Sys = %v\n", humanize.Bytes(memStats.Sys))
-	fmt.Fprintf(writer, "NumGC = %v\n", memStats.NumGC)
+func ResponseStarted(writer contracts.ResponseWriter) bool {
+	if writer.StatusCode() != 0 {
+		return true
+	}
+
+	counter, ok := writer.(interface{ Written() int64 })
+
+	return ok && counter.Written() > 0
+}
+
+func errorStatus(err error) int {
+	if errors.Is(err, ErrHostNotMapped) {
+		return http.StatusNotFound
+	}
+
+	var netErr net.Error
+	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()) {
+		return http.StatusGatewayTimeout
+	}
+
+	if isUpstreamError(err) {
+		return http.StatusBadGateway
+	}
+
+	return http.StatusInternalServerError
+}
+
+func isUpstreamError(err error) bool {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return urlErr.Op != "parse"
+	}
+
+	var opErr *net.OpError
+
+	return errors.As(err, &opErr)
 }
