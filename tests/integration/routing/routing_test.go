@@ -65,3 +65,43 @@ func TestRouting(t *testing.T) {
 		assert.False(t, result.HasBackendRequest())
 	})
 }
+
+func TestUncleanPaths(t *testing.T) {
+	const origin = "https://paths.local"
+
+	backend := integration.NewBackend(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, err := io.WriteString(w, r.Method+" "+r.URL.RequestURI()) //nolint:gosec
+		assert.NoError(t, err)
+	})
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse(origin),
+			To:   backend.AsHost(),
+		}},
+	})
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "repeated slashes", method: http.MethodPost, path: "//api//v1"},
+		{name: "dot segments", method: http.MethodPut, path: "/api/./v1/../v2"},
+		{name: "escaped slashes", method: http.MethodPost, path: "/api/a%2F%2Fb"},
+		{name: "repeated slashes with query", method: http.MethodGet, path: "/api//v1?page=2"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			req := integration.NewRequest(t, testCase.method, env.RawURL("paths.local", testCase.path))
+			req.Header.Set("Origin", origin)
+
+			result := env.Do(t, req)
+
+			assert.Equal(t, http.StatusCreated, result.Response.StatusCode)
+			assert.Equal(t, testCase.method+" "+testCase.path, result.BodyString())
+			assert.Equal(t, origin, result.Response.Header.Get("Access-Control-Allow-Origin"))
+		})
+	}
+}

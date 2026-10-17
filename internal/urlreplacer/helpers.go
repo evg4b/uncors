@@ -19,6 +19,8 @@ var (
 	errURLHasQuery        = errors.New("url must not have query parameters")
 )
 
+const labelPattern = `[^./:?#@]+`
+
 func extractKeys(raw string) []string {
 	matches := placeholderRegexp.FindAllStringSubmatch(raw, -1)
 
@@ -78,7 +80,7 @@ func rawHost(hostport string) (string, error) {
 func wildCardToRegexp(rawSource string) (*regexp.Regexp, error) {
 	var result strings.Builder
 
-	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?`)
+	result.WriteString(`^(?P<scheme>(http(s?):)?\/\/)?(?P<_dot>\.)?`)
 
 	hp := rawHostPort(rawSource)
 
@@ -92,7 +94,7 @@ func wildCardToRegexp(rawSource string) (*regexp.Regexp, error) {
 		result.WriteString(regexp.QuoteMeta(host[lastIndex:match[0]]))
 
 		key := host[match[0]+1 : match[1]-1]
-		fmt.Fprintf(&result, "(?P<%s>.+)", key)
+		fmt.Fprintf(&result, "(?P<%s>%s)", key, labelPattern)
 
 		lastIndex = match[1]
 	}
@@ -111,7 +113,7 @@ func wildCardToRegexp(rawSource string) (*regexp.Regexp, error) {
 
 func wildCardToReplacePattern(rawTarget string) string {
 	result := &strings.Builder{}
-	result.WriteString("${scheme}")
+	result.WriteString("${scheme}${_dot}")
 
 	hp := rawHostPort(rawTarget)
 	replaced := placeholderRegexp.ReplaceAllStringFunc(hp, func(match string) string {

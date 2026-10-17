@@ -96,3 +96,20 @@ func TestFactoryMake(t *testing.T) {
 		})
 	}
 }
+
+func TestFactoryMakeIgnoresHostSuffixInPath(t *testing.T) {
+	factory := urlreplacer.NewURLReplacerFactory(config.Mappings{
+		{From: hosts.Parse("http://{tenant}.local.dev"), To: hosts.Parse("https://{tenant}.api.com")},
+		{From: hosts.Parse("http://other.host"), To: hosts.Parse("https://other.com")},
+	})
+
+	requestURL, err := urlt.Parse("http://other.host/files/x.local.dev?q=.local.dev")
+	require.NoError(t, err)
+
+	target, _, err := factory.Make(requestURL)
+	require.NoError(t, err)
+
+	actual, err := target.Replace(urlt.URL_String(requestURL))
+	require.NoError(t, err)
+	assert.Equal(t, "https://other.com/files/x.local.dev?q=.local.dev", actual)
+}

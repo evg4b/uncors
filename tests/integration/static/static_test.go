@@ -51,3 +51,38 @@ func TestStaticMiddleware(t *testing.T) {
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
+
+func TestStaticPrefixRedirect(t *testing.T) {
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://static.local"),
+			To:   backend.AsHost(),
+			Statics: config.StaticDirectories{
+				{Path: "/assets", Dir: "/www", Index: "/index.html"},
+			},
+		}},
+	},
+		integration.WithFile("/www/index.html", "<h1>home</h1>"),
+	)
+
+	tests := []struct {
+		name     string
+		path     string
+		location string
+	}{
+		{name: "without query", path: "/assets", location: "/assets/"},
+		{name: "keeps the query", path: "/assets?lang=en&v=2", location: "/assets/?lang=en&v=2"},
+		{name: "keeps an escaped query", path: "/assets?q=a%26b%20c", location: "/assets/?q=a%26b%20c"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.RawURL("static.local", testCase.path)))
+
+			assert.Equal(t, http.StatusTemporaryRedirect, result.Response.StatusCode)
+			assert.Equal(t, testCase.location, result.Response.Header.Get("Location"))
+			assert.False(t, result.HasBackendRequest())
+		})
+	}
+}

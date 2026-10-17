@@ -514,6 +514,8 @@ mappings:
 
 For requests forwarded to the upstream server, UNCORS:
 
+- passes the path and query on as they came: repeated slashes, `.` and `..`
+  segments, and escaped characters such as `%2F` are not cleaned or decoded;
 - rewrites the `Origin` and `Referer` request headers from the local host to the
   upstream host. An `Origin` or `Referer` of any other host (for example a
   frontend served from `127.0.0.1` or another local domain), and

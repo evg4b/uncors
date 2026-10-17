@@ -526,3 +526,117 @@ func TestRouterMockHeaders(t *testing.T) {
 		},
 	})
 }
+
+func TestRouterKeepsUncleanPaths(t *testing.T) {
+	const origin = "http://localhost"
+
+	var upstreamURL string
+
+	httpClient := mocks.NewHTTPClientMock(t).DoMock.Set(func(req *http.Request) (*http.Response, error) {
+		upstreamURL = req.URL.String()
+
+		return &http.Response{
+			Request:    req,
+			StatusCode: http.StatusCreated,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader("proxied")),
+		}, nil
+	})
+
+	fs := testutils.FsFromMap(t, map[string]string{
+		"/mock.json":       mockJSON,
+		"/assets/index.js": indexJS,
+	})
+
+	routerInstance := newRouter(t, fs, config.Mappings{{
+		From:    hosts.Localhost.HTTP(),
+		To:      hosts.Parse("https://api.example.com"),
+		Statics: []config.StaticDirectory{{Dir: "/assets", Path: "/cc/"}},
+		Mocks:   config.Mocks{mockResponse("/api/mock", http.StatusOK, mock1Body)},
+	}}, httpClient)
+
+	tests := []struct {
+		name     string
+		method   string
+		path     string
+		upstream string
+	}{
+		{
+			name:     "repeated slashes",
+			method:   http.MethodPost,
+			path:     "//api//v1",
+			upstream: "https://api.example.com//api//v1",
+		},
+		{
+			name:     "dot segments",
+			method:   http.MethodPut,
+			path:     "/api/./v1/../v2",
+			upstream: "https://api.example.com/api/./v1/../v2",
+		},
+		{
+			name:     "escaped slash",
+			method:   http.MethodPost,
+			path:     "/api/a%2F%2Fb",
+			upstream: "https://api.example.com/api/a%2F%2Fb",
+		},
+		{
+			name:     "static path traversal",
+			method:   http.MethodGet,
+			path:     "/cc/../../mock.json",
+			upstream: "https://api.example.com/cc/../../mock.json",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			upstreamURL = ""
+
+			recorder := serve(t, routerInstance, testCase.method, testCase.path, map[string]string{
+				headers.Origin: origin,
+			})
+
+			assert.Equal(t, http.StatusCreated, recorder.Code)
+			assert.Equal(t, "proxied", testutils.ReadBody(t, recorder))
+			assert.Equal(t, origin, recorder.Header().Get(headers.AccessControlAllowOrigin))
+			assert.Equal(t, testCase.upstream, upstreamURL)
+		})
+	}
+
+	t.Run("escaped slash still matches the decoded mock path", func(t *testing.T) {
+		recorder := serve(t, routerInstance, http.MethodGet, "/api%2Fmock", nil)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, mock1Body, testutils.ReadBody(t, recorder))
+	})
+}
+
+func TestRouterStaticRedirect(t *testing.T) {
+	fs := testutils.FsFromMap(t, map[string]string{
+		"/assets/index.html": indexHTML,
+	})
+
+	routerInstance := newRouter(t, fs, config.Mappings{{
+		From:    hosts.Parse("{host}"),
+		To:      hosts.Parse("{host}"),
+		Statics: []config.StaticDirectory{{Dir: "/assets", Path: "/static"}},
+	}}, nil)
+
+	tests := []struct {
+		name     string
+		url      string
+		location string
+	}{
+		{name: "without query", url: "/static", location: "/static/"},
+		{name: "keeps query", url: "/static?lang=en&v=2", location: "/static/?lang=en&v=2"},
+		{name: "keeps escaped query", url: "/static?q=a%26b%20c", location: "/static/?q=a%26b%20c"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			recorder := serve(t, routerInstance, http.MethodGet, testCase.url, nil)
+
+			assert.Equal(t, http.StatusTemporaryRedirect, recorder.Code)
+			assert.Equal(t, testCase.location, recorder.Header().Get(headers.Location))
+		})
+	}
+}
