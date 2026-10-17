@@ -5,8 +5,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -46,6 +48,7 @@ func TestManager_GetCertificate(t *testing.T) {
 
 		manager := NewManager(fs, events.NoopPublisher{})
 		require.NotNil(t, manager)
+		manager.SetHosts([]string{"localhost"})
 
 		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
 		require.NoError(t, err)
@@ -66,6 +69,7 @@ func TestManager_GetCertificate(t *testing.T) {
 		require.NoError(t, fs.MkdirAll(fakeHome, 0o755))
 
 		manager := NewManager(fs, events.NoopPublisher{})
+		manager.SetHosts([]string{"test"})
 
 		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "test"})
 
@@ -90,6 +94,7 @@ func TestManager_GetCertificate(t *testing.T) {
 		testHost := "example.local"
 
 		manager := NewManager(fs, events.NoopPublisher{})
+		manager.SetHosts([]string{testHost})
 
 		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: testHost})
 		require.NoError(t, err)
@@ -115,6 +120,7 @@ func TestManager_GetCertificate(t *testing.T) {
 
 		manager := NewManager(fs, events.NoopPublisher{})
 		require.NotNil(t, manager)
+		manager.SetHosts([]string{"api.local", "app.local"})
 
 		apiCert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "api.local"})
 		require.NoError(t, err)
@@ -151,6 +157,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 		require.NoError(t, err)
 
 		manager := NewManager(fs, events.NoopPublisher{})
+		manager.SetHosts([]string{"192.168.1.100"})
 
 		mockConn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 8443}}
 
@@ -187,7 +194,7 @@ func TestGetCertificate_EmptySNI(t *testing.T) {
 	})
 }
 
-func newManagerWithCA(t *testing.T) *Manager {
+func newManagerWithCA(t *testing.T, hosts ...string) *Manager {
 	t.Helper()
 
 	fakeHome := filepath.Join(t.TempDir(), "home")
@@ -200,12 +207,15 @@ func newManagerWithCA(t *testing.T) *Manager {
 	_, _, err := Generate(fs, caDir, 365)
 	require.NoError(t, err)
 
-	return NewManager(fs, events.NoopPublisher{})
+	manager := NewManager(fs, events.NoopPublisher{})
+	manager.SetHosts(hosts)
+
+	return manager
 }
 
 func TestManager_Caching(t *testing.T) {
 	t.Run("should reuse the cached certificate for the same host", func(t *testing.T) {
-		manager := newManagerWithCA(t)
+		manager := newManagerWithCA(t, "cache.local")
 
 		first, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "cache.local"})
 		require.NoError(t, err)
@@ -217,7 +227,7 @@ func TestManager_Caching(t *testing.T) {
 	})
 
 	t.Run("should generate distinct certificates for different hosts", func(t *testing.T) {
-		manager := newManagerWithCA(t)
+		manager := newManagerWithCA(t, "host1.local", "host2.local")
 
 		first, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "host1.local"})
 		require.NoError(t, err)
@@ -231,7 +241,7 @@ func TestManager_Caching(t *testing.T) {
 
 func TestManager_Concurrent(t *testing.T) {
 	t.Run("should handle concurrent requests for the same host", func(t *testing.T) {
-		manager := newManagerWithCA(t)
+		manager := newManagerWithCA(t, "concurrent.local")
 
 		const numGoroutines = 10
 
@@ -249,7 +259,7 @@ func TestManager_Concurrent(t *testing.T) {
 	})
 
 	t.Run("should handle concurrent requests for different hosts", func(t *testing.T) {
-		manager := newManagerWithCA(t)
+		manager := newManagerWithCA(t, "{name}.local")
 
 		const numGoroutines = 5
 
@@ -274,6 +284,7 @@ func TestManager_Notices(t *testing.T) {
 
 		publisher := &testutils.EventRecorder{}
 		manager := NewManager(afero.NewMemMapFs(), publisher)
+		manager.SetHosts([]string{"localhost"})
 
 		for range 3 {
 			_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
@@ -296,6 +307,7 @@ func TestManager_Notices(t *testing.T) {
 
 		publisher := &testutils.EventRecorder{}
 		manager := NewManager(fs, publisher)
+		manager.SetHosts([]string{"one.local", "two.local"})
 
 		for _, host := range []string{"one.local", "two.local"} {
 			cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: host})
@@ -310,7 +322,7 @@ func TestManager_Notices(t *testing.T) {
 	})
 
 	t.Run("reports a certificate failure once per host", func(t *testing.T) {
-		manager := newManagerWithCA(t)
+		manager := newManagerWithCA(t, "one.local", "two.local")
 		publisher := &testutils.EventRecorder{}
 		manager.publisher = publisher
 
@@ -332,4 +344,166 @@ func TestManager_Notices(t *testing.T) {
 		assert.Contains(t, notices[0].Text, "one.local")
 		assert.Contains(t, notices[1].Text, "two.local")
 	})
+}
+
+func TestManager_Hosts(t *testing.T) {
+	t.Run("rejects a host outside the mappings and reports it once", func(t *testing.T) {
+		manager := newManagerWithCA(t, "app.local")
+		publisher := &testutils.EventRecorder{}
+		manager.publisher = publisher
+
+		for _, host := range []string{"evil.local", "evil.local", "other.local"} {
+			cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: host})
+			require.ErrorIs(t, err, ErrHostNotMapped)
+			assert.Nil(t, cert)
+		}
+
+		assert.Empty(t, manager.cache)
+
+		notices := publisher.Notices()
+		require.Len(t, notices, 2)
+		assert.Equal(t, events.NoticeError, notices[0].Level)
+		assert.Equal(t, "TLS: no https mapping for host: evil.local", notices[0].Text)
+		assert.Equal(t, "TLS: no https mapping for host: other.local", notices[1].Text)
+	})
+
+	t.Run("rejects every host before hosts are set", func(t *testing.T) {
+		manager := newManagerWithCA(t)
+
+		_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "localhost"})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+	})
+
+	t.Run("rejects a host without loading the CA", func(t *testing.T) {
+		t.Setenv("HOME", filepath.Join(t.TempDir(), "home"))
+
+		publisher := &testutils.EventRecorder{}
+		manager := NewManager(afero.NewMemMapFs(), publisher)
+		manager.SetHosts([]string{"app.local"})
+
+		_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "evil.local"})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+
+		require.Len(t, publisher.Notices(), 1)
+		assert.NotContains(t, publisher.Notices()[0].Text, "CA")
+	})
+
+	t.Run("matches a placeholder against one label", func(t *testing.T) {
+		manager := newManagerWithCA(t, "{tenant}.local.dev")
+
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "acme.local.dev"})
+		require.NoError(t, err)
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		require.NoError(t, err)
+		assert.Equal(t, []string{"acme.local.dev"}, x509Cert.DNSNames)
+
+		_, err = manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "a.b.local.dev"})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+	})
+
+	t.Run("uses the local address without SNI only when it is mapped", func(t *testing.T) {
+		manager := newManagerWithCA(t, "localhost")
+		conn := &mockConn{localAddr: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8443}}
+
+		_, err := manager.GetCertificate(&tls.ClientHelloInfo{Conn: conn})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+
+		manager.SetHosts([]string{"127.0.0.1"})
+
+		cert, err := manager.GetCertificate(&tls.ClientHelloInfo{Conn: conn})
+		require.NoError(t, err)
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		require.NoError(t, err)
+		require.Len(t, x509Cert.IPAddresses, 1)
+		assert.Equal(t, "127.0.0.1", x509Cert.IPAddresses[0].String())
+	})
+
+	t.Run("replaces the hosts and drops certificates of removed ones", func(t *testing.T) {
+		manager := newManagerWithCA(t, "one.local")
+		publisher := &testutils.EventRecorder{}
+		manager.publisher = publisher
+
+		_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "one.local"})
+		require.NoError(t, err)
+
+		_, err = manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "two.local"})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+
+		manager.SetHosts([]string{"two.local"})
+
+		assert.NotContains(t, manager.cache, "one.local")
+
+		_, err = manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "one.local"})
+		require.ErrorIs(t, err, ErrHostNotMapped)
+
+		_, err = manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "two.local"})
+		require.NoError(t, err)
+
+		assert.Len(t, publisher.Notices(), 2)
+	})
+
+	t.Run("keeps a bounded number of certificates", func(t *testing.T) {
+		manager := newManagerWithCA(t, "{name}.local")
+
+		for i := range maxCachedCertificates + 10 {
+			_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: fmt.Sprintf("host%d.local", i)})
+			require.NoError(t, err)
+		}
+
+		assert.Len(t, manager.cache, maxCachedCertificates)
+	})
+
+	t.Run("stops reporting after too many rejected hosts", func(t *testing.T) {
+		manager := newManagerWithCA(t, "app.local")
+		publisher := &testutils.EventRecorder{}
+		manager.publisher = publisher
+
+		for i := range maxReportedHosts + 10 {
+			_, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: fmt.Sprintf("host%d.evil", i)})
+			require.ErrorIs(t, err, ErrHostNotMapped)
+		}
+
+		assert.Len(t, publisher.Notices(), maxReportedHosts)
+	})
+}
+
+func TestManager_SingleIssuance(t *testing.T) {
+	recorded := testutils.Telemetry(t)
+	manager := newManagerWithCA(t, "burst.local")
+
+	const handshakes = 50
+
+	var (
+		start sync.WaitGroup
+		done  sync.WaitGroup
+	)
+
+	start.Add(1)
+
+	certificates := make(chan *tls.Certificate, handshakes)
+	for range handshakes {
+		done.Go(func() {
+			start.Wait()
+
+			cert, err := manager.GetCertificate(&tls.ClientHelloInfo{ServerName: "burst.local"})
+			assert.NoError(t, err)
+
+			certificates <- cert
+		})
+	}
+
+	start.Done()
+	done.Wait()
+	close(certificates)
+
+	unique := make(map[*tls.Certificate]struct{}, handshakes)
+	for cert := range certificates {
+		unique[cert] = struct{}{}
+	}
+
+	assert.Len(t, unique, 1)
+
+	assert.Equal(t, int64(1), recorded.Sum(t, "uncors.tls.certificates"))
 }

@@ -2,6 +2,8 @@ package engine_test
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/engine"
 	"github.com/evg4b/uncors/internal/events"
@@ -277,4 +280,76 @@ func TestEnginePublishesLifecycleEvents(t *testing.T) {
 		assert.Failf(t, "unexpected event", "a failed restart published %#v", event)
 	default:
 	}
+}
+
+func httpsConfiguration(host string, port int) *config.UncorsConfig {
+	return &config.UncorsConfig{
+		CacheConfig: config.CacheConfig{MaxSize: 100, ExpirationTime: time.Minute},
+		Mappings: config.Mappings{
+			{
+				From: hosts.Parse("https://" + net.JoinHostPort(host, strconv.Itoa(port))),
+				To:   hosts.Localhost.HTTP(),
+			},
+		},
+	}
+}
+
+func handshake(t *testing.T, pool *x509.CertPool, port int, serverName string) error {
+	t.Helper()
+
+	dialer := &tls.Dialer{
+		NetDialer: &net.Dialer{Timeout: dialTimeout},
+		Config: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    pool,
+			ServerName: serverName,
+		},
+	}
+
+	conn, err := dialer.DialContext(t.Context(), "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+	if err != nil {
+		return err
+	}
+
+	return conn.Close()
+}
+
+func TestEngineIssuesCertificatesOnlyForMappedHosts(t *testing.T) {
+	fakeHome := t.TempDir()
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewMemMapFs()
+
+	caDir, err := certs.Dir()
+	require.NoError(t, err)
+
+	certPath, keyPath, err := certs.Generate(fs, caDir, 30)
+	require.NoError(t, err)
+
+	caCert, _, err := certs.Load(fs, certPath, keyPath)
+	require.NoError(t, err)
+
+	pool := x509.NewCertPool()
+	pool.AddCert(caCert)
+
+	ports := testutils.GetFreePorts(t, 3)
+
+	proxy := engine.New(fs)
+	require.NoError(t, proxy.Start(t.Context(), httpsConfiguration("one.local", ports[0])))
+
+	defer testutils.Close(t, proxy)
+
+	require.NoError(t, handshake(t, pool, ports[0], "one.local"))
+	require.Error(t, handshake(t, pool, ports[0], "two.local"))
+
+	require.NoError(t, proxy.Restart(t.Context(), httpsConfiguration("two.local", ports[1])))
+
+	require.NoError(t, handshake(t, pool, ports[1], "two.local"))
+	require.Error(t, handshake(t, pool, ports[1], "one.local"))
+
+	occupy(t, ports[2])
+	require.Error(t, proxy.Restart(t.Context(), httpsConfiguration("three.local", ports[2])))
+
+	require.NoError(t, handshake(t, pool, ports[1], "two.local"))
+	require.Error(t, handshake(t, pool, ports[1], "three.local"))
 }

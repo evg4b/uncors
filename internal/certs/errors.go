@@ -9,6 +9,8 @@ var (
 
 	ErrNoSNIProvided = errors.New("no SNI provided in client hello")
 
+	ErrHostNotMapped = errors.New("no https mapping for host")
+
 	ErrCACertExpired = errors.New("CA certificate has expired! Please regenerate it with: uncors generate-certs --force")
 
 	ErrCACertExpiringSoon = errors.New("consider regenerating with: uncors generate-certs --force")

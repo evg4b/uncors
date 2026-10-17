@@ -49,6 +49,10 @@ func newEnv(t *testing.T) *integration.Env {
 				From: hosts.Parse("https://broken.local"),
 				To:   hosts.Loopback.HTTPPort(closedPort),
 			},
+			{
+				From: hosts.Parse("http://plain.local"),
+				To:   backend.AsHost(),
+			},
 		},
 	}, integration.WithFile("/www/app.js", "console.log('hi')"))
 }
@@ -135,8 +139,8 @@ func TestRequestAttribution(t *testing.T) {
 
 	t.Run("a host no mapping covers is not attributed", func(t *testing.T) {
 		env.Hosts.Set("unmapped.local", "127.0.0.1")
-		port := strconv.Itoa(env.PortFor("events.local"))
-		url := "https://unmapped.local:" + port + "/api"
+		port := strconv.Itoa(env.PortFor("plain.local"))
+		url := "http://unmapped.local:" + port + "/api"
 
 		result, tracked := env.DoTracked(t, integration.NewRequest(t, http.MethodGet, url))
 
