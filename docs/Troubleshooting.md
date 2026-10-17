@@ -379,6 +379,27 @@ more of the path, capture each segment in `from` and use it in `to`.
 A rewrite with `host` uses the scheme of the incoming request. From an `http://`
 source, the rewritten host is called over plain HTTP.
 
+## WebSocket connections fail
+
+UNCORS proxies WebSocket connections on every mapping. Connect with `ws://` to
+an `http` mapping and with `wss://` to an `https` mapping; `wss://` needs the
+same trusted certificate as HTTPS requests (see
+[HTTPS certificate errors](#https-certificate-errors)).
+
+A connection shows in the request log as a `PROXY` request with status `101`,
+which finishes when the connection closes. Another status means the upstream
+server refused the handshake, and the client got its response as is: check the
+upstream logs and the `Origin` it received (UNCORS rewrites it to the upstream
+host). `MOCK` or `SCRIPT` means a mock or a script route matches the WebSocket
+path and answers the handshake instead.
+
+[`allowed-origins`](Configuration#allowed-origins) does not refuse WebSocket
+connections: a page from an origin outside the list still connects. Only the
+upstream server can refuse it, by checking `Origin`.
+
+Open connections are closed when UNCORS stops or reloads its configuration,
+for example after the configuration file changes. Clients have to reconnect.
+
 ## Proxy problems
 
 Upstream requests fail with proxy errors. The cause is shown under the request

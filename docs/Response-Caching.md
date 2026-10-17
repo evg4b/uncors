@@ -19,6 +19,7 @@ A response is cached when all of these hold:
 
 - the request is proxied to the upstream server (mock, script, and static
   responses are never cached);
+- the request is not a WebSocket handshake or another protocol upgrade;
 - the request method is listed in `cache-config.methods` (`GET` by default);
 - the request path matches one of the mapping's `cache` globs;
 - the upstream status code is in the 2xx range;

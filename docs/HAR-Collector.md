@@ -48,6 +48,7 @@ responses it produces on that path:
 | `OPTIONS` preflight answered by UNCORS                     | Yes      |
 | Under a [static](Static-File-Serving) path, file not found, proxied | Yes |
 | [Rewritten](Request-Rewriting) and proxied                 | Yes      |
+| WebSocket or another protocol upgrade                      | No       |
 | Answered by a [mock](Response-Mocking)                     | No       |
 | Answered by a [script](Script-Handler)                     | No       |
 | Served from a static directory                             | No       |

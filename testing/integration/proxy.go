@@ -32,7 +32,11 @@ const (
 	proxyShutdownWait = 5 * time.Second
 )
 
-func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certificate, *eventRecorder) {
+func bootProxy(
+	t *testing.T,
+	fs afero.Fs,
+	cfg *config.UncorsConfig,
+) (*x509.Certificate, *eventRecorder, *engine.Engine) {
 	t.Helper()
 
 	caDir, err := certs.Dir()
@@ -69,7 +73,7 @@ func bootProxy(t *testing.T, fs afero.Fs, cfg *config.UncorsConfig) (*x509.Certi
 
 	waitForMappings(t, cfg)
 
-	return caCert, recorder
+	return caCert, recorder, proxy
 }
 
 // Scripts are trimmed: yaml.v3 emits a leading newline as a "|4" block scalar

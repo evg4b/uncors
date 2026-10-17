@@ -464,10 +464,21 @@ cd my-project
 ./scripts/setup.sh
 ```
 
-## Not supported: WebSocket
+## WebSocket
 
-UNCORS does not proxy WebSocket connections. Connect to WebSocket endpoints
-directly; browsers don't apply CORS to WebSocket connections.
+WebSocket connections go through the same mapping as the rest of the API:
+
+```yaml
+mappings:
+  - from: https://api.local:8443
+    to: https://api.example.com
+```
+
+The frontend connects to `wss://api.local:8443/socket` and UNCORS forwards it
+to `wss://api.example.com/socket`, with `Origin` rewritten to the upstream host.
+Use `ws://` with an `http` mapping. The request log shows the connection as a
+`PROXY` request with status `101` that finishes when the connection closes. See
+[What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
 
 ## Templates
 

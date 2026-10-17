@@ -122,13 +122,31 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 		defaultHandler = infra.Mddleware(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
-	if len(mapping.Cache) > 0 {
-		defaultHandler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
-	}
-
-	if mapping.HAR.Enabled() {
-		defaultHandler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), defaultHandler)
+	if len(mapping.Cache) > 0 || mapping.HAR.Enabled() {
+		defaultHandler = bypassOnUpgrade(r.recordedHandler(mapping, defaultHandler), defaultHandler)
 	}
 
 	return checkOrigin(mapping.AllowedOrigins, defaultHandler)
+}
+
+func (r *Router) recordedHandler(mapping config.Mapping, handler contracts.Handler) contracts.Handler {
+	if len(mapping.Cache) > 0 {
+		handler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), handler)
+	}
+
+	if mapping.HAR.Enabled() {
+		handler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), handler)
+	}
+
+	return handler
+}
+
+func bypassOnUpgrade(handler, upgradeHandler contracts.Handler) contracts.Handler {
+	return infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
+		if infra.IsUpgrade(request.Header) {
+			return upgradeHandler.ServeHTTP(writer, request)
+		}
+
+		return handler.ServeHTTP(writer, request)
+	})
 }

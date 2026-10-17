@@ -112,7 +112,7 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) Close() error {
-	listeners, retiring := s.release()
+	listeners, retiring, current := s.release()
 
 	var errs []error
 
@@ -124,6 +124,10 @@ func (s *Server) Close() error {
 	}
 
 	abort(retiring)
+
+	if current != nil {
+		current.retire()
+	}
 
 	return errors.Join(errs...)
 }
@@ -316,7 +320,7 @@ func (s *Server) dispatch(portListener *portListener, writer http.ResponseWriter
 	for !current.requests.acquire(conn) {
 		next := portListener.route.Load()
 		if next == current {
-			s.handleRequest(unavailable, writer, request)
+			s.handleRequest(unavailable, nil, writer, request)
 
 			return
 		}
@@ -326,7 +330,7 @@ func (s *Server) dispatch(portListener *portListener, writer http.ResponseWriter
 
 	defer current.requests.release(conn)
 
-	s.handleRequest(current.handler, writer, request)
+	s.handleRequest(current.handler, current.requests, writer, request)
 }
 
 var unavailable = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -391,7 +395,7 @@ func (s *Server) shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, s.shutdownTimeout)
 	defer cancel()
 
-	listeners, retiring := s.release()
+	listeners, retiring, current := s.release()
 
 	var (
 		waitGroup sync.WaitGroup
@@ -417,10 +421,14 @@ func (s *Server) shutdown(ctx context.Context) error {
 	waitGroup.Wait()
 	abort(retiring)
 
+	if current != nil {
+		errs = append(errs, current.drain(ctx))
+	}
+
 	return errors.Join(errs...)
 }
 
-func (s *Server) release() ([]*portListener, []*requests) {
+func (s *Server) release() ([]*portListener, []*requests, *requests) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -438,10 +446,12 @@ func (s *Server) release() ([]*portListener, []*requests) {
 		retiring = append(retiring, previous)
 	}
 
+	current := s.requests
+
 	clear(s.listeners)
 	s.requests = nil
 
-	return listeners, retiring
+	return listeners, retiring, current
 }
 
 func abort(retiring []*requests) {
@@ -477,11 +487,17 @@ func (s *Server) closeInFlight(ctx context.Context, previous *requests) {
 	}
 }
 
-func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter, request *http.Request) {
+func (s *Server) handleRequest(
+	handler http.Handler,
+	tracked *requests,
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
 	helpers.NormaliseRequest(request)
 
 	requestID := s.nextID.Add(1)
 	rec := NewResponseRecorder(writer)
+	rec.requests = tracked
 
 	// The span is started before the scope so the scope's context carries it.
 	ctx, span := telemetry.StartServer(request.Context(), "HTTP")
@@ -501,6 +517,7 @@ func (s *Server) handleRequest(handler http.Handler, writer http.ResponseWriter,
 		abort := recoverHandler(rec, request, recover())
 
 		finishRequest(span, scope, rec, request)
+		rec.releaseHijacked()
 
 		if abort {
 			panic(http.ErrAbortHandler)
