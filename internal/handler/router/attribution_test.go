@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func attributionRouter(t *testing.T) http.Handler {
+func attributionRouter(t *testing.T) (http.Handler, *cache.RistrettoCache) {
 	t.Helper()
 
 	fs := testutils.FsFromMap(t, map[string]string{
@@ -56,7 +56,7 @@ func attributionRouter(t *testing.T) http.Handler {
 				cache.WithCacheStorage(store),
 			)
 		}),
-	)
+	), store
 }
 
 func serveTracked(
@@ -96,7 +96,7 @@ func serveTracked(
 }
 
 func TestRouterAttribution(t *testing.T) {
-	handler := attributionRouter(t)
+	handler, store := attributionRouter(t)
 
 	tests := []struct {
 		name    string
@@ -132,6 +132,8 @@ func TestRouterAttribution(t *testing.T) {
 		started, completed := serveTracked(t, handler, http.MethodGet, "http://localhost/cached/item")
 		assert.Equal(t, events.HandlerProxy, started.Handler)
 		assert.Equal(t, events.HandlerProxy, completed.Handler)
+
+		store.Wait()
 
 		started, completed = serveTracked(t, handler, http.MethodGet, "http://localhost/cached/item")
 		assert.Equal(t, events.HandlerCache, started.Handler)

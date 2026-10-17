@@ -9,9 +9,10 @@ type CachedResponse struct {
 	Code    int
 	Body    []byte
 	Headers []CachedHeader
+	Vary    []string
 }
 
 type Cache interface {
 	Get(key string) (CachedResponse, bool)
-	Set(key string, value CachedResponse)
+	Set(key string, value CachedResponse) bool
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"slices"
 	"sort"
@@ -19,6 +20,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
@@ -69,7 +71,7 @@ func (m *Middleware) cacheRequest(
 	request *contracts.Request,
 	next contracts.Handler,
 ) error {
-	cacheKey := m.extractCacheKey(request.Method, request.URL)
+	cacheKey := m.extractCacheKey(request)
 
 	if m.serveCached(writer, request, cacheKey) {
 		return nil
@@ -89,16 +91,16 @@ func (m *Middleware) cacheRequest(
 		return err
 	}
 
-	m.storeResponse(request.Context(), cacheKey, writer.Captured())
+	m.storeResponse(request.Context(), request, cacheKey, writer.Captured())
 
 	return nil
 }
 
-func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contracts.Request, cacheKey string) bool {
+func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contracts.Request, baseKey string) bool {
 	ctx, span := telemetry.Start(request.Context(), "cache.lookup")
 	defer span.End()
 
-	cachedResponse := m.getCachedResponse(cacheKey)
+	cachedResponse, cacheKey := m.getCachedResponse(request, baseKey)
 
 	telemetry.CacheLookup(ctx, cachedResponse != nil)
 
@@ -132,7 +134,7 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 
 	tracking.Claim(ctx, events.HandlerCache)
 
-	err := m.writeCachedResponse(writer, cachedResponse)
+	err := m.writeCachedResponse(writer, request, cachedResponse)
 	if err != nil {
 		telemetry.Fail(span, err)
 	}
@@ -140,44 +142,54 @@ func (m *Middleware) serveCached(writer contracts.ResponseWriter, request *contr
 	return true
 }
 
-func isStorable(ctx context.Context, key string, capture contracts.ResponseCapture) bool {
-	if !helpers.Is2xxCode(capture.StatusCode) {
-		if telemetry.Enabled() {
-			if span := trace.SpanFromContext(ctx); span.IsRecording() {
-				span.AddEvent("uncors.cache.not_stored", trace.WithAttributes(
-					semconv.HTTPResponseStatusCode(capture.StatusCode),
-				))
-			}
-
-			telemetry.Debug(ctx, "response not cached: the status is not 2xx",
-				slog.String("key", key), slog.Int("status", capture.StatusCode))
-		}
-
-		return false
+func unstorableReason(capture contracts.ResponseCapture) (string, attribute.KeyValue) {
+	switch {
+	case !helpers.Is2xxCode(capture.StatusCode):
+		return "the status is not 2xx", semconv.HTTPResponseStatusCode(capture.StatusCode)
+	case capture.Truncated:
+		return "the body is too large", attribute.Bool("uncors.cache.truncated", true)
+	case len(capture.Header[headers.SetCookie]) > 0:
+		return "the response sets cookies", attribute.Bool("uncors.cache.set_cookie", true)
+	case forbidsStoring(capture.Header):
+		return "the upstream forbids storing it",
+			attribute.String("uncors.cache.cache_control", strings.Join(capture.Header[headers.CacheControl], ", "))
+	case variesOnAll(capture.Header):
+		return "the response varies on every request header", attribute.String("uncors.cache.vary", anyValue)
 	}
 
-	if capture.Truncated {
-		if telemetry.Enabled() {
-			if span := trace.SpanFromContext(ctx); span.IsRecording() {
-				span.AddEvent("uncors.cache.not_stored", trace.WithAttributes(
-					attribute.Bool("uncors.cache.truncated", true),
-				))
-			}
-
-			telemetry.Debug(ctx, "response not cached: the body is too large",
-				slog.String("key", key), slog.Int("bytes", len(capture.Body)))
-		}
-
-		return false
-	}
-
-	return true
+	return "", attribute.KeyValue{}
 }
 
-func (m *Middleware) storeResponse(ctx context.Context, key string, capture contracts.ResponseCapture) {
-	if !isStorable(ctx, key, capture) {
+func isStorable(ctx context.Context, key string, capture contracts.ResponseCapture) bool {
+	reason, attr := unstorableReason(capture)
+	if reason == "" {
+		return true
+	}
+
+	if telemetry.Enabled() {
+		if span := trace.SpanFromContext(ctx); span.IsRecording() {
+			span.AddEvent("uncors.cache.not_stored", trace.WithAttributes(attr))
+		}
+
+		telemetry.Debug(ctx, "response not cached: "+reason, slog.String("key", key),
+			slog.Int("status", capture.StatusCode), slog.Int("bytes", len(capture.Body)))
+	}
+
+	return false
+}
+
+func (m *Middleware) storeResponse(
+	ctx context.Context,
+	request *contracts.Request,
+	baseKey string,
+	capture contracts.ResponseCapture,
+) {
+	if !isStorable(ctx, baseKey, capture) {
 		return
 	}
+
+	vary := varyNames(capture.Header)
+	key := variantKey(baseKey, vary, request.Header)
 
 	_, span := telemetry.Start(ctx, "cache.store")
 	defer span.End()
@@ -190,37 +202,65 @@ func (m *Middleware) storeResponse(ctx context.Context, key string, capture cont
 		)
 	}
 
+	response := contracts.CachedResponse{
+		Code:    capture.StatusCode,
+		Body:    capture.Body,
+		Headers: storedHeaders(capture.Header),
+	}
+
+	stored := m.cache.Set(key, response)
+	if stored && len(vary) > 0 {
+		stored = m.cache.Set(baseKey, contracts.CachedResponse{Vary: vary})
+	}
+
+	if !stored {
+		telemetry.CacheRejected(ctx)
+
+		if span.IsRecording() {
+			span.SetAttributes(attribute.Bool("uncors.cache.rejected", true))
+			span.AddEvent("uncors.cache.rejected", trace.WithAttributes(
+				attribute.Int64("uncors.cache.cost", CalcCost(&response)),
+			))
+		}
+
+		if telemetry.Enabled() {
+			telemetry.Debug(ctx, "response not cached: the cache storage rejected it",
+				slog.String("key", key), slog.Int("bytes", len(capture.Body)))
+		}
+
+		return
+	}
+
 	telemetry.CacheStored(ctx, len(capture.Body))
 
 	if telemetry.Enabled() {
 		telemetry.Debug(ctx, "response cached",
 			slog.String("key", key), slog.Int("status", capture.StatusCode), slog.Int("bytes", len(capture.Body)))
 	}
+}
 
-	headers := make([]contracts.CachedHeader, 0, len(capture.Header))
+func storedHeaders(header http.Header) []contracts.CachedHeader {
+	cached := make([]contracts.CachedHeader, 0, len(header))
 
-	for name, values := range capture.Header {
+	for name, values := range header {
 		// It names the trace of the request that filled the cache.
-		if name == telemetry.TraceIDHeader {
+		if name == telemetry.TraceIDHeader || name == headers.SetCookie || isCorsHeader(name) {
 			continue
 		}
 
-		headers = append(headers, contracts.CachedHeader{Name: name, Value: values})
+		cached = append(cached, contracts.CachedHeader{Name: name, Value: values})
 	}
 
-	sort.Slice(headers, func(i, j int) bool {
-		return headers[i].Name < headers[j].Name
+	sort.Slice(cached, func(i, j int) bool {
+		return cached[i].Name < cached[j].Name
 	})
 
-	m.cache.Set(key, contracts.CachedResponse{
-		Code:    capture.StatusCode,
-		Body:    capture.Body,
-		Headers: headers,
-	})
+	return cached
 }
 
 func (m *Middleware) writeCachedResponse(
 	writer contracts.ResponseWriter,
+	request *contracts.Request,
 	cachedResponse *contracts.CachedResponse,
 ) error {
 	header := writer.Header()
@@ -229,6 +269,12 @@ func (m *Middleware) writeCachedResponse(
 		for _, value := range cachedHeader.Value {
 			header.Add(cachedHeader.Name, value)
 		}
+	}
+
+	if request.Method == http.MethodOptions {
+		infra.WriteCorsHeadersForOptions(header, request.Header)
+	} else {
+		infra.WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 	}
 
 	writer.WriteHeader(cachedResponse.Code)
@@ -261,30 +307,49 @@ func (m *Middleware) isCacheableRequest(request *contracts.Request) (bool, error
 	return false, nil
 }
 
-func (m *Middleware) extractCacheKey(method string, url *url.URL) string {
-	values := urlt.URL_Query(url)
+func (m *Middleware) extractCacheKey(request *contracts.Request) string {
+	requestURL := request.URL
+	values := urlt.URL_Query(requestURL)
 
-	items := make([]string, 0, len(values))
-	for key, value := range values {
-		sort.Strings(value)
-		valuesKey := key + "=" + strings.Join(value, ",")
-		items = append(items, valuesKey)
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
 	}
 
-	sort.Strings(items)
+	sort.Strings(names)
+
+	items := make([]string, 0, len(values))
+	for _, name := range names {
+		for _, value := range values[name] {
+			items = append(items, url.QueryEscape(name)+"="+url.QueryEscape(value))
+		}
+	}
 
 	// The store is shared by every mapping of a configuration generation, so the
 	// key must identify the listener (scheme and port), not just the host name.
-	return fmt.Sprintf("[%s]%s://%s%s?%s",
-		method, url.Scheme, strings.ToLower(url.Host), url.Path, strings.Join(items, ";"))
+	return fmt.Sprintf("[%s]%s://%s%s?%s#%s",
+		request.Method, requestURL.Scheme, strings.ToLower(requestURL.Host), requestURL.Path,
+		strings.Join(items, "&"), acceptEncoding(request.Header))
 }
 
-func (m *Middleware) getCachedResponse(cacheKey string) *contracts.CachedResponse {
-	if cachedResponse, ok := m.cache.Get(cacheKey); ok {
-		return &cachedResponse
+func (m *Middleware) getCachedResponse(request *contracts.Request, baseKey string) (*contracts.CachedResponse, string) {
+	cachedResponse, ok := m.cache.Get(baseKey)
+	if !ok {
+		return nil, baseKey
 	}
 
-	return nil
+	if len(cachedResponse.Vary) == 0 {
+		return &cachedResponse, baseKey
+	}
+
+	key := variantKey(baseKey, cachedResponse.Vary, request.Header)
+
+	variant, ok := m.cache.Get(key)
+	if !ok || len(variant.Vary) > 0 {
+		return nil, key
+	}
+
+	return &variant, key
 }
 
 type MiddlewareOption = func(*Middleware)
