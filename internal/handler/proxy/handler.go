@@ -105,15 +105,17 @@ func (h *Handler) makeOriginalRequest(
 		return nil, fmt.Errorf("failed to make request to original server: %w", err)
 	}
 
-	err = copyHeaders(req.Header, originalRequest.Header, modificationsMap{
-		headers.Origin:  replacer.Replace,
-		headers.Referer: replacer.Replace,
-	})
-	if err != nil {
-		return nil, err
-	}
+	// The body is an opaque reader, so NewRequestWithContext cannot know its
+	// length: without this every request with a body would go upstream
+	// chunked.
+	originalRequest.ContentLength = req.ContentLength
 
-	copyCookiesToTarget(req, replacer, originalRequest)
+	// Origin and Referer of other hosts (another local frontend, "null") are
+	// forwarded as they are.
+	copyHeaders(req.Header, originalRequest.Header, modificationsMap{
+		headers.Origin:  replacer.ReplaceSoft,
+		headers.Referer: replacer.ReplaceSoft,
+	})
 
 	return originalRequest, nil
 }
@@ -126,14 +128,9 @@ func (h *Handler) makeUncorsResponse(
 ) error {
 	copyCookiesToSource(original, replacer, target)
 
-	err := copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: func(s string) (string, error) { //nolint:unparam
-			return replacer.ReplaceSoft(s), nil
-		},
+	copyHeaders(original.Header, target.Header(), modificationsMap{
+		headers.Location: replacer.ReplaceSoft,
 	})
-	if err != nil {
-		return err
-	}
 
 	origin := req.Header.Get(headers.Origin)
 	infra.WriteCorsHeaders(target.Header(), origin)

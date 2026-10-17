@@ -4,9 +4,11 @@ package har_test
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,4 +72,48 @@ func TestHARMiddleware(t *testing.T) {
 	assert.Equal(t, http.MethodGet, entry.Request.Method)
 	assert.Contains(t, entry.Request.URL, "/recorded/path")
 	assert.Equal(t, http.StatusOK, entry.Response.Status)
+}
+
+func TestHARMiddlewareKeepsContentLength(t *testing.T) {
+	// The HAR middleware buffers the request body and replaces it with a
+	// reader of unknown length; the proxy must still send Content-Length.
+	type received struct {
+		contentLength    int64
+		transferEncoding []string
+		body             string
+	}
+
+	seen := make(chan received, 1)
+
+	backend := integration.NewBackend(t, func(writer http.ResponseWriter, request *http.Request) {
+		body, err := io.ReadAll(request.Body)
+		assert.NoError(t, err)
+
+		seen <- received{
+			contentLength:    request.ContentLength,
+			transferEncoding: request.TransferEncoding,
+			body:             string(body),
+		}
+
+		writer.WriteHeader(http.StatusOK)
+	})
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://har.local"),
+			To:   backend.AsHost(),
+			HAR:  config.HARConfig{File: filepath.Join(t.TempDir(), "out.har")},
+		}},
+	})
+
+	req := integration.NewRequest(t, http.MethodPost, env.URL("har.local", "/upload"))
+	req.Body = io.NopCloser(strings.NewReader("hello"))
+	req.ContentLength = 5
+
+	result := env.Do(t, req)
+	require.Equal(t, http.StatusOK, result.Response.StatusCode)
+
+	got := <-seen
+	assert.Equal(t, int64(5), got.contentLength)
+	assert.Empty(t, got.transferEncoding)
+	assert.Equal(t, "hello", got.body)
 }

@@ -515,10 +515,13 @@ mappings:
 For requests forwarded to the upstream server, UNCORS:
 
 - rewrites the `Origin` and `Referer` request headers from the local host to the
-  upstream host;
-- forwards cookies, and rewrites the `Domain` of cookies set by the upstream
-  server to the local host. The `Secure` flag follows the scheme of the side
-  the cookie is sent to;
+  upstream host. An `Origin` or `Referer` of any other host (for example a
+  frontend served from `127.0.0.1` or another local domain), and
+  `Origin: null`, is forwarded unchanged;
+- forwards the request body with its `Content-Length`;
+- forwards the `Cookie` request header unchanged, and rewrites the `Domain` of
+  cookies set by the upstream server to the local host. The `Secure` flag of
+  those cookies follows the scheme of the local host;
 - rewrites `Location` headers in redirects back to the local host;
 - adds the CORS headers listed below to every response, replacing any the
   upstream server sent.

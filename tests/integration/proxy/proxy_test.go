@@ -131,6 +131,17 @@ func TestProxyHandler(t *testing.T) {
 		assert.Contains(t, result.BackendRequest(t), `{"payload":true}`)
 	})
 
+	t.Run("forwards the request Content-Length instead of chunking the body", func(t *testing.T) {
+		req := integration.NewRequest(t, http.MethodPost, proxyURL(env, "/echo"))
+		req.Body = io.NopCloser(strings.NewReader("hello"))
+		req.ContentLength = 5
+
+		dump := env.Do(t, req).RawBackendRequest(t)
+
+		assert.Contains(t, dump, "Content-Length: 5\r\n")
+		assert.NotContains(t, dump, "Transfer-Encoding")
+	})
+
 	t.Run("forwards custom request headers", func(t *testing.T) {
 		req := integration.NewRequest(t, http.MethodGet, proxyURL(env, "/echo"))
 		req.Header.Set("X-Trace-Id", "trace-123")
@@ -166,6 +177,18 @@ func TestProxyHandler(t *testing.T) {
 		result := env.Do(t, req)
 
 		assert.Contains(t, result.RawBackendRequest(t), "Origin: "+backendURL)
+	})
+
+	t.Run("forwards an Origin of another host unchanged", func(t *testing.T) {
+		for _, origin := range []string{"http://a.test", "http://127.0.0.1:3000", "null"} {
+			req := integration.NewRequest(t, http.MethodGet, proxyURL(env, "/echo"))
+			req.Header.Set("Origin", origin)
+
+			result := env.Do(t, req)
+
+			require.Equal(t, http.StatusOK, result.Response.StatusCode, "origin %q", origin)
+			assert.Contains(t, result.RawBackendRequest(t), "Origin: "+origin+"\r\n")
+		}
 	})
 
 	t.Run("rewrites the Location response header back to the source host", func(t *testing.T) {

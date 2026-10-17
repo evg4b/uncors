@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -261,6 +262,81 @@ func TestProxyHandler(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("should forward Origin and Referer of other hosts unchanged", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			headerKey string
+			value     string
+		}{
+			{name: "Origin of another host", headerKey: headers.Origin, value: "http://myapp.test:8080"},
+			{name: "Origin of the loopback address", headerKey: headers.Origin, value: "http://127.0.0.1:3000"},
+			{name: "null Origin", headerKey: headers.Origin, value: "null"},
+			{name: "Referer of another host", headerKey: headers.Referer, value: "http://myapp.test/page?q=1"},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				var forwarded *http.Request
+
+				handler := proxy.NewProxyHandler(
+					proxy.WithHTTPClient(capturingClient(&forwarded)),
+					proxy.WithURLReplacerFactory(replacerFactory),
+				)
+
+				req := premiumRequest(t, http.MethodGet, nil)
+				req.Header.Set(testCase.headerKey, testCase.value)
+
+				recorder := httptest.NewRecorder()
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), req)
+				require.NoError(t, err)
+
+				require.NotNil(t, forwarded)
+				assert.Equal(t, testCase.value, forwarded.Header.Get(testCase.headerKey))
+				assert.Equal(t, http.StatusOK, recorder.Code)
+			})
+		}
+	})
+
+	t.Run("should forward the request Content-Length", func(t *testing.T) {
+		var forwarded *http.Request
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(capturingClient(&forwarded)),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		req := premiumRequest(t, http.MethodPost, io.NopCloser(strings.NewReader("hello")))
+		req.ContentLength = 5
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
+
+		require.NotNil(t, forwarded)
+		assert.Equal(t, int64(5), forwarded.ContentLength)
+	})
+
+	t.Run("should forward the Cookie header unchanged", func(t *testing.T) {
+		// Values a cookie parser would reject or reformat: quotes, spaces,
+		// commas, and a pair without "=".
+		const cookie = `quoted="a b"; list=x,y; spaced=with space; flag; session=abc123`
+
+		var forwarded *http.Request
+
+		handler := proxy.NewProxyHandler(
+			proxy.WithHTTPClient(capturingClient(&forwarded)),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		req := premiumRequest(t, http.MethodGet, nil)
+		req.Header.Set(headers.Cookie, cookie)
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
+
+		require.NotNil(t, forwarded)
+		assert.Equal(t, []string{cookie}, forwarded.Header.Values(headers.Cookie))
+	})
+
 	t.Run("should forward cookies from response to source", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
@@ -432,5 +508,33 @@ func TestProxyHandler(t *testing.T) {
 				})
 			}
 		})
+	})
+}
+
+func premiumRequest(t *testing.T, method string, body io.Reader) *http.Request {
+	t.Helper()
+
+	req, err := http.NewRequestWithContext(t.Context(), method, "http://premium.local.com/", body)
+	require.NoError(t, err)
+
+	req.URL.Scheme = premiumLocalScheme
+	req.Host = premiumLocalHost
+	helpers.NormaliseRequest(req)
+
+	return req
+}
+
+// capturingClient answers 200 and stores the request it was given.
+func capturingClient(forwarded **http.Request) contracts.HTTPClient {
+	return testutils.NewTestClient(func(req *http.Request) *http.Response {
+		*forwarded = req
+
+		return &http.Response{
+			Status:     "200 OK",
+			StatusCode: http.StatusOK,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader("")),
+			Request:    req,
+		}
 	})
 }
