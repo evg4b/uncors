@@ -577,6 +577,13 @@ responses, and error pages. Requests without an `Origin` header, such as
 navigations and same-origin `GET` requests, get CORS headers as before. Without
 `allowed-origins` any origin gets CORS headers.
 
+`allowed-origins` does not block WebSocket connections. A handshake from an
+origin outside the list is proxied as usual and the connection works: the
+`101` response has no CORS headers, but browsers don't apply CORS to
+WebSocket. To refuse such connections, check `Origin` on the upstream server,
+which receives it rewritten as described in
+[What UNCORS changes in proxied traffic](#what-uncors-changes-in-proxied-traffic).
+
 ```yaml
 mappings:
   - from: http://api.local:3000

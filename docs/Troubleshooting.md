@@ -393,6 +393,10 @@ upstream logs and the `Origin` it received (UNCORS rewrites it to the upstream
 host). `MOCK` or `SCRIPT` means a mock or a script route matches the WebSocket
 path and answers the handshake instead.
 
+[`allowed-origins`](Configuration#allowed-origins) does not refuse WebSocket
+connections: a page from an origin outside the list still connects. Only the
+upstream server can refuse it, by checking `Origin`.
+
 Open connections are closed when UNCORS stops or reloads its configuration,
 for example after the configuration file changes. Clients have to reconnect.
 

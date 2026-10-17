@@ -98,9 +98,10 @@ func startTunnel(t *testing.T, request *http.Request) *tunnelCase {
 		return &http.Response{
 			StatusCode: http.StatusSwitchingProtocols,
 			Header: http.Header{
-				"Connection":           {"Upgrade"},
-				"Upgrade":              {"echo"},
-				"Sec-Websocket-Accept": {"accepted"},
+				"Connection":                  {"Upgrade"},
+				"Upgrade":                     {"echo"},
+				"Sec-Websocket-Accept":        {"accepted"},
+				"Access-Control-Allow-Origin": {"*"},
 			},
 			Body: proxyUpstream,
 		}
@@ -172,6 +173,21 @@ func TestProxyHandlerUpgrade(t *testing.T) {
 		assert.Equal(t, "Upgrade", header.Get("Connection"))
 		assert.Equal(t, "accepted", header.Get("Sec-Websocket-Accept"))
 		assert.Equal(t, "http://premium.local.com", header.Get("Access-Control-Allow-Origin"))
+	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		testCase := startTunnel(t, testutils.RejectOrigin(t, upgradeRequest(t)))
+
+		transfer(t, testCase.client, testCase.upstream, "ping")
+		require.NoError(t, testCase.client.Close())
+		testCase.wait(t)
+
+		header := testCase.recorder.Header()
+		assert.Equal(t, http.StatusSwitchingProtocols, testCase.recorder.Code)
+		assert.Equal(t, "echo", header.Get("Upgrade"))
+		assert.Empty(t, header.Get("Access-Control-Allow-Origin"))
+		assert.Empty(t, header.Get("Access-Control-Allow-Credentials"))
+		assert.Contains(t, header.Values("Vary"), "Origin")
 	})
 
 	t.Run("closes the upstream when the client closes", func(t *testing.T) {

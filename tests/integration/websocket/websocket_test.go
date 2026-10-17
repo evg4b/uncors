@@ -373,3 +373,43 @@ func TestWebSocketServerShutdown(t *testing.T) {
 	assertTunnelCompleted(t, env, "ws.local", "/plain", 1)
 	assertTunnelCompleted(t, env, "wss.local", "/secure", 1)
 }
+
+func TestWebSocketOutsideAllowedOrigins(t *testing.T) {
+	echo := newEchoServer(t)
+	env := integration.New(t, echo.Backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From:           hosts.Parse("https://wss.local"),
+			To:             echo.AsHost(),
+			AllowedOrigins: config.AllowedOrigins{"http://localhost:*"},
+		}},
+	})
+
+	t.Run("still connects", func(t *testing.T) {
+		socket := dial(t, env, "wss.local", "/rejected")
+
+		exchange(t, socket, "hello")
+
+		assert.Equal(t, echo.URL(), echo.lastOrigin())
+	})
+
+	t.Run("answers the handshake without CORS headers", func(t *testing.T) {
+		request := integration.NewRequest(t, http.MethodGet, env.URL("wss.local", "/handshake"))
+		request.Header.Set("Connection", "Upgrade")
+		request.Header.Set("Upgrade", "websocket")
+		request.Header.Set("Sec-WebSocket-Version", "13")
+		request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+		request.Header.Set("Origin", "https://app.local")
+
+		response, err := env.Client.Do(request)
+		require.NoError(t, err)
+		require.NoError(t, response.Body.Close())
+
+		assert.Equal(t, http.StatusSwitchingProtocols, response.StatusCode)
+		assert.Equal(t, "websocket", response.Header.Get("Upgrade"))
+		assert.Empty(t, response.Header.Get("Access-Control-Allow-Origin"))
+		assert.Contains(t, response.Header.Values("Vary"), "Origin")
+
+		echo.waitClosed(t, "/handshake", 1)
+		assertTunnelCompleted(t, env, "wss.local", "/handshake", 1)
+	})
+}

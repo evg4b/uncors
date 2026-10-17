@@ -41,7 +41,7 @@ func (h *Handler) switchProtocols(
 		headers.Location: replacer.ReplaceSoft,
 	})
 
-	infra.WriteCorsHeaders(target.Header(), req.Header.Get(headers.Origin))
+	infra.WriteRequestCorsHeaders(target.Header(), req)
 
 	target.WriteHeader(http.StatusSwitchingProtocols)
 
