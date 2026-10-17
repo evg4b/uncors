@@ -23,6 +23,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const DefaultTimeout = 30 * time.Second
+
 type Handler struct {
 	script *config.Script
 	fs     afero.Fs
@@ -102,21 +104,51 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState := newLuaState()
 	defer luaState.Close()
 
+	reqTable, err := createRequestTable(luaState, request, h.maxBodySize())
+	if err != nil {
+		return err
+	}
+
 	origin := request.Header.Get("Origin")
 	infra.WriteCorsHeaders(writer.Header(), origin)
 
-	reqTable := createRequestTable(luaState, request)
 	respTable := createResponseTable(luaState, writer)
 
 	luaState.SetGlobal("request", reqTable)
 	luaState.SetGlobal("response", respTable)
 
-	err := h.runScript(request.Context(), luaState)
+	ctx, cancel := context.WithTimeoutCause(request.Context(), h.timeout(), ErrScriptTimeout)
+	defer cancel()
+
+	luaState.SetContext(ctx)
+
+	err = h.runScript(ctx, luaState)
 	if err != nil {
+		cause := context.Cause(ctx)
+		if cause != nil {
+			return fmt.Errorf("script error: %w: %w", cause, err)
+		}
+
 		return fmt.Errorf("script error: %w", err)
 	}
 
 	return nil
+}
+
+func (h *Handler) timeout() time.Duration {
+	if h.script.Timeout > 0 {
+		return h.script.Timeout
+	}
+
+	return DefaultTimeout
+}
+
+func (h *Handler) maxBodySize() int64 {
+	if h.script.MaxBodySize > 0 {
+		return h.script.MaxBodySize
+	}
+
+	return DefaultMaxBodySize
 }
 
 func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {

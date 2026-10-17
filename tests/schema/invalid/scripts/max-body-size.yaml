@@ -1,0 +1,7 @@
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    scripts:
+      - path: /upload
+        script: response:WriteString("Hello")
+        max-body-size: 10MB

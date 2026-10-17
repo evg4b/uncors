@@ -1,0 +1,7 @@
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    scripts:
+      - path: /slow
+        script: response:WriteString("Hello")
+        timeout: 30 seconds

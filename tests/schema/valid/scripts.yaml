@@ -1,0 +1,11 @@
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    scripts:
+      - path: /inline
+        script: response:WriteString("Hello")
+      - path: /slow
+        method: POST
+        file: ./scripts/slow.lua
+        timeout: 2m30s
+        max-body-size: 52428800

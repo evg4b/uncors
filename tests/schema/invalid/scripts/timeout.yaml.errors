@@ -1,0 +1,2 @@
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0.scripts.0.timeout: Does not match pattern '^(\d+h)?(\d+m)?(\d+s)?(\d+ms)?(\d+(us|µs))?(\d+(ns))?$'
