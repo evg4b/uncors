@@ -23,7 +23,7 @@ func TestMiddleware(t *testing.T) {
 
 		defaultControlAllowOrigin := []string{"*"}
 		defaultControlAllowMethods := []string{
-			"GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS",
+			"GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS",
 		}
 		defaultControlAllowCredentials := []string{"true"}
 		defaultControlAllowHeaders := []string{"*"}
@@ -78,6 +78,7 @@ func TestMiddleware(t *testing.T) {
 						headers.AccessControlAllowMethods:     defaultControlAllowMethods,
 						headers.AccessControlMaxAge:           defaultControlMaxAge,
 						headers.AccessControlExposeHeaders:    defaultControlExposeHeaders,
+						headers.Vary:                          []string{headers.AccessControlRequestHeaders},
 					},
 					code: http.StatusOK,
 				},
@@ -97,6 +98,7 @@ func TestMiddleware(t *testing.T) {
 						headers.AccessControlAllowMethods:     []string{"POST"},
 						headers.AccessControlMaxAge:           defaultControlMaxAge,
 						headers.AccessControlExposeHeaders:    defaultControlExposeHeaders,
+						headers.Vary:                          []string{headers.AccessControlRequestMethod},
 					},
 					code: http.StatusOK,
 				},
@@ -117,6 +119,10 @@ func TestMiddleware(t *testing.T) {
 						headers.AccessControlAllowMethods:     []string{"PUT"},
 						headers.AccessControlMaxAge:           defaultControlMaxAge,
 						headers.AccessControlExposeHeaders:    defaultControlExposeHeaders,
+						headers.Vary: []string{
+							headers.AccessControlRequestMethod,
+							headers.AccessControlRequestHeaders,
+						},
 					},
 					code: http.StatusOK,
 				},
@@ -218,10 +224,11 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, "true", recorder.Header().Get(headers.AccessControlAllowCredentials))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowHeaders))
 
-		expectedMethods := "GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS"
+		expectedMethods := "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
 		assert.Equal(t, expectedMethods, recorder.Header().Get(headers.AccessControlAllowMethods))
 		assert.Equal(t, "86400", recorder.Header().Get(headers.AccessControlMaxAge))
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, []string{headers.Origin}, recorder.Header().Values(headers.Vary))
 	})
 
 	t.Run("for OPTIONS request with empty origin", func(t *testing.T) {

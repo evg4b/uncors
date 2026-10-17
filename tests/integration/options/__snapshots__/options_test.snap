@@ -3,11 +3,12 @@
 HTTP/1.1 204 No Content
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
-Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS
 Access-Control-Allow-Origin: https://example.com
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400
 Date: <scrubbed>
+Vary: Origin
 X-Options: handled
 
 
@@ -27,7 +28,7 @@ HTTP/1.1 200 OK
 Content-Length: 2
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Headers: *
-Access-Control-Allow-Methods: GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS
+Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 86400

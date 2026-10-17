@@ -476,20 +476,24 @@ UNCORS answers `OPTIONS` requests itself by default, so CORS preflight checks
 pass without reaching the upstream server. The default response has status 200
 and these headers:
 
-| Header                             | Value                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------- |
-| `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                           |
-| `Access-Control-Allow-Methods`     | The request's `Access-Control-Request-Method`, or a list of common methods |
-| `Access-Control-Allow-Headers`     | The request's `Access-Control-Request-Headers`, or `*`                    |
-| `Access-Control-Allow-Credentials` | `true`                                                                    |
-| `Access-Control-Expose-Headers`    | `*`                                                                       |
-| `Access-Control-Max-Age`           | `86400`                                                                   |
+| Header                             | Value                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                                                               |
+| `Access-Control-Allow-Methods`     | The request's `Access-Control-Request-Method`, or `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`              |
+| `Access-Control-Allow-Headers`     | The request's `Access-Control-Request-Headers`, or `*`                                                        |
+| `Access-Control-Allow-Credentials` | `true`                                                                                                        |
+| `Access-Control-Expose-Headers`    | `*`                                                                                                           |
+| `Access-Control-Max-Age`           | `86400`                                                                                                       |
+| `Vary`                             | The request headers copied above: `Origin`, `Access-Control-Request-Method`, `Access-Control-Request-Headers` |
 
-| Option     | Type    | Default | Description                                                    |
-| ---------- | ------- | ------- | -------------------------------------------------------------- |
-| `disabled` | boolean | `false` | Forward `OPTIONS` requests to the upstream server instead.     |
-| `code`     | integer | `200`   | Status code of the `OPTIONS` response.                         |
-| `headers`  | object  | -       | Extra headers. They replace the defaults when names collide.   |
+The same headers are added to `OPTIONS` requests forwarded to the upstream
+server when `disabled` is `true`.
+
+| Option     | Type    | Default | Description                                                  |
+| ---------- | ------- | ------- | ------------------------------------------------------------ |
+| `disabled` | boolean | `false` | Forward `OPTIONS` requests to the upstream server instead.   |
+| `code`     | integer | `200`   | Status code of the `OPTIONS` response.                       |
+| `headers`  | object  | -       | Extra headers. They replace the defaults when names collide. |
 
 ```yaml
 mappings:
@@ -535,19 +539,30 @@ For requests forwarded to the upstream server, UNCORS:
   those cookies follows the scheme of the local host;
 - rewrites `Location` headers in redirects back to the local host;
 - adds the CORS headers listed below to every response, replacing any the
-  upstream server sent.
+  upstream server sent. `Access-Control-Allow-Headers` from the upstream server
+  is removed: it only matters in preflight responses.
 
-| Header                             | Value                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                          |
-| `Access-Control-Allow-Credentials` | `true`                                                                   |
-| `Access-Control-Allow-Headers`     | `*`                                                                      |
-| `Access-Control-Allow-Methods`     | `GET, PUT, POST, HEAD, TRACE, DELETE, PATCH, COPY, HEAD, LINK, OPTIONS`  |
-| `Access-Control-Expose-Headers`    | `*`                                                                      |
-| `Access-Control-Max-Age`           | `86400`                                                                  |
+| Header                             | Value                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Access-Control-Allow-Origin`      | The request's `Origin`, or `*` if there is none                                                  |
+| `Access-Control-Allow-Credentials` | `true`                                                                                           |
+| `Access-Control-Allow-Methods`     | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`                                                   |
+| `Access-Control-Expose-Headers`    | The names of the other response headers if the request has an `Origin`, or `*`                   |
+| `Access-Control-Max-Age`           | `86400`                                                                                          |
+| `Vary`                             | `Origin` is added when the request has an `Origin`; the upstream server's `Vary` values are kept |
 
-Mock and script responses get the same CORS headers. Files served by
-[statics](Static-File-Serving) do not.
+Requests sent with credentials (cookies or `Authorization`) need the exact
+origin and an explicit list of exposed headers: browsers read `*` in
+`Access-Control-Expose-Headers` literally for them. The list leaves out the
+headers JavaScript can always read (`Cache-Control`, `Content-Language`,
+`Content-Length`, `Content-Type`, `Expires`, `Last-Modified`, `Pragma`), the
+`Access-Control-*` headers, and `Set-Cookie`.
+
+Mock and script responses get the same CORS headers. For them, the list of
+exposed headers is built when the status is written, so it includes the
+headers set by the mock or the script. An `Access-Control-Expose-Headers` set
+by the mock or the script is kept. Files served by
+[statics](Static-File-Serving) get no CORS headers.
 
 ## HAR recording
 

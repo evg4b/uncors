@@ -185,6 +185,32 @@ than the CA does. Existing CAs keep working.
 `uncors generate-certs --validity-days` with zero or a negative number is now
 an error instead of creating an expired CA.
 
+### CORS response headers
+
+UNCORS changed the CORS headers it adds to proxied, mock, and script
+responses:
+
+- `Access-Control-Expose-Headers` now lists the names of the response headers
+  when the request has an `Origin`, instead of `*`. Browsers read `*` literally
+  for requests sent with credentials, so custom headers were hidden from
+  JavaScript. Without an `Origin` it is still `*`.
+- `Access-Control-Allow-Headers` is no longer sent with these responses. It is
+  still in preflight responses, which copy `Access-Control-Request-Headers`.
+- `Vary: Origin` is added when `Access-Control-Allow-Origin` copies the
+  request's `Origin`. Preflight responses also add the
+  `Access-Control-Request-*` headers they copy. An upstream `Vary` is kept.
+- `Access-Control-Allow-Methods` is now
+  `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS`. `TRACE`, `COPY`, `LINK`, and
+  the second `HEAD` are gone.
+- With `options-handling.disabled`, `OPTIONS` requests forwarded to the
+  upstream server now get the preflight headers, which copy the requested
+  method and headers.
+
+Tests or snapshots that compare UNCORS response headers need the new values.
+To send other values, set the headers in the mock, the script, or
+`options-handling.headers`. See
+[What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
+
 ### Status codes of file mocks
 
 A mock with a `file` response used to be sent with status 200 whatever its
