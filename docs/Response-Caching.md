@@ -21,7 +21,9 @@ A response is cached when all of these hold:
   responses are never cached);
 - the request method is listed in `cache-config.methods` (`GET` by default);
 - the request path matches one of the mapping's `cache` globs;
-- the upstream status code is in the 2xx range.
+- the upstream status code is in the 2xx range;
+- the response body is at most 10 MiB. Larger responses, such as long event
+  streams, are passed through without being stored.
 
 The cache key is the method, scheme, host name and port, path, and query
 string, so mappings on different ports never share entries. Query parameters

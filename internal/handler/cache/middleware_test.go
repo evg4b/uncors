@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
+	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
@@ -336,4 +338,50 @@ func TestCacheMiddleware(t *testing.T) {
 
 		assert.Len(t, methods, testHandler.Count())
 	})
+}
+
+func TestCacheMiddlewareTruncatedCapture(t *testing.T) {
+	tests := []struct {
+		name   string
+		size   int
+		stored bool
+	}{
+		{name: "stores a body within the capture limit", size: 1024, stored: true},
+		{name: "does not store a body over the capture limit", size: 11 << 20, stored: false},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			body := bytes.Repeat([]byte("x"), testCase.size)
+
+			storage := mocks.NewCacheMock(t).
+				GetMock.Return(contracts.CachedResponse{}, false)
+			if testCase.stored {
+				storage.SetMock.Set(func(_ string, value contracts.CachedResponse) {
+					assert.Equal(t, body, value.Body)
+				})
+			}
+
+			middleware := cache.NewMiddleware(
+				cache.WithCacheStorage(storage),
+				cache.WithMethods([]string{http.MethodGet}),
+				cache.WithGlobs(config.CacheGlobs{"/**"}),
+			)
+
+			handler := infra.Mddleware(middleware, infra.HandlerFunc(
+				func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+					writer.WriteHeader(http.StatusOK)
+					_, err := writer.Write(body)
+
+					return err
+				},
+			))
+
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/stream", nil)
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+			assert.Equal(t, testCase.size, recorder.Body.Len())
+		})
+	}
 }

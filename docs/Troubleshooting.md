@@ -380,6 +380,10 @@ To compare, time the upstream server directly:
 time curl https://api.example.com/endpoint
 ```
 
+A request fails if the upstream server does not start its response within 5
+minutes. Once it has started, the body is forwarded for as long as the upstream
+server sends it, so server-sent events and long downloads are not cut off.
+
 If memory use is high, lower `cache-config.max-size` (100 MB by default) or
 `expiration-time`, or narrow the `cache` globs so large responses aren't
 cached:

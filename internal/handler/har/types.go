@@ -74,5 +74,5 @@ type Cookie struct {
 
 type PostData struct {
 	MimeType string `json:"mimeType"`
-	Text     string `json:"text"`
+	Text     string `json:"text,omitempty"`
 }

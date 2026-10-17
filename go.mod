@@ -6,6 +6,7 @@ require (
 	charm.land/bubbles/v2 v2.2.1
 	charm.land/bubbletea/v2 v2.1.0
 	charm.land/lipgloss/v2 v2.0.6
+	github.com/andybalholm/brotli v1.2.6
 	github.com/bmatcuk/doublestar/v4 v4.10.2
 	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4
 	github.com/charmbracelet/x/ansi v0.11.9
@@ -16,6 +17,7 @@ require (
 	github.com/gojuno/minimock/v3 v3.4.7
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-version v1.9.0
+	github.com/klauspost/compress v1.20.3
 	github.com/samber/lo v1.53.0
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/pflag v1.0.10
