@@ -10,18 +10,20 @@ import (
 )
 
 type Script struct {
-	Matcher RequestMatcher `yaml:",inline"`
-	Script  string         `yaml:"script"`
-	File    string         `yaml:"file"`
-	Timeout time.Duration  `yaml:"timeout"`
+	Matcher     RequestMatcher `yaml:",inline"`
+	Script      string         `yaml:"script"`
+	File        string         `yaml:"file"`
+	Timeout     time.Duration  `yaml:"timeout"`
+	MaxBodySize int64          `yaml:"max-body-size"`
 }
 
 func (s *Script) Clone() Script {
 	return Script{
-		Matcher: s.Matcher.Clone(),
-		Script:  s.Script,
-		File:    s.File,
-		Timeout: s.Timeout,
+		Matcher:     s.Matcher.Clone(),
+		Script:      s.Script,
+		File:        s.File,
+		Timeout:     s.Timeout,
+		MaxBodySize: s.MaxBodySize,
 	}
 }
 
@@ -56,6 +58,11 @@ func (s *Script) Validate(field string, fs afero.Fs) error {
 
 	errs = append(errs, s.Matcher.Validate(field))
 	errs = append(errs, ValidateDuration(joinPath(field, "timeout"), s.Timeout, true))
+
+	if s.MaxBodySize < 0 {
+		msg := fmt.Sprintf("%s must be greater than or equal to 0", joinPath(field, "max-body-size"))
+		errs = append(errs, &ValidationError{msg})
+	}
 
 	switch {
 	case s.Script == "" && s.File == "":

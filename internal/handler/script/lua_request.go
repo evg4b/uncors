@@ -11,9 +11,9 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-const MaxRequestBodySize = 10 << 20
+const DefaultMaxBodySize int64 = 10 << 20
 
-func createRequestTable(luaState *lua.LState, request *contracts.Request) (*lua.LTable, error) {
+func createRequestTable(luaState *lua.LState, request *contracts.Request, maxBodySize int64) (*lua.LTable, error) {
 	reqTable := luaState.NewTable()
 
 	reqTable.RawSetString("method", lua.LString(request.Method))
@@ -27,7 +27,7 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) (*lua.
 	reqTable.RawSetString("query_params", createValuesTable(luaState, urlt.URL_Query(request.URL)))
 	reqTable.RawSetString("path_params", createPathParamsTable(luaState, request))
 
-	body, err := readBody(request)
+	body, err := readBody(request, maxBodySize)
 	if err != nil {
 		return nil, err
 	}
@@ -37,18 +37,18 @@ func createRequestTable(luaState *lua.LState, request *contracts.Request) (*lua.
 	return reqTable, nil
 }
 
-func readBody(request *contracts.Request) (string, error) {
+func readBody(request *contracts.Request, maxBodySize int64) (string, error) {
 	if request.Body == nil {
 		return "", nil
 	}
 
-	body, err := io.ReadAll(io.LimitReader(request.Body, MaxRequestBodySize+1))
+	body, err := io.ReadAll(io.LimitReader(request.Body, maxBodySize+1))
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrRequestBodyNotRead, err)
 	}
 
-	if len(body) > MaxRequestBodySize {
-		return "", fmt.Errorf("%w: limit is %d bytes", ErrRequestBodyTooLarge, MaxRequestBodySize)
+	if int64(len(body)) > maxBodySize {
+		return "", fmt.Errorf("%w: limit is %d bytes", ErrRequestBodyTooLarge, maxBodySize)
 	}
 
 	return string(body), nil

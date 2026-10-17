@@ -104,7 +104,7 @@ func (h *Handler) executeScript(writer contracts.ResponseWriter, request *contra
 	luaState := newLuaState()
 	defer luaState.Close()
 
-	reqTable, err := createRequestTable(luaState, request)
+	reqTable, err := createRequestTable(luaState, request, h.maxBodySize())
 	if err != nil {
 		return err
 	}
@@ -141,6 +141,14 @@ func (h *Handler) timeout() time.Duration {
 	}
 
 	return DefaultTimeout
+}
+
+func (h *Handler) maxBodySize() int64 {
+	if h.script.MaxBodySize > 0 {
+		return h.script.MaxBodySize
+	}
+
+	return DefaultMaxBodySize
 }
 
 func (h *Handler) runScript(ctx context.Context, luaState *lua.LState) error {

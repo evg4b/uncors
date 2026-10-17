@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"strconv"
 	"testing"
 	"testing/iotest"
 	"time"
@@ -102,34 +103,61 @@ response:WriteString(tostring(ok))`,
 	})
 }
 
+func serveBody(t *testing.T, maxBodySize int64, body io.Reader) (*httptest.ResponseRecorder, error) {
+	t.Helper()
+
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", body)
+	recorder := httptest.NewRecorder()
+
+	handler := script.NewHandler(
+		script.WithScript(&config.Script{
+			Script:      "response:WriteString(tostring(#request.body))",
+			MaxBodySize: maxBodySize,
+		}),
+		script.WithFileSystem(afero.NewMemMapFs()),
+	)
+
+	return recorder, handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
+}
+
 func TestScriptHandlerRequestBody(t *testing.T) {
-	t.Run("body at the limit", func(t *testing.T) {
-		body := strings.Repeat("a", script.MaxRequestBodySize)
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", strings.NewReader(body))
-		recorder := httptest.NewRecorder()
+	tests := []struct {
+		name        string
+		maxBodySize int64
+		limit       int64
+	}{
+		{name: "default limit", maxBodySize: 0, limit: script.DefaultMaxBodySize},
+		{name: "configured limit", maxBodySize: 16, limit: 16},
+		{
+			name:        "configured limit above default",
+			maxBodySize: script.DefaultMaxBodySize + 8,
+			limit:       script.DefaultMaxBodySize + 8,
+		},
+	}
 
-		handler := script.NewHandler(
-			script.WithScript(&config.Script{Script: "response:WriteString(tostring(#request.body))"}),
-			script.WithFileSystem(afero.NewMemMapFs()),
-		)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Run("body at the limit", func(t *testing.T) {
+				body := bytes.Repeat([]byte("a"), int(testCase.limit))
 
-		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
-		assert.Equal(t, "10485760", recorder.Body.String())
-	})
+				recorder, err := serveBody(t, testCase.maxBodySize, bytes.NewReader(body))
 
-	t.Run("body over the limit", func(t *testing.T) {
-		body := bytes.Repeat([]byte("a"), script.MaxRequestBodySize+1)
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", bytes.NewReader(body))
+				require.NoError(t, err)
+				assert.Equal(t, strconv.FormatInt(testCase.limit, 10), recorder.Body.String())
+			})
 
-		err := serveWithTimeout(t, "response:WriteString('ok')", time.Minute, request)
+			t.Run("body over the limit", func(t *testing.T) {
+				body := bytes.Repeat([]byte("a"), int(testCase.limit)+1)
 
-		require.ErrorIs(t, err, script.ErrRequestBodyTooLarge)
-	})
+				_, err := serveBody(t, testCase.maxBodySize, bytes.NewReader(body))
+
+				require.ErrorIs(t, err, script.ErrRequestBodyTooLarge)
+			})
+		})
+	}
 
 	t.Run("read failure", func(t *testing.T) {
-		request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", iotest.ErrReader(errBodyRead))
-
-		err := serveWithTimeout(t, "response:WriteString('ok')", time.Minute, request)
+		_, err := serveBody(t, 0, iotest.ErrReader(errBodyRead))
 
 		require.ErrorIs(t, err, script.ErrRequestBodyNotRead)
 		require.ErrorIs(t, err, errBodyRead)

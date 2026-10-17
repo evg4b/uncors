@@ -229,20 +229,22 @@ end
 
 ## Limits
 
-| Limit             | Value                        | What happens                                              |
-| ----------------- | ---------------------------- | --------------------------------------------------------- |
-| Running time      | 30 seconds, or the `timeout` | The script is stopped with a `script timed out` error.    |
-| Request body size | 10 MiB                       | The script does not run; the request fails with an error. |
+| Limit             | Option          | Default    | What happens                                              |
+| ----------------- | --------------- | ---------- | --------------------------------------------------------- |
+| Running time      | `timeout`       | 30 seconds | The script is stopped with a `script timed out` error.    |
+| Request body size | `max-body-size` | 10 MiB     | The script does not run; the request fails with an error. |
 
-Set `timeout` on a script to give it more (or less) time. It uses Go duration
-syntax without spaces, such as `90s` or `2m30s`, like a mock's
-[`delay`](Response-Mocking#delay). `0` or no value means the 30-second default:
+Set the options on a script to raise or lower its limits. `timeout` uses Go
+duration syntax without spaces, such as `90s` or `2m30s`, like a mock's
+[`delay`](Response-Mocking#delay). `max-body-size` is a number of bytes. `0` or
+no value means the default:
 
 ```yaml
 scripts:
-  - path: /api/report
-    file: ./scripts/report.lua
+  - path: /api/upload
+    file: ./scripts/upload.lua
     timeout: 2m
+    max-body-size: 52428800 # 50 MiB
 ```
 
 A script is also stopped when its client disconnects or UNCORS shuts down. In

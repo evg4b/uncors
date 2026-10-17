@@ -8,3 +8,4 @@ mappings:
         method: POST
         file: ./scripts/slow.lua
         timeout: 2m30s
+        max-body-size: 52428800

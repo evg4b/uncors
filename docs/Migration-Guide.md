@@ -133,7 +133,8 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
   whose client disconnects or whose server shuts down. The request fails with
   status 500. Set `timeout` on a script that needs longer.
 - A request body larger than 10 MiB fails with status 500 before the script
-  runs. Before, a body that failed to read reached the script as `nil`.
+  runs. Set `max-body-size` on a script that needs larger bodies. Before, a
+  body that failed to read reached the script as `nil`.
 
 ## Upgrading from 0.5.x to 0.6.x
 

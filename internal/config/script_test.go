@@ -52,14 +52,16 @@ func TestScript_Clone(t *testing.T) {
 				"X-Custom": "header",
 			},
 		},
-		Script:  "print('hello')",
-		File:    "/path/to/script.lua",
-		Timeout: 2 * time.Minute,
+		Script:      "print('hello')",
+		File:        "/path/to/script.lua",
+		Timeout:     2 * time.Minute,
+		MaxBodySize: 1024,
 	}
 
 	cloned := original.Clone()
 
 	assert.Equal(t, original.Timeout, cloned.Timeout)
+	assert.Equal(t, original.MaxBodySize, cloned.MaxBodySize)
 	assert.Equal(t, original.Matcher.Path, cloned.Matcher.Path)
 	assert.Equal(t, original.Matcher.Method, cloned.Matcher.Method)
 	assert.Equal(t, original.Script, cloned.Script)
@@ -72,26 +74,37 @@ func TestScript_Clone(t *testing.T) {
 }
 
 func TestScriptUnmarshalYAML(t *testing.T) {
-	t.Run("decodes timeout", func(t *testing.T) {
+	t.Run("decodes limits", func(t *testing.T) {
 		const input = `
 path: /api/slow
 script: response:WriteString("ok")
 timeout: 2m30s
+max-body-size: 52428800
 `
 
 		var actual config.Script
 
 		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
 		assert.Equal(t, 150*time.Second, actual.Timeout)
+		assert.Equal(t, int64(52428800), actual.MaxBodySize)
 	})
 
-	t.Run("zero timeout when field is absent", func(t *testing.T) {
+	t.Run("zero limits when fields are absent", func(t *testing.T) {
 		const input = `script: response:WriteString("ok")`
 
 		var actual config.Script
 
 		require.NoError(t, yaml.Unmarshal([]byte(input), &actual))
 		assert.Zero(t, actual.Timeout)
+		assert.Zero(t, actual.MaxBodySize)
+	})
+
+	t.Run("returns error for invalid max-body-size", func(t *testing.T) {
+		const input = `max-body-size: 10MB`
+
+		var actual config.Script
+
+		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
 	})
 
 	t.Run("returns error for invalid timeout", func(t *testing.T) {
@@ -332,6 +345,25 @@ func TestScriptValidator(t *testing.T) {
 		}).Validate("script", noFS)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "script.timeout must be greater than or equal to 0")
+	})
+
+	t.Run("valid max-body-size", func(t *testing.T) {
+		err := (&config.Script{
+			Matcher:     config.RequestMatcher{Path: testAPIPath},
+			Script:      testScriptContent,
+			MaxBodySize: 1024,
+		}).Validate("script", noFS)
+		assert.NoError(t, err)
+	})
+
+	t.Run("negative max-body-size", func(t *testing.T) {
+		err := (&config.Script{
+			Matcher:     config.RequestMatcher{Path: testAPIPath},
+			Script:      testScriptContent,
+			MaxBodySize: -1,
+		}).Validate("script", noFS)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "script.max-body-size must be greater than or equal to 0")
 	})
 
 	t.Run("multiple errors", func(t *testing.T) {
