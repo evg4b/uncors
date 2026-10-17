@@ -20,6 +20,7 @@ type Env struct {
 	Client  *http.Client
 	Backend *Backend
 	Hosts   *Hosts
+	FS      afero.Fs
 
 	routes []route
 	events *eventRecorder
@@ -62,7 +63,7 @@ func New(t *testing.T, backend *Backend, cfg *config.UncorsConfig, opts ...Optio
 	}
 
 	resolver := newHosts()
-	env := &Env{Backend: backend, Hosts: resolver}
+	env := &Env{Backend: backend, Hosts: resolver, FS: fs}
 
 	for i := range cfg.Mappings {
 		from := &cfg.Mappings[i].From
