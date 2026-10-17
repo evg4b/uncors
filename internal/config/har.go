@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -45,4 +46,40 @@ func (h *HARConfig) Validate(field string) error {
 	}
 
 	return nil
+}
+
+func validateUniqueHARFiles(mappings Mappings) error {
+	owners := make(map[string]string, len(mappings))
+
+	var errs []error
+
+	for i, mapping := range mappings {
+		if !mapping.HAR.Enabled() {
+			continue
+		}
+
+		field := joinPath("mappings", index(i), "har")
+		key := harFileKey(mapping.HAR.File)
+
+		if owner, ok := owners[key]; ok {
+			errs = append(errs, &ValidationError{
+				fmt.Sprintf("%s: HAR file %q is already used by %s", field, mapping.HAR.File, owner),
+			})
+
+			continue
+		}
+
+		owners[key] = field
+	}
+
+	return errors.Join(errs...)
+}
+
+func harFileKey(file string) string {
+	abs, err := filepath.Abs(file)
+	if err != nil {
+		return filepath.Clean(file)
+	}
+
+	return abs
 }

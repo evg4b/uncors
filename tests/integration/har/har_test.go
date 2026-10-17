@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +55,7 @@ func TestHARMiddleware(t *testing.T) {
 	var parsed harFile
 
 	require.Eventually(t, func() bool {
-		data, err := os.ReadFile(harPath)
+		data, err := afero.ReadFile(env.FS, harPath)
 		if err != nil {
 			return false
 		}
@@ -66,7 +66,7 @@ func TestHARMiddleware(t *testing.T) {
 		}
 
 		return len(parsed.Log.Entries) == 1
-	}, 2*time.Second, 20*time.Millisecond)
+	}, 5*time.Second, 20*time.Millisecond)
 
 	entry := parsed.Log.Entries[0]
 	assert.Equal(t, http.MethodGet, entry.Request.Method)

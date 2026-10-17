@@ -15,12 +15,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/iotest"
 
+	"github.com/andybalholm/brotli"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/klauspost/compress/zstd"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +42,7 @@ func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middlewa
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "test.har")
-	harWriter := har.NewWriter(path)
+	harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
 	opts = append([]har.MiddlewareOption{har.WithWriter(harWriter)}, opts...)
 	mdlw := har.NewMiddleware(opts...)
 
@@ -71,6 +75,17 @@ func compressBody(t *testing.T, algo string, data []byte) []byte {
 	case "deflate":
 		w := zlib.NewWriter(&buf)
 		_, err := w.Write(data)
+		require.NoError(t, err)
+		require.NoError(t, w.Close())
+	case "br":
+		w := brotli.NewWriter(&buf)
+		_, err := w.Write(data)
+		require.NoError(t, err)
+		require.NoError(t, w.Close())
+	case "zstd":
+		w, err := zstd.NewWriter(&buf)
+		require.NoError(t, err)
+		_, err = w.Write(data)
 		require.NoError(t, err)
 		require.NoError(t, w.Close())
 	}
@@ -294,6 +309,8 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 	}{
 		{encoding: "gzip"},
 		{encoding: "deflate"},
+		{encoding: "br"},
+		{encoding: "zstd"},
 	}
 
 	for _, testCase := range tests {
@@ -330,6 +347,135 @@ func TestMiddleware_Wrap_Decompression(t *testing.T) {
 			content := archive.Log.Entries[0].Response.Content
 			assert.JSONEq(t, originalBody, content.Text)
 			assert.Empty(t, content.Encoding, "encoding field should be empty for decoded text")
+		})
+	}
+}
+
+func serveHAR(t *testing.T, mdlw *har.Middleware, req *http.Request) {
+	t.Helper()
+
+	next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		rw.WriteHeader(http.StatusOK)
+
+		return nil
+	})
+
+	err := infra.Mddleware(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+	require.NoError(t, err)
+}
+
+func TestMiddleware_PostData(t *testing.T) {
+	t.Run("records a text body", func(t *testing.T) {
+		mdlw, harWriter, path := newHARMiddleware(t)
+
+		const body = `{"name":"uncors"}`
+
+		req, err := http.NewRequestWithContext(
+			t.Context(), http.MethodPost, "http://example.com/api", strings.NewReader(body),
+		)
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		serveHAR(t, mdlw, req)
+		require.NoError(t, harWriter.Close())
+
+		archive := readHARFile(t, path)
+		require.Len(t, archive.Log.Entries, 1)
+
+		request := archive.Log.Entries[0].Request
+		assert.Equal(t, int64(len(body)), request.BodySize)
+		assert.Equal(t, &har.PostData{MimeType: "application/json", Text: body}, request.PostData)
+	})
+
+	t.Run("records only the size of a binary body", func(t *testing.T) {
+		mdlw, harWriter, path := newHARMiddleware(t)
+
+		body := []byte{0xff, 0xfe, 0x00, 0x01}
+
+		req, err := http.NewRequestWithContext(
+			t.Context(), http.MethodPut, "http://example.com/upload", bytes.NewReader(body),
+		)
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/octet-stream")
+
+		serveHAR(t, mdlw, req)
+		require.NoError(t, harWriter.Close())
+
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		assert.NotContains(t, string(data), `"text"`)
+
+		archive := readHARFile(t, path)
+		require.Len(t, archive.Log.Entries, 1)
+
+		request := archive.Log.Entries[0].Request
+		assert.Equal(t, int64(len(body)), request.BodySize)
+		assert.Equal(t, &har.PostData{MimeType: "application/octet-stream"}, request.PostData)
+	})
+
+	t.Run("omits postData without a body", func(t *testing.T) {
+		mdlw, harWriter, path := newHARMiddleware(t)
+
+		serveHAR(t, mdlw, makeHARRequest(t, "http://example.com/"))
+		require.NoError(t, harWriter.Close())
+
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		assert.NotContains(t, string(data), "postData")
+
+		archive := readHARFile(t, path)
+		require.Len(t, archive.Log.Entries, 1)
+		assert.Equal(t, int64(0), archive.Log.Entries[0].Request.BodySize)
+	})
+}
+
+func TestMiddleware_RequestBodyReadError(t *testing.T) {
+	mdlw, harWriter, path := newHARMiddleware(t)
+
+	readErr := io.ErrUnexpectedEOF
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://example.com/api",
+		io.MultiReader(strings.NewReader("partial"), iotest.ErrReader(readErr)))
+	require.NoError(t, err)
+
+	called := false
+	next := infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error {
+		called = true
+
+		return nil
+	})
+
+	serveErr := infra.Mddleware(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+
+	require.ErrorIs(t, serveErr, readErr)
+	assert.False(t, called)
+
+	require.NoError(t, harWriter.Close())
+	assert.Empty(t, readHARFile(t, path).Log.Entries)
+}
+
+func TestMiddleware_ResponseHTTPVersion(t *testing.T) {
+	for _, proto := range []struct {
+		name  string
+		major int
+		minor int
+	}{
+		{name: "HTTP/1.0", major: 1, minor: 0},
+		{name: "HTTP/1.1", major: 1, minor: 1},
+		{name: "HTTP/2.0", major: 2, minor: 0},
+	} {
+		t.Run(proto.name, func(t *testing.T) {
+			mdlw, harWriter, path := newHARMiddleware(t)
+
+			req := makeHARRequest(t, "http://example.com/")
+			req.Proto, req.ProtoMajor, req.ProtoMinor = proto.name, proto.major, proto.minor
+
+			serveHAR(t, mdlw, req)
+			require.NoError(t, harWriter.Close())
+
+			archive := readHARFile(t, path)
+			require.Len(t, archive.Log.Entries, 1)
+			assert.Equal(t, proto.name, archive.Log.Entries[0].Request.HTTPVersion)
+			assert.Equal(t, proto.name, archive.Log.Entries[0].Response.HTTPVersion)
 		})
 	}
 }

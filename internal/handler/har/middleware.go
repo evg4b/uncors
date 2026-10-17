@@ -1,13 +1,14 @@
 package har
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -47,24 +48,30 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 
 	start := time.Now()
 
-	var reqBodySize int64
+	var reqBody []byte
 
 	if req.Body != nil && req.Body != http.NoBody {
-		var buf strings.Builder
-
-		n, _ := io.Copy(&buf, req.Body)
-		reqBodySize = n
+		body, err := io.ReadAll(req.Body)
 		_ = req.Body.Close()
 
-		req.Body = io.NopCloser(strings.NewReader(buf.String()))
+		if err != nil {
+			telemetry.Fail(span, err)
+
+			return fmt.Errorf("har: cannot read request body: %w", err)
+		}
+
+		reqBody = body
+		req.Body = io.NopCloser(bytes.NewReader(body))
 	}
+
+	reqBodySize := int64(len(reqBody))
 
 	writer.EnableBodyCapture()
 
 	err := next(writer, req)
 
 	elapsed := time.Since(start)
-	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBodySize)
+	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBody)
 	recorded := m.writer.AddEntry(entry)
 	telemetry.HAREntry(req.Context(), recorded)
 
@@ -91,15 +98,15 @@ func (m *Middleware) buildEntry(
 	capture contracts.ResponseCapture,
 	start time.Time,
 	elapsed time.Duration,
-	reqBodySize int64,
+	reqBody []byte,
 ) Entry {
 	elapsedMS := float64(elapsed.Nanoseconds()) / nanosecondsPerMillisecond
 
 	return Entry{
 		StartedDateTime: start,
 		Time:            elapsedMS,
-		Request:         m.buildRequest(req, reqBodySize),
-		Response:        m.buildResponse(capture),
+		Request:         m.buildRequest(req, reqBody),
+		Response:        m.buildResponse(req, capture),
 		Timings: Timings{
 			Send:    0,
 			Wait:    elapsedMS,
@@ -108,7 +115,7 @@ func (m *Middleware) buildEntry(
 	}
 }
 
-func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
+func (m *Middleware) buildRequest(req *http.Request, body []byte) Request {
 	scheme := "http"
 	if req.TLS != nil {
 		scheme = "https"
@@ -130,11 +137,25 @@ func (m *Middleware) buildRequest(req *http.Request, bodySize int64) Request {
 		QueryString: queryToNameValues(urlt.URL_Query(req.URL)),
 		Cookies:     cookies,
 		HeadersSize: -1,
-		BodySize:    bodySize,
+		BodySize:    int64(len(body)),
+		PostData:    buildPostData(body, req.Header.Get("Content-Type")),
 	}
 }
 
-func (m *Middleware) buildResponse(capture contracts.ResponseCapture) Response {
+func buildPostData(body []byte, mimeType string) *PostData {
+	if len(body) == 0 {
+		return nil
+	}
+
+	postData := &PostData{MimeType: mimeType}
+	if utf8.Valid(body) {
+		postData.Text = string(body)
+	}
+
+	return postData
+}
+
+func (m *Middleware) buildResponse(req *http.Request, capture contracts.ResponseCapture) Response {
 	mimeType := capture.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
@@ -152,7 +173,7 @@ func (m *Middleware) buildResponse(capture contracts.ResponseCapture) Response {
 	return Response{
 		Status:      capture.StatusCode,
 		StatusText:  http.StatusText(capture.StatusCode),
-		HTTPVersion: "HTTP/1.1",
+		HTTPVersion: req.Proto,
 		Headers:     m.headersToNameValues(capture.Header),
 		Cookies:     cookies,
 		Content:     content,

@@ -1,17 +1,21 @@
 package har
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
+	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -20,19 +24,25 @@ const (
 	creatorName     = "uncors"
 	creatorVersion  = "dev"
 	entryChanBuffer = 4096
-	harFileMode     = 0o600
 	harDirMode      = 0o755
+	flushInterval   = time.Second
+	entryPrefix     = "      "
+	entriesClosing  = "\n    "
 )
+
+var archiveHead, archiveTail = archiveFrame()
 
 type Writer struct {
 	path      string
+	fs        afero.Fs
 	publisher events.Publisher
 	entries   chan Entry
 	done      chan struct{}
 	once      sync.Once
 	wg        sync.WaitGroup
 	mu        sync.Mutex
-	all       []Entry
+	encoded   [][]byte
+	size      int
 
 	// Set after a failed flush, so a failure streak produces one notice.
 	failing bool
@@ -46,6 +56,12 @@ func WithPublisher(publisher events.Publisher) WriterOption {
 	}
 }
 
+func WithFileSystem(fs afero.Fs) WriterOption {
+	return func(w *Writer) {
+		w.fs = fs
+	}
+}
+
 func NewWriter(path string, options ...WriterOption) *Writer {
 	writer := helpers.ApplyOptions(&Writer{
 		path:      path,
@@ -53,6 +69,10 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 		entries:   make(chan Entry, entryChanBuffer),
 		done:      make(chan struct{}),
 	}, options)
+
+	if writer.fs == nil {
+		panic("har: NewWriter requires WithFileSystem option")
+	}
 
 	writer.wg.Add(1)
 
@@ -88,14 +108,32 @@ func (w *Writer) Close() error {
 func (w *Writer) run() {
 	defer w.wg.Done()
 
+	var (
+		timer *time.Timer
+		tick  <-chan time.Time
+	)
+
 	for {
 		select {
 		case entry := <-w.entries:
 			w.append(entry)
 			w.drain()
+
+			if tick == nil {
+				timer = time.NewTimer(flushInterval)
+				tick = timer.C
+			}
+
+		case <-tick:
+			tick = nil
+
 			w.flush()
 
 		case <-w.done:
+			if timer != nil {
+				timer.Stop()
+			}
+
 			w.drain()
 			w.flush()
 
@@ -116,10 +154,18 @@ func (w *Writer) drain() {
 }
 
 func (w *Writer) append(entry Entry) {
+	data, err := json.MarshalIndent(entry, entryPrefix, "  ")
+	if err != nil {
+		telemetry.Error(context.Background(), "cannot encode HAR entry", slog.String("file", w.path), telemetry.Err(err))
+
+		return
+	}
+
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.all = append(w.all, entry)
+	w.encoded = append(w.encoded, data)
+	w.size += len(data)
 }
 
 func (w *Writer) flush() {
@@ -127,33 +173,17 @@ func (w *Writer) flush() {
 	defer span.End()
 
 	w.mu.Lock()
-	snapshot := make([]Entry, len(w.all))
-	copy(snapshot, w.all)
+	snapshot := w.encoded[:len(w.encoded):len(w.encoded)]
+	size := w.size
 	w.mu.Unlock()
-
-	archive := HAR{
-		Log: Log{
-			Version: harVersion,
-			Creator: Creator{Name: creatorName, Version: creatorVersion},
-			Entries: snapshot,
-		},
-	}
-
-	data, err := json.MarshalIndent(archive, "", "  ")
-	if err != nil {
-		telemetry.Fail(span, err)
-		telemetry.Error(ctx, "cannot encode HAR file", slog.String("file", w.path), telemetry.Err(err))
-
-		return
-	}
 
 	span.SetAttributes(
 		attribute.String("uncors.har.path", w.path),
 		attribute.Int("uncors.har.entries", len(snapshot)),
-		attribute.Int("uncors.har.bytes", len(data)),
+		attribute.Int("uncors.har.bytes", size),
 	)
 
-	err = w.write(data)
+	err := w.write(snapshot)
 	telemetry.HARFlushed(ctx, err)
 
 	if err != nil {
@@ -165,32 +195,85 @@ func (w *Writer) flush() {
 	}
 
 	telemetry.Debug(ctx, "HAR file written",
-		slog.String("file", w.path), slog.Int("entries", len(snapshot)), slog.Int("bytes", len(data)))
+		slog.String("file", w.path), slog.Int("entries", len(snapshot)), slog.Int("bytes", size))
 
 	w.failing = false
 }
 
-func (w *Writer) write(data []byte) error {
-	err := os.MkdirAll(filepath.Dir(w.path), harDirMode)
+func (w *Writer) write(entries [][]byte) error {
+	dir := filepath.Dir(w.path)
+
+	err := w.fs.MkdirAll(dir, harDirMode)
 	if err != nil {
 		return fmt.Errorf("cannot create directory: %w", err)
 	}
 
-	tmp := w.path + ".tmp"
-
-	err = os.WriteFile(tmp, data, harFileMode)
+	tmp, err := afero.TempFile(w.fs, dir, filepath.Base(w.path)+".*.tmp")
 	if err != nil {
+		return fmt.Errorf("cannot create temp file: %w", err)
+	}
+
+	err = errors.Join(writeArchive(tmp, entries), tmp.Close())
+	if err != nil {
+		_ = w.fs.Remove(tmp.Name())
+
 		return fmt.Errorf("cannot write temp file: %w", err)
 	}
 
-	err = os.Rename(tmp, w.path)
+	err = w.fs.Rename(tmp.Name(), w.path)
 	if err != nil {
-		_ = os.Remove(tmp)
+		_ = w.fs.Remove(tmp.Name())
 
 		return fmt.Errorf("cannot rename temp file: %w", err)
 	}
 
 	return nil
+}
+
+func writeArchive(file afero.File, entries [][]byte) error {
+	buffered := bufio.NewWriter(file)
+
+	_, _ = buffered.Write(archiveHead)
+	_ = buffered.WriteByte('[')
+
+	for i, entry := range entries {
+		if i > 0 {
+			_ = buffered.WriteByte(',')
+		}
+
+		_ = buffered.WriteByte('\n')
+		_, _ = buffered.WriteString(entryPrefix)
+		_, _ = buffered.Write(entry)
+	}
+
+	if len(entries) > 0 {
+		_, _ = buffered.WriteString(entriesClosing)
+	}
+
+	_ = buffered.WriteByte(']')
+	_, _ = buffered.Write(archiveTail)
+
+	return buffered.Flush()
+}
+
+func archiveFrame() ([]byte, []byte) {
+	data, err := json.MarshalIndent(HAR{
+		Log: Log{
+			Version: harVersion,
+			Creator: Creator{Name: creatorName, Version: creatorVersion},
+			Entries: []Entry{},
+		},
+	}, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	head, tail, found := bytes.Cut(data, []byte("[]"))
+	if !found {
+		panic("har: cannot find the entries list in the archive frame")
+	}
+
+	return head, append(tail, '\n')
 }
 
 // Runs on the writer goroutine only, like every flush.

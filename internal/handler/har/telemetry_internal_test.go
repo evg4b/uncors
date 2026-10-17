@@ -11,6 +11,7 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/testutils"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/log"
@@ -24,7 +25,7 @@ func TestWriterLogsFlushes(t *testing.T) {
 	require.NoError(t, os.WriteFile(blocker, nil, 0o600))
 
 	path := filepath.Join(blocker, "out.har")
-	writer := NewWriter(path)
+	writer := NewWriter(path, WithFileSystem(afero.NewOsFs()))
 
 	t.Cleanup(func() { _ = writer.Close() })
 

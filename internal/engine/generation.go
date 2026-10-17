@@ -106,7 +106,10 @@ func (g *Generation) CacheMiddleware(globs config.CacheGlobs) contracts.Middlewa
 }
 
 func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middleware {
-	writer := register(g, har.NewWriter(harConfig.File, har.WithPublisher(g.publisher)))
+	writer := register(g, har.NewWriter(harConfig.File,
+		har.WithFileSystem(g.fs),
+		har.WithPublisher(g.publisher),
+	))
 
 	return har.NewMiddleware(
 		har.WithWriter(writer),

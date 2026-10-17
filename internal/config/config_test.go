@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"net/http"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -314,6 +315,30 @@ func TestUncorsConfigValidator(t *testing.T) {
 			value *config.UncorsConfig
 		}{
 			{
+				name: "different HAR files",
+				value: &config.UncorsConfig{
+					Mappings: []config.Mapping{
+						{
+							From: hosts.Localhost.Port(8080),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: "./recordings/api.har"},
+						},
+						{
+							From: hosts.Localhost.Port(8081),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: "./recordings/auth.har"},
+						},
+						{From: hosts.Localhost.Port(8082), To: hosts.Github.HTTPS()},
+						{From: hosts.Localhost.Port(8083), To: hosts.Github.HTTPS()},
+					},
+					CacheConfig: config.CacheConfig{
+						MaxSize:        100 * 1024 * 1024,
+						ExpirationTime: 10 * time.Minute,
+						Methods:        []string{http.MethodGet},
+					},
+				},
+			},
+			{
 				name: "minimal config",
 				value: &config.UncorsConfig{
 					Mappings: []config.Mapping{
@@ -354,6 +379,40 @@ func TestUncorsConfigValidator(t *testing.T) {
 				},
 				error: "mappings must not be empty",
 			},
+			{
+				name: "same HAR file in several mappings",
+				value: &config.UncorsConfig{
+					Mappings: []config.Mapping{
+						{
+							From: hosts.Localhost.Port(8080),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: "./recordings/api.har"},
+						},
+						{
+							From: hosts.Localhost.Port(8081),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: "./other.har"},
+						},
+						{
+							From: hosts.Localhost.Port(8082),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: "recordings/../recordings/./api.har"},
+						},
+						{
+							From: hosts.Localhost.Port(8083),
+							To:   hosts.Github.HTTPS(),
+							HAR:  config.HARConfig{File: harAbsPath(t, "other.har")},
+						},
+					},
+					CacheConfig: config.CacheConfig{
+						MaxSize:        100 * 1024 * 1024,
+						ExpirationTime: 10 * time.Minute,
+						Methods:        []string{http.MethodGet},
+					},
+				},
+				error: "mappings[2].har: HAR file \"recordings/../recordings/./api.har\" is already used by mappings[0].har\n" +
+					"mappings[3].har: HAR file \"" + harAbsPath(t, "other.har") + "\" is already used by mappings[1].har",
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -363,6 +422,15 @@ func TestUncorsConfigValidator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func harAbsPath(t *testing.T, name string) string {
+	t.Helper()
+
+	abs, err := filepath.Abs(name)
+	require.NoError(t, err)
+
+	return abs
 }
 
 func TestProxyValidatorIsValid(t *testing.T) {
