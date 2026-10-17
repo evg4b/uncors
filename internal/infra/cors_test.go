@@ -15,11 +15,11 @@ import (
 
 const expectedAllowMethods = "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS"
 
-func corsHeaders(origin, allowMethods, exposeHeaders string) http.Header {
+func corsHeaders(origin, exposeHeaders string) http.Header {
 	header := http.Header{
 		headers.AccessControlAllowOrigin:      []string{origin},
 		headers.AccessControlAllowCredentials: []string{"true"},
-		headers.AccessControlAllowMethods:     []string{allowMethods},
+		headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 		headers.AccessControlMaxAge:           []string{"86400"},
 	}
 
@@ -70,13 +70,13 @@ func TestWriteCorsHeaders(t *testing.T) {
 			name:     "Empty headers without origin",
 			header:   http.Header{},
 			origin:   "",
-			expected: corsHeaders("*", expectedAllowMethods, "*"),
+			expected: corsHeaders("*", "*"),
 		},
 		{
 			name:     "Empty headers with origin",
 			header:   http.Header{},
 			origin:   origin,
-			expected: corsHeaders(origin, expectedAllowMethods, "Vary"),
+			expected: corsHeaders(origin, "Vary"),
 		},
 		{
 			name: "Override existing headers",
@@ -88,7 +88,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlExposeHeaders:    []string{"*"},
 			},
 			origin:   "",
-			expected: corsHeaders("*", expectedAllowMethods, "*"),
+			expected: corsHeaders("*", "*"),
 		},
 		{
 			name: "Do not change existing headers",
@@ -97,7 +97,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: "",
 			expected: withHeader(
-				corsHeaders("*", expectedAllowMethods, "*"),
+				corsHeaders("*", "*"),
 				"X-Data", hosts.Github.HTTPS().String(),
 			),
 		},
@@ -144,7 +144,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, expectedAllowMethods, "Vary"),
+				corsHeaders(origin, "Vary"),
 				headers.Vary, "Accept-Encoding", headers.Origin,
 			),
 		},
@@ -155,7 +155,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, expectedAllowMethods, "Vary"),
+				corsHeaders(origin, "Vary"),
 				headers.Vary, "Accept-Encoding, ORIGIN",
 			),
 		},
@@ -166,7 +166,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, expectedAllowMethods, "Vary"),
+				corsHeaders(origin, "Vary"),
 				headers.Vary, "*",
 			),
 		},
@@ -186,7 +186,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 		infra.WriteCorsHeaders(header, origin)
 
 		assert.Equal(t, withHeader(
-			corsHeaders(origin, expectedAllowMethods, "Vary, X-Total-Count"),
+			corsHeaders(origin, "Vary, X-Total-Count"),
 			"X-Total-Count", "10",
 		), header)
 	})

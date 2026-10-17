@@ -201,9 +201,17 @@ options-handling:
 
 Check custom headers. Headers you set in mocks, scripts, or
 `options-handling.headers` replace the CORS headers UNCORS adds. A
-hand-written `Access-Control-Allow-Origin: *` breaks requests sent with
-credentials, which need the exact origin. Remove the custom header to get the
-default behavior back.
+hand-written `Access-Control-Allow-Origin: *` or
+`Access-Control-Expose-Headers: *` breaks requests sent with credentials,
+which need the exact origin and the exact header names. Remove the custom
+header to get the default behavior back.
+
+Check that JavaScript can read a response header. When the request has an
+`Origin`, UNCORS lists the response's headers in
+`Access-Control-Expose-Headers`, so `response.headers.get()` works for them
+with `credentials: 'include'` too. A header added after the status is written,
+for example by a script after `response:WriteHeader()`, is not in the list.
+See [What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
 
 Check static files. Files served from a [static directory](Static-File-Serving)
 come without CORS headers. Load them from the same origin as the page, or serve
