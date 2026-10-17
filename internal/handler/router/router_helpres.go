@@ -44,7 +44,15 @@ func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.
 
 	router.NewRoute().
 		Path(clearPrefix).
-		Handler(http.RedirectHandler(fullPrefix, http.StatusTemporaryRedirect))
+		HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			target := fullPrefix
+			if request.URL.RawQuery != "" {
+				target += "?" + request.URL.RawQuery
+			}
+
+			//nolint:gosec // G710: the target is the configured prefix; the query cannot change the host
+			http.Redirect(writer, request, target, http.StatusTemporaryRedirect)
+		})
 
 	registerRoute(router.NewRoute().PathPrefix(fullPrefix), handler)
 }

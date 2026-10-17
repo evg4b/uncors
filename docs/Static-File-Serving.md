@@ -41,7 +41,7 @@ statics:
 A request whose path starts with `path` is looked up in `dir`, with the prefix
 removed. With `path: /assets` and `dir: ./assets`, a request for
 `/assets/css/site.css` reads `./assets/css/site.css`. A request for exactly
-`/assets` is redirected to `/assets/`.
+`/assets` is redirected to `/assets/`, keeping the query string.
 
 What happens next depends on whether the file exists and whether `index` is
 set:

@@ -8,6 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	rePrefix = `^(?P<scheme>(http(s?):)?\/\/)?(?P<_dot>\.)?`
+	reLabel  = `[^./:?#@]+`
+	reSuffix = `(:\d+)?(?P<path>[\/?].*)?$`
+)
+
 var testCases = []struct {
 	name            string
 	url             string
@@ -17,62 +23,62 @@ var testCases = []struct {
 	{
 		name:            hosts.Localhost.Host().String(),
 		url:             hosts.Localhost.Host().String(),
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?localhost(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}localhost${path}",
+		expectedRegexp:  rePrefix + `localhost` + reSuffix,
+		expectedPattern: "${scheme}${_dot}localhost${path}",
 	},
 	{
 		name:            "localhost with port",
 		url:             "localhost:3000",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?localhost(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}localhost:3000${path}",
+		expectedRegexp:  rePrefix + `localhost` + reSuffix,
+		expectedPattern: "${scheme}${_dot}localhost:3000${path}",
 	},
 	{
 		name:            "single placeholder",
 		url:             "{tenant}",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${tenant}${path}",
+		expectedRegexp:  rePrefix + `(?P<tenant>` + reLabel + `)` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${tenant}${path}",
 	},
 	{
 		name:            "single placeholder with port",
 		url:             "{tenant}:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${tenant}:3001${path}",
+		expectedRegexp:  rePrefix + `(?P<tenant>` + reLabel + `)` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${tenant}:3001${path}",
 	},
 	{
 		name:            "single placeholder with url part",
 		url:             "demo.{tenant}.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?demo\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}demo.${tenant}.com${path}",
+		expectedRegexp:  rePrefix + `demo\.(?P<tenant>` + reLabel + `)\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}demo.${tenant}.com${path}",
 	},
 	{
 		name:            "single placeholder with url part and port",
 		url:             "api.{tenant}.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?api\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}api.${tenant}.com:3001${path}",
+		expectedRegexp:  rePrefix + `api\.(?P<tenant>` + reLabel + `)\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}api.${tenant}.com:3001${path}",
 	},
 	{
 		name:            "multiple placeholders with url part",
 		url:             "{region}.host.{tenant}.com",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${region}.host.${tenant}.com${path}",
+		expectedRegexp:  rePrefix + `(?P<region>` + reLabel + `)\.host\.(?P<tenant>` + reLabel + `)\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${region}.host.${tenant}.com${path}",
 	},
 	{
 		name:            "multiple placeholders with url part and port",
 		url:             "{region}.host.{tenant}.com:3001",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<region>.+)\.host\.(?P<tenant>.+)\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${region}.host.${tenant}.com:3001${path}",
+		expectedRegexp:  rePrefix + `(?P<region>` + reLabel + `)\.host\.(?P<tenant>` + reLabel + `)\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${region}.host.${tenant}.com:3001${path}",
 	},
 	{
 		name:            "host with default http port",
 		url:             "{tenant}.api.com:80",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${tenant}.api.com:80${path}",
+		expectedRegexp:  rePrefix + `(?P<tenant>` + reLabel + `)\.api\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${tenant}.api.com:80${path}",
 	},
 	{
 		name:            "host with default https port",
 		url:             "{tenant}.api.com:443",
-		expectedRegexp:  `^(?P<scheme>(http(s?):)?\/\/)?(?P<tenant>.+)\.api\.com(:\d+)?(?P<path>[\/?].*)?$`,
-		expectedPattern: "${scheme}${tenant}.api.com:443${path}",
+		expectedRegexp:  rePrefix + `(?P<tenant>` + reLabel + `)\.api\.com` + reSuffix,
+		expectedPattern: "${scheme}${_dot}${tenant}.api.com:443${path}",
 	},
 }
 

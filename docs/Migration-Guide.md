@@ -112,6 +112,17 @@ Handler errors are no longer printed as separate console lines. They appear
 under the failing request instead, and are also recorded on the request's trace
 when [tracing](Configuration#tracing-and-diagnostics) is on.
 
+### Request paths are no longer cleaned
+
+UNCORS used to answer a path with repeated slashes or `.` and `..` segments,
+such as `//api//v1`, with a `301` redirect to the cleaned path. The redirect
+skipped the mapping's mocks, scripts, and proxy, carried no CORS headers, and
+made browsers repeat a `POST` as a `GET`. Such paths are now handled as they
+came: they are proxied to the upstream unchanged, and mocks, scripts, statics,
+and rewrites match them only if their `path` matches the path as written. If a
+client sends such paths to reach a mock, fix the client or add the path to the
+mock.
+
 ## Upgrading from 0.5.x to 0.6.x
 
 Version 0.6 had three breaking changes.
