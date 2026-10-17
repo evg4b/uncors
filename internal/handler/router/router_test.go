@@ -83,7 +83,7 @@ func proxyFactory(
 		httpClient = mocks.NewHTTPClientMock(t)
 	}
 
-	return proxy.NewProxyHandler(
+	return proxy.NewHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
 	)

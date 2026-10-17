@@ -225,7 +225,7 @@ func TestWriter(t *testing.T) {
 	})
 
 	t.Run("requires a file system", func(t *testing.T) {
-		assert.PanicsWithValue(t, "har: NewWriter requires WithFileSystem option", func() {
+		assert.PanicsWithValue(t, "HARWriter: File system is not configured", func() {
 			har.NewWriter("out.har")
 		})
 	})

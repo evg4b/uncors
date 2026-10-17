@@ -33,8 +33,12 @@ type Middleware struct {
 	prefix string
 }
 
-func NewStaticMiddleware(options ...MiddlewareOption) *Middleware {
-	return helpers.ApplyOptions(&Middleware{}, options)
+func NewMiddleware(options ...MiddlewareOption) *Middleware {
+	middleware := helpers.ApplyOptions(&Middleware{}, options)
+
+	helpers.AssertIsDefined(middleware.fs, "StaticMiddleware: File system is not configured")
+
+	return middleware
 }
 
 func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request, next contracts.Next) error {

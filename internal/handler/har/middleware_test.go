@@ -483,7 +483,7 @@ func TestMiddleware_ResponseHTTPVersion(t *testing.T) {
 func TestNewMiddleware_NilWriterPanic(t *testing.T) {
 	assert.PanicsWithValue(
 		t,
-		"har: NewMiddleware requires WithWriter option",
+		"HARMiddleware: Writer is not configured",
 		func() { har.NewMiddleware() },
 	)
 }

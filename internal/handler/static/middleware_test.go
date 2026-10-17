@@ -110,7 +110,7 @@ func TestStaticMiddleware(t *testing.T) {
 			testHTTPBody       = "this is tests response"
 		)
 
-		handler := static.NewStaticMiddleware(static.WithFileSystem(fs)).
+		handler := static.NewMiddleware(static.WithFileSystem(fs)).
 			Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 				writer.WriteHeader(testHTTPStatusCode)
 				fmt.Fprint(writer, testHTTPBody)
@@ -132,7 +132,7 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file is configured", func(t *testing.T) {
-		handler := static.NewStaticMiddleware(static.WithFileSystem(fs), static.WithIndex(indexHTML)).
+		handler := static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex(indexHTML)).
 			Wrap(mocks.FailNowHandlerMock(t))
 
 		for _, testCase := range staticFileTests {
@@ -149,7 +149,7 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file doesn't exists", func(t *testing.T) {
-		handler := static.NewStaticMiddleware(static.WithFileSystem(fs), static.WithIndex("/not-exists.html")).
+		handler := static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex("/not-exists.html")).
 			Wrap(mocks.FailNowHandlerMock(t))
 
 		_, err := serveStatic(t, handler, "/options/")
@@ -211,7 +211,7 @@ func TestStaticMiddlewareReleasesFileHandles(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			trackingFs := testutils.NewTrackingFs(fs)
-			middleware := static.NewStaticMiddleware(
+			middleware := static.NewMiddleware(
 				static.WithFileSystem(trackingFs),
 				static.WithIndex(testCase.index),
 			)
@@ -237,7 +237,7 @@ func TestStaticMiddlewareStaysInsideRoot(t *testing.T) {
 	} {
 		t.Run(rawPath, func(t *testing.T) {
 			trackingFs := testutils.NewTrackingFs(fs)
-			middleware := static.NewStaticMiddleware(
+			middleware := static.NewMiddleware(
 				static.WithFileSystem(trackingFs),
 				static.WithPrefix("/static"),
 			)
@@ -283,7 +283,7 @@ func TestStaticMiddlewarePathUnderFile(t *testing.T) {
 
 	for fsName, fileSystem := range fileSystems {
 		t.Run(fsName, func(t *testing.T) {
-			forward := static.NewStaticMiddleware(static.WithFileSystem(fileSystem)).
+			forward := static.NewMiddleware(static.WithFileSystem(fileSystem)).
 				Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 					writer.WriteHeader(forwardCode)
 					fmt.Fprint(writer, forwardBody)
@@ -291,7 +291,7 @@ func TestStaticMiddlewarePathUnderFile(t *testing.T) {
 					return nil
 				}))
 
-			index := static.NewStaticMiddleware(static.WithFileSystem(fileSystem), static.WithIndex(indexHTML)).
+			index := static.NewMiddleware(static.WithFileSystem(fileSystem), static.WithIndex(indexHTML)).
 				Wrap(mocks.FailNowHandlerMock(t))
 
 			for _, path := range paths {

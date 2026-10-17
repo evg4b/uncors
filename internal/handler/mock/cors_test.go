@@ -24,7 +24,7 @@ func TestHandlerCors(t *testing.T) {
 	serve := func(t *testing.T, response config.Response, origin string) http.Header {
 		t.Helper()
 
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(&response),
 			mock.WithFileSystem(fileSystem),
 		)

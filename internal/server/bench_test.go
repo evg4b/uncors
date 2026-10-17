@@ -56,7 +56,7 @@ func benchmarkRequest(b *testing.B) {
 
 	handler := router.NewRouter(mappings,
 		router.WithFactory(generation),
-		router.WithDefaultHandler(proxy.NewProxyHandler(
+		router.WithDefaultHandler(proxy.NewHandler(
 			proxy.WithURLReplacerFactory(lo.Must(urlreplacer.NewURLReplacerFactory(mappings))),
 			proxy.WithHTTPClient(&http.Client{Transport: telemetry.WrapTransport(stubTransport{})}),
 		)),

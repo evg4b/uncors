@@ -58,7 +58,7 @@ func upgradeRequest(t *testing.T) *http.Request {
 }
 
 func upgradeHandler(response func(*http.Request) *http.Response, forwarded **http.Request) *proxy.Handler {
-	return proxy.NewProxyHandler(
+	return proxy.NewHandler(
 		proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
 			*forwarded = req
 			upstreamResponse := response(req)

@@ -25,7 +25,7 @@ func TestProxyHandlerLogs(t *testing.T) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: status,
