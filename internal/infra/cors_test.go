@@ -8,6 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,7 +77,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			name:     "Empty headers with origin",
 			header:   http.Header{},
 			origin:   origin,
-			expected: corsHeaders(origin, "Vary"),
+			expected: corsHeaders(origin, "Date, Vary"),
 		},
 		{
 			name: "Override existing headers",
@@ -122,7 +123,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 				headers.AccessControlAllowCredentials: []string{"true"},
 				headers.AccessControlAllowMethods:     []string{expectedAllowMethods},
 				headers.AccessControlMaxAge:           []string{"86400"},
-				headers.AccessControlExposeHeaders:    []string{"Content-Encoding, Vary, X-Request-Id, X-Total-Count"},
+				headers.AccessControlExposeHeaders:    []string{"Content-Encoding, Date, Vary, X-Request-Id, X-Total-Count"},
 				headers.Vary:                          []string{headers.Origin},
 				"X-Total-Count":                       []string{"10"},
 				"X-Request-Id":                        []string{"42"},
@@ -144,7 +145,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "Accept-Encoding", headers.Origin,
 			),
 		},
@@ -155,7 +156,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "Accept-Encoding, ORIGIN",
 			),
 		},
@@ -166,7 +167,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 			},
 			origin: origin,
 			expected: withHeader(
-				corsHeaders(origin, "Vary"),
+				corsHeaders(origin, "Date, Vary"),
 				headers.Vary, "*",
 			),
 		},
@@ -179,6 +180,22 @@ func TestWriteCorsHeaders(t *testing.T) {
 		})
 	}
 
+	t.Run("Exposes Date written by the server later", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteCorsHeaders(header, origin)
+
+		assert.Equal(t, "Date, Vary", header.Get(headers.AccessControlExposeHeaders))
+	})
+
+	t.Run("Exposes Date once", func(t *testing.T) {
+		header := http.Header{"Date": []string{"Wed, 21 Oct 2015 07:28:00 GMT"}}
+
+		infra.WriteCorsHeaders(header, origin)
+
+		assert.Equal(t, "Date, Vary", header.Get(headers.AccessControlExposeHeaders))
+	})
+
 	t.Run("Is idempotent", func(t *testing.T) {
 		header := http.Header{"X-Total-Count": []string{"10"}}
 
@@ -186,7 +203,7 @@ func TestWriteCorsHeaders(t *testing.T) {
 		infra.WriteCorsHeaders(header, origin)
 
 		assert.Equal(t, withHeader(
-			corsHeaders(origin, "Vary, X-Total-Count"),
+			corsHeaders(origin, "Date, Vary, X-Total-Count"),
 			"X-Total-Count", "10",
 		), header)
 	})
@@ -291,7 +308,7 @@ func TestCorsWriter(t *testing.T) {
 	newWriter := func(origin string) (*httptest.ResponseRecorder, *infra.CorsWriter) {
 		recorder := httptest.NewRecorder()
 
-		return recorder, infra.NewCorsWriter(server.NewResponseRecorder(recorder), origin)
+		return recorder, infra.NewCorsWriter(server.NewResponseRecorder(recorder), originRequest(t, origin))
 	}
 
 	t.Run("exposes the headers set before WriteHeader", func(t *testing.T) {
@@ -305,7 +322,7 @@ func TestCorsWriter(t *testing.T) {
 		require.NoError(t, response.Body.Close())
 
 		assert.Equal(t, http.StatusCreated, response.StatusCode)
-		assert.Equal(t, "Vary, X-Total-Count", response.Header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-Total-Count", response.Header.Get(headers.AccessControlExposeHeaders))
 		assert.Equal(t, []string{headers.Origin}, response.Header.Values(headers.Vary))
 		assert.Equal(t, http.StatusCreated, writer.StatusCode())
 	})
@@ -320,7 +337,7 @@ func TestCorsWriter(t *testing.T) {
 		response := recorder.Result()
 		require.NoError(t, response.Body.Close())
 
-		assert.Equal(t, "Vary, X-Request-Id", response.Header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-Request-Id", response.Header.Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("keeps exposed headers set by the handler", func(t *testing.T) {
@@ -351,7 +368,7 @@ func TestCorsWriter(t *testing.T) {
 		writer.Header().Set("X-Second", "2")
 		writer.ExposeHeaders()
 
-		assert.Equal(t, "Vary, X-First", recorder.Header().Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary, X-First", recorder.Header().Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("replaces upstream CORS headers", func(t *testing.T) {
@@ -359,17 +376,96 @@ func TestCorsWriter(t *testing.T) {
 		recorder.Header().Set(headers.AccessControlAllowHeaders, "*")
 		recorder.Header().Set(headers.AccessControlExposeHeaders, "*")
 
-		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), origin)
+		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), originRequest(t, origin))
 		writer.WriteHeader(http.StatusOK)
 
 		assert.Empty(t, recorder.Header().Values(headers.AccessControlAllowHeaders))
-		assert.Equal(t, "Vary", recorder.Header().Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Vary", recorder.Header().Get(headers.AccessControlExposeHeaders))
 	})
 
 	t.Run("unwraps to the underlying writer", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		inner := server.NewResponseRecorder(recorder)
 
-		assert.Same(t, inner, infra.NewCorsWriter(inner, origin).Unwrap())
+		assert.Same(t, inner, infra.NewCorsWriter(inner, originRequest(t, origin)).Unwrap())
 	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		recorder.Header().Set(headers.AccessControlAllowOrigin, "*")
+
+		request := testutils.RejectOrigin(t, originRequest(t, origin))
+		writer := infra.NewCorsWriter(server.NewResponseRecorder(recorder), request)
+
+		writer.Header().Set("X-Total-Count", "10")
+		writer.Header().Set(headers.AccessControlAllowCredentials, "true")
+		writer.WriteHeader(http.StatusOK)
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, recorder.Header())
+	})
+}
+
+func TestWriteRequestCorsHeaders(t *testing.T) {
+	origin := hosts.Localhost.HTTPPort(4000).String()
+
+	t.Run("writes CORS headers for the request origin", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteRequestCorsHeaders(header, originRequest(t, origin))
+
+		assert.Equal(t, corsHeaders(origin, "Date, Vary"), header)
+	})
+
+	t.Run("writes CORS headers without an origin", func(t *testing.T) {
+		header := http.Header{}
+
+		infra.WriteRequestCorsHeaders(header, originRequest(t, ""))
+
+		assert.Equal(t, corsHeaders("*", "*"), header)
+	})
+
+	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
+		header := corsHeaders(origin, "X-Total-Count")
+		header.Set("X-Total-Count", "10")
+
+		infra.WriteRequestCorsHeaders(header, testutils.RejectOrigin(t, originRequest(t, origin)))
+
+		assert.Equal(t, http.Header{
+			"X-Total-Count": []string{"10"},
+			headers.Vary:    []string{headers.Origin},
+		}, header)
+	})
+}
+
+func TestWithholdCorsHeaders(t *testing.T) {
+	header := http.Header{
+		headers.AccessControlAllowOrigin:   []string{"*"},
+		headers.AccessControlExposeHeaders: []string{"*"},
+		"access-control-max-age":           []string{"86400"},
+		"Access-Control":                   []string{"kept"},
+		headers.Vary:                       []string{"Accept-Encoding, Origin"},
+		headers.ContentType:                []string{"text/plain"},
+	}
+
+	infra.WithholdCorsHeaders(header)
+
+	assert.Equal(t, http.Header{
+		"Access-Control":    []string{"kept"},
+		headers.Vary:        []string{"Accept-Encoding, Origin"},
+		headers.ContentType: []string{"text/plain"},
+	}, header)
+}
+
+func originRequest(t *testing.T, origin string) *http.Request {
+	t.Helper()
+
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/data", nil)
+	if origin != "" {
+		request.Header.Set(headers.Origin, origin)
+	}
+
+	return request
 }

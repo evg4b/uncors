@@ -48,7 +48,9 @@ the error message. Its status tells what went wrong:
 | `500`  | Anything else, such as a failed script, a missing file, or a crash.   |
 
 The error page carries the same CORS headers as other responses, so the
-browser shows its status and text instead of a CORS error.
+browser shows its status and text instead of a CORS error. An origin that is
+not in [`allowed-origins`](Configuration#allowed-origins) gets the error page
+without them.
 
 There is no error page when the response has already started, for example when
 the upstream server drops the connection in the middle of the body. UNCORS then
@@ -221,8 +223,40 @@ Check the status. An error page from UNCORS has CORS headers, so a failed
 request shows up in the browser's network tab with its status and the error
 text. See [Error pages](#error-pages).
 
+Check `allowed-origins`. When a mapping has it, a page whose origin matches
+none of the patterns gets responses without CORS headers, and its preflight
+requests get `403`. Add the page's origin, exactly as the browser sends it in
+`Origin`, or a pattern that matches it. See
+[Allowed origins](Configuration#allowed-origins).
+
 Clear the browser cache, or try a private window, in case the browser kept an
 old preflight result.
+
+## Any website can read responses through UNCORS
+
+Without `allowed-origins`, UNCORS copies any `Origin` into
+`Access-Control-Allow-Origin` and allows credentials. A page from any site you
+open while UNCORS runs can send requests to the mapping, with your cookies for
+the local host, and read the responses. That includes upstream data that those
+cookies authorize, because UNCORS forwards the `Cookie` header. Listening on
+`127.0.0.1` does not prevent this: the requests come from your own browser.
+
+Limit CORS headers to the origins of your own frontend:
+
+```yaml
+mappings:
+  - from: http://api.local:3000
+    to: https://api.example.com
+    allowed-origins:
+      - http://localhost:*
+      - http://app.local:3000
+```
+
+Other origins then get responses without CORS headers, so the browser keeps
+them from the page, and their preflight requests get `403`. Requests are still
+forwarded, so this does not stop a page from sending simple requests (such as a
+form `POST`) that change data; it stops it from reading the answers. See
+[Allowed origins](Configuration#allowed-origins).
 
 ## Configuration problems
 

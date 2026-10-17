@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
@@ -24,6 +25,8 @@ type Scope struct {
 	method    string
 	url       *url.URL
 	startedAt time.Time
+
+	originRejected atomic.Bool
 
 	mu       sync.Mutex
 	started  bool
@@ -82,6 +85,22 @@ func Rewrote(ctx context.Context, from, to string) {
 			)
 		}
 	}
+}
+
+func RejectOrigin(ctx context.Context) {
+	if scope := fromContext(ctx); scope != nil {
+		scope.originRejected.Store(true)
+
+		if root := rootSpan(ctx); root != nil {
+			root.SetAttributes(attribute.Bool("uncors.origin_rejected", true))
+		}
+	}
+}
+
+func OriginRejected(ctx context.Context) bool {
+	scope := fromContext(ctx)
+
+	return scope != nil && scope.originRejected.Load()
 }
 
 func Fail(ctx context.Context, err error) {

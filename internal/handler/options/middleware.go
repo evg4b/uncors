@@ -32,20 +32,20 @@ func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Req
 
 		tracking.Claim(req.Context(), events.HandlerOptions)
 
+		status := m.handle(resp, req)
+
 		if span.IsRecording() {
 			span.SetAttributes(
-				semconv.HTTPResponseStatusCode(helpers.NormaliseStatusCode(m.code)),
+				semconv.HTTPResponseStatusCode(status),
 				attribute.Int("uncors.options.custom_headers", len(m.headers)),
 			)
 		}
-
-		m.handle(resp, req)
 
 		if telemetry.Enabled() {
 			telemetry.Debug(req.Context(), "answered preflight request",
 				slog.String("origin", req.Header.Get("Origin")),
 				slog.String("requested_method", req.Header.Get("Access-Control-Request-Method")),
-				slog.Int("status", helpers.NormaliseStatusCode(m.code)),
+				slog.Int("status", status),
 			)
 		}
 
@@ -55,14 +55,24 @@ func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Req
 	return next(resp, req)
 }
 
-func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) {
+func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) int {
+	if tracking.OriginRejected(req.Context()) {
+		infra.WithholdCorsHeaders(resp.Header())
+		resp.WriteHeader(http.StatusForbidden)
+
+		return http.StatusForbidden
+	}
+
 	infra.WriteCorsHeadersForOptions(resp.Header(), req.Header)
 
 	for key, value := range m.headers {
 		resp.Header().Set(key, value)
 	}
 
-	resp.WriteHeader(helpers.NormaliseStatusCode(m.code))
+	status := helpers.NormaliseStatusCode(m.code)
+	resp.WriteHeader(status)
+
+	return status
 }
 
 type MiddlewareOption = func(*Middleware)

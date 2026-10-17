@@ -1,0 +1,2 @@
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0.allowed-origins.0: String length must be greater than or equal to 1

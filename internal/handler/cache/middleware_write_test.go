@@ -28,8 +28,9 @@ func (disconnectedWriter) Write([]byte) (int, error) {
 }
 
 func TestCacheMiddlewareClientDisconnect(t *testing.T) {
+	store := cache.NewRistrettoCache(1024*1024, time.Minute)
 	middleware := cache.NewMiddleware(
-		cache.WithCacheStorage(cache.NewRistrettoCache(1024*1024, time.Minute)),
+		cache.WithCacheStorage(store),
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 	)
@@ -48,14 +49,14 @@ func TestCacheMiddlewareClientDisconnect(t *testing.T) {
 	}
 
 	require.NoError(t, serve(httptest.NewRecorder()))
-	assert.Eventually(t, func() bool {
-		recorder := httptest.NewRecorder()
-		require.NoError(t, serve(recorder))
-
-		return handler.Count() == 1 && testutils.ReadBody(t, recorder) == "cached body"
-	}, time.Second, 10*time.Millisecond)
+	store.Wait()
 
 	recorder := httptest.NewRecorder()
+	require.NoError(t, serve(recorder))
+	assert.Equal(t, "cached body", testutils.ReadBody(t, recorder))
+	assert.Equal(t, 1, handler.Count())
+
+	recorder = httptest.NewRecorder()
 
 	assert.NotPanics(t, func() {
 		require.NoError(t, serve(disconnectedWriter{recorder}))

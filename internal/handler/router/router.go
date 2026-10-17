@@ -84,7 +84,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(index int, def *config.Mock) {
-			handler := traced(r.factory.MockHandler(&def.Response), slices.Concat(
+			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.MockHandler(&def.Response)), slices.Concat(
 				mappingAttributes(mapping, routeMock),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -94,7 +94,7 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(index int, def *config.Script) {
-			handler := traced(r.factory.ScriptHandler(def), slices.Concat(
+			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.ScriptHandler(def)), slices.Concat(
 				mappingAttributes(mapping, routeScript),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -122,21 +122,23 @@ func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler
 		defaultHandler = infra.Mddleware(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
 	}
 
-	if len(mapping.Cache) == 0 && !mapping.HAR.Enabled() {
-		return defaultHandler
+	if len(mapping.Cache) > 0 || mapping.HAR.Enabled() {
+		defaultHandler = bypassOnUpgrade(r.recordedHandler(mapping, defaultHandler), defaultHandler)
 	}
 
-	upgradeHandler := defaultHandler
+	return checkOrigin(mapping.AllowedOrigins, defaultHandler)
+}
 
+func (r *Router) recordedHandler(mapping config.Mapping, handler contracts.Handler) contracts.Handler {
 	if len(mapping.Cache) > 0 {
-		defaultHandler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), defaultHandler)
+		handler = infra.Mddleware(r.cacheMiddlewareFactory(mapping.Cache), handler)
 	}
 
 	if mapping.HAR.Enabled() {
-		defaultHandler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), defaultHandler)
+		handler = infra.Mddleware(r.factory.HARMiddleware(&mapping.HAR), handler)
 	}
 
-	return bypassOnUpgrade(defaultHandler, upgradeHandler)
+	return handler
 }
 
 func bypassOnUpgrade(handler, upgradeHandler contracts.Handler) contracts.Handler {

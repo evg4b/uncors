@@ -253,8 +253,8 @@ an error instead of creating an expired CA.
 UNCORS changed the CORS headers it adds to proxied, mock, and script
 responses:
 
-- `Access-Control-Expose-Headers` now lists the names of the response headers
-  when the request has an `Origin`, instead of `*`. Browsers read `*` literally
+- `Access-Control-Expose-Headers` now lists `Date` and the names of the
+  response headers when the request has an `Origin`, instead of `*`. Browsers read `*` literally
   for requests sent with credentials, so custom headers were hidden from
   JavaScript. Without an `Origin` it is still `*`.
 - `Access-Control-Allow-Headers` is no longer sent with these responses. It is
@@ -273,6 +273,24 @@ Tests or snapshots that compare UNCORS response headers need the new values.
 To send other values, set the headers in the mock, the script, or
 `options-handling.headers`. See
 [What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
+
+### Cached responses
+
+The response cache follows more of the HTTP caching rules:
+
+- Responses with `Set-Cookie`, with `no-store` or `private` in
+  `Cache-Control`, or with `Vary: *` are no longer cached.
+- The request's `Accept-Encoding` and the request headers named in the
+  upstream `Vary` header are part of the cache key, so clients that ask for
+  different encodings or languages get separate entries.
+- A repeated query parameter keeps the order of its values in the key:
+  `?a=1&a=2` and `?a=2&a=1` no longer share an entry.
+- `Access-Control-*` headers are no longer stored. A cache hit gets the CORS
+  headers for its own `Origin` instead of those of the request that filled the
+  entry.
+
+Expect more cache misses for APIs that set cookies or send these headers. See
+[Response Caching](Response-Caching#what-gets-cached).
 
 ### Status codes of file mocks
 

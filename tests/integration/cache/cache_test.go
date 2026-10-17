@@ -50,6 +50,27 @@ func TestCacheMiddleware(t *testing.T) {
 		}, 2*time.Second, 10*time.Millisecond)
 	})
 
+	t.Run("cache hit answers each origin with its own CORS headers", func(t *testing.T) {
+		url := env.URL("cache.local", "/cached/cors")
+		request := func(origin string) *http.Request {
+			req := integration.NewRequest(t, http.MethodGet, url)
+			req.Header.Set("Origin", origin)
+
+			return req
+		}
+
+		require.Eventually(t, func() bool {
+			return !env.Do(t, request("http://first.local")).HasBackendRequest()
+		}, 2*time.Second, 10*time.Millisecond)
+
+		result := env.Do(t, request("http://second.local"))
+
+		assert.False(t, result.HasBackendRequest())
+		assert.Equal(t, "ok", result.BodyString())
+		assert.Equal(t, "http://second.local", result.Response.Header.Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, []string{"Origin"}, result.Response.Header.Values("Vary"))
+	})
+
 	t.Run("path outside the cache globs always reaches the backend", func(t *testing.T) {
 		backend.Reset()
 

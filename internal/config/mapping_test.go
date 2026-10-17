@@ -108,6 +108,14 @@ func TestURLMappingClone(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "structure with allowed origins",
+			expected: config.Mapping{
+				From:           hosts.Localhost.HTTP(),
+				To:             localhostSecure,
+				AllowedOrigins: config.AllowedOrigins{"http://localhost:*"},
+			},
+		},
 	}
 
 	for _, testCase := range tests {
@@ -271,6 +279,15 @@ func TestMappingValidator(t *testing.T) {
 					},
 				},
 				error: "mapping.cache[0] is not a valid glob pattern",
+			},
+			{
+				name: "mapping with invalid allowed origins",
+				value: config.Mapping{
+					From:           hosts.Parse("localhost"),
+					To:             hosts.Github.Host(),
+					AllowedOrigins: config.AllowedOrigins{"http://localhost:*", "http://[localhost"},
+				},
+				error: "mapping.allowed-origins[1] is not a valid glob pattern",
 			},
 			{
 				name: "mapping with invalid rewrites",

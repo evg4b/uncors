@@ -54,7 +54,7 @@ func TestHandlerCors(t *testing.T) {
 		}, origin)
 
 		assert.Equal(t, origin, header.Get(headers.AccessControlAllowOrigin))
-		assert.Equal(t, "Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Date, Etag, Vary, X-Total-Count", header.Get(headers.AccessControlExposeHeaders))
 		assert.Equal(t, []string{headers.Origin}, header.Values(headers.Vary))
 		assert.Empty(t, header.Values(headers.AccessControlAllowHeaders))
 	})
@@ -68,7 +68,7 @@ func TestHandlerCors(t *testing.T) {
 			},
 		}, origin)
 
-		assert.Equal(t, "Accept-Ranges, Vary, X-Request-Id", header.Get(headers.AccessControlExposeHeaders))
+		assert.Equal(t, "Accept-Ranges, Date, Vary, X-Request-Id", header.Get(headers.AccessControlExposeHeaders))
 		assert.Equal(t, []string{headers.Origin}, header.Values(headers.Vary))
 	})
 

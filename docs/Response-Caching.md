@@ -23,17 +23,44 @@ A response is cached when all of these hold:
 - the request method is listed in `cache-config.methods` (`GET` by default);
 - the request path matches one of the mapping's `cache` globs;
 - the upstream status code is in the 2xx range;
+- the response has no `Set-Cookie` header;
+- the upstream `Cache-Control` header has neither `no-store` nor `private`;
+- the upstream `Vary` header is not `*`;
 - the response body is at most 10 MiB. Larger responses, such as long event
   streams, are passed through without being stored.
 
-The cache key is the method, scheme, host name and port, path, and query
-string, so mappings on different ports never share entries. Query parameters
-are sorted first, so `?a=1&b=2` and `?b=2&a=1` share an entry.
-Request headers are not part of the key.
+## Cache key
+
+The cache key is made of:
+
+- the method, scheme, host name and port, and path, so mappings on different
+  ports never share entries;
+- the query string. Parameter names are sorted, so `?a=1&b=2` and `?b=2&a=1`
+  share an entry. The values of a repeated parameter keep their order:
+  `?a=1&a=2` and `?a=2&a=1` are cached separately;
+- the request's `Accept-Encoding`, compared without case, spaces, or order, so
+  `gzip, br` and `br,gzip` share an entry. UNCORS forwards this header, and
+  the upstream server may compress the body for it. A client that sends no
+  `Accept-Encoding`, such as `curl` without `--compressed`, never gets a body
+  compressed for a browser;
+- the request headers listed in the upstream `Vary` header. With
+  `Vary: Accept-Language`, requests in different languages are cached
+  separately. `Origin` and `Accept-Encoding` in `Vary` add nothing: CORS headers
+  are written for each request, and `Accept-Encoding` is always in the key.
+
+Other request headers are not part of the key.
+
+## Cache hits
 
 A cache hit returns the stored status code, headers, and body without
-contacting the upstream server. The cache lives in memory only. It is emptied
-when UNCORS stops or reloads its configuration.
+contacting the upstream server. `Access-Control-*` headers are not stored.
+Each hit gets the CORS headers written for its own `Origin`, as a proxied
+response would, so a response cached for one page can be served to another.
+When the mapping has [`allowed-origins`](Configuration#allowed-origins) and the
+origin does not match, the hit has no CORS headers, as with any other response.
+
+The cache lives in memory only. It is emptied when UNCORS stops or reloads its
+configuration.
 
 ## Glob syntax
 
@@ -82,7 +109,10 @@ cache-config:
 `5m`, `2h`, or `1h30m`. The cache is built on
 [ristretto](https://github.com/dgraph-io/ristretto). When it reaches
 `max-size`, ristretto evicts entries it considers least useful, and it may
-also decline to store a new entry.
+also decline to store a new entry. A response larger than `max-size` is never
+stored. With [`UNCORS_TRACE`](Configuration#tracing-and-diagnostics) on, a
+declined response adds the `uncors.cache.rejected` event to its `cache.store`
+span and is counted by the `uncors.cache.rejections` metric.
 
 ## Examples
 
