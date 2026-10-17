@@ -1,6 +1,8 @@
 package certs
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/tls"
 	"crypto/x509"
 	"testing"
@@ -50,7 +52,6 @@ func TestIssueHostCertificate(t *testing.T) {
 		assert.Contains(t, x509Cert.Subject.Organization, "UNCORS Development CA")
 
 		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageDigitalSignature)
-		assert.NotEqual(t, 0, x509Cert.KeyUsage&x509.KeyUsageKeyEncipherment)
 		assert.Contains(t, x509Cert.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
 
 		assert.False(t, x509Cert.IsCA)
@@ -124,4 +125,37 @@ func TestIssueHostCertificate(t *testing.T) {
 			assert.Equal(t, host, x509Cert.Subject.CommonName)
 		}
 	})
+
+	t.Run("should use an ECDSA P-256 key", func(t *testing.T) {
+		cert, err := issueHostCertificate(caCert, caKey, "ecdsa.local")
+		require.NoError(t, err)
+
+		privateKey, ok := cert.PrivateKey.(*ecdsa.PrivateKey)
+		require.True(t, ok)
+		assert.Equal(t, elliptic.P256(), privateKey.Curve)
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		require.NoError(t, err)
+		assert.Equal(t, x509.ECDSA, x509Cert.PublicKeyAlgorithm)
+		assert.Equal(t, x509.SHA256WithRSA, x509Cert.SignatureAlgorithm)
+	})
+}
+
+func TestIssueHostCertificate_ExpiresWithCA(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	certPath, keyPath, err := Generate(fs, testTmpDir, 3)
+	require.NoError(t, err)
+
+	caCert, caKey, err := Load(fs, certPath, keyPath)
+	require.NoError(t, err)
+
+	cert, err := issueHostCertificate(caCert, caKey, "short.local")
+	require.NoError(t, err)
+
+	x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+	require.NoError(t, err)
+
+	assert.False(t, x509Cert.NotAfter.After(caCert.NotAfter))
+	assert.True(t, x509Cert.NotAfter.Equal(caCert.NotAfter))
 }

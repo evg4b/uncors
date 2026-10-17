@@ -136,6 +136,24 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
   runs. Set `max-body-size` on a script that needs larger bodies. Before, a
   body that failed to read reached the script as `nil`.
 
+### HTTPS certificates only for mapped hosts
+
+UNCORS used to sign a certificate for any host name a client asked for. It now
+signs certificates only for the host names of the `https://` mappings, and the
+TLS handshake fails for any other name with the notice
+"TLS: no https mapping for host". A `{name}` placeholder matches one label of
+the host name. A client that connects to an IP address without a host name
+gets a certificate only when a mapping uses that address, such as
+`https://127.0.0.1:8443`. If a client reaches UNCORS under a name that is not
+in `from`, add a mapping for it. See
+[Use HTTPS mappings](Configuration#use-https-mappings).
+
+Host certificates now use ECDSA P-256 keys instead of RSA, and end no later
+than the CA does. Existing CAs keep working.
+
+`uncors generate-certs --validity-days` with zero or a negative number is now
+an error instead of creating an expired CA.
+
 ## Upgrading from 0.5.x to 0.6.x
 
 Version 0.6 had three breaking changes.

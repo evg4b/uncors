@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -17,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/singleflight"
 )
 
 // Manager loads the CA on the first TLS handshake and signs a certificate
@@ -24,8 +26,10 @@ import (
 type Manager struct {
 	fs        afero.Fs
 	publisher events.Publisher
+	hosts     atomic.Pointer[hostMatcher]
+	issuing   singleflight.Group
 
-	// Guards everything below; ensureCA, loadCA and certificateForHost run under it.
+	// Guards everything below; ensureCA and loadCA run under it.
 	mu     sync.Mutex
 	caCert *x509.Certificate
 	caKey  *rsa.PrivateKey
@@ -36,6 +40,11 @@ type Manager struct {
 	reported   map[string]bool
 }
 
+const (
+	maxCachedCertificates = 256
+	maxReportedHosts      = 256
+)
+
 func NewManager(fs afero.Fs, publisher events.Publisher) *Manager {
 	return &Manager{
 		fs:        fs,
@@ -43,6 +52,22 @@ func NewManager(fs afero.Fs, publisher events.Publisher) *Manager {
 		cache:     make(map[string]*tls.Certificate),
 		reported:  make(map[string]bool),
 	}
+}
+
+func (m *Manager) SetHosts(hosts []string) {
+	matcher := newHostMatcher(hosts)
+	m.hosts.Store(matcher)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for host := range m.cache {
+		if !matcher.match(host) {
+			delete(m.cache, host)
+		}
+	}
+
+	clear(m.reported)
 }
 
 func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -58,17 +83,6 @@ func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certifi
 		annotateClientHello(span, clientHello)
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	err := m.ensureCA(ctx)
-	if err != nil {
-		err = fmt.Errorf("failed to load CA certificate: %w", err)
-		telemetry.Fail(span, err)
-
-		return nil, err
-	}
-
 	host, ok := extractServerHost(clientHello)
 	if !ok {
 		telemetry.Fail(span, ErrNoSNIProvided)
@@ -78,6 +92,22 @@ func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certifi
 
 	if span.IsRecording() {
 		span.SetAttributes(attribute.String("uncors.tls.host", host))
+	}
+
+	if !m.hosts.Load().match(host) {
+		err := fmt.Errorf("%w: %s", ErrHostNotMapped, host)
+		telemetry.Fail(span, err)
+		m.reportOnce(host, err)
+
+		return nil, err
+	}
+
+	err := m.ensureCA(ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to load CA certificate: %w", err)
+		telemetry.Fail(span, err)
+
+		return nil, err
 	}
 
 	cert, err := m.certificateForHost(ctx, host)
@@ -92,6 +122,9 @@ func (m *Manager) GetCertificate(clientHello *tls.ClientHelloInfo) (*tls.Certifi
 }
 
 func (m *Manager) ensureCA(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.caCert != nil {
 		return nil
 	}
@@ -144,33 +177,82 @@ func (m *Manager) loadCA(ctx context.Context) error {
 }
 
 func (m *Manager) certificateForHost(ctx context.Context, host string) (*tls.Certificate, error) {
-	if cert, exists := m.cache[host]; exists {
+	if cert, ok := m.cached(host); ok {
 		return cert, nil
 	}
 
+	result, err, _ := m.issuing.Do(host, func() (any, error) {
+		if cert, ok := m.cached(host); ok {
+			return cert, nil
+		}
+
+		return m.generate(ctx, host)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cert, _ := result.(*tls.Certificate)
+
+	return cert, nil
+}
+
+func (m *Manager) cached(host string) (*tls.Certificate, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	cert, ok := m.cache[host]
+
+	return cert, ok
+}
+
+func (m *Manager) generate(ctx context.Context, host string) (*tls.Certificate, error) {
 	_, span := telemetry.Start(ctx, "tls.generate_certificate")
 	defer span.End()
 
 	span.SetAttributes(attribute.String("uncors.tls.host", host))
 
-	cert, err := issueHostCertificate(m.caCert, m.caKey, host)
+	m.mu.Lock()
+	caCert, caKey := m.caCert, m.caKey
+	m.mu.Unlock()
+
+	cert, err := issueHostCertificate(caCert, caKey, host)
 	telemetry.TLSCertificate(ctx, err)
 
 	if err != nil {
 		err = fmt.Errorf("failed to generate certificate for %s: %w", host, err)
 		telemetry.Fail(span, err)
-
-		if !m.reported[host] {
-			m.reported[host] = true
-			m.publisher.Publish(events.Notice{Level: events.NoticeError, Text: "TLS: " + err.Error()})
-		}
+		m.reportOnce(host, err)
 
 		return nil, err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(m.cache) >= maxCachedCertificates {
+		for cachedHost := range m.cache {
+			delete(m.cache, cachedHost)
+
+			break
+		}
 	}
 
 	m.cache[host] = cert
 
 	return cert, nil
+}
+
+func (m *Manager) reportOnce(host string, err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.reported[host] || len(m.reported) >= maxReportedHosts {
+		return
+	}
+
+	m.reported[host] = true
+	m.publisher.Publish(events.Notice{Level: events.NoticeError, Text: "TLS: " + err.Error()})
 }
 
 func annotateClientHello(span trace.Span, clientHello *tls.ClientHelloInfo) {

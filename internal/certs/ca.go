@@ -74,9 +74,10 @@ func Generate(fs afero.Fs, dir string, validityDays int) (string, string, error)
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  true,
+		MaxPathLenZero:        true,
 	}
 
-	certDER, privateKey, err := issue(template, nil, nil)
+	certDER, privateKey, err := issueCA(template)
 	if err != nil {
 		return "", "", err
 	}
@@ -111,6 +112,11 @@ func writePEM(fs afero.Fs, path string, perm os.FileMode, blockType string, data
 	defer func() {
 		err = errors.Join(err, file.Close())
 	}()
+
+	err = fs.Chmod(path, perm)
+	if err != nil {
+		return err
+	}
 
 	return pem.Encode(file, &pem.Block{Type: blockType, Bytes: data})
 }

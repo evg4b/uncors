@@ -243,4 +243,53 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			assert.Equal(t, testCase.wantErr, err)
 		})
 	}
+
+	t.Run("should restrict the key permissions when overwriting with force flag", func(t *testing.T) {
+		fakeHome := filepath.Join(t.TempDir(), "home")
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+
+		keyPath := filepath.Join(caDir, caKeyFile)
+		require.NoError(t, os.WriteFile(keyPath, []byte("key"), 0o600))
+		require.NoError(t, os.Chmod(keyPath, 0o644))
+
+		cmd := commands.NewGenerateCertsCommand(
+			commands.WithFs(afero.NewOsFs()),
+			commands.WithOutput(mocks.NoopOutput()),
+		)
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		cmd.DefineFlags(flags, version)
+		require.NoError(t, flags.Set("force", "true"))
+
+		require.NoError(t, cmd.Execute())
+
+		keyInfo, err := os.Stat(keyPath)
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0o600), keyInfo.Mode().Perm())
+	})
+
+	for _, days := range []string{"0", "-1"} {
+		t.Run("should reject validity days "+days, func(t *testing.T) {
+			fakeHome := filepath.Join(t.TempDir(), "home")
+			t.Setenv("HOME", fakeHome)
+
+			fs := afero.NewMemMapFs()
+			cmd := commands.NewGenerateCertsCommand(
+				commands.WithFs(fs),
+				commands.WithOutput(mocks.NoopOutput()),
+			)
+			flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			cmd.DefineFlags(flags, version)
+			require.NoError(t, flags.Set("validity-days", days))
+
+			err := cmd.Execute()
+			require.ErrorIs(t, err, commands.ErrInvalidValidityDays)
+
+			exists, err := afero.DirExists(fs, filepath.Join(fakeHome, configDir, "uncors"))
+			require.NoError(t, err)
+			assert.False(t, exists)
+		})
+	}
 }

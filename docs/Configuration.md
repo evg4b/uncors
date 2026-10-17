@@ -232,6 +232,8 @@ on or not:
 - the config file watcher reports an error;
 - a TLS certificate cannot be loaded or generated (once for the CA, once per
   host);
+- a client asks for a TLS certificate for a host that no `https://` mapping
+  covers (once per host);
 - in-flight requests are cut off because they did not finish before a restart.
 
 ## Configuration file
@@ -599,9 +601,11 @@ uncors generate-certs --force
 This writes two files to `~/.config/uncors/`:
 
 - `ca.crt`, the CA certificate, which you add to your system's trust store;
-- `ca.key`, its private key.
+- `ca.key`, its private key, readable only by you (`0600`), also when
+  `--force` replaces an existing file.
 
 Without `--force`, the command stops if either file already exists.
+`--validity-days` must be a positive number.
 
 Trust `ca.crt` so browsers accept the certificates UNCORS creates:
 
@@ -623,10 +627,23 @@ mappings:
 ```
 
 UNCORS refuses to start if a mapping uses `https://` in `from` and the CA files
-are missing. It creates a certificate for each host name the client asks for
-(through SNI) and keeps it in memory, so clients must connect by host name, not
-by IP address. The HTTPS listener only starts when at least one mapping uses an
+are missing. The HTTPS listener only starts when at least one mapping uses an
 `https://` source.
+
+UNCORS signs a certificate only for the host names of the `https://` mappings
+in the current configuration, and keeps it in memory. It reads the host name
+the client asks for (through SNI). A `{name}` placeholder matches one label, as
+in routing: `https://{tenant}.local.dev` covers `acme.local.dev` but not
+`a.b.local.dev`. For any other host name the TLS handshake fails, and UNCORS
+shows a notice once per host. When the configuration is reloaded, the new host
+names take effect.
+
+A client that connects to an IP address sends no host name. UNCORS then uses
+the address the client reached (`127.0.0.1`), so this works only with a
+mapping such as `https://127.0.0.1:8443`. Otherwise, connect by host name.
+
+Host certificates use ECDSA P-256 keys and are valid for a year, but never
+past the expiry date of the CA.
 
 ## Proxy configuration
 

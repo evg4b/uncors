@@ -10,8 +10,10 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -60,5 +62,29 @@ func TestTLS(t *testing.T) {
 
 		var certErr x509.UnknownAuthorityError
 		assert.ErrorAs(t, err, &certErr)
+	})
+
+	t.Run("handshake for a host outside the mappings is rejected", func(t *testing.T) {
+		transport, ok := env.Client.Transport.(*http.Transport)
+		require.True(t, ok)
+
+		transport = transport.Clone()
+		transport.TLSClientConfig.ServerName = "unmapped.local"
+
+		req := integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/"))
+
+		resp, err := (&http.Client{Transport: transport}).Do(req) //nolint:bodyclose
+		require.Error(t, err)
+		require.Nil(t, resp)
+
+		var certErr x509.UnknownAuthorityError
+		assert.NotErrorAs(t, err, &certErr)
+
+		notices := lo.FilterMap(env.Events(), func(event events.Event, _ int) (string, bool) {
+			notice, ok := event.(events.Notice)
+
+			return notice.Text, ok
+		})
+		assert.Contains(t, notices, "TLS: no https mapping for host: unmapped.local")
 	})
 }

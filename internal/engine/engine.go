@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/evg4b/uncors/internal/certs"
@@ -18,12 +19,14 @@ import (
 type Engine struct {
 	fs        afero.Fs
 	publisher events.Publisher
+	certs     *certs.Manager
 	server    *server.Server
 
 	// Serialises Start, Restart, Shutdown and Close for their whole duration:
 	// guarding only the generation swap lets overlapping restarts orphan listeners.
 	mu         sync.Mutex
 	generation *Generation
+	tlsHosts   []string
 }
 
 type Option = func(*Engine)
@@ -40,7 +43,8 @@ func New(fs afero.Fs, options ...Option) *Engine {
 		publisher: events.NoopPublisher{},
 	}, options)
 
-	engine.server = server.New(certs.NewManager(engine.fs, engine.publisher).GetCertificate, engine.publisher)
+	engine.certs = certs.NewManager(engine.fs, engine.publisher)
+	engine.server = server.New(engine.certs.GetCertificate, engine.publisher)
 
 	return engine
 }
@@ -85,13 +89,19 @@ func (e *Engine) apply(
 
 	return telemetry.Run(ctx, span, func(ctx context.Context) error {
 		generation := e.buildGeneration(ctx, uncorsConfig)
+		tlsHosts := httpsHosts(uncorsConfig.Mappings)
+		e.certs.SetHosts(slices.Concat(e.tlsHosts, tlsHosts))
 
 		err := serve(ctx, generation.Targets())
 		if err != nil {
+			e.certs.SetHosts(e.tlsHosts)
+
 			return errors.Join(err, generation.Close())
 		}
 
 		previous := e.swap(generation)
+		e.tlsHosts = tlsHosts
+		e.certs.SetHosts(tlsHosts)
 		e.publisher.Publish(served(uncorsConfig.Mappings))
 
 		return closeGeneration(ctx, previous)
@@ -115,6 +125,18 @@ func (e *Engine) swap(generation *Generation) *Generation {
 	e.generation = generation
 
 	return previous
+}
+
+func httpsHosts(mappings config.Mappings) []string {
+	hosts := make([]string, 0, len(mappings))
+
+	for _, mapping := range mappings {
+		if mapping.From.Scheme == "https" {
+			hosts = append(hosts, mapping.From.Hostname)
+		}
+	}
+
+	return hosts
 }
 
 func closeGeneration(ctx context.Context, generation *Generation) error {

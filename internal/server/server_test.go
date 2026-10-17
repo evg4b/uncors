@@ -121,8 +121,10 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
-		instance := server.New(manager, events.NewBus())
+		manager := certs.NewManager(fs, events.NoopPublisher{})
+		manager.SetHosts([]string{"127.0.0.1"})
+
+		instance := server.New(manager.GetCertificate, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), targets))
 
 		defer func() {
@@ -172,8 +174,10 @@ func TestServer(t *testing.T) {
 			}
 		})
 
-		manager := certs.NewManager(fs, events.NoopPublisher{}).GetCertificate
-		instance := server.New(manager, events.NewBus())
+		manager := certs.NewManager(fs, events.NoopPublisher{})
+		manager.SetHosts([]string{"127.0.0.1"})
+
+		instance := server.New(manager.GetCertificate, events.NewBus())
 		require.NoError(t, instance.Start(t.Context(), append(httpTargets, httpsTargets...)))
 
 		defer func() {
