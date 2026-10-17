@@ -47,6 +47,7 @@ type instruments struct {
 	cacheLookups     metric.Int64Counter
 	cacheStores      metric.Int64Counter
 	cacheStoredBytes metric.Int64Counter
+	cacheRejections  metric.Int64Counter
 	mockResponses    metric.Int64Counter
 	mockDelay        metric.Float64Histogram
 	scriptRuns       metric.Int64Counter
@@ -87,6 +88,7 @@ func newInstruments(meter metric.Meter) *instruments {
 		cacheLookups:     counter("uncors.cache.lookups", "{lookup}", "Cache lookups, by hit or miss."),
 		cacheStores:      counter("uncors.cache.stores", "{response}", "Responses stored in the cache."),
 		cacheStoredBytes: counter("uncors.cache.stored_bytes", "By", "Bytes of response bodies stored in the cache."),
+		cacheRejections:  counter("uncors.cache.rejections", "{response}", "Responses the cache storage declined to store."),
 		mockResponses:    counter("uncors.mock.responses", "{response}", "Mock responses, served or cancelled."),
 		mockDelay:        seconds("uncors.mock.delay", "Configured delays of the mock responses served."),
 		scriptRuns:       counter("uncors.script.executions", "{execution}", "Lua script executions."),
@@ -141,6 +143,12 @@ func CacheStored(ctx context.Context, bytes int) {
 	if state := current.Load(); state != nil {
 		state.metrics.cacheStores.Add(ctx, 1)
 		state.metrics.cacheStoredBytes.Add(ctx, int64(bytes))
+	}
+}
+
+func CacheRejected(ctx context.Context) {
+	if state := current.Load(); state != nil {
+		state.metrics.cacheRejections.Add(ctx, 1)
 	}
 }
 

@@ -174,13 +174,14 @@ Child spans show the work done for the request:
 | `script.serve`, `script.lua.compile`, `script.lua.execute` | The script source and size, the status it wrote, and the Lua stack trace of an error.    |
 | `rewrite.apply`                                            | The pattern, template, path variables, original and new path, and target host.           |
 | `har.record`                                               | The HAR file, body sizes, and whether the entry was dropped because the queue was full.  |
-| `cache.lookup`, `cache.store`                              | The cache key, hit or miss, and the cached status and size.                              |
+| `cache.lookup`, `cache.store`                              | The cache key, hit or miss, the cached status and size, and whether the store declined.  |
 | `options.preflight`                                        | An answered `OPTIONS` request and its configured status.                                 |
 | `proxy.forward`, `proxy.copy_body`                         | The upstream URL, its content type, length, and protocol, and the bytes copied.          |
 | `HTTP <method>` (client)                                   | The real upstream request; its connection phases with `UNCORS_TRACE_CONNECTIONS`.        |
 
 Requests that skip the cache add a `uncors.cache.not_cacheable` event, and
-responses that are not stored add `uncors.cache.not_stored`. Lifecycle work has
+responses that are not stored add `uncors.cache.not_stored`, or
+`uncors.cache.rejected` when the cache storage declined them. Lifecycle work has
 its own traces: `engine.start`, `engine.restart`, `engine.shutdown`,
 `supervisor.reload`, `config.load`, `server.listen`, `tls.get_certificate`
 (with the SNI name and ALPN protocols), `tls.ensure_ca` (with the CA expiry),
@@ -211,6 +212,7 @@ A request the client cancels is logged at `DEBUG`, not as a failure.
 | `http.server.active_requests`                                              | Requests being served.                                               |
 | `http.client.request.duration` and the other `http.client.*` metrics       | Upstream requests by host and status or error type, timed and sized. |
 | `uncors.cache.lookups`, `uncors.cache.stores`, `uncors.cache.stored_bytes` | Cache hits and misses, and responses stored.                         |
+| `uncors.cache.rejections`                                                  | Responses the cache storage declined to store.                       |
 | `uncors.mock.responses`, `uncors.mock.delay`                               | Mock responses, served or cancelled during their delay.              |
 | `uncors.script.executions`, `uncors.script.duration`                       | Lua script runs, by success or error, and their duration.            |
 | `uncors.static.requests`                                                   | Static requests served, passed on to the proxy, or failed.           |

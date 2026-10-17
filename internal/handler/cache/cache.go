@@ -16,6 +16,10 @@ func CalcCost(value *contracts.CachedResponse) int64 {
 		}, 0)
 	}
 
+	for _, name := range value.Vary {
+		cost += len(name)
+	}
+
 	return int64(cost)
 }
 
@@ -49,9 +53,13 @@ func (cs *RistrettoCache) Get(key string) (contracts.CachedResponse, bool) {
 	return cs.storage.Get(key)
 }
 
-func (cs *RistrettoCache) Set(key string, value contracts.CachedResponse) {
-	cs.storage.SetWithTTL(key, value, CalcCost(&value), cs.ttl)
-	cs.storage.Wait()
+func (cs *RistrettoCache) Set(key string, value contracts.CachedResponse) bool {
+	cost := CalcCost(&value)
+	if cost > cs.storage.MaxCost() {
+		return false
+	}
+
+	return cs.storage.SetWithTTL(key, value, cost, cs.ttl)
 }
 
 func (cs *RistrettoCache) Wait() {

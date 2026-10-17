@@ -25,7 +25,7 @@ type CacheMock struct {
 	beforeGetCounter uint64
 	GetMock          mCacheMockGet
 
-	funcSet          func(key string, value mm_contracts.CachedResponse)
+	funcSet          func(key string, value mm_contracts.CachedResponse) (b1 bool)
 	funcSetOrigin    string
 	inspectFuncSet   func(key string, value mm_contracts.CachedResponse)
 	afterSetCounter  uint64
@@ -383,9 +383,9 @@ type CacheMockSetExpectation struct {
 	params             *CacheMockSetParams
 	paramPtrs          *CacheMockSetParamPtrs
 	expectationOrigins CacheMockSetExpectationOrigins
-
-	returnOrigin string
-	Counter      uint64
+	results            *CacheMockSetResults
+	returnOrigin       string
+	Counter            uint64
 }
 
 // CacheMockSetParams contains parameters of the Cache.Set
@@ -398,6 +398,11 @@ type CacheMockSetParams struct {
 type CacheMockSetParamPtrs struct {
 	key   *string
 	value *mm_contracts.CachedResponse
+}
+
+// CacheMockSetResults contains results of the Cache.Set
+type CacheMockSetResults struct {
+	b1 bool
 }
 
 // CacheMockSetOrigins contains origins of expectations of the Cache.Set
@@ -500,7 +505,7 @@ func (mmSet *mCacheMockSet) Inspect(f func(key string, value mm_contracts.Cached
 }
 
 // Return sets up results that will be returned by Cache.Set
-func (mmSet *mCacheMockSet) Return() *CacheMock {
+func (mmSet *mCacheMockSet) Return(b1 bool) *CacheMock {
 	if mmSet.mock.funcSet != nil {
 		mmSet.mock.t.Fatalf("CacheMock.Set mock is already set by Set")
 	}
@@ -508,13 +513,13 @@ func (mmSet *mCacheMockSet) Return() *CacheMock {
 	if mmSet.defaultExpectation == nil {
 		mmSet.defaultExpectation = &CacheMockSetExpectation{mock: mmSet.mock}
 	}
-
+	mmSet.defaultExpectation.results = &CacheMockSetResults{b1}
 	mmSet.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
 	return mmSet.mock
 }
 
 // Set uses given function f to mock the Cache.Set method
-func (mmSet *mCacheMockSet) Set(f func(key string, value mm_contracts.CachedResponse)) *CacheMock {
+func (mmSet *mCacheMockSet) Set(f func(key string, value mm_contracts.CachedResponse) (b1 bool)) *CacheMock {
 	if mmSet.defaultExpectation != nil {
 		mmSet.mock.t.Fatalf("Default expectation is already set for the Cache.Set method")
 	}
@@ -545,8 +550,8 @@ func (mmSet *mCacheMockSet) When(key string, value mm_contracts.CachedResponse) 
 }
 
 // Then sets up Cache.Set return parameters for the expectation previously defined by the When method
-
-func (e *CacheMockSetExpectation) Then() *CacheMock {
+func (e *CacheMockSetExpectation) Then(b1 bool) *CacheMock {
+	e.results = &CacheMockSetResults{b1}
 	return e.mock
 }
 
@@ -572,7 +577,7 @@ func (mmSet *mCacheMockSet) invocationsDone() bool {
 }
 
 // Set implements mm_contracts.Cache
-func (mmSet *CacheMock) Set(key string, value mm_contracts.CachedResponse) {
+func (mmSet *CacheMock) Set(key string, value mm_contracts.CachedResponse) (b1 bool) {
 	mm_atomic.AddUint64(&mmSet.beforeSetCounter, 1)
 	defer mm_atomic.AddUint64(&mmSet.afterSetCounter, 1)
 
@@ -592,7 +597,7 @@ func (mmSet *CacheMock) Set(key string, value mm_contracts.CachedResponse) {
 	for _, e := range mmSet.SetMock.expectations {
 		if minimock.Equal(*e.params, mm_params) {
 			mm_atomic.AddUint64(&e.Counter, 1)
-			return
+			return e.results.b1
 		}
 	}
 
@@ -620,15 +625,17 @@ func (mmSet *CacheMock) Set(key string, value mm_contracts.CachedResponse) {
 				mmSet.SetMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
 
-		return
-
+		mm_results := mmSet.SetMock.defaultExpectation.results
+		if mm_results == nil {
+			mmSet.t.Fatal("No results are set for the CacheMock.Set")
+		}
+		return (*mm_results).b1
 	}
 	if mmSet.funcSet != nil {
-		mmSet.funcSet(key, value)
-		return
+		return mmSet.funcSet(key, value)
 	}
 	mmSet.t.Fatalf("Unexpected call to CacheMock.Set. %v %v", key, value)
-
+	return
 }
 
 // SetAfterCounter returns a count of finished CacheMock.Set invocations
