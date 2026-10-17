@@ -42,7 +42,8 @@ See [Named placeholder mapping](Configuration#named-placeholder-mapping).
 ### `debug` is replaced by `UNCORS_TRACE`
 
 The `--debug` flag and the `debug` configuration key are gone. `--debug` now
-fails with an unknown-flag error, and a `debug` key in the file is ignored. To
+fails with an unknown-flag error, and a `debug` key in the file is an
+[unknown field](#unknown-keys-are-errors) error. To
 get diagnostics, set `UNCORS_TRACE=true` and run an OpenTelemetry collector
 such as Jaeger. UNCORS exports traces and logs to it over OTLP/HTTP
 (`localhost:4318` by default). See
@@ -58,9 +59,11 @@ UNCORS_TRACE=true uncors --config .uncors.yaml
 
 ### Cache settings
 
-`cache-config.clear-time` is gone and is ignored if present. A new
+`cache-config.clear-time` is gone and is an
+[unknown field](#unknown-keys-are-errors) error if present. A new
 `cache-config.max-size` limits the total size of the cache in bytes (100 MB by
-default):
+default). `CONNECT` is no longer accepted in `cache-config.methods`: UNCORS
+cannot proxy it, so it was never cached.
 
 In 0.6.x:
 
@@ -136,6 +139,66 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
 - A request body larger than 10 MiB fails with status 500 before the script
   runs. Set `max-body-size` on a script that needs larger bodies. Before, a
   body that failed to read reached the script as `nil`.
+
+### Unknown keys are errors
+
+UNCORS used to ignore keys it did not know, so a typo silently turned an option
+off. Now every unknown key fails the configuration, at any level of the file,
+with its path and line:
+
+```text
+mappings[0].mocks[0].response.cod: unknown field (line 8)
+```
+
+Remove keys of removed options, such as `debug`, `cache-config.clear-time`,
+`http-port`, `https-port`, `cert-file`, and `key-file`. A top-level key that
+only holds a YAML anchor is an unknown key too; move the anchor to a value
+inside a known option.
+
+### Simplified mapping syntax needs a host-like key
+
+A mapping with a single `key: value` pair used to be read as `from: to` when the
+key was not a known option. A typo such as `- frm: http://localhost:3000` then
+became a mapping from the host `frm` and made UNCORS listen on port 80. Now the
+pair is read as the simplified syntax only when the key contains a scheme, a
+port, or a dot, or is `localhost`; any other key is an unknown field.
+
+A simplified mapping with a single-label host and no scheme or port, such as
+`- myapp: https://example.com`, must now be written with a scheme:
+
+```yaml
+mappings:
+  - http://myapp: https://example.com
+```
+
+### Conflicting and duplicate mappings
+
+Two mappings on the same port with different schemes, such as
+`http://localhost:3000` and `https://localhost:3000`, used to fail at startup
+with "address already in use". They are now a configuration error:
+
+```text
+mappings[1].from: port 3000 is already used for http by mappings[0].from
+```
+
+Two mappings with the same `from` are an error too. Before, UNCORS used the
+first one and ignored the other. UNCORS compares `from` after adding the
+default scheme and port and ignores the case of the host name, so
+`localhost:80` and `http://LOCALHOST` are the same:
+
+```text
+mappings[1].from: http://localhost is already mapped by mappings[0].from
+```
+
+Merge the options of the duplicates into one mapping. A `--from` flag that
+matches a `from` in the file in this way replaces its `to`, as before; it used
+to add a second mapping when the spelling differed.
+
+### Error paths match the configuration keys
+
+Validation errors now name the keys as they are written in the file:
+`rewrites[0]` instead of `rewrite[0]`, `statics[0].dir` instead of
+`statics[0].directory`, and `cache-config.methods` instead of `methods`.
 
 ### One HAR file per mapping
 

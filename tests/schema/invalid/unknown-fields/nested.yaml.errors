@@ -1,0 +1,14 @@
+cache-config: Additional property methds is not allowed
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0.har: Must validate one and only one schema (oneOf)
+mappings.0.har: file is required
+mappings.0.har: Additional property fil is not allowed
+mappings.0.mocks.0.response: Must validate one and only one schema (oneOf)
+mappings.0.mocks.0.response: code is required
+mappings.0.mocks.0.response: Additional property cod is not allowed
+mappings.0.rewrites.0: from is required
+mappings.0.rewrites.0: Additional property form is not allowed
+mappings.0.statics: Must validate one and only one schema (oneOf)
+mappings.0.statics./static: Must validate one and only one schema (oneOf)
+mappings.0.statics./static: dir is required
+mappings.0.statics./static: Additional property dri is not allowed

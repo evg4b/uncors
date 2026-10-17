@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 )
@@ -24,6 +25,8 @@ func (h *HARConfig) Clone() HARConfig {
 	}
 }
 
+type harConfigAlias HARConfig
+
 func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.ScalarNode {
 		h.File = value.Value
@@ -31,9 +34,11 @@ func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
-	type harConfigAlias HARConfig
-
 	return value.Decode((*harConfigAlias)(h))
+}
+
+func (h *HARConfig) checkKnownFields(field string, node *yaml.Node) error {
+	return checkStructFields(field, node, reflect.TypeFor[harConfigAlias]())
 }
 
 func (h *HARConfig) Validate(field string) error {

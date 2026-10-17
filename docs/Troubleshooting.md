@@ -241,6 +241,12 @@ to the directory UNCORS was started from, and `~` is not expanded.
 "cannot unmarshal !!str `1m 30s` into time.Duration" means a duration contains
 a space. Write `1m30s` instead.
 
+"unknown field" means a key is misspelled or is not an option at that place in
+the file. The error names the path and the line of the key.
+
+"port N is already used for http" means two mappings use the same port with
+different schemes. Give the `https://` mapping its own port.
+
 UNCORS reloads the configuration file when it changes. If the new version is
 invalid, or one of its ports is already in use, UNCORS prints the error and
 keeps serving the previous configuration until you fix the file.

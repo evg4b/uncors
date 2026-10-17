@@ -73,7 +73,7 @@ cache-config:
 
 | Option            | Type     | Default     | Description                                        |
 | ----------------- | -------- | ----------- | -------------------------------------------------- |
-| `methods`         | array    | `[GET]`     | HTTP methods whose responses can be cached.        |
+| `methods`         | array    | `[GET]`     | HTTP methods whose responses can be cached. `CONNECT` is not allowed. |
 | `expiration-time` | duration | `30m`       | How long an entry is kept.                         |
 | `max-size`        | integer  | `104857600` | Total cache size in bytes (100 MB by default).     |
 

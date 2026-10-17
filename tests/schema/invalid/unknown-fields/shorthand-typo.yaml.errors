@@ -1,0 +1,3 @@
+mappings.0: Must validate one and only one schema (oneOf)
+mappings.0: Property name of "frm" does not match
+mappings.0: Does not match pattern '[.:]|^localhost$'

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"reflect"
+	"strings"
 
 	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/pkg/urlt"
@@ -25,20 +27,22 @@ type Mapping struct {
 	HAR             HARConfig         `yaml:"har"`
 }
 
-var knownMappingFields = map[string]bool{
-	"from": true, "to": true, "statics": true, "mocks": true,
-	"scripts": true, "cache": true, "rewrites": true,
-	"options-handling": true, "har": true,
-}
+type mappingAlias Mapping
 
 func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
 	if isShorthandMapping(value) {
 		return m.unmarshalShorthand(value)
 	}
 
-	type mappingAlias Mapping
-
 	return value.Decode((*mappingAlias)(m))
+}
+
+func (m *Mapping) checkKnownFields(field string, node *yaml.Node) error {
+	if isShorthandMapping(node) {
+		return nil
+	}
+
+	return checkStructFields(field, node, reflect.TypeFor[mappingAlias]())
 }
 
 func isShorthandMapping(value *yaml.Node) bool {
@@ -46,7 +50,9 @@ func isShorthandMapping(value *yaml.Node) bool {
 		return false
 	}
 
-	return !knownMappingFields[value.Content[0].Value]
+	key := value.Content[0].Value
+
+	return strings.ContainsAny(key, ".:") || strings.EqualFold(key, "localhost")
 }
 
 func (m *Mapping) Clone() Mapping {
@@ -110,7 +116,7 @@ func (m *Mapping) Validate(field string, fs afero.Fs) error {
 	}
 
 	for i, rewrite := range m.Rewrites {
-		errs = append(errs, rewrite.Validate(joinPath(field, "rewrite", index(i))))
+		errs = append(errs, rewrite.Validate(joinPath(field, "rewrites", index(i))))
 	}
 
 	for i, script := range m.Scripts {

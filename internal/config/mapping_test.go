@@ -235,7 +235,7 @@ func TestMappingValidator(t *testing.T) {
 					Mocks: []config.Mock{},
 					Cache: config.CacheGlobs{},
 				},
-				error: "mapping.statics[1].directory must not be empty",
+				error: "mapping.statics[1].dir must not be empty",
 			},
 			{
 				name: "mapping with invalid mocks",
@@ -271,6 +271,18 @@ func TestMappingValidator(t *testing.T) {
 					},
 				},
 				error: "mapping.cache[0] is not a valid glob pattern",
+			},
+			{
+				name: "mapping with invalid rewrites",
+				value: config.Mapping{
+					From: hosts.Parse("localhost"),
+					To:   hosts.Github.Host(),
+					Rewrites: config.RewriteOptions{
+						{From: "/api", To: "/v1/api"},
+						{From: "/old", To: ""},
+					},
+				},
+				error: "mapping.rewrites[1].to must not be empty",
 			},
 		}
 		for _, test := range tests {

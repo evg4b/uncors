@@ -29,10 +29,15 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 			return fmt.Errorf("invalid `to` value %q: %w", to[index], err)
 		}
 
+		fromHost, err := urlt.ParseHost(key)
+		if err != nil {
+			return fmt.Errorf("invalid `from` value %q: %w", key, err)
+		}
+
 		found := false
 
 		for i := range cfg.Mappings {
-			if strings.EqualFold(cfg.Mappings[i].From.String(), key) {
+			if sameSource(cfg.Mappings[i].From, *fromHost) {
 				cfg.Mappings[i].To = *toHost
 				found = true
 
@@ -41,11 +46,6 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 		}
 
 		if !found {
-			fromHost, err := urlt.ParseHost(key)
-			if err != nil {
-				return fmt.Errorf("invalid `from` value %q: %w", key, err)
-			}
-
 			cfg.Mappings = append(cfg.Mappings, Mapping{
 				From: *fromHost,
 				To:   *toHost,
@@ -54,6 +54,15 @@ func mergeURLMappings(cfg *UncorsConfig, from, to []string) error {
 	}
 
 	return nil
+}
+
+func sameSource(left, right urlt.Host) bool {
+	left = normalizeHost(left)
+	right = normalizeHost(right)
+
+	return strings.EqualFold(left.Scheme, right.Scheme) &&
+		strings.EqualFold(left.Hostname, right.Hostname) &&
+		left.Port == right.Port
 }
 
 const (

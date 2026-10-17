@@ -1,0 +1,5 @@
+mappings:
+  - localhost: https://github.com
+  - api.local: https://github.com
+  - localhost:3000: https://github.com
+  - http://{repo}.local:8080: https://{repo}.example.io

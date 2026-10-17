@@ -209,7 +209,7 @@ func TestStaticValidator(t *testing.T) {
 			{
 				name:  "empty directory",
 				value: config.StaticDirectory{Path: assetsPath, Dir: ""},
-				error: "test.directory must not be empty",
+				error: "test.dir must not be empty",
 			},
 			{
 				name:  "missing index file",

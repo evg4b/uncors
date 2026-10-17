@@ -1,0 +1,1 @@
+cache-config.methods.1: cache-config.methods.1 must be one of the following: "GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "TRACE", "PATCH"

@@ -1,0 +1,4 @@
+mappings:
+  - http://localhost:3000: https://github.com
+cache-config:
+  methods: [GET, CONNECT]

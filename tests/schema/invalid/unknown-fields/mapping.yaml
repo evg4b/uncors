@@ -1,0 +1,8 @@
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    mock:
+      - path: /api
+        response:
+          code: 200
+          raw: ok
