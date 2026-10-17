@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"strings"
 
@@ -41,32 +42,39 @@ func checkKnownFields(field string, node *yaml.Node, typ reflect.Type) error {
 		return nil
 	}
 
-	switch typ.Kind() {
-	case reflect.Struct:
+	kind := typ.Kind()
+	if kind == reflect.Struct {
 		return checkStructFields(field, node, typ)
-	case reflect.Slice, reflect.Array:
-		return checkSequenceItems(field, node, typ.Elem())
-	case reflect.Map:
-		return checkMapValues(field, node, typ.Elem())
-	default:
-		return nil
 	}
+
+	if kind == reflect.Slice || kind == reflect.Array {
+		return checkSequenceItems(field, node, typ.Elem())
+	}
+
+	if kind == reflect.Map {
+		return checkMapValues(field, node, typ.Elem())
+	}
+
+	return nil
 }
 
 func resolveNode(node *yaml.Node) *yaml.Node {
 	for node != nil {
-		switch node.Kind {
-		case yaml.DocumentNode:
-			if len(node.Content) == 0 {
-				return nil
-			}
-
-			node = node.Content[0]
-		case yaml.AliasNode:
+		if node.Kind == yaml.AliasNode {
 			node = node.Alias
-		default:
+
+			continue
+		}
+
+		if node.Kind != yaml.DocumentNode {
 			return node
 		}
+
+		if len(node.Content) == 0 {
+			return nil
+		}
+
+		node = node.Content[0]
 	}
 
 	return nil
@@ -146,8 +154,7 @@ func checkMapValues(field string, node *yaml.Node, elem reflect.Type) error {
 func yamlFields(typ reflect.Type) map[string]reflect.Type {
 	fields := make(map[string]reflect.Type, typ.NumField())
 
-	for i := range typ.NumField() {
-		structField := typ.Field(i)
+	for structField := range typ.Fields() {
 		if !structField.IsExported() {
 			continue
 		}
@@ -158,9 +165,7 @@ func yamlFields(typ reflect.Type) map[string]reflect.Type {
 		}
 
 		if strings.Contains(options, "inline") {
-			for inlineName, inlineType := range yamlFields(structField.Type) {
-				fields[inlineName] = inlineType
-			}
+			maps.Copy(fields, yamlFields(structField.Type))
 
 			continue
 		}

@@ -37,10 +37,6 @@ func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {
 	return value.Decode((*harConfigAlias)(h))
 }
 
-func (h *HARConfig) checkKnownFields(field string, node *yaml.Node) error {
-	return checkStructFields(field, node, reflect.TypeFor[harConfigAlias]())
-}
-
 func (h *HARConfig) Validate(field string) error {
 	if !h.Enabled() {
 		return nil
@@ -51,6 +47,10 @@ func (h *HARConfig) Validate(field string) error {
 	}
 
 	return nil
+}
+
+func (h *HARConfig) checkKnownFields(field string, node *yaml.Node) error {
+	return checkStructFields(field, node, reflect.TypeFor[harConfigAlias]())
 }
 
 func validateUniqueHARFiles(mappings Mappings) error {

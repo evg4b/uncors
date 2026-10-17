@@ -37,14 +37,6 @@ func (m *Mapping) UnmarshalYAML(value *yaml.Node) error {
 	return value.Decode((*mappingAlias)(m))
 }
 
-func (m *Mapping) checkKnownFields(field string, node *yaml.Node) error {
-	if isShorthandMapping(node) {
-		return nil
-	}
-
-	return checkStructFields(field, node, reflect.TypeFor[mappingAlias]())
-}
-
 func isShorthandMapping(value *yaml.Node) bool {
 	if value.Kind != yaml.MappingNode || len(value.Content) != 2 {
 		return false
@@ -124,6 +116,14 @@ func (m *Mapping) Validate(field string, fs afero.Fs) error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func (m *Mapping) checkKnownFields(field string, node *yaml.Node) error {
+	if isShorthandMapping(node) {
+		return nil
+	}
+
+	return checkStructFields(field, node, reflect.TypeFor[mappingAlias]())
 }
 
 func (m *Mapping) unmarshalShorthand(value *yaml.Node) error {

@@ -547,7 +547,9 @@ func TestUncorsConfigValidateListeners(t *testing.T) {
 			},
 			{
 				name: "same from after normalization",
-				from: []string{"http://localhost", "localhost:80", "http://LOCALHOST", "https://localhost:443", "https://localhost"},
+				from: []string{
+					"http://localhost", "localhost:80", "http://LOCALHOST", "https://localhost:443", "https://localhost",
+				},
 				error: "mappings[1].from: http://localhost is already mapped by mappings[0].from\n" +
 					"mappings[2].from: http://LOCALHOST is already mapped by mappings[0].from\n" +
 					"mappings[4].from: https://localhost is already mapped by mappings[3].from",
