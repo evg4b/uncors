@@ -91,6 +91,10 @@
           "description": "Host mapping definition",
           "maxProperties": 1,
           "minProperties": 1,
+          "propertyNames": {
+            "description": "The local host: it must contain a scheme, a port or a dot, or be localhost",
+            "pattern": "[.:]|^localhost$"
+          },
           "type": "object"
         },
         {
@@ -443,7 +447,17 @@
           ],
           "description": "HTTP methods whose responses can be cached",
           "items": {
-            "$ref": "#/definitions/Method"
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "DELETE",
+              "OPTIONS",
+              "TRACE",
+              "PATCH"
+            ],
+            "type": "string"
           },
           "type": "array"
         }

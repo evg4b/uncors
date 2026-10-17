@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const debounceDelay = 10 * time.Millisecond
+const debounceDelay = 100 * time.Millisecond
 
 var errAlreadyWatching = errors.New("watcher is already watching")
 

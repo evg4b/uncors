@@ -2,10 +2,12 @@ package config_test
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -44,9 +46,6 @@ mappings:
             Accept-Encoding: deflate
           raw: demo
 proxy: http://localhost:8080
-https-port: 8081
-cert-file: /etc/certificates/cert-file.pem
-key-file: /etc/certificates/key-file.key
 cache-config:
   expiration-time: 1h
   max-size: 52428800
@@ -189,6 +188,24 @@ func TestLoadConfiguration(t *testing.T) {
 					"--proxy", "http://newproxy:9999",
 				},
 				expected: fullConfigExpected("http://newproxy:9999"),
+			},
+			{
+				name: "CLI from without scheme updates existing mapping from config file",
+				args: []string{
+					params.Config, minimalConfigPath,
+					params.From, "LOCALHOST:8080", params.To, hosts.Stackoverflow.HTTPS().String(),
+				},
+				expected: &config.UncorsConfig{
+					Mappings: config.Mappings{
+						{From: hosts.Localhost.HTTPPort(8080), To: hosts.Stackoverflow.HTTPS()},
+					},
+					CacheConfig: config.CacheConfig{
+						ExpirationTime: config.DefaultExpirationTime,
+						MaxSize:        config.DefaultMaxSize,
+						Methods:        []string{http.MethodGet},
+					},
+					Interactive: true,
+				},
 			},
 			{
 				name: "CLI from/to updates existing mapping from config file",
@@ -444,5 +461,105 @@ func TestProxyValidatorIsValid(t *testing.T) {
 
 	t.Run("empty url", func(t *testing.T) {
 		assert.NoError(t, config.ValidateProxy("testField", ""))
+	})
+}
+
+func TestUncorsConfigValidateListeners(t *testing.T) {
+	fakeHome := filepath.Join(t.TempDir(), "home")
+	require.NoError(t, os.MkdirAll(fakeHome, 0o755))
+	t.Setenv("HOME", fakeHome)
+
+	fs := afero.NewOsFs()
+	_, _, err := certs.Generate(fs, filepath.Join(fakeHome, ".config", "uncors"), 365)
+	require.NoError(t, err)
+
+	makeConfig := func(from ...string) *config.UncorsConfig {
+		mappings := make(config.Mappings, 0, len(from))
+		for _, host := range from {
+			mappings = append(mappings, config.Mapping{From: hosts.Parse(host), To: hosts.Github.HTTPS()})
+		}
+
+		return &config.UncorsConfig{
+			Mappings: config.NormaliseMappings(mappings),
+			CacheConfig: config.CacheConfig{
+				MaxSize:        100 * 1024 * 1024,
+				ExpirationTime: 10 * time.Minute,
+				Methods:        []string{http.MethodGet},
+			},
+		}
+	}
+
+	t.Run("should not register errors for", func(t *testing.T) {
+		tests := []struct {
+			name string
+			from []string
+		}{
+			{
+				name: "different hosts on one http port",
+				from: []string{"http://localhost:3000", "http://api.local:3000"},
+			},
+			{
+				name: "different hosts on one https port",
+				from: []string{"https://localhost:3443", "https://api.local:3443"},
+			},
+			{
+				name: "same host on different ports",
+				from: []string{"http://localhost:3000", "http://localhost:3001", "https://localhost:3443"},
+			},
+			{
+				name: "http and https on default ports",
+				from: []string{"http://localhost", "https://localhost"},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				require.NoError(t, makeConfig(test.from...).Validate(fs))
+			})
+		}
+	})
+
+	t.Run("should register errors for", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			from  []string
+			error string
+		}{
+			{
+				name:  "http and https on one port",
+				from:  []string{"http://localhost:38940", "https://localhost:38940"},
+				error: "mappings[1].from: port 38940 is already used for http by mappings[0].from",
+			},
+			{
+				name:  "https on the default http port",
+				from:  []string{"http://localhost", "https://api.local:80"},
+				error: "mappings[1].from: port 80 is already used for http by mappings[0].from",
+			},
+			{
+				name:  "http on the default https port",
+				from:  []string{"https://localhost", "http://api.local:443"},
+				error: "mappings[1].from: port 443 is already used for https by mappings[0].from",
+			},
+			{
+				name:  "same from",
+				from:  []string{"http://localhost:3000", "http://localhost:3000"},
+				error: "mappings[1].from: http://localhost:3000 is already mapped by mappings[0].from",
+			},
+			{
+				name: "same from after normalization",
+				from: []string{
+					"http://localhost", "localhost:80", "http://LOCALHOST", "https://localhost:443", "https://localhost",
+				},
+				error: "mappings[1].from: http://localhost is already mapped by mappings[0].from\n" +
+					"mappings[2].from: http://LOCALHOST is already mapped by mappings[0].from\n" +
+					"mappings[4].from: https://localhost is already mapped by mappings[3].from",
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				require.EqualError(t, makeConfig(test.from...).Validate(fs), test.error)
+			})
+		}
 	})
 }

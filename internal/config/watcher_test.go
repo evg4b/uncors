@@ -220,3 +220,46 @@ func TestNewConfigWatcher(t *testing.T) {
 		assert.False(t, waitForCall(called, 100*time.Millisecond), "onChange was called after context cancelled")
 	})
 }
+
+func TestConfigWatcherWaitsForTheRestOfASave(t *testing.T) {
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+	require.NoError(t, os.WriteFile(configFile, []byte("proxy: \"\""), 0o600))
+
+	contents := make(chan string, 10)
+
+	watcher := config.NewWatcher(configFile)
+	err := watcher.Watch(t.Context(), func() {
+		content, _ := os.ReadFile(configFile)
+
+		contents <- string(content)
+	}, nil)
+	require.NoError(t, err)
+
+	defer testutils.Close(t, watcher)
+
+	file, err := os.OpenFile(configFile, os.O_WRONLY|os.O_TRUNC, 0o600)
+	require.NoError(t, err)
+
+	_, err = file.WriteString("proxy:")
+	require.NoError(t, err)
+
+	time.Sleep(30 * time.Millisecond)
+
+	_, err = file.WriteString(" localhost:8080")
+	require.NoError(t, err)
+	require.NoError(t, file.Close())
+
+	select {
+	case content := <-contents:
+		assert.Equal(t, "proxy: localhost:8080", content)
+	case <-time.After(watcherTimeout):
+		t.Fatal("onChange was never called")
+	}
+
+	select {
+	case content := <-contents:
+		t.Fatalf("onChange was called again with %q", content)
+	case <-time.After(200 * time.Millisecond):
+	}
+}

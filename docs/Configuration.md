@@ -91,7 +91,8 @@ mappings:
 `--to`, and so on. UNCORS refuses to start if the counts differ. Each pair
 becomes a mapping. If a `--from` value is the same as a `from` already in the
 configuration file, the flag replaces that mapping's `to` instead of adding a
-new mapping.
+new mapping. The comparison ignores case, a missing `http://`, and the default
+port, so `--from localhost:8080` replaces `from: http://localhost:8080`.
 
 ```bash
 uncors --from http://localhost:8080 --to https://api.example.com \
@@ -300,6 +301,13 @@ with the path to the bad value (for example
 checks that the files and directories referenced by mocks, scripts, and statics
 exist.
 
+A key that UNCORS does not know is an error at any level of the file, so a typo
+does not silently turn an option off:
+
+```text
+mappings[0].mocks[0].response.cod: unknown field (line 8)
+```
+
 While UNCORS runs, it watches the configuration file. When the file changes, it
 loads and validates the new version and restarts the server with it. If the new
 version is invalid, UNCORS prints the error and keeps running with the previous
@@ -350,6 +358,12 @@ mappings:
   - from: http://admin.local:4000
     to: https://admin.example.com
 ```
+
+Mappings that share a port must use the same scheme: `http://localhost:3000`
+and `https://localhost:3000` in one file is a configuration error. Two mappings
+with the same `from` are an error too. UNCORS compares them after adding the
+default scheme and port and ignores the case of the host name, so
+`localhost:80` and `http://LOCALHOST` are the same `from`.
 
 ### Protocol scheme mapping
 
@@ -447,7 +461,10 @@ accepted; see the [Migration Guide](Migration-Guide).
 ### Simplified syntax
 
 A mapping that needs nothing but `from` and `to` can be written as a single
-`from: to` pair:
+`from: to` pair. The key must look like a host: it contains a scheme, a port,
+or a dot, or is `localhost`. Any other single key is read as an option of the
+full form, so a typo such as `- frm: http://localhost:3000` is reported as an
+unknown field.
 
 ```yaml
 mappings:

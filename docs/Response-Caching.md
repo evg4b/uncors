@@ -71,11 +71,11 @@ cache-config:
   max-size: 104857600
 ```
 
-| Option            | Type     | Default     | Description                                        |
-| ----------------- | -------- | ----------- | -------------------------------------------------- |
-| `methods`         | array    | `[GET]`     | HTTP methods whose responses can be cached.        |
-| `expiration-time` | duration | `30m`       | How long an entry is kept.                         |
-| `max-size`        | integer  | `104857600` | Total cache size in bytes (100 MB by default).     |
+| Option            | Type     | Default     | Description                                                           |
+| ----------------- | -------- | ----------- | --------------------------------------------------------------------- |
+| `methods`         | array    | `[GET]`     | HTTP methods whose responses can be cached. `CONNECT` is not allowed. |
+| `expiration-time` | duration | `30m`       | How long an entry is kept.                                            |
+| `max-size`        | integer  | `104857600` | Total cache size in bytes (100 MB by default).                        |
 
 `expiration-time` uses Go duration syntax without spaces, for example `30s`,
 `5m`, `2h`, or `1h30m`. The cache is built on

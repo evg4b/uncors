@@ -87,7 +87,7 @@ func TestCacheConfigValidator(t *testing.T) {
 			{
 				name:  "empty methods",
 				value: config.CacheConfig{ExpirationTime: 5 * time.Minute, MaxSize: 100 * 1024 * 1024},
-				error: "methods must not be empty",
+				error: "test.methods must not be empty",
 			},
 			{
 				name: "invalid method",
@@ -96,7 +96,7 @@ func TestCacheConfigValidator(t *testing.T) {
 					MaxSize:        100 * 1024 * 1024,
 					Methods:        []string{"invalid"},
 				},
-				error: "test.methods[0] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE",
+				error: "test.methods[0] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE",
 			},
 			{
 				name: "invalid second method",
@@ -105,7 +105,16 @@ func TestCacheConfigValidator(t *testing.T) {
 					MaxSize:        100 * 1024 * 1024,
 					Methods:        []string{http.MethodGet, "invalid", http.MethodPost},
 				},
-				error: "test.methods[1] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE",
+				error: "test.methods[1] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE",
+			},
+			{
+				name: "connect method",
+				value: config.CacheConfig{
+					ExpirationTime: 5 * time.Minute,
+					MaxSize:        100 * 1024 * 1024,
+					Methods:        []string{http.MethodGet, http.MethodConnect},
+				},
+				error: "test.methods[1] must be one of GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE",
 			},
 		}
 		for _, test := range tests {

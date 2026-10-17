@@ -1,11 +1,14 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/evg4b/uncors/pkg/urlt"
 	"github.com/samber/lo"
 )
 
@@ -57,18 +60,9 @@ func (m Mappings) GroupByPort() PortGroups {
 	grouped := make(map[portKey]Mappings)
 
 	for _, mapping := range m {
-		port := defaultHTTPPort
-		portStr := mapping.From.Port
-
-		if portStr != "" {
-			parsedPort, err := strconv.Atoi(portStr)
-			if err != nil {
-				panic(fmt.Errorf("invalid port number: %w", err))
-			}
-
-			port = parsedPort
-		} else if mapping.From.Scheme == httpsScheme {
-			port = defaultHTTPSPort
+		port, err := listenPort(mapping.From)
+		if err != nil {
+			panic(fmt.Errorf("invalid port number: %w", err))
 		}
 
 		key := portKey{port: port, scheme: mapping.From.Scheme}
@@ -93,4 +87,61 @@ func (m Mappings) GroupByPort() PortGroups {
 	})
 
 	return result
+}
+
+func listenPort(host urlt.Host) (int, error) {
+	if host.Port != "" {
+		return strconv.Atoi(host.Port)
+	}
+
+	if host.Scheme == httpsScheme {
+		return defaultHTTPSPort, nil
+	}
+
+	return defaultHTTPPort, nil
+}
+
+func validateListeners(mappings Mappings) error {
+	type listener struct {
+		scheme string
+		field  string
+	}
+
+	listeners := make(map[int]listener, len(mappings))
+	sources := make(map[string]string, len(mappings))
+
+	var errs []error
+
+	for i, mapping := range mappings {
+		field := joinPath("mappings", index(i), "from")
+		from := normalizeHost(mapping.From)
+
+		port, err := listenPort(from)
+		if err != nil || from.Hostname == "" {
+			continue
+		}
+
+		if owner, ok := listeners[port]; !ok {
+			listeners[port] = listener{scheme: from.Scheme, field: field}
+		} else if owner.scheme != from.Scheme {
+			errs = append(errs, &ValidationError{fmt.Sprintf(
+				"%s: port %d is already used for %s by %s", field, port, owner.scheme, owner.field,
+			)})
+
+			continue
+		}
+
+		source := strings.ToLower(from.Scheme + "://" + net.JoinHostPort(from.Hostname, strconv.Itoa(port)))
+		if owner, ok := sources[source]; ok {
+			errs = append(errs, &ValidationError{fmt.Sprintf(
+				"%s: %s is already mapped by %s", field, mapping.From.String(), owner,
+			)})
+
+			continue
+		}
+
+		sources[source] = field
+	}
+
+	return errors.Join(errs...)
 }

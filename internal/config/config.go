@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
@@ -84,7 +85,17 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 
 	defer file.Close()
 
-	err = yaml.NewDecoder(file).Decode(cfg)
+	var document yaml.Node
+
+	err = yaml.NewDecoder(file).Decode(&document)
+	if err == nil {
+		err = checkKnownFields("", &document, reflect.TypeFor[UncorsConfig]())
+	}
+
+	if err == nil {
+		err = document.Decode(cfg)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
 	}
@@ -119,6 +130,7 @@ func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
 	}
 
 	errs = append(errs, validateUniqueHARFiles(cfg.Mappings))
+	errs = append(errs, validateListeners(cfg.Mappings))
 
 	errs = append(errs, ValidateProxy("proxy", cfg.Proxy))
 	errs = append(errs, cfg.CacheConfig.Validate("cache-config"))
