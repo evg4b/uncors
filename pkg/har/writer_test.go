@@ -312,4 +312,34 @@ func TestWriter(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, archive.Log.Entries, 1)
 	})
+
+	t.Run("orders entries by start time", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		started := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
+
+		harWriter := har.NewWriter("/out.har", har.WithFileSystem(fs))
+		for _, offset := range []int{2, 0, 3, 1} {
+			require.True(t, harWriter.AddEntry(har.Entry{
+				StartedDateTime: started.Add(time.Duration(offset) * time.Second),
+				Request:         har.Request{URL: fmt.Sprintf("http://example.com/%d", offset)},
+			}))
+		}
+
+		require.NoError(t, harWriter.Close())
+
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+
+		urls := make([]string, 0, len(archive.Log.Entries))
+		for _, entry := range archive.Log.Entries {
+			urls = append(urls, entry.Request.URL)
+		}
+
+		assert.Equal(t, []string{
+			"http://example.com/0", "http://example.com/1", "http://example.com/2", "http://example.com/3",
+		}, urls)
+	})
 }

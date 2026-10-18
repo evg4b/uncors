@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -39,6 +40,11 @@ type Flush struct {
 	Err      error
 }
 
+type encodedEntry struct {
+	started time.Time
+	data    []byte
+}
+
 type Writer struct {
 	path          string
 	fs            afero.Fs
@@ -54,7 +60,7 @@ type Writer struct {
 	once       sync.Once
 	wg         sync.WaitGroup
 	mu         sync.Mutex
-	encoded    [][]byte
+	encoded    []encodedEntry
 	size       int
 
 	discarded atomic.Bool
@@ -214,17 +220,19 @@ func (w *Writer) append(entry Entry) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.encoded = append(w.encoded, data)
+	index := len(w.encoded)
+	for index > 0 && w.encoded[index-1].started.After(entry.StartedDateTime) {
+		index--
+	}
+
+	w.encoded = slices.Insert(w.encoded, index, encodedEntry{started: entry.StartedDateTime, data: data})
 	w.size += len(data)
 }
 
 func (w *Writer) flush() {
 	start := time.Now()
 
-	w.mu.Lock()
-	snapshot := w.encoded[:len(w.encoded):len(w.encoded)]
-	size := w.size
-	w.mu.Unlock()
+	snapshot, size := w.snapshot()
 
 	err := w.write(snapshot)
 	if w.onFlush == nil {
@@ -239,6 +247,18 @@ func (w *Writer) flush() {
 		Duration: time.Since(start),
 		Err:      err,
 	})
+}
+
+func (w *Writer) snapshot() ([][]byte, int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	snapshot := make([][]byte, len(w.encoded))
+	for index, entry := range w.encoded {
+		snapshot[index] = entry.data
+	}
+
+	return snapshot, w.size
 }
 
 func (w *Writer) write(entries [][]byte) error {
