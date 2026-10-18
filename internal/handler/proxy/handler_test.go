@@ -336,6 +336,125 @@ func TestProxyHandler(t *testing.T) {
 		assert.Equal(t, []string{cookie}, forwarded.Header.Values(headers.Cookie))
 	})
 
+	t.Run("should not forward hop-by-hop request headers", func(t *testing.T) {
+		var forwarded *http.Request
+
+		handler := proxy.NewHandler(
+			proxy.WithHTTPClient(capturingClient(&forwarded)),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		req := premiumRequest(t, http.MethodGet, nil)
+		req.Header.Set("Connection", "keep-alive, X-Hop")
+		req.Header.Set("X-Hop", "1")
+		req.Header.Set("Keep-Alive", "timeout=5")
+		req.Header.Set("Proxy-Connection", "keep-alive")
+		req.Header.Set("Proxy-Authorization", "Basic dXNlcjpwYXNz")
+		req.Header.Set("Te", "trailers, deflate")
+		req.Header.Set("Trailer", "X-Checksum")
+		req.Header.Set("X-End-To-End", "kept")
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
+
+		require.NotNil(t, forwarded)
+
+		for _, name := range []string{
+			"Connection", "X-Hop", "Keep-Alive", "Proxy-Connection", "Proxy-Authorization", "Trailer", "Upgrade",
+		} {
+			assert.Empty(t, forwarded.Header.Values(name), name)
+		}
+
+		assert.Equal(t, "trailers", forwarded.Header.Get("Te"))
+		assert.Equal(t, "kept", forwarded.Header.Get("X-End-To-End"))
+	})
+
+	t.Run("should keep the upgrade headers of an upgrade request", func(t *testing.T) {
+		var forwarded *http.Request
+
+		handler := proxy.NewHandler(
+			proxy.WithHTTPClient(capturingClient(&forwarded)),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		req := premiumRequest(t, http.MethodGet, nil)
+		req.Header.Set("Connection", "keep-alive, Upgrade")
+		req.Header.Set("Upgrade", "websocket")
+		req.Header.Set("Keep-Alive", "timeout=5")
+
+		err := handler.ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+		require.NoError(t, err)
+
+		require.NotNil(t, forwarded)
+		assert.Equal(t, "Upgrade", forwarded.Header.Get("Connection"))
+		assert.Equal(t, "websocket", forwarded.Header.Get("Upgrade"))
+		assert.Empty(t, forwarded.Header.Values("Keep-Alive"))
+	})
+
+	t.Run("should not copy hop-by-hop response headers", func(t *testing.T) {
+		handler := proxy.NewHandler(
+			proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Connection":   {"close, X-Hop"},
+						"X-Hop":        {"1"},
+						"Keep-Alive":   {"timeout=5"},
+						"X-End-To-End": {"kept"},
+					},
+					Body:    io.NopCloser(strings.NewReader("body")),
+					Request: req,
+				}
+			})),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		recorder := httptest.NewRecorder()
+		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), premiumRequest(t, http.MethodGet, nil))
+		require.NoError(t, err)
+
+		for _, name := range []string{"Connection", "X-Hop", "Keep-Alive"} {
+			assert.Empty(t, recorder.Header().Values(name), name)
+		}
+
+		assert.Equal(t, "kept", recorder.Header().Get("X-End-To-End"))
+	})
+
+	t.Run("should keep Content-Length of responses without a body", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			method string
+			status int
+			want   string
+		}{
+			{name: "HEAD", method: http.MethodHead, status: http.StatusOK, want: "1234"},
+			{name: "304", method: http.MethodGet, status: http.StatusNotModified, want: "1234"},
+			{name: "GET with body", method: http.MethodGet, status: http.StatusOK, want: ""},
+		}
+
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := proxy.NewHandler(
+					proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
+						return &http.Response{
+							StatusCode: testCase.status,
+							Header:     http.Header{"Content-Length": {"1234"}},
+							Body:       http.NoBody,
+							Request:    req,
+						}
+					})),
+					proxy.WithURLReplacerFactory(replacerFactory),
+				)
+
+				recorder := httptest.NewRecorder()
+				err := handler.ServeHTTP(server.NewResponseRecorder(recorder), premiumRequest(t, testCase.method, nil))
+				require.NoError(t, err)
+
+				assert.Equal(t, testCase.want, recorder.Header().Get("Content-Length"))
+			})
+		}
+	})
+
 	t.Run("should forward cookies from response to source", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
