@@ -92,7 +92,7 @@ it came over the wire.
 ## Secure headers
 
 To keep credentials off the disk, these headers are left out of every entry by
-default, and so are the request and response cookie lists:
+default, and the request and response `cookies` lists are empty:
 
 | Header                | Why it is sensitive                          |
 | --------------------- | -------------------------------------------- |
