@@ -56,6 +56,7 @@ func TestNewRequest(t *testing.T) {
 			HTTPVersion: "HTTP/1.1",
 			Headers:     []har.NameValue{{Name: "Content-Type", Value: "application/json"}},
 			QueryString: []har.NameValue{{Name: "page", Value: "2"}},
+			Cookies:     []har.Cookie{},
 			HeadersSize: -1,
 			BodySize:    7,
 			PostData:    &har.PostData{MimeType: "application/json", Text: `{"a":1}`},
@@ -84,7 +85,7 @@ func TestNewRequest(t *testing.T) {
 		request := har.NewRequest(req, nil)
 
 		assert.Empty(t, request.Headers)
-		assert.Nil(t, request.Cookies)
+		assert.Equal(t, []har.Cookie{}, request.Cookies)
 	})
 
 	t.Run("captures secure headers and cookies on request", func(t *testing.T) {
@@ -148,7 +149,7 @@ func TestNewResponse(t *testing.T) {
 		}
 
 		assert.Empty(t, har.NewResponse(resp, nil).Headers)
-		assert.Nil(t, har.NewResponse(resp, nil).Cookies)
+		assert.Equal(t, []har.Cookie{}, har.NewResponse(resp, nil).Cookies)
 
 		captured := har.NewResponse(resp, nil, har.WithSecureHeaders(true))
 		assert.Equal(t, []har.NameValue{{Name: "Set-Cookie", Value: "session=abc; Path=/"}}, captured.Headers)

@@ -58,8 +58,7 @@ func NewEntry(start time.Time, elapsed time.Duration, request Request, response 
 func NewRequest(req *http.Request, body []byte, opts ...Option) Request {
 	config := applyOptions(opts)
 
-	var cookies []Cookie
-
+	cookies := []Cookie{}
 	if config.secureHeaders {
 		cookies = NewCookies(req.Cookies())
 	}
@@ -85,8 +84,7 @@ func NewResponse(resp *http.Response, body []byte, opts ...Option) Response {
 		mimeType = defaultMimeType
 	}
 
-	var cookies []Cookie
-
+	cookies := []Cookie{}
 	if config.secureHeaders {
 		cookies = NewCookies(resp.Cookies())
 	}
