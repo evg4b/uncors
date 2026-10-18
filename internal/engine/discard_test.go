@@ -23,11 +23,12 @@ import (
 const harPath = "/traffic.har"
 
 func recordingConfiguration(upstream string, harPort int, otherPorts ...int) *config.UncorsConfig {
-	mappings := config.Mappings{{
+	mappings := make(config.Mappings, 0, 1+len(otherPorts))
+	mappings = append(mappings, config.Mapping{
 		From: hosts.Localhost.HTTPPort(harPort),
 		To:   hosts.Parse(upstream),
 		HAR:  config.HARConfig{File: harPath},
-	}}
+	})
 
 	for _, port := range otherPorts {
 		mappings = append(mappings, config.Mapping{
@@ -68,6 +69,7 @@ func TestEngineDiscardsTheHAROfAGenerationThatNeverServed(t *testing.T) {
 
 		fileSystem := afero.NewMemMapFs()
 		instance := engine.New(fileSystem)
+
 		t.Cleanup(func() { _ = instance.Close() })
 
 		err := instance.Start(t.Context(), recordingConfiguration(upstream.URL, ports[0], ports[1]))
@@ -82,6 +84,7 @@ func TestEngineDiscardsTheHAROfAGenerationThatNeverServed(t *testing.T) {
 
 		fileSystem := afero.NewMemMapFs()
 		instance := engine.New(fileSystem)
+
 		t.Cleanup(func() { _ = instance.Close() })
 
 		require.NoError(t, instance.Start(t.Context(), recordingConfiguration(upstream.URL, ports[0])))

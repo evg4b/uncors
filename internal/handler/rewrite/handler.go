@@ -132,6 +132,7 @@ func replace(template string, data map[string]string) string {
 
 		builder.WriteString(template[:start])
 		builder.WriteString(value)
+
 		template = template[end+1:]
 	}
 
