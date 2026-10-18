@@ -38,3 +38,15 @@ func TestCoreDoesNotImportTheUI(t *testing.T) {
 		}
 	}
 }
+
+func TestPackagesDoNotImportInternal(t *testing.T) {
+	args := []string{"list", "-deps", "-f", "{{.ImportPath}}", "github.com/evg4b/uncors/pkg/..."}
+
+	output, err := exec.CommandContext(t.Context(), "go", args...).Output() //nolint:gosec // fixed arguments
+	require.NoError(t, err)
+
+	for dependency := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+		assert.False(t, strings.HasPrefix(dependency, "github.com/evg4b/uncors/internal/"),
+			"pkg depends on %s", dependency)
+	}
+}
