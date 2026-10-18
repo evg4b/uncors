@@ -169,7 +169,7 @@ func (m *Middleware) buildResponse(req *http.Request, capture contracts.Response
 	}
 
 	rawBody := capture.Body
-	content := buildContent(rawBody, capture.Header.Get("Content-Encoding"), mimeType)
+	content := harlib.NewContent(rawBody, capture.Header.Get("Content-Encoding"), mimeType)
 
 	return harlib.Response{
 		Status:      capture.StatusCode,

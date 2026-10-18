@@ -13,29 +13,27 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	harlib "github.com/evg4b/uncors/pkg/har"
-
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
 )
 
-var errUnsupportedEncoding = errors.New("unsupported content encoding")
+var ErrUnsupportedEncoding = errors.New("unsupported content encoding")
 
 var zstdDecoder = sync.OnceValues(func() (*zstd.Decoder, error) {
 	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 })
 
-func buildContent(raw []byte, contentEncoding, mimeType string) harlib.Content {
+func NewContent(raw []byte, contentEncoding, mimeType string) Content {
 	if len(raw) == 0 {
-		return harlib.Content{Size: 0, MimeType: mimeType}
+		return Content{Size: 0, MimeType: mimeType}
 	}
 
-	decoded, err := decodeBody(raw, strings.ToLower(strings.TrimSpace(contentEncoding)))
+	decoded, err := DecodeBody(raw, contentEncoding)
 	if err != nil {
 		decoded = raw
 	}
 
-	content := harlib.Content{Size: int64(len(decoded)), MimeType: mimeType}
+	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
 	if err != nil || !utf8.Valid(decoded) {
 		content.Text = base64.StdEncoding.EncodeToString(decoded)
 		content.Encoding = "base64"
@@ -48,7 +46,9 @@ func buildContent(raw []byte, contentEncoding, mimeType string) harlib.Content {
 	return content
 }
 
-func decodeBody(raw []byte, encoding string) ([]byte, error) {
+func DecodeBody(raw []byte, contentEncoding string) ([]byte, error) {
+	encoding := strings.ToLower(strings.TrimSpace(contentEncoding))
+
 	switch encoding {
 	case "", "identity":
 		return raw, nil
@@ -61,7 +61,7 @@ func decodeBody(raw []byte, encoding string) ([]byte, error) {
 	case "zstd":
 		return decodeZstd(raw)
 	default:
-		return nil, fmt.Errorf("%w: %q", errUnsupportedEncoding, encoding)
+		return nil, fmt.Errorf("%w: %q", ErrUnsupportedEncoding, encoding)
 	}
 }
 
