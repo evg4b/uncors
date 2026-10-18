@@ -12,6 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/pkg/urlt"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,4 +105,58 @@ func TestMiddlewareWrap(t *testing.T) {
 
 		assert.True(t, nextCalled)
 	})
+}
+
+func TestMiddlewareSubstitutesPathVariablesOnce(t *testing.T) {
+	tests := []struct {
+		name string
+		to   string
+		vars map[string]string
+		want string
+	}{
+		{
+			name: "value that looks like another placeholder",
+			to:   "/api/{name}/{id}",
+			vars: map[string]string{"id": "{name}", "name": "bob"},
+			want: "/api/bob/{name}",
+		},
+		{
+			name: "unknown placeholder stays",
+			to:   "/api/{missing}/{id}",
+			vars: map[string]string{"id": "7"},
+			want: "/api/{missing}/7",
+		},
+		{
+			name: "nested braces",
+			to:   "/api/{{id}}",
+			vars: map[string]string{"id": "7"},
+			want: "/api/{7}",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			middleware := rewrite.NewMiddleware(
+				rewrite.WithRewritingOptions(&config.RewritingOption{To: testCase.to}),
+			)
+
+			for range 50 {
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/original", nil)
+				helpers.NormaliseRequest(request)
+				request = mux.SetURLVars(request, testCase.vars)
+
+				var path string
+
+				next := infra.HandlerFunc(func(_ contracts.ResponseWriter, request *contracts.Request) error {
+					path = request.URL.Path
+
+					return nil
+				})
+
+				err := infra.Wrap(middleware, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), request)
+				require.NoError(t, err)
+				assert.Equal(t, testCase.want, path)
+			}
+		})
+	}
 }
