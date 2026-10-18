@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	dateTimeLayout            = "2006-01-02T15:04:05.000Z07:00"
 	defaultMimeType           = "application/octet-stream"
 	nanosecondsPerMillisecond = 1e6
 )
@@ -135,7 +136,20 @@ func NewCookies(cookies []*http.Cookie) []Cookie {
 	result := make([]Cookie, 0, len(cookies))
 
 	for _, cookie := range cookies {
-		result = append(result, Cookie{Name: cookie.Name, Value: cookie.Value})
+		harCookie := Cookie{
+			Name:     cookie.Name,
+			Value:    cookie.Value,
+			Path:     cookie.Path,
+			Domain:   cookie.Domain,
+			HTTPOnly: cookie.HttpOnly,
+			Secure:   cookie.Secure,
+		}
+
+		if !cookie.Expires.IsZero() {
+			harCookie.Expires = cookie.Expires.Format(dateTimeLayout)
+		}
+
+		result = append(result, harCookie)
 	}
 
 	return result

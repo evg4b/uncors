@@ -145,15 +145,15 @@ func TestNewResponse(t *testing.T) {
 	t.Run("captures cookies only on request", func(t *testing.T) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
-			Header:     http.Header{"Set-Cookie": {"session=abc; Path=/"}},
+			Header:     http.Header{"Set-Cookie": {"session=abc; Path=/; HttpOnly"}},
 		}
 
 		assert.Empty(t, har.NewResponse(resp, nil).Headers)
 		assert.Equal(t, []har.Cookie{}, har.NewResponse(resp, nil).Cookies)
 
 		captured := har.NewResponse(resp, nil, har.WithSecureHeaders(true))
-		assert.Equal(t, []har.NameValue{{Name: "Set-Cookie", Value: "session=abc; Path=/"}}, captured.Headers)
-		assert.Equal(t, []har.Cookie{{Name: "session", Value: "abc"}}, captured.Cookies)
+		assert.Equal(t, []har.NameValue{{Name: "Set-Cookie", Value: "session=abc; Path=/; HttpOnly"}}, captured.Headers)
+		assert.Equal(t, []har.Cookie{{Name: "session", Value: "abc", Path: "/", HTTPOnly: true}}, captured.Cookies)
 	})
 }
 
@@ -174,6 +174,36 @@ func TestNewQueryString(t *testing.T) {
 		{Name: "a", Value: "2"},
 		{Name: "b", Value: ""},
 	}, query)
+}
+
+func TestNewCookies(t *testing.T) {
+	expires := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
+
+	cookies := har.NewCookies([]*http.Cookie{
+		{Name: "plain", Value: "1"}, // nolint: gosec
+		{ // nolint: gosec
+			Name:     "session",
+			Value:    "abc",
+			Path:     "/api",
+			Domain:   "example.com",
+			Expires:  expires,
+			HttpOnly: true,
+			Secure:   true,
+		},
+	})
+
+	assert.Equal(t, []har.Cookie{
+		{Name: "plain", Value: "1"},
+		{
+			Name:     "session",
+			Value:    "abc",
+			Path:     "/api",
+			Domain:   "example.com",
+			Expires:  "2026-10-16T12:00:00.000Z",
+			HTTPOnly: true,
+			Secure:   true,
+		},
+	}, cookies)
 }
 
 func TestNewPostData(t *testing.T) {
