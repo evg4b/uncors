@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -158,22 +157,39 @@ func TestNewResponse(t *testing.T) {
 }
 
 func TestNewHeaders(t *testing.T) {
-	headers := har.NewHeaders(http.Header{"Accept": {"text/html", "application/json"}})
+	headers := har.NewHeaders(http.Header{
+		"X-Trace": {"1"},
+		"Accept":  {"text/html", "application/json"},
+		"Cookie":  {"session=abc"},
+	})
 
-	assert.ElementsMatch(t, []har.NameValue{
+	assert.Equal(t, []har.NameValue{
 		{Name: "Accept", Value: "text/html"},
 		{Name: "Accept", Value: "application/json"},
+		{Name: "X-Trace", Value: "1"},
 	}, headers)
 }
 
 func TestNewQueryString(t *testing.T) {
-	query := har.NewQueryString(url.Values{"a": {"1", "2"}, "b": {""}})
+	t.Run("keeps the order of the parameters", func(t *testing.T) {
+		query := har.NewQueryString("z=1&a=2&z=3&b&q=hello+world%21")
 
-	assert.ElementsMatch(t, []har.NameValue{
-		{Name: "a", Value: "1"},
-		{Name: "a", Value: "2"},
-		{Name: "b", Value: ""},
-	}, query)
+		assert.Equal(t, []har.NameValue{
+			{Name: "z", Value: "1"},
+			{Name: "a", Value: "2"},
+			{Name: "z", Value: "3"},
+			{Name: "b", Value: ""},
+			{Name: "q", Value: "hello world!"},
+		}, query)
+	})
+
+	t.Run("keeps a malformed escape as it is", func(t *testing.T) {
+		assert.Equal(t, []har.NameValue{{Name: "a", Value: "%zz"}}, har.NewQueryString("a=%zz"))
+	})
+
+	t.Run("without a query", func(t *testing.T) {
+		assert.Equal(t, []har.NameValue{}, har.NewQueryString(""))
+	})
 }
 
 func TestNewCookies(t *testing.T) {

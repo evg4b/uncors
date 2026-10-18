@@ -1,8 +1,11 @@
 package har
 
 import (
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -69,7 +72,7 @@ func NewRequest(req *http.Request, body []byte, opts ...Option) Request {
 		URL:         requestURL(req),
 		HTTPVersion: req.Proto,
 		Headers:     NewHeaders(req.Header, opts...),
-		QueryString: NewQueryString(urlt.URL_Query(req.URL)),
+		QueryString: NewQueryString(req.URL.RawQuery),
 		Cookies:     cookies,
 		HeadersSize: -1,
 		BodySize:    int64(len(body)),
@@ -107,7 +110,9 @@ func NewHeaders(header http.Header, opts ...Option) []NameValue {
 	config := applyOptions(opts)
 	result := make([]NameValue, 0, len(header))
 
-	for name, values := range header {
+	for _, name := range slices.Sorted(maps.Keys(header)) {
+		values := header[name]
+
 		if !config.secureHeaders && IsSecureHeader(name) {
 			continue
 		}
@@ -120,13 +125,16 @@ func NewHeaders(header http.Header, opts ...Option) []NameValue {
 	return result
 }
 
-func NewQueryString(query url.Values) []NameValue {
-	result := make([]NameValue, 0, len(query))
+func NewQueryString(rawQuery string) []NameValue {
+	result := []NameValue{}
 
-	for name, values := range query {
-		for _, value := range values {
-			result = append(result, NameValue{Name: name, Value: value})
+	for pair := range strings.SplitSeq(rawQuery, "&") {
+		if pair == "" {
+			continue
 		}
+
+		name, value, _ := strings.Cut(pair, "=")
+		result = append(result, NameValue{Name: unescapeQuery(name), Value: unescapeQuery(value)})
 	}
 
 	return result
@@ -179,6 +187,15 @@ func requestURL(req *http.Request) string {
 	}
 
 	return scheme + "://" + req.Host + req.RequestURI
+}
+
+func unescapeQuery(value string) string {
+	unescaped, err := url.QueryUnescape(value)
+	if err != nil {
+		return value
+	}
+
+	return unescaped
 }
 
 func applyOptions(opts []Option) options {

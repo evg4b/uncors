@@ -46,7 +46,7 @@ Smaller pieces are exported too:
 
 ```go
 har.NewHeaders(header, opts...)       // []NameValue
-har.NewQueryString(values)            // []NameValue
+har.NewQueryString(rawQuery)          // []NameValue in query order
 har.NewCookies(cookies)               // []Cookie
 har.NewPostData(body, mimeType)       // nil for an empty body
 har.NewContent(body, encoding, mime)  // decoded body as Content
