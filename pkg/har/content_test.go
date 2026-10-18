@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/pkg/har"
 	"github.com/stretchr/testify/assert"
 )
 

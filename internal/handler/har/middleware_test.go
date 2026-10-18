@@ -17,6 +17,8 @@ import (
 	"testing"
 	"testing/iotest"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/andybalholm/brotli"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
@@ -49,13 +51,13 @@ func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middlewa
 	return mdlw, harWriter, path
 }
 
-func readHARFile(t *testing.T, path string) har.HAR {
+func readHARFile(t *testing.T, path string) harlib.HAR {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	var archive har.HAR
+	var archive harlib.HAR
 	require.NoError(t, json.Unmarshal(data, &archive))
 
 	return archive
@@ -384,7 +386,7 @@ func TestMiddleware_PostData(t *testing.T) {
 
 		request := archive.Log.Entries[0].Request
 		assert.Equal(t, int64(len(body)), request.BodySize)
-		assert.Equal(t, &har.PostData{MimeType: "application/json", Text: body}, request.PostData)
+		assert.Equal(t, &harlib.PostData{MimeType: "application/json", Text: body}, request.PostData)
 	})
 
 	t.Run("records only the size of a binary body", func(t *testing.T) {
@@ -410,7 +412,7 @@ func TestMiddleware_PostData(t *testing.T) {
 
 		request := archive.Log.Entries[0].Request
 		assert.Equal(t, int64(len(body)), request.BodySize)
-		assert.Equal(t, &har.PostData{MimeType: "application/octet-stream"}, request.PostData)
+		assert.Equal(t, &harlib.PostData{MimeType: "application/octet-stream"}, request.PostData)
 	})
 
 	t.Run("omits postData without a body", func(t *testing.T) {

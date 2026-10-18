@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -21,7 +23,6 @@ import (
 )
 
 const (
-	harVersion      = "1.2"
 	creatorName     = "uncors"
 	creatorVersion  = "dev"
 	entryChanBuffer = 4096
@@ -37,7 +38,7 @@ type Writer struct {
 	path      string
 	fs        afero.Fs
 	publisher events.Publisher
-	entries   chan Entry
+	entries   chan harlib.Entry
 	done      chan struct{}
 	once      sync.Once
 	wg        sync.WaitGroup
@@ -69,7 +70,7 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 	writer := helpers.ApplyOptions(&Writer{
 		path:      path,
 		publisher: events.NoopPublisher{},
-		entries:   make(chan Entry, entryChanBuffer),
+		entries:   make(chan harlib.Entry, entryChanBuffer),
 		done:      make(chan struct{}),
 	}, options)
 
@@ -84,7 +85,7 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 
 // AddEntry queues the entry and reports whether it was queued: when the
 // queue is full the entry is dropped rather than block the request.
-func (w *Writer) AddEntry(entry Entry) bool {
+func (w *Writer) AddEntry(entry harlib.Entry) bool {
 	select {
 	case w.entries <- entry:
 		return true
@@ -162,7 +163,7 @@ func (w *Writer) drain() {
 	}
 }
 
-func (w *Writer) append(entry Entry) {
+func (w *Writer) append(entry harlib.Entry) {
 	data, err := json.MarshalIndent(entry, entryPrefix, "  ")
 	if err != nil {
 		telemetry.Error(context.Background(), "cannot encode HAR entry", slog.String("file", w.path), telemetry.Err(err))
@@ -266,13 +267,7 @@ func writeArchive(file afero.File, entries [][]byte) error {
 }
 
 func archiveFrame() ([]byte, []byte) {
-	data, err := json.MarshalIndent(HAR{
-		Log: Log{
-			Version: harVersion,
-			Creator: Creator{Name: creatorName, Version: creatorVersion},
-			Entries: []Entry{},
-		},
-	}, "", "  ")
+	data, err := json.MarshalIndent(harlib.New(harlib.Creator{Name: creatorName, Version: creatorVersion}), "", "  ")
 	if err != nil {
 		panic(err)
 	}

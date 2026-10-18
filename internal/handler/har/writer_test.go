@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -20,11 +22,11 @@ func TestWriter(t *testing.T) {
 		path := filepath.Join(dir, "out.har")
 
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
-		harWriter.AddEntry(har.Entry{
+		harWriter.AddEntry(harlib.Entry{
 			StartedDateTime: time.Now(),
 			Time:            42,
-			Request:         har.Request{Method: "GET", URL: "http://example.com/"},
-			Response:        har.Response{Status: 200},
+			Request:         harlib.Request{Method: "GET", URL: "http://example.com/"},
+			Response:        harlib.Response{Status: 200},
 		})
 
 		require.NoError(t, harWriter.Close())
@@ -32,7 +34,7 @@ func TestWriter(t *testing.T) {
 		data, err := os.ReadFile(path)
 		require.NoError(t, err)
 
-		var archive har.HAR
+		var archive harlib.HAR
 		require.NoError(t, json.Unmarshal(data, &archive))
 
 		assert.Equal(t, "1.2", archive.Log.Version)
@@ -53,7 +55,7 @@ func TestWriter(t *testing.T) {
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
 
 		for range 10_000 {
-			harWriter.AddEntry(har.Entry{})
+			harWriter.AddEntry(harlib.Entry{})
 		}
 
 		require.NoError(t, harWriter.Close())
@@ -68,7 +70,7 @@ func TestWriter(t *testing.T) {
 		data, err := os.ReadFile(path)
 		require.NoError(t, err)
 
-		var archive har.HAR
+		var archive harlib.HAR
 		require.NoError(t, json.Unmarshal(data, &archive))
 		assert.Empty(t, archive.Log.Entries)
 	})
@@ -90,7 +92,7 @@ func TestWriter(t *testing.T) {
 
 		path := filepath.Join(blocker, "sub", "out.har")
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
-		harWriter.AddEntry(har.Entry{})
+		harWriter.AddEntry(harlib.Entry{})
 
 		require.NoError(t, harWriter.Close())
 
@@ -109,7 +111,7 @@ func TestWriter(t *testing.T) {
 		})
 
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
-		harWriter.AddEntry(har.Entry{})
+		harWriter.AddEntry(harlib.Entry{})
 
 		require.NoError(t, harWriter.Close())
 
@@ -124,7 +126,7 @@ func TestWriter(t *testing.T) {
 		require.NoError(t, os.Mkdir(path, 0o755))
 
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
-		harWriter.AddEntry(har.Entry{})
+		harWriter.AddEntry(harlib.Entry{})
 
 		require.NoError(t, harWriter.Close())
 
@@ -136,9 +138,9 @@ func TestWriter(t *testing.T) {
 	t.Run("creates parent directories automatically", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "nested", "deep", "out.har")
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
-		harWriter.AddEntry(har.Entry{
-			Request:  har.Request{Method: "GET", URL: "http://example.com/"},
-			Response: har.Response{Status: 200},
+		harWriter.AddEntry(harlib.Entry{
+			Request:  harlib.Request{Method: "GET", URL: "http://example.com/"},
+			Response: harlib.Response{Status: 200},
 		})
 
 		require.NoError(t, harWriter.Close())
@@ -146,28 +148,28 @@ func TestWriter(t *testing.T) {
 		data, err := os.ReadFile(path)
 		require.NoError(t, err)
 
-		var archive har.HAR
+		var archive harlib.HAR
 		require.NoError(t, json.Unmarshal(data, &archive))
 		assert.Len(t, archive.Log.Entries, 1)
 	})
 
 	t.Run("writes the same JSON as an indented archive", func(t *testing.T) {
 		started := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
-		entries := []har.Entry{
+		entries := []harlib.Entry{
 			{
 				StartedDateTime: started,
 				Time:            12.5,
-				Request:         har.Request{Method: "GET", URL: "http://example.com/a", HeadersSize: -1},
-				Response:        har.Response{Status: 200, Content: har.Content{Text: "<a & b>"}},
+				Request:         harlib.Request{Method: "GET", URL: "http://example.com/a", HeadersSize: -1},
+				Response:        harlib.Response{Status: 200, Content: harlib.Content{Text: "<a & b>"}},
 			},
 			{
 				StartedDateTime: started.Add(time.Second),
-				Request: har.Request{
+				Request: harlib.Request{
 					Method:   "POST",
 					URL:      "http://example.com/b",
-					PostData: &har.PostData{MimeType: "application/json", Text: `{"a":1}`},
+					PostData: &harlib.PostData{MimeType: "application/json", Text: `{"a":1}`},
 				},
-				Response: har.Response{Status: 201},
+				Response: harlib.Response{Status: 201},
 			},
 		}
 
@@ -182,11 +184,11 @@ func TestWriter(t *testing.T) {
 
 				require.NoError(t, harWriter.Close())
 
-				expected, err := json.MarshalIndent(har.HAR{
-					Log: har.Log{
+				expected, err := json.MarshalIndent(harlib.HAR{
+					Log: harlib.Log{
 						Version: "1.2",
-						Creator: har.Creator{Name: "uncors", Version: "dev"},
-						Entries: append([]har.Entry{}, entries[:count]...),
+						Creator: harlib.Creator{Name: "uncors", Version: "dev"},
+						Entries: append([]harlib.Entry{}, entries[:count]...),
 					},
 				}, "", "  ")
 				require.NoError(t, err)
@@ -204,7 +206,7 @@ func TestWriter(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
 		harWriter := har.NewWriter(path, har.WithFileSystem(fs))
-		harWriter.AddEntry(har.Entry{Request: har.Request{Method: "GET"}})
+		harWriter.AddEntry(harlib.Entry{Request: harlib.Request{Method: "GET"}})
 		require.NoError(t, harWriter.Close())
 
 		exists, err := afero.Exists(fs, path)
@@ -219,7 +221,7 @@ func TestWriter(t *testing.T) {
 
 		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
 		for range 100 {
-			harWriter.AddEntry(har.Entry{Request: har.Request{Method: "GET"}})
+			harWriter.AddEntry(harlib.Entry{Request: harlib.Request{Method: "GET"}})
 		}
 
 		require.NoError(t, harWriter.Close())

@@ -10,6 +10,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/server"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestMiddlewareLogsDroppedEntries(t *testing.T) {
 	recorded := testutils.Telemetry(t)
 
 	// An unbuffered queue nobody reads is always full.
-	writer := &Writer{path: "out.har", publisher: events.NoopPublisher{}, entries: make(chan Entry)}
+	writer := &Writer{path: "out.har", publisher: events.NoopPublisher{}, entries: make(chan harlib.Entry)}
 	handler := NewMiddleware(WithWriter(writer))
 
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api", nil)

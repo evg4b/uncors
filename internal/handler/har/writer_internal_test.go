@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -70,7 +72,9 @@ func TestWritersSharingAFile(t *testing.T) {
 	for index, writer := range writers {
 		group.Go(func() {
 			for range 200 {
-				writer.append(Entry{Request: Request{Method: http.MethodGet, URL: fmt.Sprintf("http://writer-%d/", index)}})
+				writer.append(harlib.Entry{
+					Request: harlib.Request{Method: http.MethodGet, URL: fmt.Sprintf("http://writer-%d/", index)},
+				})
 				writer.flush()
 			}
 		})
@@ -86,7 +90,7 @@ func TestWritersSharingAFile(t *testing.T) {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	var archive HAR
+	var archive harlib.HAR
 	require.NoError(t, json.Unmarshal(data, &archive))
 	assert.Len(t, archive.Log.Entries, 200)
 
@@ -102,7 +106,7 @@ func TestWriterFlushesOnInterval(t *testing.T) {
 
 	t.Cleanup(func() { _ = writer.Close() })
 
-	assert.True(t, writer.AddEntry(Entry{Request: Request{Method: http.MethodPost}}))
+	assert.True(t, writer.AddEntry(harlib.Entry{Request: harlib.Request{Method: http.MethodPost}}))
 
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		data, err := afero.ReadFile(fs, "/out.har")
@@ -110,7 +114,7 @@ func TestWriterFlushesOnInterval(t *testing.T) {
 			return
 		}
 
-		var archive HAR
+		var archive harlib.HAR
 		if assert.NoError(collect, json.Unmarshal(data, &archive)) {
 			assert.Len(collect, archive.Log.Entries, 1)
 		}

@@ -13,6 +13,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
 )
@@ -23,9 +25,9 @@ var zstdDecoder = sync.OnceValues(func() (*zstd.Decoder, error) {
 	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 })
 
-func buildContent(raw []byte, contentEncoding, mimeType string) Content {
+func buildContent(raw []byte, contentEncoding, mimeType string) harlib.Content {
 	if len(raw) == 0 {
-		return Content{Size: 0, MimeType: mimeType}
+		return harlib.Content{Size: 0, MimeType: mimeType}
 	}
 
 	decoded, err := decodeBody(raw, strings.ToLower(strings.TrimSpace(contentEncoding)))
@@ -33,7 +35,7 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 		decoded = raw
 	}
 
-	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
+	content := harlib.Content{Size: int64(len(decoded)), MimeType: mimeType}
 	if err != nil || !utf8.Valid(decoded) {
 		content.Text = base64.StdEncoding.EncodeToString(decoded)
 		content.Encoding = "base64"

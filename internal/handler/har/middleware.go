@@ -10,6 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	harlib "github.com/evg4b/uncors/pkg/har"
+
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -98,15 +100,15 @@ func (m *Middleware) buildEntry(
 	start time.Time,
 	elapsed time.Duration,
 	reqBody []byte,
-) Entry {
+) harlib.Entry {
 	elapsedMS := float64(elapsed.Nanoseconds()) / nanosecondsPerMillisecond
 
-	return Entry{
+	return harlib.Entry{
 		StartedDateTime: start,
 		Time:            elapsedMS,
 		Request:         m.buildRequest(req, reqBody),
 		Response:        m.buildResponse(req, capture),
-		Timings: Timings{
+		Timings: harlib.Timings{
 			Send:    0,
 			Wait:    elapsedMS,
 			Receive: 0,
@@ -114,7 +116,7 @@ func (m *Middleware) buildEntry(
 	}
 }
 
-func (m *Middleware) buildRequest(req *http.Request, body []byte) Request {
+func (m *Middleware) buildRequest(req *http.Request, body []byte) harlib.Request {
 	scheme := "http"
 	if req.TLS != nil {
 		scheme = "https"
@@ -122,13 +124,13 @@ func (m *Middleware) buildRequest(req *http.Request, body []byte) Request {
 
 	fullURL := fmt.Sprintf("%s://%s%s", scheme, req.Host, req.RequestURI)
 
-	var cookies []Cookie
+	var cookies []harlib.Cookie
 
 	if m.captureSecureHeaders {
 		cookies = cookiesToHAR(req.Cookies())
 	}
 
-	return Request{
+	return harlib.Request{
 		Method:      req.Method,
 		URL:         fullURL,
 		HTTPVersion: req.Proto,
@@ -141,12 +143,12 @@ func (m *Middleware) buildRequest(req *http.Request, body []byte) Request {
 	}
 }
 
-func buildPostData(body []byte, mimeType string) *PostData {
+func buildPostData(body []byte, mimeType string) *harlib.PostData {
 	if len(body) == 0 {
 		return nil
 	}
 
-	postData := &PostData{MimeType: mimeType}
+	postData := &harlib.PostData{MimeType: mimeType}
 	if utf8.Valid(body) {
 		postData.Text = string(body)
 	}
@@ -154,13 +156,13 @@ func buildPostData(body []byte, mimeType string) *PostData {
 	return postData
 }
 
-func (m *Middleware) buildResponse(req *http.Request, capture contracts.ResponseCapture) Response {
+func (m *Middleware) buildResponse(req *http.Request, capture contracts.ResponseCapture) harlib.Response {
 	mimeType := capture.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
 
-	var cookies []Cookie
+	var cookies []harlib.Cookie
 
 	if m.captureSecureHeaders {
 		cookies = cookiesToHAR(extractResponseCookies(capture.Header))
@@ -169,7 +171,7 @@ func (m *Middleware) buildResponse(req *http.Request, capture contracts.Response
 	rawBody := capture.Body
 	content := buildContent(rawBody, capture.Header.Get("Content-Encoding"), mimeType)
 
-	return Response{
+	return harlib.Response{
 		Status:      capture.StatusCode,
 		StatusText:  http.StatusText(capture.StatusCode),
 		HTTPVersion: req.Proto,
@@ -182,8 +184,8 @@ func (m *Middleware) buildResponse(req *http.Request, capture contracts.Response
 	}
 }
 
-func (m *Middleware) headersToNameValues(h http.Header) []NameValue {
-	result := make([]NameValue, 0, len(h))
+func (m *Middleware) headersToNameValues(h http.Header) []harlib.NameValue {
+	result := make([]harlib.NameValue, 0, len(h))
 
 	for name, values := range h {
 		if !m.captureSecureHeaders && secureHeaderNames[name] {
@@ -191,30 +193,30 @@ func (m *Middleware) headersToNameValues(h http.Header) []NameValue {
 		}
 
 		for _, v := range values {
-			result = append(result, NameValue{Name: name, Value: v})
+			result = append(result, harlib.NameValue{Name: name, Value: v})
 		}
 	}
 
 	return result
 }
 
-func queryToNameValues(q url.Values) []NameValue {
-	result := make([]NameValue, 0, len(q))
+func queryToNameValues(q url.Values) []harlib.NameValue {
+	result := make([]harlib.NameValue, 0, len(q))
 
 	for k, vals := range q {
 		for _, v := range vals {
-			result = append(result, NameValue{Name: k, Value: v})
+			result = append(result, harlib.NameValue{Name: k, Value: v})
 		}
 	}
 
 	return result
 }
 
-func cookiesToHAR(cookies []*http.Cookie) []Cookie {
-	result := make([]Cookie, 0, len(cookies))
+func cookiesToHAR(cookies []*http.Cookie) []harlib.Cookie {
+	result := make([]harlib.Cookie, 0, len(cookies))
 
 	for _, c := range cookies {
-		result = append(result, Cookie{Name: c.Name, Value: c.Value})
+		result = append(result, harlib.Cookie{Name: c.Name, Value: c.Value})
 	}
 
 	return result
