@@ -51,6 +51,22 @@ func TestNewWriter(t *testing.T) {
 		assert.Contains(t, notices[0].Text, "HAR: cannot write /out.har")
 	})
 
+	t.Run("names uncors and its version as the creator", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		writer := NewWriter("/out.har", WithFileSystem(fs), WithVersion("v1.2.3"))
+
+		require.NoError(t, writer.Close())
+
+		file, err := fs.Open("/out.har")
+		require.NoError(t, err)
+
+		defer file.Close()
+
+		archive, err := harlib.Decode(file)
+		require.NoError(t, err)
+		assert.Equal(t, harlib.Creator{Name: "uncors", Version: "v1.2.3"}, archive.Log.Creator)
+	})
+
 	t.Run("requires a file system", func(t *testing.T) {
 		assert.PanicsWithValue(t, "HARWriter: File system is not configured", func() {
 			NewWriter("out.har")

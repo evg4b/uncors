@@ -19,6 +19,7 @@ import (
 type Engine struct {
 	fs        afero.Fs
 	publisher events.Publisher
+	version   string
 	certs     *certs.Manager
 	server    *server.Server
 
@@ -35,6 +36,12 @@ type Option = func(*Engine)
 func WithPublisher(publisher events.Publisher) Option {
 	return func(e *Engine) {
 		e.publisher = publisher
+	}
+}
+
+func WithVersion(version string) Option {
+	return func(e *Engine) {
+		e.version = version
 	}
 }
 

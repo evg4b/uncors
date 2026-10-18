@@ -17,6 +17,7 @@ import (
 type writerConfig struct {
 	fs        afero.Fs
 	publisher events.Publisher
+	version   string
 }
 
 type WriterOption = func(*writerConfig)
@@ -24,6 +25,12 @@ type WriterOption = func(*writerConfig)
 func WithPublisher(publisher events.Publisher) WriterOption {
 	return func(c *writerConfig) {
 		c.publisher = publisher
+	}
+}
+
+func WithVersion(version string) WriterOption {
+	return func(c *writerConfig) {
+		c.version = version
 	}
 }
 
@@ -38,10 +45,16 @@ func NewWriter(path string, options ...WriterOption) *harlib.Writer {
 
 	helpers.AssertIsDefined(config.fs, "HARWriter: File system is not configured")
 
+	creator := harlib.DefaultCreator
+	if config.version != "" {
+		creator.Version = config.version
+	}
+
 	reporter := &flushReporter{path: path, publisher: config.publisher}
 
 	return harlib.NewWriter(path,
 		harlib.WithFileSystem(config.fs),
+		harlib.WithCreator(creator),
 		harlib.WithFlushHandler(reporter.flushed),
 		harlib.WithErrorHandler(reporter.failed),
 	)

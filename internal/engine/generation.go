@@ -35,6 +35,7 @@ const baseAddress = "127.0.0.1"
 type Generation struct {
 	fs          afero.Fs
 	publisher   events.Publisher
+	version     string
 	cacheConfig *config.CacheConfig
 	cacheStore  contracts.Cache
 	proxyURL    string
@@ -59,6 +60,7 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 	generation := &Generation{
 		fs:          e.fs,
 		publisher:   e.publisher,
+		version:     e.version,
 		cacheConfig: &uncorsConfig.CacheConfig,
 		proxyURL:    uncorsConfig.Proxy,
 	}
@@ -107,6 +109,7 @@ func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middle
 	writer := register(g, har.NewWriter(harConfig.File,
 		har.WithFileSystem(g.fs),
 		har.WithPublisher(g.publisher),
+		har.WithVersion(g.version),
 	))
 
 	return har.NewMiddleware(
