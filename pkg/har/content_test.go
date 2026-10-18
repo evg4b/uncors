@@ -28,7 +28,14 @@ func TestNewContent(t *testing.T) {
 	t.Run("decodes a compressed text body", func(t *testing.T) {
 		content := har.NewContent(gzipped(t, "hello"), "gzip", "text/plain")
 
-		assert.Equal(t, har.Content{Size: 5, MimeType: "text/plain", Text: "hello"}, content)
+		compression := int64(5 - len(gzipped(t, "hello")))
+		assert.Equal(t, har.Content{Size: 5, Compression: &compression, MimeType: "text/plain", Text: "hello"}, content)
+	})
+
+	t.Run("leaves out compression for an uncompressed body", func(t *testing.T) {
+		content := har.NewContent([]byte("hello"), "identity", "text/plain")
+
+		assert.Nil(t, content.Compression)
 	})
 
 	t.Run("stores an undecodable body as base64", func(t *testing.T) {
@@ -57,10 +64,10 @@ func TestDecodeBody(t *testing.T) {
 
 	t.Run("decodes gzip regardless of case", func(t *testing.T) {
 		for _, encoding := range []string{"gzip", "x-gzip", "GZIP"} {
-			decoded, err := har.DecodeBody(gzipped(t, "hello"), encoding)
+			decoded, err := har.DecodeBody(gzipped(t, "gzip body"), encoding)
 
 			require.NoError(t, err)
-			assert.Equal(t, "hello", string(decoded))
+			assert.Equal(t, "gzip body", string(decoded))
 		}
 	})
 

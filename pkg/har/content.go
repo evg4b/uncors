@@ -34,6 +34,11 @@ func NewContent(raw []byte, contentEncoding, mimeType string) Content {
 	}
 
 	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
+	if err == nil && !isIdentity(contentEncoding) {
+		compression := int64(len(decoded) - len(raw))
+		content.Compression = &compression
+	}
+
 	if err != nil || !utf8.Valid(decoded) {
 		content.Text = base64.StdEncoding.EncodeToString(decoded)
 		content.Encoding = "base64"
@@ -47,7 +52,7 @@ func NewContent(raw []byte, contentEncoding, mimeType string) Content {
 }
 
 func DecodeBody(raw []byte, contentEncoding string) ([]byte, error) {
-	encoding := strings.ToLower(strings.TrimSpace(contentEncoding))
+	encoding := normalizeEncoding(contentEncoding)
 
 	switch encoding {
 	case "", "identity":
@@ -63,6 +68,16 @@ func DecodeBody(raw []byte, contentEncoding string) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("%w: %q", ErrUnsupportedEncoding, encoding)
 	}
+}
+
+func normalizeEncoding(contentEncoding string) string {
+	return strings.ToLower(strings.TrimSpace(contentEncoding))
+}
+
+func isIdentity(contentEncoding string) bool {
+	encoding := normalizeEncoding(contentEncoding)
+
+	return encoding == "" || encoding == "identity"
 }
 
 func decodeZstd(data []byte) ([]byte, error) {
