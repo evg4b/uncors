@@ -57,14 +57,23 @@ Each entry has the request and response headers, cookies, query string,
 bodies, and timings. `httpVersion` is the protocol the client used, such as
 `HTTP/1.1` or `HTTP/2.0`, for both the request and the response.
 
+- Entries are sorted by `startedDateTime`, oldest first.
+- `url` never includes the fragment.
+- `queryString` keeps the parameters in the order they were sent; headers are
+  sorted by name.
+- Response cookies keep their `path`, `domain`, `expires`, `httpOnly`, and
+  `secure` attributes.
+- `creator` is `uncors` with the version that wrote the file.
+
 ### Request bodies
 
 A request with a body gets a `postData` object, as described in HAR 1.2:
 
-| Field      | Value                                                       |
-| ---------- | ----------------------------------------------------------- |
-| `mimeType` | The request's `Content-Type` header                         |
-| `text`     | The body, if it is valid UTF-8. Left out for binary bodies. |
+| Field      | Value                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `mimeType` | The request's `Content-Type` header                                                                   |
+| `params`   | The parameters of an `application/x-www-form-urlencoded` body, in order                               |
+| `text`     | Any other body, if it is valid UTF-8. Left out for forms, as HAR 1.2 requires, and for binary bodies. |
 
 `bodySize` is the size of the body in bytes, so a binary upload such as an
 image is recorded by its size only. Requests without a body have no `postData`.
@@ -87,7 +96,8 @@ Browsers usually ask for Brotli or zstd, and UNCORS forwards the browser's
 | Unknown encoding, or a body that fails to decode | Base64 of the bytes as received | `base64`   |
 
 `content.size` is the size of the decoded body, and `bodySize` is the size as
-it came over the wire.
+it came over the wire. For a decoded compressed body, `content.compression` is
+the number of bytes saved.
 
 ## Secure headers
 

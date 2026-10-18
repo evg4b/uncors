@@ -13,6 +13,7 @@ update your configuration.
   - [Unknown keys are errors](#unknown-keys-are-errors)
   - [Simplified mapping syntax needs a host-like key](#simplified-mapping-syntax-needs-a-host-like-key)
   - [Duplicate mappings](#duplicate-mappings)
+  - [HAR field names](#har-field-names)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -160,6 +161,11 @@ mappings[1].from: http://localhost is already mapped by mappings[0].from
 ```
 
 Merge the options of the duplicates into one mapping.
+
+### HAR field names
+
+[HAR files](HAR-Collector) use the HAR 1.2 name `redirectURL` instead of
+`redirectUrl`. Update tools that read the old name.
 
 ## Upgrading from 0.5.x to 0.6.x
 
