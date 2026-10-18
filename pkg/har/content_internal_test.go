@@ -53,7 +53,7 @@ func compressZstd(t *testing.T, data []byte) []byte {
 
 func TestBuildContent(t *testing.T) {
 	t.Run("empty body returns zero-size content", func(t *testing.T) {
-		c := buildContent(nil, "", "text/plain")
+		c := NewContent(nil, "", "text/plain")
 
 		assert.Equal(t, int64(0), c.Size)
 		assert.Equal(t, "text/plain", c.MimeType)
@@ -62,21 +62,21 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("empty encoding stores plain text", func(t *testing.T) {
-		c := buildContent([]byte("hello"), "", "text/plain")
+		c := NewContent([]byte("hello"), "", "text/plain")
 
 		assert.Equal(t, "hello", c.Text)
 		assert.Empty(t, c.Encoding)
 	})
 
 	t.Run("identity encoding stores plain text", func(t *testing.T) {
-		c := buildContent([]byte("hello"), "identity", "text/plain")
+		c := NewContent([]byte("hello"), "identity", "text/plain")
 
 		assert.Equal(t, "hello", c.Text)
 		assert.Empty(t, c.Encoding)
 	})
 
 	t.Run("unknown encoding falls back to base64", func(t *testing.T) {
-		c := buildContent([]byte("data"), "compress", "text/plain")
+		c := NewContent([]byte("data"), "compress", "text/plain")
 
 		assert.Equal(t, "base64", c.Encoding)
 		assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("data")), c.Text)
@@ -86,7 +86,7 @@ func TestBuildContent(t *testing.T) {
 	t.Run("identity body that is not UTF-8 is stored as base64", func(t *testing.T) {
 		raw := []byte{0x89, 'P', 'N', 'G', 0xff, 0x00}
 
-		c := buildContent(raw, "", "image/png")
+		c := NewContent(raw, "", "image/png")
 
 		assert.Equal(t, "base64", c.Encoding)
 		assert.Equal(t, base64.StdEncoding.EncodeToString(raw), c.Text)
@@ -94,7 +94,7 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("brotli body is decoded", func(t *testing.T) {
-		c := buildContent(compressBrotli(t, []byte("brotli content")), "br", "text/plain")
+		c := NewContent(compressBrotli(t, []byte("brotli content")), "br", "text/plain")
 
 		assert.Equal(t, "brotli content", c.Text)
 		assert.Empty(t, c.Encoding)
@@ -102,7 +102,7 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("zstd body is decoded", func(t *testing.T) {
-		c := buildContent(compressZstd(t, []byte("zstd content")), "zstd", "text/plain")
+		c := NewContent(compressZstd(t, []byte("zstd content")), "zstd", "text/plain")
 
 		assert.Equal(t, "zstd content", c.Text)
 		assert.Empty(t, c.Encoding)
@@ -110,7 +110,7 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("encoding name is case and space insensitive", func(t *testing.T) {
-		c := buildContent(compressBrotli(t, []byte("brotli content")), " BR ", "text/plain")
+		c := NewContent(compressBrotli(t, []byte("brotli content")), " BR ", "text/plain")
 
 		assert.Equal(t, "brotli content", c.Text)
 	})
@@ -119,7 +119,7 @@ func TestBuildContent(t *testing.T) {
 		t.Run("invalid "+encoding+" data falls back to base64 of the raw bytes", func(t *testing.T) {
 			raw := []byte{0xde, 0xad, 0xbe, 0xef, 0x00, 0x01}
 
-			c := buildContent(raw, encoding, "application/octet-stream")
+			c := NewContent(raw, encoding, "application/octet-stream")
 
 			assert.Equal(t, "base64", c.Encoding)
 			assert.Equal(t, base64.StdEncoding.EncodeToString(raw), c.Text)
@@ -130,7 +130,7 @@ func TestBuildContent(t *testing.T) {
 	t.Run("decoded body that is not UTF-8 is stored as base64 of the decoded bytes", func(t *testing.T) {
 		decoded := []byte{0xff, 0xfe, 0x00, 0x80}
 
-		c := buildContent(compressBrotli(t, decoded), "br", "application/protobuf")
+		c := NewContent(compressBrotli(t, decoded), "br", "application/protobuf")
 
 		assert.Equal(t, "base64", c.Encoding)
 		assert.Equal(t, base64.StdEncoding.EncodeToString(decoded), c.Text)
@@ -138,13 +138,13 @@ func TestBuildContent(t *testing.T) {
 	})
 
 	t.Run("invalid gzip data falls back to base64", func(t *testing.T) {
-		c := buildContent([]byte("not-gzip-data"), "gzip", "application/octet-stream")
+		c := NewContent([]byte("not-gzip-data"), "gzip", "application/octet-stream")
 
 		assert.Equal(t, "base64", c.Encoding)
 	})
 
 	t.Run("invalid deflate data falls back to base64", func(t *testing.T) {
-		c := buildContent([]byte{0x00, 0x01, 0x02}, "deflate", "application/octet-stream")
+		c := NewContent([]byte{0x00, 0x01, 0x02}, "deflate", "application/octet-stream")
 
 		assert.Equal(t, "base64", c.Encoding)
 	})
@@ -154,7 +154,7 @@ func TestBuildContent(t *testing.T) {
 
 		compressed := rawDeflate(t, []byte(original))
 
-		c := buildContent(compressed, "deflate", "text/plain")
+		c := NewContent(compressed, "deflate", "text/plain")
 
 		assert.Equal(t, original, c.Text)
 		assert.Empty(t, c.Encoding, "decoded content must not carry an encoding field")

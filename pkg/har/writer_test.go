@@ -1,14 +1,16 @@
 package har_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/pkg/har"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,18 +184,13 @@ func TestWriter(t *testing.T) {
 
 				require.NoError(t, harWriter.Close())
 
-				expected, err := json.MarshalIndent(har.HAR{
-					Log: har.Log{
-						Version: "1.2",
-						Creator: har.Creator{Name: "uncors", Version: "dev"},
-						Entries: append([]har.Entry{}, entries[:count]...),
-					},
-				}, "", "  ")
-				require.NoError(t, err)
+				var expected bytes.Buffer
+
+				require.NoError(t, har.Encode(&expected, har.New(har.DefaultCreator, entries[:count]...)))
 
 				actual, err := afero.ReadFile(fs, "/out.har")
 				require.NoError(t, err)
-				assert.Equal(t, string(expected)+"\n", string(actual))
+				assert.Equal(t, expected.String(), string(actual))
 			})
 		}
 	})
@@ -234,9 +231,129 @@ func TestWriter(t *testing.T) {
 		assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
 	})
 
-	t.Run("requires a file system", func(t *testing.T) {
-		assert.PanicsWithValue(t, "HARWriter: File system is not configured", func() {
-			har.NewWriter("out.har")
-		})
+	t.Run("uses the OS file system by default", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "out.har")
+
+		require.NoError(t, har.NewWriter(path).Close())
+
+		assert.FileExists(t, path)
+	})
+
+	t.Run("writes the configured creator", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		creator := har.Creator{Name: "recorder [beta]", Version: "2.0"}
+
+		harWriter := har.NewWriter("/out.har", har.WithFileSystem(fs), har.WithCreator(creator))
+		require.True(t, harWriter.AddEntry(har.Entry{Request: har.Request{Method: "GET"}}))
+		require.NoError(t, harWriter.Close())
+
+		file, err := fs.Open("/out.har")
+		require.NoError(t, err)
+
+		defer file.Close()
+
+		archive, err := har.Decode(file)
+		require.NoError(t, err)
+		assert.Equal(t, creator, archive.Log.Creator)
+		assert.Len(t, archive.Log.Entries, 1)
+	})
+
+	t.Run("reports every flush", func(t *testing.T) {
+		var flushes []har.Flush
+
+		harWriter := har.NewWriter("/out.har",
+			har.WithFileSystem(afero.NewMemMapFs()),
+			har.WithFlushHandler(func(flush har.Flush) { flushes = append(flushes, flush) }),
+		)
+		require.True(t, harWriter.AddEntry(har.Entry{Request: har.Request{Method: "GET"}}))
+		require.NoError(t, harWriter.Close())
+
+		require.Len(t, flushes, 1)
+		assert.Equal(t, "/out.har", flushes[0].Path)
+		assert.Equal(t, 1, flushes[0].Entries)
+		assert.Positive(t, flushes[0].Bytes)
+		assert.False(t, flushes[0].Start.IsZero())
+		assert.NoError(t, flushes[0].Err)
+	})
+
+	t.Run("reports a failed flush", func(t *testing.T) {
+		var flushes []har.Flush
+
+		fs := afero.NewReadOnlyFs(afero.NewMemMapFs())
+		harWriter := har.NewWriter("/out.har",
+			har.WithFileSystem(fs),
+			har.WithFlushHandler(func(flush har.Flush) { flushes = append(flushes, flush) }),
+		)
+		require.NoError(t, harWriter.Close())
+
+		require.Len(t, flushes, 1)
+		assert.Error(t, flushes[0].Err)
+	})
+
+	t.Run("reports and skips an entry it cannot encode", func(t *testing.T) {
+		var errs []error
+
+		fs := afero.NewMemMapFs()
+		harWriter := har.NewWriter("/out.har",
+			har.WithFileSystem(fs),
+			har.WithErrorHandler(func(err error) { errs = append(errs, err) }),
+		)
+		require.True(t, harWriter.AddEntry(har.Entry{Time: math.Inf(1)}))
+		require.True(t, harWriter.AddEntry(har.Entry{Request: har.Request{Method: "GET"}}))
+		require.NoError(t, harWriter.Close())
+
+		require.Len(t, errs, 1)
+		require.ErrorIs(t, errs[0], har.ErrEncodeEntry)
+
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+		assert.Len(t, archive.Log.Entries, 1)
+	})
+
+	t.Run("orders entries by start time", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		started := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
+
+		harWriter := har.NewWriter("/out.har", har.WithFileSystem(fs))
+		for _, offset := range []int{2, 0, 3, 1} {
+			require.True(t, harWriter.AddEntry(har.Entry{
+				StartedDateTime: started.Add(time.Duration(offset) * time.Second),
+				Request:         har.Request{URL: fmt.Sprintf("http://example.com/%d", offset)},
+			}))
+		}
+
+		require.NoError(t, harWriter.Close())
+
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+
+		urls := make([]string, 0, len(archive.Log.Entries))
+		for _, entry := range archive.Log.Entries {
+			urls = append(urls, entry.Request.URL)
+		}
+
+		assert.Equal(t, []string{
+			"http://example.com/0", "http://example.com/1", "http://example.com/2", "http://example.com/3",
+		}, urls)
+	})
+
+	t.Run("skips an entry it cannot encode without an error handler", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		harWriter := har.NewWriter("/out.har", har.WithFileSystem(fs))
+		require.True(t, harWriter.AddEntry(har.Entry{Time: math.NaN()}))
+		require.NoError(t, harWriter.Close())
+
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+		assert.Empty(t, archive.Log.Entries)
 	})
 }

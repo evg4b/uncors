@@ -17,23 +17,28 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-var errUnsupportedEncoding = errors.New("unsupported content encoding")
+var ErrUnsupportedEncoding = errors.New("unsupported content encoding")
 
 var zstdDecoder = sync.OnceValues(func() (*zstd.Decoder, error) {
 	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 })
 
-func buildContent(raw []byte, contentEncoding, mimeType string) Content {
+func NewContent(raw []byte, contentEncoding, mimeType string) Content {
 	if len(raw) == 0 {
 		return Content{Size: 0, MimeType: mimeType}
 	}
 
-	decoded, err := decodeBody(raw, strings.ToLower(strings.TrimSpace(contentEncoding)))
+	decoded, err := DecodeBody(raw, contentEncoding)
 	if err != nil {
 		decoded = raw
 	}
 
 	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
+	if err == nil && !isIdentity(contentEncoding) {
+		compression := int64(len(decoded) - len(raw))
+		content.Compression = &compression
+	}
+
 	if err != nil || !utf8.Valid(decoded) {
 		content.Text = base64.StdEncoding.EncodeToString(decoded)
 		content.Encoding = "base64"
@@ -46,7 +51,9 @@ func buildContent(raw []byte, contentEncoding, mimeType string) Content {
 	return content
 }
 
-func decodeBody(raw []byte, encoding string) ([]byte, error) {
+func DecodeBody(raw []byte, contentEncoding string) ([]byte, error) {
+	encoding := normalizeEncoding(contentEncoding)
+
 	switch encoding {
 	case "", "identity":
 		return raw, nil
@@ -59,8 +66,18 @@ func decodeBody(raw []byte, encoding string) ([]byte, error) {
 	case "zstd":
 		return decodeZstd(raw)
 	default:
-		return nil, fmt.Errorf("%w: %q", errUnsupportedEncoding, encoding)
+		return nil, fmt.Errorf("%w: %q", ErrUnsupportedEncoding, encoding)
 	}
+}
+
+func normalizeEncoding(contentEncoding string) string {
+	return strings.ToLower(strings.TrimSpace(contentEncoding))
+}
+
+func isIdentity(contentEncoding string) bool {
+	encoding := normalizeEncoding(contentEncoding)
+
+	return encoding == "" || encoding == "identity"
 }
 
 func decodeZstd(data []byte) ([]byte, error) {

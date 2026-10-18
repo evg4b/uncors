@@ -12,7 +12,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/engine"
-	"github.com/evg4b/uncors/internal/handler/har"
+	"github.com/evg4b/uncors/pkg/har"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"

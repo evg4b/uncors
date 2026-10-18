@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
@@ -80,11 +81,13 @@ func TestTLS(t *testing.T) {
 		var certErr x509.UnknownAuthorityError
 		assert.NotErrorAs(t, err, &certErr)
 
-		notices := lo.FilterMap(env.Events(), func(event events.Event, _ int) (string, bool) {
-			notice, ok := event.(events.Notice)
+		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			notices := lo.FilterMap(env.Events(), func(event events.Event, _ int) (string, bool) {
+				notice, ok := event.(events.Notice)
 
-			return notice.Text, ok
-		})
-		assert.Contains(t, notices, "TLS: no https mapping for host: unmapped.local")
+				return notice.Text, ok
+			})
+			assert.Contains(collect, notices, "TLS: no https mapping for host: unmapped.local")
+		}, time.Second, 10*time.Millisecond)
 	})
 }

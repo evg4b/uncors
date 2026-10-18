@@ -30,6 +30,7 @@ browser accepts them.
 | `internal/tui`, `internal/uncors_app` | Event rendering, console output, and the interactive Bubble Tea UI.                  |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
 | `pkg/urlt`              | A fork of `net/url` with placeholder support.                                                      |
+| `pkg/har`               | HAR 1.2 types, builders from `net/http`, and the file `Writer`; imports nothing from `internal`.  |
 | `testing/`, `tests/`    | Shared test helpers and mocks; integration and schema tests.                                       |
 
 ## Configuration
@@ -186,7 +187,8 @@ functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 
 ## HAR collector
 
-`internal/handler/har` records traffic in HAR 1.2 format.
+`internal/handler/har` records traffic in HAR 1.2 format with `pkg/har`, and
+reports the writer's flushes to telemetry and its failures as notices.
 
 - Requests never wait for disk I/O. The middleware sends each entry over a
   channel with capacity 4096 and drops the entry if the channel is full.

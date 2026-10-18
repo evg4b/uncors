@@ -2,7 +2,7 @@ package har
 
 type MiddlewareOption = func(*Middleware)
 
-func WithWriter(w *Writer) MiddlewareOption {
+func WithWriter(w EntryWriter) MiddlewareOption {
 	return func(m *Middleware) {
 		m.writer = w
 	}
