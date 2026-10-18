@@ -187,10 +187,8 @@ functional options (`helpers.ApplyOptions`) and wired in `engine.Generation`.
 
 ## HAR collector
 
-`internal/handler/har` records traffic in HAR 1.2 format with `pkg/har`: the
-middleware builds each entry with `har.NewRequest`, `har.NewResponse`, and
-`har.NewEntry`, and the writer reports flushes to telemetry and failures as
-notices through `har.WithFlushHandler` and `har.WithErrorHandler`.
+`internal/handler/har` records traffic in HAR 1.2 format with `pkg/har`, and
+reports the writer's flushes to telemetry and its failures as notices.
 
 - Requests never wait for disk I/O. The middleware sends each entry over a
   channel with capacity 4096 and drops the entry if the channel is full.

@@ -57,13 +57,11 @@ Each entry has the request and response headers, cookies, query string,
 bodies, and timings. `httpVersion` is the protocol the client used, such as
 `HTTP/1.1` or `HTTP/2.0`, for both the request and the response.
 
-- Entries are sorted by `startedDateTime`, oldest first.
-- `url` never includes the fragment.
-- `queryString` keeps the parameters in the order they were sent; headers are
-  sorted by name.
-- Response cookies keep their `path`, `domain`, `expires`, `httpOnly`, and
-  `secure` attributes.
-- `creator` is `uncors` with the version that wrote the file.
+Entries are sorted by `startedDateTime`, oldest first. `url` never includes the
+fragment, `queryString` keeps the order the parameters were sent in, and
+headers are sorted by name. Response cookies keep `path`, `domain`, `expires`,
+`httpOnly`, and `secure`. `creator` is `uncors` and the version that wrote the
+file.
 
 ### Request bodies
 
