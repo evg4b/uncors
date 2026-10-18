@@ -127,6 +127,17 @@ func TestDecode(t *testing.T) {
 		assert.Contains(t, buffer.String(), `"cache": {}`)
 	})
 
+	t.Run("ignores a byte order mark", func(t *testing.T) {
+		var buffer bytes.Buffer
+
+		buffer.Write([]byte{0xEF, 0xBB, 0xBF})
+		require.NoError(t, har.Encode(&buffer, har.New(creator)))
+
+		archive, err := har.Decode(&buffer)
+		require.NoError(t, err)
+		assert.Equal(t, har.New(creator), archive)
+	})
+
 	t.Run("reports invalid JSON", func(t *testing.T) {
 		_, err := har.Decode(strings.NewReader("{"))
 

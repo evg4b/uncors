@@ -1,12 +1,16 @@
 package har
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 )
 
 const Version = "1.2"
+
+var byteOrderMark = []byte{0xEF, 0xBB, 0xBF}
 
 func New(creator Creator, entries ...Entry) HAR {
 	if entries == nil {
@@ -39,7 +43,14 @@ func Encode(writer io.Writer, archive HAR) error {
 func Decode(reader io.Reader) (HAR, error) {
 	var archive HAR
 
-	err := json.NewDecoder(reader).Decode(&archive)
+	buffered := bufio.NewReader(reader)
+
+	prefix, err := buffered.Peek(len(byteOrderMark))
+	if err == nil && bytes.Equal(prefix, byteOrderMark) {
+		_, _ = buffered.Discard(len(byteOrderMark))
+	}
+
+	err = json.NewDecoder(buffered).Decode(&archive)
 	if err != nil {
 		return HAR{}, fmt.Errorf("har: cannot decode archive: %w", err)
 	}
