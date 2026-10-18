@@ -42,7 +42,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := infra.Mddleware(middleware, next)
+		handler := infra.Wrap(middleware, next)
 		err := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, err)
 
@@ -69,7 +69,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := infra.Mddleware(middleware, next)
+		handler := infra.Wrap(middleware, next)
 		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
 
 		assert.Equal(t, "/v2/users?page=2&sort=name", rewritten)
@@ -98,7 +98,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			return nil
 		})
 
-		handler := infra.Mddleware(middleware, next)
+		handler := infra.Wrap(middleware, next)
 		serveErr := handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, serveErr)
 

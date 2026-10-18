@@ -34,7 +34,7 @@ func TestRouterUpgradeSkipsCacheAndHAR(t *testing.T) {
 		To:    hosts.Parse("https://upstream.local"),
 		Cache: config.CacheGlobs{"/**"},
 		HAR:   config.HARConfig{File: filepath.Join(t.TempDir(), "test.har")},
-	}}, upstream(t, http.StatusOK, "proxied"), router.ForRouterWithCacheMiddlewareFactory(
+	}}, upstream(t, http.StatusOK, "proxied"), router.WithCacheMiddlewareFactory(
 		func(config.CacheGlobs) contracts.Middleware { return cacheMiddleware },
 	))
 

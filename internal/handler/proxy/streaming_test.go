@@ -40,7 +40,7 @@ func (r *flushRecorder) Flush() {
 }
 
 func streamingHandler(response *http.Response) *proxy.Handler {
-	return proxy.NewProxyHandler(
+	return proxy.NewHandler(
 		proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
 			response.Request = req
 

@@ -29,7 +29,7 @@ func TestCacheMiddlewareLogs(t *testing.T) {
 			cache.WithMethods([]string{http.MethodGet}),
 			cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 		)
-		handler := infra.Mddleware(middleware, infra.HandlerFunc(
+		handler := infra.Wrap(middleware, infra.HandlerFunc(
 			func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 				writer.WriteHeader(status)
 
@@ -70,7 +70,7 @@ func TestCacheMiddlewareRejectedStore(t *testing.T) {
 		cache.WithMethods([]string{http.MethodGet}),
 		cache.WithGlobs(config.CacheGlobs{"/api/**"}),
 	)
-	handler := infra.Mddleware(middleware, infra.HandlerFunc(
+	handler := infra.Wrap(middleware, infra.HandlerFunc(
 		func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 			_, err := writer.Write([]byte("a body larger than the whole cache"))
 

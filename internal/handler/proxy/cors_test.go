@@ -26,7 +26,7 @@ func TestProxyHandlerCors(t *testing.T) {
 	serve := func(t *testing.T, request *http.Request, upstream http.Header) http.Header {
 		t.Helper()
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
 				return &http.Response{
 					Status:     "200 OK",

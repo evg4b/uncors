@@ -35,9 +35,8 @@ type Middleware struct {
 
 func NewMiddleware(opts ...MiddlewareOption) *Middleware {
 	m := helpers.ApplyOptions(&Middleware{}, opts)
-	if m.writer == nil {
-		panic("har: NewMiddleware requires WithWriter option")
-	}
+
+	helpers.AssertIsDefined(m.writer, "HARMiddleware: Writer is not configured")
 
 	return m
 }

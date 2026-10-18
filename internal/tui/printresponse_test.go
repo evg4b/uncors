@@ -3,9 +3,9 @@ package tui_test
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -74,20 +74,20 @@ func TestPrintResponse(t *testing.T) {
 	}
 }
 
-func TestPrintResponse_PanicsForUnsupportedCodes(t *testing.T) {
-	out := tui.NewCliOutput(io.Discard)
+func TestPrintResponse_NonstandardCodes(t *testing.T) {
+	for _, code := range []int{99, 600, 799, 999} {
+		t.Run(strconv.Itoa(code), func(t *testing.T) {
+			var buf strings.Builder
 
-	t.Run("code below 100", func(t *testing.T) {
-		assert.Panics(t, func() {
-			out.Request(events.RequestCompleted{Data: makeRequestData(http.MethodGet, "https://example.com/", 99)})
+			assert.NotPanics(t, func() {
+				tui.NewCliOutput(&buf).Request(events.RequestCompleted{
+					Data: makeRequestData(http.MethodGet, "https://example.com/", code),
+				})
+			})
+			assert.Contains(t, buf.String(), strconv.Itoa(code)+" GET")
+			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
 		})
-	})
-
-	t.Run("code above 599", func(t *testing.T) {
-		assert.Panics(t, func() {
-			out.Request(events.RequestCompleted{Data: makeRequestData(http.MethodGet, "https://example.com/", 600)})
-		})
-	})
+	}
 }
 
 var errUpstream = errors.New("dial tcp 127.0.0.1:1: connect: connection refused")

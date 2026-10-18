@@ -18,7 +18,7 @@ func TestStaticMiddlewareLogs(t *testing.T) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
-		handler := static.NewStaticMiddleware(static.WithFileSystem(newStaticFs(t))).
+		handler := static.NewMiddleware(static.WithFileSystem(newStaticFs(t))).
 			Wrap(infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error { return nil }))
 
 		_, err := serveStatic(t, handler, path)

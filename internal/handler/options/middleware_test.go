@@ -195,7 +195,7 @@ func TestMiddleware(t *testing.T) {
 					request.Header = testCase.args.requestHeaders
 				}
 
-				err := infra.Mddleware(middleware, mockedNextHandler).
+				err := infra.Wrap(middleware, mockedNextHandler).
 					ServeHTTP(server.NewResponseRecorder(recorder), request)
 				require.NoError(t, err)
 
@@ -215,7 +215,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, testOrigin)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
+		err := infra.Wrap(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 
 		require.NoError(t, err)
@@ -244,7 +244,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "http://attacker.test")
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
+		err := infra.Wrap(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), testutils.RejectOrigin(t, request))
 
 		require.NoError(t, err)
@@ -262,7 +262,7 @@ func TestMiddleware(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
 		request.Header.Set(headers.Origin, "")
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
+		err := infra.Wrap(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 
 		require.NoError(t, err)
@@ -283,7 +283,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.Origin, testOrigin)
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
+		err := infra.Wrap(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 
 		require.NoError(t, err)
@@ -307,7 +307,7 @@ func TestMiddleware(t *testing.T) {
 		request.Header.Set(headers.AccessControlRequestHeaders, testHeaders)
 		request.Header.Set(headers.AccessControlRequestMethod, testMethod)
 
-		err := infra.Mddleware(middleware, mockedNextHandler).
+		err := infra.Wrap(middleware, mockedNextHandler).
 			ServeHTTP(server.NewResponseRecorder(recorder), request)
 		require.NoError(t, err)
 
@@ -343,7 +343,7 @@ func TestMiddleware(t *testing.T) {
 
 				mockedNextHandler.ServeHTTPMock.Expect(response, request).Return(nil)
 
-				err := infra.Mddleware(middleware, mockedNextHandler).
+				err := infra.Wrap(middleware, mockedNextHandler).
 					ServeHTTP(response, request)
 				require.NoError(t, err)
 

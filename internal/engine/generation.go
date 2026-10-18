@@ -125,7 +125,7 @@ func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middle
 }
 
 func (g *Generation) StaticMiddleware(path string, dir config.StaticDirectory) contracts.Middleware {
-	return static.NewStaticMiddleware(
+	return static.NewMiddleware(
 		static.WithFileSystem(afero.NewBasePathFs(g.fs, dir.Dir)),
 		static.WithIndex(dir.Index),
 		static.WithPrefix(path),
@@ -144,7 +144,7 @@ func (g *Generation) OptionsMiddleware(cfg config.OptionsHandling) contracts.Mid
 }
 
 func (g *Generation) MockHandler(response *config.Response) contracts.Handler {
-	return mock.NewMockHandler(
+	return mock.NewHandler(
 		mock.WithResponse(response),
 		mock.WithFileSystem(g.fs),
 		mock.WithAfter(time.After),
@@ -159,7 +159,7 @@ func (g *Generation) ScriptHandler(scriptConfig *config.Script) contracts.Handle
 }
 
 func (g *Generation) ProxyHandler(replacers urlreplacer.ReplacerFactory) contracts.Handler {
-	return proxy.NewProxyHandler(
+	return proxy.NewHandler(
 		proxy.WithURLReplacerFactory(replacers),
 		proxy.WithHTTPClient(g.client),
 	)
@@ -226,8 +226,8 @@ func (g *Generation) build(uncorsConfig *config.UncorsConfig) ([]server.Target, 
 			Handler: router.NewRouter(
 				group.Mappings,
 				router.WithFactory(g),
-				router.ForRouterWithDefaultHandler(g.ProxyHandler(replacers)),
-				router.ForRouterWithCacheMiddlewareFactory(g.CacheMiddleware),
+				router.WithDefaultHandler(g.ProxyHandler(replacers)),
+				router.WithCacheMiddlewareFactory(g.CacheMiddleware),
 			),
 			EnableTLS: group.Scheme == "https",
 		})

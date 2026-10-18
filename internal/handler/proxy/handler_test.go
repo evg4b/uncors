@@ -79,7 +79,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				handler := proxy.NewProxyHandler(
+				handler := proxy.NewHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 				)
@@ -131,7 +131,7 @@ func TestProxyHandler(t *testing.T) {
 					}
 				})
 
-				handler := proxy.NewProxyHandler(
+				handler := proxy.NewHandler(
 					proxy.WithHTTPClient(httpClient),
 					proxy.WithURLReplacerFactory(replacerFactory),
 				)
@@ -166,7 +166,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -207,7 +207,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -240,7 +240,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -279,7 +279,7 @@ func TestProxyHandler(t *testing.T) {
 			t.Run(testCase.name, func(t *testing.T) {
 				var forwarded *http.Request
 
-				handler := proxy.NewProxyHandler(
+				handler := proxy.NewHandler(
 					proxy.WithHTTPClient(capturingClient(&forwarded)),
 					proxy.WithURLReplacerFactory(replacerFactory),
 				)
@@ -301,7 +301,7 @@ func TestProxyHandler(t *testing.T) {
 	t.Run("should forward the request Content-Length", func(t *testing.T) {
 		var forwarded *http.Request
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(capturingClient(&forwarded)),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -321,7 +321,7 @@ func TestProxyHandler(t *testing.T) {
 
 		var forwarded *http.Request
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(capturingClient(&forwarded)),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -350,7 +350,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -385,7 +385,7 @@ func TestProxyHandler(t *testing.T) {
 			}
 		})
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -410,7 +410,7 @@ func TestProxyHandler(t *testing.T) {
 
 		spans := testutils.Telemetry(t).Spans
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(httpMock),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
@@ -439,7 +439,7 @@ func TestProxyHandler(t *testing.T) {
 	t.Run("OPTIONS request handling", func(t *testing.T) {
 		t.Skip()
 
-		handler := proxy.NewProxyHandler(
+		handler := proxy.NewHandler(
 			proxy.WithHTTPClient(http.DefaultClient),
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)

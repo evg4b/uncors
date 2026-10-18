@@ -37,8 +37,12 @@ const contentTypeSniffLen = 512
 
 var ErrResponseIsNotDefined = errors.New("response is not defined")
 
-func NewMockHandler(options ...HandlerOption) *Handler {
-	return helpers.ApplyOptions(&Handler{}, options)
+func NewHandler(options ...HandlerOption) *Handler {
+	handler := helpers.ApplyOptions(&Handler{}, options)
+
+	helpers.AssertIsDefined(handler.response, "MockHandler: Response is not configured")
+
+	return handler
 }
 
 func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.Request) error {

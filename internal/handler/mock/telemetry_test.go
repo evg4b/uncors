@@ -33,7 +33,7 @@ func TestMockTelemetry(t *testing.T) {
 		t.Helper()
 
 		recorded := testutils.Telemetry(t)
-		handler := mock.NewMockHandler(
+		handler := mock.NewHandler(
 			mock.WithResponse(response),
 			mock.WithAfter(func(time.Duration) <-chan time.Time { return after }),
 		)

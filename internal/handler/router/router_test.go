@@ -83,7 +83,7 @@ func proxyFactory(
 		httpClient = mocks.NewHTTPClientMock(t)
 	}
 
-	return proxy.NewProxyHandler(
+	return proxy.NewHandler(
 		proxy.WithURLReplacerFactory(replacerFactory),
 		proxy.WithHTTPClient(httpClient),
 	)
@@ -128,8 +128,8 @@ func newRouter(
 	}
 
 	options = append([]router.Option{
-		router.ForRouterWithDefaultHandler(proxyFactory(t, replacerFactory, httpClient)),
-		router.ForRouterWithCacheMiddlewareFactory(cacheFactory()),
+		router.WithDefaultHandler(proxyFactory(t, replacerFactory, httpClient)),
+		router.WithCacheMiddlewareFactory(cacheFactory()),
 		router.WithFactory(newGeneration(t, fs)),
 	}, options...)
 
@@ -299,7 +299,7 @@ func TestRouterCacheGlobs(t *testing.T) {
 		To:    hosts.Parse("{host}"),
 		Cache: config.CacheGlobs{"*.json"},
 		Mocks: config.Mocks{mockResponse("/data.json", http.StatusOK, `{"cached": true}`)},
-	}}, nil, router.ForRouterWithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
+	}}, nil, router.WithCacheMiddlewareFactory(func(globs config.CacheGlobs) contracts.Middleware {
 		callCount++
 
 		return cacheFactory()(globs)

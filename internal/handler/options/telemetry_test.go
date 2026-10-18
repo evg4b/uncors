@@ -16,7 +16,7 @@ import (
 
 func TestMiddlewareLogs(t *testing.T) {
 	recorded := testutils.Telemetry(t)
-	handler := infra.Mddleware(options.NewMiddleware(options.WithCode(http.StatusNoContent)),
+	handler := infra.Wrap(options.NewMiddleware(options.WithCode(http.StatusNoContent)),
 		infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error { return nil }))
 
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
