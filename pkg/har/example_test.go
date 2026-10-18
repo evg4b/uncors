@@ -43,6 +43,7 @@ func ExampleEncode() {
 	//           "method": "GET",
 	//           "url": "http://example.com/search?q=har",
 	//           "httpVersion": "HTTP/1.1",
+	//           "cookies": [],
 	//           "headers": [],
 	//           "queryString": [
 	//             {
@@ -50,7 +51,6 @@ func ExampleEncode() {
 	//               "value": "har"
 	//             }
 	//           ],
-	//           "cookies": [],
 	//           "headersSize": -1,
 	//           "bodySize": 0
 	//         },
@@ -58,13 +58,13 @@ func ExampleEncode() {
 	//           "status": 200,
 	//           "statusText": "OK",
 	//           "httpVersion": "HTTP/1.1",
+	//           "cookies": [],
 	//           "headers": [
 	//             {
 	//               "name": "Content-Type",
 	//               "value": "text/plain"
 	//             }
 	//           ],
-	//           "cookies": [],
 	//           "content": {
 	//             "size": 5,
 	//             "mimeType": "text/plain",
@@ -74,6 +74,7 @@ func ExampleEncode() {
 	//           "headersSize": -1,
 	//           "bodySize": 5
 	//         },
+	//         "cache": {},
 	//         "timings": {
 	//           "send": 0,
 	//           "wait": 25,

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"math"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -103,6 +105,26 @@ func TestDecode(t *testing.T) {
 		decoded, err := har.Decode(&buffer)
 		require.NoError(t, err)
 		assert.Equal(t, archive, decoded)
+	})
+
+	t.Run("keeps every field of HAR 1.2", func(t *testing.T) {
+		data, err := os.ReadFile(filepath.Join("testdata", "full.har"))
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+
+		var buffer bytes.Buffer
+
+		require.NoError(t, har.Encode(&buffer, archive))
+		assert.JSONEq(t, string(data), buffer.String())
+	})
+
+	t.Run("writes an empty cache object", func(t *testing.T) {
+		var buffer bytes.Buffer
+
+		require.NoError(t, har.Encode(&buffer, har.New(creator, har.Entry{})))
+		assert.Contains(t, buffer.String(), `"cache": {}`)
 	})
 
 	t.Run("reports invalid JSON", func(t *testing.T) {
