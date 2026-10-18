@@ -10,9 +10,8 @@ import (
 	"testing"
 	"time"
 
-	harlib "github.com/evg4b/uncors/pkg/har"
-
 	"github.com/evg4b/uncors/internal/events"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"

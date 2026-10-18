@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	harlib "github.com/evg4b/uncors/pkg/har"
-
 	"github.com/evg4b/uncors/internal/handler/har"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

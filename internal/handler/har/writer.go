@@ -13,11 +13,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	harlib "github.com/evg4b/uncors/pkg/har"
-
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
 )

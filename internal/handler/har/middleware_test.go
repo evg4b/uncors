@@ -17,13 +17,12 @@ import (
 	"testing"
 	"testing/iotest"
 
-	harlib "github.com/evg4b/uncors/pkg/har"
-
 	"github.com/andybalholm/brotli"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/har"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/server"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/afero"
