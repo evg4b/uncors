@@ -184,8 +184,17 @@ func NewPostData(body []byte, mimeType string) *PostData {
 }
 
 func requestURL(req *http.Request) string {
+	if isAbsoluteURI(req.RequestURI) {
+		target, _, _ := strings.Cut(req.RequestURI, "#")
+
+		return target
+	}
+
 	if req.RequestURI == "" {
-		return urlt.URL_String(req.URL)
+		target := *req.URL
+		target.Fragment, target.RawFragment = "", ""
+
+		return urlt.URL_String(&target)
 	}
 
 	scheme := "http"
@@ -194,6 +203,12 @@ func requestURL(req *http.Request) string {
 	}
 
 	return scheme + "://" + req.Host + req.RequestURI
+}
+
+func isAbsoluteURI(requestURI string) bool {
+	lower := strings.ToLower(requestURI)
+
+	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://")
 }
 
 func isURLEncodedForm(mimeType string) bool {

@@ -69,11 +69,18 @@ func TestNewRequest(t *testing.T) {
 		assert.Equal(t, "https://example.com/", har.NewRequest(req, nil).URL)
 	})
 
-	t.Run("records a client request", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/a?b=c", nil)
+	t.Run("records a client request without the fragment", func(t *testing.T) {
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/a?b=c#top", nil)
 		require.NoError(t, err)
 
 		assert.Equal(t, "https://example.com/a?b=c", har.NewRequest(req, nil).URL)
+	})
+
+	t.Run("records a proxy request in absolute form", func(t *testing.T) {
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com/a?b=c", nil)
+		req.Host = "example.com"
+
+		assert.Equal(t, "http://example.com/a?b=c", har.NewRequest(req, nil).URL)
 	})
 
 	t.Run("leaves out secure headers and cookies by default", func(t *testing.T) {
