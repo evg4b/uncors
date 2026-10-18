@@ -105,8 +105,6 @@ func NewWriter(path string, options ...WriterOption) *Writer {
 		creator:       DefaultCreator,
 		queueSize:     DefaultQueueSize,
 		flushInterval: DefaultFlushInterval,
-		onFlush:       func(Flush) {},
-		onError:       func(error) {},
 		done:          make(chan struct{}),
 	}
 
@@ -206,7 +204,9 @@ func (w *Writer) drain() {
 func (w *Writer) append(entry Entry) {
 	data, err := json.MarshalIndent(entry, entryPrefix, "  ")
 	if err != nil {
-		w.onError(fmt.Errorf("%w: %w", ErrEncodeEntry, err))
+		if w.onError != nil {
+			w.onError(fmt.Errorf("%w: %w", ErrEncodeEntry, err))
+		}
 
 		return
 	}
@@ -227,6 +227,9 @@ func (w *Writer) flush() {
 	w.mu.Unlock()
 
 	err := w.write(snapshot)
+	if w.onFlush == nil {
+		return
+	}
 
 	w.onFlush(Flush{
 		Path:     w.path,
