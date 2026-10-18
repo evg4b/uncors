@@ -613,6 +613,12 @@ For requests forwarded to the upstream server, UNCORS:
   frontend served from `127.0.0.1` or another local domain), and
   `Origin: null`, is forwarded unchanged;
 - forwards the request body with its `Content-Length`;
+- drops hop-by-hop headers in both directions: `Connection` and the headers it
+  names, `Keep-Alive`, `Proxy-Connection`, `Proxy-Authorization`,
+  `Proxy-Authenticate`, `TE` (except `TE: trailers`), `Trailer`,
+  `Transfer-Encoding`, and `Upgrade` (kept for upgrade requests);
+- keeps the upstream `Content-Length` of `HEAD` and `304 Not Modified`
+  responses;
 - waits up to 5 minutes for the upstream server to start its response (30
   seconds to connect, 10 seconds for the TLS handshake). The response body has
   no time limit: it is forwarded until the upstream server finishes it or the
