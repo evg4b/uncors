@@ -2,6 +2,7 @@ package har
 
 import (
 	"maps"
+	"mime"
 	"net/http"
 	"net/url"
 	"slices"
@@ -169,7 +170,13 @@ func NewPostData(body []byte, mimeType string) *PostData {
 	}
 
 	postData := &PostData{MimeType: mimeType}
-	if utf8.Valid(body) {
+
+	switch {
+	case isURLEncodedForm(mimeType):
+		for _, pair := range NewQueryString(string(body)) {
+			postData.Params = append(postData.Params, Param{Name: pair.Name, Value: pair.Value})
+		}
+	case utf8.Valid(body):
 		postData.Text = string(body)
 	}
 
@@ -187,6 +194,12 @@ func requestURL(req *http.Request) string {
 	}
 
 	return scheme + "://" + req.Host + req.RequestURI
+}
+
+func isURLEncodedForm(mimeType string) bool {
+	mediaType, _, err := mime.ParseMediaType(mimeType)
+
+	return err == nil && mediaType == "application/x-www-form-urlencoded"
 }
 
 func unescapeQuery(value string) string {

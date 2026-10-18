@@ -231,6 +231,19 @@ func TestNewPostData(t *testing.T) {
 		assert.Equal(t, &har.PostData{MimeType: "text/plain", Text: "hi"}, har.NewPostData([]byte("hi"), "text/plain"))
 	})
 
+	t.Run("with a URL-encoded form", func(t *testing.T) {
+		postData := har.NewPostData([]byte("name=John+Doe&tag=a&tag=b"), "application/x-www-form-urlencoded; charset=UTF-8")
+
+		assert.Equal(t, &har.PostData{
+			MimeType: "application/x-www-form-urlencoded; charset=UTF-8",
+			Params: []har.Param{
+				{Name: "name", Value: "John Doe"},
+				{Name: "tag", Value: "a"},
+				{Name: "tag", Value: "b"},
+			},
+		}, postData)
+	})
+
 	t.Run("with a binary body", func(t *testing.T) {
 		assert.Equal(t, &har.PostData{MimeType: "image/png"}, har.NewPostData([]byte{0xff, 0xfe}, "image/png"))
 	})
