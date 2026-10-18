@@ -15,8 +15,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+type EntryWriter interface {
+	AddEntry(entry harlib.Entry) bool
+	Path() string
+}
+
 type Middleware struct {
-	writer               *Writer
+	writer               EntryWriter
 	captureSecureHeaders bool
 	options              []harlib.Option
 }

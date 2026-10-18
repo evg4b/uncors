@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/codes"
@@ -93,6 +94,15 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 	}
 
 	return state.tracer.Start(ctx, name) //nolint:spancheck // the caller ends the span
+}
+
+func StartAt(ctx context.Context, name string, start time.Time) (context.Context, trace.Span) {
+	state := current.Load()
+	if state == nil {
+		return ctx, noopSpan
+	}
+
+	return state.tracer.Start(ctx, name, trace.WithTimestamp(start)) //nolint:spancheck // the caller ends the span
 }
 
 func StartKind(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {

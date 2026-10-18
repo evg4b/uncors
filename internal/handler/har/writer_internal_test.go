@@ -1,12 +1,7 @@
 package har
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-	"sync"
+	"errors"
 	"testing"
 	"time"
 
@@ -18,104 +13,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var errFlush = errors.New("disk full")
+
 func TestWriterReportsOneNoticePerFailureStreak(t *testing.T) {
-	// A file where the HAR directory should be makes every flush fail.
-	blocker := filepath.Join(t.TempDir(), "blocker")
-	block := func() { require.NoError(t, os.WriteFile(blocker, nil, 0o600)) }
-
-	block()
-
 	publisher := &testutils.EventRecorder{}
-	path := filepath.Join(blocker, "out.har")
-	writer := NewWriter(path, WithFileSystem(afero.NewOsFs()), WithPublisher(publisher))
+	reporter := &flushReporter{path: "out.har", publisher: publisher}
+	failed := harlib.Flush{Path: "out.har", Start: time.Now(), Err: errFlush}
+	written := harlib.Flush{Path: "out.har", Start: time.Now()}
 
-	// No entry is added, so the writer goroutine stays idle and flush can be
-	// driven from the test.
-	writer.flush()
-	writer.flush()
+	reporter.flushed(failed)
+	reporter.flushed(failed)
 
 	notices := publisher.Notices()
 	require.Len(t, notices, 1)
 	assert.Equal(t, events.NoticeError, notices[0].Level)
-	assert.Contains(t, notices[0].Text, "HAR: cannot write "+path)
+	assert.Equal(t, "HAR: cannot write out.har: disk full", notices[0].Text)
 
-	require.NoError(t, os.Remove(blocker))
-	writer.flush()
-	assert.FileExists(t, path)
+	reporter.flushed(written)
 	assert.Len(t, publisher.Notices(), 1)
 
-	require.NoError(t, os.RemoveAll(blocker))
-	block()
-	writer.flush()
+	reporter.flushed(failed)
 	assert.Len(t, publisher.Notices(), 2)
-
-	require.NoError(t, writer.Close())
-	assert.Len(t, publisher.Notices(), 2, "the failing flush on Close continues the streak")
 }
 
-func TestWritersSharingAFile(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "shared.har")
-	fs := afero.NewOsFs()
+func TestNewWriter(t *testing.T) {
+	t.Run("publishes a notice when the file cannot be written", func(t *testing.T) {
+		publisher := &testutils.EventRecorder{}
+		writer := NewWriter("/out.har",
+			WithFileSystem(afero.NewReadOnlyFs(afero.NewMemMapFs())),
+			WithPublisher(publisher),
+		)
 
-	publishers := []*testutils.EventRecorder{{}, {}}
-	writers := make([]*Writer, 0, len(publishers))
-
-	for _, publisher := range publishers {
-		writer := NewWriter(path, WithFileSystem(fs), WithPublisher(publisher))
-		writers = append(writers, writer)
-	}
-
-	var group sync.WaitGroup
-
-	for index, writer := range writers {
-		group.Go(func() {
-			for range 200 {
-				writer.append(harlib.Entry{
-					Request: harlib.Request{Method: http.MethodGet, URL: fmt.Sprintf("http://writer-%d/", index)},
-				})
-				writer.flush()
-			}
-		})
-	}
-
-	group.Wait()
-
-	for index, writer := range writers {
 		require.NoError(t, writer.Close())
-		assert.Empty(t, publishers[index].Notices())
-	}
 
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
+		notices := publisher.Notices()
+		require.Len(t, notices, 1)
+		assert.Contains(t, notices[0].Text, "HAR: cannot write /out.har")
+	})
 
-	var archive harlib.HAR
-	require.NoError(t, json.Unmarshal(data, &archive))
-	assert.Len(t, archive.Log.Entries, 200)
-
-	files, err := os.ReadDir(dir)
-	require.NoError(t, err)
-	require.Len(t, files, 1)
-	assert.Equal(t, "shared.har", files[0].Name())
-}
-
-func TestWriterFlushesOnInterval(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	writer := NewWriter("/out.har", WithFileSystem(fs))
-
-	t.Cleanup(func() { _ = writer.Close() })
-
-	assert.True(t, writer.AddEntry(harlib.Entry{Request: harlib.Request{Method: http.MethodPost}}))
-
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-		data, err := afero.ReadFile(fs, "/out.har")
-		if !assert.NoError(collect, err) {
-			return
-		}
-
-		var archive harlib.HAR
-		if assert.NoError(collect, json.Unmarshal(data, &archive)) {
-			assert.Len(collect, archive.Log.Entries, 1)
-		}
-	}, 3*flushInterval, 50*time.Millisecond)
+	t.Run("requires a file system", func(t *testing.T) {
+		assert.PanicsWithValue(t, "HARWriter: File system is not configured", func() {
+			NewWriter("out.har")
+		})
+	})
 }

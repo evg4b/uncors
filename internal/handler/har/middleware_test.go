@@ -39,7 +39,7 @@ func makeHARRequest(t *testing.T, rawURL string) *http.Request {
 	return req
 }
 
-func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middleware, *har.Writer, string) {
+func newHARMiddleware(t *testing.T, opts ...har.MiddlewareOption) (*har.Middleware, *harlib.Writer, string) {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "test.har")
