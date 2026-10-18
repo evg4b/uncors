@@ -342,4 +342,18 @@ func TestWriter(t *testing.T) {
 			"http://example.com/0", "http://example.com/1", "http://example.com/2", "http://example.com/3",
 		}, urls)
 	})
+
+	t.Run("skips an entry it cannot encode without an error handler", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		harWriter := har.NewWriter("/out.har", har.WithFileSystem(fs))
+		require.True(t, harWriter.AddEntry(har.Entry{Time: math.NaN()}))
+		require.NoError(t, harWriter.Close())
+
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		archive, err := har.Decode(bytes.NewReader(data))
+		require.NoError(t, err)
+		assert.Empty(t, archive.Log.Entries)
+	})
 }
