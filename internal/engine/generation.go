@@ -67,7 +67,7 @@ func (e *Engine) buildGeneration(ctx context.Context, uncorsConfig *config.Uncor
 	if err != nil {
 		telemetry.Fail(span, err)
 
-		return nil, errors.Join(err, generation.Close())
+		return nil, errors.Join(err, generation.Discard())
 	}
 
 	generation.targets = targets
@@ -80,20 +80,11 @@ func (g *Generation) Targets() []server.Target {
 }
 
 func (g *Generation) Close() error {
-	errs := make([]error, 0, len(g.closers))
+	return g.release(false)
+}
 
-	for _, closer := range slices.Backward(g.closers) {
-		err := closer.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	g.closers = nil
-	g.cacheStore = nil
-	g.client = nil
-
-	return errors.Join(errs...)
+func (g *Generation) Discard() error {
+	return g.release(true)
 }
 
 func (g *Generation) Cache() contracts.Cache {
@@ -246,4 +237,32 @@ func register[T io.Closer](generation *Generation, resource T) T {
 	generation.closers = append(generation.closers, resource)
 
 	return resource
+}
+
+type discarder interface {
+	Discard() error
+}
+
+func (g *Generation) release(discard bool) error {
+	errs := make([]error, 0, len(g.closers))
+
+	for _, closer := range slices.Backward(g.closers) {
+		var err error
+
+		if resource, ok := closer.(discarder); ok && discard {
+			err = resource.Discard()
+		} else {
+			err = closer.Close()
+		}
+
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	g.closers = nil
+	g.cacheStore = nil
+	g.client = nil
+
+	return errors.Join(errs...)
 }

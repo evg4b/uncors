@@ -260,3 +260,14 @@ func TestReplacerIsMatched(t *testing.T) {
 		})
 	}
 }
+
+func TestReplacerKeepsPlaceholderTextFromTheRequest(t *testing.T) {
+	replacer, err := urlreplacer.NewReplacer("http://{tenant}.local.dev", "https://{tenant}.api.com")
+	require.NoError(t, err)
+
+	for range 100 {
+		actual, err := replacer.Replace("http://acme.local.dev/a/${tenant}/${path}/b")
+		require.NoError(t, err)
+		assert.Equal(t, "https://acme.api.com/a/${tenant}/${path}/b", actual)
+	}
+}

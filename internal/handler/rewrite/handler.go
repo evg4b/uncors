@@ -104,12 +104,41 @@ func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Reque
 	)
 }
 
-func replace(s string, data map[string]string) string {
-	for key, value := range data {
-		s = strings.ReplaceAll(s, "{"+key+"}", value)
+func replace(template string, data map[string]string) string {
+	var builder strings.Builder
+
+	builder.Grow(len(template))
+
+	for {
+		start := strings.IndexByte(template, '{')
+		if start < 0 {
+			break
+		}
+
+		length := strings.IndexByte(template[start+1:], '}')
+		if length < 0 {
+			break
+		}
+
+		end := start + 1 + length
+
+		value, ok := data[template[start+1:end]]
+		if !ok {
+			builder.WriteString(template[:start+1])
+			template = template[start+1:]
+
+			continue
+		}
+
+		builder.WriteString(template[:start])
+		builder.WriteString(value)
+
+		template = template[end+1:]
 	}
 
-	return s
+	builder.WriteString(template)
+
+	return builder.String()
 }
 
 type MiddlewareOption = func(*Middleware)

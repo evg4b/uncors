@@ -23,12 +23,18 @@ var (
 
 type hook = func(string) string
 
+var templatePartRegexp = regexp.MustCompile(`\$\{(\w+)\}`)
+
+type templatePart struct {
+	literal string
+	group   int
+	hook    hook
+}
+
 type Replacer struct {
-	regexp      *regexp.Regexp
-	pattern     string
-	hooks       map[string]hook
-	scheme      string
-	subexpIndex map[string]int
+	regexp   *regexp.Regexp
+	template []templatePart
+	scheme   string
 }
 
 func NewReplacer(source, target string) (*Replacer, error) {
@@ -55,30 +61,51 @@ func NewReplacer(source, target string) (*Replacer, error) {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidTargetURL, err)
 	}
 
-	replacer := &Replacer{
-		hooks: map[string]func(string) string{},
-	}
+	replacer := &Replacer{}
 
 	replacer.regexp, err = wildCardToRegexp(source)
 	if err != nil {
 		return nil, err
 	}
 
-	replacer.pattern = wildCardToReplacePattern(target)
 	replacer.scheme = extractScheme(target)
 
+	hooks := map[string]hook{}
 	if len(replacer.scheme) > 0 {
-		replacer.hooks["scheme"] = schemeHookFactory(replacer.scheme)
+		hooks["scheme"] = schemeHookFactory(replacer.scheme)
 	}
 
-	replacer.subexpIndex = make(map[string]int, len(replacer.regexp.SubexpNames()))
-	for i, name := range replacer.regexp.SubexpNames() {
-		if name != "" {
-			replacer.subexpIndex[name] = i
-		}
-	}
+	replacer.template = compileTemplate(wildCardToReplacePattern(target), replacer.regexp, hooks)
 
 	return replacer, nil
+}
+
+func compileTemplate(pattern string, source *regexp.Regexp, hooks map[string]hook) []templatePart {
+	var parts []templatePart
+
+	last := 0
+
+	for _, match := range templatePartRegexp.FindAllStringSubmatchIndex(pattern, -1) {
+		name := pattern[match[2]:match[3]]
+
+		group := source.SubexpIndex(name)
+		if group < 0 {
+			continue
+		}
+
+		if match[0] > last {
+			parts = append(parts, templatePart{literal: pattern[last:match[0]], group: -1})
+		}
+
+		parts = append(parts, templatePart{group: group, hook: hooks[name]})
+		last = match[1]
+	}
+
+	if last < len(pattern) {
+		parts = append(parts, templatePart{literal: pattern[last:], group: -1})
+	}
+
+	return parts
 }
 
 func (r *Replacer) Replace(source string) (string, error) {
@@ -87,18 +114,26 @@ func (r *Replacer) Replace(source string) (string, error) {
 		return "", fmt.Errorf("url '%s' %w", source, ErrURLNotMatched)
 	}
 
-	replaced := strings.Clone(r.pattern)
+	var builder strings.Builder
 
-	for name, idx := range r.subexpIndex {
-		partValue := matches[idx]
-		if hook, ok := r.hooks[name]; ok {
-			partValue = hook(partValue)
+	builder.Grow(len(source))
+
+	for _, part := range r.template {
+		if part.group < 0 {
+			builder.WriteString(part.literal)
+
+			continue
 		}
 
-		replaced = strings.ReplaceAll(replaced, "${"+name+"}", partValue)
+		value := matches[part.group]
+		if part.hook != nil {
+			value = part.hook(value)
+		}
+
+		builder.WriteString(value)
 	}
 
-	return replaced, nil
+	return builder.String(), nil
 }
 
 func (r *Replacer) ReplaceSoft(source string) string {

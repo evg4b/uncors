@@ -56,6 +56,21 @@ func backendMux(t *testing.T, self *backend) http.Handler {
 		_, err := io.WriteString(writer, `{"id":1}`)
 		assert.NoError(t, err)
 	})
+	mux.HandleFunc("/sized", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Length", "1234")
+
+		if request.Method != http.MethodHead {
+			_, err := io.WriteString(writer, strings.Repeat("x", 1234))
+			assert.NoError(t, err)
+		}
+	})
+	mux.HandleFunc("/hop", func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Header().Set("Connection", "X-Hop")
+		writer.Header().Set("X-Hop", "1")
+		writer.Header().Set("Keep-Alive", "timeout=5")
+		_, err := io.WriteString(writer, "hop")
+		assert.NoError(t, err)
+	})
 	mux.HandleFunc("/redirect", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.Header().Set("Location", self.base+"/target")
 		writer.WriteHeader(http.StatusFound)

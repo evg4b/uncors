@@ -73,6 +73,16 @@ func TestWriter(t *testing.T) {
 		assert.Empty(t, archive.Log.Entries)
 	})
 
+	t.Run("Discard stops without writing the file", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "discarded.har")
+		harWriter := har.NewWriter(path, har.WithFileSystem(afero.NewOsFs()))
+
+		require.NoError(t, harWriter.Discard())
+
+		_, err := os.Stat(path)
+		assert.ErrorIs(t, err, os.ErrNotExist)
+	})
+
 	t.Run("flush handles directory creation failure gracefully", func(t *testing.T) {
 		dir := t.TempDir()
 		blocker := filepath.Join(dir, "blocker")

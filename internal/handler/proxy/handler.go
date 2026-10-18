@@ -117,6 +117,17 @@ func (h *Handler) makeOriginalRequest(
 		headers.Referer: replacer.ReplaceSoft,
 	})
 
+	removeHopByHopHeaders(originalRequest.Header)
+
+	if hasToken(req.Header.Values(headers.TE), "trailers") {
+		originalRequest.Header.Set(headers.TE, "trailers")
+	}
+
+	if infra.IsUpgrade(req.Header) {
+		originalRequest.Header.Set(connectionHeader, "Upgrade")
+		originalRequest.Header.Set(headers.Upgrade, req.Header.Get(headers.Upgrade))
+	}
+
 	return originalRequest, nil
 }
 
@@ -131,6 +142,14 @@ func (h *Handler) makeUncorsResponse(
 	copyHeaders(original.Header, target.Header(), modificationsMap{
 		headers.Location: replacer.ReplaceSoft,
 	})
+
+	removeHopByHopHeaders(target.Header())
+
+	if hasNoBody(req, original) {
+		if length := original.Header.Get(headers.ContentLength); length != "" {
+			target.Header().Set(headers.ContentLength, length)
+		}
+	}
 
 	switch {
 	case tracking.OriginRejected(req.Context()):
@@ -151,6 +170,10 @@ func (h *Handler) makeUncorsResponse(
 	_ = controller.Flush()
 
 	return copyBody(req.Context(), flushWriter{writer: target, controller: controller}, original.Body)
+}
+
+func hasNoBody(request *http.Request, response *http.Response) bool {
+	return request.Method == http.MethodHead || response.StatusCode == http.StatusNotModified
 }
 
 func isStreaming(response *http.Response) bool {

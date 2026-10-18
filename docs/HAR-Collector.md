@@ -146,7 +146,9 @@ writer adds them to the file at most once a second, so a new request shows up
 in the file within about a second. It writes to a temporary file next to the
 `.har` file and renames it over the old one, so the `.har` file is always
 complete and valid, even if you open it while UNCORS runs. The file is written
-once more when UNCORS stops or reloads its configuration.
+once more when UNCORS stops or reloads its configuration. A configuration that
+fails to start, or a reload that fails and keeps the previous configuration
+running, leaves the file untouched.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads a changed configuration file, the recording starts empty and the
