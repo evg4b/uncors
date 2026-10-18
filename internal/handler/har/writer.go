@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/evg4b/uncors/internal/events"
@@ -46,6 +47,8 @@ type Writer struct {
 
 	// Set after a failed flush, so a failure streak produces one notice.
 	failing bool
+
+	discarded atomic.Bool
 }
 
 type WriterOption = func(*Writer)
@@ -94,6 +97,12 @@ func (w *Writer) Path() string {
 	return w.path
 }
 
+func (w *Writer) Discard() error {
+	w.discarded.Store(true)
+
+	return w.Close()
+}
+
 func (w *Writer) Close() error {
 	w.once.Do(func() {
 		close(w.done)
@@ -132,8 +141,10 @@ func (w *Writer) run() {
 				timer.Stop()
 			}
 
-			w.drain()
-			w.flush()
+			if !w.discarded.Load() {
+				w.drain()
+				w.flush()
+			}
 
 			return
 		}

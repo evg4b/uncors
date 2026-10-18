@@ -111,7 +111,7 @@ func (e *Engine) apply(
 		if err != nil {
 			e.certs.SetHosts(e.tlsHosts)
 
-			return errors.Join(err, generation.Close())
+			return errors.Join(err, generation.Discard())
 		}
 
 		previous := e.swap(generation)
