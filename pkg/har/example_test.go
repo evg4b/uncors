@@ -70,7 +70,7 @@ func ExampleEncode() {
 	//             "mimeType": "text/plain",
 	//             "text": "found"
 	//           },
-	//           "redirectUrl": "",
+	//           "redirectURL": "",
 	//           "headersSize": -1,
 	//           "bodySize": 5
 	//         },
