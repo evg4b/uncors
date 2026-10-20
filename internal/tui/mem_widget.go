@@ -21,6 +21,7 @@ func getMemUsage() float64 {
 
 type MemoryWidget struct {
 	memMB       float64
+	rendered    string
 	getMemUsage func() float64
 }
 
@@ -34,7 +35,7 @@ func WithMemoryUsage(usage func() float64) MemoryWidgetOption {
 
 func NewMemoryWidget(options ...MemoryWidgetOption) *MemoryWidget {
 	widget := helpers.ApplyOptions(&MemoryWidget{getMemUsage: getMemUsage}, options)
-	widget.memMB = widget.getMemUsage()
+	widget.setUsage(widget.getMemUsage())
 
 	return widget
 }
@@ -45,7 +46,7 @@ func (m *MemoryWidget) Init() tea.Cmd {
 
 func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 	if typedMsg, ok := msg.(memUpdateMsg); ok {
-		m.memMB = typedMsg.mb
+		m.setUsage(typedMsg.mb)
 
 		return m, m.memTickCmd()
 	}
@@ -54,9 +55,16 @@ func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 }
 
 func (m *MemoryWidget) View() tea.View {
-	content := styles.Default.MutedText.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
+	return tea.NewView(m.rendered)
+}
 
-	return tea.NewView(content)
+func (m *MemoryWidget) setUsage(memMB float64) {
+	if memMB == m.memMB && m.rendered != "" {
+		return
+	}
+
+	m.memMB = memMB
+	m.rendered = styles.Default.MutedText.Render(fmt.Sprintf("[ %.1f MB ]", memMB))
 }
 
 func (m *MemoryWidget) memTickCmd() tea.Cmd {

@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var formatter = render.NewFormatter(styles.Default)
+
 func makeRequestData(method, rawURL string, code int) *contracts.RequestData {
 	u, _ := url.Parse(rawURL)
 
@@ -105,7 +107,7 @@ func TestMethodLabel(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.method, func(t *testing.T) {
-			line := render.FormatRequest(styles.Default, events.RequestCompleted{
+			line := formatter.Request(events.RequestCompleted{
 				Data: makeRequestData(testCase.method, "https://example.com/", http.StatusOK),
 			})
 
@@ -131,8 +133,8 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 			pending := events.RequestStarted{Method: method, URL: cancelled.URL, Handler: events.HandlerOptions}
 
 			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
-			assert.Equal(t, 1, lipgloss.Height(render.FormatRequest(styles.Default, events.RequestCompleted{Data: cancelled})))
-			assert.Equal(t, 1, lipgloss.Height(render.FormatPending(styles.Default, pending, "▱▱▱")))
+			assert.Equal(t, 1, lipgloss.Height(formatter.Request(events.RequestCompleted{Data: cancelled})))
+			assert.Equal(t, 1, lipgloss.Height(formatter.Pending(pending, "▱▱▱")))
 		})
 	}
 }
@@ -140,7 +142,7 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 func TestFormatPending(t *testing.T) {
 	reqURL, _ := url.Parse("http://localhost/test")
 
-	line := ansi.Strip(render.FormatPending(styles.Default, events.RequestStarted{
+	line := ansi.Strip(formatter.Pending(events.RequestStarted{
 		Method:  http.MethodDelete,
 		URL:     reqURL,
 		Handler: events.HandlerScript,
@@ -191,7 +193,7 @@ func TestFormatRequest(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			testutils.MatchSnapshot(t, render.FormatRequest(styles.Default, testCase.event))
+			testutils.MatchSnapshot(t, formatter.Request(testCase.event))
 		})
 	}
 
@@ -216,7 +218,7 @@ func TestFormatRequest(t *testing.T) {
 		cancelled := makeRequestData(http.MethodGet, "https://api.domain.com/api/user", http.StatusOK)
 		cancelled.Cancelled = true
 
-		line := render.FormatRequest(styles.Default, events.RequestCompleted{Data: cancelled, Err: context.Canceled})
+		line := formatter.Request(events.RequestCompleted{Data: cancelled, Err: context.Canceled})
 
 		assert.Equal(t, 1, lipgloss.Height(line))
 		assert.NotContains(t, line, context.Canceled.Error())

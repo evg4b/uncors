@@ -7,7 +7,6 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/telemetry"
 )
@@ -19,6 +18,7 @@ type HistoryWidget struct {
 	keys       KeyMap
 	autoScroll bool
 	termWidth  int
+	blankLine  string
 	height     int
 	offset     int
 }
@@ -43,6 +43,7 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 	switch typedMsg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.termWidth = typedMsg.Width
+		m.blankLine = strings.Repeat(" ", max(0, typedMsg.Width))
 
 		if m.autoScroll {
 			m.gotoBottom()
@@ -92,18 +93,35 @@ func (m *HistoryWidget) View() tea.View {
 	}
 
 	lines := m.hist.Window(m.offset, m.offset+m.height)
-	for index, line := range lines {
-		if ansi.StringWidth(line) > m.termWidth {
-			lines[index] = ansi.Cut(line, 0, m.termWidth)
+
+	var builder strings.Builder
+
+	builder.Grow(m.height * (m.termWidth + 1))
+
+	for index := range m.height {
+		if index > 0 {
+			builder.WriteByte('\n')
 		}
+
+		if index >= len(lines) {
+			builder.WriteString(m.blankLine)
+
+			continue
+		}
+
+		line := lines[index]
+
+		width := ansi.StringWidth(line)
+		if width > m.termWidth {
+			line = ansi.Cut(line, 0, m.termWidth)
+			width = m.termWidth
+		}
+
+		builder.WriteString(line)
+		builder.WriteString(m.blankLine[:m.termWidth-width])
 	}
 
-	content := lipgloss.NewStyle().
-		Width(m.termWidth).
-		Height(m.height).
-		Render(strings.Join(lines, "\n"))
-
-	return tea.NewView(content)
+	return tea.NewView(builder.String())
 }
 
 func (m *HistoryWidget) maxOffset() int {

@@ -21,7 +21,7 @@ const corsLetters = ` ██████  ██████  ██████
 ██      ██    ██ ██   ██      ██
  ██████  ██████  ██   ██ ███████`
 
-func Logo(theme styles.Theme, version string) string {
+func Logo(theme *styles.Theme, version string) string {
 	return lipgloss.JoinVertical(
 		lipgloss.Right,
 		lipgloss.JoinHorizontal(lipgloss.Top, theme.LogoRed.Render(unLetters), theme.LogoYellow.Render(corsLetters)),
@@ -29,7 +29,7 @@ func Logo(theme styles.Theme, version string) string {
 	)
 }
 
-func PrintLogo(out io.Writer, theme styles.Theme, version string) {
+func PrintLogo(out io.Writer, theme *styles.Theme, version string) {
 	_, err := fmt.Fprintln(out, Logo(theme, version))
 	if err != nil {
 		panic(err)

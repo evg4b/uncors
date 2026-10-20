@@ -26,18 +26,14 @@ const (
 // Fits " ERROR ", so every level label is as wide.
 const boxLength = 7
 
-var messageMap = map[outputType]string{
-	infoOutput:  InfoLabel,
-	warnOutput:  WarningLabel,
-	errorOutput: ErrorLabel,
-}
-
 type CliOutput struct {
-	mutex  *sync.RWMutex
-	output io.Writer
-	prefix string
-	theme  styles.Theme
-	buffer bytes.Buffer
+	mutex     *sync.RWMutex
+	output    io.Writer
+	prefix    string
+	theme     *styles.Theme
+	formatter *Formatter
+	levels    map[outputType]string
+	buffer    bytes.Buffer
 }
 
 type Option = func(*CliOutput)
@@ -48,7 +44,7 @@ func WithPrefix(prefix string) Option {
 	}
 }
 
-func WithTheme(theme styles.Theme) Option {
+func WithTheme(theme *styles.Theme) Option {
 	return func(o *CliOutput) {
 		o.theme = theme
 	}
@@ -61,11 +57,24 @@ func withMutex(mutex *sync.RWMutex) Option {
 }
 
 func NewCliOutput(output io.Writer, options ...Option) *CliOutput {
-	return helpers.ApplyOptions(&CliOutput{
+	cliOutput := helpers.ApplyOptions(&CliOutput{
 		mutex:  &sync.RWMutex{},
 		output: output,
 		theme:  styles.Default,
 	}, options)
+
+	cliOutput.formatter = NewFormatter(cliOutput.theme)
+	cliOutput.levels = levelLabels(cliOutput.theme)
+
+	return cliOutput
+}
+
+func levelLabels(theme *styles.Theme) map[outputType]string {
+	return map[outputType]string{
+		infoOutput:  theme.InfoBlock.Width(boxLength).Bold(true).Render(InfoLabel),
+		warnOutput:  theme.WarningBlock.Width(boxLength).Bold(true).Render(WarningLabel),
+		errorOutput: theme.ErrorBlock.Width(boxLength).Bold(true).Render(ErrorLabel),
+	}
 }
 
 func (output *CliOutput) Write(p []byte) (int, error) {
@@ -133,7 +142,7 @@ func (output *CliOutput) Request(event events.RequestCompleted) {
 	defer output.mutex.Unlock()
 
 	output.renderPrefix()
-	output.buffer.WriteString(FormatRequest(output.theme, event))
+	output.buffer.WriteString(output.formatter.Request(event))
 	output.buffer.WriteByte('\n')
 	output.flush()
 }
@@ -163,24 +172,9 @@ func (output *CliOutput) flush() {
 	}
 }
 
-func (output *CliOutput) levelStyle(level outputType) lipgloss.Style {
-	switch level {
-	case infoOutput:
-		return output.theme.InfoBlock.Width(boxLength).Bold(true)
-	case warnOutput:
-		return output.theme.WarningBlock.Width(boxLength).Bold(true)
-	case errorOutput:
-		return output.theme.ErrorBlock.Width(boxLength).Bold(true)
-	case defaultOutput:
-	}
-
-	return lipgloss.NewStyle()
-}
-
 func (output *CliOutput) renderLevel(level outputType) {
-	renderer := output.levelStyle(level)
-	if levelMessage, ok := messageMap[level]; ok {
-		output.buffer.WriteString(renderer.Render(levelMessage))
+	if label, ok := output.levels[level]; ok {
+		output.buffer.WriteString(label)
 	}
 
 	output.buffer.WriteByte(' ')

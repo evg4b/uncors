@@ -22,9 +22,10 @@ type (
 )
 
 type TrackerWidget struct {
-	pending map[uint64]events.RequestStarted
-	ticking bool
-	spinner spinner.Model
+	pending   map[uint64]events.RequestStarted
+	ticking   bool
+	spinner   spinner.Model
+	formatter *render.Formatter
 }
 
 func NewTrackerWidget() *TrackerWidget {
@@ -32,12 +33,13 @@ func NewTrackerWidget() *TrackerWidget {
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
-	// Plain: render.FormatPending styles the frame together with the method.
+	// Plain: render.Formatter styles the frame together with the method.
 	loader.Style = lipgloss.NewStyle()
 
 	return &TrackerWidget{
-		pending: make(map[uint64]events.RequestStarted),
-		spinner: loader,
+		pending:   make(map[uint64]events.RequestStarted),
+		spinner:   loader,
+		formatter: render.NewFormatter(styles.Default),
 	}
 }
 
@@ -114,7 +116,7 @@ func (m *TrackerWidget) View() tea.View {
 	lines := make([]string, 0, len(m.pending))
 
 	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
-		lines = append(lines, render.FormatPending(styles.Default, m.pending[id], m.spinner.View()))
+		lines = append(lines, m.formatter.Pending(m.pending[id], m.spinner.View()))
 	}
 
 	return tea.NewView(strings.Join(lines, "\n"))

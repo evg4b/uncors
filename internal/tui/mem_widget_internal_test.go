@@ -53,7 +53,7 @@ func TestMemoryWidget(t *testing.T) {
 
 	t.Run("View renders correctly", func(t *testing.T) {
 		widget := NewMemoryWidget()
-		widget.memMB = 12.34
+		widget.setUsage(12.34)
 
 		view := widget.View()
 		assert.Contains(t, view.Content, "[ 12.3 MB ]")

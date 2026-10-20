@@ -24,12 +24,12 @@ type Theme struct {
 	LogoRed      lipgloss.Style
 	LogoYellow   lipgloss.Style
 
-	handler  lipgloss.Style
-	handlers map[events.HandlerKind]lipgloss.Style
-	statuses map[int]lipgloss.Style
+	blankHandler  string
+	handlerLabels map[events.HandlerKind]string
+	statuses      map[int]lipgloss.Style
 }
 
-func NewTheme(dark bool) Theme {
+func NewTheme(dark bool) *Theme {
 	lightDark := lipgloss.LightDark(dark)
 
 	var (
@@ -56,7 +56,21 @@ func NewTheme(dark bool) Theme {
 
 	handler := paddedStyle.Foreground(contrastColor).Width(handlerLabelWidth)
 
-	return Theme{
+	handlerColors := map[events.HandlerKind]color.Color{
+		events.HandlerProxy:   proxyColor,
+		events.HandlerCache:   cacheColor,
+		events.HandlerMock:    mockColor,
+		events.HandlerScript:  scriptColor,
+		events.HandlerStatic:  staticColor,
+		events.HandlerOptions: optionsColor,
+	}
+
+	handlerLabels := make(map[events.HandlerKind]string, len(handlerColors))
+	for kind, background := range handlerColors {
+		handlerLabels[kind] = handler.Background(background).Render(kind.String())
+	}
+
+	return &Theme{
 		InfoBlock:    block(infoColor),
 		WarningBlock: block(warningColor),
 		ErrorBlock:   block(errorColor),
@@ -68,15 +82,8 @@ func NewTheme(dark bool) Theme {
 		LogoRed:      lipgloss.NewStyle().Foreground(errorColor),
 		LogoYellow:   lipgloss.NewStyle().Foreground(warningColor),
 
-		handler: handler,
-		handlers: map[events.HandlerKind]lipgloss.Style{
-			events.HandlerProxy:   handler.Background(proxyColor),
-			events.HandlerCache:   handler.Background(cacheColor),
-			events.HandlerMock:    handler.Background(mockColor),
-			events.HandlerScript:  handler.Background(scriptColor),
-			events.HandlerStatic:  handler.Background(staticColor),
-			events.HandlerOptions: handler.Background(optionsColor),
-		},
+		blankHandler:  handler.Render(""),
+		handlerLabels: handlerLabels,
 		statuses: map[int]lipgloss.Style{
 			1: block(infoColor),
 			2: block(successColor),
@@ -87,7 +94,7 @@ func NewTheme(dark bool) Theme {
 	}
 }
 
-func (t Theme) StatusStyle(code int) lipgloss.Style {
+func (t *Theme) StatusStyle(code int) lipgloss.Style {
 	if style, ok := t.statuses[code/100]; ok {
 		return style
 	}
@@ -95,13 +102,12 @@ func (t Theme) StatusStyle(code int) lipgloss.Style {
 	return t.Cancelled
 }
 
-func (t Theme) HandlerLabel(kind events.HandlerKind) string {
-	style, ok := t.handlers[kind]
-	if !ok {
-		return t.handler.Render("")
+func (t *Theme) HandlerLabel(kind events.HandlerKind) string {
+	if label, ok := t.handlerLabels[kind]; ok {
+		return label
 	}
 
-	return style.Render(kind.String())
+	return t.blankHandler
 }
 
 var Default = NewTheme(lipgloss.HasDarkBackground(os.Stdin, os.Stdout))

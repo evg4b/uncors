@@ -27,7 +27,7 @@ var errScript = errors.New("attempt to index a nil value")
 
 type paletteTerminal struct {
 	name  string
-	theme styles.Theme
+	theme *styles.Theme
 	fg    color.Color
 	bg    color.Color
 }
@@ -76,7 +76,7 @@ var paletteRequests = []request{
 	{method: http.MethodPut, url: paletteHost + "/users/42", handler: events.HandlerScript},
 }
 
-func paletteSample(theme styles.Theme) string {
+func paletteSample(theme *styles.Theme) string {
 	var buf bytes.Buffer
 
 	renderer := render.NewEventRenderer(render.NewCliOutput(&buf, render.WithTheme(theme)), version)
@@ -86,8 +86,9 @@ func paletteSample(theme styles.Theme) string {
 
 	lines := []string{strings.TrimRight(buf.String(), "\n"), ""}
 
+	formatter := render.NewFormatter(theme)
 	for _, req := range paletteRequests {
-		lines = append(lines, render.FormatPending(theme, events.RequestStarted{
+		lines = append(lines, formatter.Pending(events.RequestStarted{
 			Method: req.method, URL: parseURL(req.url), Handler: req.handler,
 		}, pendingFrame))
 	}
