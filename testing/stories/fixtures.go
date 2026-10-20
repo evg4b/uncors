@@ -12,7 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/internal/tuiapp"
 )
 
 const version = "0.0.0-story"
@@ -85,7 +85,7 @@ func started(requests ...request) []tea.Msg {
 	for _, req := range requests {
 		requestID++
 
-		msgs = append(msgs, uncorsapp.EventMsg(events.RequestStarted{
+		msgs = append(msgs, tuiapp.EventMsg(events.RequestStarted{
 			ID: requestID, Method: req.method, URL: parseURL(req.url),
 			Handler: req.handler, Rewrite: req.rewrite, At: requestTime,
 		}))
@@ -121,7 +121,7 @@ func serverStarted() []tea.Msg {
 func eventMsgs(evts ...events.Event) []tea.Msg {
 	msgs := make([]tea.Msg, 0, len(evts))
 	for _, event := range evts {
-		msgs = append(msgs, uncorsapp.EventMsg(event))
+		msgs = append(msgs, tuiapp.EventMsg(event))
 	}
 
 	return msgs

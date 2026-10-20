@@ -47,7 +47,7 @@ Core and UI are separate (`TestCoreDoesNotImportTheUI` enforces it):
 - `internal/cli` supervisor: owns the engine, the config watcher, signals,
   and the version check; frontends send it `events.Restart` / `events.Shutdown`.
   An invalid file publishes `ReloadFailed` and keeps the previous config.
-- Frontends only render events: the TUI (`internal/uncors_app`, BubbleTea, the
+- Frontends only render events: the TUI (`internal/tuiapp`, BubbleTea, the
   default) and the headless printer (`--interactive=false`), both through
   `tui.EventRenderer`.
 

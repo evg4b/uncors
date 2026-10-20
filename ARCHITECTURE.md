@@ -27,7 +27,8 @@ browser accepts them.
 | `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
 | `internal/telemetry`    | OpenTelemetry spans and logs, exported over OTLP when `UNCORS_TRACE=true`; free when off.         |
 | `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
-| `internal/tui`, `internal/uncors_app` | Event rendering, console output, and the interactive Bubble Tea UI.                  |
+| `internal/tui`          | Line formatting and console output shared by both frontends and the CLI commands; no Bubble Tea. |
+| `internal/tuiapp`       | The interactive Bubble Tea UI, built on `internal/tui`.                                           |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
 | `pkg/urlt`              | A fork of `net/url` with placeholder support.                                                      |
 | `pkg/har`               | HAR 1.2 types, builders from `net/http`, and the file `Writer`; imports nothing from `internal`.  |
@@ -78,7 +79,7 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
    Restart/Shutdown │   │ ServerStopped, ReloadFailed,         │ ServerStarted/Restarted,
                     │   ▼ NewVersionAvailable                  ▼ RequestStarted/Completed
                  frontend ◄──────────────── events.Bus ◄───────┘
-         (uncors_app TUI or headless printer)
+           (tuiapp TUI or headless printer)
 ```
 
 - The engine (`internal/engine`, plus `server`, `handler`, `events`,

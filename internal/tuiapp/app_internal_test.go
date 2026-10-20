@@ -1,4 +1,4 @@
-package uncorsapp
+package tuiapp
 
 import (
 	"errors"

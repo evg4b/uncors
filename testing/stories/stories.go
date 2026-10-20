@@ -10,7 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 	uv "github.com/charmbracelet/ultraviolet"
 	"github.com/evg4b/uncors/internal/events"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/internal/tuiapp"
 )
 
 const (
@@ -34,10 +34,10 @@ var errReload = errors.New("mappings[0].from: invalid URL")
 func Stories() []Story {
 	return []Story{
 		{Name: "help/short", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewHelpWidget(uncorsapp.NewKeyMap()), nil)
+			return widgetStory(tuiapp.NewHelpWidget(tuiapp.NewKeyMap()), nil)
 		}},
 		{Name: "help/full", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewHelpWidget(uncorsapp.NewKeyMap()), nil, key('?'))
+			return widgetStory(tuiapp.NewHelpWidget(tuiapp.NewKeyMap()), nil, key('?'))
 		}},
 		{Name: "memory/small", New: func() tea.Model {
 			return widgetStory(fixedMemoryWidget(memSmall), nil)
@@ -46,16 +46,16 @@ func Stories() []Story {
 			return widgetStory(fixedMemoryWidget(memLarge), nil)
 		}},
 		{Name: "tracker/single", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewTrackerWidget(), nil, pending()[0])
+			return widgetStory(tuiapp.NewTrackerWidget(), nil, pending()[0])
 		}},
 		{Name: "tracker/many", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewTrackerWidget(), nil, pending()...)
+			return widgetStory(tuiapp.NewTrackerWidget(), nil, pending()...)
 		}},
 		{Name: "tracker/long-url", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewTrackerWidget(), nil, started(longRequest)...)
+			return widgetStory(tuiapp.NewTrackerWidget(), nil, started(longRequest)...)
 		}},
 		{Name: "tracker/handlers", New: func() tea.Model {
-			return widgetStory(uncorsapp.NewTrackerWidget(), nil, started(handlerRequests()...)...)
+			return widgetStory(tuiapp.NewTrackerWidget(), nil, started(handlerRequests()...)...)
 		}},
 		{Name: "history/short", Height: historyHeight, New: func() tea.Model {
 			return historyStory(rendered(traffic()...))

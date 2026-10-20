@@ -1,4 +1,4 @@
-package uncorsapp
+package tuiapp
 
 import (
 	"charm.land/bubbles/v2/help"

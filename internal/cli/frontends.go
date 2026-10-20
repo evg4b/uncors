@@ -4,7 +4,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/internal/tuiapp"
 )
 
 type frontend func(subscription *events.Subscription, commands chan<- events.Command) error
@@ -28,7 +28,7 @@ func headless(env Env) frontend {
 
 func interactive(env Env) frontend {
 	return func(subscription *events.Subscription, commands chan<- events.Command) error {
-		app := uncorsapp.NewUncorsApp(subscription, commands, env.Build.Version())
+		app := tuiapp.NewUncorsApp(subscription, commands, env.Build.Version())
 
 		_, err := tea.NewProgram(app).Run()
 
