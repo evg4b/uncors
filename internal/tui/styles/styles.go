@@ -11,21 +11,19 @@ import (
 var lightDark = lipgloss.LightDark(lipgloss.HasDarkBackground(os.Stdin, os.Stdout))
 
 var (
-	infoColor     = lightDark(lipgloss.Color("#005BA5"), lipgloss.Color("#0072CE"))
-	successColor  = lightDark(lipgloss.Color("#01833B"), lipgloss.Color("#00AF4F"))
+	infoColor     = lightDark(lipgloss.Color("#2563EB"), lipgloss.Color("#3B82F6"))
+	successColor  = lightDark(lipgloss.Color("#15803D"), lipgloss.Color("#22C55E"))
 	warningColor  = lightDark(lipgloss.Color("#E2A600"), lipgloss.Color("#FFD400"))
 	errorColor    = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
 	contrastColor = lightDark(lipgloss.Color("#FFFFFF"), lipgloss.Color("#000000"))
-	dimColor      = lipgloss.Color("#8C8C8C")
-	mutedColor    = lipgloss.Color("#777777")
-	whiteColor    = lipgloss.Color("#FFFFFF")
+	dimColor      = lightDark(lipgloss.Color("#6B7280"), lipgloss.Color("#9CA3AF"))
 
-	proxyColor   = lightDark(lipgloss.Color("#545AC9"), lipgloss.Color("#6A71F7"))
-	cacheColor   = lightDark(lipgloss.Color("#CCC906"), lipgloss.Color("#FEFC7F"))
-	mockColor    = lightDark(lipgloss.Color("#D258DD"), lipgloss.Color("#EE7FF8"))
-	scriptColor  = lipgloss.Color("#FF7F00")
-	staticColor  = lightDark(lipgloss.Color("#588853"), lipgloss.Color("#A6FC9D"))
-	optionsColor = lightDark(lipgloss.Color("#384957"), lipgloss.Color("#C5D1DB"))
+	proxyColor   = lightDark(lipgloss.Color("#4F46E5"), lipgloss.Color("#6366F1"))
+	cacheColor   = lightDark(lipgloss.Color("#0E7490"), lipgloss.Color("#06B6D4"))
+	mockColor    = lightDark(lipgloss.Color("#C026D3"), lipgloss.Color("#D946EF"))
+	scriptColor  = lightDark(lipgloss.Color("#7C3AED"), lipgloss.Color("#8B5CF6"))
+	staticColor  = lightDark(lipgloss.Color("#DB2777"), lipgloss.Color("#EC4899"))
+	optionsColor = lightDark(lipgloss.Color("#475569"), lipgloss.Color("#94A3B8"))
 )
 
 const handlerLabelWidth = 7
@@ -44,11 +42,10 @@ var (
 	WarningBlockStyle = block(warningColor)
 	ErrorBlockStyle   = block(errorColor)
 	CancelledStyle    = block(dimColor)
-	PendingBlockStyle = paddedStyle.Background(dimColor).Foreground(whiteColor).Bold(true)
+	PendingBlockStyle = CancelledStyle.Bold(true)
 
-	URLStyle       = lipgloss.NewStyle().Underline(true)
-	DimTextStyle   = lipgloss.NewStyle().Foreground(dimColor)
-	MutedTextStyle = lipgloss.NewStyle().Foreground(mutedColor)
+	URLStyle     = lipgloss.NewStyle().Underline(true)
+	DimTextStyle = lipgloss.NewStyle().Foreground(dimColor)
 
 	LogoRed    = lipgloss.NewStyle().Foreground(errorColor)
 	LogoYellow = lipgloss.NewStyle().Foreground(warningColor)
