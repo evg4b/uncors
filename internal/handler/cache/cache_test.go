@@ -66,12 +66,12 @@ func TestCalcCost(t *testing.T) {
 
 func TestRistrettoCache(t *testing.T) {
 	ttl := 1 * time.Minute
-	cache := lo.Must(cache.NewRistrettoCache(1024, ttl))
+	storage := lo.Must(cache.NewRistrettoCache(1024, ttl))
 
-	assert.NotNil(t, cache)
+	assert.NotNil(t, storage)
 
 	t.Run("Get missing key", func(t *testing.T) {
-		val, ok := cache.Get("non-existent")
+		val, ok := storage.Get("non-existent")
 		assert.False(t, ok)
 		assert.Empty(t, val)
 	})
@@ -85,29 +85,29 @@ func TestRistrettoCache(t *testing.T) {
 			},
 		}
 
-		assert.True(t, cache.Set(key, value))
-		cache.Wait()
+		assert.True(t, storage.Set(key, value))
+		storage.Wait()
 
-		got, ok := cache.Get(key)
+		got, ok := storage.Get(key)
 
 		assert.True(t, ok)
 		assert.Equal(t, value.Body, got.Body)
 		assert.Equal(t, value.Headers, got.Headers)
 	})
 
-	t.Run("Set rejects a value larger than the cache", func(t *testing.T) {
+	t.Run("Set rejects a value larger than the storage", func(t *testing.T) {
 		key := "large-key"
 
-		assert.False(t, cache.Set(key, contracts.CachedResponse{Body: make([]byte, 2048)}))
-		cache.Wait()
+		assert.False(t, storage.Set(key, contracts.CachedResponse{Body: make([]byte, 2048)}))
+		storage.Wait()
 
-		_, ok := cache.Get(key)
+		_, ok := storage.Get(key)
 		assert.False(t, ok)
 	})
 
 	t.Run("Wait call", func(t *testing.T) {
 		assert.NotPanics(t, func() {
-			cache.Wait()
+			storage.Wait()
 		})
 	})
 }

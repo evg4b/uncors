@@ -38,11 +38,11 @@ func runBoxTests(t *testing.T, write func(out *tui.CliOutput, messages ...string
 	t.Helper()
 
 	for _, testCase := range testCases {
-		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			buffer := strings.Builder{}
 			write(tui.NewCliOutput(&buffer), testCase.message)
 			testutils.MatchSnapshot(t, buffer.String())
-		}))
+		})
 	}
 }
 

@@ -51,12 +51,12 @@ func NewURLReplacerFactory(urlMappings config.Mappings) (*Factory, error) {
 }
 
 func (f *Factory) Make(requestURL *url.URL) (*Replacer, *Replacer, error) {
-	mapping, err := f.findMapping(urlt.URL_String(requestURL))
+	found, err := f.findMapping(urlt.URL_String(requestURL))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return mapping.target, mapping.source, nil
+	return found.target, found.source, nil
 }
 
 func replacers(rawSource, rawTarget string) (*Replacer, *Replacer, error) {

@@ -45,7 +45,7 @@ func (c *GenerateCertsCommand) Execute() error {
 	certPath, keyPath := certs.Paths(c.outputDir)
 
 	if !c.force {
-		_, err := c.fs.Stat(certPath)
+		_, err = c.fs.Stat(certPath)
 		if err == nil {
 			c.output.Printf(
 				fmt.Sprintf("CA certificate already exists at %s", certPath),

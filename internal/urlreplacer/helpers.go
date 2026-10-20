@@ -129,7 +129,7 @@ func wildCardToReplacePattern(rawTarget string) string {
 }
 
 func validateRawURL(rawURL string) error {
-	if len(rawURL) == 0 {
+	if rawURL == "" {
 		return errEmptyURL
 	}
 
@@ -148,11 +148,11 @@ func validateRawURL(rawURL string) error {
 		return fmt.Errorf("invalid url: %w", err)
 	}
 
-	if len(parsed.Path) > 0 && parsed.Path != "/" {
+	if parsed.Path != "" && parsed.Path != "/" {
 		return errURLHasPath
 	}
 
-	if len(parsed.RawQuery) > 0 {
+	if parsed.RawQuery != "" {
 		return errURLHasQuery
 	}
 

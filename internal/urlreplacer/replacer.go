@@ -71,7 +71,7 @@ func NewReplacer(source, target string) (*Replacer, error) {
 	replacer.scheme = extractScheme(target)
 
 	hooks := map[string]hook{}
-	if len(replacer.scheme) > 0 {
+	if replacer.scheme != "" {
 		hooks["scheme"] = schemeHookFactory(replacer.scheme)
 	}
 
@@ -146,7 +146,7 @@ func (r *Replacer) ReplaceSoft(source string) string {
 }
 
 func (r *Replacer) IsTargetSecure() bool {
-	if len(r.scheme) > 0 {
+	if r.scheme != "" {
 		return isSecure(r.scheme)
 	}
 

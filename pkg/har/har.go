@@ -49,7 +49,7 @@ type Entry struct {
 	Response        Response  `json:"response"`
 	Cache           Cache     `json:"cache"`
 	Timings         Timings   `json:"timings"`
-	ServerIPAddress string    `json:"serverIPAddress,omitempty"` //nolint:tagliatelle // HAR 1.2 field name
+	ServerIPAddress string    `json:"serverIPAddress,omitempty"`
 	Connection      string    `json:"connection,omitempty"`
 	Comment         string    `json:"comment,omitempty"`
 }
@@ -74,7 +74,7 @@ type Response struct {
 	Cookies     []Cookie    `json:"cookies"`
 	Headers     []NameValue `json:"headers"`
 	Content     Content     `json:"content"`
-	RedirectURL string      `json:"redirectURL"` //nolint:tagliatelle // HAR 1.2 field name
+	RedirectURL string      `json:"redirectURL"`
 	HeadersSize int         `json:"headersSize"`
 	BodySize    int64       `json:"bodySize"`
 	Comment     string      `json:"comment,omitempty"`

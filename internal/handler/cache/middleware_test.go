@@ -167,13 +167,13 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 		for _, testCase := range tests {
 			t.Run(testCase.name, func(t *testing.T) {
-				testHandler := testutils.NewCounter(proxyLike(testCase.statusCode, responseHeader, expectedBody))
+				counter := testutils.NewCounter(proxyLike(testCase.statusCode, responseHeader, expectedBody))
 
-				wrappedHandler := infra.Wrap(middleware, testHandler)
+				wrappedHandler := infra.Wrap(middleware, counter)
 
 				serveFiveTimes(t, wrappedHandler, testCase.method, testCase.path)
 
-				assert.Equal(t, 5, testHandler.Count())
+				assert.Equal(t, 5, counter.Count())
 			})
 		}
 	})

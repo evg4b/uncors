@@ -43,7 +43,7 @@ func (r *recorder) all() []events.Event {
 func begin(t *testing.T) (context.Context, *tracking.Scope, *recorder) {
 	t.Helper()
 
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/users", nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/users", http.NoBody)
 	require.NoError(t, err)
 
 	publisher := &recorder{}
@@ -206,7 +206,7 @@ func TestOriginRejection(t *testing.T) {
 func TestScopeRecordsOnTheRootSpan(t *testing.T) {
 	recorded := testutils.Telemetry(t)
 
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/users", nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://api.local/users", http.NoBody)
 	require.NoError(t, err)
 
 	rootCtx, root := telemetry.StartServer(request.Context(), "HTTP GET")

@@ -181,7 +181,7 @@ func (output *CliOutput) renderMessage(msg string) {
 }
 
 func (output *CliOutput) renderPrefix() {
-	if len(output.prefix) > 0 {
+	if output.prefix != "" {
 		output.buffer.WriteString(output.prefix)
 	}
 }

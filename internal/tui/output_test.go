@@ -1,6 +1,7 @@
 package tui_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var errWrite = fmt.Errorf("write error")
+var errWrite = errors.New("write error")
 
 type errorWriter struct{}
 
@@ -26,11 +27,11 @@ func (e *errorWriter) Write(_ []byte) (int, error) {
 }
 
 func snapshotOutput(write func(out *tui.CliOutput)) func(t *testing.T) {
-	return testutils.WithTrueColor(func(t *testing.T) {
+	return func(t *testing.T) {
 		var buf strings.Builder
 		write(tui.NewCliOutput(&buf))
 		testutils.MatchSnapshot(t, buf.String())
-	})
+	}
 }
 
 func TestCliOutput_Write(t *testing.T) {
@@ -105,11 +106,11 @@ func TestCliOutput_WithPrefix(t *testing.T) {
 		assert.Contains(t, buf.String(), "[pfx]")
 	})
 
-	t.Run("snapshot with prefix", testutils.WithTrueColor(func(t *testing.T) {
+	t.Run("snapshot with prefix", func(t *testing.T) {
 		var buf strings.Builder
 		tui.NewCliOutput(&buf, tui.WithPrefix("[pfx]")).Info("message")
 		testutils.MatchSnapshot(t, buf.String())
-	}))
+	})
 
 	t.Run("empty prefix is not written", func(t *testing.T) {
 		var (

@@ -33,7 +33,7 @@ func checkKnownFields(field string, node *yaml.Node, typ reflect.Type) error {
 
 	ptr := reflect.PointerTo(typ)
 	if ptr.Implements(knownFieldsCheckerType) {
-		checker, _ := reflect.New(typ).Interface().(knownFieldsChecker)
+		checker, _ := reflect.TypeAssert[knownFieldsChecker](reflect.New(typ))
 
 		return checker.checkKnownFields(field, node)
 	}

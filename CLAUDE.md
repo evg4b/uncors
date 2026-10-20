@@ -62,6 +62,8 @@ Core and UI are separate (`TestCoreDoesNotImportTheUI` enforces it):
 - Mocks: minimock into `testing/mocks`. Snapshots: go-snaps. Helpers:
   `testing/testutils`. TUI stories: `testing/stories`.
 - Commit prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`.
+- No `//nolint`: fix the finding, or add a path- and rule-scoped exclusion to
+  `.golangci.yml`. The golangci-lint version is pinned in the Makefile and CI.
 
 ## Configuration
 

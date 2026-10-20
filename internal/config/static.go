@@ -51,20 +51,20 @@ type staticMapEntry struct {
 func (s *StaticDirectories) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.MappingNode {
 		for i := 0; i+1 < len(value.Content); i += 2 {
-			path := value.Content[i].Value
+			dirPath := value.Content[i].Value
 			valNode := value.Content[i+1]
 
 			var staticDir StaticDirectory
 
 			if valNode.Kind == yaml.ScalarNode {
-				staticDir = StaticDirectory{Path: path, Dir: valNode.Value}
+				staticDir = StaticDirectory{Path: dirPath, Dir: valNode.Value}
 			} else {
 				err := valNode.Decode(&staticDir)
 				if err != nil {
 					return err
 				}
 
-				staticDir.Path = path
+				staticDir.Path = dirPath
 			}
 
 			*s = append(*s, staticDir)

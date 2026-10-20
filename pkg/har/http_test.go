@@ -70,7 +70,7 @@ func TestNewRequest(t *testing.T) {
 	})
 
 	t.Run("records a client request without the fragment", func(t *testing.T) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/a?b=c#top", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/a?b=c#top", http.NoBody)
 		require.NoError(t, err)
 
 		assert.Equal(t, "https://example.com/a?b=c", har.NewRequest(req, nil).URL)
@@ -86,7 +86,7 @@ func TestNewRequest(t *testing.T) {
 	t.Run("leaves out secure headers and cookies by default", func(t *testing.T) {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		req.Header.Set("Authorization", "Bearer token")
-		req.AddCookie(&http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
+		req.AddCookie(&http.Cookie{Name: "session", Value: "abc"})
 
 		request := har.NewRequest(req, nil)
 
@@ -96,7 +96,7 @@ func TestNewRequest(t *testing.T) {
 
 	t.Run("captures secure headers and cookies on request", func(t *testing.T) {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
-		req.AddCookie(&http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
+		req.AddCookie(&http.Cookie{Name: "session", Value: "abc"})
 
 		request := har.NewRequest(req, nil, har.WithSecureHeaders(true))
 
@@ -203,8 +203,8 @@ func TestNewCookies(t *testing.T) {
 	expires := time.Date(2026, time.October, 16, 12, 0, 0, 0, time.UTC)
 
 	cookies := har.NewCookies([]*http.Cookie{
-		{Name: "plain", Value: "1"}, // nolint: gosec
-		{ // nolint: gosec
+		{Name: "plain", Value: "1"},
+		{
 			Name:     "session",
 			Value:    "abc",
 			Path:     "/api",

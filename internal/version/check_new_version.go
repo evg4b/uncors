@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/hashicorp/go-version"
 	"go.opentelemetry.io/otel/attribute"
@@ -16,7 +15,7 @@ import (
 const lastVersionURL = "https://api.github.com/repos/evg4b/uncors/releases/latest"
 
 type versionInfo struct {
-	Version string `json:"tag_name"` // nolint: tagliatelle
+	Version string `json:"tag_name"`
 }
 
 func (checker *Checker) CheckNewVersion(ctx context.Context) (string, bool) {
@@ -51,7 +50,7 @@ func (checker *Checker) CheckNewVersion(ctx context.Context) (string, bool) {
 }
 
 func (checker *Checker) fetchLatest(ctx context.Context) (*version.Version, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, lastVersionURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build the version check request: %w", err)
 	}
@@ -61,7 +60,7 @@ func (checker *Checker) fetchLatest(ctx context.Context) (*version.Version, erro
 		return nil, fmt.Errorf("version check request failed: %w", err)
 	}
 
-	defer helpers.CloseSafe(response.Body)
+	defer response.Body.Close()
 
 	lastVersionInfo := versionInfo{}
 

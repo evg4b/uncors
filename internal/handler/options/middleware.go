@@ -26,33 +26,33 @@ func NewMiddleware(options ...MiddlewareOption) *Middleware {
 }
 
 func (m *Middleware) ServeHTTP(resp contracts.ResponseWriter, req *contracts.Request, next contracts.Next) error {
-	if strings.EqualFold(req.Method, http.MethodOptions) {
-		req, span := telemetry.StartRequest(req, "options.preflight")
-		defer span.End()
-
-		tracking.Claim(req.Context(), events.HandlerOptions)
-
-		status := m.handle(resp, req)
-
-		if span.IsRecording() {
-			span.SetAttributes(
-				semconv.HTTPResponseStatusCode(status),
-				attribute.Int("uncors.options.custom_headers", len(m.headers)),
-			)
-		}
-
-		if telemetry.Enabled() {
-			telemetry.Debug(req.Context(), "answered preflight request",
-				slog.String("origin", req.Header.Get("Origin")),
-				slog.String("requested_method", req.Header.Get("Access-Control-Request-Method")),
-				slog.Int("status", status),
-			)
-		}
-
-		return nil
+	if !strings.EqualFold(req.Method, http.MethodOptions) {
+		return next(resp, req)
 	}
 
-	return next(resp, req)
+	req, span := telemetry.StartRequest(req, "options.preflight")
+	defer span.End()
+
+	tracking.Claim(req.Context(), events.HandlerOptions)
+
+	status := m.handle(resp, req)
+
+	if span.IsRecording() {
+		span.SetAttributes(
+			semconv.HTTPResponseStatusCode(status),
+			attribute.Int("uncors.options.custom_headers", len(m.headers)),
+		)
+	}
+
+	if telemetry.Enabled() {
+		telemetry.Debug(req.Context(), "answered preflight request",
+			slog.String("origin", req.Header.Get("Origin")),
+			slog.String("requested_method", req.Header.Get("Access-Control-Request-Method")),
+			slog.Int("status", status),
+		)
+	}
+
+	return nil
 }
 
 func (m *Middleware) handle(resp http.ResponseWriter, req *http.Request) int {

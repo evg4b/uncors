@@ -16,8 +16,8 @@ import (
 
 var errSome = errors.New("some error")
 
-func versionResponse(version string) io.ReadCloser {
-	return io.NopCloser(strings.NewReader(fmt.Sprintf(`{ "tag_name": "%s" }`, version)))
+func versionResponse(tag string) io.ReadCloser {
+	return io.NopCloser(strings.NewReader(fmt.Sprintf(`{ "tag_name": %q }`, tag)))
 }
 
 func TestCheckNewVersion(t *testing.T) {

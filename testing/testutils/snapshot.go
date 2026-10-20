@@ -18,6 +18,8 @@ var (
 )
 
 func MatchSnapshot(t *testing.T, values ...any) {
+	t.Helper()
+
 	config := snaps.WithConfig(snaps.Dir(getSnapshotDir()))
 	config.MatchSnapshot(t, values...)
 }

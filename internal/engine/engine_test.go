@@ -237,8 +237,8 @@ func TestEngineClosesIdleUpstreamConnectionsOnRestart(t *testing.T) {
 
 	defer testutils.Close(t, proxy)
 
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
-		hosts.Localhost.HTTPPort(port).String()+"/", nil)
+	url := hosts.Localhost.HTTPPort(port).String() + "/"
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 	require.NoError(t, err)
 
 	response, err := http.DefaultClient.Do(request)
@@ -444,8 +444,9 @@ func TestEngineRestartOnTheSamePort(t *testing.T) {
 	defer testutils.Close(t, proxy)
 
 	fetch := func(path string) (string, error) {
-		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
-			hosts.Localhost.HTTPPort(port).String()+path, nil)
+		url := hosts.Localhost.HTTPPort(port).String() + path
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		if err != nil {
 			return "", err
 		}

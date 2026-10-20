@@ -65,12 +65,12 @@ func restartOnChange(binary, root, story string, changes <-chan string, signals 
 		running := startStory(ctx, root, binary, story)
 
 		select {
-		case err := <-running.done():
-			if err == nil {
+		case <-running.done():
+			if running.err == nil {
 				return
 			}
 
-			logf("the story stopped: %v; waiting for changes", err)
+			logf("the story stopped: %v; waiting for changes", running.err)
 
 			select {
 			case <-changes:
@@ -90,7 +90,8 @@ func restartOnChange(binary, root, story string, changes <-chan string, signals 
 
 type runningStory struct {
 	cmd    *exec.Cmd
-	exited chan error
+	exited chan struct{}
+	err    error
 }
 
 func startStory(ctx context.Context, root, binary, story string) *runningStory {
@@ -107,7 +108,7 @@ func startStory(ctx context.Context, root, binary, story string) *runningStory {
 		return nil
 	}
 
-	cmd := exec.CommandContext(ctx, binary, "-story", story, "-watch=false") //nolint:gosec // our own build
+	cmd := exec.CommandContext(ctx, binary, "-story", story, "-watch=false")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -119,17 +120,18 @@ func startStory(ctx context.Context, root, binary, story string) *runningStory {
 		return nil
 	}
 
-	running := &runningStory{cmd: cmd, exited: make(chan error, 1)}
+	running := &runningStory{cmd: cmd, exited: make(chan struct{})}
 
 	go func() {
-		running.exited <- cmd.Wait()
+		running.err = cmd.Wait()
+		close(running.exited)
 	}()
 
 	return running
 }
 
 // done is nil, and so blocks forever, when no story is running.
-func (r *runningStory) done() <-chan error {
+func (r *runningStory) done() <-chan struct{} {
 	if r == nil {
 		return nil
 	}

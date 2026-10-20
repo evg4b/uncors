@@ -62,7 +62,7 @@ func loadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, 
 	}
 
 	if configPath != "" {
-		err := readYAMLFile(fs, cfg, configPath)
+		err = readYAMLFile(fs, cfg, configPath)
 		if err != nil {
 			return nil, "", err
 		}

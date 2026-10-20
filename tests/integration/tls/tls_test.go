@@ -57,7 +57,7 @@ func TestTLS(t *testing.T) {
 
 		req := integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/"))
 
-		resp, err := untrusting.Do(req) //nolint:bodyclose
+		resp, err := untrusting.Do(req)
 		require.Error(t, err)
 		require.Nil(t, resp)
 
@@ -74,7 +74,7 @@ func TestTLS(t *testing.T) {
 
 		req := integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/"))
 
-		resp, err := (&http.Client{Transport: transport}).Do(req) //nolint:bodyclose
+		resp, err := (&http.Client{Transport: transport}).Do(req)
 		require.Error(t, err)
 		require.Nil(t, resp)
 

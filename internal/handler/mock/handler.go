@@ -142,7 +142,7 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 	response := h.response
 
 	header := writer.Header()
-	if len(header.Get(headers.ContentType)) == 0 {
+	if header.Get(headers.ContentType) == "" {
 		sniff := response.Raw
 		if len(sniff) > contentTypeSniffLen {
 			sniff = sniff[:contentTypeSniffLen]
@@ -192,9 +192,9 @@ func writeFileWithStatus(writer http.ResponseWriter, file io.Reader, stat os.Fil
 
 	body := file
 
-	if len(header.Get(headers.ContentType)) == 0 {
+	if header.Get(headers.ContentType) == "" {
 		contentType := mime.TypeByExtension(filepath.Ext(stat.Name()))
-		if len(contentType) == 0 {
+		if contentType == "" {
 			sniff := make([]byte, contentTypeSniffLen)
 
 			read, err := io.ReadFull(file, sniff)
@@ -215,7 +215,7 @@ func writeFileWithStatus(writer http.ResponseWriter, file io.Reader, stat os.Fil
 		return nil
 	}
 
-	if len(header.Get(headers.ContentLength)) == 0 {
+	if header.Get(headers.ContentLength) == "" {
 		header.Set(headers.ContentLength, strconv.FormatInt(stat.Size(), 10))
 	}
 

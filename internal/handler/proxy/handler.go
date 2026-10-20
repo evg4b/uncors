@@ -103,7 +103,6 @@ func (h *Handler) makeOriginalRequest(
 		return nil, fmt.Errorf("failed to replace URL: %w", err)
 	}
 
-	//nolint:gosec // G704: forwarding to user-configured target is intentional
 	originalRequest, err := http.NewRequestWithContext(req.Context(), req.Method, url, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to original server: %w", err)
@@ -244,7 +243,9 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 	}
 
 	if rewriteHost == "" {
-		targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
+		var targetReplacer, sourceReplacer *urlreplacer.Replacer
+
+		targetReplacer, sourceReplacer, err = h.replacers.Make(req.URL)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to transform general url: %w", err)
 		}
@@ -331,8 +332,8 @@ func WithURLReplacerFactory(replacerFactory urlreplacer.ReplacerFactory) Handler
 	}
 }
 
-func WithHTTPClient(http contracts.HTTPClient) HandlerOption {
+func WithHTTPClient(client contracts.HTTPClient) HandlerOption {
 	return func(m *Handler) {
-		m.http = http
+		m.http = client
 	}
 }

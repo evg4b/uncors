@@ -39,7 +39,9 @@ func TestServer(t *testing.T) {
 	}))
 
 	assertResponse := func(t *testing.T, url string, pool *x509.CertPool) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		t.Helper()
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		require.NoError(t, err)
 
 		var client *http.Client
@@ -347,8 +349,9 @@ func TestServer(t *testing.T) {
 		}()
 
 		go func() {
-			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
-				hosts.Loopback.HTTPPort(initial).String(), nil)
+			url := hosts.Loopback.HTTPPort(initial).String()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 			if !assert.NoError(t, err) {
 				return
 			}

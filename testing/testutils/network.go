@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 func GetFreePort(t *testing.T) int {
 	t.Helper()
 
-	listener, err := net.Listen("tcp4", hosts.Loopback.Port(0).String()) //nolint:noctx
+	listener, err := new(net.ListenConfig).Listen(t.Context(), "tcp4", hosts.Loopback.Port(0).String())
 	require.NoError(t, err)
 
 	defer listener.Close()
@@ -35,11 +36,12 @@ func GetFreePorts(t *testing.T, count int) []int {
 }
 
 func IsPortFree(port int) bool {
-	l, err := net.Listen("tcp", hosts.Loopback.Port(port).String()) // nolint: noctx
+	listener, err := new(net.ListenConfig).Listen(context.Background(), "tcp", hosts.Loopback.Port(port).String())
 	if err != nil {
 		return false
 	}
-	defer l.Close()
+
+	_ = listener.Close()
 
 	return true
 }

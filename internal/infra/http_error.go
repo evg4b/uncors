@@ -75,8 +75,7 @@ func errorStatus(err error) int {
 }
 
 func isUpstreamError(err error) bool {
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
 		return urlErr.Op != "parse"
 	}
 

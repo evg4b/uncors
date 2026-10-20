@@ -53,7 +53,7 @@ func TestLocalDomainMapping(t *testing.T) {
 		url := fmt.Sprintf("https://unmapped.invalid:%d/", env.PortFor("api.example.local"))
 		req := integration.NewRequest(t, http.MethodGet, url)
 
-		resp, err := env.Client.Do(req) //nolint:bodyclose
+		resp, err := env.Client.Do(req)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 	})
@@ -61,7 +61,7 @@ func TestLocalDomainMapping(t *testing.T) {
 
 func TestPlaceholderDomainMapping(t *testing.T) {
 	backend := integration.NewBackend(t, func(w http.ResponseWriter, r *http.Request) {
-		_, err := io.WriteString(w, "served "+r.URL.Path) //nolint:gosec
+		_, err := io.WriteString(w, "served "+r.URL.Path)
 		assert.NoError(t, err)
 	})
 	env := integration.New(t, backend, &config.UncorsConfig{
@@ -143,7 +143,7 @@ func TestSharedPortDistinctRemotes(t *testing.T) {
 
 func TestPlaceholderDoesNotReachIntoTheURL(t *testing.T) {
 	echo := func(w http.ResponseWriter, r *http.Request) {
-		_, err := io.WriteString(w, r.URL.RequestURI()) //nolint:gosec
+		_, err := io.WriteString(w, r.URL.RequestURI())
 		assert.NoError(t, err)
 	}
 	tenantRemote := integration.NewBackend(t, echo)

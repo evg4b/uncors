@@ -8,6 +8,8 @@ import (
 )
 
 func FailNowHandlerMock(t *testing.T) contracts.Handler {
+	t.Helper()
+
 	return infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 		t.Fatal("should not be called")
 

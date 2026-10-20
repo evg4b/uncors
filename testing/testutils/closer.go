@@ -8,6 +8,8 @@ import (
 )
 
 func Close(t *testing.T, closer io.Closer) {
+	t.Helper()
+
 	err := closer.Close()
 	require.NoError(t, err)
 }

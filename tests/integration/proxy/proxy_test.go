@@ -43,10 +43,12 @@ func newMuxBackend(t *testing.T) *backend {
 }
 
 func backendMux(t *testing.T, self *backend) http.Handler {
+	t.Helper()
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/echo", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := io.WriteString(writer, "echo:"+request.URL.Path) //nolint:gosec
+		_, err := io.WriteString(writer, "echo:"+request.URL.Path)
 		assert.NoError(t, err)
 	})
 	mux.HandleFunc("/data", func(writer http.ResponseWriter, _ *http.Request) {
@@ -76,7 +78,6 @@ func backendMux(t *testing.T, self *backend) http.Handler {
 		writer.WriteHeader(http.StatusFound)
 	})
 	mux.HandleFunc("/set-cookie", func(writer http.ResponseWriter, _ *http.Request) {
-		//nolint:gosec // G124: test cookie; Secure is added by the proxy on the way out
 		http.SetCookie(writer, &http.Cookie{Name: "sid", Value: "abc", Domain: self.host, Path: "/"})
 		_, err := io.WriteString(writer, "cookie set")
 		assert.NoError(t, err)
@@ -91,7 +92,7 @@ func backendMux(t *testing.T, self *backend) http.Handler {
 			return
 		}
 
-		_, writeErr := io.WriteString(writer, "token="+cookie.Value) //nolint:gosec // G705: value is test-controlled
+		_, writeErr := io.WriteString(writer, "token="+cookie.Value)
 		assert.NoError(t, writeErr)
 	})
 	mux.HandleFunc("/", func(writer http.ResponseWriter, _ *http.Request) {
@@ -226,7 +227,7 @@ func TestProxyHandler(t *testing.T) {
 
 	t.Run("forwards request cookies to the backend", func(t *testing.T) {
 		req := integration.NewRequest(t, http.MethodGet, proxyURL(env, "/read-cookie"))
-		req.AddCookie(&http.Cookie{Name: "token", Value: "xyz"}) //nolint:gosec // G124: test request cookie
+		req.AddCookie(&http.Cookie{Name: "token", Value: "xyz"})
 
 		result := env.Do(t, req)
 

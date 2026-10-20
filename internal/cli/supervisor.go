@@ -74,9 +74,8 @@ func supervise(
 	err := supervisor.engine.Start(ctx, uncorsConfig)
 	if err != nil {
 		supervisor.announceStopped()
-		<-frontendDone
 
-		return errors.Join(err, supervisor.engine.Close())
+		return errors.Join(err, <-frontendDone, supervisor.engine.Close())
 	}
 
 	if telemetry.Enabled() {

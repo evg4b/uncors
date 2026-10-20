@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math"
 	"net"
 	"net/http"
 	"strconv"
@@ -77,7 +78,7 @@ func annotateRequest(span trace.Span, request *http.Request, requestID uint64) {
 	host, port := splitHostPort(request.Host)
 	attrs := make([]attribute.KeyValue, 0, requestAttributes+len(tracedRequestHeaders))
 	attrs = append(attrs,
-		attribute.Int64("uncors.request.id", int64(requestID)), //nolint:gosec // request ids never reach MaxInt64
+		attribute.Int64("uncors.request.id", int64(requestID&math.MaxInt64)),
 		semconv.HTTPRequestMethodKey.String(request.Method),
 		semconv.URLFull(helpers.LogURL(request.URL)),
 		semconv.URLScheme(request.URL.Scheme),

@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var errSyntheticWatcher = fmt.Errorf("synthetic test error")
+var errSyntheticWatcher = errors.New("synthetic test error")
 
 func newIsolatedWatcher(t *testing.T) (*Watcher, chan fsnotify.Event, chan error) {
 	t.Helper()

@@ -84,7 +84,7 @@ func (p *proxy) client() *http.Client {
 func (p *proxy) get(t *testing.T, url string) (int, string, error) {
 	t.Helper()
 
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return 0, "", err
 	}

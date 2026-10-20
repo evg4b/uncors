@@ -24,10 +24,10 @@ func RunUncors(ctx context.Context, env Env) error {
 		}
 	}
 
-	frontend := headless(env)
+	render := headless(env)
 	if uncorsConfig.Interactive {
-		frontend = interactive(env)
+		render = interactive(env)
 	}
 
-	return supervise(ctx, env, uncorsConfig, cfgPath, frontend)
+	return supervise(ctx, env, uncorsConfig, cfgPath, render)
 }

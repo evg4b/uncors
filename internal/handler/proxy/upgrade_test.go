@@ -172,7 +172,7 @@ func TestProxyHandlerUpgrade(t *testing.T) {
 		header := testCase.recorder.Header()
 		assert.Equal(t, "echo", header.Get("Upgrade"))
 		assert.Equal(t, "Upgrade", header.Get("Connection"))
-		assert.Equal(t, "accepted", header.Get("Sec-Websocket-Accept"))
+		assert.Equal(t, "accepted", header.Get("Sec-WebSocket-Accept"))
 		assert.Equal(t, "http://premium.local.com", header.Get("Access-Control-Allow-Origin"))
 	})
 
