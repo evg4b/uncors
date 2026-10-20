@@ -12,7 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/evg4b/uncors/internal/tuiapp"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 const version = "0.0.0-story"
@@ -85,7 +85,7 @@ func started(requests ...request) []tea.Msg {
 	for _, req := range requests {
 		requestID++
 
-		msgs = append(msgs, tuiapp.EventMsg(events.RequestStarted{
+		msgs = append(msgs, tui.EventMsg(events.RequestStarted{
 			ID: requestID, Method: req.method, URL: parseURL(req.url),
 			Handler: req.handler, Rewrite: req.rewrite, At: requestTime,
 		}))
@@ -121,7 +121,7 @@ func serverStarted() []tea.Msg {
 func eventMsgs(evts ...events.Event) []tea.Msg {
 	msgs := make([]tea.Msg, 0, len(evts))
 	for _, event := range evts {
-		msgs = append(msgs, tuiapp.EventMsg(event))
+		msgs = append(msgs, tui.EventMsg(event))
 	}
 
 	return msgs
@@ -130,7 +130,7 @@ func eventMsgs(evts ...events.Event) []tea.Msg {
 func rendered(evts ...events.Event) []string {
 	var buf bytes.Buffer
 
-	renderer := tui.NewEventRenderer(tui.NewCliOutput(&buf), version)
+	renderer := render.NewEventRenderer(render.NewCliOutput(&buf), version)
 	lines := make([]string, 0, len(evts))
 
 	for _, event := range evts {

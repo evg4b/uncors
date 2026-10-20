@@ -1,4 +1,4 @@
-package tui_test
+package render_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
@@ -60,14 +60,14 @@ func TestPrintResponse(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Run("should print single line", func(t *testing.T) {
 				var buf strings.Builder
-				tui.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
+				render.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
 				output := strings.Trim(buf.String(), "\n")
 				assert.Equal(t, 1, lipgloss.Height(output))
 			})
 
 			t.Run("should match snapshot", func(t *testing.T) {
 				var buf strings.Builder
-				tui.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
+				render.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
 				testutils.MatchSnapshot(t, buf.String())
 			})
 		})
@@ -80,7 +80,7 @@ func TestPrintResponse_NonstandardCodes(t *testing.T) {
 			var buf strings.Builder
 
 			assert.NotPanics(t, func() {
-				tui.NewCliOutput(&buf).Request(events.RequestCompleted{
+				render.NewCliOutput(&buf).Request(events.RequestCompleted{
 					Data: makeRequestData(http.MethodGet, "https://example.com/", code),
 				})
 			})
@@ -105,7 +105,7 @@ func TestMethodLabel(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.method, func(t *testing.T) {
-			line := tui.FormatRequest(events.RequestCompleted{
+			line := render.FormatRequest(events.RequestCompleted{
 				Data: makeRequestData(testCase.method, "https://example.com/", http.StatusOK),
 			})
 
@@ -121,7 +121,7 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 		t.Run(method, func(t *testing.T) {
 			var buf strings.Builder
 
-			tui.NewCliOutput(&buf).Request(events.RequestCompleted{
+			render.NewCliOutput(&buf).Request(events.RequestCompleted{
 				Data: makeRequestData(method, "https://example.com/", http.StatusBadGateway),
 			})
 
@@ -131,8 +131,8 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 			pending := events.RequestStarted{Method: method, URL: cancelled.URL, Handler: events.HandlerOptions}
 
 			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
-			assert.Equal(t, 1, lipgloss.Height(tui.FormatRequest(events.RequestCompleted{Data: cancelled})))
-			assert.Equal(t, 1, lipgloss.Height(tui.FormatPending(pending, "▱▱▱")))
+			assert.Equal(t, 1, lipgloss.Height(render.FormatRequest(events.RequestCompleted{Data: cancelled})))
+			assert.Equal(t, 1, lipgloss.Height(render.FormatPending(pending, "▱▱▱")))
 		})
 	}
 }
@@ -140,7 +140,7 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 func TestFormatPending(t *testing.T) {
 	reqURL, _ := url.Parse("http://localhost/test")
 
-	line := ansi.Strip(tui.FormatPending(events.RequestStarted{
+	line := ansi.Strip(render.FormatPending(events.RequestStarted{
 		Method:  http.MethodDelete,
 		URL:     reqURL,
 		Handler: events.HandlerScript,
@@ -191,7 +191,7 @@ func TestFormatRequest(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			testutils.MatchSnapshot(t, tui.FormatRequest(testCase.event))
+			testutils.MatchSnapshot(t, render.FormatRequest(testCase.event))
 		})
 	}
 
@@ -216,7 +216,7 @@ func TestFormatRequest(t *testing.T) {
 		cancelled := makeRequestData(http.MethodGet, "https://api.domain.com/api/user", http.StatusOK)
 		cancelled.Cancelled = true
 
-		line := tui.FormatRequest(events.RequestCompleted{Data: cancelled, Err: context.Canceled})
+		line := render.FormatRequest(events.RequestCompleted{Data: cancelled, Err: context.Canceled})
 
 		assert.Equal(t, 1, lipgloss.Height(line))
 		assert.NotContains(t, line, context.Canceled.Error())

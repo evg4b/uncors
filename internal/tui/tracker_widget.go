@@ -1,4 +1,4 @@
-package tuiapp
+package tui
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 type (
@@ -31,7 +31,7 @@ func NewTrackerWidget() *TrackerWidget {
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
-	// Plain: tui.FormatPending styles the frame together with the method.
+	// Plain: render.FormatPending styles the frame together with the method.
 	loader.Style = lipgloss.NewStyle()
 
 	return &TrackerWidget{
@@ -113,7 +113,7 @@ func (m *TrackerWidget) View() tea.View {
 	lines := make([]string, 0, len(m.pending))
 
 	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
-		lines = append(lines, tui.FormatPending(m.pending[id], m.spinner.View()))
+		lines = append(lines, render.FormatPending(m.pending[id], m.spinner.View()))
 	}
 
 	return tea.NewView(strings.Join(lines, "\n"))

@@ -1,6 +1,6 @@
 ---
 name: tui-stories
-description: Add, change, check, or look at uncors TUI widgets (internal/tuiapp) through stories — the Storybook-like catalog in testing/stories, the tuiplay playground, story snapshots, and frame renders. Use when changing how the TUI looks or behaves, adding a widget or widget state, reviewing a TUI diff, or when asked to show or verify what the TUI looks like.
+description: Add, change, check, or look at uncors TUI widgets (internal/tui) through stories — the Storybook-like catalog in testing/stories, the tuiplay playground, story snapshots, and frame renders. Use when changing how the TUI looks or behaves, adding a widget or widget state, reviewing a TUI diff, or when asked to show or verify what the TUI looks like.
 ---
 
 # TUI stories
@@ -30,15 +30,15 @@ answers Bubble Tea's startup queries. Use `-render` instead.
 
 ## Adding a story
 
-Stories use only the public API of `internal/tuiapp`; add a small public
+Stories use only the public API of `internal/tui`; add a small public
 seam there (an option, a method) rather than reaching into internals.
 
 - Widget: `widgetStory(widget, resize, msgs...)` in `models.go`. `resize` is
   for widgets whose height the app sets (see `historyStory`); pass nil
   otherwise.
 - Whole app: `appStory(msgs)`; it passes a fixed memory widget through
-  `tuiapp.WithMemoryWidget`.
-- Feed state as the app does: engine events through `tuiapp.EventMsg`
+  `tui.WithMemoryWidget`.
+- Feed state as the app does: engine events through `tui.EventMsg`
   (`eventMsgs`, `started`), history output with `HistoryWidget.AppendLine`
   (`rendered` renders events like the app), keys with `key`. Reuse the
   fixtures in `fixtures.go`: `pending`, `traffic`, `serverStarted`.

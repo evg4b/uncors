@@ -1,4 +1,4 @@
-package tui_test
+package render_test
 
 import (
 	"errors"
@@ -9,17 +9,17 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/stretchr/testify/assert"
 )
 
 var errReload = errors.New("mappings must not be empty")
 
-func render(event events.Event) string {
+func renderEvent(event events.Event) string {
 	var output strings.Builder
 
-	tui.NewEventRenderer(tui.NewCliOutput(&output), "1.2.3").Render(event)
+	render.NewEventRenderer(render.NewCliOutput(&output), "1.2.3").Render(event)
 
 	return ansi.Strip(output.String())
 }
@@ -84,7 +84,7 @@ func TestEventRenderer(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			output := render(testCase.event)
+			output := renderEvent(testCase.event)
 
 			for _, expected := range testCase.contains {
 				assert.Contains(t, output, expected)
@@ -93,6 +93,6 @@ func TestEventRenderer(t *testing.T) {
 	}
 
 	t.Run("started requests print nothing", func(t *testing.T) {
-		assert.Empty(t, render(events.RequestStarted{ID: 1}))
+		assert.Empty(t, renderEvent(events.RequestStarted{ID: 1}))
 	})
 }

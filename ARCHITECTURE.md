@@ -27,8 +27,9 @@ browser accepts them.
 | `internal/tracking`     | Per-request scope: attributes each request to the component that answered it and publishes its two events. |
 | `internal/telemetry`    | OpenTelemetry spans and logs, exported over OTLP when `UNCORS_TRACE=true`; free when off.         |
 | `internal/urlreplacer`  | Matching `from` hosts (with `{name}` placeholders) and building upstream URLs.                     |
-| `internal/tui`          | Line formatting and console output shared by both frontends and the CLI commands; no Bubble Tea. |
-| `internal/tuiapp`       | The interactive Bubble Tea UI, built on `internal/tui`.                                           |
+| `internal/tui`          | The interactive Bubble Tea UI: the app model and its widgets.                                      |
+| `internal/tui/render`   | Line formatting and console output shared by both frontends and the CLI commands; no Bubble Tea. |
+| `internal/tui/styles`   | Colours and block styles used by `render` and the widgets.                                         |
 | `internal/version`      | Checks GitHub for a newer release at startup.                                                      |
 | `pkg/urlt`              | A fork of `net/url` with placeholder support.                                                      |
 | `pkg/har`               | HAR 1.2 types, builders from `net/http`, and the file `Writer`; imports nothing from `internal`.  |
@@ -79,7 +80,7 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
    Restart/Shutdown │   │ ServerStopped, ReloadFailed,         │ ServerStarted/Restarted,
                     │   ▼ NewVersionAvailable                  ▼ RequestStarted/Completed
                  frontend ◄──────────────── events.Bus ◄───────┘
-           (tuiapp TUI or headless printer)
+              (tui app or headless printer)
 ```
 
 - The engine (`internal/engine`, plus `server`, `handler`, `events`,
@@ -93,7 +94,7 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
   own goroutine; requests that arrive during one are merged into a single
   follow-up reload.
 - A frontend runs on its own goroutine and only renders events
-  (`tui.EventRenderer`) and sends commands. It subscribes before the engine
+  (`render.EventRenderer`) and sends commands. It subscribes before the engine
   starts. `ServerStopped` is the last event; the bus closes after it. If the
   frontend exits on its own, the supervisor shuts down.
 - Diagnostics are OpenTelemetry spans and logs (`internal/telemetry`), never

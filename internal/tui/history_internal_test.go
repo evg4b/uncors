@@ -1,4 +1,4 @@
-package tuiapp
+package tui
 
 import (
 	"strings"

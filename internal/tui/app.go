@@ -1,4 +1,4 @@
-package tuiapp
+package tui
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 const (
@@ -31,7 +31,7 @@ type UncorsApp struct {
 	stopped chan struct{}
 
 	rendered *bytes.Buffer
-	renderer *tui.EventRenderer
+	renderer *render.EventRenderer
 
 	termHeight int
 	termWidth  int
@@ -70,7 +70,7 @@ func NewUncorsApp(
 		commands:      commands,
 		stopped:       make(chan struct{}),
 		rendered:      rendered,
-		renderer:      tui.NewEventRenderer(tui.NewCliOutput(rendered), version),
+		renderer:      render.NewEventRenderer(render.NewCliOutput(rendered), version),
 		historyWidget: NewHistoryWidget(keys),
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),

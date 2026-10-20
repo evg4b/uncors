@@ -1,4 +1,4 @@
-package tui_test
+package render_test
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,10 +26,10 @@ func (e *errorWriter) Write(_ []byte) (int, error) {
 	return 0, errWrite
 }
 
-func snapshotOutput(write func(out *tui.CliOutput)) func(t *testing.T) {
+func snapshotOutput(write func(out *render.CliOutput)) func(t *testing.T) {
 	return func(t *testing.T) {
 		var buf strings.Builder
-		write(tui.NewCliOutput(&buf))
+		write(render.NewCliOutput(&buf))
 		testutils.MatchSnapshot(t, buf.String())
 	}
 }
@@ -37,7 +37,7 @@ func snapshotOutput(write func(out *tui.CliOutput)) func(t *testing.T) {
 func TestCliOutput_Write(t *testing.T) {
 	var buf strings.Builder
 
-	out := tui.NewCliOutput(&buf)
+	out := render.NewCliOutput(&buf)
 
 	n, err := out.Write([]byte("direct write"))
 
@@ -47,32 +47,32 @@ func TestCliOutput_Write(t *testing.T) {
 }
 
 func TestCliOutput_Info(t *testing.T) {
-	t.Run("Info", snapshotOutput(func(out *tui.CliOutput) { out.Info("test message") }))
+	t.Run("Info", snapshotOutput(func(out *render.CliOutput) { out.Info("test message") }))
 
-	t.Run("Infof", snapshotOutput(func(out *tui.CliOutput) { out.Infof("formatted %s %d", "message", 42) }))
+	t.Run("Infof", snapshotOutput(func(out *render.CliOutput) { out.Infof("formatted %s %d", "message", 42) }))
 }
 
 func TestCliOutput_Error(t *testing.T) {
-	t.Run("Error", snapshotOutput(func(out *tui.CliOutput) { out.Error("test error") }))
+	t.Run("Error", snapshotOutput(func(out *render.CliOutput) { out.Error("test error") }))
 
-	t.Run("Errorf", snapshotOutput(func(out *tui.CliOutput) { out.Errorf("formatted %s %d", "error", 42) }))
+	t.Run("Errorf", snapshotOutput(func(out *render.CliOutput) { out.Errorf("formatted %s %d", "error", 42) }))
 }
 
 func TestCliOutput_Warn(t *testing.T) {
-	t.Run("Warn", snapshotOutput(func(out *tui.CliOutput) { out.Warn("test warning") }))
+	t.Run("Warn", snapshotOutput(func(out *render.CliOutput) { out.Warn("test warning") }))
 
-	t.Run("Warnf", snapshotOutput(func(out *tui.CliOutput) { out.Warnf("formatted %s %d", "warning", 42) }))
+	t.Run("Warnf", snapshotOutput(func(out *render.CliOutput) { out.Warnf("formatted %s %d", "warning", 42) }))
 }
 
 func TestCliOutput_Print(t *testing.T) {
-	t.Run("Print", snapshotOutput(func(out *tui.CliOutput) { out.Print("plain message") }))
+	t.Run("Print", snapshotOutput(func(out *render.CliOutput) { out.Print("plain message") }))
 
-	t.Run("Printf", snapshotOutput(func(out *tui.CliOutput) { out.Printf("formatted %s %d", "plain", 42) }))
+	t.Run("Printf", snapshotOutput(func(out *render.CliOutput) { out.Printf("formatted %s %d", "plain", 42) }))
 }
 
 func TestCliOutput_RenderMessage_StripsTrailingNewline(t *testing.T) {
 	var buf strings.Builder
-	tui.NewCliOutput(&buf).Info("hello\n")
+	render.NewCliOutput(&buf).Info("hello\n")
 	output := buf.String()
 	assert.Contains(t, output, "hello")
 	assert.NotContains(t, output, "hello\n\n")
@@ -81,20 +81,20 @@ func TestCliOutput_RenderMessage_StripsTrailingNewline(t *testing.T) {
 func TestCliOutput_RenderMessage_IndentsContinuationLines(t *testing.T) {
 	t.Run("aligns lines under the text column", func(t *testing.T) {
 		var buf strings.Builder
-		tui.NewCliOutput(&buf).Error("first\nsecond")
+		render.NewCliOutput(&buf).Error("first\nsecond")
 		assert.Equal(t, " ERROR  first\n        second\n", ansi.Strip(buf.String()))
 	})
 
 	t.Run("counts the prefix", func(t *testing.T) {
 		var buf strings.Builder
-		tui.NewCliOutput(&buf, tui.WithPrefix("[pfx]")).Info("first\nsecond")
+		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("first\nsecond")
 		assert.Equal(t, "[pfx] INFO   first\n             second\n", ansi.Strip(buf.String()))
 	})
 
 	t.Run("matches the box text column", func(t *testing.T) {
 		var single, box strings.Builder
-		tui.NewCliOutput(&single).Warn("text")
-		tui.NewCliOutput(&box).WarnBox("text", "more")
+		render.NewCliOutput(&single).Warn("text")
+		render.NewCliOutput(&box).WarnBox("text", "more")
 		assert.Equal(t, strings.Index(ansi.Strip(single.String()), "text"), strings.Index(ansi.Strip(box.String()), "text"))
 	})
 }
@@ -102,13 +102,13 @@ func TestCliOutput_RenderMessage_IndentsContinuationLines(t *testing.T) {
 func TestCliOutput_WithPrefix(t *testing.T) {
 	t.Run("prefix appears in output", func(t *testing.T) {
 		var buf strings.Builder
-		tui.NewCliOutput(&buf, tui.WithPrefix("[pfx]")).Info("message")
+		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("message")
 		assert.Contains(t, buf.String(), "[pfx]")
 	})
 
 	t.Run("snapshot with prefix", func(t *testing.T) {
 		var buf strings.Builder
-		tui.NewCliOutput(&buf, tui.WithPrefix("[pfx]")).Info("message")
+		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("message")
 		testutils.MatchSnapshot(t, buf.String())
 	})
 
@@ -118,8 +118,8 @@ func TestCliOutput_WithPrefix(t *testing.T) {
 			withoutPrefix strings.Builder
 		)
 
-		tui.NewCliOutput(&withPrefix, tui.WithPrefix("")).Info("message")
-		tui.NewCliOutput(&withoutPrefix).Info("message")
+		render.NewCliOutput(&withPrefix, render.WithPrefix("")).Info("message")
+		render.NewCliOutput(&withoutPrefix).Info("message")
 		assert.Equal(t, withoutPrefix.String(), withPrefix.String())
 	})
 }
@@ -128,7 +128,7 @@ func TestCliOutput_Request(t *testing.T) {
 	t.Run("includes the handler label in output", func(t *testing.T) {
 		var buf strings.Builder
 
-		out := tui.NewCliOutput(&buf)
+		out := render.NewCliOutput(&buf)
 		out.Request(events.RequestCompleted{
 			Handler: events.HandlerProxy,
 			Data: &contracts.RequestData{
@@ -153,7 +153,7 @@ func TestCliOutput_NewPrefixOutput(t *testing.T) {
 	t.Run("writes to parent writer", func(t *testing.T) {
 		var buf strings.Builder
 
-		parent := tui.NewCliOutput(&buf)
+		parent := render.NewCliOutput(&buf)
 		sub := parent.NewPrefixOutput("[sub]")
 		parent.Print("from parent")
 		sub.Print("from sub")
@@ -166,20 +166,20 @@ func TestCliOutput_NewPrefixOutput(t *testing.T) {
 	t.Run("sub prefix appears in output", func(t *testing.T) {
 		var buf strings.Builder
 
-		parent := tui.NewCliOutput(&buf)
+		parent := render.NewCliOutput(&buf)
 		parent.NewPrefixOutput("[sub]").Print("msg")
 		assert.Contains(t, buf.String(), "[sub]")
 	})
 
 	t.Run("implements Output interface", func(_ *testing.T) {
-		parent := tui.NewCliOutput(io.Discard)
+		parent := render.NewCliOutput(io.Discard)
 
 		_ = parent.NewPrefixOutput("[sub]")
 	})
 }
 
 func TestCliOutput_PanicsOnWriteError(t *testing.T) {
-	out := tui.NewCliOutput(&errorWriter{})
+	out := render.NewCliOutput(&errorWriter{})
 
 	assert.Panics(t, func() {
 		out.Info("this will panic")
@@ -189,7 +189,7 @@ func TestCliOutput_PanicsOnWriteError(t *testing.T) {
 func TestCliOutput_ConcurrentSafety(t *testing.T) {
 	var buf strings.Builder
 
-	parent := tui.NewCliOutput(&buf)
+	parent := render.NewCliOutput(&buf)
 
 	const goroutines = 20
 

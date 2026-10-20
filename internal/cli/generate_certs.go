@@ -6,7 +6,7 @@ import (
 
 	"github.com/evg4b/uncors/internal/commands"
 	"github.com/evg4b/uncors/internal/telemetry"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/spf13/pflag"
 )
 
@@ -14,7 +14,7 @@ const GenerateCertsCmd = "generate-certs"
 
 func GenerateCerts(env Env) error {
 	cmd := commands.NewGenerateCertsCommand(
-		commands.WithOutput(tui.NewCliOutput(env.Stdout)),
+		commands.WithOutput(render.NewCliOutput(env.Stdout)),
 		commands.WithFs(env.Fs),
 	)
 

@@ -4,15 +4,15 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/evg4b/uncors/internal/tuiapp"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 type frontend func(subscription *events.Subscription, commands chan<- events.Command) error
 
 func headless(env Env) frontend {
 	return func(subscription *events.Subscription, _ chan<- events.Command) error {
-		output := tui.NewCliOutput(env.Stdout)
-		renderer := tui.NewEventRenderer(output, env.Build.Version())
+		output := render.NewCliOutput(env.Stdout)
+		renderer := render.NewEventRenderer(output, env.Build.Version())
 
 		for event := range subscription.Events() {
 			renderer.Render(event)
@@ -28,7 +28,7 @@ func headless(env Env) frontend {
 
 func interactive(env Env) frontend {
 	return func(subscription *events.Subscription, commands chan<- events.Command) error {
-		app := tuiapp.NewUncorsApp(subscription, commands, env.Build.Version())
+		app := tui.NewUncorsApp(subscription, commands, env.Build.Version())
 
 		_, err := tea.NewProgram(app).Run()
 

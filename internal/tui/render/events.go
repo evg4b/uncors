@@ -1,4 +1,4 @@
-package tui
+package render
 
 import (
 	"github.com/evg4b/uncors/internal/events"

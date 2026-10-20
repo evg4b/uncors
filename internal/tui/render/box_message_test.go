@@ -1,10 +1,10 @@
-package tui_test
+package render_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/testing/testutils"
 )
 
@@ -34,26 +34,26 @@ var testCases = []struct {
 	},
 }
 
-func runBoxTests(t *testing.T, write func(out *tui.CliOutput, messages ...string)) {
+func runBoxTests(t *testing.T, write func(out *render.CliOutput, messages ...string)) {
 	t.Helper()
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			buffer := strings.Builder{}
-			write(tui.NewCliOutput(&buffer), testCase.message)
+			write(render.NewCliOutput(&buffer), testCase.message)
 			testutils.MatchSnapshot(t, buffer.String())
 		})
 	}
 }
 
 func TestPrintWarnBox(t *testing.T) {
-	runBoxTests(t, (*tui.CliOutput).WarnBox)
+	runBoxTests(t, (*render.CliOutput).WarnBox)
 }
 
 func TestPrintInfoBox(t *testing.T) {
-	runBoxTests(t, (*tui.CliOutput).InfoBox)
+	runBoxTests(t, (*render.CliOutput).InfoBox)
 }
 
 func TestPrintErrorBox(t *testing.T) {
-	runBoxTests(t, (*tui.CliOutput).ErrorBox)
+	runBoxTests(t, (*render.CliOutput).ErrorBox)
 }
