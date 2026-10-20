@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
 	"github.com/evg4b/uncors/internal/tui/render"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 const version = "0.0.0-story"
@@ -210,4 +214,82 @@ func statuses() []events.Event {
 		Handler: events.HandlerProxy,
 		Data:    &contracts.RequestData{Method: http.MethodGet, URL: parseURL(usersURL), Cancelled: true},
 	})
+}
+
+const (
+	nonstandardStatus = 999
+	paletteMarginY    = 1
+	paletteMarginX    = 2
+)
+
+var paletteHandlerRows = [][]events.HandlerKind{
+	{events.HandlerProxy, events.HandlerCache, events.HandlerMock},
+	{events.HandlerScript, events.HandlerStatic, events.HandlerOptions},
+}
+
+var paletteStatusRows = [][]int{
+	{http.StatusSwitchingProtocols, http.StatusOK, http.StatusNotModified, http.StatusNotFound},
+	{http.StatusBadGateway, nonstandardStatus},
+}
+
+var (
+	lightTerminal = lipgloss.NewStyle().Background(lipgloss.Color("#FFFFFF")).Foreground(lipgloss.Color("#000000"))
+	darkTerminal  = lipgloss.NewStyle().Background(lipgloss.Color("#1E1E1E")).Foreground(lipgloss.Color("#D4D4D4"))
+)
+
+func palette() string {
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		paletteColumn("light", styles.NewTheme(false), lightTerminal),
+		" ",
+		paletteColumn("dark", styles.NewTheme(true), darkTerminal),
+	)
+}
+
+func paletteColumn(name string, theme styles.Theme, terminal lipgloss.Style) string {
+	row := func(items ...string) string {
+		return strings.Join(items, terminal.Render(" "))
+	}
+	text := func(style lipgloss.Style, value string) string {
+		return style.Inherit(terminal).Render(value)
+	}
+
+	handlerLines := make([]string, 0, len(paletteHandlerRows))
+	for _, kinds := range paletteHandlerRows {
+		labels := make([]string, 0, len(kinds))
+		for _, kind := range kinds {
+			labels = append(labels, theme.HandlerLabel(kind))
+		}
+
+		handlerLines = append(handlerLines, row(labels...))
+	}
+
+	statusLines := make([]string, 0, len(paletteStatusRows))
+	for _, codes := range paletteStatusRows {
+		blocks := make([]string, 0, len(codes))
+		for _, code := range codes {
+			blocks = append(blocks, theme.StatusStyle(code).Render(strconv.Itoa(code)))
+		}
+
+		statusLines = append(statusLines, row(blocks...))
+	}
+
+	last := len(statusLines) - 1
+	statusLines[last] = row(statusLines[last], theme.Cancelled.Render("CXL"), theme.PendingBlock.Render("▱▱▱"))
+
+	levels := row(
+		theme.InfoBlock.Render(render.InfoLabel),
+		theme.WarningBlock.Render(render.WarningLabel),
+		theme.ErrorBlock.Render(render.ErrorLabel),
+	)
+	texts := row(
+		text(theme.URL, "url"),
+		text(theme.DimText, "dim"),
+		text(theme.MutedText, "muted"),
+		text(theme.LogoRed, "red"),
+		text(theme.LogoYellow, "yellow"),
+	)
+
+	lines := slices.Concat([]string{text(terminal.Bold(true), name)}, handlerLines, statusLines, []string{levels, texts})
+
+	return terminal.Padding(paletteMarginY, paletteMarginX).Render(strings.Join(lines, "\n"))
 }

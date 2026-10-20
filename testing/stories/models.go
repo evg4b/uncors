@@ -106,3 +106,17 @@ func fixedMemoryWidget(mb float64) *tui.MemoryWidget {
 func key(code rune) tea.Msg {
 	return tea.KeyPressMsg(tea.Key{Text: string(code), Code: code})
 }
+
+type staticModel string
+
+func (m staticModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m staticModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m staticModel) View() tea.View {
+	return tea.NewView(string(m))
+}

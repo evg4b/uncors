@@ -33,6 +33,9 @@ var errReload = errors.New("mappings[0].from: invalid URL")
 
 func Stories() []Story {
 	return []Story{
+		{Name: "styles/palette", New: func() tea.Model {
+			return staticModel(palette())
+		}},
 		{Name: "help/short", New: func() tea.Model {
 			return widgetStory(tui.NewHelpWidget(tui.NewKeyMap()), nil)
 		}},
