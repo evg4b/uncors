@@ -36,7 +36,7 @@ func TestHandleRequestTelemetry(t *testing.T) {
 		request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost:8080/api?x=1",
 			strings.NewReader("payload"))
 		request.Header.Set("Origin", "http://app.local")
-		request.Header.Set("X-Request-Id", "abc-123")
+		request.Header.Set("X-Request-ID", "abc-123")
 		request.Header.Set("Authorization", "Bearer secret")
 
 		recorder := httptest.NewRecorder()

@@ -59,7 +59,7 @@ func (b *blocking) ServeHTTP(writer http.ResponseWriter, request *http.Request) 
 func get(t *testing.T, client *http.Client, url string) (string, error) {
 	t.Helper()
 
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return "", err
 	}

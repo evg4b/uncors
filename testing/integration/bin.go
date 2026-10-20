@@ -25,7 +25,6 @@ const UncorsTestVersion = "v1.2.3"
 
 func SetupBin(_ *testing.M) {
 	compile.Do(func() {
-		//nolint:usetesting // intentional: binary lifetime must span all tests, not one subtest
 		tmp, err := os.MkdirTemp("", "uncors-test-*")
 		if err != nil {
 			panic(err)
@@ -48,6 +47,8 @@ func SetupBin(_ *testing.M) {
 }
 
 func UncorsCommand(t *testing.T, args []string) *exec.Cmd {
+	t.Helper()
+
 	return exec.CommandContext(t.Context(), bin, args...)
 }
 

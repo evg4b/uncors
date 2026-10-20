@@ -21,7 +21,7 @@ type TestServer struct {
 func NewServer(t *testing.T, handler http.Handler) *TestServer {
 	t.Helper()
 
-	listener, err := net.Listen("tcp4", "127.0.0.1:0") //nolint:noctx
+	listener, err := new(net.ListenConfig).Listen(t.Context(), "tcp4", "127.0.0.1:0")
 	require.NoError(t, err)
 
 	server := &http.Server{

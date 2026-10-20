@@ -160,7 +160,7 @@ func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) 
 
 // On error the returned file, when not nil, is still open.
 func (h *Middleware) openIndexFile() (afero.File, os.FileInfo, error) {
-	if len(h.index) == 0 {
+	if h.index == "" {
 		return nil, nil, errNotHandled
 	}
 
@@ -179,9 +179,9 @@ func (h *Middleware) openIndexFile() (afero.File, os.FileInfo, error) {
 
 type MiddlewareOption = func(*Middleware)
 
-func WithFileSystem(fs afero.Fs) MiddlewareOption {
+func WithFileSystem(fileSystem afero.Fs) MiddlewareOption {
 	return func(h *Middleware) {
-		h.fs = fs
+		h.fs = fileSystem
 	}
 }
 

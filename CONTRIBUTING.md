@@ -34,7 +34,9 @@ You need:
 - [gum](https://github.com/charmbracelet/gum), which the Makefile uses for its
   output;
 - [gofumpt](https://github.com/mvdan/gofumpt) and
-  [golangci-lint](https://golangci-lint.run/) for `make format`.
+  [golangci-lint](https://golangci-lint.run/) for `make format`. Use the
+  golangci-lint version pinned in `.github/workflows/go.yml`: newer versions add
+  linters, so CI and your machine would disagree.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/uncors.git
@@ -78,13 +80,16 @@ The same without Make:
 go test -race ./...
 go build -tags release .
 golangci-lint run
+golangci-lint run --build-tags release
 ```
 
 ## Code style
 
 - Follow standard Go conventions.
 - Run `make format` before committing.
-- The linter configuration is in [.golangci.yml](.golangci.yml).
+- The linter configuration is in [.golangci.yml](.golangci.yml). Fix what it
+  reports instead of adding `//nolint`; a deliberate exception goes into the
+  `exclusions` of that file, scoped to a path and a rule.
 - If you change the configuration format, update `schema.json`, the fixtures
   in `tests/schema`, and the pages in `docs/`.
 

@@ -282,6 +282,8 @@ func TestSuperviseDoesNotWaitForReload(t *testing.T) {
 			commands <- events.Shutdown{}
 		},
 		"SIGINT": func(t *testing.T, _ chan<- events.Command) {
+			t.Helper()
+
 			assert.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
 		},
 	}

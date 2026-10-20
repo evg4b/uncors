@@ -32,7 +32,7 @@ func (t *CountableHandler) Reset() {
 	t.count = 0
 }
 
-func CopyHeaders(from http.Header, to http.Header) {
+func CopyHeaders(from, to http.Header) {
 	for key, values := range from {
 		for _, value := range values {
 			to.Add(key, value)

@@ -330,7 +330,7 @@ func TestCorsWriter(t *testing.T) {
 	t.Run("exposes the headers set before Write", func(t *testing.T) {
 		recorder, writer := newWriter(origin)
 
-		writer.Header().Set("X-Request-Id", "42")
+		writer.Header().Set("X-Request-ID", "42")
 		_, err := writer.Write([]byte("ok"))
 		require.NoError(t, err)
 

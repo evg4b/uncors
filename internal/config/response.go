@@ -28,11 +28,11 @@ func (r *Response) Clone() Response {
 }
 
 func (r *Response) IsRaw() bool {
-	return len(r.Raw) > 0
+	return r.Raw != ""
 }
 
 func (r *Response) IsFile() bool {
-	return len(r.File) > 0
+	return r.File != ""
 }
 
 func (r *Response) Validate(field string, fs afero.Fs) error {

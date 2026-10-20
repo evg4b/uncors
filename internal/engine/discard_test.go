@@ -89,8 +89,8 @@ func TestEngineDiscardsTheHAROfAGenerationThatNeverServed(t *testing.T) {
 
 		require.NoError(t, instance.Start(t.Context(), recordingConfiguration(upstream.URL, ports[0])))
 
-		request, err := http.NewRequestWithContext(
-			t.Context(), http.MethodGet, "http://localhost:"+strconv.Itoa(ports[0])+"/recorded", nil)
+		url := "http://localhost:" + strconv.Itoa(ports[0]) + "/recorded"
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		require.NoError(t, err)
 
 		response, err := http.DefaultClient.Do(request)

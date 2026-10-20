@@ -75,6 +75,8 @@ func proxyFactory(
 	replacerFactory urlreplacer.ReplacerFactory,
 	httpClient contracts.HTTPClient,
 ) contracts.Handler {
+	t.Helper()
+
 	if replacerFactory == nil {
 		replacerFactory = mocks.NewReplacerFactoryMock(t)
 	}
@@ -89,11 +91,16 @@ func proxyFactory(
 	)
 }
 
-func serveHTTP(_ *testing.T, router http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
-	router.ServeHTTP(server.NewResponseRecorder(recorder), request)
+func serveHTTP(_ *testing.T, handler http.Handler, recorder *httptest.ResponseRecorder, request *http.Request) {
+	handler.ServeHTTP(server.NewResponseRecorder(recorder), request)
 }
 
-func serve(t *testing.T, router http.Handler, method, url string, header map[string]string) *httptest.ResponseRecorder {
+func serve(
+	t *testing.T,
+	handler http.Handler,
+	method, url string,
+	header map[string]string,
+) *httptest.ResponseRecorder {
 	t.Helper()
 
 	if strings.HasPrefix(url, "/") {
@@ -108,7 +115,7 @@ func serve(t *testing.T, router http.Handler, method, url string, header map[str
 	helpers.NormaliseRequest(request)
 
 	recorder := httptest.NewRecorder()
-	serveHTTP(t, router, recorder, request)
+	serveHTTP(t, handler, recorder, request)
 
 	return recorder
 }
@@ -165,7 +172,7 @@ type routeCase struct {
 	expected   string
 }
 
-func (c routeCase) run(t *testing.T, router http.Handler) {
+func (c routeCase) run(t *testing.T, handler http.Handler) {
 	t.Helper()
 
 	method := c.method
@@ -173,18 +180,18 @@ func (c routeCase) run(t *testing.T, router http.Handler) {
 		method = http.MethodGet
 	}
 
-	recorder := serve(t, router, method, c.url, c.headers)
+	recorder := serve(t, handler, method, c.url, c.headers)
 
 	assert.Equal(t, c.statusCode, recorder.Code)
 	assert.Equal(t, c.expected, testutils.ReadBody(t, recorder))
 }
 
-func runRouteCases(t *testing.T, router http.Handler, cases []routeCase) {
+func runRouteCases(t *testing.T, handler http.Handler, cases []routeCase) {
 	t.Helper()
 
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			testCase.run(t, router)
+			testCase.run(t, handler)
 		})
 	}
 }

@@ -2,29 +2,91 @@ version: "2"
 run:
   build-tags:
     - integration
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 linters:
   default: all
   disable:
-    - bodyclose
     - contextcheck
-    - depguard
     - exhaustruct
+    - exhaustruct_v5
     - funlen
     - gochecknoglobals
     - godox
-    - ireturn
-    - maintidx
-    - nolintlint
     - gomodguard
+    - ireturn
     - paralleltest
-    - perfsprint
     - rowserrcheck
     - sqlclosecheck
-    - thelper
-    - wastedassign
     - wrapcheck
     - wsl
   settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: log$
+              desc: write diagnostics through internal/telemetry
+            - pkg: math/rand$
+              desc: use math/rand/v2
+            - pkg: io/ioutil
+              desc: use io and os
+            - pkg: github.com/pkg/errors
+              desc: use errors and fmt.Errorf with %w
+            - pkg: gopkg.in/yaml.v2
+              desc: use gopkg.in/yaml.v3
+            - pkg: github.com/spf13/viper
+              desc: config is loaded with pflag and yaml.v3
+            - pkg: golang.org/x/exp
+              desc: use the standard library
+    errcheck:
+      check-type-assertions: true
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^(fmt\.Print(|f|ln)|print|println)$
+          msg: only the UI and the printer write to the terminal
+        - pattern: ^os\.(Chmod|Create|CreateTemp|Lstat|Mkdir|MkdirAll|MkdirTemp|Open|OpenFile|ReadDir|ReadFile|Remove|RemoveAll|Rename|Stat|WriteFile)$
+          msg: use the injected afero.Fs
+        - pattern: ^http\.(DefaultClient|DefaultTransport|Get|Head|Post|PostForm)$
+          msg: build clients with infra.MakeHTTPClient
+    gocritic:
+      enable-all: true
+      disabled-checks:
+        - appendCombine
+        - evalOrder
+        - hugeParam
+        - rangeValCopy
+        - unnamedResult
+        - whyNoLint
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    perfsprint:
+      strconcat: false
+    spancheck:
+      extra-start-span-signatures:
+        - github.com/evg4b/uncors/internal/telemetry.Start:opentelemetry
+        - github.com/evg4b/uncors/internal/telemetry.StartAt:opentelemetry
+        - github.com/evg4b/uncors/internal/telemetry.StartKind:opentelemetry
+        - github.com/evg4b/uncors/internal/telemetry.StartServer:opentelemetry
+        - github.com/evg4b/uncors/internal/telemetry.StartRequest:opentelemetry
+    tagliatelle:
+      case:
+        rules:
+          json: goCamel
+          yaml: kebab
+        overrides:
+          - pkg: internal/version
+            rules:
+              json: snake
+    testifylint:
+      enable-all: true
     varnamelen:
       ignore-names:
         - form
@@ -32,25 +94,38 @@ linters:
         - ok
         - fs
         - ca
-    tagliatelle:
-      case:
-        rules:
-          yaml: kebab
   exclusions:
-    generated: lax
+    generated: strict
     presets:
       - comments
       - common-false-positives
-      - legacy
       - std-error-handling
     rules:
       - path: _test\.go
         linters:
           - goconst
+          - maintidx
+      - path: (_test\.go|^testing/|^tests/|^tools/)
+        linters:
+          - bodyclose
+          - forbidigo
+          - gosec
+      - path: ^internal/handler/proxy/handler\.go$
+        text: G704
+        linters:
+          - gosec
+      - path: ^internal/handler/router/router_helpers\.go$
+        text: G710
+        linters:
+          - gosec
+      - path: ^internal/telemetry/telemetry\.go$
+        linters:
+          - spancheck
+      - path: ^internal/config/watcher\.go$
+        text: os\.Stat
+        linters:
+          - forbidigo
     paths:
-      - third_party$
-      - builtin$
-      - examples$
       - pkg/urlt
 formatters:
   enable:
@@ -58,9 +133,6 @@ formatters:
     - gofumpt
     - goimports
   exclusions:
-    generated: lax
+    generated: strict
     paths:
-      - third_party$
-      - builtin$
-      - examples$
       - pkg/urlt

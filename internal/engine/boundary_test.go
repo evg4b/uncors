@@ -29,7 +29,7 @@ func TestCoreDoesNotImportTheUI(t *testing.T) {
 
 	args := append([]string{"list", "-deps", "-f", "{{.ImportPath}}"}, core...)
 
-	output, err := exec.CommandContext(t.Context(), "go", args...).Output() //nolint:gosec // fixed arguments
+	output, err := exec.CommandContext(t.Context(), "go", args...).Output()
 	require.NoError(t, err)
 
 	for dependency := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
@@ -42,7 +42,7 @@ func TestCoreDoesNotImportTheUI(t *testing.T) {
 func TestPackagesDoNotImportInternal(t *testing.T) {
 	args := []string{"list", "-deps", "-f", "{{.ImportPath}}", "github.com/evg4b/uncors/pkg/..."}
 
-	output, err := exec.CommandContext(t.Context(), "go", args...).Output() //nolint:gosec // fixed arguments
+	output, err := exec.CommandContext(t.Context(), "go", args...).Output()
 	require.NoError(t, err)
 
 	for dependency := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {

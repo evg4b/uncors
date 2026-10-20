@@ -11,6 +11,7 @@ LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)'"
 COVERAGE_FILE := coverage.out
 BINARY_NAME := uncors
 BINARY_WINDOWS := $(BINARY_NAME).exe
+GOLANGCI_LINT_VERSION := 2.15.0
 
 # Directories and files to clean
 CLEAN_FILES := $(BINARY_NAME) $(BINARY_WINDOWS) $(COVERAGE_FILE)
@@ -37,7 +38,10 @@ format:
 	@gum style --foreground 11 "Formatting code..."
 	@gofmt -l -s -w .
 	@gofumpt -l -w .
+	@[ "$$(golangci-lint version --short)" = "$(GOLANGCI_LINT_VERSION)" ] || \
+		gum style --foreground 214 "golangci-lint $$(golangci-lint version --short) differs from $(GOLANGCI_LINT_VERSION) used on CI"
 	@golangci-lint run --fix
+	@golangci-lint run --fix --build-tags release
 
 ## format-docs: Format documentation files using Prettier
 format-docs:

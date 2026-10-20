@@ -12,7 +12,8 @@ func defineFlags(usage Usage) *pflag.FlagSet {
 		}
 	}
 	flags.StringSliceP("to", "t", []string{}, "Target host with protocol for the resource to be proxied")
-	flags.StringSliceP("from", "f", []string{}, "Local host with protocol for the resource from which proxying will take place") //nolint: lll
+	flags.StringSliceP("from", "f", []string{},
+		"Local host with protocol for the resource from which proxying will take place")
 	flags.String("proxy", "", "HTTP/HTTPS proxy for requests to the real server (uses system proxy by default)")
 	flags.StringP("config", "c", "", "Path to the configuration file (defaults to .uncors.yaml or .uncors.yml)")
 	flags.Bool("interactive", true, "Run application in interactive TUI mode")

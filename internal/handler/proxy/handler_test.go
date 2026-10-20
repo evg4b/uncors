@@ -84,7 +84,7 @@ func TestProxyHandler(t *testing.T) {
 					proxy.WithURLReplacerFactory(replacerFactory),
 				)
 
-				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, targetURL.Path, http.NoBody)
 				testutils.CheckNoError(t, err)
 
 				req.Host = targetURL.Host
@@ -136,7 +136,7 @@ func TestProxyHandler(t *testing.T) {
 					proxy.WithURLReplacerFactory(replacerFactory),
 				)
 
-				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, nil)
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, expectedURL.Path, http.NoBody)
 				testutils.CheckNoError(t, err)
 
 				req.URL.Scheme = expectedURL.Scheme
@@ -171,7 +171,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "/", http.NoBody)
 		testutils.CheckNoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -212,7 +212,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", http.NoBody)
 		require.NoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -245,7 +245,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", http.NoBody)
 		require.NoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -350,7 +350,7 @@ func TestProxyHandler(t *testing.T) {
 		req.Header.Set("Keep-Alive", "timeout=5")
 		req.Header.Set("Proxy-Connection", "keep-alive")
 		req.Header.Set("Proxy-Authorization", "Basic dXNlcjpwYXNz")
-		req.Header.Set("Te", "trailers, deflate")
+		req.Header.Set("TE", "trailers, deflate")
 		req.Header.Set("Trailer", "X-Checksum")
 		req.Header.Set("X-End-To-End", "kept")
 
@@ -365,7 +365,7 @@ func TestProxyHandler(t *testing.T) {
 			assert.Empty(t, forwarded.Header.Values(name), name)
 		}
 
-		assert.Equal(t, "trailers", forwarded.Header.Get("Te"))
+		assert.Equal(t, "trailers", forwarded.Header.Get("TE"))
 		assert.Equal(t, "kept", forwarded.Header.Get("X-End-To-End"))
 	})
 
@@ -474,7 +474,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", http.NoBody)
 		require.NoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -509,7 +509,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/app", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/app", http.NoBody)
 		require.NoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -534,7 +534,7 @@ func TestProxyHandler(t *testing.T) {
 			proxy.WithURLReplacerFactory(replacerFactory),
 		)
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", http.NoBody)
 		require.NoError(t, err)
 
 		req.URL.Scheme = premiumLocalScheme
@@ -615,7 +615,7 @@ func TestProxyHandler(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					recorder := testCase.recorderFactory()
-					req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, "/", nil)
+					req, err := http.NewRequestWithContext(t.Context(), http.MethodOptions, "/", http.NoBody)
 					testutils.CheckNoError(t, err)
 
 					err = handler.ServeHTTP(server.NewResponseRecorder(recorder), req)

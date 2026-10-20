@@ -13,11 +13,11 @@ import (
 func createRoute(router *mux.Router, matcher config.RequestMatcher) *mux.Route {
 	route := router.NewRoute()
 
-	if len(matcher.Path) > 0 {
+	if matcher.Path != "" {
 		route.Path(matcher.Path)
 	}
 
-	if len(matcher.Method) > 0 {
+	if matcher.Method != "" {
 		route.Methods(matcher.Method)
 	}
 
@@ -55,7 +55,6 @@ func registerPrefixHandler(router *mux.Router, prefix string, handler contracts.
 				target += "?" + request.URL.RawQuery
 			}
 
-			//nolint:gosec // G710: the target is the configured prefix; the query cannot change the host
 			http.Redirect(writer, request, target, http.StatusTemporaryRedirect)
 		})
 

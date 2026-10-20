@@ -86,7 +86,7 @@ func TestFactoryMake(t *testing.T) {
 			testutils.CheckNoError(t, err)
 
 			got, got1, err := factory.Make(parseURL)
-			if len(testCase.err) > 0 {
+			if testCase.err != "" {
 				assert.Nil(t, got1)
 				assert.Nil(t, got)
 				require.EqualError(t, err, testCase.err)

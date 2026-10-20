@@ -65,7 +65,7 @@ func compileHostPattern(pattern string) func(string) bool {
 	if !strings.ContainsAny(pattern, "{*") {
 		want := strings.ToLower(pattern)
 
-		return func(host string) bool { return strings.ToLower(host) == want }
+		return func(host string) bool { return strings.EqualFold(host, want) }
 	}
 
 	labels := strings.Split(pattern, ".")

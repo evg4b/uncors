@@ -37,9 +37,9 @@ func TestCacheMiddleware(t *testing.T) {
 		require.Eventually(t, func() bool {
 			before := backend.Count()
 
-			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, url, http.NoBody)
 
-			resp, err := env.Client.Do(req) //nolint:gosec // G704: request targets the in-process test proxy
+			resp, err := env.Client.Do(req)
 			if err != nil || resp == nil {
 				return false
 			}

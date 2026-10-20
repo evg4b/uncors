@@ -33,7 +33,7 @@ import (
 func makeHARRequest(t *testing.T, rawURL string) *http.Request {
 	t.Helper()
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, http.NoBody)
 	require.NoError(t, err)
 
 	return req
@@ -194,15 +194,15 @@ func TestMiddleware_Wrap(t *testing.T) {
 		mdlw, harWriter, path := newHARMiddleware(t)
 
 		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
-			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
-			rw.Header().Set("Www-Authenticate", `Bearer realm="api"`)
+			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
+			rw.Header().Set("WWW-Authenticate", `Bearer realm="api"`)
 			rw.WriteHeader(http.StatusOK)
 
 			return nil
 		})
 
 		req := makeHARRequest(t, "http://example.com/")
-		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
+		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9")
 
 		rec := httptest.NewRecorder()
@@ -265,14 +265,14 @@ func TestMiddleware_Wrap(t *testing.T) {
 		mdlw, harWriter, path := newHARMiddleware(t, har.WithCaptureSecureHeaders(true))
 
 		next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
-			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"}) // nolint: gosec
+			http.SetCookie(rw, &http.Cookie{Name: "session", Value: "abc"})
 			rw.WriteHeader(http.StatusOK)
 
 			return nil
 		})
 
 		req := makeHARRequest(t, "http://example.com/")
-		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"}) // nolint: gosec
+		req.AddCookie(&http.Cookie{Name: "token", Value: "secret"})
 		req.Header.Set("Authorization", "Bearer token123")
 
 		rec := httptest.NewRecorder()

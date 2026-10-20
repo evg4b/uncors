@@ -93,7 +93,7 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 		return ctx, noopSpan
 	}
 
-	return state.tracer.Start(ctx, name) //nolint:spancheck // the caller ends the span
+	return state.tracer.Start(ctx, name)
 }
 
 func StartAt(ctx context.Context, name string, start time.Time) (context.Context, trace.Span) {
@@ -102,7 +102,7 @@ func StartAt(ctx context.Context, name string, start time.Time) (context.Context
 		return ctx, noopSpan
 	}
 
-	return state.tracer.Start(ctx, name, trace.WithTimestamp(start)) //nolint:spancheck // the caller ends the span
+	return state.tracer.Start(ctx, name, trace.WithTimestamp(start))
 }
 
 func StartKind(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
@@ -111,7 +111,7 @@ func StartKind(ctx context.Context, name string, kind trace.SpanKind) (context.C
 		return ctx, noopSpan
 	}
 
-	return state.tracer.Start(ctx, name, trace.WithSpanKind(kind)) //nolint:spancheck // the caller ends the span
+	return state.tracer.Start(ctx, name, trace.WithSpanKind(kind))
 }
 
 // StartServer starts the root span of a new trace for an incoming request:
@@ -122,7 +122,6 @@ func StartServer(ctx context.Context, name string) (context.Context, trace.Span)
 		return ctx, noopSpan
 	}
 
-	//nolint:spancheck // the caller ends the span
 	return state.tracer.Start(ctx, name, trace.WithNewRoot(), trace.WithSpanKind(trace.SpanKindServer))
 }
 
@@ -135,9 +134,9 @@ func StartRequest(request *http.Request, name string) (*http.Request, trace.Span
 		return request, noopSpan
 	}
 
-	ctx, span := state.tracer.Start(request.Context(), name) //nolint:spancheck // the caller ends the span
+	ctx, span := state.tracer.Start(request.Context(), name)
 
-	return request.WithContext(ctx), span //nolint:spancheck // the caller ends the span
+	return request.WithContext(ctx), span
 }
 
 // Run runs fn in a span and records the error it returns. It is for cold

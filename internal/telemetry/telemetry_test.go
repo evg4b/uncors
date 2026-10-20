@@ -52,12 +52,15 @@ func TestDisabledDoesNotAllocate(t *testing.T) {
 		"Fail": func() {
 			_, span := telemetry.Start(ctx, "test.span")
 			telemetry.Fail(span, errTest)
+			span.End()
 		},
 		"guarded SetAttributes": func() {
 			_, span := telemetry.Start(ctx, "test.span")
 			if span.IsRecording() {
 				span.SetAttributes(attribute.String("key", request.URL.String()))
 			}
+
+			span.End()
 		},
 		"metrics": func() {
 			telemetry.RequestStarted(ctx)
@@ -91,6 +94,7 @@ func TestStartRequestKeepsTheRequestWhenDisabled(t *testing.T) {
 	request := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "http://localhost/", nil)
 
 	got, span := telemetry.StartRequest(request, "test.span")
+	defer span.End()
 
 	assert.Same(t, request, got)
 	assert.False(t, span.IsRecording())
@@ -268,7 +272,7 @@ func TestWrapTransport(t *testing.T) {
 		recorded := testutils.Telemetry(t, options...)
 		client := &http.Client{Transport: telemetry.WrapTransport(http.DefaultTransport)}
 
-		request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, upstream.URL, nil)
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, upstream.URL, http.NoBody)
 		require.NoError(t, err)
 
 		response, err := client.Do(request)

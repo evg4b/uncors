@@ -71,7 +71,7 @@ func TestUncleanPaths(t *testing.T) {
 
 	backend := integration.NewBackend(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		_, err := io.WriteString(w, r.Method+" "+r.URL.RequestURI()) //nolint:gosec
+		_, err := io.WriteString(w, r.Method+" "+r.URL.RequestURI())
 		assert.NoError(t, err)
 	})
 	env := integration.New(t, backend, &config.UncorsConfig{

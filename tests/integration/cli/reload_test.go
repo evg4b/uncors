@@ -85,7 +85,7 @@ func TestReloadWithBrokenMappingKeepsServing(t *testing.T) {
 
 	url := fmt.Sprintf("http://localhost:%d/", port)
 	get := func() (int, error) {
-		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		if err != nil {
 			return 0, err
 		}

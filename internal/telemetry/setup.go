@@ -110,23 +110,27 @@ func setupExporters(ctx context.Context, version string) (func(context.Context) 
 	providers := Providers{Tracer: tracerProvider, TraceConnections: traceConnections}
 	otel.SetTracerProvider(tracerProvider)
 
-	loggerProvider, err := newLoggerProvider(ctx, res)
-	if err != nil {
-		return nil, errors.Join(err, shutdown(ctx))
-	}
+	if exporterEnabled("LOGS") {
+		var loggerProvider *sdklog.LoggerProvider
 
-	if loggerProvider != nil {
+		loggerProvider, err = newLoggerProvider(ctx, res)
+		if err != nil {
+			return nil, errors.Join(err, shutdown(ctx))
+		}
+
 		providers.Logger = loggerProvider
 		shutdowns = append(shutdowns, loggerProvider.Shutdown)
 		otel.SetLoggerProvider(loggerProvider)
 	}
 
-	meterProvider, err := newMeterProvider(ctx, res)
-	if err != nil {
-		return nil, errors.Join(err, shutdown(ctx))
-	}
+	if exporterEnabled("METRICS") {
+		var meterProvider *sdkmetric.MeterProvider
 
-	if meterProvider != nil {
+		meterProvider, err = newMeterProvider(ctx, res)
+		if err != nil {
+			return nil, errors.Join(err, shutdown(ctx))
+		}
+
 		providers.Meter = meterProvider
 		shutdowns = append(shutdowns, meterProvider.Shutdown)
 		otel.SetMeterProvider(meterProvider)
@@ -144,13 +148,13 @@ func setupExporters(ctx context.Context, version string) (func(context.Context) 
 	return shutdown, nil
 }
 
-// newLoggerProvider returns nil when OTEL_LOGS_EXPORTER is "none": Jaeger,
+// exporterEnabled is false when OTEL_<signal>_EXPORTER is "none": Jaeger,
 // for one, accepts spans but not logs.
-func newLoggerProvider(ctx context.Context, res *resource.Resource) (*sdklog.LoggerProvider, error) {
-	if os.Getenv("OTEL_LOGS_EXPORTER") == "none" {
-		return nil, nil //nolint:nilnil // no provider is a valid outcome
-	}
+func exporterEnabled(signal string) bool {
+	return os.Getenv("OTEL_"+signal+"_EXPORTER") != "none"
+}
 
+func newLoggerProvider(ctx context.Context, res *resource.Resource) (*sdklog.LoggerProvider, error) {
 	var options []otlploghttp.Option
 
 	if !configured("LOGS") {
@@ -169,10 +173,6 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource) (*sdklog.Log
 }
 
 func newMeterProvider(ctx context.Context, res *resource.Resource) (*sdkmetric.MeterProvider, error) {
-	if os.Getenv("OTEL_METRICS_EXPORTER") == "none" {
-		return nil, nil //nolint:nilnil // no provider is a valid outcome
-	}
-
 	var options []otlpmetrichttp.Option
 
 	if !configured("METRICS") {

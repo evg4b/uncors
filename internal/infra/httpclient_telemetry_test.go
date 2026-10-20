@@ -32,7 +32,7 @@ func TestHTTPClientTracing(t *testing.T) {
 
 		ctx, parent := telemetry.Start(context.Background(), "test.parent")
 
-		request, err := http.NewRequestWithContext(ctx, http.MethodGet, upstream.URL, nil)
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, upstream.URL, http.NoBody)
 		require.NoError(t, err)
 
 		httpClient, err := infra.MakeHTTPClient("")

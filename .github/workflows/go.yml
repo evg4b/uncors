@@ -19,10 +19,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - &setup-go
+        name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12.2
+          version: v2.15.0
+
+      - name: Lint release build
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          args: --build-tags=release
 
   test:
     name: Test code
@@ -30,11 +42,7 @@ jobs:
     steps:
       - *fast-clone
 
-      - &setup-go
-        name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
+      - *setup-go
 
       - name: Test
         run: go test -tags release -timeout 1m -race -v -coverprofile=coverage.out ./...

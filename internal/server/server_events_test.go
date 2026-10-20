@@ -52,7 +52,7 @@ func TestServerPublishesRequestEvents(t *testing.T) {
 		t.Helper()
 
 		url := hosts.Loopback.HTTPPort(port).String() + path
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		require.NoError(t, err)
 
 		response, err := http.DefaultClient.Do(req)

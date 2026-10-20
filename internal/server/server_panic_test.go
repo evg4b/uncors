@@ -64,7 +64,7 @@ func TestServerRecoversHandlerPanics(t *testing.T) {
 		t.Helper()
 
 		url := hosts.Loopback.HTTPPort(port).String() + path
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, http.NoBody)
 		require.NoError(t, err)
 		req.Header.Set(headers.Origin, "http://localhost:3000")
 

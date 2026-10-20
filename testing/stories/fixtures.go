@@ -103,7 +103,7 @@ func traffic() []events.Event {
 
 	for index, req := range completedRequests {
 		evts = append(evts, events.RequestCompleted{
-			ID:       uint64(len(pendingRequests) + index + 1), //nolint:gosec // small positive index
+			ID:       uint64(len(pendingRequests) + index + 1),
 			Handler:  req.handler,
 			Rewrite:  req.rewrite,
 			Data:     &contracts.RequestData{Method: req.method, URL: parseURL(req.url), Code: req.code},

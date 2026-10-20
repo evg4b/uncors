@@ -58,18 +58,18 @@ func TestPrintResponse(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			t.Run("should print single line", testutils.WithTrueColor(func(t *testing.T) {
+			t.Run("should print single line", func(t *testing.T) {
 				var buf strings.Builder
 				tui.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
 				output := strings.Trim(buf.String(), "\n")
 				assert.Equal(t, 1, lipgloss.Height(output))
-			}))
+			})
 
-			t.Run("should match snapshot", testutils.WithTrueColor(func(t *testing.T) {
+			t.Run("should match snapshot", func(t *testing.T) {
 				var buf strings.Builder
 				tui.NewCliOutput(&buf).Request(events.RequestCompleted{Data: testCase.data})
 				testutils.MatchSnapshot(t, buf.String())
-			}))
+			})
 		})
 	}
 }
@@ -130,9 +130,9 @@ func TestFormatRequest(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		t.Run(testCase.name, testutils.WithTrueColor(func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			testutils.MatchSnapshot(t, tui.FormatRequest(testCase.event))
-		}))
+		})
 	}
 
 	t.Run("every handler label fits on one line", func(t *testing.T) {

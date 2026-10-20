@@ -160,7 +160,7 @@ func ValidateGlobPattern(field, value string) error {
 	return nil
 }
 
-func ValidateStringEnum(_ string, value string, options []string) error {
+func ValidateStringEnum(_, value string, options []string) error {
 	if !slices.Contains(options, value) {
 		return &ValidationError{fmt.Sprintf("'%s' is not a valid option", value)}
 	}

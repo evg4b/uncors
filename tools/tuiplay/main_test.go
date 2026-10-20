@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -38,7 +39,9 @@ func TestRunUnknownStory(t *testing.T) {
 }
 
 func key(text string) tea.KeyPressMsg {
-	return tea.KeyPressMsg(tea.Key{Text: text, Code: []rune(text)[0]})
+	code, _ := utf8.DecodeRuneInString(text)
+
+	return tea.KeyPressMsg(tea.Key{Text: text, Code: code})
 }
 
 func special(code rune) tea.KeyPressMsg {

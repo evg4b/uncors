@@ -95,7 +95,7 @@ func TestProxyStreaming(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), firstEventWait)
 			defer cancel()
 
-			request, err := http.NewRequestWithContext(ctx, http.MethodGet, env.URL(host, "/events"), nil)
+			request, err := http.NewRequestWithContext(ctx, http.MethodGet, env.URL(host, "/events"), http.NoBody)
 			require.NoError(t, err)
 
 			response, err := env.Client.Do(request)

@@ -410,8 +410,7 @@ func requireClosedByProxy(t *testing.T, socket *websocket.Conn) {
 	err := websocket.Message.Receive(socket, &reply)
 	require.Error(t, err)
 
-	var netErr net.Error
-	if errors.As(err, &netErr) {
+	if netErr, ok := errors.AsType[net.Error](err); ok {
 		require.False(t, netErr.Timeout(), "the proxy did not close the connection: %v", err)
 	}
 }

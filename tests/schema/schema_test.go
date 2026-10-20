@@ -14,12 +14,16 @@ import (
 )
 
 func loadUncorsSchema(t *testing.T) gojsonschema.JSONLoader {
-	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "../../schema.json")
+	t.Helper()
+
+	jsonSchemaPath := filepath.Join(testutils.CurrentDir(t), "..", "..", "schema.json")
 
 	return gojsonschema.NewReferenceLoader("file://" + jsonSchemaPath)
 }
 
 func loadFileSchema(t *testing.T, fs afero.Fs, file string) gojsonschema.JSONLoader {
+	t.Helper()
+
 	targetJSONFile := schema.TransformToJSON(t, fs, file)
 
 	return gojsonschema.NewReferenceLoader("file://" + targetJSONFile)

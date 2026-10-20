@@ -56,10 +56,14 @@ func readErrors(t *testing.T, fs afero.Fs, filePath string) []string {
 }
 
 func LoadTestCases(t *testing.T, fs afero.Fs, parts ...string) []TestCase {
+	t.Helper()
+
 	return loadTestCasesInternal(t, fs, false, parts...)
 }
 
 func LoadTestCasesWithErrors(t *testing.T, fs afero.Fs, parts ...string) []TestCase {
+	t.Helper()
+
 	return loadTestCasesInternal(t, fs, true, parts...)
 }
 

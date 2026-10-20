@@ -25,7 +25,7 @@ func (e *Env) Do(t *testing.T, req *http.Request) *Result {
 
 	before := e.Backend.Count()
 
-	resp, err := e.Client.Do(req) //nolint:gosec // G704: requests target the in-process test proxy
+	resp, err := e.Client.Do(req)
 	require.NoError(t, err)
 
 	body, err := io.ReadAll(resp.Body)
@@ -49,7 +49,7 @@ func (e *Env) Do(t *testing.T, req *http.Request) *Result {
 func NewRequest(t *testing.T, method, url string) *http.Request {
 	t.Helper()
 
-	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, http.NoBody)
 	require.NoError(t, err)
 
 	return req

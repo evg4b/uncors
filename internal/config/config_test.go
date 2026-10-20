@@ -270,9 +270,9 @@ func TestLoadConfiguration(t *testing.T) {
 
 		for _, name := range []string{".uncors.yaml", ".uncors.yml"} {
 			t.Run("loads "+name+" when no config flag", func(t *testing.T) {
-				fs := testutils.FsFromMap(t, map[string]string{name: minimalConfig})
+				memFs := testutils.FsFromMap(t, map[string]string{name: minimalConfig})
 
-				actual, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+				actual, configPath, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{})
 				require.NoError(t, err)
 
 				assert.Equal(t, minimalExpected, actual)
@@ -281,44 +281,44 @@ func TestLoadConfiguration(t *testing.T) {
 		}
 
 		t.Run("prefers .uncors.yaml over .uncors.yml", func(t *testing.T) {
-			fs := testutils.FsFromMap(t, map[string]string{
+			memFs := testutils.FsFromMap(t, map[string]string{
 				".uncors.yaml": minimalConfig,
 				".uncors.yml":  incorrectConfig,
 			})
 
-			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			_, configPath, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{})
 			require.NoError(t, err)
 
 			assert.Equal(t, ".uncors.yaml", configPath)
 		})
 
 		t.Run("ignores a directory named .uncors.yaml", func(t *testing.T) {
-			fs := testutils.FsFromMap(t, map[string]string{".uncors.yml": minimalConfig})
-			require.NoError(t, fs.Mkdir(".uncors.yaml", os.ModePerm))
+			memFs := testutils.FsFromMap(t, map[string]string{".uncors.yml": minimalConfig})
+			require.NoError(t, memFs.Mkdir(".uncors.yaml", os.ModePerm))
 
-			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			_, configPath, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{})
 			require.NoError(t, err)
 
 			assert.Equal(t, ".uncors.yml", configPath)
 		})
 
 		t.Run("config flag takes precedence", func(t *testing.T) {
-			fs := testutils.FsFromMap(t, map[string]string{
+			memFs := testutils.FsFromMap(t, map[string]string{
 				".uncors.yaml":    incorrectConfig,
 				minimalConfigPath: minimalConfig,
 			})
 
-			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{params.Config, minimalConfigPath})
+			_, configPath, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{params.Config, minimalConfigPath})
 			require.NoError(t, err)
 
 			assert.Equal(t, minimalConfigPath, configPath)
 		})
 
 		t.Run("CLI mappings are merged into the default config", func(t *testing.T) {
-			fs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": minimalConfig})
+			memFs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": minimalConfig})
 			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
 
-			actual, _, err := config.LoadConfiguration(t.Context(), fs, nil, args)
+			actual, _, err := config.LoadConfiguration(t.Context(), memFs, nil, args)
 			require.NoError(t, err)
 
 			assert.Equal(t, config.Mappings{
@@ -328,9 +328,9 @@ func TestLoadConfiguration(t *testing.T) {
 		})
 
 		t.Run("reports errors from the default config", func(t *testing.T) {
-			fs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": corruptedConfig})
+			memFs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": corruptedConfig})
 
-			_, _, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			_, _, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{})
 			require.ErrorContains(t, err, "failed to read config file '.uncors.yaml'")
 		})
 	})
