@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// collector is an OTLP/HTTP endpoint that records the paths it receives and
-// answers every export with status.
 type collector struct {
 	mu    sync.Mutex
 	paths []string
@@ -51,9 +49,6 @@ func startCollector(t *testing.T, status int) *collector {
 	return received
 }
 
-// setup runs Setup, records something on every signal, and flushes it. It
-// returns the export errors reported and puts back the package state Setup
-// changes.
 func setup(t *testing.T) ([]reported, error) {
 	t.Helper()
 

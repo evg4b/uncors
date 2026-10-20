@@ -86,7 +86,6 @@ func Stories() []Story {
 	}
 }
 
-// Find returns the story with the given name.
 func Find(name string) (Story, bool) {
 	for _, story := range Stories() {
 		if story.Name == name {

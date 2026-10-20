@@ -242,10 +242,6 @@ func TestProxyHandler(t *testing.T) {
 		assert.Equal(t, "sid", cookies[0].Name)
 		assert.Equal(t, "abc", cookies[0].Value)
 		assert.True(t, cookies[0].Secure)
-		// The backend's own host must not leak to the client. (The proxy currently
-		// rewrites it to a port-bearing domain that the Go client drops as invalid,
-		// leaving it empty; a fixed proxy would set "app.example.local". Either way
-		// it must no longer reference the loopback backend.)
 		assert.NotContains(t, cookies[0].Domain, "127.0.0.1")
 	})
 

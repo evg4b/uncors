@@ -171,7 +171,6 @@ func (output *CliOutput) renderLevel(level outputType) {
 	output.buffer.WriteByte(' ')
 }
 
-// Indents the lines after the first to the column where the first one starts.
 func (output *CliOutput) renderMessage(msg string) {
 	msg = strings.TrimSuffix(msg, "\n")
 

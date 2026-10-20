@@ -81,7 +81,6 @@ func (h *Handler) ServeHTTP(writer contracts.ResponseWriter, request *contracts.
 	return nil
 }
 
-// source names the script in logs.
 func (h *Handler) source() slog.Attr {
 	if h.script.Script != "" {
 		return slog.String("script", "inline")

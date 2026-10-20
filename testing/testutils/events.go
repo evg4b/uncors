@@ -6,7 +6,6 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 )
 
-// EventRecorder is an events.Publisher that keeps every event it receives.
 type EventRecorder struct {
 	mu     sync.Mutex
 	events []events.Event

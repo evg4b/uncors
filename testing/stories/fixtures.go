@@ -77,7 +77,6 @@ var completedRequests = []request{
 	{http.MethodDelete, "https://api.example.com/v1/users/42", events.HandlerScript, http.StatusInternalServerError, nil},
 }
 
-// started is the messages for requests that are still in flight.
 func started(requests ...request) []tea.Msg {
 	msgs := make([]tea.Msg, 0, len(requests))
 
@@ -128,7 +127,6 @@ func eventMsgs(evts ...events.Event) []tea.Msg {
 	return msgs
 }
 
-// rendered renders events the way the app writes them to the history.
 func rendered(evts ...events.Event) []string {
 	var buf bytes.Buffer
 

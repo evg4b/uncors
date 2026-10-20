@@ -58,8 +58,6 @@ func (m *HistoryWidget) Update(msg tea.Msg) (*HistoryWidget, tea.Cmd) {
 	return m, nil
 }
 
-// AppendLine adds output to the history and keeps it scrolled to the bottom
-// unless the user scrolled up.
 func (m *HistoryWidget) AppendLine(line string) {
 	evicted := m.hist.AppendLine(line)
 

@@ -74,7 +74,6 @@ func (r *ResponseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return conn, buffered, nil
 }
 
-// Written is the number of body bytes sent to the client.
 func (r *ResponseRecorder) Written() int64 {
 	return r.written
 }

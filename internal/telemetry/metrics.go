@@ -9,7 +9,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
-// Values of the uncors.result metric attribute.
 const (
 	ResultOK          = "ok"
 	ResultError       = "error"
@@ -29,7 +28,6 @@ const (
 	resultKey  = attribute.Key("uncors.result")
 )
 
-// RequestMetrics describes a request the server finished.
 type RequestMetrics struct {
 	Method        string
 	Handler       string

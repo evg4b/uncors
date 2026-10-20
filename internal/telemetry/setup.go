@@ -63,7 +63,6 @@ func Setup(ctx context.Context, version string) func(context.Context) error {
 	return shutdown
 }
 
-// Endpoint is the OTLP/HTTP traces endpoint the exporter sends to.
 func Endpoint() string {
 	for _, key := range []string{envPrefix + "TRACES_ENDPOINT", envPrefix + "ENDPOINT"} {
 		if value := os.Getenv(key); value != "" {
@@ -169,7 +168,6 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource) (*sdklog.Log
 	), nil
 }
 
-// newMeterProvider returns nil when OTEL_METRICS_EXPORTER is "none".
 func newMeterProvider(ctx context.Context, res *resource.Resource) (*sdkmetric.MeterProvider, error) {
 	if os.Getenv("OTEL_METRICS_EXPORTER") == "none" {
 		return nil, nil //nolint:nilnil // no provider is a valid outcome
@@ -199,8 +197,6 @@ func newMeterProvider(ctx context.Context, res *resource.Resource) (*sdkmetric.M
 	), nil
 }
 
-// configured reports whether the user chose the signal's endpoint or
-// transport security through the OTEL_EXPORTER_OTLP_* variables.
 func configured(signal string) bool {
 	for _, key := range []string{
 		envPrefix + "ENDPOINT",

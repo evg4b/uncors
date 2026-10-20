@@ -68,7 +68,6 @@ func (h *Handler) handle(resp http.ResponseWriter, req *http.Request) error {
 		return fmt.Errorf("failed to create request to original source: %w", err)
 	}
 
-	// The upstream URL is built once, for the span and the logs.
 	var target string
 
 	if telemetry.Enabled() {

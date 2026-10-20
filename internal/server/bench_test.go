@@ -43,8 +43,6 @@ func (discardLogs) Export(context.Context, []sdklog.Record) error { return nil }
 func (discardLogs) Shutdown(context.Context) error                { return nil }
 func (discardLogs) ForceFlush(context.Context) error              { return nil }
 
-// benchmarkRequest serves a proxied request through the router. The upstream
-// client goes through telemetry.WrapTransport, as in infra.MakeHTTPClient.
 func benchmarkRequest(b *testing.B) {
 	b.Helper()
 
@@ -71,14 +69,10 @@ func benchmarkRequest(b *testing.B) {
 	}
 }
 
-// BenchmarkRequestDisabled measures a request with tracing off: its cost is
-// the one the instrumentation must not add to.
 func BenchmarkRequestDisabled(b *testing.B) {
 	benchmarkRequest(b)
 }
 
-// BenchmarkRequestEnabled measures a request with tracing on, through the SDK
-// pipelines Setup builds, exporting to nowhere.
 func BenchmarkRequestEnabled(b *testing.B) {
 	signals := map[string]struct{ logs, metrics bool }{
 		"traces":              {},

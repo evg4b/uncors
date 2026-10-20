@@ -49,7 +49,6 @@ type (
 
 type AppOption = func(*UncorsApp)
 
-// WithMemoryWidget replaces the memory widget, for example to show a fixed value.
 func WithMemoryWidget(widget *MemoryWidget) AppOption {
 	return func(app *UncorsApp) {
 		app.memWidget = widget
@@ -283,7 +282,6 @@ func (m *UncorsApp) watchEventsCmd() tea.Cmd {
 	}
 }
 
-// EventMsg is the message the app and its widgets receive for an engine event.
 func EventMsg(event events.Event) tea.Msg {
 	switch typed := event.(type) {
 	case events.RequestStarted:
