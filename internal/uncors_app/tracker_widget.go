@@ -138,8 +138,7 @@ func (m *TrackerWidget) View() tea.View {
 		url := pendingTextStyle.Render(urlStr)
 
 		viewBuilder.WriteString(styles.HandlerLabel(req.Handler))
-		viewBuilder.WriteRune(' ')
-		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View() + " " + req.Method))
+		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View() + " " + tui.MethodLabel(req.Method)))
 		viewBuilder.WriteRune(' ')
 		viewBuilder.WriteString(url)
 

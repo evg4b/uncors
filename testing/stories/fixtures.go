@@ -151,3 +151,63 @@ func numberedLines(count int) []string {
 
 	return lines
 }
+
+var handlerKinds = []events.HandlerKind{
+	events.HandlerProxy,
+	events.HandlerCache,
+	events.HandlerMock,
+	events.HandlerScript,
+	events.HandlerStatic,
+	events.HandlerOptions,
+}
+
+var statusCodes = []int{
+	http.StatusSwitchingProtocols,
+	http.StatusOK,
+	http.StatusNotModified,
+	http.StatusNotFound,
+	http.StatusBadGateway,
+}
+
+func handlerRequests() []request {
+	requests := make([]request, 0, len(handlerKinds))
+	for _, kind := range handlerKinds {
+		if kind == events.HandlerOptions {
+			requests = append(requests, request{http.MethodOptions, usersURL, kind, http.StatusNoContent, nil})
+
+			continue
+		}
+
+		requests = append(requests, request{http.MethodGet, usersURL, kind, http.StatusOK, nil})
+	}
+
+	return requests
+}
+
+func completed(requests ...request) []events.Event {
+	evts := make([]events.Event, 0, len(requests))
+
+	for index, req := range requests {
+		evts = append(evts, events.RequestCompleted{
+			ID:       uint64(index + 1),
+			Handler:  req.handler,
+			Data:     &contracts.RequestData{Method: req.method, URL: parseURL(req.url), Code: req.code},
+			Duration: time.Millisecond,
+		})
+	}
+
+	return evts
+}
+
+func statuses() []events.Event {
+	requests := make([]request, 0, len(statusCodes))
+	for _, code := range statusCodes {
+		requests = append(requests, request{http.MethodGet, usersURL, events.HandlerProxy, code, nil})
+	}
+
+	return append(completed(requests...), events.RequestCompleted{
+		ID:      uint64(len(requests) + 1),
+		Handler: events.HandlerProxy,
+		Data:    &contracts.RequestData{Method: http.MethodGet, URL: parseURL(usersURL), Cancelled: true},
+	})
+}

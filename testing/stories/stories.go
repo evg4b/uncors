@@ -54,8 +54,17 @@ func Stories() []Story {
 		{Name: "tracker/long-url", New: func() tea.Model {
 			return widgetStory(uncorsapp.NewTrackerWidget(), nil, started(longRequest)...)
 		}},
+		{Name: "tracker/handlers", New: func() tea.Model {
+			return widgetStory(uncorsapp.NewTrackerWidget(), nil, started(handlerRequests()...)...)
+		}},
 		{Name: "history/short", Height: historyHeight, New: func() tea.Model {
 			return historyStory(rendered(traffic()...))
+		}},
+		{Name: "history/handlers", Height: historyHeight, New: func() tea.Model {
+			return historyStory(rendered(completed(handlerRequests()...)...))
+		}},
+		{Name: "history/statuses", Height: historyHeight, New: func() tea.Model {
+			return historyStory(rendered(statuses()...))
 		}},
 		{Name: "history/overflow", Height: historyHeight, New: func() tea.Model {
 			return historyStory(numberedLines(overflowLines))

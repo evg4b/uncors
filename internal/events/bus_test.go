@@ -278,7 +278,7 @@ func TestBusSubscription(t *testing.T) {
 func TestHandlerKindString(t *testing.T) {
 	require.Equal(t, "PROXY", events.HandlerProxy.String())
 	require.Equal(t, "CACHE", events.HandlerCache.String())
-	require.Equal(t, "OPTIONS", events.HandlerOptions.String())
+	require.Equal(t, "OPTNS", events.HandlerOptions.String())
 	require.Equal(t, "NONE", events.HandlerNone.String())
 	require.Equal(t, "UNKNOWN", events.HandlerKind(200).String())
 }

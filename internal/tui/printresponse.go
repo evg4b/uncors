@@ -2,9 +2,11 @@ package tui
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
@@ -12,13 +14,15 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-const RequestPrefixWidth = 13
+const (
+	RequestPrefixWidth = 11
+	methodWidth        = 5
+)
 
 func FormatRequest(event events.RequestCompleted) string {
 	var builder strings.Builder
 
 	builder.WriteString(styles.HandlerLabel(event.Handler))
-	builder.WriteByte(' ')
 	builder.WriteString(printResponse(event.Data))
 
 	if event.Rewrite != nil {
@@ -45,13 +49,27 @@ func printResponse(data *contracts.RequestData) string {
 		prefixStyle = styles.HTTPStatusCancelledBlockStyle
 		textStyle = styles.HTTPStatusCancelledTextStyle
 	} else {
-		prefix = fmt.Sprintf("%d %s", data.Code, data.Method)
+		prefix = fmt.Sprintf("%d %s", data.Code, MethodLabel(data.Method))
 		prefixStyle, textStyle = getStyles(data.Code)
 	}
 
 	prefixStyle = prefixStyle.Width(RequestPrefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(urlt.URL_String(data.URL)))
+}
+
+var methodLabels = map[string]string{
+	http.MethodDelete:  "DEL",
+	http.MethodOptions: "OPTS",
+	http.MethodConnect: "CONN",
+}
+
+func MethodLabel(method string) string {
+	if label, ok := methodLabels[method]; ok {
+		return label
+	}
+
+	return ansi.Truncate(method, methodWidth, "…")
 }
 
 func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {

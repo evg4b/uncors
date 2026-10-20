@@ -14,22 +14,26 @@ Common problems with UNCORS and how to fix them.
 Every handled request is printed as one line:
 
 ```text
- CACHE     200 GET      http://api.local:3000/users
- PROXY     200 GET      http://api.local:3000/old → /new
- PROXY     502 GET      http://api.local:3000/orders
+ CACHE  200 GET    http://api.local:3000/users
+ PROXY  200 GET    http://api.local:3000/old → /new
+ PROXY  502 GET    http://api.local:3000/orders
   ↳ failed to execute request: dial tcp 10.0.0.5:443: connect: connection refused
 ```
 
 The label names what produced the response:
 
-| Label     | Response came from                                          |
-| --------- | ----------------------------------------------------------- |
-| `PROXY`   | The upstream server (`to`), including cache misses.         |
-| `CACHE`   | The response cache. The first request for a URL is `PROXY`. |
-| `MOCK`    | A mock.                                                     |
-| `SCRIPT`  | A Lua script.                                               |
-| `STATIC`  | A static directory.                                         |
-| `OPTIONS` | UNCORS's own preflight answer.                              |
+| Label   | Response came from                                          |
+| ------- | ----------------------------------------------------------- |
+| `PROXY` | The upstream server (`to`), including cache misses.         |
+| `CACHE` | The response cache. The first request for a URL is `PROXY`. |
+| `MOCK`  | A mock.                                                     |
+| `SCRPT` | A Lua script.                                               |
+| `STATC` | A static directory.                                         |
+| `OPTNS` | UNCORS's own preflight answer.                              |
+
+Methods are shortened to fit: `DELETE` shows as `DEL`, `OPTIONS` as `OPTS`,
+`CONNECT` as `CONN`, and other methods longer than five letters are cut with
+`…`.
 
 A line without a label is a request no mapping took, for example one for a host
 that isn't mapped. `→` shows the path a rewrite sent the request to. A request
@@ -390,7 +394,7 @@ A connection shows in the request log as a `PROXY` request with status `101`,
 which finishes when the connection closes. Another status means the upstream
 server refused the handshake, and the client got its response as is: check the
 upstream logs and the `Origin` it received (UNCORS rewrites it to the upstream
-host). `MOCK` or `SCRIPT` means a mock or a script route matches the WebSocket
+host). `MOCK` or `SCRPT` means a mock or a script route matches the WebSocket
 path and answers the handshake instead.
 
 [`allowed-origins`](Configuration#allowed-origins) does not refuse WebSocket

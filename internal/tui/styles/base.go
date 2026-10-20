@@ -8,7 +8,7 @@ var underlineStyle = lipgloss.NewStyle().
 var PaddedStyle = lipgloss.NewStyle().
 	Padding(0, 1)
 
-const baseBlockWidth = 9
+const baseBlockWidth = 7
 
 var blockStyle = lipgloss.NewStyle().
 	Foreground(ContrastColor).

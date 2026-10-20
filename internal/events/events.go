@@ -28,9 +28,9 @@ var handlerNames = map[HandlerKind]string{
 	HandlerProxy:   "PROXY",
 	HandlerCache:   "CACHE",
 	HandlerMock:    "MOCK",
-	HandlerScript:  "SCRIPT",
-	HandlerStatic:  "STATIC",
-	HandlerOptions: "OPTIONS",
+	HandlerScript:  "SCRPT",
+	HandlerStatic:  "STATC",
+	HandlerOptions: "OPTNS",
 }
 
 func (k HandlerKind) String() string {

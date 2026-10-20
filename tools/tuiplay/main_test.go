@@ -66,12 +66,12 @@ func TestPicker(t *testing.T) {
 
 		chooser.Update(special(tea.KeyDown))
 		view := ansi.Strip(chooser.View().Content)
-		assert.Contains(t, view, "› history/overflow")
+		assert.Contains(t, view, "› history/handlers")
 		assert.NotContains(t, view, "tracker")
 
 		_, cmd := chooser.Update(special(tea.KeyEnter))
 		require.NotNil(t, cmd)
-		assert.Equal(t, "history/overflow", chooser.chosen)
+		assert.Equal(t, "history/handlers", chooser.chosen)
 		assert.Empty(t, chooser.View().Content)
 	})
 

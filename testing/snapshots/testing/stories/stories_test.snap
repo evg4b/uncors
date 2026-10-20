@@ -78,132 +78,132 @@ pgdn/f page down
 ---
 
 [TestStories/tracker/single/40 - 1]
- PROXY     ▱▱▱ GET      https://api.exam
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+ PROXY  ▱▱▱ GET    https://api.example.c
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/single/80 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/tracker/single/120 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/tracker/many/40 - 1]
- PROXY     ▱▱▱ GET      https://api.exam
- MOCK      ▱▱▱ POST     http://localhost
- SCRIPT    ▱▱▱ PUT      http://localhost
- CACHE     ▱▱▱ GET      https://api.exam
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+ PROXY  ▱▱▱ GET    https://api.example.c
+ MOCK   ▱▱▱ POST   http://localhost:3000
+ SCRPT  ▱▱▱ PUT    http://localhost:3000
+ CACHE  ▱▱▱ GET    https://api.example.c
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/many/80 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
- MOCK      ▱▱▱ POST     http://localhost:3000/api/login
- SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
- CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ POST   http://localhost:3000/api/login
+ SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 ---
 
 [TestStories/tracker/many/120 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
- MOCK      ▱▱▱ POST     http://localhost:3000/api/login
- SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
- CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ POST   http://localhost:3000/api/login
+ SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 ---
 
 [TestStories/tracker/long-url/40 - 1]
- PROXY     ▱▱▱ GET      https://api.exam
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+ PROXY  ▱▱▱ GET    https://api.example.c
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/long-url/80 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/search?query=very+long+search
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/search?query=very+long+search+term
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+term[m
 ---
 
 [TestStories/tracker/long-url/120 - 1]
- PROXY     ▱▱▱ GET      https://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-5
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-5[m
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-50&sor
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-50&sor[m
 ---
 
 [TestStories/history/short/40 - 1]
- PROXY     200 GET      https://api.exam
- MOCK      201 POST     http://localhost
- STATIC    200 GET      http://localhost
- CACHE     304 GET      https://api.exam
- OPTIONS   204 OPTIONS  https://api.exam
- PROXY     404 GET      https://api.exam
- SCRIPT    500 DELETE   https://api.exam
+ PROXY  200 GET    https://api.example.c
+ MOCK   201 POST   http://localhost:3000
+ STATC  200 GET    http://localhost:3000
+ CACHE  304 GET    https://api.example.c
+ OPTNS  204 OPTS   https://api.example.c
+ PROXY  404 GET    https://api.example.c
+ SCRPT  500 DEL    https://api.example.c
 
 
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 
 
 
 ---
 
 [TestStories/history/short/80 - 1]
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 
 
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 
 
 
 ---
 
 [TestStories/history/short/120 - 1]
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 
 
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 
 
 
@@ -364,13 +364,13 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https:
 
- PROXY     200 GET      https://api.exam
- MOCK      201 POST     http://localhost
- STATIC    200 GET      http://localhost
- CACHE     304 GET      https://api.exam
- OPTIONS   204 OPTIONS  https://api.exam
- PROXY     404 GET      https://api.exam
- SCRIPT    500 DELETE   https://api.exam
+ PROXY  200 GET    https://api.example.c
+ MOCK   201 POST   http://localhost:3000
+ STATC  200 GET    http://localhost:3000
+ CACHE  304 GET    https://api.example.c
+ OPTNS  204 OPTS   https://api.example.c
+ PROXY  404 GET    https://api.example.c
+ SCRPT  500 DEL    https://api.example.c
 ? toggle help • r reload • q quit
 [38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ████[m
 [38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██  [m
@@ -388,13 +388,13 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
 ---
 
@@ -415,13 +415,13 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 ? toggle help • r reload • q quit                                    [ 42.5 MB ]
 [38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ██████  ███████[m
 [38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██   ██ ██     [m
@@ -439,13 +439,13 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
@@ -466,13 +466,13 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 ? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
 [38;2;220;1;0m██    ██ ███    ██ [38;2;255;212;0m ██████  ██████  ██████  ███████[m
 [38;2;220;1;0m██    ██ ████   ██ [38;2;255;212;0m██      ██    ██ ██   ██ ██     [m
@@ -490,13 +490,13 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
@@ -512,17 +512,17 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https:
 
- PROXY     200 GET      https://api.exam
- MOCK      201 POST     http://localhost
- STATIC    200 GET      http://localhost
- CACHE     304 GET      https://api.exam
- OPTIONS   204 OPTIONS  https://api.exam
- PROXY     404 GET      https://api.exam
- SCRIPT    500 DELETE   https://api.exam
- PROXY     ▱▱▱ GET      https://api.exam
- MOCK      ▱▱▱ POST     http://localhost
- SCRIPT    ▱▱▱ PUT      http://localhost
- CACHE     ▱▱▱ GET      https://api.exam
+ PROXY  200 GET    https://api.example.c
+ MOCK   201 POST   http://localhost:3000
+ STATC  200 GET    http://localhost:3000
+ CACHE  304 GET    https://api.example.c
+ OPTNS  204 OPTS   https://api.example.c
+ PROXY  404 GET    https://api.example.c
+ SCRPT  500 DEL    https://api.example.c
+ PROXY  ▱▱▱ GET    https://api.example.c
+ MOCK   ▱▱▱ POST   http://localhost:3000
+ SCRPT  ▱▱▱ PUT    http://localhost:3000
+ CACHE  ▱▱▱ GET    https://api.example.c
 ? toggle help • r reload • q quit
 
                                version:
@@ -536,17 +536,17 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
 
 ---
@@ -563,17 +563,17 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
- MOCK      ▱▱▱ POST     http://localhost:3000/api/login
- SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
- CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ POST   http://localhost:3000/api/login
+ SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
 ? toggle help • r reload • q quit                                    [ 42.5 MB ]
 
                                version: 0.0.0-story
@@ -587,17 +587,17 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
 
 ---
@@ -614,17 +614,17 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
- PROXY     ▱▱▱ GET      https://api.example.com/v1/users
- MOCK      ▱▱▱ POST     http://localhost:3000/api/login
- SCRIPT    ▱▱▱ PUT      http://localhost:3000/v1/users/42 → /v2/users/42
- CACHE     ▱▱▱ GET      https://api.example.com/v1/catalog?page=2
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ POST   http://localhost:3000/api/login
+ SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
 ? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
 
                                version: 0.0.0-story
@@ -638,17 +638,17 @@ line 10
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m    [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m     [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m     [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
 
 ---
@@ -667,13 +667,13 @@ line 10
             static: /assets => ./public
         https://localhost:3443 => https:
 
- PROXY     200 GET      https://api.exam
- MOCK      201 POST     http://localhost
- STATIC    200 GET      http://localhost
- CACHE     304 GET      https://api.exam
- OPTIONS   204 OPTIONS  https://api.exam
- PROXY     404 GET      https://api.exam
- SCRIPT    500 DELETE   https://api.exam
+ PROXY  200 GET    https://api.example.c
+ MOCK   201 POST   http://localhost:3000
+ STATC  200 GET    http://localhost:3000
+ CACHE  304 GET    https://api.example.c
+ OPTNS  204 OPTS   https://api.example.c
+ PROXY  404 GET    https://api.example.c
+ SCRPT  500 DEL    https://api.example.c
 ↑/k    scroll up      home/g top    …
 ↓/j    scroll down    end/G  bottom
 pgup/b page up
@@ -691,13 +691,13 @@ pgdn/f page down
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.exam[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.exam[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.exam[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.exam[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.exam[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m    [38;2;60;60;60m…[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m
@@ -718,13 +718,13 @@ pgdn/f page down
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 ↑/k    scroll up      home/g top       ? toggle help
 ↓/j    scroll down    end/G  bottom    r reload
 pgup/b page up                         q quit
@@ -742,13 +742,13 @@ pgdn/f page down                                                     [ 42.5 MB ]
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
@@ -769,13 +769,13 @@ pgdn/f page down                                                     [ 42.5 MB ]
             static: /assets => ./public
         https://localhost:3443 => https://cdn.example.com
 
- PROXY     200 GET      https://api.example.com/v1/users
- MOCK      201 POST     http://localhost:3000/api/login
- STATIC    200 GET      http://localhost:3000/assets/app.js
- CACHE     304 GET      https://api.example.com/v1/catalog
- OPTIONS   204 OPTIONS  https://api.example.com/v1/users
- PROXY     404 GET      https://api.example.com/v1/missing
- SCRIPT    500 DELETE   https://api.example.com/v1/users/42
+ PROXY  200 GET    https://api.example.com/v1/users
+ MOCK   201 POST   http://localhost:3000/api/login
+ STATC  200 GET    http://localhost:3000/assets/app.js
+ CACHE  304 GET    https://api.example.com/v1/catalog
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/missing
+ SCRPT  500 DEL    https://api.example.com/v1/users/42
 ↑/k    scroll up      home/g top       ? toggle help
 ↓/j    scroll down    end/G  bottom    r reload
 pgup/b page up                         q quit
@@ -793,13 +793,13 @@ pgdn/f page down                                                                
 [48;2;0;114;206m       [m     static: /assets => ./public
 [48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttps://api.example.com/v1/users[m
-[48;2;238;127;248m [38;2;0;0;0mMOCK[39m    [m [48;2;0;175;79m [38;2;0;0;0m201 POST[39m    [m [4mhttp://localhost:3000/api/login[m
-[48;2;166;252;157m [38;2;0;0;0mSTATIC[39m  [m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m     [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;254;252;127m [38;2;0;0;0mCACHE[39m   [m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m     [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;0;114;206m [38;2;0;0;0mOPTIONS[39m [m [48;2;0;175;79m [38;2;0;0;0m204 OPTIONS[39m [m [4mhttps://api.example.com/v1/users[m
-[48;2;106;113;247m [38;2;0;0;0mPROXY[39m   [m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m     [m [4mhttps://api.example.com/v1/missing[m
-[48;2;255;127;0m [38;2;0;0;0mSCRIPT[39m  [m [48;2;220;1;0m [38;2;0;0;0m500 DELETE[39m  [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
@@ -957,4 +957,187 @@ pgdn/f page down                                                                
         See more information at https://github.com/evg4b/uncors/releases
 
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
+---
+
+[TestStories/tracker/handlers/40 - 1]
+ PROXY  ▱▱▱ GET    https://api.example.c
+ CACHE  ▱▱▱ GET    https://api.example.c
+ MOCK   ▱▱▱ GET    https://api.example.c
+ SCRPT  ▱▱▱ GET    https://api.example.c
+ STATC  ▱▱▱ GET    https://api.example.c
+ OPTNS  ▱▱▱ OPTS   https://api.example.c
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.c[m
+---
+
+[TestStories/tracker/handlers/80 - 1]
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ GET    https://api.example.com/v1/users
+ SCRPT  ▱▱▱ GET    https://api.example.com/v1/users
+ STATC  ▱▱▱ GET    https://api.example.com/v1/users
+ OPTNS  ▱▱▱ OPTS   https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+---
+
+[TestStories/tracker/handlers/120 - 1]
+ PROXY  ▱▱▱ GET    https://api.example.com/v1/users
+ CACHE  ▱▱▱ GET    https://api.example.com/v1/users
+ MOCK   ▱▱▱ GET    https://api.example.com/v1/users
+ SCRPT  ▱▱▱ GET    https://api.example.com/v1/users
+ STATC  ▱▱▱ GET    https://api.example.com/v1/users
+ OPTNS  ▱▱▱ OPTS   https://api.example.com/v1/users
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+---
+
+[TestStories/history/handlers/40 - 1]
+ PROXY  200 GET    https://api.example.c
+ CACHE  200 GET    https://api.example.c
+ MOCK   200 GET    https://api.example.c
+ SCRPT  200 GET    https://api.example.c
+ STATC  200 GET    https://api.example.c
+ OPTNS  204 OPTS   https://api.example.c
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+
+
+
+
+---
+
+[TestStories/history/handlers/80 - 1]
+ PROXY  200 GET    https://api.example.com/v1/users
+ CACHE  200 GET    https://api.example.com/v1/users
+ MOCK   200 GET    https://api.example.com/v1/users
+ SCRPT  200 GET    https://api.example.com/v1/users
+ STATC  200 GET    https://api.example.com/v1/users
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+
+
+
+
+---
+
+[TestStories/history/handlers/120 - 1]
+ PROXY  200 GET    https://api.example.com/v1/users
+ CACHE  200 GET    https://api.example.com/v1/users
+ MOCK   200 GET    https://api.example.com/v1/users
+ SCRPT  200 GET    https://api.example.com/v1/users
+ STATC  200 GET    https://api.example.com/v1/users
+ OPTNS  204 OPTS   https://api.example.com/v1/users
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+
+
+
+
+---
+
+[TestStories/history/statuses/40 - 1]
+ PROXY  101 GET    https://api.example.c
+ PROXY  200 GET    https://api.example.c
+ PROXY  304 GET    https://api.example.c
+ PROXY  404 GET    https://api.example.c
+ PROXY  502 GET    https://api.example.c
+ PROXY  CXL GET    https://api.example.c
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.c[m
+
+
+
+
+---
+
+[TestStories/history/statuses/80 - 1]
+ PROXY  101 GET    https://api.example.com/v1/users
+ PROXY  200 GET    https://api.example.com/v1/users
+ PROXY  304 GET    https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/users
+ PROXY  502 GET    https://api.example.com/v1/users
+ PROXY  CXL GET    https://api.example.com/v1/users
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
+
+
+
+
+---
+
+[TestStories/history/statuses/120 - 1]
+ PROXY  101 GET    https://api.example.com/v1/users
+ PROXY  200 GET    https://api.example.com/v1/users
+ PROXY  304 GET    https://api.example.com/v1/users
+ PROXY  404 GET    https://api.example.com/v1/users
+ PROXY  502 GET    https://api.example.com/v1/users
+ PROXY  CXL GET    https://api.example.com/v1/users
+
+
+
+
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
+
+
+
+
 ---

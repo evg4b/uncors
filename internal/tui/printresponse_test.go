@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/evg4b/uncors/internal/tui/styles"
-
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -90,6 +90,42 @@ func TestPrintResponse_NonstandardCodes(t *testing.T) {
 	}
 }
 
+func TestMethodLabel(t *testing.T) {
+	tests := []struct {
+		method string
+		label  string
+	}{
+		{http.MethodGet, "GET"},
+		{http.MethodPatch, "PATCH"},
+		{http.MethodDelete, "DEL"},
+		{http.MethodOptions, "OPTS"},
+		{http.MethodConnect, "CONN"},
+		{"PROPFIND", "PROP…"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.method, func(t *testing.T) {
+			assert.Equal(t, testCase.label, tui.MethodLabel(testCase.method))
+		})
+	}
+}
+
+func TestPrintResponse_LongMethods(t *testing.T) {
+	methods := []string{http.MethodPatch, http.MethodTrace, http.MethodOptions, http.MethodConnect, "PROPFIND"}
+
+	for _, method := range methods {
+		t.Run(method, func(t *testing.T) {
+			var buf strings.Builder
+
+			tui.NewCliOutput(&buf).Request(events.RequestCompleted{
+				Data: makeRequestData(method, "https://example.com/", http.StatusBadGateway),
+			})
+
+			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
+		})
+	}
+}
+
 var errUpstream = errors.New("dial tcp 127.0.0.1:1: connect: connection refused")
 
 func TestFormatRequest(t *testing.T) {
@@ -147,7 +183,9 @@ func TestFormatRequest(t *testing.T) {
 			assert.Contains(t, label, kind.String())
 		}
 
-		assert.Empty(t, styles.HandlerLabel(events.HandlerNone))
+		blank := styles.HandlerLabel(events.HandlerNone)
+		assert.Empty(t, strings.TrimSpace(ansi.Strip(blank)))
+		assert.Equal(t, lipgloss.Width(styles.HandlerLabel(events.HandlerProxy)), lipgloss.Width(blank))
 	})
 
 	t.Run("hides the error of a cancelled request", func(t *testing.T) {

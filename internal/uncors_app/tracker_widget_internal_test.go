@@ -111,10 +111,23 @@ func TestTrackerWidget(t *testing.T) {
 		}
 
 		view := widget.View()
-		assert.Contains(t, view.Content, "SCRIPT")
+		assert.Contains(t, view.Content, "SCRPT")
 		assert.Contains(t, view.Content, "POST")
 		assert.Contains(t, view.Content, "localhost/test")
 		assert.Contains(t, view.Content, "→ /v2/test")
+	})
+
+	t.Run("View keeps long methods on one line", func(t *testing.T) {
+		widget := NewTrackerWidget()
+		reqURL, _ := url.Parse("http://localhost/test")
+
+		for id, method := range []string{"OPTIONS", "PATCH", "PROPFIND"} {
+			widget.pending[uint64(id)] = events.RequestStarted{
+				ID: uint64(id), Method: method, URL: reqURL, Handler: events.HandlerOptions,
+			}
+		}
+
+		assert.Len(t, strings.Split(widget.View().Content, "\n"), 3)
 	})
 
 	t.Run("View renders one request per line in ID order", func(t *testing.T) {

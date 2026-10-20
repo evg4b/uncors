@@ -28,7 +28,7 @@ var handlerStyles = map[events.HandlerKind]lipgloss.Style{
 func HandlerLabel(kind events.HandlerKind) string {
 	style, ok := handlerStyles[kind]
 	if !ok {
-		return ""
+		return blockStyle.Render("")
 	}
 
 	return style.Render(kind.String())

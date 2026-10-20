@@ -13,6 +13,7 @@ var (
 	ErrorColor    = lightDark(lipgloss.Color("#B60000"), lipgloss.Color("#DC0100"))
 	ContrastColor = lightDark(lipgloss.Color("#FFFFFF"), lipgloss.Color("#000000"))
 	InfoColor     = lightDark(lipgloss.Color("#005BA5"), lipgloss.Color("#0072CE"))
+	SuccessColor  = lightDark(lipgloss.Color("#01833B"), lipgloss.Color("#00AF4F"))
 	DebugColor    = lipgloss.Color("#8C8C8C")
 
 	logoYellowColor = WarningColor
@@ -22,11 +23,11 @@ var (
 	mockColor    = lightDark(lipgloss.Color("#D258DD"), lipgloss.Color("#EE7FF8"))
 	staticColor  = lightDark(lipgloss.Color("#588853"), lipgloss.Color("#A6FC9D"))
 	cacheColor   = lightDark(lipgloss.Color("#CCC906"), lipgloss.Color("#FEFC7F"))
-	scriptColor  = lipgloss.Color("#FF7F00")
-	optionsColor = InfoColor
+	scriptColor  = lightDark(lipgloss.Color("#FF7F00"), lipgloss.Color("#FF7F00"))
+	optionsColor = lightDark(lipgloss.Color("#384957"), lipgloss.Color("#C5D1DB"))
 
 	httpStatus1xxColor       = InfoColor
-	httpStatus2xxColor       = lightDark(lipgloss.Color("#01833B"), lipgloss.Color("#00AF4F"))
+	httpStatus2xxColor       = SuccessColor
 	httpStatus3xxColor       = WarningColor
 	httpStatus4xxColor       = ErrorColor
 	httpStatus5xxColor       = ErrorColor
