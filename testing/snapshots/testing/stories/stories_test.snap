@@ -49,47 +49,47 @@ pgdn/f page down
 
 [TestStories/memory/small/40 - 1]
 [ 42.5 MB ]
-[38;2;156;163;175m[ 42.5 MB ][m
+[38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/memory/small/80 - 1]
 [ 42.5 MB ]
-[38;2;156;163;175m[ 42.5 MB ][m
+[38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/memory/small/120 - 1]
 [ 42.5 MB ]
-[38;2;156;163;175m[ 42.5 MB ][m
+[38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/memory/large/40 - 1]
 [ 2048.2 MB ]
-[38;2;156;163;175m[ 2048.2 MB ][m
+[38;2;119;119;119m[ 2048.2 MB ][m
 ---
 
 [TestStories/memory/large/80 - 1]
 [ 2048.2 MB ]
-[38;2;156;163;175m[ 2048.2 MB ][m
+[38;2;119;119;119m[ 2048.2 MB ][m
 ---
 
 [TestStories/memory/large/120 - 1]
 [ 2048.2 MB ]
-[38;2;156;163;175m[ 2048.2 MB ][m
+[38;2;119;119;119m[ 2048.2 MB ][m
 ---
 
 [TestStories/tracker/single/40 - 1]
  PROXY  ▱▱▱ GET    https://api.example.c
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/single/80 - 1]
  PROXY  ▱▱▱ GET    https://api.example.com/v1/users
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/tracker/single/120 - 1]
  PROXY  ▱▱▱ GET    https://api.example.com/v1/users
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/tracker/many/40 - 1]
@@ -97,10 +97,10 @@ pgdn/f page down
  MOCK   ▱▱▱ POST   http://localhost:3000
  SCRPT  ▱▱▱ PUT    http://localhost:3000
  CACHE  ▱▱▱ GET    https://api.example.c
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/many/80 - 1]
@@ -108,10 +108,10 @@ pgdn/f page down
  MOCK   ▱▱▱ POST   http://localhost:3000/api/login
  SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
  CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000/api/login[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000/v1/users/42[m [38;2;156;163;175m→ /v2/users/42[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/catalog?page=2[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 ---
 
 [TestStories/tracker/many/120 - 1]
@@ -119,25 +119,25 @@ pgdn/f page down
  MOCK   ▱▱▱ POST   http://localhost:3000/api/login
  SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
  CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000/api/login[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000/v1/users/42[m [38;2;156;163;175m→ /v2/users/42[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/catalog?page=2[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 ---
 
 [TestStories/tracker/long-url/40 - 1]
  PROXY  ▱▱▱ GET    https://api.example.c
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/long-url/80 - 1]
  PROXY  ▱▱▱ GET    https://api.example.com/v1/search?query=very+long+search+term
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/search?query=very+long+search+term[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+term[m
 ---
 
 [TestStories/tracker/long-url/120 - 1]
  PROXY  ▱▱▱ GET    https://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-50&sor
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-50&sor[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/search?query=very+long+search+terms&filters=category:books,price:10-50&sor[m
 ---
 
 [TestStories/history/short/40 - 1]
@@ -151,13 +151,13 @@ pgdn/f page down
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 
 
 
@@ -174,13 +174,13 @@ pgdn/f page down
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 
 
 
@@ -197,13 +197,13 @@ pgdn/f page down
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 
 
 
@@ -383,18 +383,18 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use
 [48;2;255;212;0m       [m It hasn't been reviewed for secu
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
 ---
 
@@ -434,19 +434,19 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;156;163;175m[ 42.5 MB ][m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/app/started/120 - 1]
@@ -485,19 +485,19 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;156;163;175m[ 42.5 MB ][m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/app/busy/40 - 1]
@@ -531,22 +531,22 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use
 [48;2;255;212;0m       [m It hasn't been reviewed for secu
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
 
 ---
@@ -582,23 +582,23 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000/api/login[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000/v1/users/42[m [38;2;156;163;175m→ /v2/users/42[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/catalog?page=2[m
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;156;163;175m[ 42.5 MB ][m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
 
 ---
 
@@ -633,23 +633,23 @@ line 10
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ POST[39;22m  [m [38;2;156;163;175mhttp://localhost:3000/api/login[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ PUT[39;22m   [m [38;2;156;163;175mhttp://localhost:3000/v1/users/42[m [38;2;156;163;175m→ /v2/users/42[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/catalog?page=2[m
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;156;163;175m[ 42.5 MB ][m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ POST[39;22m  [m [38;2;140;140;140mhttp://localhost:3000/api/login[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
 
 ---
 
@@ -686,18 +686,18 @@ pgdn/f page down
 [48;2;255;212;0m       [m This is a reverse proxy for use
 [48;2;255;212;0m       [m It hasn't been reviewed for secu
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.c[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m    [38;2;60;60;60m…[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m
@@ -737,22 +737,22 @@ pgdn/f page down                                                     [ 42.5 MB ]
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
-[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                     [38;2;156;163;175m[ 42.5 MB ][m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                     [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/app/full-help/120 - 1]
@@ -788,22 +788,22 @@ pgdn/f page down                                                                
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m201 POST[39m  [m [4mhttp://localhost:3000/api/login[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttp://localhost:3000/assets/app.js[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/catalog[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/missing[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;220;1;0m [38;2;0;0;0m500 DEL[39m   [m [4mhttps://api.example.com/v1/users/42[m
 [38;2;98;98;98m↑/k[m    [38;2;74;74;74mscroll up[m  [38;2;60;60;60m    [38;2;98;98;98mhome/g[m [38;2;74;74;74mtop[m   [38;2;60;60;60m    [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[m
 [38;2;98;98;98m↓/j[m    [38;2;74;74;74mscroll down[m    [38;2;98;98;98mend/G[m  [38;2;74;74;74mbottom[m    [38;2;98;98;98mr[m [38;2;74;74;74mreload[m
 [38;2;98;98;98mpgup/b[m [38;2;74;74;74mpage up[m                         [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
-[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                                                             [38;2;156;163;175m[ 42.5 MB ][m
+[38;2;98;98;98mpgdn/f[m [38;2;74;74;74mpage down[m                                                                                             [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/app/notices/40 - 1]
@@ -836,21 +836,21 @@ pgdn/f page down                                                                
 [48;2;255;212;0m       [m This is a reverse proxy for use
 [48;2;255;212;0m       [m It hasn't been reviewed for secu
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
 
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
 [48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable,
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration,
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m Server restarted
-[48;2;59;130;246m       [m http://localhost:3000 => https:/
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https:
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https:/
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https:
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
         0.5.0 is not the latest version,
         See more information at https://
 
@@ -887,25 +887,25 @@ pgdn/f page down                                                                
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
 [48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable, caching in memory
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt to index a nil value
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration, keeping the previous one: mappings[0].fr
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m Server restarted
-[48;2;59;130;246m       [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
         0.5.0 is not the latest version, you should upgrade to 0.6.0.
         See more information at https://github.com/evg4b/uncors/releases
 
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;156;163;175m[ 42.5 MB ][m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/app/notices/120 - 1]
@@ -938,25 +938,25 @@ pgdn/f page down                                                                
 [48;2;255;212;0m       [m This is a reverse proxy for use in testing or debugging web applications locally.
 [48;2;255;212;0m       [m It hasn't been reviewed for security issues.
 
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
 
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m Recording HAR to ./traffic.har
 [48;2;255;212;0m [38;2;0;0;0;1mWARN[39;22m  [m Cache directory is not writable, caching in memory
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m script mocks/login.lua: attempt to index a nil value
 [48;2;220;1;0m [38;2;0;0;0;1mERROR[39;22m [m Failed to reload configuration, keeping the previous one: mappings[0].from: invalid URL
-[48;2;59;130;246m [38;2;0;0;0mINFO[39m  [m Server restarted
-[48;2;59;130;246m       [m http://localhost:3000 => https://api.example.com
-[48;2;59;130;246m       [m     mock: [GET] /v1/health
-[48;2;59;130;246m       [m     static: /assets => ./public
-[48;2;59;130;246m       [m https://localhost:3443 => https://cdn.example.com
-[48;2;59;130;246m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
+[48;2;0;114;206m [38;2;0;0;0mINFO[39m  [m Server restarted
+[48;2;0;114;206m       [m http://localhost:3000 => https://api.example.com
+[48;2;0;114;206m       [m     mock: [GET] /v1/health
+[48;2;0;114;206m       [m     static: /assets => ./public
+[48;2;0;114;206m       [m https://localhost:3443 => https://cdn.example.com
+[48;2;0;114;206m [38;2;0;0;0;1mINFO[39;22m  [m NEW VERSION IS AVAILABLE!
         0.5.0 is not the latest version, you should upgrade to 0.6.0.
         See more information at https://github.com/evg4b/uncors/releases
 
-[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;156;163;175m[ 42.5 MB ][m
+[38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
 ---
 
 [TestStories/tracker/handlers/40 - 1]
@@ -966,12 +966,12 @@ pgdn/f page down                                                                
  SCRPT  ▱▱▱ GET    https://api.example.c
  STATC  ▱▱▱ GET    https://api.example.c
  OPTNS  ▱▱▱ OPTS   https://api.example.c
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ OPTS[39;22m  [m [38;2;156;163;175mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.c[m
 ---
 
 [TestStories/tracker/handlers/80 - 1]
@@ -981,12 +981,12 @@ pgdn/f page down                                                                
  SCRPT  ▱▱▱ GET    https://api.example.com/v1/users
  STATC  ▱▱▱ GET    https://api.example.com/v1/users
  OPTNS  ▱▱▱ OPTS   https://api.example.com/v1/users
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ OPTS[39;22m  [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/tracker/handlers/120 - 1]
@@ -996,12 +996,12 @@ pgdn/f page down                                                                
  SCRPT  ▱▱▱ GET    https://api.example.com/v1/users
  STATC  ▱▱▱ GET    https://api.example.com/v1/users
  OPTNS  ▱▱▱ OPTS   https://api.example.com/v1/users
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ GET[39;22m   [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;156;163;175m [38;2;0;0;0;1m▱▱▱ OPTS[39;22m  [m [38;2;156;163;175mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ OPTS[39;22m  [m [38;2;140;140;140mhttps://api.example.com/v1/users[m
 ---
 
 [TestStories/history/handlers/40 - 1]
@@ -1015,12 +1015,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.c[m
 
 
 
@@ -1038,12 +1038,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
 
 
 
@@ -1061,12 +1061,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;6;182;212m [38;2;0;0;0mCACHE[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;217;70;239m [38;2;0;0;0mMOCK[39m  [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;139;92;246m [38;2;0;0;0mSCRPT[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;236;72;153m [38;2;0;0;0mSTATC[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;148;163;184m [38;2;0;0;0mOPTNS[39m [48;2;34;197;94m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;238;127;248m [38;2;0;0;0mMOCK[39m  [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;166;252;157m [38;2;0;0;0mSTATC[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;197;209;219m [38;2;0;0;0mOPTNS[39m [48;2;0;175;79m [38;2;0;0;0m204 OPTS[39m  [m [4mhttps://api.example.com/v1/users[m
 
 
 
@@ -1084,12 +1084,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;59;130;246m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.c[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.c[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.c[m
 
 
 
@@ -1107,12 +1107,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;59;130;246m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
 
 
 
@@ -1130,12 +1130,12 @@ pgdn/f page down                                                                
 
 
 
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;59;130;246m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;34;197;94m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
-[48;2;99;102;241m [38;2;0;0;0mPROXY[39m [48;2;156;163;175m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;114;206m [38;2;0;0;0m101 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;0;175;79m [38;2;0;0;0m200 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;255;212;0m [38;2;0;0;0m304 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m404 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;220;1;0m [38;2;0;0;0m502 GET[39m   [m [4mhttps://api.example.com/v1/users[m
+[48;2;106;113;247m [38;2;0;0;0mPROXY[39m [48;2;140;140;140m [38;2;0;0;0mCXL GET[39m   [m [4mhttps://api.example.com/v1/users[m
 
 
 

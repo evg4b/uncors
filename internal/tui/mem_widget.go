@@ -54,7 +54,7 @@ func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 }
 
 func (m *MemoryWidget) View() tea.View {
-	content := styles.DimTextStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
+	content := styles.MutedTextStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
 
 	return tea.NewView(content)
 }
