@@ -15,6 +15,8 @@ import (
 
 var ErrVersionRequested = errors.New("version requested")
 
+var defaultConfigFiles = []string{".uncors.yaml", ".uncors.yml"}
+
 type UncorsConfig struct {
 	Mappings    Mappings    `yaml:"mappings"`
 	Proxy       string      `yaml:"proxy"`
@@ -53,7 +55,11 @@ func loadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, 
 	}
 
 	cfg := defaultConfig()
+
 	configPath, _ := flags.GetString("config")
+	if !flags.Changed("config") {
+		configPath = findDefaultConfig(fs)
+	}
 
 	if configPath != "" {
 		err := readYAMLFile(fs, cfg, configPath)
@@ -75,6 +81,17 @@ func loadConfiguration(fs afero.Fs, usage Usage, args []string) (*UncorsConfig, 
 	}
 
 	return cfg, configPath, nil
+}
+
+func findDefaultConfig(fs afero.Fs) string {
+	for _, name := range defaultConfigFiles {
+		info, err := fs.Stat(name)
+		if err == nil && !info.IsDir() {
+			return name
+		}
+	}
+
+	return ""
 }
 
 func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {

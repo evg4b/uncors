@@ -54,12 +54,13 @@ mappings:
 Start UNCORS and send a request:
 
 ```bash
-uncors --config .uncors.yaml
+uncors
 curl http://api.local:3000/
 ```
 
-The response comes from `https://api.github.com`, with CORS headers added by
-UNCORS.
+UNCORS picks up `.uncors.yaml` (or `.uncors.yml`) from the current directory;
+use `--config` to load a file from somewhere else. The response comes from
+`https://api.github.com`, with CORS headers added by UNCORS.
 
 From here, [Configuration](Configuration) covers every option,
 [Response Mocking](Response-Mocking) shows how to add fake endpoints, and

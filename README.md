@@ -110,8 +110,8 @@ Start a proxy from `http://localhost:8080` to `https://github.com`:
 uncors --from 'http://localhost:8080' --to 'https://github.com'
 ```
 
-For larger setups, put the mappings in a YAML file and run
-`uncors --config .uncors.yaml`. The
+For larger setups, put the mappings in `.uncors.yaml` and run `uncors` from
+the same directory, or pass another file with `--config`. The
 [Configuration](https://github.com/evg4b/uncors/wiki/Configuration) wiki page
 describes every option.
 

@@ -82,7 +82,7 @@ mappings:
 | --------------- | ----- | ------------------------------------------------------------------------------------------------- |
 | `--from`        | `-f`  | Source URL with scheme and port, for example `http://localhost:8080`. Can be repeated.            |
 | `--to`          | `-t`  | Target URL with scheme, for example `https://api.example.com`. Can be repeated.                   |
-| `--config`      | `-c`  | Path to a YAML configuration file.                                                                |
+| `--config`      | `-c`  | Path to a YAML configuration file. Defaults to `.uncors.yaml` or `.uncors.yml` if one exists.     |
 | `--proxy`       |       | HTTP/HTTPS proxy for upstream requests. Overrides `proxy` from the file.                          |
 | `--interactive` |       | Run the interactive terminal UI. Defaults to `true`; pass `--interactive=false` for plain output. |
 | `--version`     | `-v`  | Print the version and exit.                                                                       |
@@ -130,15 +130,14 @@ open <http://localhost:4319>:
 
 ```bash
 docker run --rm -p 4318:4318 -p 4319:4319 ghcr.io/mashiro/otelop
-UNCORS_TRACE=true uncors --config .uncors.yaml
+UNCORS_TRACE=true uncors
 ```
 
 Jaeger works too, for traces only:
 
 ```bash
 docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger
-UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none OTEL_METRICS_EXPORTER=none \
-  uncors --config .uncors.yaml
+UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none OTEL_METRICS_EXPORTER=none uncors
 ```
 
 Without the two `none` settings UNCORS warns that Jaeger rejects logs and
@@ -242,6 +241,11 @@ on or not:
 - in-flight requests are cut off because they did not finish before a restart.
 
 ## Configuration file
+
+Without `--config`, UNCORS looks for `.uncors.yaml` in the current directory,
+then `.uncors.yml`, and loads the first one it finds. If neither exists, it
+runs with the command-line flags alone. `--from` and `--to` are merged into a
+file found this way just as they are into one given with `--config`.
 
 The configuration file is YAML. A JSON Schema is available at
 [`schema.json`](https://raw.githubusercontent.com/evg4b/uncors/main/schema.json);

@@ -255,6 +255,86 @@ func TestLoadConfiguration(t *testing.T) {
 		})
 	})
 
+	t.Run("default config file", func(t *testing.T) {
+		minimalExpected := &config.UncorsConfig{
+			Mappings: config.Mappings{
+				{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
+			},
+			CacheConfig: config.CacheConfig{
+				ExpirationTime: config.DefaultExpirationTime,
+				MaxSize:        config.DefaultMaxSize,
+				Methods:        []string{http.MethodGet},
+			},
+			Interactive: true,
+		}
+
+		for _, name := range []string{".uncors.yaml", ".uncors.yml"} {
+			t.Run("loads "+name+" when no config flag", func(t *testing.T) {
+				fs := testutils.FsFromMap(t, map[string]string{name: minimalConfig})
+
+				actual, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+				require.NoError(t, err)
+
+				assert.Equal(t, minimalExpected, actual)
+				assert.Equal(t, name, configPath)
+			})
+		}
+
+		t.Run("prefers .uncors.yaml over .uncors.yml", func(t *testing.T) {
+			fs := testutils.FsFromMap(t, map[string]string{
+				".uncors.yaml": minimalConfig,
+				".uncors.yml":  incorrectConfig,
+			})
+
+			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			require.NoError(t, err)
+
+			assert.Equal(t, ".uncors.yaml", configPath)
+		})
+
+		t.Run("ignores a directory named .uncors.yaml", func(t *testing.T) {
+			fs := testutils.FsFromMap(t, map[string]string{".uncors.yml": minimalConfig})
+			require.NoError(t, fs.Mkdir(".uncors.yaml", os.ModePerm))
+
+			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			require.NoError(t, err)
+
+			assert.Equal(t, ".uncors.yml", configPath)
+		})
+
+		t.Run("config flag takes precedence", func(t *testing.T) {
+			fs := testutils.FsFromMap(t, map[string]string{
+				".uncors.yaml":    incorrectConfig,
+				minimalConfigPath: minimalConfig,
+			})
+
+			_, configPath, err := config.LoadConfiguration(t.Context(), fs, nil, []string{params.Config, minimalConfigPath})
+			require.NoError(t, err)
+
+			assert.Equal(t, minimalConfigPath, configPath)
+		})
+
+		t.Run("CLI mappings are merged into the default config", func(t *testing.T) {
+			fs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": minimalConfig})
+			args := []string{params.From, hosts.Localhost1.HTTP().String(), params.To, hosts.Github.Host().String()}
+
+			actual, _, err := config.LoadConfiguration(t.Context(), fs, nil, args)
+			require.NoError(t, err)
+
+			assert.Equal(t, config.Mappings{
+				{From: hosts.Localhost.HTTPPort(8080), To: hosts.Github.HTTPS()},
+				{From: hosts.Localhost1.HTTP(), To: hosts.Github.Host()},
+			}, actual.Mappings)
+		})
+
+		t.Run("reports errors from the default config", func(t *testing.T) {
+			fs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": corruptedConfig})
+
+			_, _, err := config.LoadConfiguration(t.Context(), fs, nil, []string{})
+			require.ErrorContains(t, err, "failed to read config file '.uncors.yaml'")
+		})
+	})
+
 	t.Run("parse config with error", func(t *testing.T) {
 		tests := []struct {
 			name        string
