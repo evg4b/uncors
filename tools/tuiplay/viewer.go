@@ -6,11 +6,8 @@ import (
 	"github.com/evg4b/uncors/testing/stories"
 )
 
-// statusRows is the blank line and the status line under the story.
 const statusRows = 2
 
-// viewer shows one story across the whole terminal, with a status line under
-// it. Keys go to the story, except q and ctrl+c, which quit.
 type viewer struct {
 	story  stories.Story
 	model  tea.Model
@@ -69,7 +66,6 @@ func (v *viewer) View() tea.View {
 	return view
 }
 
-// storyHeight leaves two rows for the status line.
 func (v *viewer) storyHeight() int {
 	free := max(v.height-statusRows, 1)
 

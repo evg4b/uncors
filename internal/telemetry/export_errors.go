@@ -49,8 +49,6 @@ func (h *exportErrorHook) handle(signal string, err error) {
 	}
 }
 
-// claim returns the function to report the error with, or nil when the
-// signal was reported already or no hook is registered yet.
 func (h *exportErrorHook) claim(signal string, err error) func(string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

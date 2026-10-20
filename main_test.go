@@ -72,7 +72,6 @@ func TestMain_RunUncorsVersionPath(t *testing.T) {
 
 func TestMain_GenerateCertsPath(t *testing.T) {
 	saveTelemetry(t)
-	// Point HOME to a temp dir so CA certificates go there, not ~/.config/uncors.
 	t.Setenv("HOME", t.TempDir())
 	setArgs(t, []string{"uncors", cli.GenerateCertsCmd, "--validity-days=7"})
 

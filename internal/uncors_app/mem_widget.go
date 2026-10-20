@@ -29,7 +29,6 @@ type MemoryWidget struct {
 
 type MemoryWidgetOption = func(*MemoryWidget)
 
-// WithMemoryUsage replaces the source of the shown memory, in megabytes.
 func WithMemoryUsage(usage func() float64) MemoryWidgetOption {
 	return func(widget *MemoryWidget) {
 		widget.getMemUsage = usage

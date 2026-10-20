@@ -12,7 +12,6 @@ import (
 	"github.com/evg4b/uncors/pkg/urlt"
 )
 
-// RequestPrefixWidth is the width of the status and method block, so request URLs start in one column.
 const RequestPrefixWidth = 13
 
 func FormatRequest(event events.RequestCompleted) string {

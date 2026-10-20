@@ -191,7 +191,6 @@ func Error(ctx context.Context, msg string, attrs ...slog.Attr) {
 	logAttrs(ctx, slog.LevelError, msg, attrs)
 }
 
-// Err is the attribute a log records an error under.
 func Err(err error) slog.Attr {
 	return slog.String("error", err.Error())
 }
@@ -245,7 +244,6 @@ func escapeAttr(attr slog.Attr) slog.Attr {
 	return slog.String(escapeLineBreaks(attr.Key), escapeLineBreaks(value.String()))
 }
 
-// escapeLineBreaks returns value itself when it has no line break.
 func escapeLineBreaks(value string) string {
 	value = strings.ReplaceAll(value, "\n", `\n`)
 

@@ -116,7 +116,6 @@ func Fail(ctx context.Context, err error) {
 	}
 }
 
-// Handler is the component that claimed the request so far.
 func (s *Scope) Handler() events.HandlerKind {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -174,7 +173,6 @@ func (s *Scope) publishStarted() {
 	})
 }
 
-// rootSpan returns nil unless tracing is on and the span is recording.
 func rootSpan(ctx context.Context) trace.Span {
 	if !telemetry.Enabled() {
 		return nil

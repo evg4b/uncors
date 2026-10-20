@@ -16,7 +16,6 @@ func TestGenerateCerts(t *testing.T) {
 	})
 
 	t.Run("generates CA certificate with valid args", func(t *testing.T) {
-		// Point HOME to a temp dir so certs go there, not ~/.config/uncors.
 		t.Setenv("HOME", t.TempDir())
 
 		err := cli.GenerateCerts(cli.Env{Fs: afero.NewMemMapFs(), Stdout: io.Discard, Args: []string{"--validity-days=7"}})

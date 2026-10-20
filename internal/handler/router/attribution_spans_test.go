@@ -22,8 +22,6 @@ import (
 
 const rootSpanName = "request"
 
-// serveTraced serves one request under a root span, as the server does, and
-// returns the ended spans of its trace.
 func serveTraced(
 	t *testing.T,
 	spans *tracetest.SpanRecorder,
@@ -50,7 +48,6 @@ func serveTraced(
 	})
 }
 
-// spanTree lists the "parent > child" edges of the trace, by span name.
 func spanTree(ended []sdktrace.ReadOnlySpan) []string {
 	names := map[string]string{}
 	for _, span := range ended {

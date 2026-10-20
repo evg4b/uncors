@@ -21,14 +21,10 @@ const (
 	stopTimeout   = 2 * time.Second
 )
 
-// watchedDirs are the module directories whose Go files can change a story.
 var watchedDirs = []string{"internal", "pkg", "tools"}
 
 var errNoModule = errors.New("go.mod not found")
 
-// watch shows the story in a child tuiplay built from the current sources,
-// and rebuilds and restarts it whenever a Go file changes. It returns when
-// the story is quit or tuiplay is interrupted.
 func watch(story string) error {
 	root, err := moduleRoot()
 	if err != nil {
@@ -60,8 +56,6 @@ func watch(story string) error {
 	return nil
 }
 
-// restartOnChange runs the story until it is quit, restarting it on every
-// change.
 func restartOnChange(binary, root, story string, changes <-chan string, signals <-chan os.Signal) {
 	ctx := context.Background()
 
@@ -99,8 +93,6 @@ type runningStory struct {
 	exited chan error
 }
 
-// startStory builds tuiplay and runs it on the story. It returns nil, and
-// prints why, when either step fails.
 func startStory(ctx context.Context, root, binary, story string) *runningStory {
 	// The developer's own go from PATH, as the Go docs advise for locating it.
 	build := exec.CommandContext(ctx, "go", "build", "-o", binary, "./tools/tuiplay") // NOSONAR
@@ -145,8 +137,6 @@ func (r *runningStory) done() <-chan error {
 	return r.exited
 }
 
-// stop asks the story to quit, so Bubble Tea restores the terminal, and kills
-// it if it does not.
 func (r *runningStory) stop() {
 	if r == nil {
 		return
@@ -165,8 +155,6 @@ func (r *runningStory) stop() {
 	}
 }
 
-// watchGoFiles reports, after a short quiet period, a Go file that was
-// written, created, removed, or renamed under watchedDirs.
 func watchGoFiles(root string) (<-chan string, func(), error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

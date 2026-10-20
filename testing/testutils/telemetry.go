@@ -16,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
-// Recorded holds what the code under test recorded while tracing was on.
 type Recorded struct {
 	Spans   *tracetest.SpanRecorder
 	Logs    *logtest.Recorder
@@ -59,8 +58,6 @@ func Telemetry(t *testing.T, options ...func(*telemetry.Providers)) *Recorded {
 	return recorded
 }
 
-// TraceConnections makes Telemetry record the connection phases of upstream
-// requests.
 func TraceConnections(providers *telemetry.Providers) {
 	providers.TraceConnections = true
 }
@@ -93,15 +90,12 @@ func (r *Recorded) Sum(t *testing.T, name string, match ...attribute.KeyValue) i
 	return total
 }
 
-// LogRecord is a log the code under test emitted, with its attribute values
-// as strings.
 type LogRecord struct {
 	Severity log.Severity
 	Message  string
 	Attrs    map[string]string
 }
 
-// Records returns the logs emitted so far, in order.
 func (r *Recorded) Records() []LogRecord {
 	var records []LogRecord
 
@@ -123,7 +117,6 @@ func (r *Recorded) Records() []LogRecord {
 	return records
 }
 
-// Messages returns the messages of the logs emitted so far, in order.
 func (r *Recorded) Messages() []string {
 	records := r.Records()
 	messages := make([]string, 0, len(records))

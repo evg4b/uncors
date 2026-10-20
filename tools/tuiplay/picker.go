@@ -14,8 +14,6 @@ var (
 	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#777777"))
 )
 
-// picker lists the stories: arrows move, typing filters, enter picks, esc
-// cancels.
 type picker struct {
 	names   []string
 	filter  string
@@ -38,7 +36,6 @@ func newPicker(catalog []stories.Story, last string) *picker {
 	return chooser
 }
 
-// pick asks for a story and returns its name, or "" when cancelled.
 func pick(catalog []stories.Story, last string) (string, error) {
 	chooser := newPicker(catalog, last)
 
@@ -75,7 +72,6 @@ func (p *picker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p *picker) View() tea.View {
 	if p.done {
-		// Leaves nothing behind in the terminal.
 		return tea.NewView("")
 	}
 

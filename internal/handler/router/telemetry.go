@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Kinds of route, recorded as uncors.route.kind.
 const (
 	routeStatic  = "static"
 	routeMock    = "mock"
