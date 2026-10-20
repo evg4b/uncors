@@ -5,11 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	lipgloss "charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
-	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
 	"github.com/evg4b/uncors/pkg/urlt"
 )
@@ -45,7 +43,7 @@ func FormatPending(event events.RequestStarted, frame string) string {
 	builder.WriteString(styles.HandlerLabel(event.Handler))
 	builder.WriteString(styles.PendingBlockStyle.Width(requestPrefixWidth).Render(frame + " " + methodLabel(event.Method)))
 	builder.WriteByte(' ')
-	builder.WriteString(styles.PendingTextStyle.Render(urlStr))
+	builder.WriteString(styles.DimTextStyle.Render(urlStr))
 	writeRewrite(&builder, event.Rewrite)
 
 	return builder.String()
@@ -59,23 +57,15 @@ func writeRewrite(builder *strings.Builder, rewrite *events.Rewrite) {
 }
 
 func printResponse(data *contracts.RequestData) string {
-	var (
-		prefix                 string
-		prefixStyle, textStyle lipgloss.Style
-	)
+	prefix := fmt.Sprintf("%d %s", data.Code, methodLabel(data.Method))
+	prefixStyle := styles.StatusStyle(data.Code)
 
 	if data.Cancelled {
-		prefix = fmt.Sprintf("CXL %s", methodLabel(data.Method))
-		prefixStyle = styles.HTTPStatusCancelledBlockStyle
-		textStyle = styles.HTTPStatusCancelledTextStyle
-	} else {
-		prefix = fmt.Sprintf("%d %s", data.Code, methodLabel(data.Method))
-		prefixStyle, textStyle = getStyles(data.Code)
+		prefix = "CXL " + methodLabel(data.Method)
+		prefixStyle = styles.CancelledStyle
 	}
 
-	prefixStyle = prefixStyle.Width(requestPrefixWidth)
-
-	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(urlt.URL_String(data.URL)))
+	return prefixStyle.Width(requestPrefixWidth).Render(prefix) + " " + styles.URLStyle.Render(urlt.URL_String(data.URL))
 }
 
 var methodLabels = map[string]string{
@@ -90,28 +80,4 @@ func methodLabel(method string) string {
 	}
 
 	return ansi.Truncate(method, methodWidth, "…")
-}
-
-func getStyles(statusCode int) (lipgloss.Style, lipgloss.Style) {
-	if helpers.Is1xxCode(statusCode) {
-		return styles.HTTPStatus1xxBlockStyle, styles.HTTPStatus1xxTextStyle
-	}
-
-	if helpers.Is2xxCode(statusCode) {
-		return styles.HTTPStatus2xxBlockStyle, styles.HTTPStatus2xxTextStyle
-	}
-
-	if helpers.Is3xxCode(statusCode) {
-		return styles.HTTPStatus3xxBlockStyle, styles.HTTPStatus3xxTextStyle
-	}
-
-	if helpers.Is4xxCode(statusCode) {
-		return styles.HTTPStatus4xxBlockStyle, styles.HTTPStatus4xxTextStyle
-	}
-
-	if helpers.Is5xxCode(statusCode) {
-		return styles.HTTPStatus5xxBlockStyle, styles.HTTPStatus5xxTextStyle
-	}
-
-	return styles.HTTPStatusOtherBlockStyle, styles.HTTPStatusOtherTextStyle
 }

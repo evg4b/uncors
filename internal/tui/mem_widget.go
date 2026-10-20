@@ -6,12 +6,9 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/helpers"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
-
-var memWidgetStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#777777"))
 
 type memUpdateMsg struct{ mb float64 }
 
@@ -57,7 +54,7 @@ func (m *MemoryWidget) Update(msg tea.Msg) (*MemoryWidget, tea.Cmd) {
 }
 
 func (m *MemoryWidget) View() tea.View {
-	content := memWidgetStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
+	content := styles.MutedTextStyle.Render(fmt.Sprintf("[ %.1f MB ]", m.memMB))
 
 	return tea.NewView(content)
 }
