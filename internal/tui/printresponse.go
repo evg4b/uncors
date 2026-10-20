@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	RequestPrefixWidth = 11
+	requestPrefixWidth = 11
 	methodWidth        = 5
 )
 
@@ -24,11 +24,7 @@ func FormatRequest(event events.RequestCompleted) string {
 
 	builder.WriteString(styles.HandlerLabel(event.Handler))
 	builder.WriteString(printResponse(event.Data))
-
-	if event.Rewrite != nil {
-		builder.WriteByte(' ')
-		builder.WriteString(styles.DimTextStyle.Render("→ " + event.Rewrite.To))
-	}
+	writeRewrite(&builder, event.Rewrite)
 
 	if event.Err != nil && !event.Data.Cancelled {
 		builder.WriteString("\n  ")
@@ -38,6 +34,30 @@ func FormatRequest(event events.RequestCompleted) string {
 	return builder.String()
 }
 
+func FormatPending(event events.RequestStarted, frame string) string {
+	var builder strings.Builder
+
+	urlStr := ""
+	if event.URL != nil {
+		urlStr = urlt.URL_String(event.URL)
+	}
+
+	builder.WriteString(styles.HandlerLabel(event.Handler))
+	builder.WriteString(styles.PendingBlockStyle.Width(requestPrefixWidth).Render(frame + " " + methodLabel(event.Method)))
+	builder.WriteByte(' ')
+	builder.WriteString(styles.PendingTextStyle.Render(urlStr))
+	writeRewrite(&builder, event.Rewrite)
+
+	return builder.String()
+}
+
+func writeRewrite(builder *strings.Builder, rewrite *events.Rewrite) {
+	if rewrite != nil {
+		builder.WriteByte(' ')
+		builder.WriteString(styles.DimTextStyle.Render("→ " + rewrite.To))
+	}
+}
+
 func printResponse(data *contracts.RequestData) string {
 	var (
 		prefix                 string
@@ -45,15 +65,15 @@ func printResponse(data *contracts.RequestData) string {
 	)
 
 	if data.Cancelled {
-		prefix = fmt.Sprintf("CXL %s", data.Method)
+		prefix = fmt.Sprintf("CXL %s", methodLabel(data.Method))
 		prefixStyle = styles.HTTPStatusCancelledBlockStyle
 		textStyle = styles.HTTPStatusCancelledTextStyle
 	} else {
-		prefix = fmt.Sprintf("%d %s", data.Code, MethodLabel(data.Method))
+		prefix = fmt.Sprintf("%d %s", data.Code, methodLabel(data.Method))
 		prefixStyle, textStyle = getStyles(data.Code)
 	}
 
-	prefixStyle = prefixStyle.Width(RequestPrefixWidth)
+	prefixStyle = prefixStyle.Width(requestPrefixWidth)
 
 	return fmt.Sprintf("%s %s", prefixStyle.Render(prefix), textStyle.Render(urlt.URL_String(data.URL)))
 }
@@ -64,7 +84,7 @@ var methodLabels = map[string]string{
 	http.MethodConnect: "CONN",
 }
 
-func MethodLabel(method string) string {
+func methodLabel(method string) string {
 	if label, ok := methodLabels[method]; ok {
 		return label
 	}

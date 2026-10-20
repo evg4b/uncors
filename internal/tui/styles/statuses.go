@@ -1,6 +1,14 @@
 package styles
 
+import "charm.land/lipgloss/v2"
+
 var (
+	PendingTextStyle  = lipgloss.NewStyle().Foreground(DebugColor)
+	PendingBlockStyle = PaddedStyle.
+				Background(DebugColor).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Bold(true)
+
 	HTTPStatus1xxTextStyle  = underlineStyle
 	HTTPStatus1xxBlockStyle = PaddedStyle.
 				Background(httpStatus1xxColor).

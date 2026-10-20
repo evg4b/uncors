@@ -105,7 +105,11 @@ func TestMethodLabel(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.method, func(t *testing.T) {
-			assert.Equal(t, testCase.label, tui.MethodLabel(testCase.method))
+			line := tui.FormatRequest(events.RequestCompleted{
+				Data: makeRequestData(testCase.method, "https://example.com/", http.StatusOK),
+			})
+
+			assert.Contains(t, ansi.Strip(line), "200 "+testCase.label+" ")
 		})
 	}
 }
@@ -121,9 +125,29 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 				Data: makeRequestData(method, "https://example.com/", http.StatusBadGateway),
 			})
 
+			cancelled := makeRequestData(method, "https://example.com/", http.StatusOK)
+			cancelled.Cancelled = true
+
+			pending := events.RequestStarted{Method: method, URL: cancelled.URL, Handler: events.HandlerOptions}
+
 			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
+			assert.Equal(t, 1, lipgloss.Height(tui.FormatRequest(events.RequestCompleted{Data: cancelled})))
+			assert.Equal(t, 1, lipgloss.Height(tui.FormatPending(pending, "▱▱▱")))
 		})
 	}
+}
+
+func TestFormatPending(t *testing.T) {
+	reqURL, _ := url.Parse("http://localhost/test")
+
+	line := ansi.Strip(tui.FormatPending(events.RequestStarted{
+		Method:  http.MethodDelete,
+		URL:     reqURL,
+		Handler: events.HandlerScript,
+		Rewrite: &events.Rewrite{From: "/test", To: "/v2/test"},
+	}, "▱▱▱"))
+
+	assert.Equal(t, " SCRPT  ▱▱▱ DEL    http://localhost/test → /v2/test", line)
 }
 
 var errUpstream = errors.New("dial tcp 127.0.0.1:1: connect: connection refused")

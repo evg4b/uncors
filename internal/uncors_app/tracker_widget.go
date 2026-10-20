@@ -13,20 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui"
-	"github.com/evg4b/uncors/internal/tui/styles"
-	"github.com/evg4b/uncors/pkg/urlt"
 )
-
-var pendingMethodStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#FFFFFF")).
-	Background(lipgloss.Color("#8C8C8C")).
-	PaddingLeft(1).
-	PaddingRight(1).
-	Width(tui.RequestPrefixWidth).
-	Bold(true)
-
-var pendingTextStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#8C8C8C"))
 
 type (
 	requestStartedMsg   events.RequestStarted
@@ -44,7 +31,7 @@ func NewTrackerWidget() *TrackerWidget {
 
 	loader := spinner.New()
 	loader.Spinner = spinner.Meter
-	// Plain: pendingMethodStyle styles the frame together with the method.
+	// Plain: tui.FormatPending styles the frame together with the method.
 	loader.Style = lipgloss.NewStyle()
 
 	return &TrackerWidget{
@@ -126,27 +113,7 @@ func (m *TrackerWidget) View() tea.View {
 	lines := make([]string, 0, len(m.pending))
 
 	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
-		req := m.pending[id]
-
-		var viewBuilder strings.Builder
-
-		urlStr := ""
-		if req.URL != nil {
-			urlStr = urlt.URL_String(req.URL)
-		}
-
-		url := pendingTextStyle.Render(urlStr)
-
-		viewBuilder.WriteString(styles.HandlerLabel(req.Handler))
-		viewBuilder.WriteString(pendingMethodStyle.Render(m.spinner.View() + " " + tui.MethodLabel(req.Method)))
-		viewBuilder.WriteRune(' ')
-		viewBuilder.WriteString(url)
-
-		if req.Rewrite != nil {
-			viewBuilder.WriteString(" " + styles.DimTextStyle.Render("→ "+req.Rewrite.To))
-		}
-
-		lines = append(lines, viewBuilder.String())
+		lines = append(lines, tui.FormatPending(m.pending[id], m.spinner.View()))
 	}
 
 	return tea.NewView(strings.Join(lines, "\n"))
