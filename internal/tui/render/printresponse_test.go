@@ -105,7 +105,7 @@ func TestMethodLabel(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.method, func(t *testing.T) {
-			line := render.FormatRequest(events.RequestCompleted{
+			line := render.FormatRequest(styles.Default, events.RequestCompleted{
 				Data: makeRequestData(testCase.method, "https://example.com/", http.StatusOK),
 			})
 
@@ -131,8 +131,8 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 			pending := events.RequestStarted{Method: method, URL: cancelled.URL, Handler: events.HandlerOptions}
 
 			assert.Equal(t, 1, lipgloss.Height(strings.Trim(buf.String(), "\n")))
-			assert.Equal(t, 1, lipgloss.Height(render.FormatRequest(events.RequestCompleted{Data: cancelled})))
-			assert.Equal(t, 1, lipgloss.Height(render.FormatPending(pending, "▱▱▱")))
+			assert.Equal(t, 1, lipgloss.Height(render.FormatRequest(styles.Default, events.RequestCompleted{Data: cancelled})))
+			assert.Equal(t, 1, lipgloss.Height(render.FormatPending(styles.Default, pending, "▱▱▱")))
 		})
 	}
 }
@@ -140,7 +140,7 @@ func TestPrintResponse_LongMethods(t *testing.T) {
 func TestFormatPending(t *testing.T) {
 	reqURL, _ := url.Parse("http://localhost/test")
 
-	line := ansi.Strip(render.FormatPending(events.RequestStarted{
+	line := ansi.Strip(render.FormatPending(styles.Default, events.RequestStarted{
 		Method:  http.MethodDelete,
 		URL:     reqURL,
 		Handler: events.HandlerScript,
@@ -191,7 +191,7 @@ func TestFormatRequest(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			testutils.MatchSnapshot(t, render.FormatRequest(testCase.event))
+			testutils.MatchSnapshot(t, render.FormatRequest(styles.Default, testCase.event))
 		})
 	}
 
@@ -202,21 +202,21 @@ func TestFormatRequest(t *testing.T) {
 		}
 
 		for _, kind := range kinds {
-			label := styles.HandlerLabel(kind)
+			label := styles.Default.HandlerLabel(kind)
 			assert.Equal(t, 1, lipgloss.Height(label), kind.String())
 			assert.Contains(t, label, kind.String())
 		}
 
-		blank := styles.HandlerLabel(events.HandlerNone)
+		blank := styles.Default.HandlerLabel(events.HandlerNone)
 		assert.Empty(t, strings.TrimSpace(ansi.Strip(blank)))
-		assert.Equal(t, lipgloss.Width(styles.HandlerLabel(events.HandlerProxy)), lipgloss.Width(blank))
+		assert.Equal(t, lipgloss.Width(styles.Default.HandlerLabel(events.HandlerProxy)), lipgloss.Width(blank))
 	})
 
 	t.Run("hides the error of a cancelled request", func(t *testing.T) {
 		cancelled := makeRequestData(http.MethodGet, "https://api.domain.com/api/user", http.StatusOK)
 		cancelled.Cancelled = true
 
-		line := render.FormatRequest(events.RequestCompleted{Data: cancelled, Err: context.Canceled})
+		line := render.FormatRequest(styles.Default, events.RequestCompleted{Data: cancelled, Err: context.Canceled})
 
 		assert.Equal(t, 1, lipgloss.Height(line))
 		assert.NotContains(t, line, context.Canceled.Error())

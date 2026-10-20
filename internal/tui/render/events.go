@@ -18,7 +18,7 @@ func (r *EventRenderer) Render(event events.Event) {
 	case events.RequestCompleted:
 		r.output.Request(typed)
 	case events.ServerStarted:
-		PrintLogo(r.output, r.version)
+		PrintLogo(r.output, r.output.theme, r.version)
 		r.output.Print("")
 		r.output.WarnBox(DisclaimerMessage)
 		r.output.Print("")

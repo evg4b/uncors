@@ -105,24 +105,3 @@ func (t Theme) HandlerLabel(kind events.HandlerKind) string {
 }
 
 var Default = NewTheme(lipgloss.HasDarkBackground(os.Stdin, os.Stdout))
-
-var (
-	InfoBlockStyle    = Default.InfoBlock
-	WarningBlockStyle = Default.WarningBlock
-	ErrorBlockStyle   = Default.ErrorBlock
-	CancelledStyle    = Default.Cancelled
-	PendingBlockStyle = Default.PendingBlock
-	URLStyle          = Default.URL
-	DimTextStyle      = Default.DimText
-	MutedTextStyle    = Default.MutedText
-	LogoRed           = Default.LogoRed
-	LogoYellow        = Default.LogoYellow
-)
-
-func StatusStyle(code int) lipgloss.Style {
-	return Default.StatusStyle(code)
-}
-
-func HandlerLabel(kind events.HandlerKind) string {
-	return Default.HandlerLabel(kind)
-}

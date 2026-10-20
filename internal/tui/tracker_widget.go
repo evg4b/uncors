@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui/render"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 type (
@@ -113,7 +114,7 @@ func (m *TrackerWidget) View() tea.View {
 	lines := make([]string, 0, len(m.pending))
 
 	for _, id := range slices.Sorted(maps.Keys(m.pending)) {
-		lines = append(lines, render.FormatPending(m.pending[id], m.spinner.View()))
+		lines = append(lines, render.FormatPending(styles.Default, m.pending[id], m.spinner.View()))
 	}
 
 	return tea.NewView(strings.Join(lines, "\n"))

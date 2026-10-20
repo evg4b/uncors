@@ -26,13 +26,6 @@ const (
 // Fits " ERROR ", so every level label is as wide.
 const boxLength = 7
 
-var levelStyles = map[outputType]lipgloss.Style{
-	infoOutput:    styles.InfoBlockStyle.Width(boxLength).Bold(true),
-	warnOutput:    styles.WarningBlockStyle.Width(boxLength).Bold(true),
-	errorOutput:   styles.ErrorBlockStyle.Width(boxLength).Bold(true),
-	defaultOutput: lipgloss.NewStyle(),
-}
-
 var messageMap = map[outputType]string{
 	infoOutput:  InfoLabel,
 	warnOutput:  WarningLabel,
@@ -43,6 +36,7 @@ type CliOutput struct {
 	mutex  *sync.RWMutex
 	output io.Writer
 	prefix string
+	theme  styles.Theme
 	buffer bytes.Buffer
 }
 
@@ -51,6 +45,12 @@ type Option = func(*CliOutput)
 func WithPrefix(prefix string) Option {
 	return func(o *CliOutput) {
 		o.prefix = prefix
+	}
+}
+
+func WithTheme(theme styles.Theme) Option {
+	return func(o *CliOutput) {
+		o.theme = theme
 	}
 }
 
@@ -64,6 +64,7 @@ func NewCliOutput(output io.Writer, options ...Option) *CliOutput {
 	return helpers.ApplyOptions(&CliOutput{
 		mutex:  &sync.RWMutex{},
 		output: output,
+		theme:  styles.Default,
 	}, options)
 }
 
@@ -86,7 +87,7 @@ func (output *CliOutput) InfoBox(messages ...string) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
 
-	output.printMessageBox(strings.Join(messages, "\n"), InfoLabel, styles.InfoBlockStyle)
+	output.printMessageBox(strings.Join(messages, "\n"), InfoLabel, output.theme.InfoBlock)
 }
 
 func (output *CliOutput) Error(msg any) {
@@ -101,7 +102,7 @@ func (output *CliOutput) ErrorBox(messages ...string) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
 
-	output.printMessageBox(strings.Join(messages, "\n"), ErrorLabel, styles.ErrorBlockStyle)
+	output.printMessageBox(strings.Join(messages, "\n"), ErrorLabel, output.theme.ErrorBlock)
 }
 
 func (output *CliOutput) Warn(msg any) {
@@ -116,7 +117,7 @@ func (output *CliOutput) WarnBox(messages ...string) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
 
-	output.printMessageBox(strings.Join(messages, "\n"), WarningLabel, styles.WarningBlockStyle)
+	output.printMessageBox(strings.Join(messages, "\n"), WarningLabel, output.theme.WarningBlock)
 }
 
 func (output *CliOutput) Print(msg any) {
@@ -132,13 +133,13 @@ func (output *CliOutput) Request(event events.RequestCompleted) {
 	defer output.mutex.Unlock()
 
 	output.renderPrefix()
-	output.buffer.WriteString(FormatRequest(event))
+	output.buffer.WriteString(FormatRequest(output.theme, event))
 	output.buffer.WriteByte('\n')
 	output.flush()
 }
 
 func (output *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
-	return NewCliOutput(output.output, WithPrefix(prefix), withMutex(output.mutex))
+	return NewCliOutput(output.output, WithPrefix(prefix), WithTheme(output.theme), withMutex(output.mutex))
 }
 
 // Holds the write lock for render and write: Write only takes RLock.
@@ -162,8 +163,22 @@ func (output *CliOutput) flush() {
 	}
 }
 
+func (output *CliOutput) levelStyle(level outputType) lipgloss.Style {
+	switch level {
+	case infoOutput:
+		return output.theme.InfoBlock.Width(boxLength).Bold(true)
+	case warnOutput:
+		return output.theme.WarningBlock.Width(boxLength).Bold(true)
+	case errorOutput:
+		return output.theme.ErrorBlock.Width(boxLength).Bold(true)
+	case defaultOutput:
+	}
+
+	return lipgloss.NewStyle()
+}
+
 func (output *CliOutput) renderLevel(level outputType) {
-	renderer := levelStyles[level]
+	renderer := output.levelStyle(level)
 	if levelMessage, ok := messageMap[level]; ok {
 		output.buffer.WriteString(renderer.Render(levelMessage))
 	}
