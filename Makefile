@@ -6,8 +6,7 @@ GO := go
 GOTEST := $(GO) test
 GOBUILD := $(GO) build
 GOINSTALL := $(GO) install
-VERSION := $(shell git rev-parse --short HEAD)
-LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)'"
+LDFLAGS := -ldflags="-s -w"
 COVERAGE_FILE := coverage.out
 BINARY_NAME := uncors
 BINARY_WINDOWS := $(BINARY_NAME).exe
@@ -96,12 +95,12 @@ build:
 
 ## build-release: Build release binary with optimizations
 build-release:
-	@printf "$$(gum style --foreground 11 'Building release binary') $$(gum style --foreground 190 '(version: $(VERSION))')\n"
+	@printf "$$(gum style --foreground 11 'Building release binary')\n"
 	@$(GOBUILD) -tags release $(LDFLAGS) .
 
 ## install: Install the binary to GOPATH/bin
 install:
-	@printf "$$(gum style --foreground 11 'Installing binary') $$(gum style --foreground 190 '(version: $(VERSION))')\n"
+	@printf "$$(gum style --foreground 11 'Installing binary')\n"
 	@$(GOINSTALL) -tags release $(LDFLAGS) .
 
 ## clean: Remove generated files and binaries

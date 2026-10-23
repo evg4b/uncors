@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -100,7 +101,7 @@ func (b *syncBuffer) String() string {
 }
 
 func env(fs afero.Fs, args ...string) cli.Env {
-	return cli.Env{Fs: fs, Stdout: io.Discard, Args: args, Version: "x.x.x"}
+	return cli.Env{Fs: fs, Stdout: io.Discard, Args: args, Build: version.Build{Release: "x.x.x"}}
 }
 
 func startProxy(ctx context.Context, env cli.Env) <-chan error {
@@ -119,15 +120,15 @@ func TestRunUncors(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("prints the version for --version flag", func(t *testing.T) {
+	t.Run("prints the build information for --version flag", func(t *testing.T) {
 		output := &syncBuffer{}
 		versionEnv := env(afero.NewMemMapFs(), "--version")
 		versionEnv.Stdout = output
-		versionEnv.Version = "1.2.3"
+		versionEnv.Build = version.Build{Release: "1.2.3", GoVersion: "go1.99.0", Revision: "abc"}
 
 		err := cli.RunUncors(context.Background(), versionEnv)
 		require.NoError(t, err)
-		assert.Equal(t, "1.2.3\n", output.String())
+		assert.Equal(t, "version: 1.2.3\ngo:      go1.99.0\ncommit:  abc\n", output.String())
 	})
 
 	t.Run("returns nil for --help flag", func(t *testing.T) {

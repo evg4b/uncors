@@ -82,7 +82,8 @@ go install -tags release .
 
 With the `release` build tag, an unexpected crash prints a short error message
 instead of re-panicking with a full stack trace. `make install` builds the same
-way and also embeds the current commit as the version.
+way. A build without a release version reports the short commit hash as its
+version, with a `-dirty` suffix when the working tree had uncommitted changes.
 
 ## Hosts file setup
 

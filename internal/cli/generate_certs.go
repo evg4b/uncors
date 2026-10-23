@@ -19,7 +19,7 @@ func GenerateCerts(env Env) error {
 	)
 
 	flags := pflag.NewFlagSet(GenerateCertsCmd, pflag.ContinueOnError)
-	cmd.DefineFlags(flags, env.Version)
+	cmd.DefineFlags(flags, env.Build.Version())
 
 	err := flags.Parse(env.Args)
 	if err != nil {
