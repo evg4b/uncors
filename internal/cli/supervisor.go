@@ -48,7 +48,7 @@ func supervise(
 		cfgPath:     cfgPath,
 		interactive: uncorsConfig.Interactive,
 		bus:         bus,
-		engine:      engine.New(env.Fs, engine.WithPublisher(bus), engine.WithVersion(env.Version)),
+		engine:      engine.New(env.Fs, engine.WithPublisher(bus), engine.WithVersion(env.Build.Version())),
 		commands:    make(chan events.Command, commandsBuffer),
 		// One pending reload is enough: it reads the file as it is then.
 		reloads: make(chan struct{}, 1),
@@ -269,7 +269,7 @@ func (s *supervisor) checkVersion(ctx context.Context, proxyURL string) {
 
 	checker := version.NewVersionChecker(
 		version.WithHTTPClient(client),
-		version.WithCurrentVersion(s.env.Version),
+		version.WithCurrentVersion(s.env.Build.Version()),
 	)
 
 	latest, available := checker.CheckNewVersion(ctx)

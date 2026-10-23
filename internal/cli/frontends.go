@@ -12,7 +12,7 @@ type frontend func(subscription *events.Subscription, commands chan<- events.Com
 func headless(env Env) frontend {
 	return func(subscription *events.Subscription, _ chan<- events.Command) error {
 		output := tui.NewCliOutput(env.Stdout)
-		renderer := tui.NewEventRenderer(output, env.Version)
+		renderer := tui.NewEventRenderer(output, env.Build.Version())
 
 		for event := range subscription.Events() {
 			renderer.Render(event)
@@ -28,7 +28,7 @@ func headless(env Env) frontend {
 
 func interactive(env Env) frontend {
 	return func(subscription *events.Subscription, commands chan<- events.Command) error {
-		app := uncorsapp.NewUncorsApp(subscription, commands, env.Version)
+		app := uncorsapp.NewUncorsApp(subscription, commands, env.Build.Version())
 
 		_, err := tea.NewProgram(app).Run()
 

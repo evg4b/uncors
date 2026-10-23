@@ -14,7 +14,7 @@ func RunUncors(ctx context.Context, env Env) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, config.ErrVersionRequested):
-			_, err = fmt.Fprintln(env.Stdout, env.Version)
+			_, err = fmt.Fprint(env.Stdout, env.Build.String())
 
 			return err
 		case errors.Is(err, pflag.ErrHelp):

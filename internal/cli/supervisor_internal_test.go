@@ -17,6 +17,7 @@ import (
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/telemetry"
+	"github.com/evg4b/uncors/internal/version"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/spf13/afero"
@@ -52,7 +53,7 @@ func supervisedConfig(t *testing.T) (Env, *config.UncorsConfig) {
 	require.NoError(t, err)
 	require.NoError(t, afero.WriteFile(fs, configPath, data, 0o600))
 
-	env := Env{Fs: fs, Stdout: io.Discard, Args: []string{"-c", configPath}, Version: "x.x.x"}
+	env := Env{Fs: fs, Stdout: io.Discard, Args: []string{"-c", configPath}, Build: version.Build{Release: "x.x.x"}}
 
 	return env, uncorsConfig
 }

@@ -85,7 +85,7 @@ mappings:
 | `--config`      | `-c`  | Path to a YAML configuration file. Defaults to `.uncors.yaml` or `.uncors.yml` if one exists.     |
 | `--proxy`       |       | HTTP/HTTPS proxy for upstream requests. Overrides `proxy` from the file.                          |
 | `--interactive` |       | Run the interactive terminal UI. Defaults to `true`; pass `--interactive=false` for plain output. |
-| `--version`     | `-v`  | Print the version and exit.                                                                       |
+| `--version`     | `-v`  | Print the version, Go version, and commit, then exit.                                             |
 | `--help`        | `-h`  | Print usage and exit.                                                                             |
 
 `--from` and `--to` work in pairs: the first `--from` goes with the first
