@@ -3,7 +3,7 @@ package stories
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/evg4b/uncors/internal/events"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/internal/tui"
 )
 
 const commandBuffer = 16
@@ -78,29 +78,29 @@ func widgetStory[T widget[T]](view T, resize func(T, tea.WindowSizeMsg), msgs ..
 }
 
 func historyStory(lines []string, msgs ...tea.Msg) tea.Model {
-	history := uncorsapp.NewHistoryWidget(uncorsapp.NewKeyMap())
+	history := tui.NewHistoryWidget(tui.NewKeyMap())
 	for _, line := range lines {
 		history.AppendLine(line)
 	}
 
-	return widgetStory(history, func(widget *uncorsapp.HistoryWidget, size tea.WindowSizeMsg) {
+	return widgetStory(history, func(widget *tui.HistoryWidget, size tea.WindowSizeMsg) {
 		widget.SetHeight(size.Height)
 	}, msgs...)
 }
 
 func appStory(msgs []tea.Msg) tea.Model {
-	app := uncorsapp.NewUncorsApp(
+	app := tui.NewUncorsApp(
 		events.NewBus().Subscribe(1),
 		make(chan events.Command, commandBuffer),
 		version,
-		uncorsapp.WithMemoryWidget(fixedMemoryWidget(memSmall)),
+		tui.WithMemoryWidget(fixedMemoryWidget(memSmall)),
 	)
 
 	return replay(app, msgs...)
 }
 
-func fixedMemoryWidget(mb float64) *uncorsapp.MemoryWidget {
-	return uncorsapp.NewMemoryWidget(uncorsapp.WithMemoryUsage(func() float64 { return mb }))
+func fixedMemoryWidget(mb float64) *tui.MemoryWidget {
+	return tui.NewMemoryWidget(tui.WithMemoryUsage(func() float64 { return mb }))
 }
 
 func key(code rune) tea.Msg {

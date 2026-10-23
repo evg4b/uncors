@@ -8,7 +8,7 @@ import (
 	"github.com/evg4b/uncors/internal/cli"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 )
@@ -71,6 +71,6 @@ func handleError(err error) {
 }
 
 func report(value any) {
-	tui.NewCliOutput(os.Stdout).
+	render.NewCliOutput(os.Stdout).
 		Error(value)
 }

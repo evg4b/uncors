@@ -4,9 +4,9 @@ import (
 	"io"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 func NoopOutput() contracts.Output {
-	return tui.NewCliOutput(io.Discard)
+	return render.NewCliOutput(io.Discard)
 }

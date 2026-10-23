@@ -6,7 +6,7 @@ import (
 	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -26,7 +26,7 @@ func NewGenerateCertsCommand(options ...Option) *GenerateCertsCommand {
 }
 
 func (c *GenerateCertsCommand) DefineFlags(flags *pflag.FlagSet, version string) {
-	flags.Usage = func() { tui.PrintUsage(flags, version) }
+	flags.Usage = func() { render.PrintUsage(flags, version) }
 	flags.IntVar(&c.validityDays, "validity-days", defaultValidityDays, "Certificate validity period in days")
 	flags.BoolVar(&c.force, "force", false, "Force overwrite existing CA certificates")
 }

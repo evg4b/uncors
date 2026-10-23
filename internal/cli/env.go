@@ -3,7 +3,7 @@ package cli
 import (
 	"io"
 
-	"github.com/evg4b/uncors/internal/tui"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/internal/version"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -17,5 +17,5 @@ type Env struct {
 }
 
 func (e Env) usage(flags *pflag.FlagSet) {
-	tui.PrintUsage(flags, e.Build.Version())
+	render.PrintUsage(flags, e.Build.Version())
 }

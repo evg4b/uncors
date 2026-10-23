@@ -12,7 +12,6 @@ import (
 func TestCoreDoesNotImportTheUI(t *testing.T) {
 	forbidden := []string{
 		"github.com/evg4b/uncors/internal/tui",
-		"github.com/evg4b/uncors/internal/uncors_app",
 		"charm.land/",
 		"github.com/charmbracelet/",
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tui"
-	uncorsapp "github.com/evg4b/uncors/internal/uncors_app"
+	"github.com/evg4b/uncors/internal/tui/render"
 )
 
 const version = "0.0.0-story"
@@ -85,7 +85,7 @@ func started(requests ...request) []tea.Msg {
 	for _, req := range requests {
 		requestID++
 
-		msgs = append(msgs, uncorsapp.EventMsg(events.RequestStarted{
+		msgs = append(msgs, tui.EventMsg(events.RequestStarted{
 			ID: requestID, Method: req.method, URL: parseURL(req.url),
 			Handler: req.handler, Rewrite: req.rewrite, At: requestTime,
 		}))
@@ -121,7 +121,7 @@ func serverStarted() []tea.Msg {
 func eventMsgs(evts ...events.Event) []tea.Msg {
 	msgs := make([]tea.Msg, 0, len(evts))
 	for _, event := range evts {
-		msgs = append(msgs, uncorsapp.EventMsg(event))
+		msgs = append(msgs, tui.EventMsg(event))
 	}
 
 	return msgs
@@ -130,7 +130,7 @@ func eventMsgs(evts ...events.Event) []tea.Msg {
 func rendered(evts ...events.Event) []string {
 	var buf bytes.Buffer
 
-	renderer := tui.NewEventRenderer(tui.NewCliOutput(&buf), version)
+	renderer := render.NewEventRenderer(render.NewCliOutput(&buf), version)
 	lines := make([]string, 0, len(evts))
 
 	for _, event := range evts {
@@ -150,4 +150,64 @@ func numberedLines(count int) []string {
 	}
 
 	return lines
+}
+
+var handlerKinds = []events.HandlerKind{
+	events.HandlerProxy,
+	events.HandlerCache,
+	events.HandlerMock,
+	events.HandlerScript,
+	events.HandlerStatic,
+	events.HandlerOptions,
+}
+
+var statusCodes = []int{
+	http.StatusSwitchingProtocols,
+	http.StatusOK,
+	http.StatusNotModified,
+	http.StatusNotFound,
+	http.StatusBadGateway,
+}
+
+func handlerRequests() []request {
+	requests := make([]request, 0, len(handlerKinds))
+	for _, kind := range handlerKinds {
+		if kind == events.HandlerOptions {
+			requests = append(requests, request{http.MethodOptions, usersURL, kind, http.StatusNoContent, nil})
+
+			continue
+		}
+
+		requests = append(requests, request{http.MethodGet, usersURL, kind, http.StatusOK, nil})
+	}
+
+	return requests
+}
+
+func completed(requests ...request) []events.Event {
+	evts := make([]events.Event, 0, len(requests))
+
+	for index, req := range requests {
+		evts = append(evts, events.RequestCompleted{
+			ID:       uint64(index + 1),
+			Handler:  req.handler,
+			Data:     &contracts.RequestData{Method: req.method, URL: parseURL(req.url), Code: req.code},
+			Duration: time.Millisecond,
+		})
+	}
+
+	return evts
+}
+
+func statuses() []events.Event {
+	requests := make([]request, 0, len(statusCodes))
+	for _, code := range statusCodes {
+		requests = append(requests, request{http.MethodGet, usersURL, events.HandlerProxy, code, nil})
+	}
+
+	return append(completed(requests...), events.RequestCompleted{
+		ID:      uint64(len(requests) + 1),
+		Handler: events.HandlerProxy,
+		Data:    &contracts.RequestData{Method: http.MethodGet, URL: parseURL(usersURL), Cancelled: true},
+	})
 }
