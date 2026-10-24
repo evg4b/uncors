@@ -37,9 +37,7 @@ func (h *Handler) switchProtocols(
 
 	copyCookiesToSource(original, replacer, target)
 
-	copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: replacer.ReplaceSoft,
-	})
+	copyHeaders(original.Header, target.Header(), replacer, headers.Location)
 
 	infra.WriteRequestCorsHeaders(target.Header(), req)
 
