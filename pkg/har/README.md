@@ -52,8 +52,9 @@ writer.AddEntry(entry)
 
 `AddEntry` never blocks: it returns `false` and drops the entry when the queue
 is full. A background goroutine keeps the entries sorted by `startedDateTime`
-and rewrites the file at most once per flush interval, through a temporary file
-and a rename, so the file on disk is always a valid archive. `Close` writes
+and rewrites the file at most once per flush interval, or once per ten times
+the last write's duration when that is longer, through a temporary file and a
+rename, so the file on disk is always a valid archive. `Close` writes
 what is left, and `Discard` stops without writing. The flush and error handlers
 run on that goroutine.
 
