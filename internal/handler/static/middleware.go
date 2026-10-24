@@ -17,7 +17,6 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
-	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
@@ -100,14 +99,6 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 	}
 
 	return nil
-}
-
-func (h *Middleware) Wrap(next contracts.Handler) contracts.Handler {
-	return infra.HandlerFunc(func(writer contracts.ResponseWriter, request *contracts.Request) error {
-		return h.ServeHTTP(writer, request, func(w contracts.ResponseWriter, r *contracts.Request) error {
-			return next.ServeHTTP(w, r)
-		})
-	})
 }
 
 func (h *Middleware) recordFallThrough(request *contracts.Request, span trace.Span, filePath string) {

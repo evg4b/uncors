@@ -110,8 +110,8 @@ func TestStaticMiddleware(t *testing.T) {
 			testHTTPBody       = "this is tests response"
 		)
 
-		handler := static.NewMiddleware(static.WithFileSystem(fs)).
-			Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+		handler := infra.Wrap(static.NewMiddleware(static.WithFileSystem(fs)),
+			infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 				writer.WriteHeader(testHTTPStatusCode)
 				fmt.Fprint(writer, testHTTPBody)
 
@@ -132,8 +132,8 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file is configured", func(t *testing.T) {
-		handler := static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex(indexHTML)).
-			Wrap(mocks.FailNowHandlerMock(t))
+		handler := infra.Wrap(static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex(indexHTML)),
+			mocks.FailNowHandlerMock(t))
 
 		for _, testCase := range staticFileTests {
 			t.Run(testCase.name, func(t *testing.T) {
@@ -149,8 +149,8 @@ func TestStaticMiddleware(t *testing.T) {
 	})
 
 	t.Run("index file doesn't exists", func(t *testing.T) {
-		handler := static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex("/not-exists.html")).
-			Wrap(mocks.FailNowHandlerMock(t))
+		handler := infra.Wrap(static.NewMiddleware(static.WithFileSystem(fs), static.WithIndex("/not-exists.html")),
+			mocks.FailNowHandlerMock(t))
 
 		_, err := serveStatic(t, handler, "/options/")
 
@@ -183,7 +183,7 @@ func expectServed(t *testing.T, handler contracts.Handler, path string, code int
 }
 
 func serveOnce(middleware *static.Middleware, requestURL *url.URL) {
-	handler := middleware.Wrap(infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
+	handler := infra.Wrap(middleware, infra.HandlerFunc(func(_ contracts.ResponseWriter, _ *contracts.Request) error {
 		return nil
 	}))
 
@@ -283,16 +283,16 @@ func TestStaticMiddlewarePathUnderFile(t *testing.T) {
 
 	for fsName, fileSystem := range fileSystems {
 		t.Run(fsName, func(t *testing.T) {
-			forward := static.NewMiddleware(static.WithFileSystem(fileSystem)).
-				Wrap(infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+			forward := infra.Wrap(static.NewMiddleware(static.WithFileSystem(fileSystem)),
+				infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
 					writer.WriteHeader(forwardCode)
 					fmt.Fprint(writer, forwardBody)
 
 					return nil
 				}))
 
-			index := static.NewMiddleware(static.WithFileSystem(fileSystem), static.WithIndex(indexHTML)).
-				Wrap(mocks.FailNowHandlerMock(t))
+			index := infra.Wrap(static.NewMiddleware(static.WithFileSystem(fileSystem), static.WithIndex(indexHTML)),
+				mocks.FailNowHandlerMock(t))
 
 			for _, path := range paths {
 				t.Run("forward "+path, func(t *testing.T) {
