@@ -1,7 +1,6 @@
 package render
 
-var (
-	DebugLabel   = "DEBUG"
+const (
 	InfoLabel    = "INFO"
 	WarningLabel = "WARN"
 	ErrorLabel   = "ERROR"
