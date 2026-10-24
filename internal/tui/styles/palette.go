@@ -24,15 +24,17 @@ type Palette struct {
 	Options color.Color
 }
 
+var white = lipgloss.Color("#FFFFFF")
+
 var Light = Palette{
 	Info:     lipgloss.Color("#005BA5"),
 	Success:  lipgloss.Color("#01833B"),
 	Warning:  lipgloss.Color("#E2A600"),
 	Error:    lipgloss.Color("#B60000"),
-	Contrast: lipgloss.Color("#FFFFFF"),
+	Contrast: white,
 	Dim:      lipgloss.Color("#8C8C8C"),
 	Muted:    lipgloss.Color("#777777"),
-	White:    lipgloss.Color("#FFFFFF"),
+	White:    white,
 
 	Proxy:   lipgloss.Color("#545AC9"),
 	Cache:   lipgloss.Color("#CCC906"),
@@ -50,7 +52,7 @@ var Dark = Palette{
 	Contrast: lipgloss.Color("#000000"),
 	Dim:      lipgloss.Color("#8C8C8C"),
 	Muted:    lipgloss.Color("#777777"),
-	White:    lipgloss.Color("#FFFFFF"),
+	White:    white,
 
 	Proxy:   lipgloss.Color("#6A71F7"),
 	Cache:   lipgloss.Color("#FEFC7F"),
