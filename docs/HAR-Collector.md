@@ -76,9 +76,14 @@ A request with a body gets a `postData` object, as described in HAR 1.2:
 `bodySize` is the size of the body in bytes, so a binary upload such as an
 image is recorded by its size only. Requests without a body have no `postData`.
 
-If the request body cannot be read, for example because the client
-disconnected in the middle of an upload, the request fails and is not sent to
-the upstream server, so the upstream never gets a truncated body.
+UNCORS reads up to 10 MiB of the body before sending the request upstream. If
+the first 10 MiB cannot be read, for example because the client disconnected
+in the middle of an upload, the request fails and is not sent to the upstream
+server, so the upstream never gets a truncated body.
+
+A body larger than 10 MiB is streamed to the upstream server instead of being
+held in memory. Its entry has a `postData` with only `mimeType`, and `bodySize`
+is the number of bytes the upstream read.
 
 ### Response bodies
 

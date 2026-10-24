@@ -488,3 +488,38 @@ func TestNewMiddleware_NilWriterPanic(t *testing.T) {
 		func() { har.NewMiddleware() },
 	)
 }
+
+func TestMiddleware_LargeRequestBody(t *testing.T) {
+	mdlw, harWriter, path := newHARMiddleware(t)
+
+	body := strings.Repeat("a", 10<<20+1024)
+
+	var received int
+
+	next := infra.HandlerFunc(func(rw contracts.ResponseWriter, r *contracts.Request) error {
+		data, err := io.ReadAll(r.Body)
+		received = len(data)
+
+		rw.WriteHeader(http.StatusOK)
+
+		return err
+	})
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "http://example.com/upload",
+		strings.NewReader(body))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "text/plain")
+
+	serveErr := infra.Wrap(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()), req)
+	require.NoError(t, serveErr)
+	require.NoError(t, harWriter.Close())
+
+	assert.Equal(t, len(body), received)
+
+	archive := readHARFile(t, path)
+	require.Len(t, archive.Log.Entries, 1)
+
+	request := archive.Log.Entries[0].Request
+	assert.Equal(t, int64(len(body)), request.BodySize)
+	assert.Equal(t, &harlib.PostData{MimeType: "text/plain"}, request.PostData)
+}
