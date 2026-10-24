@@ -33,8 +33,8 @@ type paletteTerminal struct {
 }
 
 var paletteTerminals = []paletteTerminal{
-	{"light", styles.NewTheme(false), lipgloss.Color("#1F1F1F"), lipgloss.Color("#FFFFFF")},
-	{"dark", styles.NewTheme(true), lipgloss.Color("#D4D4D4"), lipgloss.Color("#1E1E1E")},
+	{"light", styles.NewTheme(styles.Light), lipgloss.Color("#1F1F1F"), lipgloss.Color("#FFFFFF")},
+	{"dark", styles.NewTheme(styles.Dark), lipgloss.Color("#D4D4D4"), lipgloss.Color("#1E1E1E")},
 }
 
 func completedSample(handler events.HandlerKind, method, path string, code int) events.RequestCompleted {
