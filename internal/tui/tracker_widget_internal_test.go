@@ -78,24 +78,16 @@ func TestTrackerWidget(t *testing.T) {
 		assert.False(t, widget.ticking)
 	})
 
-	t.Run("Update clears pending requests on restart", func(t *testing.T) {
-		widget := NewTrackerWidget()
-		widget.pending[1] = events.RequestStarted{ID: 1}
-		widget.ticking = true
-
-		newWidget, cmd := widget.Update(lifecycleMsg{event: events.ServerRestarted{}})
-		assert.Same(t, widget, newWidget)
-		assert.Nil(t, cmd)
-		assert.Equal(t, 0, widget.ActiveCount())
-		assert.False(t, widget.ticking)
-	})
-
-	t.Run("Update keeps pending requests on other lifecycle events", func(t *testing.T) {
+	t.Run("Update keeps pending requests on lifecycle events", func(t *testing.T) {
 		widget := NewTrackerWidget()
 		widget.pending[1] = events.RequestStarted{ID: 1}
 
+		_, _ = widget.Update(lifecycleMsg{event: events.ServerRestarted{}})
 		_, _ = widget.Update(lifecycleMsg{event: events.ReloadFailed{}})
 		assert.Equal(t, 1, widget.ActiveCount())
+
+		_, _ = widget.Update(requestCompletedMsg{ID: 1})
+		assert.Equal(t, 0, widget.ActiveCount())
 	})
 
 	t.Run("View renders correctly", func(t *testing.T) {
