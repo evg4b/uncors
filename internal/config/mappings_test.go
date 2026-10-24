@@ -3,6 +3,7 @@ package config_test
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
@@ -300,4 +301,27 @@ func TestMappings_GroupByPort(t *testing.T) {
 		_, err := mappings.GroupByPort()
 		require.ErrorContains(t, err, "invalid port number")
 	})
+}
+
+func TestMappingsStringKeepsOrderAndOwnDetails(t *testing.T) {
+	mappings := config.Mappings{
+		{From: hosts.Localhost.HTTPS(), To: hosts.Github.HTTPS()},
+		{
+			From: hosts.Localhost.HTTP(),
+			To:   hosts.Github.HTTPS(),
+			Mocks: config.Mocks{{
+				Matcher:  config.RequestMatcher{Path: "/demo", Method: http.MethodGet},
+				Response: config.Response{Code: http.StatusOK, Raw: "OK"},
+			}},
+		},
+		{From: hosts.Github.HTTP(), To: hosts.Localhost.HTTP(), Cache: config.CacheGlobs{"/api/**"}},
+	}
+
+	assert.Equal(t, strings.Join([]string{
+		mapping(hosts.Localhost.HTTPS().String(), hosts.Github.HTTPS().String()),
+		mapping(hosts.Localhost.HTTP().String(), hosts.Github.HTTPS().String()),
+		"    mock: [GET 200] /demo",
+		mapping(hosts.Github.HTTP().String(), hosts.Localhost.HTTP().String()),
+		"    cache: /api/**",
+	}, "\n"), mappings.String())
 }
