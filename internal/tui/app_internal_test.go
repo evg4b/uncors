@@ -121,6 +121,7 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
 	app.helpWidget.help.ShowAll = true
+	app.helpWidget.refresh()
 	app.trackerWidget.pending[1] = events.RequestStarted{Method: "POST", URL: requestURL, At: time.Now()}
 	assert.Equal(t, 6, app.footerHeight())
 

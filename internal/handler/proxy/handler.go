@@ -110,10 +110,7 @@ func (h *Handler) makeOriginalRequest(
 
 	originalRequest.ContentLength = req.ContentLength
 
-	copyHeaders(req.Header, originalRequest.Header, modificationsMap{
-		headers.Origin:  replacer.ReplaceSoft,
-		headers.Referer: replacer.ReplaceSoft,
-	})
+	copyHeaders(req.Header, originalRequest.Header, replacer, headers.Origin, headers.Referer)
 
 	removeHopByHopHeaders(originalRequest.Header)
 
@@ -137,9 +134,7 @@ func (h *Handler) makeUncorsResponse(
 ) error {
 	copyCookiesToSource(original, replacer, target)
 
-	copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: replacer.ReplaceSoft,
-	})
+	copyHeaders(original.Header, target.Header(), replacer, headers.Location)
 
 	removeHopByHopHeaders(target.Header())
 

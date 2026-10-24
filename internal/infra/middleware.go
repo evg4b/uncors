@@ -5,7 +5,9 @@ import (
 )
 
 func Wrap(middleware contracts.Middleware, handler contracts.Handler) contracts.Handler {
+	next := contracts.Next(handler.ServeHTTP)
+
 	return HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
-		return middleware.ServeHTTP(w, r, handler.ServeHTTP)
+		return middleware.ServeHTTP(w, r, next)
 	})
 }
