@@ -76,9 +76,14 @@ A request with a body gets a `postData` object, as described in HAR 1.2:
 `bodySize` is the size of the body in bytes, so a binary upload such as an
 image is recorded by its size only. Requests without a body have no `postData`.
 
-If the request body cannot be read, for example because the client
-disconnected in the middle of an upload, the request fails and is not sent to
-the upstream server, so the upstream never gets a truncated body.
+UNCORS reads up to 10 MiB of the body before sending the request upstream. If
+the first 10 MiB cannot be read, for example because the client disconnected
+in the middle of an upload, the request fails and is not sent to the upstream
+server, so the upstream never gets a truncated body.
+
+A body larger than 10 MiB is streamed to the upstream server instead of being
+held in memory. Its entry has a `postData` with only `mimeType`, and `bodySize`
+is the number of bytes the upstream read.
 
 ### Response bodies
 
@@ -151,12 +156,14 @@ mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
 
 Recording never slows down requests. Entries go to a queue, and a background
 writer adds them to the file at most once a second, so a new request shows up
-in the file within about a second. It writes to a temporary file next to the
-`.har` file and renames it over the old one, so the `.har` file is always
-complete and valid, even if you open it while UNCORS runs. The file is written
-once more when UNCORS stops or reloads its configuration. A configuration that
-fails to start, or a reload that fails and keeps the previous configuration
-running, leaves the file untouched.
+in the file within about a second. Each write replaces the whole file, so with
+a large recording the writer waits at least ten times as long as the last write
+took, which keeps writing to about a tenth of the time. It writes to a
+temporary file next to the `.har` file and renames it over the old one, so the
+`.har` file is always complete and valid, even if you open it while UNCORS
+runs. The file is written once more when UNCORS stops or reloads its
+configuration. A configuration that fails to start, or a reload that fails and
+keeps the previous configuration running, leaves the file untouched.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads a changed configuration file, the recording starts empty and the

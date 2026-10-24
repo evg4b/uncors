@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/pkg/urlt"
-	"github.com/samber/lo"
 )
 
 type Mappings []Mapping
@@ -25,12 +24,9 @@ type PortGroups []PortGroup
 func (m Mappings) String() string {
 	lines := make([]string, 0, len(m))
 
-	for _, group := range lo.GroupBy(m, extractHost) {
-		for _, mapping := range group {
-			lines = append(lines, fmt.Sprintf("%s => %s", mapping.From, mapping.To))
-		}
+	for _, mapping := range m {
+		lines = append(lines, fmt.Sprintf("%s => %s", mapping.From, mapping.To))
 
-		mapping := lo.FirstOrEmpty(group)
 		for _, mock := range mapping.Mocks {
 			lines = append(lines, fmt.Sprintf("    mock: %s", mock.String()))
 		}
@@ -45,10 +41,6 @@ func (m Mappings) String() string {
 	}
 
 	return strings.Join(lines, "\n")
-}
-
-func extractHost(item Mapping) string {
-	return item.From.Hostname
 }
 
 func (m Mappings) GroupByPort() (PortGroups, error) {

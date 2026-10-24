@@ -6,14 +6,18 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
 	harlib "github.com/evg4b/uncors/pkg/har"
+	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+const maxRecordedRequestBody = 10 << 20
 
 type EntryWriter interface {
 	AddEntry(entry harlib.Entry) bool
@@ -42,30 +46,26 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 
 	start := time.Now()
 
-	var reqBody []byte
+	reqBody, streamed, err := recordRequestBody(req)
+	if err != nil {
+		telemetry.Fail(span, err)
 
-	if req.Body != nil && req.Body != http.NoBody {
-		body, err := io.ReadAll(req.Body)
-		_ = req.Body.Close()
-
-		if err != nil {
-			telemetry.Fail(span, err)
-
-			return fmt.Errorf("har: cannot read request body: %w", err)
-		}
-
-		reqBody = body
-		req.Body = io.NopCloser(bytes.NewReader(body))
+		return err
 	}
-
-	reqBodySize := int64(len(reqBody))
 
 	writer.EnableBodyCapture()
 
-	err := next(writer, req)
+	err = next(writer, req)
 
 	elapsed := time.Since(start)
 	entry := m.buildEntry(req, writer.Captured(), start, elapsed, reqBody)
+
+	if streamed != nil {
+		entry.Request.BodySize = streamed.read.Load()
+		entry.Request.PostData = &harlib.PostData{MimeType: req.Header.Get(headers.ContentType)}
+	}
+
+	reqBodySize := entry.Request.BodySize
 	recorded := m.writer.AddEntry(entry)
 	telemetry.HAREntry(req.Context(), recorded)
 
@@ -85,6 +85,48 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, req *contracts.R
 	}
 
 	return err
+}
+
+func recordRequestBody(req *http.Request) ([]byte, *countingReader, error) {
+	if req.Body == nil || req.Body == http.NoBody {
+		return nil, nil, nil
+	}
+
+	body, err := io.ReadAll(io.LimitReader(req.Body, maxRecordedRequestBody+1))
+	if err != nil {
+		_ = req.Body.Close()
+
+		return nil, nil, fmt.Errorf("har: cannot read request body: %w", err)
+	}
+
+	if len(body) > maxRecordedRequestBody {
+		streamed := &countingReader{reader: io.MultiReader(bytes.NewReader(body), req.Body)}
+		req.Body = readCloser{Reader: streamed, Closer: req.Body}
+
+		return nil, streamed, nil
+	}
+
+	_ = req.Body.Close()
+	req.Body = io.NopCloser(bytes.NewReader(body))
+
+	return body, nil, nil
+}
+
+type countingReader struct {
+	reader io.Reader
+	read   atomic.Int64
+}
+
+func (r *countingReader) Read(p []byte) (int, error) {
+	n, err := r.reader.Read(p)
+	r.read.Add(int64(n))
+
+	return n, err
+}
+
+type readCloser struct {
+	io.Reader
+	io.Closer
 }
 
 func (m *Middleware) buildEntry(

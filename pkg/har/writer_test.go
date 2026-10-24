@@ -276,6 +276,29 @@ func TestWriter(t *testing.T) {
 		assert.NoError(t, flushes[0].Err)
 	})
 
+	t.Run("waits longer between flushes when a flush is slow", func(t *testing.T) {
+		flushes := make(chan har.Flush, 2)
+
+		harWriter := har.NewWriter("/out.har",
+			har.WithFileSystem(slowRenameFs{Fs: afero.NewMemMapFs(), delay: 20 * time.Millisecond}),
+			har.WithFlushInterval(time.Millisecond),
+			har.WithFlushHandler(func(flush har.Flush) { flushes <- flush }),
+		)
+
+		require.True(t, harWriter.AddEntry(har.Entry{}))
+
+		first := <-flushes
+
+		require.True(t, harWriter.AddEntry(har.Entry{}))
+
+		second := <-flushes
+
+		require.NoError(t, harWriter.Close())
+
+		gap := second.Start.Sub(first.Start.Add(first.Duration))
+		assert.GreaterOrEqual(t, gap, 10*first.Duration)
+	})
+
 	t.Run("reports a failed flush", func(t *testing.T) {
 		var flushes []har.Flush
 
@@ -356,4 +379,16 @@ func TestWriter(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, archive.Log.Entries)
 	})
+}
+
+type slowRenameFs struct {
+	afero.Fs
+
+	delay time.Duration
+}
+
+func (fs slowRenameFs) Rename(oldname, newname string) error {
+	time.Sleep(fs.delay)
+
+	return fs.Fs.Rename(oldname, newname)
 }

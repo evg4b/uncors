@@ -145,17 +145,15 @@ func TestUncorsAppRendersLifecycleEvents(t *testing.T) {
 		assert.Contains(t, historyText(app), "http://localhost:3000 => https://github.com")
 	})
 
-	t.Run("server restarted clears pending requests", func(t *testing.T) {
+	t.Run("server restarted keeps requests still in flight", func(t *testing.T) {
 		app := newTestApp(t)
-		app.trackerWidget.pending[1] = events.RequestStarted{Method: "GET", At: time.Now()}
-		app.trackerWidget.ticking = true
+		app.trackerWidget.pending[1] = events.RequestStarted{ID: 1, Method: "GET", At: time.Now()}
 
 		_, cmd := app.Update(lifecycleMsg{event: events.ServerRestarted{Mappings: mappings()}})
 		require.NotNil(t, cmd)
 
 		assert.Contains(t, historyText(app), "Server restarted")
-		assert.Empty(t, app.trackerWidget.pending)
-		assert.False(t, app.trackerWidget.ticking)
+		assert.Len(t, app.trackerWidget.pending, 1)
 	})
 
 	t.Run("a failed reload is reported", func(t *testing.T) {

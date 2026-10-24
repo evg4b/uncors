@@ -20,6 +20,8 @@ const (
 	DefaultQueueSize     = 4096
 	DefaultFlushInterval = time.Second
 
+	flushCostFactor = 10
+
 	dirMode        = 0o755
 	entryPrefix    = "      "
 	entriesClosing = "\n    "
@@ -163,6 +165,7 @@ func (w *Writer) run() {
 	var (
 		timer *time.Timer
 		tick  <-chan time.Time
+		cost  time.Duration
 	)
 
 	for {
@@ -172,14 +175,14 @@ func (w *Writer) run() {
 			w.drain()
 
 			if tick == nil {
-				timer = time.NewTimer(w.flushInterval)
+				timer = time.NewTimer(max(w.flushInterval, cost*flushCostFactor))
 				tick = timer.C
 			}
 
 		case <-tick:
 			tick = nil
 
-			w.flush()
+			cost = w.flush()
 
 		case <-w.done:
 			if timer != nil {
@@ -229,24 +232,26 @@ func (w *Writer) append(entry Entry) {
 	w.size += len(data)
 }
 
-func (w *Writer) flush() {
+func (w *Writer) flush() time.Duration {
 	start := time.Now()
 
 	snapshot, size := w.snapshot()
 
 	err := w.write(snapshot)
-	if w.onFlush == nil {
-		return
+	duration := time.Since(start)
+
+	if w.onFlush != nil {
+		w.onFlush(Flush{
+			Path:     w.path,
+			Entries:  len(snapshot),
+			Bytes:    size,
+			Start:    start,
+			Duration: duration,
+			Err:      err,
+		})
 	}
 
-	w.onFlush(Flush{
-		Path:     w.path,
-		Entries:  len(snapshot),
-		Bytes:    size,
-		Start:    start,
-		Duration: time.Since(start),
-		Err:      err,
-	})
+	return duration
 }
 
 func (w *Writer) snapshot() ([][]byte, int) {

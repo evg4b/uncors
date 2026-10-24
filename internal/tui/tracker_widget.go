@@ -79,18 +79,6 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 		m.ticking = false
 
 		return m, nil
-
-	case lifecycleMsg:
-		// Requests of the previous generation finished before the restart, so
-		// anything still pending lost its completion event.
-		if _, restarted := typedMsg.event.(events.ServerRestarted); restarted {
-			telemetry.Debug(context.Background(), "TrackerWidget: clearing pending requests after restart")
-
-			m.pending = make(map[uint64]events.RequestStarted)
-			m.ticking = false
-		}
-
-		return m, nil
 	}
 
 	return m, nil
