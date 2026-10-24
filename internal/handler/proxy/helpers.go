@@ -3,29 +3,27 @@ package proxy
 import (
 	"net/http"
 	"net/textproto"
+	"slices"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/go-http-utils/headers"
 )
 
-type modificationsMap = map[string]func(string) string
-
-func noop(s string) string { return s }
-
-func copyHeaders(source, dest http.Header, modifications modificationsMap) {
+func copyHeaders(source, dest http.Header, replacer *urlreplacer.Replacer, rewritten ...string) {
 	for key, values := range source {
 		if key == headers.SetCookie || key == headers.ContentLength {
 			continue
 		}
 
-		modificationFunc, ok := modifications[headers.Normalize(key)]
-		if !ok {
-			modificationFunc = noop
-		}
+		rewrite := slices.Contains(rewritten, headers.Normalize(key))
 
 		for _, value := range values {
-			dest.Add(key, modificationFunc(value))
+			if rewrite {
+				value = replacer.ReplaceSoft(value)
+			}
+
+			dest.Add(key, value)
 		}
 	}
 }

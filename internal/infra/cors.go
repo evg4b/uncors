@@ -47,15 +47,16 @@ func WriteCorsHeaders(header http.Header, origin string) {
 
 func writeCorsHeaders(header http.Header, origin string) {
 	if origin != "" {
-		header.Set(headers.AccessControlAllowOrigin, origin)
 		addVary(header, headers.Origin)
 	} else {
-		header.Set(headers.AccessControlAllowOrigin, anyValue)
+		origin = anyValue
 	}
 
-	header.Set(headers.AccessControlAllowCredentials, "true")
-	header.Set(headers.AccessControlAllowMethods, allowMethods)
-	header.Set(headers.AccessControlMaxAge, maxAge)
+	values := []string{origin, "true", allowMethods, maxAge}
+	header[headers.AccessControlAllowOrigin] = values[0:1:1]
+	header[headers.AccessControlAllowCredentials] = values[1:2:2]
+	header[headers.AccessControlAllowMethods] = values[2:3:3]
+	header[headers.AccessControlMaxAge] = values[3:4:4]
 	header.Del(headers.AccessControlAllowHeaders)
 	header.Del(headers.AccessControlExposeHeaders)
 }
