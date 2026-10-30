@@ -136,7 +136,7 @@ func TestResponseValidator(t *testing.T) {
 			{
 				name:  "code",
 				value: config.Response{Code: 0, File: file, Delay: 3 * time.Second},
-				error: "test.code code must be in range 100-599",
+				error: "test.code code must be in range 200-599",
 			},
 			{
 				name:  "file",

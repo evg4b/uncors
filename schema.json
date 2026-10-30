@@ -459,7 +459,7 @@
         500
       ],
       "maximum": 599,
-      "minimum": 100,
+      "minimum": 200,
       "type": "integer"
     }
   },

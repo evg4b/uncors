@@ -16,6 +16,7 @@ update your configuration.
   - [HAR field names](#har-field-names)
   - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
   - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
+  - [No 1xx codes in mocks and `options-handling`](#no-1xx-codes-in-mocks-and-options-handling)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -185,6 +186,13 @@ script, or set `disabled: true` under `options-handling` for the mapping.
 A [static directory](Static-File-Serving) used to return its file for any
 method, so a `POST` to `/assets/app.js` got the file with `200`. Requests other
 than `GET` and `HEAD` now go to the upstream server.
+
+### No 1xx codes in mocks and `options-handling`
+
+A mock or `options-handling` `code` between 100 and 199 is now a configuration
+error. Such a code is not a final response: with `100`, the client got
+`100 Continue` followed by `200 OK`, and with `101` it waited for a protocol
+switch. Use a code from 200 to 599.
 
 ## Upgrading from 0.5.x to 0.6.x
 

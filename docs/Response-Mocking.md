@@ -106,7 +106,7 @@ never reached.
 
 | Option    | Type    | Required | Description                                                  |
 | --------- | ------- | -------- | ------------------------------------------------------------ |
-| `code`    | integer | Yes      | HTTP status code, 100 to 599.                                |
+| `code`    | integer | Yes      | HTTP status code, 200 to 599.                                |
 | `headers` | object  | No       | Response headers.                                            |
 | `delay`   | string  | No       | Wait this long before responding, for example `500ms`.       |
 | `raw`     | string  | One of   | Response body as text.                                       |

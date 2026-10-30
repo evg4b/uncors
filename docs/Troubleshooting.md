@@ -266,7 +266,7 @@ form `POST`) that change data; it stops it from reading the answers. See
 
 UNCORS validates the configuration at startup and prints every error with the
 path of the bad value, for example
-`mappings[0].mocks[0].response.code code must be in range 100-599`.
+`mappings[0].mocks[0].response.code code must be in range 200-599`.
 
 "mappings must not be empty" means no mapping was found. Check the
 `--config` path, and use an absolute path if you start UNCORS from another

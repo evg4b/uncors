@@ -93,6 +93,6 @@ func TestOptionsValidator(t *testing.T) {
 		require.EqualError(t, (&config.OptionsHandling{
 			Headers: map[string]string{headers.ContentType: "application/json"},
 			Code:    -10,
-		}).Validate("options"), "options.code code must be in range 100-599")
+		}).Validate("options"), "options.code code must be in range 200-599")
 	})
 }
