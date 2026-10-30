@@ -94,6 +94,7 @@ func TestCacheMiddlewareCorsHeaders(t *testing.T) {
 				headers.ContentType: {"application/json"},
 				"X-Request-Id":      {"first"},
 				headers.Vary:        {headers.Origin},
+				"Age":               {"0"},
 			}, testCase.origin), recorder.Header())
 		})
 	}

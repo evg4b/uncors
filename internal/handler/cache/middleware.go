@@ -8,7 +8,9 @@ import (
 	"net/url"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/tracking"
@@ -25,6 +27,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
+
+const ageHeader = "Age"
 
 type Middleware struct {
 	cache     contracts.Cache
@@ -206,6 +210,7 @@ func (m *Middleware) storeResponse(
 		Code:    capture.StatusCode,
 		Body:    capture.Body,
 		Headers: storedHeaders(capture.Header),
+		Stored:  time.Now(),
 	}
 
 	stored := m.cache.Set(key, response)
@@ -270,6 +275,9 @@ func (m *Middleware) writeCachedResponse(
 			header.Add(cachedHeader.Name, value)
 		}
 	}
+
+	upstreamAge, _ := strconv.ParseInt(header.Get(ageHeader), 10, 64)
+	header.Set(ageHeader, strconv.FormatInt(upstreamAge+int64(time.Since(cachedResponse.Stored)/time.Second), 10))
 
 	switch {
 	case tracking.OriginRejected(request.Context()):

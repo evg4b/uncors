@@ -1,5 +1,7 @@
 package contracts
 
+import "time"
+
 type CachedHeader struct {
 	Name  string
 	Value []string
@@ -10,6 +12,7 @@ type CachedResponse struct {
 	Body    []byte
 	Headers []CachedHeader
 	Vary    []string
+	Stored  time.Time
 }
 
 type Cache interface {

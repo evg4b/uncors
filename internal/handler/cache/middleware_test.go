@@ -59,7 +59,10 @@ func TestCacheMiddleware(t *testing.T) {
 			request := httptest.NewRequestWithContext(t.Context(), method, path, nil)
 			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
 			store.Wait()
-			assert.Equal(t, expectedHeader, recorder.Header())
+
+			header := recorder.Header().Clone()
+			header.Del("Age")
+			assert.Equal(t, expectedHeader, header)
 			assert.Equal(t, expectedBody, testutils.ReadBody(t, recorder))
 		})
 	}
@@ -397,5 +400,49 @@ func proxyLike(status int, header http.Header, body string) func(contracts.Respo
 		fmt.Fprint(writer, body)
 
 		return nil
+	}
+}
+
+func TestCacheMiddlewareAge(t *testing.T) {
+	tests := []struct {
+		name     string
+		stored   time.Duration
+		upstream string
+		want     string
+	}{
+		{name: "counts the time in the cache", stored: 90 * time.Second, want: "90"},
+		{name: "adds the upstream age", stored: 90 * time.Second, upstream: "10", want: "100"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			stored := []contracts.CachedHeader{}
+			if testCase.upstream != "" {
+				stored = append(stored, contracts.CachedHeader{Name: "Age", Value: []string{testCase.upstream}})
+			}
+
+			storage := mocks.NewCacheMock(t).GetMock.Return(contracts.CachedResponse{
+				Code:    http.StatusOK,
+				Headers: stored,
+				Stored:  time.Now().Add(-testCase.stored),
+			}, true)
+
+			middleware := cache.NewMiddleware(
+				cache.WithCacheStorage(storage),
+				cache.WithMethods([]string{http.MethodGet}),
+				cache.WithGlobs(config.CacheGlobs{"/**"}),
+			)
+
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/data", nil)
+			handler := infra.Wrap(middleware, infra.HandlerFunc(func(contracts.ResponseWriter, *contracts.Request) error {
+				t.Fatal("cache hit reached the next handler")
+
+				return nil
+			}))
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+			assert.Equal(t, testCase.want, recorder.Header().Get("Age"))
+		})
 	}
 }
