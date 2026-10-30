@@ -249,7 +249,7 @@ func storedHeaders(header http.Header) []contracts.CachedHeader {
 
 	for name, values := range header {
 		// It names the trace of the request that filled the cache.
-		if name == telemetry.TraceIDHeader || name == headers.SetCookie || isCorsHeader(name) {
+		if name == telemetry.TraceIDHeader || name == headers.SetCookie || infra.IsCorsHeader(name) {
 			continue
 		}
 

@@ -33,7 +33,7 @@ func WriteRequestCorsHeaders(header http.Header, request *http.Request) {
 
 func WithholdCorsHeaders(header http.Header) {
 	for name := range header {
-		if isCorsHeader(name) {
+		if IsCorsHeader(name) {
 			delete(header, name)
 		}
 	}
@@ -113,10 +113,10 @@ func isExposedHeader(name string) bool {
 		return false
 	}
 
-	return !isCorsHeader(name)
+	return !IsCorsHeader(name)
 }
 
-func isCorsHeader(name string) bool {
+func IsCorsHeader(name string) bool {
 	return len(name) >= len(corsHeaderPrefix) && strings.EqualFold(name[:len(corsHeaderPrefix)], corsHeaderPrefix)
 }
 

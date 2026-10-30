@@ -9,14 +9,7 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-const (
-	anyValue         = "*"
-	corsHeaderPrefix = "Access-Control-"
-)
-
-func isCorsHeader(name string) bool {
-	return len(name) >= len(corsHeaderPrefix) && strings.EqualFold(name[:len(corsHeaderPrefix)], corsHeaderPrefix)
-}
+const anyValue = "*"
 
 func forbidsStoring(header http.Header) bool {
 	for _, value := range header[headers.CacheControl] {
