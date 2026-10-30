@@ -34,6 +34,7 @@ func NewHandler(options ...HandlerOption) *Handler {
 	handler := helpers.ApplyOptions(&Handler{}, options)
 
 	helpers.AssertIsDefined(handler.script, "ScriptHandler: Script is not configured")
+	helpers.AssertIsDefined(handler.fs, "ScriptHandler: File system is not configured")
 
 	return handler
 }

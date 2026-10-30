@@ -3,6 +3,7 @@ package script_test
 import (
 	"testing"
 
+	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/script"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,5 +13,13 @@ func TestNewHandler_RequiresScript(t *testing.T) {
 		t,
 		"ScriptHandler: Script is not configured",
 		func() { script.NewHandler() },
+	)
+}
+
+func TestNewHandler_RequiresFileSystem(t *testing.T) {
+	assert.PanicsWithValue(
+		t,
+		"ScriptHandler: File system is not configured",
+		func() { script.NewHandler(script.WithScript(&config.Script{File: "/script.lua"})) },
 	)
 }
