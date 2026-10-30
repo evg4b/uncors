@@ -57,8 +57,11 @@ gorilla/mux also accepts a regular expression after the name, for example
 method: DELETE
 ```
 
-Without `method`, the mock answers every method. Allowed values are `GET`,
-`HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`, `OPTIONS`, and `TRACE`.
+Without `method`, the mock answers every method except `OPTIONS`, which UNCORS
+answers itself (see
+[OPTIONS request handling](Configuration#options-request-handling)). Allowed
+values are `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `CONNECT`,
+`OPTIONS`, and `TRACE`.
 
 ### Query parameters and headers
 

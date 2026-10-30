@@ -14,6 +14,7 @@ update your configuration.
   - [Simplified mapping syntax needs a host-like key](#simplified-mapping-syntax-needs-a-host-like-key)
   - [Duplicate mappings](#duplicate-mappings)
   - [HAR field names](#har-field-names)
+  - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -166,6 +167,17 @@ Merge the options of the duplicates into one mapping.
 
 [HAR files](HAR-Collector) use the HAR 1.2 name `redirectURL` instead of
 `redirectUrl`. Update tools that read the old name.
+
+### OPTIONS requests to mocks and scripts
+
+A mock or script without `method` used to answer `OPTIONS` requests with its
+own response, which left CORS preflight checks without
+`Access-Control-Allow-Headers`. UNCORS now answers those requests itself, as it
+does for proxied paths (see
+[OPTIONS request handling](Configuration#options-request-handling)).
+
+To keep a custom `OPTIONS` response, set `method: OPTIONS` on the mock or
+script, or set `disabled: true` under `options-handling` for the mapping.
 
 ## Upgrading from 0.5.x to 0.6.x
 

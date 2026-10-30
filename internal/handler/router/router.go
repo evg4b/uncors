@@ -84,7 +84,8 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Mocks,
 		func(m *config.Mock) *config.RequestMatcher { return &m.Matcher },
 		func(index int, def *config.Mock) {
-			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.MockHandler(&def.Response)), slices.Concat(
+			mock := r.withPreflight(mapping, def.Matcher, r.factory.MockHandler(&def.Response))
+			handler := traced(checkOrigin(mapping.AllowedOrigins, mock), slices.Concat(
 				mappingAttributes(mapping, routeMock),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -94,7 +95,8 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 	registerMatchedRoutes(mapping.Scripts,
 		func(s *config.Script) *config.RequestMatcher { return &s.Matcher },
 		func(index int, def *config.Script) {
-			handler := traced(checkOrigin(mapping.AllowedOrigins, r.factory.ScriptHandler(def)), slices.Concat(
+			script := r.withPreflight(mapping, def.Matcher, r.factory.ScriptHandler(def))
+			handler := traced(checkOrigin(mapping.AllowedOrigins, script), slices.Concat(
 				mappingAttributes(mapping, routeScript),
 				matcherAttributes(def.Matcher, index),
 			)...)
@@ -117,16 +119,25 @@ func (r *Router) registerMapping(mapping config.Mapping) {
 }
 
 func (r *Router) prepareDefaultHandler(mapping config.Mapping) contracts.Handler {
-	defaultHandler := r.defaultHandler
-	if !mapping.OptionsHandling.Disabled {
-		defaultHandler = infra.Wrap(r.factory.OptionsMiddleware(mapping.OptionsHandling), defaultHandler)
-	}
+	defaultHandler := r.withPreflight(mapping, config.RequestMatcher{}, r.defaultHandler)
 
 	if len(mapping.Cache) > 0 || mapping.HAR.Enabled() {
 		defaultHandler = bypassOnUpgrade(r.recordedHandler(mapping, defaultHandler), defaultHandler)
 	}
 
 	return checkOrigin(mapping.AllowedOrigins, defaultHandler)
+}
+
+func (r *Router) withPreflight(
+	mapping config.Mapping,
+	matcher config.RequestMatcher,
+	handler contracts.Handler,
+) contracts.Handler {
+	if mapping.OptionsHandling.Disabled || matcher.Method == http.MethodOptions {
+		return handler
+	}
+
+	return infra.Wrap(r.factory.OptionsMiddleware(mapping.OptionsHandling), handler)
 }
 
 func (r *Router) recordedHandler(mapping config.Mapping, handler contracts.Handler) contracts.Handler {
