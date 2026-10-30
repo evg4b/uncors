@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"runtime"
+	"runtime/metrics"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -13,10 +13,13 @@ import (
 type memUpdateMsg struct{ mb float64 }
 
 func getMemUsage() float64 {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
+	samples := []metrics.Sample{
+		{Name: "/memory/classes/total:bytes"},
+		{Name: "/memory/classes/heap/released:bytes"},
+	}
+	metrics.Read(samples)
 
-	return float64(memStats.Sys) / bytesPerMegabyte
+	return float64(samples[0].Value.Uint64()-samples[1].Value.Uint64()) / bytesPerMegabyte
 }
 
 type MemoryWidget struct {

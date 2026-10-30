@@ -12,7 +12,7 @@ func TestMemoryWidget(t *testing.T) {
 	t.Run("NewMemoryWidget initializes with valid memory", func(t *testing.T) {
 		widget := NewMemoryWidget()
 		assert.NotNil(t, widget)
-		assert.GreaterOrEqual(t, widget.memMB, 0.0)
+		assert.Positive(t, widget.memMB)
 	})
 
 	t.Run("WithMemoryUsage sets where the memory comes from", func(t *testing.T) {
