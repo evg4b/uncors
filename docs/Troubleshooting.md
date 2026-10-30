@@ -117,7 +117,8 @@ ipconfig /flushdns
 ## "host not mapped" error page
 
 UNCORS received the request but no mapping on that port matches its host name,
-so it answered with status 404. Check that the host in the browser's address
+so it answered with status 404. The message names the host it got, such as
+`host not mapped: api.local:3000`. Check that the host in the browser's address
 bar is spelled exactly like the host in `from`. A `{name}` placeholder matches
 a single label, so `{name}.local.com` matches `api.local.com` but not
 `v2.api.local.com`.
