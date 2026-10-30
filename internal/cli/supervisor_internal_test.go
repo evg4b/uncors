@@ -256,8 +256,8 @@ func TestSuperviseReportsFailedStart(t *testing.T) {
 		return nil
 	}
 
-	require.Error(t, supervise(t.Context(), env, uncorsConfig, "", frontend))
-	assert.Equal(t, []string{"stopped"}, eventTypes(received))
+	require.ErrorContains(t, supervise(t.Context(), env, uncorsConfig, "", frontend), "cannot listen on port")
+	assert.Empty(t, eventTypes(received))
 }
 
 type blockingFs struct {
