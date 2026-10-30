@@ -53,9 +53,9 @@ func TestBuildGeneration(t *testing.T) {
 
 		assert.Implements(t, (*contracts.Middleware)(nil), generation.CacheMiddleware(config.CacheGlobs{"*.json"}))
 
-		store := generation.Cache()
+		store := generation.CacheStore()
 
-		assert.Same(t, store, generation.Cache())
+		assert.Same(t, store, generation.CacheStore())
 	})
 
 	t.Run("every generation gets its own resources", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestBuildGeneration(t *testing.T) {
 
 		second := lo.Must(proxy.BuildGeneration(harConfiguration()))
 
-		assert.NotSame(t, first.Cache(), second.Cache())
+		assert.NotSame(t, first.CacheStore(), second.CacheStore())
 
 		require.NoError(t, first.Close())
 		require.NoError(t, second.Close())

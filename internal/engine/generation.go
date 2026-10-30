@@ -87,18 +87,10 @@ func (g *Generation) Discard() error {
 	return g.release(true)
 }
 
-func (g *Generation) Cache() contracts.Cache {
-	if g.cacheStore == nil {
-		_ = g.openCache()
-	}
-
-	return g.cacheStore
-}
-
 func (g *Generation) CacheMiddleware(globs config.CacheGlobs) contracts.Middleware {
 	return cache.NewMiddleware(
 		cache.WithMethods(g.cacheConfig.Methods),
-		cache.WithCacheStorage(g.Cache()),
+		cache.WithCacheStorage(g.cacheStore),
 		cache.WithGlobs(globs),
 	)
 }
