@@ -523,3 +523,30 @@ func TestMiddleware_LargeRequestBody(t *testing.T) {
 	assert.Equal(t, int64(len(body)), request.BodySize)
 	assert.Equal(t, &harlib.PostData{MimeType: "text/plain"}, request.PostData)
 }
+
+func TestMiddleware_LargeResponseBody(t *testing.T) {
+	mdlw, harWriter, path := newHARMiddleware(t)
+
+	body := strings.Repeat("a", 10<<20+1024)
+
+	next := infra.HandlerFunc(func(rw contracts.ResponseWriter, _ *contracts.Request) error {
+		rw.Header().Set("Content-Type", "text/plain")
+		rw.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(rw, body)
+
+		return err
+	})
+
+	serveErr := infra.Wrap(mdlw, next).ServeHTTP(server.NewResponseRecorder(httptest.NewRecorder()),
+		makeHARRequest(t, "http://example.com/download"))
+	require.NoError(t, serveErr)
+	require.NoError(t, harWriter.Close())
+
+	archive := readHARFile(t, path)
+	require.Len(t, archive.Log.Entries, 1)
+
+	response := archive.Log.Entries[0].Response
+	assert.Equal(t, int64(len(body)), response.BodySize)
+	assert.Equal(t, int64(10<<20), response.Content.Size)
+	assert.Equal(t, "Only the first 10485760 bytes of the body are recorded", response.Content.Comment)
+}

@@ -105,6 +105,10 @@ received, in base64, and `content.comment` says why.
 it came over the wire. For a decoded compressed body, `content.compression` is
 the number of bytes saved.
 
+Only the first 10 MiB of a response body are recorded; the client still gets
+the whole response. For a longer body, `bodySize` is the full size,
+`content.text` holds the first 10 MiB, and `content.comment` says it was cut.
+
 ## Secure headers
 
 To keep credentials off the disk, these headers are left out of every entry by
