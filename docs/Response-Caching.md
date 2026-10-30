@@ -53,7 +53,10 @@ Other request headers are not part of the key.
 ## Cache hits
 
 A cache hit returns the stored status code, headers, and body without
-contacting the upstream server. `Access-Control-*` headers are not stored.
+contacting the upstream server, with an `Age` header: the seconds since the
+response was stored, plus the upstream `Age` if it sent one. The stored entry
+lives for `expiration-time` whatever the upstream `Cache-Control: max-age` or
+`Expires` says. `Access-Control-*` headers are not stored.
 Each hit gets the CORS headers written for its own `Origin`, as a proxied
 response would, so a response cached for one page can be served to another.
 When the mapping has [`allowed-origins`](Configuration#allowed-origins) and the
