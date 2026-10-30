@@ -75,7 +75,7 @@ func (c *GenerateCertsCommand) Execute() error {
 		"",
 		"To use auto-generated certificates:",
 		"  1. Add the CA certificate to your system's trusted certificates",
-		"  2. Configure HTTPS mappings in your uncors config without cert-file/key-file",
+		"  2. Configure HTTPS mappings (from: https://...) in your uncors config",
 		"  3. UNCORS will automatically generate and sign certificates on-the-fly",
 	)
 
