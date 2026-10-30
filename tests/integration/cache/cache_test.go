@@ -3,7 +3,6 @@
 package cache_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -18,11 +17,6 @@ import (
 func TestCacheMiddleware(t *testing.T) {
 	backend := integration.NewBackend(t, nil)
 	env := integration.New(t, backend, &config.UncorsConfig{
-		CacheConfig: config.CacheConfig{
-			Methods:        []string{http.MethodGet},
-			MaxSize:        10 * 1024 * 1024,
-			ExpirationTime: 5 * time.Minute,
-		},
 		Mappings: config.Mappings{{
 			From:  hosts.Parse("https://cache.local"),
 			To:    backend.AsHost(),
@@ -35,18 +29,7 @@ func TestCacheMiddleware(t *testing.T) {
 
 		// Ristretto's Set is asynchronous.
 		require.Eventually(t, func() bool {
-			before := backend.Count()
-
-			req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, url, http.NoBody)
-
-			resp, err := env.Client.Do(req)
-			if err != nil || resp == nil {
-				return false
-			}
-
-			resp.Body.Close()
-
-			return backend.Count() == before
+			return !env.Do(t, integration.NewRequest(t, http.MethodGet, url)).HasBackendRequest()
 		}, 2*time.Second, 10*time.Millisecond)
 	})
 

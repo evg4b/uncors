@@ -5,6 +5,7 @@ package integration
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -33,16 +34,10 @@ func (e *Env) Do(t *testing.T, req *http.Request) *Result {
 	resp.Body.Close()
 	resp.Body = io.NopCloser(bytes.NewReader(body))
 
-	all := e.Backend.Requests()
-	newReqs := all[before:]
-
-	snapshot := make([]string, len(newReqs))
-	copy(snapshot, newReqs)
-
 	return &Result{
 		Response:        resp,
 		body:            body,
-		backendRequests: snapshot,
+		backendRequests: e.Backend.Requests()[before:],
 	}
 }
 
@@ -53,6 +48,14 @@ func NewRequest(t *testing.T, method, url string) *http.Request {
 	require.NoError(t, err)
 
 	return req
+}
+
+func (r *Result) Certificate(t *testing.T) *x509.Certificate {
+	t.Helper()
+	require.NotNil(t, r.Response.TLS, "response did not travel over TLS")
+	require.NotEmpty(t, r.Response.TLS.PeerCertificates)
+
+	return r.Response.TLS.PeerCertificates[0]
 }
 
 func (r *Result) BodyString() string {

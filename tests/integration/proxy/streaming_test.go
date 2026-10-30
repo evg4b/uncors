@@ -76,11 +76,6 @@ func (s *eventStream) arm() func() {
 func TestProxyStreaming(t *testing.T) {
 	stream := newEventStream(t)
 	env := integration.New(t, stream.Backend, &config.UncorsConfig{
-		CacheConfig: config.CacheConfig{
-			Methods:        []string{http.MethodGet},
-			MaxSize:        10 * 1024 * 1024,
-			ExpirationTime: 5 * time.Minute,
-		},
 		Mappings: config.Mappings{
 			{From: hosts.Parse("https://events.local"), To: stream.AsHost()},
 			{From: hosts.Parse("https://cached-events.local"), To: stream.AsHost(), Cache: config.CacheGlobs{"/**"}},

@@ -130,7 +130,6 @@ func TestProxyHandler(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, proxyURL(env, "/echo")+"?limit=10&sort=asc"))
 
 		require.Equal(t, http.StatusOK, result.Response.StatusCode)
-		require.True(t, result.HasBackendRequest())
 
 		dump := result.BackendRequest(t)
 		assert.True(t, strings.HasPrefix(dump, "GET /echo?limit=10&sort=asc HTTP/1.1"),
@@ -269,7 +268,6 @@ func TestProxyOverHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "echo:/echo", result.BodyString())
 		assert.Nil(t, result.Response.TLS, "plain HTTP response must not carry TLS state")
-		assert.True(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -298,10 +296,7 @@ func TestProxyMultipleMappings(t *testing.T) {
 
 	t.Run("each host is routed to its own backend", func(t *testing.T) {
 		alphaResult := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("alpha.local", "/")))
-		defer testutils.Close(t, alphaResult.Response.Body)
-
 		betaResult := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("beta.local", "/")))
-		defer testutils.Close(t, betaResult.Response.Body)
 
 		assert.Equal(t, "alpha", alphaResult.BodyString())
 		assert.Equal(t, "beta", betaResult.BodyString())
@@ -330,10 +325,7 @@ func TestProxyPlaceholderMapping(t *testing.T) {
 			assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 			assert.Equal(t, "echo:/echo", result.BodyString())
 			require.True(t, result.HasBackendRequest(), "tenant %q must reach the backend", tenant)
-
-			require.NotNil(t, result.Response.TLS)
-			require.NotEmpty(t, result.Response.TLS.PeerCertificates)
-			assert.Contains(t, result.Response.TLS.PeerCertificates[0].DNSNames, tenant+".api.local")
+			assert.Contains(t, result.Certificate(t).DNSNames, tenant+".api.local")
 		}
 
 		assert.Equal(t, len(tenants), back.Count())

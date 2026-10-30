@@ -31,10 +31,8 @@ func TestStaticMiddleware(t *testing.T) {
 	t.Run("serves an existing static file", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", "/assets/app.js")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "console.log('hi')", body)
+		assert.Equal(t, "console.log('hi')", result.BodyString())
 		assert.False(t, result.HasBackendRequest(), "static file must not reach the backend")
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -43,10 +41,8 @@ func TestStaticMiddleware(t *testing.T) {
 	t.Run("falls back to the index file for unknown paths under the prefix", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("static.local", "/assets/missing-route")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "<h1>home</h1>", body)
+		assert.Equal(t, "<h1>home</h1>", result.BodyString())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})

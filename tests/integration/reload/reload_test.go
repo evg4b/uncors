@@ -3,9 +3,6 @@
 package reload_test
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -18,10 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/engine"
-	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
 	"github.com/evg4b/uncors/testing/testutils"
@@ -32,55 +26,25 @@ import (
 
 var errUnexpectedResponse = errors.New("unexpected response")
 
-const (
-	shutdownWait = 5 * time.Second
-	dialTimeout  = time.Second
-)
+const dialTimeout = time.Second
 
 type proxy struct {
-	engine *engine.Engine
-	pool   *x509.CertPool
-	fs     afero.Fs
+	*integration.Env
+
+	client *http.Client
 }
 
-func start(t *testing.T, cfg *config.UncorsConfig) *proxy {
+func start(t *testing.T, backend *integration.Backend, cfg *config.UncorsConfig) *proxy {
 	t.Helper()
 
-	t.Setenv("HOME", t.TempDir())
+	env := integration.New(t, backend, cfg)
+	transport, ok := env.Client.Transport.(*http.Transport)
+	require.True(t, ok)
 
-	fs := afero.NewMemMapFs()
+	transport = transport.Clone()
+	transport.DisableKeepAlives = true
 
-	caDir, err := certs.Dir()
-	require.NoError(t, err)
-
-	certPath, keyPath, err := certs.Generate(fs, caDir, 30)
-	require.NoError(t, err)
-
-	caCert, _, err := certs.Load(fs, certPath, keyPath)
-	require.NoError(t, err)
-
-	pool := x509.NewCertPool()
-	pool.AddCert(caCert)
-
-	instance := engine.New(fs, engine.WithPublisher(events.NewBus()))
-	require.NoError(t, instance.Start(t.Context(), cfg))
-
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownWait)
-		defer cancel()
-
-		assert.NoError(t, instance.Shutdown(ctx))
-		instance.Wait()
-	})
-
-	return &proxy{engine: instance, pool: pool, fs: fs}
-}
-
-func (p *proxy) client() *http.Client {
-	return &http.Client{Transport: &http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: p.pool},
-	}}
+	return &proxy{Env: env, client: &http.Client{Transport: transport}}
 }
 
 func (p *proxy) get(t *testing.T, url string) (int, string, error) {
@@ -91,7 +55,7 @@ func (p *proxy) get(t *testing.T, url string) (int, string, error) {
 		return 0, "", err
 	}
 
-	response, err := p.client().Do(request)
+	response, err := p.client.Do(request)
 	if err != nil {
 		return 0, "", err
 	}
@@ -111,14 +75,7 @@ func mapping(from string, port int, backend *integration.Backend) config.Mapping
 }
 
 func configuration(mappings ...config.Mapping) *config.UncorsConfig {
-	return &config.UncorsConfig{
-		Mappings: mappings,
-		CacheConfig: config.CacheConfig{
-			ExpirationTime: config.DefaultExpirationTime,
-			MaxSize:        config.DefaultMaxSize,
-			Methods:        []string{http.MethodGet},
-		},
-	}
+	return &config.UncorsConfig{Mappings: mappings}
 }
 
 func url(scheme string, port int, path string) string {
@@ -144,7 +101,7 @@ func TestReloadAcceptsConnections(t *testing.T) {
 	backend := integration.NewBackend(t, nil)
 	port := testutils.GetFreePort(t)
 	cfg := configuration(mapping("http", port, backend))
-	instance := start(t, cfg)
+	instance := start(t, backend, cfg)
 
 	var (
 		stop       atomic.Bool
@@ -175,7 +132,7 @@ func TestReloadAcceptsConnections(t *testing.T) {
 	}
 
 	for range 20 {
-		require.NoError(t, instance.engine.Restart(t.Context(), cfg))
+		instance.Restart(t, cfg)
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -226,7 +183,7 @@ func TestReloadCompletesInFlightRequests(t *testing.T) {
 			})
 
 			ports := testutils.GetFreePorts(t, 2)
-			instance := start(t, configuration(mapping("http", ports[0], backend)))
+			instance := start(t, backend, configuration(mapping("http", ports[0], backend)))
 
 			type result struct {
 				code int
@@ -243,7 +200,7 @@ func TestReloadCompletesInFlightRequests(t *testing.T) {
 
 			<-entered
 
-			require.NoError(t, instance.engine.Restart(t.Context(), testCase.next(ports, backend)))
+			instance.Restart(t, testCase.next(ports, backend))
 
 			code, body, err := instance.get(t, url("http", ports[1], "/fast"))
 			require.NoError(t, err)
@@ -279,7 +236,7 @@ func TestReloadKeepsNewHARRecording(t *testing.T) {
 	harMapping := mapping("http", port, backend)
 	harMapping.HAR = config.HARConfig{File: harFile}
 	cfg := configuration(harMapping)
-	instance := start(t, cfg)
+	instance := start(t, backend, cfg)
 
 	slow := make(chan error, 1)
 
@@ -290,13 +247,13 @@ func TestReloadKeepsNewHARRecording(t *testing.T) {
 
 	<-entered
 
-	require.NoError(t, instance.engine.Restart(t.Context(), cfg))
+	instance.Restart(t, cfg)
 
 	_, _, err := instance.get(t, url("http", port, "/fast"))
 	require.NoError(t, err)
 
 	recorded := func(path string) bool {
-		data, err := afero.ReadFile(instance.fs, harFile)
+		data, err := afero.ReadFile(instance.FS, harFile)
 
 		return err == nil && strings.Contains(string(data), path)
 	}
@@ -312,9 +269,9 @@ func TestReloadKeepsNewHARRecording(t *testing.T) {
 func TestReloadMovesPorts(t *testing.T) {
 	backend := integration.NewBackend(t, nil)
 	ports := testutils.GetFreePorts(t, 2)
-	instance := start(t, configuration(mapping("http", ports[0], backend)))
+	instance := start(t, backend, configuration(mapping("http", ports[0], backend)))
 
-	require.NoError(t, instance.engine.Restart(t.Context(), configuration(mapping("http", ports[1], backend))))
+	instance.Restart(t, configuration(mapping("http", ports[1], backend)))
 
 	assert.True(t, refused(t, ports[0]), "the removed port must be closed")
 
@@ -327,7 +284,7 @@ func TestReloadMovesPorts(t *testing.T) {
 func TestReloadSwitchesScheme(t *testing.T) {
 	backend := integration.NewBackend(t, nil)
 	port := testutils.GetFreePort(t)
-	instance := start(t, configuration(mapping("http", port, backend)))
+	instance := start(t, backend, configuration(mapping("http", port, backend)))
 
 	assertServes := func(t *testing.T, scheme string) {
 		t.Helper()
@@ -340,7 +297,7 @@ func TestReloadSwitchesScheme(t *testing.T) {
 
 	assertServes(t, "http")
 
-	require.NoError(t, instance.engine.Restart(t.Context(), configuration(mapping("https", port, backend))))
+	instance.Restart(t, configuration(mapping("https", port, backend)))
 
 	assertServes(t, "https")
 
@@ -348,7 +305,7 @@ func TestReloadSwitchesScheme(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, code)
 
-	require.NoError(t, instance.engine.Restart(t.Context(), configuration(mapping("http", port, backend))))
+	instance.Restart(t, configuration(mapping("http", port, backend)))
 
 	assertServes(t, "http")
 

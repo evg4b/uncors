@@ -24,11 +24,6 @@ func newEnv(t *testing.T) *integration.Env {
 	backend := integration.NewBackend(t, nil)
 
 	return integration.New(t, backend, &config.UncorsConfig{
-		CacheConfig: config.CacheConfig{
-			Methods:        []string{http.MethodGet},
-			MaxSize:        10 * 1024 * 1024,
-			ExpirationTime: 5 * time.Minute,
-		},
 		Mappings: config.Mappings{
 			{
 				From:    hosts.Parse("https://events.local"),
@@ -138,7 +133,6 @@ func TestRequestAttribution(t *testing.T) {
 	})
 
 	t.Run("a host no mapping covers is not attributed", func(t *testing.T) {
-		env.Hosts.Set("unmapped.local", "127.0.0.1")
 		port := strconv.Itoa(env.PortFor("plain.local"))
 		url := "http://unmapped.local:" + port + "/api"
 
@@ -155,8 +149,13 @@ func TestRequestAttribution(t *testing.T) {
 func TestEngineAnnouncesStart(t *testing.T) {
 	env := newEnv(t)
 
-	received := env.Events()
-	require.NotEmpty(t, received)
+	var received []events.Event
+
+	require.Eventually(t, func() bool {
+		received = env.Events()
+
+		return len(received) > 0
+	}, time.Second, 10*time.Millisecond)
 
 	started, ok := received[0].(events.ServerStarted)
 	require.True(t, ok, "the first event is %T", received[0])

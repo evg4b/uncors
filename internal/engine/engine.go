@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"sync"
 
@@ -62,15 +61,13 @@ func (e *Engine) Start(ctx context.Context, uncorsConfig *config.UncorsConfig) e
 		return nil, e.server.Start(ctx, targets)
 	}
 
-	return e.apply(ctx, "engine.start", uncorsConfig, start, func(mappings fmt.Stringer) events.Event {
-		return events.ServerStarted{Mappings: mappings}
-	})
+	return e.apply(ctx, "engine.start", uncorsConfig, start, events.ServerStarted{Mappings: uncorsConfig.Mappings})
 }
 
 func (e *Engine) Restart(ctx context.Context, uncorsConfig *config.UncorsConfig) error {
-	return e.apply(ctx, "engine.restart", uncorsConfig, e.server.Restart, func(mappings fmt.Stringer) events.Event {
-		return events.ServerRestarted{Mappings: mappings}
-	})
+	served := events.ServerRestarted{Mappings: uncorsConfig.Mappings}
+
+	return e.apply(ctx, "engine.restart", uncorsConfig, e.server.Restart, served)
 }
 
 func (e *Engine) Shutdown(ctx context.Context) error {
@@ -95,7 +92,7 @@ func (e *Engine) apply(
 	span string,
 	uncorsConfig *config.UncorsConfig,
 	serve func(context.Context, []server.Target) (<-chan struct{}, error),
-	served func(fmt.Stringer) events.Event,
+	served events.Event,
 ) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -128,7 +125,7 @@ func (e *Engine) apply(
 
 		e.tlsHosts = tlsHosts
 		e.certs.SetHosts(tlsHosts)
-		e.publisher.Publish(served(uncorsConfig.Mappings))
+		e.publisher.Publish(served)
 
 		if retired == nil {
 			return closeGeneration(ctx, previous)
