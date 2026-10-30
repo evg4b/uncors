@@ -182,6 +182,10 @@ func TestMappingValidator(t *testing.T) {
 				},
 			},
 			{
+				name:  "mapping from the loopback address",
+				value: config.Mapping{From: hosts.Parse("http://127.0.0.1:3000"), To: hosts.Github.Host()},
+			},
+			{
 				name: "mapping without mocks and statics and caches",
 				value: config.Mapping{
 					From:    hosts.Parse("localhost"),
@@ -219,6 +223,17 @@ func TestMappingValidator(t *testing.T) {
 					Cache:   config.CacheGlobs{},
 				},
 				error: "mapping.from must not be empty",
+			},
+			{
+				name:  "mapping from an IPv6 address",
+				value: config.Mapping{From: hosts.Parse("http://[::1]:3000"), To: hosts.Github.Host()},
+				error: "mapping.from: UNCORS listens on 127.0.0.1 only, so ::1 is never reached; use 127.0.0.1 or a host name",
+			},
+			{
+				name:  "mapping from a LAN address",
+				value: config.Mapping{From: hosts.Parse("http://192.168.1.10:3000"), To: hosts.Github.Host()},
+				error: "mapping.from: UNCORS listens on 127.0.0.1 only, so 192.168.1.10 is never reached; " +
+					"use 127.0.0.1 or a host name",
 			},
 			{
 				name: "mapping without to",
