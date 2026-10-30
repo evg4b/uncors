@@ -38,7 +38,7 @@ func TestMiddlewareWrap(t *testing.T) {
 			nextCalled = true
 
 			assert.Equal(t, expectedURL, request.URL.Path)
-			assert.Equal(t, expectedHost.HostPort(), request.Context().Value(rewrite.RewriteHostKey))
+			assert.Equal(t, expectedHost.String(), request.Context().Value(rewrite.RewriteHostKey))
 
 			return nil
 		})

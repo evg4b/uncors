@@ -742,3 +742,67 @@ func capturingClient(forwarded **http.Request) contracts.HTTPClient {
 		}
 	})
 }
+
+func TestProxyHandlerRewriteScheme(t *testing.T) {
+	replacerFactory := lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
+	}))
+
+	tests := []struct {
+		name   string
+		local  string
+		host   string
+		target string
+		secure bool
+	}{
+		{
+			name:   "with a scheme",
+			local:  "http://premium.local.com",
+			host:   "https://auth.api.com",
+			target: "https://auth.api.com/app",
+		},
+		{
+			name:   "without a scheme",
+			local:  "http://premium.local.com",
+			host:   "auth.api.com",
+			target: "http://auth.api.com/app",
+		},
+		{
+			name:   "without a scheme on an https listener",
+			local:  "https://premium.local.com",
+			host:   "auth.api.com",
+			target: "https://auth.api.com/app",
+			secure: true,
+		},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			handler := proxy.NewHandler(
+				proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
+					assert.Equal(t, testCase.target, req.URL.String())
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header: http.Header{
+							headers.Location:  {testCase.target + "/next"},
+							headers.SetCookie: {"a=1"},
+						},
+						Body:    http.NoBody,
+						Request: req,
+					}
+				})),
+				proxy.WithURLReplacerFactory(replacerFactory),
+			)
+
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.local+"/app", http.NoBody)
+			helpers.NormaliseRequest(req)
+			req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, testCase.host))
+
+			recorder := httptest.NewRecorder()
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), req))
+
+			assert.Equal(t, testCase.local+"/app/next", recorder.Header().Get(headers.Location))
+			assert.Equal(t, testCase.secure, recorder.Result().Cookies()[0].Secure)
+		})
+	}
+}

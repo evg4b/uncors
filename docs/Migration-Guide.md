@@ -17,6 +17,7 @@ update your configuration.
   - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
   - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
   - [More headers left out of HAR files](#more-headers-left-out-of-har-files)
+  - [Scheme in rewrite `host`](#scheme-in-rewrite-host)
   - [No 1xx codes in mocks and `options-handling`](#no-1xx-codes-in-mocks-and-options-handling)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
@@ -193,6 +194,13 @@ than `GET` and `HEAD` now go to the upstream server.
 Besides cookies and `Authorization`, [HAR files](HAR-Collector#secure-headers)
 now leave out API key and token headers, such as `X-Api-Key`, `X-Auth-Token`,
 and `X-CSRF-Token`. Set `capture-secure-headers: true` to keep them.
+
+### Scheme in rewrite `host`
+
+A scheme written in a rewrite `host`, such as `https://auth.example.com`, used
+to be ignored, and the request went out with the scheme of the incoming
+request. It is now used. Remove the scheme from `host` to keep the old
+behavior.
 
 ### No 1xx codes in mocks and `options-handling`
 

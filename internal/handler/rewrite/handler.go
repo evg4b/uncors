@@ -41,7 +41,7 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 
 	to := request.URL.Path
 	if m.rewrite.Host != (urlt.Host{}) {
-		to = m.rewrite.Host.HostPort() + to
+		to = m.rewrite.Host.String() + to
 	}
 
 	tracking.Rewrote(request.Context(), from, to)
@@ -100,7 +100,7 @@ func (m *Middleware) rewriteRequest(request *contracts.Request) *contracts.Reque
 	}
 
 	return request.WithContext(
-		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host.HostPort()),
+		context.WithValue(request.Context(), RewriteHostKey, m.rewrite.Host.String()),
 	)
 }
 

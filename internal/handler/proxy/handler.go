@@ -251,7 +251,7 @@ func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *ur
 		return nil, nil, err
 	}
 
-	source, err := urlreplacer.NewReplacer(rewriteHost, req.URL.Host)
+	source, err := urlreplacer.NewReplacer(rewriteHost, req.URL.Scheme+"://"+req.URL.Host)
 	if err != nil {
 		return nil, nil, err
 	}
