@@ -34,6 +34,7 @@ func TestRewriteMiddleware(t *testing.T) {
 			Rewrites: config.RewriteOptions{
 				{From: "/old", To: "/new"},
 				{From: "/users/{id}", To: "/accounts/{id}"},
+				{From: "/files/{rest:.*}", To: "/v2/files/{rest}"},
 			},
 		}},
 	})
@@ -56,5 +57,13 @@ func TestRewriteMiddleware(t *testing.T) {
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
+	})
+
+	t.Run("a rest placeholder keeps the rest of the path", func(t *testing.T) {
+		url := env.URL("rewrite.local", "/files/docs/2026/report.pdf")
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, url))
+
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "/v2/files/docs/2026/report.pdf", backendPath(t, result))
 	})
 }

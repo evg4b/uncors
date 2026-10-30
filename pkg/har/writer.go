@@ -47,6 +47,12 @@ type encodedEntry struct {
 	data    []byte
 }
 
+type spooledEntry struct {
+	started time.Time
+	offset  int64
+	size    int64
+}
+
 type Writer struct {
 	path          string
 	fs            afero.Fs
@@ -63,6 +69,9 @@ type Writer struct {
 	wg         sync.WaitGroup
 	mu         sync.Mutex
 	encoded    []encodedEntry
+	spool      afero.File
+	spoolEnd   int64
+	spooled    []spooledEntry
 	size       int
 
 	discarded atomic.Bool
@@ -194,6 +203,8 @@ func (w *Writer) run() {
 				w.flush()
 			}
 
+			w.removeSpool()
+
 			return
 		}
 	}
@@ -235,15 +246,29 @@ func (w *Writer) append(entry Entry) {
 func (w *Writer) flush() time.Duration {
 	start := time.Now()
 
-	snapshot, size := w.snapshot()
+	w.mu.Lock()
 
-	err := w.write(snapshot)
+	err := w.fs.MkdirAll(filepath.Dir(w.path), dirMode)
+	if err != nil {
+		err = fmt.Errorf("cannot create directory: %w", err)
+	} else {
+		err = w.spoolEncoded()
+	}
+
+	if err == nil {
+		err = w.write()
+	}
+
+	entries, size := len(w.spooled)+len(w.encoded), w.size
+
+	w.mu.Unlock()
+
 	duration := time.Since(start)
 
 	if w.onFlush != nil {
 		w.onFlush(Flush{
 			Path:     w.path,
-			Entries:  len(snapshot),
+			Entries:  entries,
 			Bytes:    size,
 			Start:    start,
 			Duration: duration,
@@ -254,32 +279,86 @@ func (w *Writer) flush() time.Duration {
 	return duration
 }
 
-func (w *Writer) snapshot() ([][]byte, int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	snapshot := make([][]byte, len(w.encoded))
-	for index, entry := range w.encoded {
-		snapshot[index] = entry.data
+func (w *Writer) spoolEncoded() error {
+	if len(w.encoded) == 0 {
+		return nil
 	}
 
-	return snapshot, w.size
+	if w.spool == nil {
+		spool, err := afero.TempFile(w.fs, filepath.Dir(w.path), "."+filepath.Base(w.path)+".*.spool")
+		if err != nil {
+			return fmt.Errorf("cannot create spool file: %w", err)
+		}
+
+		w.spool = spool
+	}
+
+	_, err := w.spool.Seek(w.spoolEnd, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("cannot write spool file: %w", err)
+	}
+
+	buffered := bufio.NewWriter(w.spool)
+	added := make([]spooledEntry, 0, len(w.encoded))
+	offset := w.spoolEnd
+
+	for _, entry := range w.encoded {
+		_, _ = buffered.Write(entry.data)
+		added = append(added, spooledEntry{started: entry.started, offset: offset, size: int64(len(entry.data))})
+		offset += int64(len(entry.data))
+	}
+
+	err = buffered.Flush()
+	if err != nil {
+		return fmt.Errorf("cannot write spool file: %w", err)
+	}
+
+	w.spoolEnd = offset
+	w.spooled = mergeByStart(w.spooled, added)
+	w.encoded = w.encoded[:0]
+
+	return nil
 }
 
-func (w *Writer) write(entries [][]byte) error {
-	dir := filepath.Dir(w.path)
-
-	err := w.fs.MkdirAll(dir, dirMode)
-	if err != nil {
-		return fmt.Errorf("cannot create directory: %w", err)
+func mergeByStart(spooled, added []spooledEntry) []spooledEntry {
+	if len(spooled) == 0 || !added[0].started.Before(spooled[len(spooled)-1].started) {
+		return append(spooled, added...)
 	}
+
+	merged := make([]spooledEntry, 0, len(spooled)+len(added))
+
+	for len(spooled) > 0 && len(added) > 0 {
+		if added[0].started.Before(spooled[0].started) {
+			merged = append(merged, added[0])
+			added = added[1:]
+		} else {
+			merged = append(merged, spooled[0])
+			spooled = spooled[1:]
+		}
+	}
+
+	return append(append(merged, spooled...), added...)
+}
+
+func (w *Writer) removeSpool() {
+	if w.spool == nil {
+		return
+	}
+
+	_ = w.spool.Close()
+	_ = w.fs.Remove(w.spool.Name())
+	w.spool = nil
+}
+
+func (w *Writer) write() error {
+	dir := filepath.Dir(w.path)
 
 	tmp, err := afero.TempFile(w.fs, dir, filepath.Base(w.path)+".*.tmp")
 	if err != nil {
 		return fmt.Errorf("cannot create temp file: %w", err)
 	}
 
-	err = errors.Join(w.writeArchive(tmp, entries), tmp.Close())
+	err = errors.Join(w.writeArchive(tmp), tmp.Close())
 	if err != nil {
 		_ = w.fs.Remove(tmp.Name())
 
@@ -296,23 +375,27 @@ func (w *Writer) write(entries [][]byte) error {
 	return nil
 }
 
-func (w *Writer) writeArchive(file io.Writer, entries [][]byte) error {
+func (w *Writer) writeArchive(file io.Writer) error {
 	buffered := bufio.NewWriter(file)
 
 	_, _ = buffered.Write(w.head)
 	_ = buffered.WriteByte('[')
 
-	for i, entry := range entries {
+	for i, entry := range w.spooled {
 		if i > 0 {
 			_ = buffered.WriteByte(',')
 		}
 
 		_ = buffered.WriteByte('\n')
 		_, _ = buffered.WriteString(entryPrefix)
-		_, _ = buffered.Write(entry)
+
+		_, err := io.Copy(buffered, io.NewSectionReader(w.spool, entry.offset, entry.size))
+		if err != nil {
+			return fmt.Errorf("cannot read spool file: %w", err)
+		}
 	}
 
-	if len(entries) > 0 {
+	if len(w.spooled) > 0 {
 		_, _ = buffered.WriteString(entriesClosing)
 	}
 

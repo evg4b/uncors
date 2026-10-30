@@ -35,8 +35,8 @@ entry := har.NewEntry(start, elapsed,
 - Request URLs never include the fragment. Query parameters keep their order,
   headers are sorted by name, and response cookies keep their attributes.
 - `Cookie`, `Set-Cookie`, `Authorization`, `WWW-Authenticate`, the two proxy
-  auth headers, and all cookies are left out unless you pass
-  `har.WithSecureHeaders(true)`.
+  auth headers, API key and token headers (see `IsSecureHeader`), and all
+  cookies are left out unless you pass `har.WithSecureHeaders(true)`.
 
 `NewHeaders`, `NewQueryString`, `NewCookies`, `NewPostData`, `NewContent`, and
 `DecodeBody` build the individual parts.
@@ -56,9 +56,11 @@ writer.AddEntry(entry)
 is full. A background goroutine keeps the entries sorted by `startedDateTime`
 and rewrites the file at most once per flush interval, or once per ten times
 the last write's duration when that is longer, through a temporary file and a
-rename, so the file on disk is always a valid archive. `Close` writes
-what is left, and `Discard` stops without writing. The flush and error handlers
-run on that goroutine.
+rename, so the file on disk is always a valid archive. Written entries are kept
+in a hidden spool file next to the archive (`.traffic.har.*.spool`), not in
+memory, and each write copies them from there. `Close` writes what is left,
+and `Discard` stops without writing; both remove the spool file. The flush and
+error handlers run on that goroutine.
 
 The other options are `WithFileSystem` (the OS file system by default),
 `WithCreator`, `WithQueueSize`, `WithFlushInterval`, and `WithErrorHandler`.

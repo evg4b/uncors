@@ -106,6 +106,18 @@ func TestHttpErrorCorsHeaders(t *testing.T) {
 
 		assert.Equal(t, "*", recorder.Header().Get(headers.AccessControlAllowOrigin))
 	})
+
+	t.Run("allows the requested headers on a failed preflight", func(t *testing.T) {
+		request := newRequest(t)
+		request.Method = http.MethodOptions
+		request.Header.Set(headers.Origin, "http://localhost:3000")
+		request.Header.Set(headers.AccessControlRequestHeaders, "Content-Type")
+
+		recorder := writeError(t, request, errHandler)
+
+		assert.Equal(t, "Content-Type", recorder.Header().Get(headers.AccessControlAllowHeaders))
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	})
 }
 
 func TestHttpErrorStatus(t *testing.T) {

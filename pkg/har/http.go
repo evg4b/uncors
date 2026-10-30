@@ -26,7 +26,10 @@ var secureHeaderNames = map[string]bool{
 	"Www-Authenticate":    true, // Go canonicalises header names
 	"Proxy-Authorization": true,
 	"Proxy-Authenticate":  true,
+	"Api-Key":             true,
 }
+
+var secureHeaderSuffixes = []string{"-Token", "-Api-Key", "-Apikey", "-Secret"}
 
 type options struct {
 	secureHeaders bool
@@ -41,7 +44,10 @@ func WithSecureHeaders(capture bool) Option {
 }
 
 func IsSecureHeader(name string) bool {
-	return secureHeaderNames[http.CanonicalHeaderKey(name)]
+	name = http.CanonicalHeaderKey(name)
+
+	return secureHeaderNames[name] || strings.HasPrefix(name, "X-Auth-") ||
+		slices.ContainsFunc(secureHeaderSuffixes, func(suffix string) bool { return strings.HasSuffix(name, suffix) })
 }
 
 func NewEntry(start time.Time, elapsed time.Duration, request Request, response Response) Entry {

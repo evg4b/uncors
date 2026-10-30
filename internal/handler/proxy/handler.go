@@ -149,14 +149,7 @@ func (h *Handler) makeUncorsResponse(
 		}
 	}
 
-	switch {
-	case tracking.OriginRejected(req.Context()):
-		infra.WithholdCorsHeaders(target.Header())
-	case strings.EqualFold(req.Method, http.MethodOptions):
-		infra.WriteCorsHeadersForOptions(target.Header(), req.Header)
-	default:
-		infra.WriteCorsHeaders(target.Header(), req.Header.Get(headers.Origin))
-	}
+	infra.WriteRequestCorsHeaders(target.Header(), req)
 
 	target.WriteHeader(original.StatusCode)
 

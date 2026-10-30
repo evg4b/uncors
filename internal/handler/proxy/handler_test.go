@@ -551,6 +551,32 @@ func TestProxyHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("should downgrade SameSite=None when the local host is not https", func(t *testing.T) {
+		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{headers.SetCookie: {"s=1; Secure; SameSite=None"}},
+				Body:       http.NoBody,
+				Request:    req,
+			}
+		})
+
+		handler := proxy.NewHandler(
+			proxy.WithHTTPClient(httpClient),
+			proxy.WithURLReplacerFactory(replacerFactory),
+		)
+
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://premium.local.com/", http.NoBody)
+		helpers.NormaliseRequest(req)
+
+		recorder := httptest.NewRecorder()
+		require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), req))
+
+		cookie := recorder.Result().Cookies()[0]
+		assert.False(t, cookie.Secure)
+		assert.Equal(t, http.SameSiteLaxMode, cookie.SameSite)
+	})
+
 	t.Run("should proxy request using rewrite host from context", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 			assert.Equal(t, "premium.api.com", req.URL.Host)
