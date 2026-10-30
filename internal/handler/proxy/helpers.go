@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"net"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -74,6 +75,12 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
+
+		host, _, err := net.SplitHostPort(cookie.Domain)
+		if err == nil {
+			cookie.Domain = host
+		}
+
 		http.SetCookie(source, cookie)
 	}
 }

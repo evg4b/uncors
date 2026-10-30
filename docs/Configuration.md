@@ -638,8 +638,8 @@ For requests forwarded to the upstream server, UNCORS:
   `Content-Length` on to the client as each chunk arrives, so server-sent events
   and long downloads are not held back;
 - forwards the `Cookie` request header unchanged, and rewrites the `Domain` of
-  cookies set by the upstream server to the local host. The `Secure` flag of
-  those cookies follows the scheme of the local host;
+  cookies set by the upstream server to the local host name, without the port.
+  The `Secure` flag of those cookies follows the scheme of the local host;
 - rewrites `Location` headers in redirects back to the local host;
 - proxies WebSocket connections and other requests that ask to switch
   protocols (`Connection: Upgrade` with an `Upgrade` header). The handshake is

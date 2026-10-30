@@ -490,6 +490,67 @@ func TestProxyHandler(t *testing.T) {
 		assert.Equal(t, "abc123", cookies[0].Value)
 	})
 
+	t.Run("should replace the cookie domain without the local port", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			from   string
+			host   string
+			domain string
+			want   string
+		}{
+			{
+				name:   "with a port",
+				from:   "http://{tenant}.local.dev:3000",
+				host:   "acme.local.dev:3000",
+				domain: ".acme.api.com",
+				want:   "Domain=acme.local.dev",
+			},
+			{
+				name:   "without a port",
+				from:   "http://{tenant}.local.dev",
+				host:   "acme.local.dev",
+				domain: "acme.api.com",
+				want:   "Domain=acme.local.dev",
+			},
+			{
+				name: "without a domain",
+				from: "http://{tenant}.local.dev:3000",
+				host: "acme.local.dev:3000",
+				want: "a=1; Path=/",
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				setCookie := "a=1; Path=/"
+				if testCase.domain != "" {
+					setCookie += "; Domain=" + testCase.domain
+				}
+
+				handler := proxy.NewHandler(
+					proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Header:     http.Header{headers.SetCookie: {setCookie}},
+							Body:       http.NoBody,
+							Request:    req,
+						}
+					})),
+					proxy.WithURLReplacerFactory(lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
+						{From: hosts.Parse(testCase.from), To: hosts.Parse("https://{tenant}.api.com")},
+					}))),
+				)
+
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+testCase.host+"/", http.NoBody)
+				helpers.NormaliseRequest(req)
+
+				recorder := httptest.NewRecorder()
+				require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), req))
+
+				assert.Contains(t, recorder.Header().Get(headers.SetCookie), testCase.want)
+			})
+		}
+	})
+
 	t.Run("should proxy request using rewrite host from context", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {
 			assert.Equal(t, "premium.api.com", req.URL.Host)
