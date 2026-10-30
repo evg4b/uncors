@@ -21,6 +21,7 @@ type HistoryWidget struct {
 	blankLine  string
 	height     int
 	offset     int
+	tail       []string
 }
 
 func NewHistoryWidget(keys KeyMap) *HistoryWidget {
@@ -69,6 +70,16 @@ func (m *HistoryWidget) AppendLine(line string) {
 	}
 }
 
+func (m *HistoryWidget) SetTail(lines []string) {
+	m.tail = lines
+
+	if m.autoScroll {
+		m.gotoBottom()
+	} else {
+		m.scrollTo(m.offset)
+	}
+}
+
 func (m *HistoryWidget) SetHeight(height int) {
 	if telemetry.Enabled() {
 		telemetry.Debug(context.Background(), "HistoryWidget: setting height", slog.Int("height", height))
@@ -93,6 +104,7 @@ func (m *HistoryWidget) View() tea.View {
 	}
 
 	lines := m.hist.Window(m.offset, m.offset+m.height)
+	tailStart := max(0, m.offset-m.hist.LineCount()) - len(lines)
 
 	var builder strings.Builder
 
@@ -103,13 +115,18 @@ func (m *HistoryWidget) View() tea.View {
 			builder.WriteByte('\n')
 		}
 
-		if index >= len(lines) {
+		var line string
+
+		switch {
+		case index < len(lines):
+			line = lines[index]
+		case tailStart+index < len(m.tail):
+			line = m.tail[tailStart+index]
+		default:
 			builder.WriteString(m.blankLine)
 
 			continue
 		}
-
-		line := lines[index]
 
 		width := ansi.StringWidth(line)
 		if width > m.termWidth {
@@ -125,7 +142,7 @@ func (m *HistoryWidget) View() tea.View {
 }
 
 func (m *HistoryWidget) maxOffset() int {
-	return max(0, m.hist.LineCount()-m.height)
+	return max(0, m.hist.LineCount()+len(m.tail)-m.height)
 }
 
 func (m *HistoryWidget) scrollTo(offset int) {

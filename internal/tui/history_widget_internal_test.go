@@ -151,4 +151,24 @@ func TestHistoryWidget(t *testing.T) {
 
 		assert.Equal(t, "01234", widget.View().Content)
 	})
+
+	t.Run("scrolls the tail with the history", func(t *testing.T) {
+		widget := NewHistoryWidget(keys)
+
+		defer cleanup(widget)
+
+		widget.Update(tea.WindowSizeMsg{Width: 10, Height: 3})
+		widget.SetHeight(3)
+		widget.AppendLine("1\n2\n3")
+		widget.SetTail([]string{"a", "b"})
+
+		assert.Equal(t, []string{"3", "a", "b"}, strings.Fields(widget.View().Content))
+
+		widget.Update(tea.KeyPressMsg(tea.Key{Text: "g", Code: 'g'}))
+		assert.Equal(t, []string{"1", "2", "3"}, strings.Fields(widget.View().Content))
+
+		widget.Update(tea.KeyPressMsg(tea.Key{Text: "G", Code: 'G'}))
+		widget.SetTail([]string{"a"})
+		assert.Equal(t, []string{"2", "3", "a"}, strings.Fields(widget.View().Content))
+	})
 }

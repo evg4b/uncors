@@ -226,8 +226,9 @@ A request the client cancels is logged at `DEBUG`, not as a failure.
 Diagnostics never appear in the console. When tracing is on, UNCORS shows one
 notice with the endpoint at startup, and one warning for each signal (spans,
 logs, or metrics) that cannot be exported, for example because no collector is
-listening. When it exits, UNCORS waits up to 5 seconds for the last data to be
-sent.
+listening. While tracing is on, the bottom bar of the interactive console shows a
+blue `TRACING` badge. When it exits, UNCORS waits up to 5 seconds for the last
+data to be sent.
 
 Failures that need your attention are shown in the console whether tracing is
 on or not:

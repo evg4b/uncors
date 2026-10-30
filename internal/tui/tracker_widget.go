@@ -88,17 +88,13 @@ func (m *TrackerWidget) ActiveCount() int {
 	return len(m.pending)
 }
 
-func (m *TrackerWidget) Height() int {
-	if len(m.pending) == 0 {
-		return 0
-	}
-
-	return 1 + len(m.pending)
+func (m *TrackerWidget) View() tea.View {
+	return tea.NewView(strings.Join(m.Lines(), "\n"))
 }
 
-func (m *TrackerWidget) View() tea.View {
+func (m *TrackerWidget) Lines() []string {
 	if len(m.pending) == 0 {
-		return tea.NewView("")
+		return nil
 	}
 
 	lines := make([]string, 0, len(m.pending))
@@ -107,7 +103,7 @@ func (m *TrackerWidget) View() tea.View {
 		lines = append(lines, m.formatter.Pending(m.pending[id], m.spinner.View()))
 	}
 
-	return tea.NewView(strings.Join(lines, "\n"))
+	return lines
 }
 
 func (m *TrackerWidget) startTicking() tea.Cmd {

@@ -21,7 +21,7 @@ func TestTrackerWidget(t *testing.T) {
 		assert.NotNil(t, widget.pending)
 		assert.False(t, widget.ticking)
 		assert.Equal(t, 0, widget.ActiveCount())
-		assert.Equal(t, 0, widget.Height())
+		assert.Nil(t, widget.Lines())
 		assert.Nil(t, widget.Init())
 	})
 
@@ -41,7 +41,7 @@ func TestTrackerWidget(t *testing.T) {
 		require.NotNil(t, cmd)
 		assert.True(t, widget.ticking)
 		assert.Equal(t, 1, widget.ActiveCount())
-		assert.Equal(t, 2, widget.Height())
+		assert.Len(t, widget.Lines(), 1)
 	})
 
 	t.Run("Update removes completed requests", func(t *testing.T) {
