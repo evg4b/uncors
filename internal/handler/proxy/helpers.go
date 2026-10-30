@@ -78,6 +78,7 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 		if !cookie.Secure && cookie.SameSite == http.SameSiteNoneMode {
 			cookie.SameSite = http.SameSiteLaxMode
 		}
+
 		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
 
 		host, _, err := net.SplitHostPort(cookie.Domain)
