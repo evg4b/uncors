@@ -100,7 +100,7 @@ func ValidateDirectory(field, value string, fs afero.Fs) error {
 
 func ValidateStatus(field string, value int) error {
 	if value < 200 || value > 599 {
-		return &ValidationError{fmt.Sprintf("%s code must be in range 200-599", field)}
+		return &ValidationError{fmt.Sprintf("%s must be in range 200-599", field)}
 	}
 
 	return nil
