@@ -30,8 +30,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const baseAddress = "127.0.0.1"
-
 type Generation struct {
 	fs          afero.Fs
 	publisher   events.Publisher
@@ -216,7 +214,7 @@ func (g *Generation) build(uncorsConfig *config.UncorsConfig) ([]server.Target, 
 		}
 
 		targets = append(targets, server.Target{
-			Address: net.JoinHostPort(baseAddress, strconv.Itoa(group.Port)),
+			Address: net.JoinHostPort(config.ListenAddress, strconv.Itoa(group.Port)),
 			Handler: router.NewRouter(
 				group.Mappings,
 				router.WithFactory(g),

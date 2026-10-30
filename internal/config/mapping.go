@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"reflect"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
+
+const ListenAddress = "127.0.0.1"
 
 var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
 
@@ -88,10 +91,23 @@ func ValidateTLS(mapping Mapping, fs afero.Fs) error {
 	return nil
 }
 
+func validateListenIP(field string, from urlt.Host) error {
+	ip := net.ParseIP(from.Hostname)
+	if ip == nil || ip.Equal(net.ParseIP(ListenAddress)) || ip.Equal(net.IPv4zero) {
+		return nil
+	}
+
+	return &ValidationError{fmt.Sprintf(
+		"%s: UNCORS listens on %s only, so %s is never reached; use %s or a host name",
+		field, ListenAddress, from.Hostname, ListenAddress,
+	)}
+}
+
 func (m *Mapping) Validate(field string, fs afero.Fs) error {
-	errs := make([]error, 0, 6+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
+	errs := make([]error, 0, 7+len(m.Statics)+len(m.Mocks)+len(m.Cache)+len(m.Rewrites)+len(m.Scripts))
 
 	errs = append(errs, ValidateHost(joinPath(field, "from"), m.From))
+	errs = append(errs, validateListenIP(joinPath(field, "from"), m.From))
 	errs = append(errs, ValidateHost(joinPath(field, "to"), m.To))
 	errs = append(errs, m.OptionsHandling.Validate(joinPath(field, "options-handling")))
 	errs = append(errs, m.AllowedOrigins.Validate(joinPath(field, "allowed-origins")))

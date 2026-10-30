@@ -364,6 +364,12 @@ query string in either is a configuration error.
 The port in the `from` URL is the port UNCORS listens on. Without a port,
 UNCORS uses 80 for `http` and 443 for `https`.
 
+UNCORS listens on `127.0.0.1` only. A `from` with another IP address, such as
+`[::1]` or a LAN address, is a configuration error, because no request can
+reach it. Some clients, such as Node.js 17 and later, resolve `localhost` to
+`::1` first; if they cannot connect, use `127.0.0.1` in the client or map the
+host name to `127.0.0.1` in your hosts file.
+
 Several mappings can share a port; UNCORS picks the mapping by the request's
 host name. Mappings on different ports each get their own listener:
 
