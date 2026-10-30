@@ -110,14 +110,21 @@ the number of bytes saved.
 To keep credentials off the disk, these headers are left out of every entry by
 default, and the request and response `cookies` lists are empty:
 
-| Header                | Why it is sensitive                          |
-| --------------------- | -------------------------------------------- |
-| `Cookie`              | Session identifiers sent by the browser      |
-| `Set-Cookie`          | Session identifiers set by the server        |
-| `Authorization`       | Bearer tokens and Basic auth credentials     |
-| `WWW-Authenticate`    | Auth challenges, which reveal scheme and realm |
-| `Proxy-Authorization` | Proxy credentials                            |
-| `Proxy-Authenticate`  | Proxy auth challenges                        |
+| Header                                                       | Why it is sensitive                              |
+| ------------------------------------------------------------ | ------------------------------------------------ |
+| `Cookie`                                                     | Session identifiers sent by the browser          |
+| `Set-Cookie`                                                 | Session identifiers set by the server            |
+| `Authorization`                                              | Bearer tokens and Basic auth credentials         |
+| `WWW-Authenticate`                                           | Auth challenges, which reveal scheme and realm   |
+| `Proxy-Authorization`                                        | Proxy credentials                                |
+| `Proxy-Authenticate`                                         | Proxy auth challenges                            |
+| `Api-Key`, and names ending in `-Api-Key` or `-Apikey`       | API keys, such as `X-Api-Key`                    |
+| Names ending in `-Token`                                     | Tokens, such as `X-Auth-Token` or `X-CSRF-Token` |
+| Names ending in `-Secret`, and names starting with `X-Auth-` | Client secrets and auth details                  |
+
+Names are compared without regard to case. URLs, query strings, and request
+and response bodies are always recorded in full, so a token passed in the URL
+or returned in a login response ends up in the file.
 
 Set `capture-secure-headers: true` to keep them:
 
