@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/pkg/har"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
 	"github.com/samber/lo"
@@ -22,43 +23,7 @@ import (
 
 const recording = "/recordings/session.har"
 
-type nameValue struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type entry struct {
-	Request struct {
-		Method      string      `json:"method"`
-		URL         string      `json:"url"`
-		Headers     []nameValue `json:"headers"`
-		Cookies     []nameValue `json:"cookies"`
-		QueryString []nameValue `json:"queryString"`
-		PostData    *struct {
-			MimeType string `json:"mimeType"`
-			Text     string `json:"text"`
-		} `json:"postData"`
-	} `json:"request"`
-	Response struct {
-		Status  int         `json:"status"`
-		Headers []nameValue `json:"headers"`
-		Content struct {
-			MimeType string `json:"mimeType"`
-			Text     string `json:"text"`
-		} `json:"content"`
-	} `json:"response"`
-}
-
-type log struct {
-	Log struct {
-		Creator struct {
-			Name string `json:"name"`
-		} `json:"creator"`
-		Entries []entry `json:"entries"`
-	} `json:"log"`
-}
-
-func headerValue(headers []nameValue, name string) (string, bool) {
+func headerValue(headers []har.NameValue, name string) (string, bool) {
 	for _, header := range headers {
 		if strings.EqualFold(header.Name, name) {
 			return header.Value, true
@@ -124,7 +89,7 @@ func postJSON(t *testing.T, env *integration.Env) {
 	require.JSONEq(t, `{"received":{"id":7}}`, result.BodyString())
 }
 
-func readRecording(t *testing.T, env *integration.Env) log {
+func readRecording(t *testing.T, env *integration.Env) har.HAR {
 	t.Helper()
 
 	env.Shutdown(t)
@@ -132,7 +97,7 @@ func readRecording(t *testing.T, env *integration.Env) log {
 	data, err := afero.ReadFile(env.FS, recording)
 	require.NoError(t, err)
 
-	var parsed log
+	var parsed har.HAR
 	require.NoError(t, json.Unmarshal(data, &parsed))
 
 	return parsed
@@ -151,7 +116,7 @@ func TestHARRecordsTheExchange(t *testing.T) {
 		assert.Equal(t, "uncors", parsed.Log.Creator.Name)
 		assert.Equal(t, http.MethodPost, recorded.Request.Method)
 		assert.Equal(t, env.RawURL("har.local", "/api/items?b=2&a=1"), recorded.Request.URL)
-		assert.Equal(t, []nameValue{{"b", "2"}, {"a", "1"}}, recorded.Request.QueryString)
+		assert.Equal(t, []har.NameValue{{Name: "b", Value: "2"}, {Name: "a", Value: "1"}}, recorded.Request.QueryString)
 
 		value, ok := headerValue(recorded.Request.Headers, "X-Request")
 		assert.True(t, ok)
