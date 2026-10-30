@@ -290,6 +290,22 @@ mappings:
 			expected: `mappings[0].mocks[0].headers must be a map of keys to values, got a list (line 7)`,
 		},
 		{
+			name: "map instead of a value",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    mocks:
+      - path: /a
+        response:
+          code: 200
+          raw: a
+          delay: {seconds: 1}
+`,
+			expected: `mappings[0].mocks[0].response.delay must be a duration without spaces, ` +
+				`such as 500ms or 1m30s, got a map (line 10)`,
+		},
+		{
 			name: "single value",
 			content: `
 mappings:
@@ -332,6 +348,24 @@ cache-config:
 			require.EqualError(t, err, "failed to parse config file '"+configFile+"': "+testCase.expected)
 		})
 	}
+}
+
+func TestLoadConfigurationEmptyValues(t *testing.T) {
+	_, err := loadConfigFile(t, afero.NewMemMapFs(), `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    cache:
+    mocks:
+      - path: /a
+        headers:
+        response:
+          code: 200
+          raw: a
+          delay:
+`)
+
+	require.NoError(t, err)
 }
 
 func TestLoadConfigurationEmptyFile(t *testing.T) {
