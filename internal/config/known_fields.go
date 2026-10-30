@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"slices"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,6 +21,11 @@ var (
 	knownFieldsCheckerType = reflect.TypeFor[knownFieldsChecker]()
 	textUnmarshalerType    = reflect.TypeFor[encoding.TextUnmarshaler]()
 	yamlUnmarshalerType    = reflect.TypeFor[yaml.Unmarshaler]()
+	durationType           = reflect.TypeFor[time.Duration]()
+	wholeNumberKinds       = []reflect.Kind{
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+	}
 )
 
 func checkKnownFields(field string, node *yaml.Node, typ reflect.Type) error {
@@ -38,24 +45,91 @@ func checkKnownFields(field string, node *yaml.Node, typ reflect.Type) error {
 		return checker.checkKnownFields(field, node)
 	}
 
-	if ptr.Implements(textUnmarshalerType) || ptr.Implements(yamlUnmarshalerType) {
+	if ptr.Implements(yamlUnmarshalerType) {
 		return nil
+	}
+
+	if ptr.Implements(textUnmarshalerType) {
+		return checkValue(field, node, typ)
 	}
 
 	kind := typ.Kind()
 	if kind == reflect.Struct {
-		return checkStructFields(field, node, typ)
+		return expectKind(field, node, yaml.MappingNode, checkStructFields(field, node, typ))
 	}
 
 	if kind == reflect.Slice || kind == reflect.Array {
-		return checkSequenceItems(field, node, typ.Elem())
+		return expectKind(field, node, yaml.SequenceNode, checkSequenceItems(field, node, typ.Elem()))
 	}
 
 	if kind == reflect.Map {
-		return checkMapValues(field, node, typ.Elem())
+		return expectKind(field, node, yaml.MappingNode, checkMapValues(field, node, typ.Elem()))
 	}
 
-	return nil
+	return checkValue(field, node, typ)
+}
+
+func expectKind(field string, node *yaml.Node, kind yaml.Kind, nested error) error {
+	if node.Kind == kind || node.Tag == "!!null" {
+		return nested
+	}
+
+	return &ValidationError{fmt.Sprintf("%s must be %s, got %s (line %d)",
+		field, describeKind(kind), describeNode(node), node.Line)}
+}
+
+func checkValue(field string, node *yaml.Node, typ reflect.Type) error {
+	if node.Tag == "!!null" {
+		return nil
+	}
+
+	err := node.Decode(reflect.New(typ).Interface())
+	if err == nil {
+		return nil
+	}
+
+	if node.Kind == yaml.ScalarNode && reflect.PointerTo(typ).Implements(textUnmarshalerType) {
+		return &ValidationError{fmt.Sprintf("%s: %v (line %d)", field, err, node.Line)}
+	}
+
+	return &ValidationError{fmt.Sprintf("%s must be %s, got %s (line %d)",
+		field, describeType(typ), describeNode(node), node.Line)}
+}
+
+func describeType(typ reflect.Type) string {
+	if typ == durationType {
+		return "a duration without spaces, such as 500ms or 1m30s"
+	}
+
+	if typ.Kind() == reflect.Bool {
+		return "true or false"
+	}
+
+	if slices.Contains(wholeNumberKinds, typ.Kind()) {
+		return "a whole number"
+	}
+
+	return "a single value"
+}
+
+func describeKind(kind yaml.Kind) string {
+	if kind == yaml.SequenceNode {
+		return "a list"
+	}
+
+	return "a map of keys to values"
+}
+
+func describeNode(node *yaml.Node) string {
+	if node.Kind == yaml.SequenceNode {
+		return "a list"
+	}
+
+	if node.Kind == yaml.MappingNode {
+		return "a map"
+	}
+
+	return fmt.Sprintf("%q", node.Value)
 }
 
 func resolveNode(node *yaml.Node) *yaml.Node {
