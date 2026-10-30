@@ -1,12 +1,14 @@
 package commands_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/evg4b/uncors/internal/certs"
 	"github.com/evg4b/uncors/internal/commands"
+	"github.com/evg4b/uncors/internal/tui/render"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -243,6 +245,28 @@ func TestGenerateCertsCommand_Execute(t *testing.T) {
 			assert.Equal(t, testCase.wantErr, err)
 		})
 	}
+
+	t.Run("should suggest the force flag when the certificate exists", func(t *testing.T) {
+		fakeHome := filepath.Join(t.TempDir(), "home")
+		t.Setenv("HOME", fakeHome)
+
+		caDir := filepath.Join(fakeHome, configDir, "uncors")
+		require.NoError(t, os.MkdirAll(caDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(caDir, caCertFile), []byte("cert"), 0o600))
+
+		var output bytes.Buffer
+
+		cmd := commands.NewGenerateCertsCommand(
+			commands.WithFs(afero.NewOsFs()),
+			commands.WithOutput(render.NewCliOutput(&output)),
+		)
+		cmd.DefineFlags(pflag.NewFlagSet("test", pflag.ContinueOnError), version)
+
+		require.ErrorIs(t, cmd.Execute(), commands.ErrCAAlreadyExists)
+		assert.Contains(t, output.String(), "CA certificate already exists at "+filepath.Join(caDir, caCertFile))
+		assert.Contains(t, output.String(), "Use --force to overwrite")
+		assert.NotContains(t, output.String(), "%!")
+	})
 
 	t.Run("should restrict the key permissions when overwriting with force flag", func(t *testing.T) {
 		fakeHome := filepath.Join(t.TempDir(), "home")
