@@ -35,8 +35,8 @@ entry := har.NewEntry(start, elapsed,
 - Request URLs never include the fragment. Query parameters keep their order,
   headers are sorted by name, and response cookies keep their attributes.
 - `Cookie`, `Set-Cookie`, `Authorization`, `WWW-Authenticate`, the two proxy
-  auth headers, and all cookies are left out unless you pass
-  `har.WithSecureHeaders(true)`.
+  auth headers, API key and token headers (see `IsSecureHeader`), and all
+  cookies are left out unless you pass `har.WithSecureHeaders(true)`.
 
 `NewHeaders`, `NewQueryString`, `NewCookies`, `NewPostData`, `NewContent`, and
 `DecodeBody` build the individual parts.
