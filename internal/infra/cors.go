@@ -21,13 +21,14 @@ const (
 )
 
 func WriteRequestCorsHeaders(header http.Header, request *http.Request) {
-	if tracking.OriginRejected(request.Context()) {
+	switch {
+	case tracking.OriginRejected(request.Context()):
 		WithholdCorsHeaders(header)
-
-		return
+	case strings.EqualFold(request.Method, http.MethodOptions):
+		WriteCorsHeadersForOptions(header, request.Header)
+	default:
+		WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 	}
-
-	WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 }
 
 func WithholdCorsHeaders(header http.Header) {
