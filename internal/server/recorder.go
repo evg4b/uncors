@@ -101,6 +101,7 @@ func (r *ResponseRecorder) Captured() contracts.ResponseCapture {
 		Header:     r.Header(),
 		Body:       body,
 		Truncated:  r.truncated,
+		Written:    r.written,
 		Duration:   time.Since(r.startedAt),
 	}
 }
