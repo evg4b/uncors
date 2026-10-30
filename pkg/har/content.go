@@ -17,10 +17,18 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-var ErrUnsupportedEncoding = errors.New("unsupported content encoding")
+const MaxDecodedBodySize = 50 << 20
+
+var (
+	ErrUnsupportedEncoding = errors.New("unsupported content encoding")
+	ErrDecodedBodyTooLarge = fmt.Errorf("decoded body is larger than %d bytes", MaxDecodedBodySize)
+)
 
 var zstdDecoder = sync.OnceValues(func() (*zstd.Decoder, error) {
-	return zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
+	return zstd.NewReader(nil,
+		zstd.WithDecoderConcurrency(0),
+		zstd.WithDecoderMaxMemory(MaxDecodedBodySize),
+	)
 })
 
 func NewContent(raw []byte, contentEncoding, mimeType string) Content {
@@ -34,6 +42,10 @@ func NewContent(raw []byte, contentEncoding, mimeType string) Content {
 	}
 
 	content := Content{Size: int64(len(decoded)), MimeType: mimeType}
+	if errors.Is(err, ErrDecodedBodyTooLarge) {
+		content.Comment = "Body is stored as received: " + err.Error()
+	}
+
 	if err == nil && !isIdentity(contentEncoding) {
 		compression := int64(len(decoded) - len(raw))
 		content.Compression = &compression
@@ -62,7 +74,7 @@ func DecodeBody(raw []byte, contentEncoding string) ([]byte, error) {
 	case "deflate":
 		return decodeDeflate(raw)
 	case "br":
-		return io.ReadAll(brotli.NewReader(bytes.NewReader(raw)))
+		return readLimited(brotli.NewReader(bytes.NewReader(raw)))
 	case "zstd":
 		return decodeZstd(raw)
 	default:
@@ -86,7 +98,12 @@ func decodeZstd(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return decoder.DecodeAll(data, nil)
+	decoded, err := decoder.DecodeAll(data, nil)
+	if errors.Is(err, zstd.ErrDecoderSizeExceeded) {
+		return nil, ErrDecodedBodyTooLarge
+	}
+
+	return decoded, err
 }
 
 func decodeGzip(data []byte) ([]byte, error) {
@@ -97,7 +114,7 @@ func decodeGzip(data []byte) ([]byte, error) {
 
 	defer reader.Close()
 
-	return io.ReadAll(reader)
+	return readLimited(reader)
 }
 
 func decodeDeflate(data []byte) ([]byte, error) {
@@ -105,14 +122,14 @@ func decodeDeflate(data []byte) ([]byte, error) {
 	// servers incorrectly send raw DEFLATE (RFC 1951). Try zlib first, then
 	// fall back to raw flate so both variants are handled correctly.
 	decoded, err := decodeZlib(data)
-	if err == nil {
-		return decoded, nil
+	if err == nil || errors.Is(err, ErrDecodedBodyTooLarge) {
+		return decoded, err
 	}
 
 	reader := flate.NewReader(bytes.NewReader(data))
 	defer reader.Close()
 
-	return io.ReadAll(reader)
+	return readLimited(reader)
 }
 
 func decodeZlib(data []byte) ([]byte, error) {
@@ -123,5 +140,18 @@ func decodeZlib(data []byte) ([]byte, error) {
 
 	defer reader.Close()
 
-	return io.ReadAll(reader)
+	return readLimited(reader)
+}
+
+func readLimited(reader io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(reader, MaxDecodedBodySize+1))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) > MaxDecodedBodySize {
+		return nil, ErrDecodedBodyTooLarge
+	}
+
+	return data, nil
 }

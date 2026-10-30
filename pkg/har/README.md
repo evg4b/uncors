@@ -28,6 +28,8 @@ entry := har.NewEntry(start, elapsed,
 
 - Response bodies are decoded by `Content-Encoding` (`gzip`, `deflate`, `br`,
   `zstd`). A body that is not UTF-8 or fails to decode is stored as base64.
+  A body that would decode past `MaxDecodedBodySize` (50 MiB) is stored as
+  received, with a comment.
 - URL-encoded forms go to `postData.params`, other UTF-8 bodies to
   `postData.text`.
 - Request URLs never include the fragment. Query parameters keep their order,

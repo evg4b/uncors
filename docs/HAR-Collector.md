@@ -98,6 +98,9 @@ Browsers usually ask for Brotli or zstd, and UNCORS forwards the browser's
 | Binary after decoding, such as an image          | Base64 of the decoded body      | `base64`   |
 | Unknown encoding, or a body that fails to decode | Base64 of the bytes as received | `base64`   |
 
+A body that would decode to more than 50 MiB is not decoded. It is stored as
+received, in base64, and `content.comment` says why.
+
 `content.size` is the size of the decoded body, and `bodySize` is the size as
 it came over the wire. For a decoded compressed body, `content.compression` is
 the number of bytes saved.
