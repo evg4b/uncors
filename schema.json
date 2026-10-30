@@ -47,6 +47,31 @@
       "title": "Duration",
       "type": "string"
     },
+    "EmptyMockResponse": {
+      "additionalProperties": false,
+      "description": "Mock response definition without a body",
+      "properties": {
+        "code": {
+          "description": "HTTP status code that has no body",
+          "enum": [
+            204,
+            304
+          ]
+        },
+        "delay": {
+          "$ref": "#/definitions/Duration",
+          "description": "Delay before sending the mock response"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers",
+          "description": "HTTP headers which will be sent in the mock response"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
     "FileMockResponse": {
       "additionalProperties": false,
       "description": "Mock response definition based on file content",
@@ -249,6 +274,9 @@
             },
             {
               "$ref": "#/definitions/FileMockResponse"
+            },
+            {
+              "$ref": "#/definitions/EmptyMockResponse"
             }
           ]
         }

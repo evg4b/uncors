@@ -42,7 +42,7 @@ func (r *Response) Validate(field string, fs afero.Fs) error {
 	errs = append(errs, ValidateDuration(joinPath(field, "delay"), r.Delay, true))
 
 	switch {
-	case r.Raw == "" && r.File == "":
+	case r.Raw == "" && r.File == "" && helpers.BodyAllowed(helpers.NormaliseStatusCode(r.Code)):
 		errs = append(errs, &ValidationError{fmt.Sprintf(
 			"%s or %s must be set",
 			joinPath(field, "raw"),

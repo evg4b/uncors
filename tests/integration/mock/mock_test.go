@@ -29,6 +29,10 @@ func TestMockHandler(t *testing.T) {
 					},
 				},
 				{
+					Matcher:  config.RequestMatcher{Path: "/empty"},
+					Response: config.Response{Code: http.StatusNoContent},
+				},
+				{
 					Matcher:  config.RequestMatcher{Path: "/file"},
 					Response: config.Response{Code: http.StatusOK, File: "/responses/data.json"},
 				},
@@ -51,6 +55,13 @@ func TestMockHandler(t *testing.T) {
 		assert.False(t, result.HasBackendRequest(), "mock must not reach the backend")
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
+	})
+
+	t.Run("response with 204 code and no body", func(t *testing.T) {
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/empty")))
+
+		assert.Equal(t, http.StatusNoContent, result.Response.StatusCode)
+		assert.Empty(t, result.BodyString())
 	})
 
 	t.Run("file response serves seeded file content", func(t *testing.T) {
