@@ -41,10 +41,8 @@ response:WriteString(request.path_params["id"])
 	t.Run("inline script writes status and body without the backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("script.local", "/hello")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusAccepted, result.Response.StatusCode)
-		assert.Equal(t, "scripted", body)
+		assert.Equal(t, "scripted", result.BodyString())
 		assert.False(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -53,10 +51,8 @@ response:WriteString(request.path_params["id"])
 	t.Run("script reads path parameters from the request", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("script.local", "/echo/abc123")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "abc123", body)
+		assert.Equal(t, "abc123", result.BodyString())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})

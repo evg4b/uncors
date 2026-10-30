@@ -47,11 +47,9 @@ func TestMockHandler(t *testing.T) {
 	t.Run("raw response returns configured code, headers and body", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/raw")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusCreated, result.Response.StatusCode)
 		assert.Equal(t, "raw", result.Response.Header.Get("X-Mock"))
-		assert.JSONEq(t, `{"mock":true}`, body)
+		assert.JSONEq(t, `{"mock":true}`, result.BodyString())
 		assert.False(t, result.HasBackendRequest(), "mock must not reach the backend")
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -67,10 +65,8 @@ func TestMockHandler(t *testing.T) {
 	t.Run("file response serves seeded file content", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/file")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.JSONEq(t, `{"from":"file"}`, body)
+		assert.JSONEq(t, `{"from":"file"}`, result.BodyString())
 		assert.False(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
@@ -79,21 +75,17 @@ func TestMockHandler(t *testing.T) {
 	t.Run("file response returns configured code", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("mock.local", "/missing")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusNotFound, result.Response.StatusCode)
 		assert.Equal(t, "application/json", result.Response.Header.Get("Content-Type"))
-		assert.JSONEq(t, `{"from":"file"}`, body)
+		assert.JSONEq(t, `{"from":"file"}`, result.BodyString())
 		assert.False(t, result.HasBackendRequest())
 	})
 
 	t.Run("method mismatch falls through to the backend", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodPost, env.URL("mock.local", "/raw")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "ok", body)
+		assert.Equal(t, "ok", result.BodyString())
 		assert.True(t, result.HasBackendRequest())
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))

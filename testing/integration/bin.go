@@ -16,11 +16,6 @@ var (
 	compile sync.Once
 )
 
-var (
-	repoRoot     string
-	repoRootOnce sync.Once
-)
-
 const UncorsTestVersion = "v1.2.3"
 
 func SetupBin(_ *testing.M) {
@@ -53,20 +48,10 @@ func UncorsCommand(t *testing.T, args []string) *exec.Cmd {
 }
 
 func repoRootPath() string {
-	repoRootOnce.Do(func() {
-		out, err := exec.CommandContext(context.Background(), "go", "list", "-m", "-f", "{{.Dir}}").Output()
-		if err != nil {
-			panic(fmt.Sprintf("failed to determine repository root: %v", err))
-		}
+	out, err := exec.CommandContext(context.Background(), "go", "list", "-m", "-f", "{{.Dir}}").Output()
+	if err != nil {
+		panic(fmt.Sprintf("failed to determine repository root: %v", err))
+	}
 
-		repoRoot = strings.TrimSpace(string(out))
-	})
-
-	return repoRoot
-}
-
-func RepoRoot(t *testing.T) string {
-	t.Helper()
-
-	return repoRootPath()
+	return strings.TrimSpace(string(out))
 }

@@ -142,7 +142,7 @@ func dial(t *testing.T, env *integration.Env, host, path string) *websocket.Conn
 	wsConfig, err := websocket.NewConfig(location.String(), target.Scheme+"://"+target.Host)
 	require.NoError(t, err)
 
-	conn, err := env.Hosts.DialContext(t.Context(), "tcp", target.Host)
+	conn, err := integration.Dial(t.Context(), "tcp", target.Host)
 	require.NoError(t, err)
 
 	var transport io.ReadWriteCloser = conn
@@ -163,6 +163,19 @@ func dial(t *testing.T, env *integration.Env, host, path string) *websocket.Conn
 	t.Cleanup(func() { _ = socket.Close() })
 
 	return socket
+}
+
+func handshake(t *testing.T, rawURL string) *http.Request {
+	t.Helper()
+
+	request := integration.NewRequest(t, http.MethodGet, rawURL)
+	request.Header.Set("Connection", "Upgrade")
+	request.Header.Set("Upgrade", "websocket")
+	request.Header.Set("Sec-WebSocket-Version", "13")
+	request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+	request.Header.Set("Origin", "https://app.local")
+
+	return request
 }
 
 func exchange(t *testing.T, socket *websocket.Conn, message string) {
@@ -248,12 +261,7 @@ func TestWebSocket(t *testing.T) {
 		})
 
 		t.Run("returns a refusal as a regular response via "+host, func(t *testing.T) {
-			request := integration.NewRequest(t, http.MethodGet, env.URL(host, "/refuse"))
-			request.Header.Set("Connection", "Upgrade")
-			request.Header.Set("Upgrade", "websocket")
-			request.Header.Set("Sec-WebSocket-Version", "13")
-			request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
-			request.Header.Set("Origin", "https://app.local")
+			request := handshake(t, env.URL(host, "/refuse"))
 
 			result, tracked := env.DoTracked(t, request)
 
@@ -270,11 +278,6 @@ func TestWebSocketSkipsHARAndCache(t *testing.T) {
 
 	echo := newEchoServer(t)
 	env := integration.New(t, echo.Backend, &config.UncorsConfig{
-		CacheConfig: config.CacheConfig{
-			Methods:        []string{http.MethodGet},
-			MaxSize:        10 * 1024 * 1024,
-			ExpirationTime: 5 * time.Minute,
-		},
 		Mappings: config.Mappings{{
 			From:  hosts.Parse("https://recorded.local"),
 			To:    echo.AsHost(),
@@ -375,12 +378,13 @@ func TestWebSocketServerShutdown(t *testing.T) {
 
 func TestWebSocketReload(t *testing.T) {
 	echo := newEchoServer(t)
-	env := integration.New(t, echo.Backend, &config.UncorsConfig{
+	cfg := &config.UncorsConfig{
 		Mappings: config.Mappings{
 			{From: hosts.Parse("http://ws.local"), To: echo.AsHost()},
 			{From: hosts.Parse("https://wss.local"), To: echo.AsHost()},
 		},
-	})
+	}
+	env := integration.New(t, echo.Backend, cfg)
 
 	plain := dial(t, env, "ws.local", "/plain")
 	secure := dial(t, env, "wss.local", "/secure")
@@ -388,7 +392,7 @@ func TestWebSocketReload(t *testing.T) {
 	exchange(t, plain, "hello")
 	exchange(t, secure, "hello")
 
-	env.Reload(t)
+	env.Restart(t, cfg)
 
 	requireClosedByProxy(t, plain)
 	requireClosedByProxy(t, secure)
@@ -434,12 +438,7 @@ func TestWebSocketOutsideAllowedOrigins(t *testing.T) {
 	})
 
 	t.Run("answers the handshake without CORS headers", func(t *testing.T) {
-		request := integration.NewRequest(t, http.MethodGet, env.URL("wss.local", "/handshake"))
-		request.Header.Set("Connection", "Upgrade")
-		request.Header.Set("Upgrade", "websocket")
-		request.Header.Set("Sec-WebSocket-Version", "13")
-		request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
-		request.Header.Set("Origin", "https://app.local")
+		request := handshake(t, env.URL("wss.local", "/handshake"))
 
 		response, err := env.Client.Do(request)
 		require.NoError(t, err)

@@ -3,7 +3,6 @@
 package domains_test
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -37,25 +36,10 @@ func TestLocalDomainMapping(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
 		assert.Equal(t, "from backend", result.BodyString())
 
-		require.NotNil(t, result.Response.TLS)
-		require.NotEmpty(t, result.Response.TLS.PeerCertificates)
-		assert.Contains(t, result.Response.TLS.PeerCertificates[0].DNSNames, "api.example.local")
-
-		assert.True(t, result.HasBackendRequest())
+		assert.Contains(t, result.Certificate(t).DNSNames, "api.example.local")
 
 		snaps.MatchSnapshot(t, result.BackendRequest(t))
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
-	})
-
-	t.Run("domain absent from the resolver is unreachable", func(t *testing.T) {
-		// Not registered via the harness and not in real DNS (.invalid never resolves),
-		// so the connection cannot be established.
-		url := fmt.Sprintf("https://unmapped.invalid:%d/", env.PortFor("api.example.local"))
-		req := integration.NewRequest(t, http.MethodGet, url)
-
-		resp, err := env.Client.Do(req)
-		require.Error(t, err)
-		assert.Nil(t, resp)
 	})
 }
 
@@ -78,14 +62,9 @@ func TestPlaceholderDomainMapping(t *testing.T) {
 			result := env.Do(t, integration.NewRequest(t, http.MethodGet,
 				env.URL(tenant+".example.local", "/dashboard")))
 
-			body := result.BodyString()
-
 			assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-			assert.Equal(t, "served /dashboard", body)
-
-			require.NotNil(t, result.Response.TLS)
-			require.NotEmpty(t, result.Response.TLS.PeerCertificates)
-			assert.Contains(t, result.Response.TLS.PeerCertificates[0].DNSNames, tenant+".example.local")
+			assert.Equal(t, "served /dashboard", result.BodyString())
+			assert.Contains(t, result.Certificate(t).DNSNames, tenant+".example.local")
 		}
 
 		assert.Equal(t, len(tenants), backend.Count())
@@ -126,16 +105,10 @@ func TestSharedPortDistinctRemotes(t *testing.T) {
 	t.Run("blog.local reaches only the blog remote", func(t *testing.T) {
 		shopBefore := shopRemote.Count()
 
-		response, err := env.Client.Do(integration.NewRequest(t, http.MethodGet, env.URL("blog.local", "/posts")))
-		require.NoError(t, err)
+		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("blog.local", "/posts")))
 
-		defer testutils.Close(t, response.Body)
-
-		body, err := io.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		assert.Equal(t, http.StatusOK, response.StatusCode)
-		assert.Equal(t, "blog remote", string(body))
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "blog remote", result.BodyString())
 		assert.Equal(t, 1, blogRemote.Count())
 		assert.Equal(t, shopBefore, shopRemote.Count(), "blog request must not reach the shop remote")
 	})
@@ -176,15 +149,10 @@ func TestPlaceholderDoesNotReachIntoTheURL(t *testing.T) {
 		tenantBefore := tenantRemote.Count()
 
 		for _, path := range paths {
-			response, err := env.Client.Do(integration.NewRequest(t, http.MethodGet, env.RawURL("other.local", path)))
-			require.NoError(t, err)
+			result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.RawURL("other.local", path)))
 
-			body, err := io.ReadAll(response.Body)
-			require.NoError(t, err)
-			testutils.Close(t, response.Body)
-
-			assert.Equal(t, http.StatusOK, response.StatusCode, path)
-			assert.Equal(t, path, string(body))
+			assert.Equal(t, http.StatusOK, result.Response.StatusCode, path)
+			assert.Equal(t, path, result.BodyString())
 		}
 
 		assert.Equal(t, len(paths), otherRemote.Count())

@@ -34,10 +34,8 @@ func TestTLS(t *testing.T) {
 	t.Run("client trusting the proxy CA completes the handshake", func(t *testing.T) {
 		result := env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("tls.local", "/")))
 
-		body := result.BodyString()
-
 		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
-		assert.Equal(t, "secure", body)
+		assert.Equal(t, "secure", result.BodyString())
 		require.NotNil(t, result.Response.TLS, "response must have travelled over TLS")
 		assert.True(t, result.Response.TLS.HandshakeComplete)
 	})
@@ -47,7 +45,7 @@ func TestTLS(t *testing.T) {
 			Transport: &http.Transport{
 				// Resolve mapped hosts to the proxy but trust no CA, so the
 				// failure is the handshake, not DNS.
-				DialContext: env.Hosts.DialContext,
+				DialContext: integration.Dial,
 				TLSClientConfig: &tls.Config{
 					MinVersion: tls.VersionTLS13,
 					RootCAs:    x509.NewCertPool(),
