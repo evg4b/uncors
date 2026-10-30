@@ -306,6 +306,35 @@ func TestHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("codes without body send no content", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			response config.Response
+		}{
+			{name: "204 with raw", response: config.Response{Code: http.StatusNoContent, Raw: "test content"}},
+			{name: "304 with raw", response: config.Response{Code: http.StatusNotModified, Raw: "test content"}},
+			{name: "204 without body", response: config.Response{Code: http.StatusNoContent}},
+			{name: "304 without body", response: config.Response{Code: http.StatusNotModified}},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := mock.NewHandler(
+					mock.WithResponse(&testCase.response),
+					mock.WithFileSystem(fileSystem),
+					mock.WithAfter(time.After),
+				)
+
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+				require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+				assert.Equal(t, testCase.response.Code, recorder.Code)
+				assert.Empty(t, recorder.Header().Get(headers.ContentType))
+				assert.Empty(t, testutils.ReadBody(t, recorder))
+			})
+		}
+	})
+
 	t.Run("file status code", func(t *testing.T) {
 		tests := []struct {
 			name        string

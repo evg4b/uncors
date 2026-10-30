@@ -32,6 +32,10 @@ func Is5xxCode(code int) bool {
 	return 500 <= code && code < 600
 }
 
+func BodyAllowed(code int) bool {
+	return code >= http.StatusOK && code != http.StatusNoContent && code != http.StatusNotModified
+}
+
 func NormaliseStatusCode(code int) int {
 	if code == 0 {
 		return http.StatusOK

@@ -112,7 +112,8 @@ never reached.
 | `raw`     | string  | One of   | Response body as text.                                       |
 | `file`    | string  | One of   | Path to a file whose content is the response body.          |
 
-Set exactly one of `raw` and `file`.
+Set exactly one of `raw` and `file`, except for `204` and `304`, which need
+neither.
 
 ### Body from `raw`
 
@@ -151,6 +152,16 @@ status. With `204` or `304`, the file is not sent.
 response:
   code: 404
   file: ./mocks/not-found.json
+```
+
+### Without a body
+
+`204 No Content` and `304 Not Modified` never have a body, so `raw` and `file`
+can be left out. If they are set, they are not sent.
+
+```yaml
+response:
+  code: 204
 ```
 
 ### Headers

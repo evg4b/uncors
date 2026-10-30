@@ -131,7 +131,7 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 	switch {
 	case response.IsFile():
 		return h.serveFileContent(writer, request)
-	case response.IsRaw():
+	case response.IsRaw(), !helpers.BodyAllowed(helpers.NormaliseStatusCode(response.Code)):
 		return h.serveRawContent(writer)
 	default:
 		return ErrResponseIsNotDefined
@@ -140,6 +140,13 @@ func (h *Handler) writeResponse(writer contracts.ResponseWriter, request *contra
 
 func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 	response := h.response
+
+	code := helpers.NormaliseStatusCode(response.Code)
+	if !helpers.BodyAllowed(code) {
+		writer.WriteHeader(code)
+
+		return nil
+	}
 
 	header := writer.Header()
 	if header.Get(headers.ContentType) == "" {
@@ -152,7 +159,7 @@ func (h *Handler) serveRawContent(writer http.ResponseWriter) error {
 		header.Set(headers.ContentType, contentType)
 	}
 
-	writer.WriteHeader(helpers.NormaliseStatusCode(response.Code))
+	writer.WriteHeader(code)
 	_, err := fmt.Fprint(writer, response.Raw)
 
 	return err
@@ -209,7 +216,7 @@ func writeFileWithStatus(writer http.ResponseWriter, file io.Reader, stat os.Fil
 		header.Set(headers.ContentType, contentType)
 	}
 
-	if !bodyAllowed(code) {
+	if !helpers.BodyAllowed(code) {
 		writer.WriteHeader(code)
 
 		return nil
@@ -227,10 +234,6 @@ func writeFileWithStatus(writer http.ResponseWriter, file io.Reader, stat os.Fil
 	}
 
 	return nil
-}
-
-func bodyAllowed(code int) bool {
-	return code >= http.StatusOK && code != http.StatusNoContent && code != http.StatusNotModified
 }
 
 func (h *Handler) waitDelay(writer contracts.ResponseWriter, request *contracts.Request) bool {

@@ -117,6 +117,8 @@ func TestResponseValidator(t *testing.T) {
 			{name: "with file", value: config.Response{Code: 200, File: file, Delay: 3 * time.Second}},
 			{name: "with raw", value: config.Response{Code: 200, Raw: `{ "test": "test" }`, Delay: 3 * time.Second}},
 			{name: "without delay", value: config.Response{Code: 200, Raw: `{ "test": "test" }`}},
+			{name: "204 without body", value: config.Response{Code: 204}},
+			{name: "304 without body", value: config.Response{Code: 304}},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
