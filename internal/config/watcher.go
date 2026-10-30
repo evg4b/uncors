@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync/atomic"
 	"time"
@@ -37,11 +36,6 @@ func (w *Watcher) Watch(ctx context.Context, onChange func(), onError func(error
 
 	if w.filePath == "" {
 		return nil
-	}
-
-	_, err := os.Stat(w.filePath)
-	if err != nil {
-		return fmt.Errorf("failed to watch config file '%s': %w", w.filePath, err)
 	}
 
 	fsWatcher, err := fsnotify.NewWatcher()
