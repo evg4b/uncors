@@ -427,6 +427,16 @@ func TestWriteRequestCorsHeaders(t *testing.T) {
 		assert.Equal(t, corsHeaders("*", "*"), header)
 	})
 
+	t.Run("writes preflight headers for an OPTIONS request", func(t *testing.T) {
+		header := http.Header{}
+		request := originRequest(t, origin)
+		request.Method = "options"
+
+		infra.WriteRequestCorsHeaders(header, request)
+
+		assert.Equal(t, preflightHeaders(origin, "*", expectedAllowMethods, headers.Origin), header)
+	})
+
 	t.Run("withholds CORS headers from a rejected origin", func(t *testing.T) {
 		header := corsHeaders(origin, "X-Total-Count")
 		header.Set("X-Total-Count", "10")

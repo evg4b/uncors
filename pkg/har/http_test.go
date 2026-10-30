@@ -16,11 +16,13 @@ import (
 func TestIsSecureHeader(t *testing.T) {
 	for _, name := range []string{
 		"Cookie", "set-cookie", "AUTHORIZATION", "WWW-Authenticate", "Proxy-Authorization", "proxy-authenticate",
+		"Api-Key", "x-api-key", "X-Apikey", "X-Auth-Token", "x-auth-user", "X-CSRF-Token", "X-Xsrf-Token",
+		"X-Amz-Security-Token", "X-Client-Secret",
 	} {
 		assert.True(t, har.IsSecureHeader(name), name)
 	}
 
-	for _, name := range []string{"Content-Type", "Accept", "X-Api-Key"} {
+	for _, name := range []string{"Content-Type", "Accept", "X-Request-Id", "X-Token-Count"} {
 		assert.False(t, har.IsSecureHeader(name), name)
 	}
 }

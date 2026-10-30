@@ -49,6 +49,20 @@ rewrites:
     to: /api/users/{userId}/content/posts/{postId}
 ```
 
+To keep the rest of the path whatever its length, end `from` with a placeholder
+that matches any text, `{name:.*}`, and use it in `to`:
+
+```yaml
+rewrites:
+  - from: /files/{rest:.*}
+    to: /v2/files/{rest}
+```
+
+| Incoming request              | Upstream request                 |
+| ----------------------------- | -------------------------------- |
+| `/files/docs/2026/report.pdf` | `/v2/files/docs/2026/report.pdf` |
+| `/files/logo.png`             | `/v2/files/logo.png`             |
+
 A rewritten request always goes to the upstream server. It does not reach
 mocks or scripts, even if the new path matches one. Caching and HAR recording
 still apply, and the cache uses the rewritten path. Rewrites are checked after

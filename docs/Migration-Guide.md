@@ -16,6 +16,7 @@ update your configuration.
   - [HAR field names](#har-field-names)
   - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
   - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
+  - [More headers left out of HAR files](#more-headers-left-out-of-har-files)
   - [No 1xx codes in mocks and `options-handling`](#no-1xx-codes-in-mocks-and-options-handling)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
@@ -186,6 +187,12 @@ script, or set `disabled: true` under `options-handling` for the mapping.
 A [static directory](Static-File-Serving) used to return its file for any
 method, so a `POST` to `/assets/app.js` got the file with `200`. Requests other
 than `GET` and `HEAD` now go to the upstream server.
+
+### More headers left out of HAR files
+
+Besides cookies and `Authorization`, [HAR files](HAR-Collector#secure-headers)
+now leave out API key and token headers, such as `X-Api-Key`, `X-Auth-Token`,
+and `X-CSRF-Token`. Set `capture-secure-headers: true` to keep them.
 
 ### No 1xx codes in mocks and `options-handling`
 
