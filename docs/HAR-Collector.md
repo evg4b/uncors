@@ -161,10 +161,12 @@ Recording never slows down requests. Entries go to a queue, and a background
 writer adds them to the file at most once a second, so a new request shows up
 in the file within about a second. Each write replaces the whole file, so with
 a large recording the writer waits at least ten times as long as the last write
-took, which keeps writing to about a tenth of the time. It writes to a
-temporary file next to the `.har` file and renames it over the old one, so the
-`.har` file is always complete and valid, even if you open it while UNCORS
-runs. The file is written once more when UNCORS stops or reloads its
+took, which keeps writing to about a tenth of the time. Entries already written
+are kept on disk rather than in memory, in a hidden file next to the `.har`
+file (for example `.api.har.1234.spool`) that is removed when the recording
+ends. It writes to a temporary file next to the `.har` file and renames it over
+the old one, so the `.har` file is always complete and valid, even if you open
+it while UNCORS runs. The file is written once more when UNCORS stops or reloads its
 configuration. A configuration that fails to start, or a reload that fails and
 keeps the previous configuration running, leaves the file untouched.
 

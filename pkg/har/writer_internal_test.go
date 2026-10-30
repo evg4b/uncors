@@ -85,3 +85,52 @@ func TestWriterFlushesOnInterval(t *testing.T) {
 		}
 	}, time.Second, 20*time.Millisecond)
 }
+
+func TestWriterSpoolsFlushedEntries(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	writer := NewWriter("/out.har", WithFileSystem(fs))
+
+	started := time.Date(2026, time.October, 29, 12, 0, 0, 0, time.UTC)
+	entry := func(offset time.Duration, url string) Entry {
+		return Entry{StartedDateTime: started.Add(offset), Request: Request{Method: http.MethodGet, URL: url}}
+	}
+
+	readURLs := func() []string {
+		data, err := afero.ReadFile(fs, "/out.har")
+		require.NoError(t, err)
+
+		var archive HAR
+		require.NoError(t, json.Unmarshal(data, &archive))
+
+		urls := make([]string, 0, len(archive.Log.Entries))
+		for _, entry := range archive.Log.Entries {
+			urls = append(urls, entry.Request.URL)
+		}
+
+		return urls
+	}
+
+	writer.append(entry(0, "/first"))
+	writer.append(entry(2*time.Second, "/third"))
+	writer.flush()
+
+	assert.Empty(t, writer.encoded)
+	assert.Equal(t, []string{"/first", "/third"}, readURLs())
+
+	writer.append(entry(time.Second, "/second"))
+	writer.append(entry(3*time.Second, "/fourth"))
+	writer.flush()
+
+	assert.Empty(t, writer.encoded)
+	assert.Len(t, writer.spooled, 4)
+	assert.Equal(t, []string{"/first", "/second", "/third", "/fourth"}, readURLs())
+
+	spool := writer.spool.Name()
+
+	require.NoError(t, writer.Discard())
+
+	exists, err := afero.Exists(fs, spool)
+	require.NoError(t, err)
+	assert.False(t, exists, "spool file was left behind")
+	assert.Equal(t, []string{"/first", "/second", "/third", "/fourth"}, readURLs())
+}
