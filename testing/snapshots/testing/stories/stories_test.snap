@@ -501,6 +501,7 @@ line 10
 ---
 
 [TestStories/app/busy/40 - 1]
+ ██████  ██   ████  ██████  ██████  ██  
                                version:
 
  WARN   DON'T USE IT FOR PRODUCTION!
@@ -524,7 +525,7 @@ line 10
  SCRPT  ▱▱▱ PUT    http://localhost:3000
  CACHE  ▱▱▱ GET    https://api.example.c
 ? toggle help • r reload • q quit
-
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██  [m
                                version:
 
 [48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
@@ -548,10 +549,10 @@ line 10
 [48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000[m
 [48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.c[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m
-
 ---
 
 [TestStories/app/busy/80 - 1]
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
                                version: 0.0.0-story
 
  WARN   DON'T USE IT FOR PRODUCTION!
@@ -575,7 +576,7 @@ line 10
  SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
  CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
 ? toggle help • r reload • q quit                                    [ 42.5 MB ]
-
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
                                version: 0.0.0-story
 
 [48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
@@ -599,10 +600,10 @@ line 10
 [48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
 [48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                    [38;2;119;119;119m[ 42.5 MB ][m
-
 ---
 
 [TestStories/app/busy/120 - 1]
+ ██████  ██   ████  ██████  ██████  ██   ██ ███████
                                version: 0.0.0-story
 
  WARN   DON'T USE IT FOR PRODUCTION!
@@ -626,7 +627,7 @@ line 10
  SCRPT  ▱▱▱ PUT    http://localhost:3000/v1/users/42 → /v2/users/42
  CACHE  ▱▱▱ GET    https://api.example.com/v1/catalog?page=2
 ? toggle help • r reload • q quit                                                                            [ 42.5 MB ]
-
+[38;2;220;1;0m ██████  ██   ████ [38;2;255;212;0m ██████  ██████  ██   ██ ███████[m
                                version: 0.0.0-story
 
 [48;2;255;212;0m [38;2;0;0;0mWARN[39m  [m DON'T USE IT FOR PRODUCTION!
@@ -650,7 +651,6 @@ line 10
 [48;2;255;127;0m [38;2;0;0;0mSCRPT[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ PUT[39;22m   [m [38;2;140;140;140mhttp://localhost:3000/v1/users/42[m [38;2;140;140;140m→ /v2/users/42[m
 [48;2;254;252;127m [38;2;0;0;0mCACHE[39m [48;2;140;140;140m [38;2;255;255;255;1m▱▱▱ GET[39;22m   [m [38;2;140;140;140mhttps://api.example.com/v1/catalog?page=2[m
 [38;2;98;98;98m?[m [38;2;74;74;74mtoggle help[38;2;60;60;60m • [38;2;98;98;98mr[m [38;2;74;74;74mreload[38;2;60;60;60m • [38;2;98;98;98mq[m [38;2;74;74;74mquit[m                                                                            [38;2;119;119;119m[ 42.5 MB ][m
-
 ---
 
 [TestStories/app/full-help/40 - 1]

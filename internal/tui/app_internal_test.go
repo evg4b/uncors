@@ -14,6 +14,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/testing/hosts"
+	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -121,8 +122,6 @@ func TestUncorsAppUpdateViewAndLayout(t *testing.T) {
 	assert.InDelta(t, 12.5, app.memWidget.memMB, 0.0001)
 
 	app.helpWidget.help.ShowAll = true
-	app.trackerWidget.pending[1] = events.RequestStarted{Method: "POST", URL: requestURL, At: time.Now()}
-	assert.Equal(t, 6, app.footerHeight())
 
 	app.termHeight = 0
 	app.updateHistoryHeight()
@@ -324,4 +323,22 @@ func TestWithMemoryWidget(t *testing.T) {
 	app := NewUncorsApp(events.NewBus().Subscribe(1), make(chan events.Command, 1), "test", WithMemoryWidget(widget))
 
 	assert.Same(t, widget, app.memWidget)
+}
+
+func TestTracingBadge(t *testing.T) {
+	t.Run("hidden while tracing is off", func(t *testing.T) {
+		app := newTestApp(t)
+		app.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
+
+		assert.NotContains(t, ansi.Strip(app.View().Content), "TRACING")
+	})
+
+	t.Run("shown while tracing is on", func(t *testing.T) {
+		testutils.Telemetry(t)
+
+		app := newTestApp(t)
+		app.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
+
+		assert.Contains(t, ansi.Strip(app.View().Content), " TRACING  [ ")
+	})
 }

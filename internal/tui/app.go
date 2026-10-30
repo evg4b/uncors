@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tui/render"
+	"github.com/evg4b/uncors/internal/tui/styles"
 )
 
 const (
@@ -35,6 +37,8 @@ type UncorsApp struct {
 
 	termHeight int
 	termWidth  int
+
+	tracingBadge string
 
 	historyWidget *HistoryWidget
 	trackerWidget *TrackerWidget
@@ -64,6 +68,11 @@ func NewUncorsApp(
 	keys := NewKeyMap()
 	rendered := &bytes.Buffer{}
 
+	tracingBadge := ""
+	if telemetry.Enabled() {
+		tracingBadge = styles.Default.InfoBlock.Render("TRACING") + " "
+	}
+
 	return helpers.ApplyOptions(&UncorsApp{
 		keys:          keys,
 		events:        subscription,
@@ -75,6 +84,7 @@ func NewUncorsApp(
 		trackerWidget: NewTrackerWidget(),
 		helpWidget:    NewHelpWidget(keys),
 		memWidget:     NewMemoryWidget(),
+		tracingBadge:  tracingBadge,
 	}, options)
 }
 
@@ -152,16 +162,10 @@ func (m *UncorsApp) View() tea.View {
 	var viewBuilder strings.Builder
 
 	viewBuilder.WriteString(m.historyWidget.View().Content)
-
-	if m.trackerWidget.ActiveCount() > 0 {
-		viewBuilder.WriteByte('\n')
-		viewBuilder.WriteString(m.trackerWidget.View().Content)
-	}
-
 	viewBuilder.WriteByte('\n')
 
 	helpStr := m.helpWidget.View().Content
-	memStr := m.memWidget.View().Content
+	memStr := m.tracingBadge + m.memWidget.View().Content
 
 	gap := m.termWidth - lipgloss.Width(helpStr) - lipgloss.Width(memStr)
 	if gap > 0 {
@@ -178,7 +182,9 @@ func (m *UncorsApp) View() tea.View {
 
 func (m *UncorsApp) updateLayout(msg tea.Msg) {
 	switch msg.(type) {
-	case requestStartedMsg, requestCompletedMsg, lifecycleMsg, tea.KeyPressMsg:
+	case requestStartedMsg, requestCompletedMsg, spinner.TickMsg:
+		m.historyWidget.SetTail(m.trackerWidget.Lines())
+	case lifecycleMsg, tea.KeyPressMsg:
 		m.updateHistoryHeight()
 	}
 }
@@ -211,7 +217,7 @@ func (m *UncorsApp) handleKeyPress(msg tea.KeyPressMsg) tea.Cmd {
 }
 
 func (m *UncorsApp) updateHistoryHeight() {
-	footerHeight := m.footerHeight()
+	footerHeight := m.helpWidget.Height()
 	viewportHeight := max(m.termHeight-footerHeight, 1)
 
 	if telemetry.Enabled() {
@@ -223,16 +229,6 @@ func (m *UncorsApp) updateHistoryHeight() {
 	}
 
 	m.historyWidget.SetHeight(viewportHeight)
-}
-
-func (m *UncorsApp) footerHeight() int {
-	footerHeight := m.helpWidget.Height()
-
-	if m.trackerWidget.ActiveCount() > 0 {
-		footerHeight += m.trackerWidget.Height()
-	}
-
-	return footerHeight
 }
 
 func (m *UncorsApp) render(event events.Event) {
