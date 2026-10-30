@@ -249,7 +249,7 @@ func storedHeaders(header http.Header) []contracts.CachedHeader {
 
 	for name, values := range header {
 		// It names the trace of the request that filled the cache.
-		if name == telemetry.TraceIDHeader || name == headers.SetCookie || isCorsHeader(name) {
+		if name == telemetry.TraceIDHeader || name == headers.SetCookie || infra.IsCorsHeader(name) {
 			continue
 		}
 
@@ -279,14 +279,7 @@ func (m *Middleware) writeCachedResponse(
 	upstreamAge, _ := strconv.ParseInt(header.Get(ageHeader), 10, 64)
 	header.Set(ageHeader, strconv.FormatInt(upstreamAge+int64(time.Since(cachedResponse.Stored)/time.Second), 10))
 
-	switch {
-	case tracking.OriginRejected(request.Context()):
-		infra.WithholdCorsHeaders(header)
-	case request.Method == http.MethodOptions:
-		infra.WriteCorsHeadersForOptions(header, request.Header)
-	default:
-		infra.WriteCorsHeaders(header, request.Header.Get(headers.Origin))
-	}
+	infra.WriteRequestCorsHeaders(header, request)
 
 	writer.WriteHeader(cachedResponse.Code)
 

@@ -21,18 +21,19 @@ const (
 )
 
 func WriteRequestCorsHeaders(header http.Header, request *http.Request) {
-	if tracking.OriginRejected(request.Context()) {
+	switch {
+	case tracking.OriginRejected(request.Context()):
 		WithholdCorsHeaders(header)
-
-		return
+	case strings.EqualFold(request.Method, http.MethodOptions):
+		WriteCorsHeadersForOptions(header, request.Header)
+	default:
+		WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 	}
-
-	WriteCorsHeaders(header, request.Header.Get(headers.Origin))
 }
 
 func WithholdCorsHeaders(header http.Header) {
 	for name := range header {
-		if isCorsHeader(name) {
+		if IsCorsHeader(name) {
 			delete(header, name)
 		}
 	}
@@ -112,10 +113,10 @@ func isExposedHeader(name string) bool {
 		return false
 	}
 
-	return !isCorsHeader(name)
+	return !IsCorsHeader(name)
 }
 
-func isCorsHeader(name string) bool {
+func IsCorsHeader(name string) bool {
 	return len(name) >= len(corsHeaderPrefix) && strings.EqualFold(name[:len(corsHeaderPrefix)], corsHeaderPrefix)
 }
 
