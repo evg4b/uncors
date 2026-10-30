@@ -306,3 +306,33 @@ func TestStaticMiddlewarePathUnderFile(t *testing.T) {
 		})
 	}
 }
+
+func TestStaticMiddlewareMethods(t *testing.T) {
+	handler := infra.Wrap(static.NewMiddleware(static.WithFileSystem(newStaticFs(t)), static.WithIndex(indexHTML)),
+		infra.HandlerFunc(func(writer contracts.ResponseWriter, _ *contracts.Request) error {
+			writer.WriteHeader(http.StatusTeapot)
+
+			return nil
+		}))
+
+	tests := []struct {
+		method string
+		code   int
+	}{
+		{method: http.MethodGet, code: http.StatusOK},
+		{method: http.MethodHead, code: http.StatusOK},
+		{method: http.MethodPost, code: http.StatusTeapot},
+		{method: http.MethodPut, code: http.StatusTeapot},
+		{method: http.MethodOptions, code: http.StatusTeapot},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.method, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), testCase.method, "http://localhost"+indexJS, nil)
+			require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), request))
+
+			assert.Equal(t, testCase.code, recorder.Code)
+		})
+	}
+}

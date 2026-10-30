@@ -57,6 +57,10 @@ set:
 A path that continues past a file, such as `/assets/app.js/extra`, counts as a
 file that does not exist.
 
+Only `GET` and `HEAD` requests are served from `dir`. Other methods, such as
+`POST` or an `OPTIONS` preflight, go to the upstream as if the file did not
+exist.
+
 "Goes to the upstream" means the request is proxied to `to`, with caching and
 HAR recording if they are configured. It does not fall through to mocks or
 scripts. Static paths are checked before mocks, scripts, and rewrites, so a

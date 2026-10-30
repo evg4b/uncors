@@ -55,7 +55,7 @@ func (h *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 		)
 	}
 
-	file, stat, err := h.openFile(filePath)
+	file, stat, err := h.openFile(request.Method, filePath)
 	defer helpers.CloseSafe(file)
 
 	if err != nil {
@@ -120,7 +120,11 @@ func (h *Middleware) extractFilePath(request *http.Request) string {
 	return filepath.Clean("/" + strings.TrimPrefix(request.URL.Path, h.prefix))
 }
 
-func (h *Middleware) openFile(filePath string) (afero.File, os.FileInfo, error) {
+func (h *Middleware) openFile(method, filePath string) (afero.File, os.FileInfo, error) {
+	if method != http.MethodGet && method != http.MethodHead {
+		return nil, nil, errNotHandled
+	}
+
 	file, err := h.fs.Open(filePath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {

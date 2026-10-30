@@ -15,6 +15,7 @@ update your configuration.
   - [Duplicate mappings](#duplicate-mappings)
   - [HAR field names](#har-field-names)
   - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
+  - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -178,6 +179,12 @@ does for proxied paths (see
 
 To keep a custom `OPTIONS` response, set `method: OPTIONS` on the mock or
 script, or set `disabled: true` under `options-handling` for the mapping.
+
+### Static files answer GET and HEAD only
+
+A [static directory](Static-File-Serving) used to return its file for any
+method, so a `POST` to `/assets/app.js` got the file with `200`. Requests other
+than `GET` and `HEAD` now go to the upstream server.
 
 ## Upgrading from 0.5.x to 0.6.x
 
