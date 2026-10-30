@@ -105,19 +105,30 @@ received, in base64, and `content.comment` says why.
 it came over the wire. For a decoded compressed body, `content.compression` is
 the number of bytes saved.
 
+Only the first 10 MiB of a response body are recorded; the client still gets
+the whole response. For a longer body, `bodySize` is the full size,
+`content.text` holds the first 10 MiB, and `content.comment` says it was cut.
+
 ## Secure headers
 
 To keep credentials off the disk, these headers are left out of every entry by
 default, and the request and response `cookies` lists are empty:
 
-| Header                | Why it is sensitive                          |
-| --------------------- | -------------------------------------------- |
-| `Cookie`              | Session identifiers sent by the browser      |
-| `Set-Cookie`          | Session identifiers set by the server        |
-| `Authorization`       | Bearer tokens and Basic auth credentials     |
-| `WWW-Authenticate`    | Auth challenges, which reveal scheme and realm |
-| `Proxy-Authorization` | Proxy credentials                            |
-| `Proxy-Authenticate`  | Proxy auth challenges                        |
+| Header                                                       | Why it is sensitive                              |
+| ------------------------------------------------------------ | ------------------------------------------------ |
+| `Cookie`                                                     | Session identifiers sent by the browser          |
+| `Set-Cookie`                                                 | Session identifiers set by the server            |
+| `Authorization`                                              | Bearer tokens and Basic auth credentials         |
+| `WWW-Authenticate`                                           | Auth challenges, which reveal scheme and realm   |
+| `Proxy-Authorization`                                        | Proxy credentials                                |
+| `Proxy-Authenticate`                                         | Proxy auth challenges                            |
+| `Api-Key`, and names ending in `-Api-Key` or `-Apikey`       | API keys, such as `X-Api-Key`                    |
+| Names ending in `-Token`                                     | Tokens, such as `X-Auth-Token` or `X-CSRF-Token` |
+| Names ending in `-Secret`, and names starting with `X-Auth-` | Client secrets and auth details                  |
+
+Names are compared without regard to case. URLs, query strings, and request
+and response bodies are always recorded in full, so a token passed in the URL
+or returned in a login response ends up in the file.
 
 Set `capture-secure-headers: true` to keep them:
 
@@ -161,13 +172,15 @@ Recording never slows down requests. Entries go to a queue, and a background
 writer adds them to the file at most once a second, so a new request shows up
 in the file within about a second. Each write replaces the whole file, so with
 a large recording the writer waits at least ten times as long as the last write
-took, which keeps writing to about a tenth of the time. It writes to a
-temporary file next to the `.har` file and renames it over the old one, so the
-`.har` file is always complete and valid, even if you open it while UNCORS
-runs. The file is written once more when UNCORS stops, or when a reload moves
-recording to another file or turns it off. A configuration that fails to start,
-or a reload that fails and keeps the previous configuration running, leaves the
-file untouched.
+took, which keeps writing to about a tenth of the time. Entries already written
+are kept on disk rather than in memory, in a hidden file next to the `.har`
+file (for example `.api.har.1234.spool`) that is removed when the recording
+ends. It writes to a temporary file next to the `.har` file and renames it over
+the old one, so the `.har` file is always complete and valid, even if you open
+it while UNCORS runs. The file is written once more when UNCORS stops, or when a
+reload moves recording to another file or turns it off. A configuration that
+fails to start, or a reload that fails and keeps the previous configuration
+running, leaves the file untouched.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads a changed configuration file, the recording starts empty and the

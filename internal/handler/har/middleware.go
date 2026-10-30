@@ -142,8 +142,11 @@ func (m *Middleware) buildEntry(
 		Header:     capture.Header,
 	}
 
-	return harlib.NewEntry(start, elapsed,
-		harlib.NewRequest(req, reqBody, m.options...),
-		harlib.NewResponse(response, capture.Body, m.options...),
-	)
+	harResponse := harlib.NewResponse(response, capture.Body, m.options...)
+	if capture.Truncated {
+		harResponse.BodySize = capture.Written
+		harResponse.Content.Comment = fmt.Sprintf("Only the first %d bytes of the body are recorded", len(capture.Body))
+	}
+
+	return harlib.NewEntry(start, elapsed, harlib.NewRequest(req, reqBody, m.options...), harResponse)
 }
