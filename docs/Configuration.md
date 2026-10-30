@@ -524,6 +524,12 @@ and these headers:
 The same headers are added to `OPTIONS` requests forwarded to the upstream
 server when `disabled` is `true`.
 
+Preflight requests to paths that mocks and scripts serve are answered the same
+way, so a mock or script without a `method` does not answer them. A mock or
+script with `method: OPTIONS` answers `OPTIONS` requests itself. When
+`disabled` is `true`, a mock or script that matches an `OPTIONS` request
+answers it.
+
 | Option     | Type    | Default | Description                                                  |
 | ---------- | ------- | ------- | ------------------------------------------------------------ |
 | `disabled` | boolean | `false` | Forward `OPTIONS` requests to the upstream server instead.   |

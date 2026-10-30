@@ -36,7 +36,7 @@ Scripts match requests the same way mocks do:
 | Option    | Required | Description                                                           |
 | --------- | -------- | --------------------------------------------------------------------- |
 | `path`    | Yes      | URL path to match, starting with `/`. `{name}` segments match any value. |
-| `method`  | No       | HTTP method in upper case. Default: any.                              |
+| `method`  | No       | HTTP method in upper case. Default: any except `OPTIONS`.             |
 | `queries` | No       | Query parameters that must be present with these values.             |
 | `headers` | No       | Request headers that must be present with these values.              |
 
