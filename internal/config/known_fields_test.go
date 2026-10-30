@@ -206,7 +206,17 @@ proxi: http://localhost:8888
 			_, err := loadConfigFile(t, afero.NewMemMapFs(), testCase.content)
 
 			require.EqualError(t, err,
-				"failed to read config file '"+configFile+"': While parsing config: "+testCase.expected)
+				"failed to parse config file '"+configFile+"': "+testCase.expected)
+		})
+	}
+}
+
+func TestLoadConfigurationEmptyFile(t *testing.T) {
+	for name, content := range map[string]string{"empty": "", "comments only": "# nothing yet\n"} {
+		t.Run(name, func(t *testing.T) {
+			_, err := loadConfigFile(t, afero.NewMemMapFs(), content)
+
+			require.EqualError(t, err, "mappings must not be empty")
 		})
 	}
 }
