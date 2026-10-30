@@ -64,9 +64,3 @@ func repoRootPath() string {
 
 	return repoRoot
 }
-
-func RepoRoot(t *testing.T) string {
-	t.Helper()
-
-	return repoRootPath()
-}

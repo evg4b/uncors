@@ -18,6 +18,7 @@ const (
 	methodWidth        = 5
 	maxCachedBlocks    = 256
 	inlineSample       = "x"
+	styledLineOverhead = 128
 )
 
 type blockKind uint8
@@ -29,9 +30,10 @@ const (
 )
 
 type blockKey struct {
-	kind blockKind
-	code int
-	text string
+	kind   blockKind
+	code   int
+	label  string
+	method string
 }
 
 type inline struct {
@@ -78,20 +80,21 @@ func NewFormatter(theme *styles.Theme) *Formatter {
 func (f *Formatter) Request(event events.RequestCompleted) string {
 	data := event.Data
 	method := methodLabel(data.Method)
+	urlStr := urlt.URL_String(data.URL)
 
 	var builder strings.Builder
 
+	builder.Grow(len(urlStr) + styledLineOverhead)
 	builder.WriteString(f.theme.HandlerLabel(event.Handler))
 
 	if data.Cancelled {
-		builder.WriteString(f.block(blockKey{kind: cancelledBlock, text: "CXL " + method}))
+		builder.WriteString(f.block(blockKey{kind: cancelledBlock, label: "CXL", method: method}))
 	} else {
-		key := blockKey{kind: statusBlock, code: data.Code, text: strconv.Itoa(data.Code) + " " + method}
-		builder.WriteString(f.block(key))
+		builder.WriteString(f.block(blockKey{kind: statusBlock, code: data.Code, method: method}))
 	}
 
 	builder.WriteByte(' ')
-	builder.WriteString(f.url.render(urlt.URL_String(data.URL)))
+	builder.WriteString(f.url.render(urlStr))
 	f.writeRewrite(&builder, event.Rewrite)
 
 	if event.Err != nil && !data.Cancelled {
@@ -110,8 +113,9 @@ func (f *Formatter) Pending(event events.RequestStarted, frame string) string {
 
 	var builder strings.Builder
 
+	builder.Grow(len(urlStr) + styledLineOverhead)
 	builder.WriteString(f.theme.HandlerLabel(event.Handler))
-	builder.WriteString(f.block(blockKey{kind: pendingBlock, text: frame + " " + methodLabel(event.Method)}))
+	builder.WriteString(f.block(blockKey{kind: pendingBlock, label: frame, method: methodLabel(event.Method)}))
 	builder.WriteByte(' ')
 	builder.WriteString(f.dim.render(urlStr))
 	f.writeRewrite(&builder, event.Rewrite)
@@ -134,7 +138,12 @@ func (f *Formatter) block(key blockKey) string {
 		return rendered
 	}
 
-	rendered := f.blockStyle(key).Render(key.text)
+	label := key.label
+	if key.kind == statusBlock {
+		label = strconv.Itoa(key.code)
+	}
+
+	rendered := f.blockStyle(key).Render(label + " " + key.method)
 	if len(f.blocks) < maxCachedBlocks {
 		f.blocks[key] = rendered
 	}

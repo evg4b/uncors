@@ -23,7 +23,7 @@ const (
 	HandlerOptions
 )
 
-var handlerNames = map[HandlerKind]string{
+var handlerNames = [...]string{
 	HandlerNone:    "NONE",
 	HandlerProxy:   "PROXY",
 	HandlerCache:   "CACHE",
@@ -34,8 +34,8 @@ var handlerNames = map[HandlerKind]string{
 }
 
 func (k HandlerKind) String() string {
-	if name, ok := handlerNames[k]; ok {
-		return name
+	if int(k) < len(handlerNames) {
+		return handlerNames[k]
 	}
 
 	return "UNKNOWN"

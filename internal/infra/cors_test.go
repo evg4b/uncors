@@ -469,3 +469,13 @@ func originRequest(t *testing.T, origin string) *http.Request {
 
 	return request
 }
+
+func TestWriteCorsHeadersValuesAreIndependent(t *testing.T) {
+	header := http.Header{}
+	infra.WriteCorsHeaders(header, "")
+
+	header.Add(headers.AccessControlAllowOrigin, "https://other.local")
+
+	assert.Equal(t, []string{"*", "https://other.local"}, header.Values(headers.AccessControlAllowOrigin))
+	assert.Equal(t, "true", header.Get(headers.AccessControlAllowCredentials))
+}
