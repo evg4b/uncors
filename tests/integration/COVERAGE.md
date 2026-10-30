@@ -10,7 +10,7 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 
 | Area                                            |     Covered |         |              |
 | ----------------------------------------------- | ----------: | ------: | ------------ |
-| [Proxying](#proxying)                           |       12/18 |     67% | `███████░░░` |
+| [Proxying](#proxying)                           |       17/21 |     81% | `████████░░` |
 | [Hosts and ports](#hosts-and-ports)             |         6/9 |     67% | `███████░░░` |
 | [CORS](#cors)                                   |        8/10 |     80% | `████████░░` |
 | [OPTIONS handling](#options-handling)           |         4/4 |    100% | `██████████` |
@@ -24,7 +24,7 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 | [Lifecycle and reload](#lifecycle-and-reload)   |         8/9 |     89% | `█████████░` |
 | [Validation and errors](#validation-and-errors) |         8/9 |     89% | `█████████░` |
 | [CLI and tooling](#cli-and-tooling)             |         1/5 |     20% | `██░░░░░░░░` |
-| **Total**                                       | **118/147** | **80%** | `████████░░` |
+| **Total**                                       | **123/150** | **82%** | `████████░░` |
 
 ## Proxying
 
@@ -42,12 +42,16 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 - ✅ `Location` rewritten to the local host — `proxy/proxy_test.go`
 - ✅ Compressed body passed through untouched — `proxy/upstream_test.go`
 - ✅ Unreachable upstream → 502 with the reason and CORS — `proxy/upstream_test.go`
+- ✅ `https://` upstream spoken over TLS, untrusted certificate → 502 with the x509 reason — `proxy/upstream_test.go`
+- ✅ Stalled upstream → 504 (TLS handshake timeout, 10 s) — `proxy/upstream_test.go`
+- ✅ Scheme-less `to` uses the incoming scheme — `proxy/upstream_test.go`
+- ✅ Upstream proxy from `proxy` in the file — `proxy/upstream_test.go`
+- ✅ `HTTP_PROXY`, and `--proxy` overriding it — `cli/upstream_proxy_test.go`
 - ❌ `304 Not Modified` keeps the upstream `Content-Length`
 - ❌ `SameSite=None` becomes `SameSite=Lax` on an http host
-- ❌ Slow upstream → 504
-- ❌ `https://` upstream
-- ❌ Scheme-less `to: //host` uses the incoming scheme
-- ❌ Upstream proxy: `proxy`, `--proxy`, `HTTP(S)_PROXY`, `NO_PROXY`
+- ❌ Successful round-trip to an `https://` upstream: needs a certificate the
+  system trusts, and the proxy reads system roots only
+- ❌ `NO_PROXY`
 
 ## Hosts and ports
 
@@ -247,15 +251,13 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 
 ## What to cover next
 
-1. **Proxying to real upstreams:** `https://` upstream, 504 on a slow upstream,
-   `to: //host`, upstream proxy settings. Every user hits these first.
-2. **Config entry points:** shorthand mappings, `--from` / `--to`, `{name}` in
+1. **Config entry points:** shorthand mappings, `--from` / `--to`, `{name}` in
    `to`, default config file, a valid change picked up by the watcher.
-3. **Header details:** `SameSite=None` → `Lax`, expose-headers list, upstream
+2. **Header details:** `SameSite=None` → `Lax`, expose-headers list, upstream
    `Access-Control-Allow-Headers` removed, `304` `Content-Length`.
-4. **Cache edges:** `Vary` key, 10 MiB limit, upstream `Age`, reload, rewritten
+3. **Cache edges:** `Vary` key, 10 MiB limit, upstream `Age`, reload, rewritten
    path.
-5. **The rest:** HAR form/binary/compressed bodies, rewrite `host` without a
+4. **The rest:** HAR form/binary/compressed bodies, rewrite `host` without a
    scheme, mock/script filters and disconnects, WebSocket handshake answered by
    a mock, `generate-certs`.
 
