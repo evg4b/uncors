@@ -16,6 +16,7 @@ update your configuration.
   - [HAR field names](#har-field-names)
   - [OPTIONS requests to mocks and scripts](#options-requests-to-mocks-and-scripts)
   - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
+  - [Scheme in rewrite `host`](#scheme-in-rewrite-host)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -185,6 +186,13 @@ script, or set `disabled: true` under `options-handling` for the mapping.
 A [static directory](Static-File-Serving) used to return its file for any
 method, so a `POST` to `/assets/app.js` got the file with `200`. Requests other
 than `GET` and `HEAD` now go to the upstream server.
+
+### Scheme in rewrite `host`
+
+A scheme written in a rewrite `host`, such as `https://auth.example.com`, used
+to be ignored, and the request went out with the scheme of the incoming
+request. It is now used. Remove the scheme from `host` to keep the old
+behavior.
 
 ## Upgrading from 0.5.x to 0.6.x
 

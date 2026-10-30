@@ -18,7 +18,7 @@ mappings:
 | ------ | ------ | -------- | --------------------------------------------------------------- |
 | `from` | string | Yes      | Path to match. Can contain `{name}` segments.                   |
 | `to`   | string | Yes      | New path. Can reuse the `{name}` values captured by `from`.     |
-| `host` | string | No       | Upstream host (and optional port) for requests matched by this rule. |
+| `host` | string | No       | Upstream host (with optional scheme and port) for requests matched by this rule. |
 
 ## How matching works
 
@@ -78,10 +78,11 @@ mappings:
 | `POST /payment/process` | `POST http://payment-service.example.com/v2/process` |
 | `GET /users`            | `GET https://primary-api.example.com/users` (no rule matched) |
 
-The request to the rewritten host uses the scheme of the incoming request, not
-the scheme of `to`. A scheme written in `host` is ignored. In the example
-above the local side is `http`, so the auth and payment services are called
-over plain HTTP. Use an `https://` source if the rewritten host needs HTTPS.
+The request to the rewritten host uses the scheme written in `host`. Without a
+scheme it uses the scheme of the incoming request, not the scheme of `to`. In
+the example above the local side is `http`, so the auth and payment services
+are called over plain HTTP. Write `host: https://auth-service.example.com` if
+the rewritten host needs HTTPS.
 
 ## Combining rewrites with other features
 

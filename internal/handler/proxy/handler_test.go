@@ -583,6 +583,66 @@ func TestProxyHandler(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("should use the scheme of the rewrite host", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			local  string
+			host   string
+			target string
+			secure bool
+		}{
+			{
+				name:   "with a scheme",
+				local:  "http://premium.local.com",
+				host:   "https://auth.api.com",
+				target: "https://auth.api.com/app",
+			},
+			{
+				name:   "without a scheme",
+				local:  "http://premium.local.com",
+				host:   "auth.api.com",
+				target: "http://auth.api.com/app",
+			},
+			{
+				name:   "without a scheme on an https listener",
+				local:  "https://premium.local.com",
+				host:   "auth.api.com",
+				target: "https://auth.api.com/app",
+				secure: true,
+			},
+		}
+		for _, testCase := range tests {
+			t.Run(testCase.name, func(t *testing.T) {
+				handler := proxy.NewHandler(
+					proxy.WithHTTPClient(testutils.NewTestClient(func(req *http.Request) *http.Response {
+						assert.Equal(t, testCase.target, req.URL.String())
+
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Header: http.Header{
+								headers.Location:  {testCase.target + "/next"},
+								headers.SetCookie: {"a=1"},
+							},
+							Body:    http.NoBody,
+							Request: req,
+						}
+					})),
+					proxy.WithURLReplacerFactory(replacerFactory),
+				)
+
+				req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, testCase.local+"/app", http.NoBody)
+				helpers.NormaliseRequest(req)
+				req = req.WithContext(context.WithValue(req.Context(), rewrite.RewriteHostKey, testCase.host))
+
+				recorder := httptest.NewRecorder()
+				require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), req))
+
+				assert.Equal(t, testCase.local+"/app/next", recorder.Header().Get(headers.Location))
+				assert.Equal(t, testCase.secure, recorder.Result().Cookies()[0].Secure)
+			})
+		}
+	})
+
 	t.Run("should return and trace error when http client fails", func(t *testing.T) {
 		httpMock := mocks.NewHTTPClientMock(t).DoMock.Set(func(_ *http.Request) (*http.Response, error) {
 			return nil, errNetworkError
