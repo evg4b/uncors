@@ -1,7 +1,6 @@
 package helpers_test
 
 import (
-	"errors"
 	"net/url"
 	"testing"
 
@@ -51,11 +50,4 @@ func TestLogURL(t *testing.T) {
 	t.Run("nil", func(t *testing.T) {
 		assert.Empty(t, helpers.LogURL(nil))
 	})
-}
-
-var errMultiline = errors.New("first line\nsecond line")
-
-func TestLogError(t *testing.T) {
-	assert.Equal(t, "first line second line", helpers.LogError(errMultiline))
-	assert.Empty(t, helpers.LogError(nil))
 }

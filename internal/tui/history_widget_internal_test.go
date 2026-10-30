@@ -28,7 +28,7 @@ func TestHistoryWidget(t *testing.T) {
 		assert.NotNil(t, widget)
 		assert.NotNil(t, widget.hist)
 		assert.True(t, widget.autoScroll)
-		assert.False(t, widget.HasLines())
+		assert.Zero(t, widget.hist.LineCount())
 		assert.Nil(t, widget.Init())
 	})
 
@@ -52,7 +52,7 @@ func TestHistoryWidget(t *testing.T) {
 
 		widget.AppendLine("first\nsecond")
 
-		assert.True(t, widget.HasLines())
+		assert.Positive(t, widget.hist.LineCount())
 		assert.Contains(t, widget.View().Content, "second")
 	})
 
@@ -66,7 +66,7 @@ func TestHistoryWidget(t *testing.T) {
 
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
-		assert.True(t, widget.HasLines())
+		assert.Positive(t, widget.hist.LineCount())
 		assert.Equal(t, 1, widget.hist.LineCount())
 	})
 

@@ -27,11 +27,3 @@ func LogURL(requestURL *url.URL) string {
 
 	return SanitizeLogValue(redacted.String())
 }
-
-func LogError(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	return SanitizeLogValue(err.Error())
-}
