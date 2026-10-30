@@ -164,14 +164,16 @@ a large recording the writer waits at least ten times as long as the last write
 took, which keeps writing to about a tenth of the time. It writes to a
 temporary file next to the `.har` file and renames it over the old one, so the
 `.har` file is always complete and valid, even if you open it while UNCORS
-runs. The file is written once more when UNCORS stops or reloads its
-configuration. A configuration that fails to start, or a reload that fails and
-keeps the previous configuration running, leaves the file untouched.
+runs. The file is written once more when UNCORS stops, or when a reload moves
+recording to another file or turns it off. A configuration that fails to start,
+or a reload that fails and keeps the previous configuration running, leaves the
+file untouched.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads a changed configuration file, the recording starts empty and the
-next write replaces the existing file. Copy the file first if you want to keep
-an earlier session.
+next write replaces the existing file. Requests still running when the reload
+happens are not recorded. Copy the file first if you want to keep an earlier
+session.
 
 > [!NOTE]
 > The queue holds 4,096 entries. If it fills up during a burst of traffic, new

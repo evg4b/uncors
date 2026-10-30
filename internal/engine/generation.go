@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
+	harlib "github.com/evg4b/uncors/pkg/har"
 	"github.com/spf13/afero"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -39,8 +41,9 @@ type Generation struct {
 	proxyURL    string
 	client      *http.Client
 
-	targets []server.Target
-	closers []io.Closer
+	targets    []server.Target
+	closers    []io.Closer
+	harWriters []*harlib.Writer
 }
 
 var _ router.Factory = (*Generation)(nil)
@@ -101,6 +104,7 @@ func (g *Generation) HARMiddleware(harConfig *config.HARConfig) contracts.Middle
 		har.WithPublisher(g.publisher),
 		har.WithVersion(g.version),
 	))
+	g.harWriters = append(g.harWriters, writer)
 
 	return har.NewMiddleware(
 		har.WithWriter(writer),
@@ -147,6 +151,16 @@ func (g *Generation) ProxyHandler(replacers urlreplacer.ReplacerFactory) contrac
 		proxy.WithURLReplacerFactory(replacers),
 		proxy.WithHTTPClient(g.client),
 	)
+}
+
+func (g *Generation) discardReplacedHAR(next *Generation) {
+	for _, writer := range g.harWriters {
+		if slices.ContainsFunc(next.harWriters, func(other *harlib.Writer) bool {
+			return filepath.Clean(other.Path()) == filepath.Clean(writer.Path())
+		}) {
+			_ = writer.Discard()
+		}
+	}
 }
 
 func (g *Generation) openCache() error {
@@ -254,6 +268,7 @@ func (g *Generation) release(discard bool) error {
 	}
 
 	g.closers = nil
+	g.harWriters = nil
 	g.cacheStore = nil
 	g.client = nil
 
