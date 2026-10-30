@@ -267,6 +267,8 @@ func (s *supervisor) checkVersion(ctx context.Context, proxyURL string) {
 		return
 	}
 
+	defer client.CloseIdleConnections()
+
 	checker := version.NewVersionChecker(
 		version.WithHTTPClient(client),
 		version.WithCurrentVersion(s.env.Build.Version()),
