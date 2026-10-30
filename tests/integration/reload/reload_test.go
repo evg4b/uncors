@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -39,6 +40,7 @@ const (
 type proxy struct {
 	engine *engine.Engine
 	pool   *x509.CertPool
+	fs     afero.Fs
 }
 
 func start(t *testing.T, cfg *config.UncorsConfig) *proxy {
@@ -71,7 +73,7 @@ func start(t *testing.T, cfg *config.UncorsConfig) *proxy {
 		instance.Wait()
 	})
 
-	return &proxy{engine: instance, pool: pool}
+	return &proxy{engine: instance, pool: pool, fs: fs}
 }
 
 func (p *proxy) client() *http.Client {
@@ -256,6 +258,55 @@ func TestReloadCompletesInFlightRequests(t *testing.T) {
 			assert.Equal(t, "slow", finished.body)
 		})
 	}
+}
+
+func TestReloadKeepsNewHARRecording(t *testing.T) {
+	const harFile = "/session.har"
+
+	entered := make(chan struct{})
+	release := make(chan struct{})
+
+	backend := integration.NewBackend(t, func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == "/slow" {
+			close(entered)
+			<-release
+		}
+
+		_, _ = io.WriteString(writer, "ok")
+	})
+
+	port := testutils.GetFreePort(t)
+	harMapping := mapping("http", port, backend)
+	harMapping.HAR = config.HARConfig{File: harFile}
+	cfg := configuration(harMapping)
+	instance := start(t, cfg)
+
+	slow := make(chan error, 1)
+
+	go func() {
+		_, _, err := instance.get(t, url("http", port, "/slow"))
+		slow <- err
+	}()
+
+	<-entered
+
+	require.NoError(t, instance.engine.Restart(t.Context(), cfg))
+
+	_, _, err := instance.get(t, url("http", port, "/fast"))
+	require.NoError(t, err)
+
+	recorded := func(path string) bool {
+		data, err := afero.ReadFile(instance.fs, harFile)
+
+		return err == nil && strings.Contains(string(data), path)
+	}
+
+	require.Eventually(t, func() bool { return recorded("/fast") }, 3*time.Second, 50*time.Millisecond)
+
+	close(release)
+	require.NoError(t, <-slow)
+
+	assert.Never(t, func() bool { return !recorded("/fast") }, 2*time.Second, 50*time.Millisecond)
 }
 
 func TestReloadMovesPorts(t *testing.T) {

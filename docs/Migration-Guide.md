@@ -18,6 +18,7 @@ update your configuration.
   - [Static files answer GET and HEAD only](#static-files-answer-get-and-head-only)
   - [More headers left out of HAR files](#more-headers-left-out-of-har-files)
   - [Scheme in rewrite `host`](#scheme-in-rewrite-host)
+  - [No 1xx codes in mocks and `options-handling`](#no-1xx-codes-in-mocks-and-options-handling)
 - [Upgrading from 0.5.x to 0.6.x](#upgrading-from-05x-to-06x)
   - [TLS certificates](#tls-certificates)
   - [Ports](#ports)
@@ -200,6 +201,13 @@ A scheme written in a rewrite `host`, such as `https://auth.example.com`, used
 to be ignored, and the request went out with the scheme of the incoming
 request. It is now used. Remove the scheme from `host` to keep the old
 behavior.
+
+### No 1xx codes in mocks and `options-handling`
+
+A mock or `options-handling` `code` between 100 and 199 is now a configuration
+error. Such a code is not a final response: with `100`, the client got
+`100 Continue` followed by `200 OK`, and with `101` it waited for a protocol
+switch. Use a code from 200 to 599.
 
 ## Upgrading from 0.5.x to 0.6.x
 

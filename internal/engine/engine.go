@@ -122,6 +122,10 @@ func (e *Engine) apply(
 		}
 
 		previous := e.swap(generation)
+		if previous != nil {
+			previous.discardReplacedHAR(generation)
+		}
+
 		e.tlsHosts = tlsHosts
 		e.certs.SetHosts(tlsHosts)
 		e.publisher.Publish(served(uncorsConfig.Mappings))

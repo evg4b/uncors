@@ -114,12 +114,12 @@ func TestValidateDirectory(t *testing.T) {
 func TestValidateStatus(t *testing.T) {
 	const field = "status"
 
-	for _, code := range []int{100, 200, 300, 400, 404, 500, 503, 599} {
+	for _, code := range []int{200, 300, 400, 404, 500, 503, 599} {
 		runOK(t, strconv.Itoa(code), func() error { return config.ValidateStatus(field, code) })
 	}
 
-	for _, code := range []int{-200, 0, 99, 600} {
-		runErr(t, strconv.Itoa(code), "status code must be in range 100-599",
+	for _, code := range []int{-200, 0, 99, 100, 101, 199, 600} {
+		runErr(t, strconv.Itoa(code), "status code must be in range 200-599",
 			func() error { return config.ValidateStatus(field, code) })
 	}
 }
