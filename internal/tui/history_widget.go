@@ -88,10 +88,6 @@ func (m *HistoryWidget) SetHeight(height int) {
 	m.height = height
 }
 
-func (m *HistoryWidget) HasLines() bool {
-	return m.hist.LineCount() > 0
-}
-
 func (m *HistoryWidget) Close() error {
 	telemetry.Debug(context.Background(), "HistoryWidget: closing")
 

@@ -144,25 +144,9 @@ func ValidateMethod(field, value string, allowEmpty bool) error {
 	return nil
 }
 
-func ValidatePort(field string, value int) error {
-	if value < 1 || value > 65535 {
-		return &ValidationError{fmt.Sprintf("%s must be between 1 and 65535", field)}
-	}
-
-	return nil
-}
-
 func ValidateGlobPattern(field, value string) error {
 	if !doublestar.ValidatePathPattern(value) {
 		return &ValidationError{fmt.Sprintf("%s is not a valid glob pattern", field)}
-	}
-
-	return nil
-}
-
-func ValidateStringEnum(_, value string, options []string) error {
-	if !slices.Contains(options, value) {
-		return &ValidationError{fmt.Sprintf("'%s' is not a valid option", value)}
 	}
 
 	return nil

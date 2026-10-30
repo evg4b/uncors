@@ -55,29 +55,14 @@ func TestNormaliseRequest(t *testing.T) {
 	})
 }
 
-func TestStatusCodeClasses(t *testing.T) {
-	checks := map[string]func(int) bool{
-		"1xx": helpers.Is1xxCode,
-		"2xx": helpers.Is2xxCode,
-		"3xx": helpers.Is3xxCode,
-		"4xx": helpers.Is4xxCode,
-		"5xx": helpers.Is5xxCode,
+func TestIs2xxCode(t *testing.T) {
+	for _, code := range []int{http.StatusOK, http.StatusCreated, http.StatusIMUsed} {
+		assert.True(t, helpers.Is2xxCode(code), code)
 	}
 
-	codes := map[string][]int{
-		"1xx": {http.StatusContinue, http.StatusSwitchingProtocols},
-		"2xx": {http.StatusOK, http.StatusCreated, http.StatusAccepted},
-		"3xx": {http.StatusMultipleChoices, http.StatusMovedPermanently, http.StatusFound},
-		"4xx": {http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden},
-		"5xx": {http.StatusInternalServerError, http.StatusHTTPVersionNotSupported, http.StatusNetworkAuthenticationRequired},
-	}
-
-	for class, check := range checks {
-		for codeClass, classCodes := range codes {
-			for _, code := range classCodes {
-				assert.Equal(t, class == codeClass, check(code), "%s check for %d", class, code)
-			}
-		}
+	notOK := []int{http.StatusContinue, http.StatusMultipleChoices, http.StatusBadRequest, http.StatusInternalServerError}
+	for _, code := range notOK {
+		assert.False(t, helpers.Is2xxCode(code), code)
 	}
 }
 

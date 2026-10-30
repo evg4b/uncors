@@ -84,10 +84,6 @@ func (m *TrackerWidget) Update(msg tea.Msg) (*TrackerWidget, tea.Cmd) {
 	return m, nil
 }
 
-func (m *TrackerWidget) ActiveCount() int {
-	return len(m.pending)
-}
-
 func (m *TrackerWidget) View() tea.View {
 	return tea.NewView(strings.Join(m.Lines(), "\n"))
 }

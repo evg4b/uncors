@@ -166,35 +166,10 @@ func TestValidateMethod(t *testing.T) {
 		func() error { return config.ValidateMethod(field, "invalid", false) })
 }
 
-func TestValidatePort(t *testing.T) {
-	const field = "port-field"
-
-	for _, port := range []int{1, 443, 65535} {
-		p := port
-		runOK(t, fmt.Sprintf("port %d", p), func() error { return config.ValidatePort(field, p) })
-	}
-
-	for _, port := range []int{-5, 0, 70000} {
-		p := port
-		runErr(t, fmt.Sprintf("port %d", p), "port-field must be between 1 and 65535",
-			func() error { return config.ValidatePort(field, p) })
-	}
-}
-
 func TestValidateGlobPattern(t *testing.T) {
 	runOK(t, "valid glob", func() error {
 		return config.ValidateGlobPattern("field", "/api/**")
 	})
 	runErr(t, "invalid glob", "field is not a valid glob pattern",
 		func() error { return config.ValidateGlobPattern("field", "[invalid") })
-}
-
-func TestValidateStringEnum(t *testing.T) {
-	options := []string{"option-1", "option-2"}
-
-	runOK(t, "valid option", func() error {
-		return config.ValidateStringEnum("field", "option-1", options)
-	})
-	runErr(t, "invalid option", "'option-x' is not a valid option",
-		func() error { return config.ValidateStringEnum("field", "option-x", options) })
 }

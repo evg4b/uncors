@@ -20,7 +20,7 @@ func TestTrackerWidget(t *testing.T) {
 		assert.NotNil(t, widget)
 		assert.NotNil(t, widget.pending)
 		assert.False(t, widget.ticking)
-		assert.Equal(t, 0, widget.ActiveCount())
+		assert.Empty(t, widget.pending)
 		assert.Nil(t, widget.Lines())
 		assert.Nil(t, widget.Init())
 	})
@@ -40,7 +40,7 @@ func TestTrackerWidget(t *testing.T) {
 		assert.Same(t, widget, newWidget)
 		require.NotNil(t, cmd)
 		assert.True(t, widget.ticking)
-		assert.Equal(t, 1, widget.ActiveCount())
+		assert.Len(t, widget.pending, 1)
 		assert.Len(t, widget.Lines(), 1)
 	})
 
@@ -54,7 +54,7 @@ func TestTrackerWidget(t *testing.T) {
 
 		assert.Same(t, widget, newWidget)
 		assert.Nil(t, cmd)
-		assert.Equal(t, 0, widget.ActiveCount())
+		assert.Empty(t, widget.pending)
 	})
 
 	t.Run("Update handles tickMsg when pending requests exist", func(t *testing.T) {
@@ -84,10 +84,10 @@ func TestTrackerWidget(t *testing.T) {
 
 		_, _ = widget.Update(lifecycleMsg{event: events.ServerRestarted{}})
 		_, _ = widget.Update(lifecycleMsg{event: events.ReloadFailed{}})
-		assert.Equal(t, 1, widget.ActiveCount())
+		assert.Len(t, widget.pending, 1)
 
 		_, _ = widget.Update(requestCompletedMsg{ID: 1})
-		assert.Equal(t, 0, widget.ActiveCount())
+		assert.Empty(t, widget.pending)
 	})
 
 	t.Run("View renders correctly", func(t *testing.T) {
