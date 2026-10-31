@@ -645,9 +645,11 @@ For requests forwarded to the upstream server, UNCORS:
   and long downloads are not held back;
 - forwards the `Cookie` request header unchanged, and rewrites the `Domain` of
   cookies set by the upstream server to the local host name, without the port.
-  The `Secure` flag of those cookies follows the scheme of the local host. On an
-  `http` local host, `SameSite=None` becomes `SameSite=Lax`, because browsers
-  reject a `SameSite=None` cookie without `Secure`;
+  A `Domain` that names another host, such as the parent domain of the upstream
+  server, is removed, so the cookie belongs to the local host. The `Secure` flag
+  of those cookies follows the scheme of the local host. On an `http` local
+  host, `SameSite=None` becomes `SameSite=Lax`, because browsers reject a
+  `SameSite=None` cookie without `Secure`;
 - rewrites `Location` headers in redirects back to the local host;
 - proxies WebSocket connections and other requests that ask to switch
   protocols (`Connection: Upgrade` with an `Upgrade` header). The handshake is

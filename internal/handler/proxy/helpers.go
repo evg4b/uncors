@@ -79,13 +79,22 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 			cookie.SameSite = http.SameSiteLaxMode
 		}
 
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-
-		host, _, err := net.SplitHostPort(cookie.Domain)
-		if err == nil {
-			cookie.Domain = host
-		}
+		cookie.Domain = localDomain(replacer, cookie.Domain)
 
 		http.SetCookie(source, cookie)
 	}
+}
+
+func localDomain(replacer *urlreplacer.Replacer, domain string) string {
+	local, err := replacer.Replace(domain)
+	if err != nil {
+		return ""
+	}
+
+	host, _, err := net.SplitHostPort(local)
+	if err != nil {
+		return local
+	}
+
+	return host
 }
