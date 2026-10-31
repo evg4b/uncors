@@ -8,11 +8,11 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/handler/script"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/go-http-utils/headers"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -135,16 +135,6 @@ func TestScriptHandlerResponse(t *testing.T) {
 			name:         "first WriteHeader wins",
 			script:       "response:WriteHeader(200)\nresponse:WriteHeader(500)\nresponse:WriteString(\"First status wins\")",
 			expectedBody: "First status wins",
-		},
-		{
-			name:         "status field is not writable",
-			script:       "response.status = 500\nresponse:WriteString(\"Status not writable\")",
-			expectedBody: "Status not writable",
-		},
-		{
-			name:         "body field is not writable",
-			script:       "response.body = \"ignored\"\nresponse:WriteString(\"Actual body\")",
-			expectedBody: "Actual body",
 		},
 		{
 			name: "custom fields are allowed",
@@ -423,12 +413,23 @@ response:WriteString("OK")`,
 
 func TestScriptHandlerErrors(t *testing.T) {
 	tests := []struct {
-		name   string
-		script config.Script
+		name    string
+		script  config.Script
+		message string
 	}{
 		{name: "script file not found", script: config.Script{File: "nonexistent.lua"}},
 		{name: "lua syntax error", script: config.Script{Script: "this is not valid lua code ###"}},
 		{name: "lua runtime error", script: config.Script{Script: "local x = nil\nresponse:WriteString(x.field)"}},
+		{
+			name:    "status assigned",
+			script:  config.Script{Script: "response.status = 500"},
+			message: "response.status cannot be assigned, use response:WriteHeader(code)",
+		},
+		{
+			name:    "body assigned",
+			script:  config.Script{Script: `response.body = "ignored"`},
+			message: "response.body cannot be assigned, use response:Write(data)",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -437,7 +438,8 @@ func TestScriptHandlerErrors(t *testing.T) {
 
 			_, err := serveScript(t, &testCase.script, afero.NewMemMapFs(), request)
 
-			assert.Error(t, err)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), testCase.message)
 		})
 	}
 }

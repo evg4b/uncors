@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-http-utils/headers"
+	"github.com/evg4b/uncors/internal/headers"
 )
 
 func IsUpgrade(header http.Header) bool {

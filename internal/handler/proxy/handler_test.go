@@ -13,6 +13,7 @@ import (
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
@@ -21,7 +22,6 @@ import (
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testconstants"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -503,20 +503,27 @@ func TestProxyHandler(t *testing.T) {
 				from:   "http://{tenant}.local.dev:3000",
 				host:   "acme.local.dev:3000",
 				domain: ".acme.api.com",
-				want:   "Domain=acme.local.dev",
+				want:   "a=1; Path=/; Domain=acme.local.dev",
 			},
 			{
 				name:   "without a port",
 				from:   "http://{tenant}.local.dev",
 				host:   "acme.local.dev",
 				domain: "acme.api.com",
-				want:   "Domain=acme.local.dev",
+				want:   "a=1; Path=/; Domain=acme.local.dev",
 			},
 			{
 				name: "without a domain",
 				from: "http://{tenant}.local.dev:3000",
 				host: "acme.local.dev:3000",
 				want: "a=1; Path=/",
+			},
+			{
+				name:   "with the parent domain of the upstream",
+				from:   "http://{tenant}.local.dev:3000",
+				host:   "acme.local.dev:3000",
+				domain: "api.com",
+				want:   "a=1; Path=/",
 			},
 		}
 		for _, testCase := range tests {
@@ -546,7 +553,7 @@ func TestProxyHandler(t *testing.T) {
 				recorder := httptest.NewRecorder()
 				require.NoError(t, handler.ServeHTTP(server.NewResponseRecorder(recorder), req))
 
-				assert.Contains(t, recorder.Header().Get(headers.SetCookie), testCase.want)
+				assert.Equal(t, testCase.want, recorder.Header().Get(headers.SetCookie))
 			})
 		}
 	})

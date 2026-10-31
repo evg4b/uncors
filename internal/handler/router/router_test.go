@@ -15,13 +15,13 @@ import (
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/proxy"
 	"github.com/evg4b/uncors/internal/handler/router"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/server"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -47,6 +47,7 @@ var (
 	userPath = "/api/user"
 
 	userIDHeader = "User-Id"
+	csrfHeader   = "X-CSRF-Token"
 )
 
 func newGeneration(t *testing.T, fs afero.Fs) *engine.Generation {
@@ -479,10 +480,10 @@ func TestRouterMockHeaders(t *testing.T) {
 	)
 
 	byCSRF := mockResponse(userPath, http.StatusCreated, mock2Body)
-	byCSRF.Matcher.Headers = map[string]string{headers.XCSRFToken: csrfToken}
+	byCSRF.Matcher.Headers = map[string]string{csrfHeader: csrfToken}
 
 	byUserAndCSRF := mockResponse(userPath, http.StatusAccepted, mock3Body)
-	byUserAndCSRF.Matcher.Headers = map[string]string{userIDHeader: "99", headers.XCSRFToken: token}
+	byUserAndCSRF.Matcher.Headers = map[string]string{userIDHeader: "99", csrfHeader: token}
 
 	routerInstance := newRouter(t, afero.NewMemMapFs(), config.Mappings{{
 		From:  hosts.Parse("{host}"),
@@ -496,7 +497,7 @@ func TestRouterMockHeaders(t *testing.T) {
 			name:       "passed unsetted headers",
 			method:     http.MethodPost,
 			url:        apiUser,
-			headers:    map[string]string{headers.XCSRFToken: "55cc413b96026e833835a2c9a3f39c21"},
+			headers:    map[string]string{csrfHeader: "55cc413b96026e833835a2c9a3f39c21"},
 			statusCode: http.StatusOK,
 			expected:   mock1Body,
 		},
@@ -504,7 +505,7 @@ func TestRouterMockHeaders(t *testing.T) {
 			name:       "passed defined header",
 			method:     http.MethodPost,
 			url:        apiUser,
-			headers:    map[string]string{headers.XCSRFToken: csrfToken},
+			headers:    map[string]string{csrfHeader: csrfToken},
 			statusCode: http.StatusCreated,
 			expected:   mock2Body,
 		},
@@ -520,7 +521,7 @@ func TestRouterMockHeaders(t *testing.T) {
 			name:       "passed all of multiple headers",
 			method:     http.MethodPost,
 			url:        apiUser,
-			headers:    map[string]string{userIDHeader: "99", headers.XCSRFToken: token},
+			headers:    map[string]string{userIDHeader: "99", csrfHeader: token},
 			statusCode: http.StatusAccepted,
 			expected:   mock3Body,
 		},
@@ -528,7 +529,7 @@ func TestRouterMockHeaders(t *testing.T) {
 			name:       "passed extra headers",
 			method:     http.MethodPost,
 			url:        apiUser,
-			headers:    map[string]string{userIDHeader: "99", headers.XCSRFToken: token, headers.AcceptEncoding: "deflate"},
+			headers:    map[string]string{userIDHeader: "99", csrfHeader: token, headers.AcceptEncoding: "deflate"},
 			statusCode: http.StatusAccepted,
 			expected:   mock3Body,
 		},

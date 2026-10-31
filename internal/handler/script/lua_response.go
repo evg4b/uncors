@@ -29,33 +29,24 @@ func createResponseTable(luaState *lua.LState, writer contracts.ResponseWriter) 
 	return respTable
 }
 
+var readOnlyResponseFields = map[string]string{
+	"status": "response:WriteHeader(code)",
+	"body":   "response:Write(data)",
+}
+
 func setupResponseMetatable(luaState *lua.LState, respTable *lua.LTable) {
 	metatable := luaState.NewTable()
 
-	indexFunc := luaState.NewFunction(func(state *lua.LState) int {
-		key := state.CheckString(luaArgKey)
-
-		switch key {
-		case "status", "body":
-			state.Push(lua.LNil)
-		default:
-			state.Push(respTable.RawGetString(key))
-		}
-
-		return luaReturnOne
-	})
-	metatable.RawSetString("__index", indexFunc)
-
 	newindexFunc := luaState.NewFunction(func(state *lua.LState) int {
 		key := state.CheckString(luaArgKey)
-		value := state.Get(luaArgValue)
 
-		switch key {
-		case "status", "body":
+		if method, ok := readOnlyResponseFields[key]; ok {
+			state.RaiseError("response.%s cannot be assigned, use %s", key, method)
+
 			return 0
-		default:
-			respTable.RawSetString(key, value)
 		}
+
+		respTable.RawSetString(key, state.Get(luaArgValue))
 
 		return 0
 	})

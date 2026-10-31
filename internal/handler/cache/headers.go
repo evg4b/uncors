@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-http-utils/headers"
+	"github.com/evg4b/uncors/internal/headers"
 )
 
 const anyValue = "*"

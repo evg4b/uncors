@@ -5,10 +5,10 @@ import (
 
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/tracking"
-	"github.com/go-http-utils/headers"
 )
 
 func checkOrigin(origins config.AllowedOrigins, handler contracts.Handler) contracts.Handler {

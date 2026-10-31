@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/evg4b/uncors/internal/config"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/integration"
-	"github.com/go-http-utils/headers"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -8,11 +8,11 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -35,7 +35,12 @@ func (h *Handler) switchProtocols(
 		return errUpstreamNotWritable
 	}
 
-	copyCookiesToSource(original, replacer, target)
+	err := copyCookiesToSource(original, replacer, target)
+	if err != nil {
+		helpers.CloseSafe(upstream)
+
+		return err
+	}
 
 	copyHeaders(original.Header, target.Header(), modificationsMap{
 		headers.Location: replacer.ReplaceSoft,

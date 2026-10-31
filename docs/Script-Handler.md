@@ -157,8 +157,9 @@ response:Header():Set("X-Request-ID", "12345")
 local contentType = response:Header():Get("Content-Type")
 ```
 
-There is no `response.status` or `response.body` field. Assigning to them does
-nothing and reading them returns `nil`; use `WriteHeader` and `Write` instead.
+There is no `response.status` or `response.body` field. Assigning to them
+fails the script with an error that names the method to use instead:
+`WriteHeader` or `Write`.
 
 The order matters:
 

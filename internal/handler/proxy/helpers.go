@@ -1,13 +1,15 @@
 package proxy
 
 import (
-	"net"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/go-http-utils/headers"
 )
 
 type modificationsMap = map[string]func(string) string
@@ -20,7 +22,7 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) {
 			continue
 		}
 
-		modificationFunc, ok := modifications[headers.Normalize(key)]
+		modificationFunc, ok := modifications[http.CanonicalHeaderKey(key)]
 		if !ok {
 			modificationFunc = noop
 		}
@@ -71,7 +73,7 @@ func hasToken(values []string, token string) bool {
 	return false
 }
 
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 
@@ -79,13 +81,32 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 			cookie.SameSite = http.SameSiteLaxMode
 		}
 
-		cookie.Domain = replacer.ReplaceSoft(cookie.Domain)
-
-		host, _, err := net.SplitHostPort(cookie.Domain)
-		if err == nil {
-			cookie.Domain = host
+		domain, err := localDomain(replacer, cookie.Domain)
+		if err != nil {
+			return err
 		}
+
+		cookie.Domain = domain
 
 		http.SetCookie(source, cookie)
 	}
+
+	return nil
+}
+
+func localDomain(replacer *urlreplacer.Replacer, domain string) (string, error) {
+	if domain == "" {
+		return "", nil
+	}
+
+	local, err := replacer.Replace(domain)
+	if errors.Is(err, urlreplacer.ErrURLNotMatched) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to replace cookie domain %q: %w", domain, err)
+	}
+
+	return (&url.URL{Host: local}).Hostname(), nil
 }

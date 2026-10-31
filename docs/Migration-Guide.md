@@ -122,6 +122,8 @@ Lua scripts now have limits. See [Limits](Script-Handler#limits).
 
 - `os.exit` raises an error instead of stopping the UNCORS process. A script
   that called it to end early should `return` from the top level instead.
+- Assigning `response.status` or `response.body` raises an error instead of
+  doing nothing. Call `response:WriteHeader(code)` and `response:Write(data)`.
 - A script that runs longer than 30 seconds is stopped, and the request fails
   with status 500. Set `timeout` on a script that needs longer.
 - A request body larger than 10 MiB fails with status 500 before the script

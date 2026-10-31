@@ -15,11 +15,11 @@ import (
 
 	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/handler/rewrite"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/urlreplacer"
 	"github.com/evg4b/uncors/pkg/urlt"
-	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
@@ -135,7 +135,10 @@ func (h *Handler) makeUncorsResponse(
 	replacer *urlreplacer.Replacer,
 	req *http.Request,
 ) error {
-	copyCookiesToSource(original, replacer, target)
+	err := copyCookiesToSource(original, replacer, target)
+	if err != nil {
+		return err
+	}
 
 	copyHeaders(original.Header, target.Header(), modificationsMap{
 		headers.Location: replacer.ReplaceSoft,

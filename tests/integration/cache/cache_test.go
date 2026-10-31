@@ -3,6 +3,7 @@
 package cache_test
 
 import (
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -65,4 +66,38 @@ func TestCacheMiddleware(t *testing.T) {
 
 		assert.Equal(t, count, backend.Count())
 	})
+}
+
+func TestCacheKeepsRewriteHostsApart(t *testing.T) {
+	main := integration.NewBackend(t, answer(t, "main"))
+	legacy := integration.NewBackend(t, answer(t, "legacy"))
+	env := integration.New(t, main, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From:     hosts.Parse("https://cache.local"),
+			To:       main.AsHost(),
+			Cache:    config.CacheGlobs{"/users"},
+			Rewrites: config.RewriteOptions{{From: "/legacy/users", To: "/users", Host: legacy.AsHost()}},
+		}},
+	})
+
+	request := func(path string) *integration.Result {
+		return env.Do(t, integration.NewRequest(t, http.MethodGet, env.URL("cache.local", path)))
+	}
+
+	require.Eventually(t, func() bool { return !request("/users").HasBackendRequest() },
+		2*time.Second, 10*time.Millisecond)
+
+	result := request("/legacy/users")
+
+	assert.Equal(t, "legacy", result.BodyString())
+	assert.Equal(t, 1, legacy.Count())
+}
+
+func answer(t *testing.T, body string) http.HandlerFunc {
+	t.Helper()
+
+	return func(writer http.ResponseWriter, _ *http.Request) {
+		_, err := io.WriteString(writer, body)
+		assert.NoError(t, err)
+	}
 }
