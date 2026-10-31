@@ -35,7 +35,12 @@ func (h *Handler) switchProtocols(
 		return errUpstreamNotWritable
 	}
 
-	copyCookiesToSource(original, replacer, target)
+	err := copyCookiesToSource(original, replacer, target)
+	if err != nil {
+		helpers.CloseSafe(upstream)
+
+		return err
+	}
 
 	copyHeaders(original.Header, target.Header(), modificationsMap{
 		headers.Location: replacer.ReplaceSoft,

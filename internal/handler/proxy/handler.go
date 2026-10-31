@@ -135,7 +135,10 @@ func (h *Handler) makeUncorsResponse(
 	replacer *urlreplacer.Replacer,
 	req *http.Request,
 ) error {
-	copyCookiesToSource(original, replacer, target)
+	err := copyCookiesToSource(original, replacer, target)
+	if err != nil {
+		return err
+	}
 
 	copyHeaders(original.Header, target.Header(), modificationsMap{
 		headers.Location: replacer.ReplaceSoft,

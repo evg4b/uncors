@@ -1,9 +1,11 @@
 package proxy
 
 import (
-	"net"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/headers"
@@ -71,7 +73,7 @@ func hasToken(values []string, token string) bool {
 	return false
 }
 
-func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) {
+func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {
 	for _, cookie := range target.Cookies() {
 		cookie.Secure = replacer.IsTargetSecure()
 
@@ -79,22 +81,32 @@ func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, 
 			cookie.SameSite = http.SameSiteLaxMode
 		}
 
-		cookie.Domain = localDomain(replacer, cookie.Domain)
+		domain, err := localDomain(replacer, cookie.Domain)
+		if err != nil {
+			return err
+		}
+
+		cookie.Domain = domain
 
 		http.SetCookie(source, cookie)
 	}
+
+	return nil
 }
 
-func localDomain(replacer *urlreplacer.Replacer, domain string) string {
+func localDomain(replacer *urlreplacer.Replacer, domain string) (string, error) {
+	if domain == "" {
+		return "", nil
+	}
+
 	local, err := replacer.Replace(domain)
-	if err != nil {
-		return ""
+	if errors.Is(err, urlreplacer.ErrURLNotMatched) {
+		return "", nil
 	}
 
-	host, _, err := net.SplitHostPort(local)
 	if err != nil {
-		return local
+		return "", fmt.Errorf("failed to replace cookie domain %q: %w", domain, err)
 	}
 
-	return host
+	return (&url.URL{Host: local}).Hostname(), nil
 }
