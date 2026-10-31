@@ -21,10 +21,10 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 | [Cache](#cache)                                 |       11/15 |     73% | `███████░░░` |
 | [HAR](#har)                                     |        9/11 |     82% | `████████░░` |
 | [WebSocket](#websocket)                         |         7/8 |     88% | `█████████░` |
-| [Lifecycle and reload](#lifecycle-and-reload)   |         8/9 |     89% | `█████████░` |
+| [Lifecycle and reload](#lifecycle-and-reload)   |        9/10 |     90% | `█████████░` |
 | [Validation and errors](#validation-and-errors) |         8/9 |     89% | `█████████░` |
 | [CLI and tooling](#cli-and-tooling)             |         1/5 |     20% | `██░░░░░░░░` |
-| **Total**                                       | **123/150** | **82%** | `████████░░` |
+| **Total**                                       | **124/151** | **82%** | `████████░░` |
 
 ## Proxying
 
@@ -219,6 +219,7 @@ what the client got. Features follow the pages in [`docs/`](../../docs).
 - ✅ Ports moved on reload — `reload/reload_test.go`
 - ✅ Scheme switched on reload — `reload/reload_test.go`
 - ✅ Broken file keeps the previous config — `cli/reload_test.go`
+- ✅ Busy new port keeps the previous config — `reload/reload_test.go`
 - ✅ `SIGINT` exits cleanly — `cli/reload_test.go`
 - ✅ `ServerStarted` lists the mappings — `events/events_test.go`
 - ✅ Every request attributed to its handler — `events/events_test.go`

@@ -139,7 +139,13 @@ func Dial(ctx context.Context, network, addr string) (net.Conn, error) {
 func (e *Env) Restart(t *testing.T, cfg *config.UncorsConfig) {
 	t.Helper()
 
-	require.NoError(t, e.engine.Restart(t.Context(), e.load(t, cfg)))
+	require.NoError(t, e.TryRestart(t, cfg))
+}
+
+func (e *Env) TryRestart(t *testing.T, cfg *config.UncorsConfig) error {
+	t.Helper()
+
+	return e.engine.Restart(t.Context(), e.load(t, cfg))
 }
 
 func (e *Env) Shutdown(t *testing.T) {
