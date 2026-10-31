@@ -117,7 +117,8 @@ ipconfig /flushdns
 ## "host not mapped" error page
 
 UNCORS received the request but no mapping on that port matches its host name,
-so it answered with status 404. Check that the host in the browser's address
+so it answered with status 404. The message names the host it got, such as
+`host not mapped: api.local:3000`. Check that the host in the browser's address
 bar is spelled exactly like the host in `from`. A `{name}` placeholder matches
 a single label, so `{name}.local.com` matches `api.local.com` but not
 `v2.api.local.com`.
@@ -266,11 +267,11 @@ form `POST`) that change data; it stops it from reading the answers. See
 
 UNCORS validates the configuration at startup and prints every error with the
 path of the bad value, for example
-`mappings[0].mocks[0].response.code code must be in range 200-599`.
+`mappings[0].mocks[0].response.code must be in range 200-599`.
 
-"mappings must not be empty" means no mapping was found. Check the
-`--config` path, and use an absolute path if you start UNCORS from another
-directory:
+"mappings must not be empty" means no mapping was found, or the file is empty.
+Check the `--config` path, and use an absolute path if you start UNCORS from
+another directory:
 
 ```bash
 uncors --config /absolute/path/to/.uncors.yaml
@@ -284,8 +285,10 @@ that contain `:` or `#`.
 `mocks`, or `scripts` usually means a relative path or `~`. Paths are relative
 to the directory UNCORS was started from, and `~` is not expanded.
 
-"cannot unmarshal !!str `1m 30s` into time.Duration" means a duration contains
-a space. Write `1m30s` instead.
+A value of the wrong type is reported with its path and line, for example
+`mappings[0].mocks[0].response.delay must be a duration without spaces, such as 500ms or 1m30s, got "1m 30s" (line 10)`.
+Write durations without spaces (`1m30s`), lists as YAML lists, and numbers
+without quotes.
 
 "unknown field" means a key is misspelled or is not an option at that place in
 the file. The error names the path and the line of the key.

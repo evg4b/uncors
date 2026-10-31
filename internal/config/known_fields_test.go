@@ -206,7 +206,174 @@ proxi: http://localhost:8888
 			_, err := loadConfigFile(t, afero.NewMemMapFs(), testCase.content)
 
 			require.EqualError(t, err,
-				"failed to read config file '"+configFile+"': While parsing config: "+testCase.expected)
+				"failed to parse config file '"+configFile+"': "+testCase.expected)
+		})
+	}
+}
+
+func TestLoadConfigurationValueTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{
+			name: "duration with a space",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    mocks:
+      - path: /slow
+        response:
+          code: 200
+          raw: slow
+          delay: 1m 30s
+`,
+			expected: `mappings[0].mocks[0].response.delay must be a duration without spaces, ` +
+				`such as 500ms or 1m30s, got "1m 30s" (line 10)`,
+		},
+		{
+			name: "global duration",
+			content: `
+mappings:
+  - http://localhost:3000: https://github.com
+cache-config:
+  expiration-time: soon
+`,
+			expected: `cache-config.expiration-time must be a duration without spaces, ` +
+				`such as 500ms or 1m30s, got "soon" (line 5)`,
+		},
+		{
+			name: "number",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    options-handling:
+      code: ok
+`,
+			expected: `mappings[0].options-handling.code must be a whole number, got "ok" (line 6)`,
+		},
+		{
+			name: "boolean",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    options-handling:
+      disabled: maybe
+`,
+			expected: `mappings[0].options-handling.disabled must be true or false, got "maybe" (line 6)`,
+		},
+		{
+			name: "list",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    cache: /api/**
+`,
+			expected: `mappings[0].cache must be a list, got "/api/**" (line 5)`,
+		},
+		{
+			name: "map",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    mocks:
+      - path: /a
+        headers: [a, b]
+        response: {code: 200, raw: a}
+`,
+			expected: `mappings[0].mocks[0].headers must be a map of keys to values, got a list (line 7)`,
+		},
+		{
+			name: "map instead of a value",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    mocks:
+      - path: /a
+        response:
+          code: 200
+          raw: a
+          delay: {seconds: 1}
+`,
+			expected: `mappings[0].mocks[0].response.delay must be a duration without spaces, ` +
+				`such as 500ms or 1m30s, got a map (line 10)`,
+		},
+		{
+			name: "single value",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    scripts:
+      - path: [/a]
+        script: a
+`,
+			expected: `mappings[0].scripts[0].path must be a single value, got a list (line 6)`,
+		},
+		{
+			name: "host",
+			content: `
+mappings:
+  - from: http://localhost:abc
+    to: https://github.com
+`,
+			expected: `mappings[0].from: invalid port ":abc" after host (line 3)`,
+		},
+		{
+			name: "every problem at once",
+			content: `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    cache: 5
+cache-config:
+  max-size: big
+`,
+			expected: "mappings[0].cache must be a list, got \"5\" (line 5)\n" +
+				"cache-config.max-size must be a whole number, got \"big\" (line 7)",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := loadConfigFile(t, afero.NewMemMapFs(), testCase.content)
+
+			require.EqualError(t, err, "failed to parse config file '"+configFile+"': "+testCase.expected)
+		})
+	}
+}
+
+func TestLoadConfigurationEmptyValues(t *testing.T) {
+	_, err := loadConfigFile(t, afero.NewMemMapFs(), `
+mappings:
+  - from: http://localhost:3000
+    to: https://github.com
+    cache:
+    mocks:
+      - path: /a
+        headers:
+        response:
+          code: 200
+          raw: a
+          delay:
+`)
+
+	require.NoError(t, err)
+}
+
+func TestLoadConfigurationEmptyFile(t *testing.T) {
+	for name, content := range map[string]string{"empty": "", "comments only": "# nothing yet\n"} {
+		t.Run(name, func(t *testing.T) {
+			_, err := loadConfigFile(t, afero.NewMemMapFs(), content)
+
+			require.EqualError(t, err, "mappings must not be empty")
 		})
 	}
 }

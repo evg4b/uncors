@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -105,6 +106,10 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	var document yaml.Node
 
 	err = yaml.NewDecoder(file).Decode(&document)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+
 	if err == nil {
 		err = checkKnownFields("", &document, reflect.TypeFor[UncorsConfig]())
 	}
@@ -114,7 +119,7 @@ func readYAMLFile(fs afero.Fs, cfg *UncorsConfig, path string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to read config file '%s': While parsing config: %w", path, err)
+		return fmt.Errorf("failed to parse config file '%s': %w", path, err)
 	}
 
 	return nil

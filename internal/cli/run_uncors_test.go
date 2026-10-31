@@ -182,8 +182,14 @@ func TestRunUncors(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, afero.WriteFile(fs, "/config.yaml", data, 0o600))
 
-		err = cli.RunUncors(context.Background(), env(fs, "-c", "/config.yaml", "--interactive=false"))
-		require.Error(t, err)
+		output := &syncBuffer{}
+		runEnv := env(fs, "-c", "/config.yaml", "--interactive=false")
+		runEnv.Stdout = output
+
+		err = cli.RunUncors(context.Background(), runEnv)
+		require.ErrorContains(t, err, "cannot listen on port "+strconv.Itoa(port)+": ")
+		require.ErrorContains(t, err, "address already in use")
+		assert.NotContains(t, output.String(), "Server was stopped")
 	})
 
 	t.Run("non-interactive: reloads valid config on file change", func(t *testing.T) {

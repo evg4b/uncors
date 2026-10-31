@@ -96,7 +96,8 @@ cli.RunUncors ─► supervisor ──Start/Restart/Shutdown──► engine.Eng
 - A frontend runs on its own goroutine and only renders events
   (`render.EventRenderer`) and sends commands. It subscribes before the engine
   starts. `ServerStopped` is the last event; the bus closes after it. If the
-  frontend exits on its own, the supervisor shuts down.
+  engine fails to start, the bus closes without it. If the frontend exits on
+  its own, the supervisor shuts down.
 - Diagnostics are OpenTelemetry spans and logs (`internal/telemetry`), never
   terminal output. Each request is one trace: `server.handleRequest` starts the
   root span and every handler and middleware adds a child span. Failures the

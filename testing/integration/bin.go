@@ -44,7 +44,11 @@ func SetupBin(_ *testing.M) {
 func UncorsCommand(t *testing.T, args []string) *exec.Cmd {
 	t.Helper()
 
-	return exec.CommandContext(t.Context(), bin, args...)
+	return UncorsCommandContext(t.Context(), args)
+}
+
+func UncorsCommandContext(ctx context.Context, args []string) *exec.Cmd {
+	return exec.CommandContext(ctx, bin, args...)
 }
 
 func repoRootPath() string {

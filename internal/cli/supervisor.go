@@ -73,7 +73,7 @@ func supervise(
 
 	err := supervisor.engine.Start(ctx, uncorsConfig)
 	if err != nil {
-		supervisor.announceStopped()
+		bus.Close()
 
 		return errors.Join(err, <-frontendDone, supervisor.engine.Close())
 	}

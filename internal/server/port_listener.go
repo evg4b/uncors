@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"sync/atomic"
@@ -23,7 +24,9 @@ func (s *Server) bind(ctx context.Context, target Target) (net.Listener, error) 
 
 	listener, err := listenConfig.Listen(ctx, "tcp", target.Address)
 	if err != nil {
-		return nil, err
+		_, port, _ := net.SplitHostPort(target.Address)
+
+		return nil, fmt.Errorf("cannot listen on port %s: %w", port, err)
 	}
 
 	if target.EnableTLS {

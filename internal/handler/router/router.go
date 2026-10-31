@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -56,7 +57,7 @@ func NewRouter(mappings config.Mappings, options ...Option) *Router {
 			span.AddEvent("uncors.host_not_mapped", trace.WithAttributes(semconv.ServerAddress(request.Host)))
 		}
 
-		return infra.ErrHostNotMapped
+		return fmt.Errorf("%w: %s", infra.ErrHostNotMapped, request.Host)
 	}))
 
 	return &instance

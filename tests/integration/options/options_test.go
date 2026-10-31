@@ -61,3 +61,43 @@ func TestOptionsHandlingDisabled(t *testing.T) {
 		snaps.MatchSnapshot(t, result.ResponseDump(t))
 	})
 }
+
+func TestOptionsHandlingDefault(t *testing.T) {
+	backend := integration.NewBackend(t, nil)
+	env := integration.New(t, backend, &config.UncorsConfig{
+		Mappings: config.Mappings{{
+			From: hosts.Parse("https://options.local"),
+			To:   backend.AsHost(),
+		}},
+	})
+
+	t.Run("preflight reflects the requested method and headers", func(t *testing.T) {
+		req := integration.NewRequest(t, http.MethodOptions, env.URL("options.local", "/api/items"))
+		req.Header.Set("Origin", "https://front.local")
+		req.Header.Set("Access-Control-Request-Method", http.MethodDelete)
+		req.Header.Set("Access-Control-Request-Headers", "x-custom, content-type")
+
+		result := env.Do(t, req)
+
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "https://front.local", result.Response.Header.Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, "true", result.Response.Header.Get("Access-Control-Allow-Credentials"))
+		assert.Equal(t, http.MethodDelete, result.Response.Header.Get("Access-Control-Allow-Methods"))
+		assert.Equal(t, "x-custom, content-type", result.Response.Header.Get("Access-Control-Allow-Headers"))
+		assert.Empty(t, result.BodyString())
+		assert.False(t, result.HasBackendRequest())
+	})
+
+	t.Run("the actual request after the preflight reaches the backend", func(t *testing.T) {
+		req := integration.NewRequest(t, http.MethodDelete, env.URL("options.local", "/api/items"))
+		req.Header.Set("Origin", "https://front.local")
+		req.Header.Set("X-Custom", "value")
+
+		result := env.Do(t, req)
+
+		assert.Equal(t, http.StatusOK, result.Response.StatusCode)
+		assert.Equal(t, "https://front.local", result.Response.Header.Get("Access-Control-Allow-Origin"))
+		assert.Contains(t, result.BackendRequest(t), "DELETE /api/items HTTP/1.1")
+		assert.Contains(t, result.BackendRequest(t), "X-Custom: value")
+	})
+}

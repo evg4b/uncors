@@ -312,3 +312,42 @@ func TestReloadSwitchesScheme(t *testing.T) {
 	_, _, err = instance.get(t, url("https", port, "/"))
 	require.Error(t, err)
 }
+
+func TestReloadKeepsServingWhenANewPortIsBusy(t *testing.T) {
+	previous := integration.NewBackend(t, func(writer http.ResponseWriter, _ *http.Request) {
+		_, err := io.WriteString(writer, "previous")
+		assert.NoError(t, err)
+	})
+	next := integration.NewBackend(t, func(writer http.ResponseWriter, _ *http.Request) {
+		_, err := io.WriteString(writer, "next")
+		assert.NoError(t, err)
+	})
+	ports := testutils.GetFreePorts(t, 2)
+	instance := start(t, previous, configuration(mapping("http", ports[0], previous)))
+
+	busy, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp",
+		net.JoinHostPort(config.ListenAddress, strconv.Itoa(ports[1])))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = busy.Close() })
+
+	reloaded := configuration(mapping("http", ports[0], next), mapping("http", ports[1], next))
+
+	err = instance.TryRestart(t, reloaded)
+	require.ErrorContains(t, err, "cannot listen on port "+strconv.Itoa(ports[1]))
+
+	code, body, err := instance.get(t, url("http", ports[0], "/"))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, "previous", body, "the previous configuration keeps serving")
+	assert.Zero(t, next.Count())
+
+	require.NoError(t, busy.Close())
+	instance.Restart(t, reloaded)
+
+	for _, port := range ports {
+		code, body, err = instance.get(t, url("http", port, "/"))
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, code)
+		assert.Equal(t, "next", body)
+	}
+}

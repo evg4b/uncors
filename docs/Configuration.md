@@ -306,7 +306,7 @@ expanded, so use a relative or absolute path instead.
 
 UNCORS validates the whole file at startup and reports every problem it finds,
 with the path to the bad value (for example
-`mappings[0].mocks[0].response.code code must be in range 200-599`). It also
+`mappings[0].mocks[0].response.code must be in range 200-599`). It also
 checks that the files and directories referenced by mocks, scripts, and statics
 exist.
 

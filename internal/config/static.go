@@ -84,11 +84,12 @@ func (s *StaticDirectories) checkKnownFields(field string, node *yaml.Node) erro
 	var errs []error
 
 	for i := 0; i+1 < len(node.Content); i += 2 {
-		errs = append(errs, checkKnownFields(
-			joinPath(field, node.Content[i].Value),
-			node.Content[i+1],
-			reflect.TypeFor[staticMapEntry](),
-		))
+		key, value := node.Content[i], node.Content[i+1]
+		if value.Kind == yaml.ScalarNode {
+			continue
+		}
+
+		errs = append(errs, checkKnownFields(joinPath(field, key.Value), value, reflect.TypeFor[staticMapEntry]()))
 	}
 
 	return errors.Join(errs...)

@@ -331,7 +331,7 @@ func TestLoadConfiguration(t *testing.T) {
 			memFs := testutils.FsFromMap(t, map[string]string{".uncors.yaml": corruptedConfig})
 
 			_, _, err := config.LoadConfiguration(t.Context(), memFs, nil, []string{})
-			require.ErrorContains(t, err, "failed to read config file '.uncors.yaml'")
+			require.ErrorContains(t, err, "failed to parse config file '.uncors.yaml'")
 		})
 	})
 
@@ -381,14 +381,14 @@ func TestLoadConfiguration(t *testing.T) {
 			{
 				name: "config file is corrupted",
 				args: []string{params.Config, corruptedConfigPath},
-				expectedErr: "failed to read config file '/corrupted-config.yaml': " +
-					"While parsing config: yaml: line 2: mapping values are not allowed in this context",
+				expectedErr: "failed to parse config file '/corrupted-config.yaml': " +
+					"yaml: line 2: mapping values are not allowed in this context",
 			},
 			{
 				name: "incorrect type in config file",
 				args: []string{params.Config, incorrectConfigPath},
-				expectedErr: "failed to read config file '/incorrect-config.yaml': " +
-					"While parsing config: mapping shorthand value must be a string URL",
+				expectedErr: "failed to parse config file '/incorrect-config.yaml': " +
+					"mapping shorthand value must be a string URL",
 			},
 		}
 

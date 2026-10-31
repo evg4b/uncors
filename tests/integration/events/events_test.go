@@ -142,7 +142,8 @@ func TestRequestAttribution(t *testing.T) {
 		assert.Equal(t, events.HandlerNone, tracked.Started.Handler)
 		assert.Equal(t, events.HandlerNone, tracked.Completed.Handler)
 		require.Error(t, tracked.Completed.Err)
-		assert.Contains(t, tracked.Completed.Err.Error(), "host not mapped")
+		assert.Equal(t, "host not mapped: unmapped.local:"+port, tracked.Completed.Err.Error())
+		assert.Contains(t, result.BodyString(), "An error occurred: host not mapped: unmapped.local:"+port)
 	})
 }
 
