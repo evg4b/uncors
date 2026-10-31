@@ -18,6 +18,7 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/evg4b/uncors/internal/config"
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/handler/rewrite"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
@@ -329,11 +330,14 @@ func (m *Middleware) extractCacheKey(request *contracts.Request) string {
 		}
 	}
 
+	upstream, _ := rewrite.GetRewriteHost(request)
+
 	// The store is shared by every mapping of a configuration generation, so the
-	// key must identify the listener (scheme and port), not just the host name.
-	return fmt.Sprintf("[%s]%s://%s%s?%s#%s",
+	// key must identify the listener (scheme and port), not just the host name,
+	// and the upstream host a rewrite sends the request to.
+	return fmt.Sprintf("[%s]%s://%s%s?%s#%s>%s",
 		request.Method, requestURL.Scheme, strings.ToLower(requestURL.Host), requestURL.Path,
-		strings.Join(items, "&"), acceptEncoding(request.Header))
+		strings.Join(items, "&"), acceptEncoding(request.Header), upstream)
 }
 
 func (m *Middleware) getCachedResponse(request *contracts.Request, baseKey string) (*contracts.CachedResponse, string) {
