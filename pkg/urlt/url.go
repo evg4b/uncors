@@ -266,11 +266,6 @@ func getScheme(rawURL string) (scheme, path string, err error) {
 	return "", rawURL, nil
 }
 
-// URLT is a defined type over net/url.URL that provides custom binary
-// marshaling using [URL_String] and [Parse] instead of the standard library
-// implementations.
-type URLT base_url.URL
-
 // Parse parses a raw url into a [URL] structure.
 //
 // The url may be relative (a path, without a host) or absolute
@@ -1005,26 +1000,6 @@ func splitHostPort(hostPort string) (host, port string) {
 	}
 
 	return
-}
-
-// Marshaling interface implementations.
-// Would like to implement MarshalText/UnmarshalText but that will change the JSON representation of URLs.
-
-func (u *URLT) MarshalBinary() (text []byte, err error) {
-	return u.AppendBinary(nil)
-}
-
-func (u *URLT) AppendBinary(b []byte) ([]byte, error) {
-	return append(b, URL_String((*base_url.URL)(u))...), nil
-}
-
-func (u *URLT) UnmarshalBinary(text []byte) error {
-	u1, err := Parse(string(text))
-	if err != nil {
-		return err
-	}
-	*u = URLT(*u1)
-	return nil
 }
 
 // URL_JoinPath returns a new [URL] with the provided path elements joined to

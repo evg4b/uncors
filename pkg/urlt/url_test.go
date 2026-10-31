@@ -5,10 +5,6 @@
 package urlt
 
 import (
-	"bytes"
-	encodingPkg "encoding"
-	"encoding/gob"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -2015,37 +2011,6 @@ func TestURLHostnameAndPort(t *testing.T) {
 			assert.Equal(t, tt.port, port, "Port for Host %q mismatch", tt.in)
 		})
 	}
-}
-
-var (
-	_ encodingPkg.BinaryMarshaler   = (*URLT)(nil)
-	_ encodingPkg.BinaryUnmarshaler = (*URLT)(nil)
-	_ encodingPkg.BinaryAppender    = (*URLT)(nil)
-)
-
-func TestJSON(t *testing.T) {
-	u, err := Parse("https://www.google.com/x?y=z")
-	require.NoError(t, err)
-	js, err := json.Marshal(u)
-	require.NoError(t, err)
-
-	u1 := new(URLT)
-	err = json.Unmarshal(js, u1)
-	require.NoError(t, err)
-	assert.Equal(t, URL_String(u), URL_String((*URL)(u1)))
-}
-
-func TestGob(t *testing.T) {
-	u, err := Parse("https://www.google.com/x?y=z")
-	require.NoError(t, err)
-	var w bytes.Buffer
-	err = gob.NewEncoder(&w).Encode(u)
-	require.NoError(t, err)
-
-	u1 := new(URLT)
-	err = gob.NewDecoder(&w).Decode(u1)
-	require.NoError(t, err)
-	assert.Equal(t, URL_String(u), URL_String((*URL)(u1)))
 }
 
 func TestNilUser(t *testing.T) {
