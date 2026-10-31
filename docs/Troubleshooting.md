@@ -141,6 +141,9 @@ Within a week of the CA expiring, UNCORS warns but keeps serving HTTPS. Once it
 has expired, HTTPS stops working until you run
 `uncors generate-certs --force` and trust the new CA.
 
+A running UNCORS keeps signing with the CA it loaded first. Restart it after
+`uncors generate-certs --force`.
+
 If the browser still rejects the certificate, the CA is not trusted yet.
 
 macOS:
