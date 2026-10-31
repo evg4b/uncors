@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/go-http-utils/headers"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )

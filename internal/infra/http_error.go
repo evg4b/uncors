@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/evg4b/uncors/internal/contracts"
-	"github.com/go-http-utils/headers"
+	"github.com/evg4b/uncors/internal/headers"
 )
 
 var ErrHostNotMapped = errors.New("host not mapped")

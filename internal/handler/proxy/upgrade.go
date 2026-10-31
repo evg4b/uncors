@@ -8,11 +8,11 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/infra"
 	"github.com/evg4b/uncors/internal/telemetry"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 )
 

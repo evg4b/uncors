@@ -13,12 +13,12 @@ import (
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/handler/cache"
 	"github.com/evg4b/uncors/internal/handler/router"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tracking"
 	"github.com/evg4b/uncors/testing/hosts"
 	"github.com/evg4b/uncors/testing/mocks"
 	"github.com/evg4b/uncors/testing/testutils"
-	"github.com/go-http-utils/headers"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )

@@ -12,7 +12,6 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/dgraph-io/ristretto/v2 v2.4.2
 	github.com/gkampitakis/go-snaps v0.5.23
-	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/go-logr/logr v1.4.4
 	github.com/gojuno/minimock/v3 v3.4.7
 	github.com/gorilla/mux v1.8.1

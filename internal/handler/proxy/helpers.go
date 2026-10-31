@@ -6,8 +6,8 @@ import (
 	"net/textproto"
 	"strings"
 
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/urlreplacer"
-	"github.com/go-http-utils/headers"
 )
 
 type modificationsMap = map[string]func(string) string
@@ -20,7 +20,7 @@ func copyHeaders(source, dest http.Header, modifications modificationsMap) {
 			continue
 		}
 
-		modificationFunc, ok := modifications[headers.Normalize(key)]
+		modificationFunc, ok := modifications[http.CanonicalHeaderKey(key)]
 		if !ok {
 			modificationFunc = noop
 		}

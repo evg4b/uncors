@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/tracking"
-	"github.com/go-http-utils/headers"
 )
 
 const (

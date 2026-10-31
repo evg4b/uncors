@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/evg4b/uncors/internal/contracts"
+	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/telemetry"
 	harlib "github.com/evg4b/uncors/pkg/har"
-	"github.com/go-http-utils/headers"
 	"go.opentelemetry.io/otel/attribute"
 )
 
