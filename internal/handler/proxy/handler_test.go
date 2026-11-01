@@ -297,6 +297,12 @@ func TestProxyHandler(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestProxyHandlerConnectionHeaders(t *testing.T) {
+	replacerFactory := lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
+	}))
 
 	t.Run("should forward the request Content-Length", func(t *testing.T) {
 		var forwarded *http.Request
@@ -454,6 +460,12 @@ func TestProxyHandler(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestProxyHandlerCookies(t *testing.T) {
+	replacerFactory := lo.Must(urlreplacer.NewURLReplacerFactory(config.Mappings{
+		{From: hosts.Parse("http://premium.local.com"), To: hosts.Parse("https://premium.api.com")},
+	}))
 
 	t.Run("should forward cookies from response to source", func(t *testing.T) {
 		httpClient := testutils.NewTestClient(func(req *http.Request) *http.Response {

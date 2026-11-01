@@ -21,7 +21,10 @@ const (
 	ResultDropped     = "dropped"
 )
 
-const unitRequest = "{request}"
+const (
+	unitRequest  = "{request}"
+	unitResponse = "{response}"
+)
 
 const (
 	handlerKey = attribute.Key("uncors.handler")
@@ -84,10 +87,10 @@ func newInstruments(meter metric.Meter) *instruments {
 		requestDuration:  seconds("http.server.request.duration", "Time to serve a request."),
 		responseSize:     responseSize,
 		cacheLookups:     counter("uncors.cache.lookups", "{lookup}", "Cache lookups, by hit or miss."),
-		cacheStores:      counter("uncors.cache.stores", "{response}", "Responses stored in the cache."),
+		cacheStores:      counter("uncors.cache.stores", unitResponse, "Responses stored in the cache."),
 		cacheStoredBytes: counter("uncors.cache.stored_bytes", "By", "Bytes of response bodies stored in the cache."),
-		cacheRejections:  counter("uncors.cache.rejections", "{response}", "Responses the cache storage declined to store."),
-		mockResponses:    counter("uncors.mock.responses", "{response}", "Mock responses, served or cancelled."),
+		cacheRejections:  counter("uncors.cache.rejections", unitResponse, "Responses the cache storage declined to store."),
+		mockResponses:    counter("uncors.mock.responses", unitResponse, "Mock responses, served or cancelled."),
 		mockDelay:        seconds("uncors.mock.delay", "Configured delays of the mock responses served."),
 		scriptRuns:       counter("uncors.script.executions", "{execution}", "Lua script executions."),
 		scriptDuration:   seconds("uncors.script.duration", "Time to compile and run a Lua script."),
