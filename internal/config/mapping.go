@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 
@@ -14,7 +15,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const ListenAddress = "127.0.0.1"
+const (
+	ListenAddressEnvVar  = "UNCORS_LISTEN_ADDRESS"
+	defaultListenAddress = "127.0.0.1"
+)
 
 var ErrMappingShorthandValue = errors.New("mapping shorthand value must be a string URL")
 
@@ -76,15 +80,33 @@ func ValidateTLS(mapping Mapping, fs afero.Fs) error {
 	return nil
 }
 
+func ListenAddress() string {
+	if value := os.Getenv(ListenAddressEnvVar); value != "" {
+		return value
+	}
+
+	return defaultListenAddress
+}
+
+func validateListenAddress() error {
+	if net.ParseIP(ListenAddress()) == nil {
+		return &ValidationError{fmt.Sprintf("%s must be an IP address, got %q", ListenAddressEnvVar, ListenAddress())}
+	}
+
+	return nil
+}
+
 func validateListenIP(field string, from urlt.Host) error {
 	ip := net.ParseIP(from.Hostname)
-	if ip == nil || ip.Equal(net.ParseIP(ListenAddress)) || ip.Equal(net.IPv4zero) {
+	listen := net.ParseIP(ListenAddress())
+
+	if ip == nil || listen == nil || listen.IsUnspecified() || ip.Equal(listen) || ip.Equal(net.IPv4zero) {
 		return nil
 	}
 
 	return &ValidationError{fmt.Sprintf(
 		"%s: UNCORS listens on %s only, so %s is never reached; use %s or a host name",
-		field, ListenAddress, from.Hostname, ListenAddress,
+		field, ListenAddress(), from.Hostname, ListenAddress(),
 	)}
 }
 

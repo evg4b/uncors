@@ -220,7 +220,7 @@ func (g *Generation) build(uncorsConfig *config.UncorsConfig) ([]server.Target, 
 		}
 
 		targets = append(targets, server.Target{
-			Address: net.JoinHostPort(config.ListenAddress, strconv.Itoa(group.Port)),
+			Address: net.JoinHostPort(config.ListenAddress(), strconv.Itoa(group.Port)),
 			Handler: router.NewRouter(
 				group.Mappings,
 				router.WithFactory(g),

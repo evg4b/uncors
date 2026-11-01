@@ -1,12 +1,11 @@
 The HAR collector writes the traffic of a mapping to an
 [HTTP Archive (HAR 1.2)](https://w3c.github.io/web-performance/specs/HAR/Overview.html)
-file. You can open the file in browser DevTools or other HAR viewers to see
-what your app sent and what the server answered, or share it with someone
-debugging the same problem.
+file. Open it in browser DevTools or another HAR viewer to see what your app
+sent and what the server answered.
 
-## Quick start
+## Configuration
 
-Add `har` to a mapping with the path of the output file:
+The short form is the path of the output file:
 
 ```yaml
 mappings:
@@ -15,9 +14,7 @@ mappings:
     har: ./recordings/api.har
 ```
 
-## Configuration
-
-The short form is a file path. The object form adds one option:
+The object form adds one option:
 
 ```yaml
 mappings:
@@ -28,30 +25,45 @@ mappings:
       capture-secure-headers: false
 ```
 
-| Option                   | Type    | Default | Description                                                                         |
-| ------------------------ | ------- | ------- | ----------------------------------------------------------------------------------- |
-| `file`                   | string  | -       | Output file. It must have an extension, such as `.har`. Empty means no recording.   |
-| `capture-secure-headers` | boolean | `false` | Keep the headers listed under [Secure headers](#secure-headers) in the recording.  |
+| Option                   | Type    | Default | Description                                                                       |
+| ------------------------ | ------- | ------- | --------------------------------------------------------------------------------- |
+| `file`                   | string  | -       | Output file. It must have an extension, such as `.har`. Empty means no recording. |
+| `capture-secure-headers` | boolean | `false` | Keep the headers listed under [Secure headers](#secure-headers) in the recording. |
 
-The path is relative to the directory you start UNCORS from. Missing parent
-directories are created.
+The path is relative to the directory you start UNCORS from, and missing
+directories are created. Each mapping needs its own file; two mappings cannot
+share one:
+
+```text
+mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
+```
 
 ## What is recorded
 
-The collector sees requests that UNCORS sends to the upstream server, plus the
-responses it produces on that path:
+Only requests that reach the proxy path are recorded:
 
-| Request                                                    | Recorded |
-| ---------------------------------------------------------- | -------- |
-| Proxied to the upstream server                             | Yes      |
-| Answered from the [cache](Response-Caching)                | Yes      |
-| `OPTIONS` preflight answered by UNCORS                     | Yes      |
-| Under a [static](Static-File-Serving) path, file not found, proxied | Yes |
-| [Rewritten](Request-Rewriting) and proxied                 | Yes      |
-| WebSocket or another protocol upgrade                      | No       |
-| Answered by a [mock](Response-Mocking)                     | No       |
-| Answered by a [script](Script-Handler)                     | No       |
-| Served from a static directory                             | No       |
+| Request                                                                           | Recorded |
+| --------------------------------------------------------------------------------- | -------- |
+| Proxied to the upstream server, including [rewritten](Request-Rewriting) requests | Yes      |
+| Answered from the [cache](Response-Caching)                                       | Yes      |
+| `OPTIONS` preflight answered by UNCORS                                            | Yes      |
+| Under a [static](Static-File-Serving) path but not found, so proxied              | Yes      |
+| Served from a static directory                                                    | No       |
+| Answered by a [mock](Response-Mocking) or a [script](Script-Handler)              | No       |
+| WebSocket or another protocol upgrade                                             | No       |
+
+Each entry has the request and response headers, cookies, query string,
+bodies, and timings. Response bodies are stored decompressed (`gzip`,
+`deflate`, `br`, and `zstd` are supported); binary bodies are stored in base64.
+
+> [!NOTE]
+> A request body over 10 MiB is recorded by its size only. A response body
+> over 10 MiB is cut to its first 10 MiB, and `content.comment` says so; the
+> client still gets all of it. A response that would decode to more than 50 MiB
+> is stored as received, in base64.
+
+<details>
+<summary>Entry format and body details</summary>
 
 Each entry has the request and response headers, cookies, query string,
 bodies, and timings. `httpVersion` is the protocol the client used, such as
@@ -63,7 +75,7 @@ headers are sorted by name. Response cookies keep `path`, `domain`, `expires`,
 `httpOnly`, and `secure`. `creator` is `uncors` and the version that wrote the
 file.
 
-### Request bodies
+#### Request bodies
 
 A request with a body gets a `postData` object, as described in HAR 1.2:
 
@@ -85,7 +97,7 @@ A body larger than 10 MiB is streamed to the upstream server instead of being
 held in memory. Its entry has a `postData` with only `mimeType`, and `bodySize`
 is the number of bytes the upstream read.
 
-### Response bodies
+#### Response bodies
 
 Response bodies are stored decompressed. UNCORS decodes these
 `Content-Encoding` values: `gzip`, `deflate`, `br` (Brotli), and `zstd`.
@@ -109,64 +121,41 @@ Only the first 10 MiB of a response body are recorded; the client still gets
 the whole response. For a longer body, `bodySize` is the full size,
 `content.text` holds the first 10 MiB, and `content.comment` says it was cut.
 
+</details>
+
 ## Secure headers
 
-To keep credentials off the disk, these headers are left out of every entry by
-default, and the request and response `cookies` lists are empty:
+By default these headers are left out of every entry, and the `cookies` lists
+are empty:
 
-| Header                                                       | Why it is sensitive                              |
-| ------------------------------------------------------------ | ------------------------------------------------ |
-| `Cookie`                                                     | Session identifiers sent by the browser          |
-| `Set-Cookie`                                                 | Session identifiers set by the server            |
-| `Authorization`                                              | Bearer tokens and Basic auth credentials         |
-| `WWW-Authenticate`                                           | Auth challenges, which reveal scheme and realm   |
-| `Proxy-Authorization`                                        | Proxy credentials                                |
-| `Proxy-Authenticate`                                         | Proxy auth challenges                            |
-| `Api-Key`, and names ending in `-Api-Key` or `-Apikey`       | API keys, such as `X-Api-Key`                    |
-| Names ending in `-Token`                                     | Tokens, such as `X-Auth-Token` or `X-CSRF-Token` |
-| Names ending in `-Secret`, and names starting with `X-Auth-` | Client secrets and auth details                  |
+- `Cookie` and `Set-Cookie`
+- `Authorization` and `WWW-Authenticate`
+- `Proxy-Authorization` and `Proxy-Authenticate`
+- `Api-Key`, and names ending in `-Api-Key`, `-Apikey`, `-Token`, or `-Secret`
+- names starting with `X-Auth-`
 
-Names are compared without regard to case. URLs, query strings, and request
-and response bodies are always recorded in full, so a token passed in the URL
-or returned in a login response ends up in the file.
-
-Set `capture-secure-headers: true` to keep them:
-
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har:
-      file: ./recordings/auth-debug.har
-      capture-secure-headers: true
-```
+Names are compared without regard to case. Set `capture-secure-headers: true` to keep them.
 
 > [!WARNING]
-> Such a file contains tokens and cookies in plain text. Don't commit it or
-> share it without removing them, and delete it when you are done.
+> URLs, query strings, and bodies are always recorded in full, so a token in the
+> URL or in a login response ends up in the file. With
+> `capture-secure-headers: true`, cookies and tokens are written in plain text
+> too. Don't commit such files.
 
-## File lifecycle
+## When the file is written
 
-Each mapping writes its own file, so traffic from different mappings never
-mixes:
+Recording never slows down requests. A background writer updates the file
+about once a second, through a temporary file, so the `.har` file is always
+complete and valid even while UNCORS runs. It is written a last time when
+UNCORS stops.
 
-```yaml
-mappings:
-  - from: http://api.local:3000
-    to: https://api.example.com
-    har: ./recordings/api.har
+A recording covers one run of one configuration. When UNCORS starts, and when
+it reloads the configuration, the recording starts empty and replaces the
+existing file. Requests still running during a reload are not recorded. Copy
+the file first if you want to keep an earlier session.
 
-  - from: http://auth.local:3001
-    to: https://auth.example.com
-    har: ./recordings/auth.har
-```
-
-Two mappings cannot share a file. UNCORS compares the absolute paths and
-refuses to load such a configuration:
-
-```text
-mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
-```
+<details>
+<summary>How the file is written</summary>
 
 Recording never slows down requests. Entries go to a queue, and a background
 writer adds them to the file at most once a second, so a new request shows up
@@ -182,44 +171,14 @@ reload moves recording to another file or turns it off. A configuration that
 fails to start, or a reload that fails and keeps the previous configuration
 running, leaves the file untouched.
 
-A recording covers one run of one configuration. When UNCORS starts, and when
-it reloads a changed configuration file, the recording starts empty and the
-next write replaces the existing file. Requests still running when the reload
-happens are not recorded. Copy the file first if you want to keep an earlier
-session.
+</details>
 
 > [!NOTE]
-> The queue holds 4,096 entries. If it fills up during a burst of traffic, new
-> entries are dropped rather than delaying requests. This is rare in normal
-> development.
+> Entries wait in a queue of 4,096. If it fills up during a burst of traffic,
+> new entries are dropped rather than delaying requests.
 
 ## Viewing HAR files
 
-| Tool                   | How                                                                 |
-| ---------------------- | ------------------------------------------------------------------- |
-| Chrome or Edge DevTools | Network tab, then Import HAR                                       |
-| Firefox DevTools       | Network tab, then Import HAR                                        |
-| Postman                | File, Import, then select the `.har` file                           |
-| HAR Viewer (online)    | [google.github.io/har-viewer](https://google.github.io/har-viewer/) |
-
-## Example: recording next to other features
-
-```yaml
-mappings:
-  - from: http://app.local:3000
-    to: https://api.example.com
-    har: ./recordings/app.har
-    cache:
-      - /api/config
-    mocks:
-      - path: /api/feature-flags
-        response:
-          code: 200
-          headers:
-            Content-Type: application/json
-          raw: '{"newUi": true}'
-```
-
-`/api/config` is recorded both when it is fetched and when it comes from the
-cache. `/api/feature-flags` is answered by the mock and does not appear in the
-file.
+- Chrome, Edge, and Firefox: DevTools, Network tab, Import HAR.
+- Postman: File, Import, then select the `.har` file.
+- Online: [HAR Viewer](https://google.github.io/har-viewer/).

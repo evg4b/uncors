@@ -646,3 +646,44 @@ func TestUncorsConfigValidateListeners(t *testing.T) {
 		}
 	})
 }
+
+func TestUncorsConfigValidateListenAddress(t *testing.T) {
+	makeConfig := func(from string) *config.UncorsConfig {
+		return &config.UncorsConfig{
+			Mappings: config.Mappings{{From: hosts.Parse(from), To: hosts.Github.HTTPS()}},
+			CacheConfig: config.CacheConfig{
+				MaxSize:        100 * 1024 * 1024,
+				ExpirationTime: 10 * time.Minute,
+				Methods:        []string{http.MethodGet},
+			},
+		}
+	}
+
+	t.Run("defaults to loopback", func(t *testing.T) {
+		assert.Equal(t, "127.0.0.1", config.ListenAddress())
+	})
+
+	t.Run("accepts any address when listening on all interfaces", func(t *testing.T) {
+		t.Setenv(config.ListenAddressEnvVar, "0.0.0.0")
+
+		assert.Equal(t, "0.0.0.0", config.ListenAddress())
+		require.NoError(t, makeConfig("http://192.168.1.10:3000").Validate(afero.NewMemMapFs()))
+	})
+
+	t.Run("rejects other addresses when listening on one", func(t *testing.T) {
+		t.Setenv(config.ListenAddressEnvVar, "10.0.0.5")
+
+		err := makeConfig("http://192.168.1.10:3000").Validate(afero.NewMemMapFs())
+
+		require.EqualError(t, err, "mappings[0].from: UNCORS listens on 10.0.0.5 only, "+
+			"so 192.168.1.10 is never reached; use 10.0.0.5 or a host name")
+	})
+
+	t.Run("rejects a value that is not an IP address", func(t *testing.T) {
+		t.Setenv(config.ListenAddressEnvVar, "localhost")
+
+		err := makeConfig("http://localhost:3000").Validate(afero.NewMemMapFs())
+
+		require.EqualError(t, err, `UNCORS_LISTEN_ADDRESS must be an IP address, got "localhost"`)
+	})
+}

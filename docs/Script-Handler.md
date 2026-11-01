@@ -17,34 +17,20 @@ mappings:
           response:WriteString('{"message": "Hello, ' .. name .. '"}')
 ```
 
-## Contents
-
-- [Request matching](#request-matching)
-- [Inline and file scripts](#inline-and-file-scripts)
-- [The request object](#the-request-object)
-- [The response object](#the-response-object)
-- [Libraries](#libraries)
-- [Limits](#limits)
-- [Examples](#examples)
-- [Errors](#errors)
-- [Scripts or mocks](#scripts-or-mocks)
-
 ## Request matching
 
 Scripts match requests the same way mocks do:
 
-| Option    | Required | Description                                                           |
-| --------- | -------- | --------------------------------------------------------------------- |
+| Option    | Required | Description                                                              |
+| --------- | -------- | ------------------------------------------------------------------------ |
 | `path`    | Yes      | URL path to match, starting with `/`. `{name}` segments match any value. |
-| `method`  | No       | HTTP method in upper case. Default: any except `OPTIONS`.             |
-| `queries` | No       | Query parameters that must be present with these values.             |
-| `headers` | No       | Request headers that must be present with these values.              |
+| `method`  | No       | HTTP method in upper case. Default: any except `OPTIONS`.                |
+| `queries` | No       | Query parameters that must be present with these values.                 |
+| `headers` | No       | Request headers that must be present with these values.                  |
 
-The path must match the whole request path. Scripts with a method, query, or
-header filter are checked before scripts that match on path alone. Mocks are
-checked before scripts, and static directories before both. See
-[Response Mocking](Response-Mocking#request-matching) for the details, which
-are the same.
+The rules are the same as for
+[mocks](Response-Mocking#request-matching). Static directories and mocks are
+checked before scripts.
 
 ## Inline and file scripts
 
@@ -82,32 +68,33 @@ nothing is kept between requests.
 
 The global `request` table describes the incoming request.
 
-| Field          | Type   | Description                                       | Example                                 |
-| -------------- | ------ | ------------------------------------------------- | --------------------------------------- |
-| `method`       | string | HTTP method                                       | `"GET"`                                 |
-| `url`          | string | Request URL                                       | `"http://localhost:3000/api/users?id=1"` |
-| `path`         | string | URL path                                          | `"/api/users"`                          |
-| `query`        | string | Raw query string                                  | `"id=1&name=test"`                      |
-| `host`         | string | `Host` header                                     | `"localhost:3000"`                      |
-| `remote_addr`  | string | Client address and port                           | `"127.0.0.1:52345"`                     |
-| `body`         | string | Request body, empty string if there is none       | `'{"data": "value"}'`                   |
-| `headers`      | table  | Request headers                                   | `request.headers["Content-Type"]`       |
-| `query_params` | table  | Parsed query parameters                           | `request.query_params["id"]`            |
-| `path_params`  | table  | Values of the `{name}` segments in `path`         | `request.path_params["id"]`             |
+| Field          | Type   | Description                                 | Example                                  |
+| -------------- | ------ | ------------------------------------------- | ---------------------------------------- |
+| `method`       | string | HTTP method                                 | `"GET"`                                  |
+| `url`          | string | Request URL                                 | `"http://localhost:3000/api/users?id=1"` |
+| `path`         | string | URL path                                    | `"/api/users"`                           |
+| `query`        | string | Raw query string                            | `"id=1&name=test"`                       |
+| `host`         | string | `Host` header                               | `"localhost:3000"`                       |
+| `remote_addr`  | string | Client address and port                     | `"127.0.0.1:52345"`                      |
+| `body`         | string | Request body, empty string if there is none | `'{"data": "value"}'`                    |
+| `headers`      | table  | Request headers                             | `request.headers["Content-Type"]`        |
+| `query_params` | table  | Parsed query parameters                     | `request.query_params["id"]`             |
+| `path_params`  | table  | Values of the `{name}` segments in `path`   | `request.path_params["id"]`              |
 
-Header names use Go's canonical form, so read `request.headers["Content-Type"]`,
-not `request.headers["content-type"]`.
+Header names use Go's canonical form: `request.headers["Content-Type"]`, not
+`request.headers["content-type"]`.
 
-In `headers` and `query_params`, a name that appears once maps to a string. A
-name that appears several times maps to an array of strings. Check the type if
-a client might repeat a value:
+> [!NOTE]
+> In `headers` and `query_params`, a name that appears several times maps to
+> an array of strings instead of a string. Check the type if a client might
+> repeat a value:
 
-```lua
-local tags = request.query_params["tag"]
-if type(tags) == "string" then
-  tags = {tags}
-end
-```
+> ```lua
+> local tags = request.query_params["tag"]
+> if type(tags) == "string" then
+>   tags = {tags}
+> end
+> ```
 
 Path parameters come from the `{name}` segments of the script's `path`:
 
@@ -138,13 +125,13 @@ calls are ignored. If you write body data without calling `WriteHeader` first,
 status 200 is sent automatically. If the script writes nothing, the client gets
 an empty 200 response.
 
-| Member                       | Description                                       |
-| ---------------------------- | ------------------------------------------------- |
-| `response.headers[name]`     | Read or set a response header                     |
-| `response:Header()`          | Returns the headers object, with `Set` and `Get`  |
-| `response:WriteHeader(code)` | Send the status code and headers                  |
-| `response:Write(data)`       | Append data to the body                           |
-| `response:WriteString(str)`  | Append a string to the body (same as `Write`)     |
+| Member                       | Description                                      |
+| ---------------------------- | ------------------------------------------------ |
+| `response.headers[name]`     | Read or set a response header                    |
+| `response:Header()`          | Returns the headers object, with `Set` and `Get` |
+| `response:WriteHeader(code)` | Send the status code and headers                 |
+| `response:Write(data)`       | Append data to the body                          |
+| `response:WriteString(str)`  | Append a string to the body (same as `Write`)    |
 
 `Write` and `WriteString` return the number of bytes written and an error
 message, or `nil` if there was no error.
@@ -157,9 +144,8 @@ response:Header():Set("X-Request-ID", "12345")
 local contentType = response:Header():Get("Content-Type")
 ```
 
-There is no `response.status` or `response.body` field. Assigning to them
-fails the script with an error that names the method to use instead:
-`WriteHeader` or `Write`.
+There is no `response.status` or `response.body` field; assigning to them is
+an error that names the method to use instead.
 
 The order matters:
 
@@ -183,11 +169,10 @@ response.headers["Access-Control-Allow-Origin"] = "https://example.com"
 
 ## Libraries
 
-All standard gopher-lua libraries are loaded: the base functions, `package`,
-`string`, `table`, `math`, `os`, `io`, `coroutine`, `debug`, and gopher-lua's
-`channel`. They are available as globals, and `require("math")` and similar
-calls also work. The one exception is `os.exit`, which raises an error instead
-of stopping the process (see [Limits](#limits)).
+All standard gopher-lua libraries are loaded as globals: the base functions,
+`package`, `string`, `table`, `math`, `os`, `io`, `coroutine`, `debug`, and
+`channel`; `require("math")` and similar calls also work. `os.exit` raises an
+error instead of stopping UNCORS.
 
 A JSON module from [gopher-json](https://github.com/layeh/gopher-json) is
 available through `require("json")`:
@@ -199,15 +184,6 @@ local encoded = json.encode({name = "Alice", tags = {"dev", "go"}})
 local decoded = json.decode('{"message": "hello", "count": 42}')
 -- decoded.message == "hello", decoded.count == 42
 ```
-
-| Lua value             | JSON value |
-| --------------------- | ---------- |
-| `nil`                 | `null`     |
-| number                | number     |
-| string                | string     |
-| boolean               | boolean    |
-| table with string keys | object    |
-| table with array keys  | array     |
 
 On invalid input, `json.decode` does not raise an error. It returns `nil` and
 an error message, so check the result before using it:
@@ -237,7 +213,7 @@ end
 
 Set the options on a script to raise or lower its limits. `timeout` uses Go
 duration syntax without spaces, such as `90s` or `2m30s`, like a mock's
-[`delay`](Response-Mocking#delay). `max-body-size` is a number of bytes. `0` or
+[`delay`](Response-Mocking#response). `max-body-size` is a number of bytes. `0` or
 no value means the default:
 
 ```yaml
@@ -248,15 +224,8 @@ scripts:
     max-body-size: 52428800 # 50 MiB
 ```
 
-A script is also stopped when its client disconnects or UNCORS shuts down. In
-all of these cases the request fails as described in [Errors](#errors).
-
-Scripts are checked between Lua instructions, so a call that blocks inside a
-library function, such as `os.execute("sleep 60")` or `io.read()`, is stopped
-only once that call returns.
-
-`os.exit` raises an error: it would otherwise stop the UNCORS process itself.
-To end a script early, `return` from the top level:
+A script is also stopped when its client disconnects or UNCORS shuts down. To
+end a script early, `return` from the top level:
 
 ```lua
 if request.method ~= "POST" then
@@ -264,6 +233,11 @@ if request.method ~= "POST" then
   return
 end
 ```
+
+> [!NOTE]
+> Limits are checked between Lua instructions, so a call that blocks inside a
+> library function, such as `os.execute("sleep 60")`, is stopped only once it
+> returns.
 
 ## Examples
 
@@ -277,21 +251,6 @@ scripts:
       response.headers["Content-Type"] = "application/json"
       response:WriteHeader(200)
       response:WriteString('{"status": "healthy", "time": "' .. os.date("%Y-%m-%d %H:%M:%S") .. '"}')
-```
-
-### Random number in a range
-
-```yaml
-scripts:
-  - path: /api/random
-    script: |
-      local min = tonumber(request.query_params["min"]) or 1
-      local max = tonumber(request.query_params["max"]) or 100
-      math.randomseed(os.time())
-
-      response.headers["Content-Type"] = "application/json"
-      response:WriteHeader(200)
-      response:WriteString('{"random": ' .. math.random(min, max) .. '}')
 ```
 
 ### Response that depends on a header
@@ -380,12 +339,12 @@ choose the response yourself.
 
 ## Scripts or mocks
 
-| Need                                   | Use    |
-| -------------------------------------- | ------ |
-| The same response every time           | Mock   |
-| A response body stored in a file       | Mock   |
-| A response that depends on the request | Script |
-| Logic, validation, or calling a tool   | Script |
+| Need                                   | Use            |
+| -------------------------------------- | -------------- |
+| The same response every time           | Mock           |
+| A response body stored in a file       | Mock           |
+| A response that depends on the request | Script         |
+| Logic, validation, or calling a tool   | Script         |
 | A simulated delay                      | Mock (`delay`) |
 
 Mocks need no code and are easier to read. Scripts can do anything Lua can.

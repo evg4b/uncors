@@ -134,7 +134,7 @@ func Dial(ctx context.Context, network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	return (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(config.ListenAddress, port))
+	return (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(config.ListenAddress(), port))
 }
 
 func (e *Env) Restart(t *testing.T, cfg *config.UncorsConfig) {

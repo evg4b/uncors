@@ -47,7 +47,8 @@ stew install evg4b/uncors
 
 Images are published on
 [Docker Hub](https://hub.docker.com/r/evg4b/uncors). Inside the container,
-UNCORS listens on the port from the `from` URL, which is 80 when none is given:
+UNCORS listens on all interfaces (`UNCORS_LISTEN_ADDRESS=0.0.0.0`), on the port
+from the `from` URL, which is 80 when none is given:
 
 ```bash
 docker run -p 80:80 evg4b/uncors --interactive=false --from 'http://local.github.com' --to 'https://github.com'
@@ -72,7 +73,7 @@ The binary has no runtime dependencies.
 ## Build from source
 
 You need [Git](https://git-scm.com/) and the [Go](https://go.dev/) version
-listed in `go.mod` (currently 1.26.4) or newer.
+listed in `go.mod` or newer.
 
 ```bash
 git clone https://github.com/evg4b/uncors.git
@@ -80,10 +81,7 @@ cd uncors
 go install -tags release .
 ```
 
-With the `release` build tag, an unexpected crash prints a short error message
-instead of re-panicking with a full stack trace. `make install` builds the same
-way. A build without a release version reports the short commit hash as its
-version, with a `-dirty` suffix when the working tree had uncommitted changes.
+`make install` does the same.
 
 ## Hosts file setup
 

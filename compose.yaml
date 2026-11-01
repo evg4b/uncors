@@ -6,8 +6,6 @@
 # Traces, logs, and metrics: http://localhost:4319
 # The proxy serves the mappings of ./.uncors.yaml on the ports below.
 
-x-ports: &ports "3000 4000 2000" # keep in sync with .uncors.yaml and uncors.ports
-
 services:
   otelop:
     image: ghcr.io/mashiro/otelop:latest
@@ -34,6 +32,7 @@ services:
     command: ["--config", "/home/nonroot/.uncors.yaml", "--interactive=false"]
     environment:
       UNCORS_TRACE: "true"
+      UNCORS_LISTEN_ADDRESS: 0.0.0.0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otelop:4318
     volumes:
       - ./.uncors.yaml:/home/nonroot/.uncors.yaml:ro
@@ -45,24 +44,6 @@ services:
       - "2000:2000"
     depends_on:
       - otelop
-
-  # UNCORS listens on 127.0.0.1, which published ports cannot reach. This
-  # sidecar shares its network and forwards the container address to it.
-  uncors-ports:
-    image: alpine/socat:latest
-    network_mode: service:uncors
-    environment:
-      PORTS: *ports
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        ip=$$(ip -4 -o addr show eth0 | awk '{print $$4}' | cut -d/ -f1)
-        for port in $$PORTS; do
-          socat TCP-LISTEN:$$port,bind=$$ip,fork,reuseaddr TCP:127.0.0.1:$$port &
-        done
-        wait
-    depends_on:
-      - uncors
 
 volumes:
   otelop-data:

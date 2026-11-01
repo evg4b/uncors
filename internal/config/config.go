@@ -153,6 +153,7 @@ func (cfg *UncorsConfig) Validate(fs afero.Fs) error {
 
 	errs = append(errs, validateUniqueHARFiles(cfg.Mappings))
 	errs = append(errs, validateListeners(cfg.Mappings))
+	errs = append(errs, validateListenAddress())
 
 	errs = append(errs, ValidateProxy("proxy", cfg.Proxy))
 	errs = append(errs, cfg.CacheConfig.Validate("cache-config"))

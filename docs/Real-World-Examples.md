@@ -224,13 +224,13 @@ npm run build # writes ./dist
 uncors --config .uncors.yaml
 ```
 
-| Request                                  | Result                                           |
-| ---------------------------------------- | ------------------------------------------------ |
-| `http://app.local:3000/`                 | `./dist/index.html`                              |
-| `http://app.local:3000/dashboard`        | `./dist/index.html` (client-side route)          |
-| `http://app.local:3000/assets/logo.png`  | `./dist/assets/logo.png`                         |
-| `http://api.local:3000/api/health`       | The mock                                         |
-| `http://api.local:3000/api/users`        | Proxied to `https://api.backend.com/api/users`   |
+| Request                                 | Result                                         |
+| --------------------------------------- | ---------------------------------------------- |
+| `http://app.local:3000/`                | `./dist/index.html`                            |
+| `http://app.local:3000/dashboard`       | `./dist/index.html` (client-side route)        |
+| `http://app.local:3000/assets/logo.png` | `./dist/assets/logo.png`                       |
+| `http://api.local:3000/api/health`      | The mock                                       |
+| `http://api.local:3000/api/users`       | Proxied to `https://api.backend.com/api/users` |
 
 ## Several backends behind one local host
 
@@ -247,29 +247,25 @@ Configuration:
 
 ```yaml
 mappings:
-  - from: https://gateway.local:8443
+  - from: http://gateway.local:8000
     to: https://production-gateway.com
     rewrites:
       - from: /auth/{endpoint}
         to: /v1/{endpoint}
-        host: auth.production.com
+        host: https://auth.production.com
       - from: /users/{endpoint}
         to: /api/{endpoint}
-        host: users.production.com
+        host: https://users.production.com
       - from: /payments/{endpoint}
         to: /v2/payments/{endpoint}
-        host: payments.production.com
+        host: https://payments.production.com
 ```
 
-The source is HTTPS because a rewritten host is called with the scheme of the
-incoming request. Run `uncors generate-certs` once and trust the CA first; see
-[HTTPS configuration](Configuration#https-configuration).
-
 ```bash
-curl https://gateway.local:8443/auth/login       # https://auth.production.com/v1/login
-curl https://gateway.local:8443/users/profile    # https://users.production.com/api/profile
-curl https://gateway.local:8443/payments/process # https://payments.production.com/v2/payments/process
-curl https://gateway.local:8443/status           # https://production-gateway.com/status
+curl http://gateway.local:8000/auth/login       # https://auth.production.com/v1/login
+curl http://gateway.local:8000/users/profile    # https://users.production.com/api/profile
+curl http://gateway.local:8000/payments/process # https://payments.production.com/v2/payments/process
+curl http://gateway.local:8000/status           # https://production-gateway.com/status
 ```
 
 Each `{endpoint}` captures one path segment; the rest of the path is not
@@ -479,83 +475,3 @@ to `wss://api.example.com/socket`, with `Origin` rewritten to the upstream host.
 Use `ws://` with an `http` mapping. The request log shows the connection as a
 `PROXY` request with status `101` that finishes when the connection closes. See
 [What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
-
-## Templates
-
-Basic proxy:
-
-```yaml
-mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
-```
-
-Proxy with a mock:
-
-```yaml
-mappings:
-  - from: http://[YOUR-DOMAIN]:3000
-    to: https://[TARGET-API]
-    mocks:
-      - path: /api/[ENDPOINT]
-        response:
-          code: 200
-          headers:
-            Content-Type: application/json
-          raw: "[JSON-RESPONSE]"
-```
-
-Single-page app and API:
-
-```yaml
-mappings:
-  - from: http://[APP-DOMAIN]:3000
-    to: https://[APP-ORIGIN]
-    statics:
-      - path: /
-        dir: [BUILD-DIR]
-        index: index.html
-  - from: http://[API-DOMAIN]:3000
-    to: https://[TARGET-API]
-```
-
-Most features in one file:
-
-```yaml
-cache-config:
-  expiration-time: 10m
-
-mappings:
-  - from: http://[APP-DOMAIN]:3000
-    to: https://[APP-ORIGIN]
-    statics:
-      - path: /
-        dir: [BUILD-DIR]
-        index: index.html
-
-  - from: http://[API-DOMAIN]:3000
-    to: https://[TARGET-API]
-    mocks:
-      - path: /api/[ENDPOINT]
-        response:
-          code: 200
-          headers:
-            Content-Type: application/json
-          raw: "[JSON-RESPONSE]"
-    cache:
-      - /api/**
-    rewrites:
-      - from: /old-api/{resource}
-        to: /v2/api/{resource}
-    har: ./recordings/api.har
-```
-
-More details on each feature:
-
-- [Configuration](Configuration)
-- [Response Mocking](Response-Mocking)
-- [Static File Serving](Static-File-Serving)
-- [Script Handler](Script-Handler)
-- [Request Rewriting](Request-Rewriting)
-- [Response Caching](Response-Caching)
-- [HAR Collector](HAR-Collector)

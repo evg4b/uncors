@@ -326,7 +326,7 @@ func TestReloadKeepsServingWhenANewPortIsBusy(t *testing.T) {
 	instance := start(t, previous, configuration(mapping("http", ports[0], previous)))
 
 	busy, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp",
-		net.JoinHostPort(config.ListenAddress, strconv.Itoa(ports[1])))
+		net.JoinHostPort(config.ListenAddress(), strconv.Itoa(ports[1])))
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = busy.Close() })
 

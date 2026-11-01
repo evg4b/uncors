@@ -16,14 +16,13 @@ mappings:
 
 ## Options
 
-| Option  | Type   | Required | Description                                                                   |
-| ------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| Option  | Type   | Required | Description                                                                       |
+| ------- | ------ | -------- | --------------------------------------------------------------------------------- |
 | `path`  | string | Yes      | URL path prefix, starting with `/`. Wildcards and placeholders are not supported. |
-| `dir`   | string | Yes      | Local directory to serve. It must exist when UNCORS starts.                   |
-| `index` | string | No       | Fallback file, relative to `dir`, returned when the requested file is missing. |
+| `dir`   | string | Yes      | Local directory to serve. It must exist when UNCORS starts.                       |
+| `index` | string | No       | Fallback file, relative to `dir`, returned when the requested file is missing.    |
 
 Relative `dir` paths are resolved against the directory you start UNCORS from.
-`~` is not expanded.
 
 `statics` can also be written as a map from path to directory. A value can be a
 directory string or an object with `dir` and `index`:
@@ -48,27 +47,27 @@ redirected.
 What happens next depends on whether the file exists and whether `index` is
 set:
 
-| Requested file   | `index` set                     | `index` not set                     |
-| ---------------- | ------------------------------- | ----------------------------------- |
-| Exists           | The file is returned            | The file is returned                |
-| Is a directory   | The `index` file is returned    | The request goes to the upstream    |
-| Does not exist   | The `index` file is returned    | The request goes to the upstream    |
+| Requested file | `index` set                  | `index` not set                  |
+| -------------- | ---------------------------- | -------------------------------- |
+| Exists         | The file is returned         | The file is returned             |
+| Is a directory | The `index` file is returned | The request goes to the upstream |
+| Does not exist | The `index` file is returned | The request goes to the upstream |
 
-A path that continues past a file, such as `/assets/app.js/extra`, counts as a
-file that does not exist.
-
-Only `GET` and `HEAD` requests are served from `dir`. Other methods, such as
-`POST` or an `OPTIONS` preflight, go to the upstream as if the file did not
-exist.
+Only `GET` and `HEAD` are served from `dir`; other methods, such as `POST` or
+an `OPTIONS` preflight, go to the upstream as if the file did not exist. A path
+that continues past a file, such as `/assets/app.js/extra`, also counts as a
+missing file.
 
 "Goes to the upstream" means the request is proxied to `to`, with caching and
-HAR recording if they are configured. It does not fall through to mocks or
-scripts. Static paths are checked before mocks, scripts, and rewrites, so a
-mock under a static prefix is never reached.
+HAR recording if configured. It skips mocks and scripts: static paths are
+checked first, so a mock under a static prefix is never reached.
 
-Files are served with a `Content-Type` based on their extension, and support
-conditional and range requests. UNCORS does not add CORS headers to files
-served from `dir`.
+Files get a `Content-Type` from their extension and support conditional and
+range requests.
+
+> [!NOTE]
+> UNCORS does not add CORS headers to files served from `dir`. Load them from
+> the same origin as the page.
 
 ## Single-page apps
 
