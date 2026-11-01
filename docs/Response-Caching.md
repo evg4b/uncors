@@ -22,7 +22,8 @@ A response is cached when all of these hold:
 - the request is not a WebSocket handshake or another protocol upgrade;
 - the request method is listed in `cache-config.methods` (`GET` by default);
 - the request path matches one of the mapping's `cache` globs;
-- the upstream status code is in the 2xx range;
+- the upstream status code is in the 2xx range and is not `206 Partial
+  Content`;
 - the response has no `Set-Cookie` header;
 - the upstream `Cache-Control` header has neither `no-store` nor `private`;
 - the upstream `Vary` header is not `*`;

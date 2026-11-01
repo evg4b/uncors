@@ -151,6 +151,8 @@ func unstorableReason(capture contracts.ResponseCapture) (string, attribute.KeyV
 	switch {
 	case !helpers.Is2xxCode(capture.StatusCode):
 		return "the status is not 2xx", semconv.HTTPResponseStatusCode(capture.StatusCode)
+	case capture.StatusCode == http.StatusPartialContent:
+		return "the response is partial", semconv.HTTPResponseStatusCode(capture.StatusCode)
 	case capture.Truncated:
 		return "the body is too large", attribute.Bool("uncors.cache.truncated", true)
 	case len(capture.Header[headers.SetCookie]) > 0:
