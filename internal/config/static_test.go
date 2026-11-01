@@ -123,48 +123,6 @@ statics:
 	})
 }
 
-func TestStaticDirMappingClone(t *testing.T) {
-	tests := []struct {
-		name     string
-		expected config.StaticDirectory
-	}{
-		{
-			name:     "empty structure",
-			expected: config.StaticDirectory{},
-		},
-		{
-			name: "structure with 1 field",
-			expected: config.StaticDirectory{
-				Dir: "dir",
-			},
-		},
-		{
-			name: "structure with 2 field",
-			expected: config.StaticDirectory{
-				Dir:  "dir",
-				Path: "/some-path",
-			},
-		},
-		{
-			name: "structure with all field",
-			expected: config.StaticDirectory{
-				Dir:   "dir",
-				Path:  "/one-more-path",
-				Index: indexHTML,
-			},
-		},
-	}
-
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			actual := testCase.expected.Clone()
-
-			assert.NotSame(t, &testCase.expected, &actual)
-			assert.Equal(t, testCase.expected, actual)
-		})
-	}
-}
-
 func TestStaticValidator(t *testing.T) {
 	const (
 		assetsPath    = "/assets"

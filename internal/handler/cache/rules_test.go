@@ -156,6 +156,19 @@ func TestCacheMiddlewareSkipsResponses(t *testing.T) {
 		})
 	}
 
+	t.Run("with 206 Partial Content", func(t *testing.T) {
+		cached := newCachedServer(t, proxyLike(http.StatusPartialContent, http.Header{
+			"Content-Range": {"bytes 0-3/100"},
+		}, "body"))
+
+		testutils.Times(3, func(_ int) {
+			recorder := cached.serve(t, cachedURL, http.Header{"Range": {"bytes=0-3"}})
+			assert.Equal(t, http.StatusPartialContent, recorder.Code)
+		})
+
+		assert.Equal(t, 3, cached.counter.Count())
+	})
+
 	t.Run("stores a public response", func(t *testing.T) {
 		cached := newCachedServer(t, proxyLike(http.StatusOK, http.Header{
 			headers.CacheControl: {"public, max-age=60"},

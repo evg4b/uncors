@@ -67,7 +67,6 @@ type Writer struct {
 	done       chan struct{}
 	once       sync.Once
 	wg         sync.WaitGroup
-	mu         sync.Mutex
 	encoded    []encodedEntry
 	spool      afero.File
 	spoolEnd   int64
@@ -231,9 +230,6 @@ func (w *Writer) append(entry Entry) {
 		return
 	}
 
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	index := len(w.encoded)
 	for index > 0 && w.encoded[index-1].started.After(entry.StartedDateTime) {
 		index--
@@ -245,8 +241,6 @@ func (w *Writer) append(entry Entry) {
 
 func (w *Writer) flush() time.Duration {
 	start := time.Now()
-
-	w.mu.Lock()
 
 	err := w.fs.MkdirAll(filepath.Dir(w.path), dirMode)
 	if err != nil {
@@ -260,8 +254,6 @@ func (w *Writer) flush() time.Duration {
 	}
 
 	entries, size := len(w.spooled)+len(w.encoded), w.size
-
-	w.mu.Unlock()
 
 	duration := time.Since(start)
 

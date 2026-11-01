@@ -6,7 +6,6 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -17,29 +16,11 @@ type StaticDirectory struct {
 	Index string `yaml:"index"`
 }
 
-func (s *StaticDirectory) Clone() StaticDirectory {
-	return StaticDirectory{
-		Path:  s.Path,
-		Dir:   s.Dir,
-		Index: s.Index,
-	}
-}
-
 func (s *StaticDirectory) String() string {
 	return fmt.Sprintf("%s => %s", s.Path, s.Dir)
 }
 
 type StaticDirectories []StaticDirectory
-
-func (s *StaticDirectories) Clone() StaticDirectories {
-	if s == nil || *s == nil {
-		return nil
-	}
-
-	return lo.Map(*s, func(item StaticDirectory, _ int) StaticDirectory {
-		return item.Clone()
-	})
-}
 
 type staticDirectoriesAlias StaticDirectories
 

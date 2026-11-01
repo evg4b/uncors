@@ -8,15 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAllowedOriginsClone(t *testing.T) {
-	origins := config.AllowedOrigins{"http://localhost:*", "https://*.example.test"}
-
-	cloned := origins.Clone()
-
-	assert.Equal(t, origins, cloned)
-	assert.NotSame(t, &origins[0], &cloned[0])
-}
-
 func TestAllowedOriginsAllows(t *testing.T) {
 	origins := config.AllowedOrigins{
 		"http://localhost:*",

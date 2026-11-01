@@ -10,47 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCacheGlobsClone(t *testing.T) {
-	globs := config.CacheGlobs{
-		"/api/**",
-		"/constants",
-		"/translations",
-		"/**/*.js",
-	}
-
-	cacheGlobs := globs.Clone()
-
-	t.Run("not same", func(t *testing.T) {
-		assert.NotSame(t, &globs, &cacheGlobs)
-	})
-
-	t.Run("equals values", func(t *testing.T) {
-		assert.Equal(t, globs, cacheGlobs)
-	})
-}
-
-func TestCacheConfigClone(t *testing.T) {
-	cacheConfig := &config.CacheConfig{
-		ExpirationTime: 5 * time.Minute,
-		MaxSize:        50 * 1024 * 1024,
-		Methods:        []string{http.MethodGet, http.MethodPost},
-	}
-
-	clonedCacheConfig := cacheConfig.Clone()
-
-	t.Run("not same", func(t *testing.T) {
-		assert.NotSame(t, cacheConfig, clonedCacheConfig)
-	})
-
-	t.Run("equals values", func(t *testing.T) {
-		assert.Equal(t, cacheConfig, clonedCacheConfig)
-	})
-
-	t.Run("not same methods", func(t *testing.T) {
-		assert.NotSame(t, &cacheConfig.Methods, &clonedCacheConfig.Methods)
-	})
-}
-
 func TestCacheConfigValidator(t *testing.T) {
 	const field = "test"
 

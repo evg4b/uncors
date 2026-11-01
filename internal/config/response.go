@@ -17,16 +17,6 @@ type Response struct {
 	File    string            `yaml:"file"`
 }
 
-func (r *Response) Clone() Response {
-	return Response{
-		Code:    r.Code,
-		Headers: helpers.CloneMap(r.Headers),
-		Raw:     r.Raw,
-		File:    r.File,
-		Delay:   r.Delay,
-	}
-}
-
 func (r *Response) IsRaw() bool {
 	return r.Raw != ""
 }

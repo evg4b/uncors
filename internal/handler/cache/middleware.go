@@ -1,11 +1,11 @@
 package cache
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"slices"
 	"sort"
 	"strconv"
@@ -64,17 +64,13 @@ func (m *Middleware) ServeHTTP(writer contracts.ResponseWriter, request *contrac
 		return next(writer, request)
 	}
 
-	handler := infra.HandlerFunc(func(w contracts.ResponseWriter, r *contracts.Request) error {
-		return next(w, r)
-	})
-
-	return m.cacheRequest(writer, request, handler)
+	return m.cacheRequest(writer, request, next)
 }
 
 func (m *Middleware) cacheRequest(
 	writer contracts.ResponseWriter,
 	request *contracts.Request,
-	next contracts.Handler,
+	next contracts.Next,
 ) error {
 	cacheKey := m.extractCacheKey(request)
 
@@ -84,7 +80,7 @@ func (m *Middleware) cacheRequest(
 
 	writer.EnableBodyCapture()
 
-	err := next.ServeHTTP(writer, request)
+	err := next(writer, request)
 	if err != nil || request.Context().Err() != nil {
 		// The captured body may be truncated: an upstream reset or a client
 		// disconnect can interrupt a response whose 2xx status is already sent.
@@ -151,6 +147,8 @@ func unstorableReason(capture contracts.ResponseCapture) (string, attribute.KeyV
 	switch {
 	case !helpers.Is2xxCode(capture.StatusCode):
 		return "the status is not 2xx", semconv.HTTPResponseStatusCode(capture.StatusCode)
+	case capture.StatusCode == http.StatusPartialContent:
+		return "the response is partial", semconv.HTTPResponseStatusCode(capture.StatusCode)
 	case capture.Truncated:
 		return "the body is too large", attribute.Bool("uncors.cache.truncated", true)
 	case len(capture.Header[headers.SetCookie]) > 0:
@@ -158,7 +156,7 @@ func unstorableReason(capture contracts.ResponseCapture) (string, attribute.KeyV
 	case forbidsStoring(capture.Header):
 		return "the upstream forbids storing it",
 			attribute.String("uncors.cache.cache_control", strings.Join(capture.Header[headers.CacheControl], ", "))
-	case variesOnAll(capture.Header):
+	case infra.HasToken(capture.Header[headers.Vary], anyValue):
 		return "the response varies on every request header", attribute.String("uncors.cache.vary", anyValue)
 	}
 
@@ -209,7 +207,7 @@ func (m *Middleware) storeResponse(
 
 	response := contracts.CachedResponse{
 		Code:    capture.StatusCode,
-		Body:    capture.Body,
+		Body:    bytes.Clone(capture.Body),
 		Headers: storedHeaders(capture.Header),
 		Stored:  time.Now(),
 	}
@@ -314,30 +312,14 @@ func (m *Middleware) isCacheableRequest(request *contracts.Request) (bool, error
 
 func (m *Middleware) extractCacheKey(request *contracts.Request) string {
 	requestURL := request.URL
-	values := urlt.URL_Query(requestURL)
-
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	items := make([]string, 0, len(values))
-	for _, name := range names {
-		for _, value := range values[name] {
-			items = append(items, url.QueryEscape(name)+"="+url.QueryEscape(value))
-		}
-	}
-
-	upstream, _ := rewrite.GetRewriteHost(request)
+	upstream := rewrite.GetRewriteHost(request)
 
 	// The store is shared by every mapping of a configuration generation, so the
 	// key must identify the listener (scheme and port), not just the host name,
 	// and the upstream host a rewrite sends the request to.
 	return fmt.Sprintf("[%s]%s://%s%s?%s#%s>%s",
 		request.Method, requestURL.Scheme, strings.ToLower(requestURL.Host), requestURL.Path,
-		strings.Join(items, "&"), acceptEncoding(request.Header), upstream)
+		urlt.URL_Query(requestURL).Encode(), acceptEncoding(request.Header), upstream)
 }
 
 func (m *Middleware) getCachedResponse(request *contracts.Request, baseKey string) (*contracts.CachedResponse, string) {

@@ -36,10 +36,6 @@ func (h host) Scheme(scheme string) urlt.Host {
 	return urlt.Host{Scheme: scheme, Hostname: string(h)}
 }
 
-func (h host) NoScheme() urlt.Host {
-	return urlt.Host{Hostname: string(h)}
-}
-
 func Parse(raw string) urlt.Host {
 	parsed, err := urlt.ParseHost(raw)
 	if err != nil {

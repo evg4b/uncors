@@ -3,7 +3,6 @@ package render_test
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"strings"
 	"sync"
@@ -85,42 +84,11 @@ func TestCliOutput_RenderMessage_IndentsContinuationLines(t *testing.T) {
 		assert.Equal(t, " ERROR  first\n        second\n", ansi.Strip(buf.String()))
 	})
 
-	t.Run("counts the prefix", func(t *testing.T) {
-		var buf strings.Builder
-		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("first\nsecond")
-		assert.Equal(t, "[pfx] INFO   first\n             second\n", ansi.Strip(buf.String()))
-	})
-
 	t.Run("matches the box text column", func(t *testing.T) {
 		var single, box strings.Builder
 		render.NewCliOutput(&single).Warn("text")
 		render.NewCliOutput(&box).WarnBox("text", "more")
 		assert.Equal(t, strings.Index(ansi.Strip(single.String()), "text"), strings.Index(ansi.Strip(box.String()), "text"))
-	})
-}
-
-func TestCliOutput_WithPrefix(t *testing.T) {
-	t.Run("prefix appears in output", func(t *testing.T) {
-		var buf strings.Builder
-		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("message")
-		assert.Contains(t, buf.String(), "[pfx]")
-	})
-
-	t.Run("snapshot with prefix", func(t *testing.T) {
-		var buf strings.Builder
-		render.NewCliOutput(&buf, render.WithPrefix("[pfx]")).Info("message")
-		testutils.MatchSnapshot(t, buf.String())
-	})
-
-	t.Run("empty prefix is not written", func(t *testing.T) {
-		var (
-			withPrefix    strings.Builder
-			withoutPrefix strings.Builder
-		)
-
-		render.NewCliOutput(&withPrefix, render.WithPrefix("")).Info("message")
-		render.NewCliOutput(&withoutPrefix).Info("message")
-		assert.Equal(t, withoutPrefix.String(), withPrefix.String())
 	})
 }
 
@@ -149,35 +117,6 @@ func mustParseURL(rawURL string) *url.URL {
 	return u
 }
 
-func TestCliOutput_NewPrefixOutput(t *testing.T) {
-	t.Run("writes to parent writer", func(t *testing.T) {
-		var buf strings.Builder
-
-		parent := render.NewCliOutput(&buf)
-		sub := parent.NewPrefixOutput("[sub]")
-		parent.Print("from parent")
-		sub.Print("from sub")
-
-		output := buf.String()
-		assert.Contains(t, output, "from parent")
-		assert.Contains(t, output, "from sub")
-	})
-
-	t.Run("sub prefix appears in output", func(t *testing.T) {
-		var buf strings.Builder
-
-		parent := render.NewCliOutput(&buf)
-		parent.NewPrefixOutput("[sub]").Print("msg")
-		assert.Contains(t, buf.String(), "[sub]")
-	})
-
-	t.Run("implements Output interface", func(_ *testing.T) {
-		parent := render.NewCliOutput(io.Discard)
-
-		_ = parent.NewPrefixOutput("[sub]")
-	})
-}
-
 func TestCliOutput_PanicsOnWriteError(t *testing.T) {
 	out := render.NewCliOutput(&errorWriter{})
 
@@ -201,8 +140,7 @@ func TestCliOutput_ConcurrentSafety(t *testing.T) {
 		go func(idx int) {
 			defer waitGroup.Done()
 
-			out := parent.NewPrefixOutput(fmt.Sprintf("[g%d]", idx))
-			out.Info(fmt.Sprintf("message from goroutine %d", idx))
+			parent.Info(fmt.Sprintf("message from goroutine %d", idx))
 		}(goroutine)
 	}
 

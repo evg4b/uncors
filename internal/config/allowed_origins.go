@@ -3,17 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
 )
 
 type AllowedOrigins []string
-
-func (o AllowedOrigins) Clone() AllowedOrigins {
-	return slices.Clone(o)
-}
 
 func (o AllowedOrigins) Allows(origin string) bool {
 	if len(o) == 0 || origin == "" {

@@ -73,30 +73,16 @@ func writeExposeHeaders(header http.Header, origin string) {
 
 func exposedHeaders(header http.Header) string {
 	names := append(make([]string, 0, exposedHeadersCapacity), dateHeader)
-	size := len(dateHeader)
 
 	for name := range header {
 		if name != dateHeader && isExposedHeader(name) {
 			names = append(names, name)
-			size += len(name) + len(", ")
 		}
 	}
 
 	slices.Sort(names)
 
-	var builder strings.Builder
-
-	builder.Grow(size)
-
-	for index, name := range names {
-		if index > 0 {
-			builder.WriteString(", ")
-		}
-
-		builder.WriteString(name)
-	}
-
-	return builder.String()
+	return strings.Join(names, ", ")
 }
 
 func isExposedHeader(name string) bool {
@@ -121,13 +107,8 @@ func IsCorsHeader(name string) bool {
 }
 
 func addVary(header http.Header, name string) {
-	for _, value := range header[headers.Vary] {
-		for token := range strings.SplitSeq(value, ",") {
-			token = strings.TrimSpace(token)
-			if token == anyValue || strings.EqualFold(token, name) {
-				return
-			}
-		}
+	if HasToken(header[headers.Vary], anyValue) || HasToken(header[headers.Vary], name) {
+		return
 	}
 
 	header.Add(headers.Vary, name)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/spf13/afero"
 )
 
@@ -15,16 +14,6 @@ type Script struct {
 	File        string         `yaml:"file"`
 	Timeout     time.Duration  `yaml:"timeout"`
 	MaxBodySize int64          `yaml:"max-body-size"`
-}
-
-func (s *Script) Clone() Script {
-	return Script{
-		Matcher:     s.Matcher.Clone(),
-		Script:      s.Script,
-		File:        s.File,
-		Timeout:     s.Timeout,
-		MaxBodySize: s.MaxBodySize,
-	}
 }
 
 func (s *Script) String() string {
@@ -42,16 +31,6 @@ func (s *Script) String() string {
 }
 
 type Scripts []Script
-
-func (s Scripts) Clone() Scripts {
-	if s == nil {
-		return nil
-	}
-
-	return lo.Map(s, func(item Script, _ int) Script {
-		return item.Clone()
-	})
-}
 
 func (s *Script) Validate(field string, fs afero.Fs) error {
 	var errs []error

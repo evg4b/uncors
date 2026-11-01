@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/evg4b/uncors/internal/contracts"
 	"github.com/evg4b/uncors/internal/events"
 	"github.com/evg4b/uncors/internal/helpers"
 	"github.com/evg4b/uncors/internal/tui/styles"
@@ -27,9 +26,8 @@ const (
 const boxLength = 7
 
 type CliOutput struct {
-	mutex     *sync.RWMutex
+	mutex     sync.RWMutex
 	output    io.Writer
-	prefix    string
 	theme     *styles.Theme
 	formatter *Formatter
 	levels    map[outputType]string
@@ -38,27 +36,14 @@ type CliOutput struct {
 
 type Option = func(*CliOutput)
 
-func WithPrefix(prefix string) Option {
-	return func(o *CliOutput) {
-		o.prefix = prefix
-	}
-}
-
 func WithTheme(theme *styles.Theme) Option {
 	return func(o *CliOutput) {
 		o.theme = theme
 	}
 }
 
-func withMutex(mutex *sync.RWMutex) Option {
-	return func(o *CliOutput) {
-		o.mutex = mutex
-	}
-}
-
 func NewCliOutput(output io.Writer, options ...Option) *CliOutput {
 	cliOutput := helpers.ApplyOptions(&CliOutput{
-		mutex:  &sync.RWMutex{},
 		output: output,
 		theme:  styles.Default,
 	}, options)
@@ -141,14 +126,9 @@ func (output *CliOutput) Request(event events.RequestCompleted) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
 
-	output.renderPrefix()
 	output.buffer.WriteString(output.formatter.Request(event))
 	output.buffer.WriteByte('\n')
 	output.flush()
-}
-
-func (output *CliOutput) NewPrefixOutput(prefix string) contracts.Output {
-	return NewCliOutput(output.output, WithPrefix(prefix), WithTheme(output.theme), withMutex(output.mutex))
 }
 
 // Holds the write lock for render and write: Write only takes RLock.
@@ -156,7 +136,6 @@ func (output *CliOutput) print(msg string, level outputType) {
 	output.mutex.Lock()
 	defer output.mutex.Unlock()
 
-	output.renderPrefix()
 	output.renderLevel(level)
 	output.renderMessage(msg)
 	output.buffer.WriteByte('\n')
@@ -187,10 +166,4 @@ func (output *CliOutput) renderMessage(msg string) {
 	indent := "\n" + strings.Repeat(" ", lipgloss.Width(string(lastLine)))
 
 	fmt.Fprint(&output.buffer, strings.ReplaceAll(msg, "\n", indent))
-}
-
-func (output *CliOutput) renderPrefix() {
-	if output.prefix != "" {
-		output.buffer.WriteString(output.prefix)
-	}
 }

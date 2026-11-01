@@ -26,18 +26,6 @@ func forbidsStoring(header http.Header) bool {
 	return false
 }
 
-func variesOnAll(header http.Header) bool {
-	for _, value := range header[headers.Vary] {
-		for token := range strings.SplitSeq(value, ",") {
-			if strings.TrimSpace(token) == anyValue {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 func varyNames(header http.Header) []string {
 	var names []string
 
