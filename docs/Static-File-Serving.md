@@ -53,8 +53,10 @@ set:
 | Is a directory | The `index` file is returned | The request goes to the upstream |
 | Does not exist | The `index` file is returned | The request goes to the upstream |
 
-Only `GET` and `HEAD` are served from `dir`; other methods go to the upstream
-as if the file did not exist.
+Only `GET` and `HEAD` are served from `dir`; other methods, such as `POST` or
+an `OPTIONS` preflight, go to the upstream as if the file did not exist. A path
+that continues past a file, such as `/assets/app.js/extra`, also counts as a
+missing file.
 
 "Goes to the upstream" means the request is proxied to `to`, with caching and
 HAR recording if configured. It skips mocks and scripts: static paths are

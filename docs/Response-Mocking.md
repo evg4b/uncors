@@ -41,6 +41,9 @@ path: /users/{id:[0-9]+}
 path: /posts/{postId}/comments/{commentId}
 ```
 
+Allowed `method` values are `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`,
+`CONNECT`, `OPTIONS`, and `TRACE`.
+
 Every listed query parameter and header must be present with the given value;
 others are ignored.
 
@@ -98,8 +101,9 @@ response:
 ```
 
 A `file` path is relative to the directory UNCORS was started from. The file
-is read on every request, so edits show up without a restart. Its
-`Content-Type` comes from the extension.
+must exist at startup and is read on every request, so edits show up without a
+restart. Its `Content-Type` comes from the extension, or from the first bytes
+for an unknown extension.
 
 Without a `Content-Type` header, UNCORS guesses the type from the body. JSON
 is not detected and is sent as `text/plain`, so set the header for JSON.
@@ -112,6 +116,7 @@ are set after them and can override them.
 
 > [!NOTE]
 > A `file` mock with `code: 200` also answers conditional and range requests
-> with `304` or `206`.
+> with `304` or `206`. With any other code, the whole file is sent with that
+> status.
 
 To build a response from the request, use the [Script Handler](Script-Handler).

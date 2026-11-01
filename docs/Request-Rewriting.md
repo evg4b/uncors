@@ -36,7 +36,15 @@ rewrites:
 | `/api/posts/42`     | `/api/v1/posts/list`        |
 | `/api/posts?page=2` | `/api/v1/posts/list?page=2` |
 
-A `{name}` segment matches one path segment. To keep the rest of the path
+A `{name}` segment matches one path segment. Capture each segment you need:
+
+```yaml
+rewrites:
+  - from: /users/{userId}/posts/{postId}
+    to: /api/users/{userId}/content/posts/{postId}
+```
+
+To keep the rest of the path
 whatever its length, end `from` with `{name:.*}`:
 
 ```yaml
@@ -53,7 +61,29 @@ rewrites:
 A rewritten request always goes to the upstream server, even if the new path
 matches a mock or a script. Caching and HAR recording still apply, using the
 rewritten path. Static directories, mocks, and scripts are checked before
-rewrites, so they win when paths overlap.
+rewrites, so they win when paths overlap:
+
+```yaml
+mappings:
+  - from: http://localhost:3000
+    to: https://api.example.com
+    rewrites:
+      - from: /old-api/{resource}
+        to: /v2/api/{resource}
+    mocks:
+      - path: /v2/api/health
+        response:
+          code: 200
+          raw: '{"status": "healthy"}'
+    cache:
+      - /v2/api/users
+```
+
+- `GET /v2/api/health` returns the mock.
+- `GET /old-api/health` is rewritten to `/v2/api/health` and proxied; the mock
+  does not answer it.
+- `GET /old-api/users` is rewritten, proxied, and cached under
+  `/v2/api/users`.
 
 ## Changing the upstream host
 

@@ -48,12 +48,13 @@ the error message. Its status tells what went wrong:
 | `500`  | Anything else, such as a failed script, a missing file, or a crash.   |
 
 The error page carries CORS headers, so the browser shows its status and text
-instead of a CORS error.
+instead of a CORS error. An origin outside
+[`allowed-origins`](Configuration#allowed-origins) gets it without them.
 
 > [!NOTE]
 > If the upstream server drops the connection after the response has started,
 > there is no error page: UNCORS closes the connection and the client sees a
-> network error.
+> network error. A request the client cancelled gets no error page either.
 
 ## Connection refused
 
@@ -193,13 +194,23 @@ options-handling:
 Check custom headers. Headers set in mocks, scripts, or
 `options-handling.headers` replace the CORS headers UNCORS adds. A
 hand-written `Access-Control-Allow-Origin: *` breaks requests sent with
-credentials, which need the exact origin.
+credentials, which need the exact origin, and so does
+`Access-Control-Expose-Headers: *`. Remove the custom header to get the
+default behavior back.
+
+Check that JavaScript can read a response header. When the request has an
+`Origin`, UNCORS lists the response's headers in
+`Access-Control-Expose-Headers`, so `response.headers.get()` works for them
+with `credentials: 'include'` too. A header a script adds after
+`response:WriteHeader()` is not in the list.
 
 Check static files. Files from a [static directory](Static-File-Serving) come
-without CORS headers.
+without CORS headers. Load them from the same origin as the page, or serve them
+through a mapping without `statics`.
 
 Check `allowed-origins`. A page whose origin matches none of the patterns gets
-responses without CORS headers, and its preflight requests get `403`. See
+responses without CORS headers, and its preflight requests get `403`. Add the
+page's origin exactly as the browser sends it in `Origin`. See
 [Allowed origins](Configuration#allowed-origins).
 
 Clear the browser cache, or try a private window, in case the browser kept an
@@ -414,6 +425,11 @@ mappings:
     cache:
       - /api/**
 ```
+
+To compare, time the upstream server directly with
+`time curl https://api.example.com/endpoint`. A request fails only if the
+upstream server does not start its response within 5 minutes; the body itself
+has no time limit.
 
 If memory use is high, lower `cache-config.max-size` (100 MiB by default) or
 `expiration-time`, or narrow the `cache` globs:

@@ -133,6 +133,9 @@ an empty 200 response.
 | `response:Write(data)`       | Append data to the body                          |
 | `response:WriteString(str)`  | Append a string to the body (same as `Write`)    |
 
+`Write` and `WriteString` return the number of bytes written and an error
+message, or `nil` if there was no error.
+
 Headers can be set either way:
 
 ```lua
@@ -142,7 +145,7 @@ local contentType = response:Header():Get("Content-Type")
 ```
 
 There is no `response.status` or `response.body` field; assigning to them is
-an error.
+an error that names the method to use instead.
 
 The order matters:
 
@@ -166,9 +169,10 @@ response.headers["Access-Control-Allow-Origin"] = "https://example.com"
 
 ## Libraries
 
-All standard gopher-lua libraries are loaded (`string`, `table`, `math`, `os`,
-`io`, and the rest), except that `os.exit` raises an error instead of stopping
-UNCORS.
+All standard gopher-lua libraries are loaded as globals: the base functions,
+`package`, `string`, `table`, `math`, `os`, `io`, `coroutine`, `debug`, and
+`channel`; `require("math")` and similar calls also work. `os.exit` raises an
+error instead of stopping UNCORS.
 
 A JSON module from [gopher-json](https://github.com/layeh/gopher-json) is
 available through `require("json")`:

@@ -32,7 +32,11 @@ mappings:
 
 The path is relative to the directory you start UNCORS from, and missing
 directories are created. Each mapping needs its own file; two mappings cannot
-share one.
+share one:
+
+```text
+mappings[1].har: HAR file "./api.har" is already used by mappings[0].har
+```
 
 ## What is recorded
 
@@ -58,6 +62,67 @@ bodies, and timings. Response bodies are stored decompressed (`gzip`,
 > client still gets all of it. A response that would decode to more than 50 MiB
 > is stored as received, in base64.
 
+<details>
+<summary>Entry format and body details</summary>
+
+Each entry has the request and response headers, cookies, query string,
+bodies, and timings. `httpVersion` is the protocol the client used, such as
+`HTTP/1.1` or `HTTP/2.0`, for both the request and the response.
+
+Entries are sorted by `startedDateTime`, oldest first. `url` never includes the
+fragment, `queryString` keeps the order the parameters were sent in, and
+headers are sorted by name. Response cookies keep `path`, `domain`, `expires`,
+`httpOnly`, and `secure`. `creator` is `uncors` and the version that wrote the
+file.
+
+#### Request bodies
+
+A request with a body gets a `postData` object, as described in HAR 1.2:
+
+| Field      | Value                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `mimeType` | The request's `Content-Type` header                                                                   |
+| `params`   | The parameters of an `application/x-www-form-urlencoded` body, in order                               |
+| `text`     | Any other body, if it is valid UTF-8. Left out for forms, as HAR 1.2 requires, and for binary bodies. |
+
+`bodySize` is the size of the body in bytes, so a binary upload such as an
+image is recorded by its size only. Requests without a body have no `postData`.
+
+UNCORS reads up to 10 MiB of the body before sending the request upstream. If
+the first 10 MiB cannot be read, for example because the client disconnected
+in the middle of an upload, the request fails and is not sent to the upstream
+server, so the upstream never gets a truncated body.
+
+A body larger than 10 MiB is streamed to the upstream server instead of being
+held in memory. Its entry has a `postData` with only `mimeType`, and `bodySize`
+is the number of bytes the upstream read.
+
+#### Response bodies
+
+Response bodies are stored decompressed. UNCORS decodes these
+`Content-Encoding` values: `gzip`, `deflate`, `br` (Brotli), and `zstd`.
+Browsers usually ask for Brotli or zstd, and UNCORS forwards the browser's
+`Accept-Encoding`, so most responses arrive compressed.
+
+| Body                                             | `text`                          | `encoding` |
+| ------------------------------------------------ | ------------------------------- | ---------- |
+| Valid UTF-8 after decoding                       | The body                        | -          |
+| Binary after decoding, such as an image          | Base64 of the decoded body      | `base64`   |
+| Unknown encoding, or a body that fails to decode | Base64 of the bytes as received | `base64`   |
+
+A body that would decode to more than 50 MiB is not decoded. It is stored as
+received, in base64, and `content.comment` says why.
+
+`content.size` is the size of the decoded body, and `bodySize` is the size as
+it came over the wire. For a decoded compressed body, `content.compression` is
+the number of bytes saved.
+
+Only the first 10 MiB of a response body are recorded; the client still gets
+the whole response. For a longer body, `bodySize` is the full size,
+`content.text` holds the first 10 MiB, and `content.comment` says it was cut.
+
+</details>
+
 ## Secure headers
 
 By default these headers are left out of every entry, and the `cookies` lists
@@ -69,7 +134,7 @@ are empty:
 - `Api-Key`, and names ending in `-Api-Key`, `-Apikey`, `-Token`, or `-Secret`
 - names starting with `X-Auth-`
 
-Set `capture-secure-headers: true` to keep them.
+Names are compared without regard to case. Set `capture-secure-headers: true` to keep them.
 
 > [!WARNING]
 > URLs, query strings, and bodies are always recorded in full, so a token in the
@@ -86,7 +151,27 @@ UNCORS stops.
 
 A recording covers one run of one configuration. When UNCORS starts, and when
 it reloads the configuration, the recording starts empty and replaces the
-existing file. Copy the file first if you want to keep an earlier session.
+existing file. Requests still running during a reload are not recorded. Copy
+the file first if you want to keep an earlier session.
+
+<details>
+<summary>How the file is written</summary>
+
+Recording never slows down requests. Entries go to a queue, and a background
+writer adds them to the file at most once a second, so a new request shows up
+in the file within about a second. Each write replaces the whole file, so with
+a large recording the writer waits at least ten times as long as the last write
+took, which keeps writing to about a tenth of the time. Entries already written
+are kept on disk rather than in memory, in a hidden file next to the `.har`
+file (for example `.api.har.1234.spool`) that is removed when the recording
+ends. It writes to a temporary file next to the `.har` file and renames it over
+the old one, so the `.har` file is always complete and valid, even if you open
+it while UNCORS runs. The file is written once more when UNCORS stops, or when a
+reload moves recording to another file or turns it off. A configuration that
+fails to start, or a reload that fails and keeps the previous configuration
+running, leaves the file untouched.
+
+</details>
 
 > [!NOTE]
 > Entries wait in a queue of 4,096. If it fills up during a burst of traffic,
