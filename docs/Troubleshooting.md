@@ -31,10 +31,6 @@ The label names what produced the response:
 | `STATC` | A static directory.                                         |
 | `OPTNS` | UNCORS's own preflight answer.                              |
 
-Methods are shortened to fit: `DELETE` shows as `DEL`, `OPTIONS` as `OPTS`,
-`CONNECT` as `CONN`, and other methods longer than five letters are cut with
-`…`.
-
 A line without a label is a request no mapping took, for example one for a host
 that isn't mapped. `→` shows the path a rewrite sent the request to. A request
 that failed in UNCORS gets a second line with the error.
@@ -51,15 +47,13 @@ the error message. Its status tells what went wrong:
 | `504`  | The upstream server or its connection timed out.                      |
 | `500`  | Anything else, such as a failed script, a missing file, or a crash.   |
 
-The error page carries the same CORS headers as other responses, so the
-browser shows its status and text instead of a CORS error. An origin that is
-not in [`allowed-origins`](Configuration#allowed-origins) gets the error page
-without them.
+The error page carries CORS headers, so the browser shows its status and text
+instead of a CORS error.
 
-There is no error page when the response has already started, for example when
-the upstream server drops the connection in the middle of the body. UNCORS then
-closes the connection, and the client sees a network error. There is none
-either when the client cancelled the request.
+> [!NOTE]
+> If the upstream server drops the connection after the response has started,
+> there is no error page: UNCORS closes the connection and the client sees a
+> network error.
 
 ## Connection refused
 
@@ -137,13 +131,6 @@ uncors generate-certs
 
 This creates `~/.config/uncors/ca.crt` and `~/.config/uncors/ca.key`.
 
-Within a week of the CA expiring, UNCORS warns but keeps serving HTTPS. Once it
-has expired, HTTPS stops working until you run
-`uncors generate-certs --force` and trust the new CA.
-
-A running UNCORS keeps signing with the CA it loaded first. Restart it after
-`uncors generate-certs --force`.
-
 If the browser still rejects the certificate, the CA is not trusted yet.
 
 macOS:
@@ -170,8 +157,8 @@ Firefox has its own certificate store. Open Settings, then Privacy & Security,
 then Certificates, View Certificates, and import `ca.crt` on the Authorities
 tab.
 
-If the CA has expired, UNCORS cannot sign new certificates. Check the dates and
-create a new CA, then trust it again:
+If the CA has expired (UNCORS warns a week before), check the dates, create a
+new CA, trust it, and restart UNCORS:
 
 ```bash
 openssl x509 -in ~/.config/uncors/ca.crt -noout -dates
@@ -179,15 +166,9 @@ uncors generate-certs --force
 ```
 
 If UNCORS shows "TLS: no https mapping for host", the client asked for a host
-name that no `https://` mapping covers. UNCORS signs certificates only for the
-hosts of its `https://` mappings, so add a mapping for that host or connect
-with a host name that has one. See
-[Use HTTPS mappings](Configuration#use-https-mappings).
-
-Connect by host name, not by IP address. UNCORS picks the certificate from the
-host name the client sends (SNI), and a client that connects to an IP address
-sends none. Then UNCORS uses `127.0.0.1`, which works only if a mapping uses
-that address, such as `https://127.0.0.1:8443`.
+name that no `https://` mapping covers. Add a mapping for that host. Connect by
+host name, not by IP address. See
+[HTTPS configuration](Configuration#https-configuration).
 
 To test without trusting the CA, `curl -k https://api.local:8443/` skips
 certificate checks.
@@ -209,32 +190,16 @@ options-handling:
   disabled: false # default; UNCORS answers preflight requests
 ```
 
-Check custom headers. Headers you set in mocks, scripts, or
+Check custom headers. Headers set in mocks, scripts, or
 `options-handling.headers` replace the CORS headers UNCORS adds. A
-hand-written `Access-Control-Allow-Origin: *` or
-`Access-Control-Expose-Headers: *` breaks requests sent with credentials,
-which need the exact origin and the exact header names. Remove the custom
-header to get the default behavior back.
+hand-written `Access-Control-Allow-Origin: *` breaks requests sent with
+credentials, which need the exact origin.
 
-Check that JavaScript can read a response header. When the request has an
-`Origin`, UNCORS lists the response's headers in
-`Access-Control-Expose-Headers`, so `response.headers.get()` works for them
-with `credentials: 'include'` too. A header added after the status is written,
-for example by a script after `response:WriteHeader()`, is not in the list.
-See [What UNCORS changes in proxied traffic](Configuration#what-uncors-changes-in-proxied-traffic).
+Check static files. Files from a [static directory](Static-File-Serving) come
+without CORS headers.
 
-Check static files. Files served from a [static directory](Static-File-Serving)
-come without CORS headers. Load them from the same origin as the page, or serve
-them through a mapping without `statics`.
-
-Check the status. An error page from UNCORS has CORS headers, so a failed
-request shows up in the browser's network tab with its status and the error
-text. See [Error pages](#error-pages).
-
-Check `allowed-origins`. When a mapping has it, a page whose origin matches
-none of the patterns gets responses without CORS headers, and its preflight
-requests get `403`. Add the page's origin, exactly as the browser sends it in
-`Origin`, or a pattern that matches it. See
+Check `allowed-origins`. A page whose origin matches none of the patterns gets
+responses without CORS headers, and its preflight requests get `403`. See
 [Allowed origins](Configuration#allowed-origins).
 
 Clear the browser cache, or try a private window, in case the browser kept an
@@ -260,11 +225,10 @@ mappings:
       - http://app.local:3000
 ```
 
-Other origins then get responses without CORS headers, so the browser keeps
-them from the page, and their preflight requests get `403`. Requests are still
-forwarded, so this does not stop a page from sending simple requests (such as a
-form `POST`) that change data; it stops it from reading the answers. See
-[Allowed origins](Configuration#allowed-origins).
+> [!NOTE]
+> Requests from other origins are still forwarded. This stops a page from
+> reading the answers, not from sending simple requests (such as a form `POST`)
+> that change data.
 
 ## Configuration problems
 
@@ -299,9 +263,8 @@ the file. The error names the path and the line of the key.
 "port N is already used for http" means two mappings use the same port with
 different schemes. Give the `https://` mapping its own port.
 
-UNCORS reloads the configuration file when it changes. If the new version is
-invalid, or one of its ports is already in use, UNCORS prints the error and
-keeps serving the previous configuration until you fix the file.
+If a reloaded file is invalid, or one of its ports is in use, UNCORS prints
+the error and keeps the previous configuration.
 
 ## Mocks don't respond
 
@@ -386,8 +349,9 @@ A rewrite replaces the whole path with `to` and keeps the query string. A
 `{name}` segment captures one path segment only. If the upstream server needs
 more of the path, capture each segment in `from` and use it in `to`.
 
-A rewrite with `host` uses the scheme of the incoming request. From an `http://`
-source, the rewritten host is called over plain HTTP.
+A rewrite `host` without a scheme uses the scheme of the incoming request, so
+from an `http://` source it is called over plain HTTP. Write the scheme, for
+example `host: https://auth.example.com`.
 
 ## WebSocket connections fail
 
@@ -396,16 +360,10 @@ an `http` mapping and with `wss://` to an `https` mapping; `wss://` needs the
 same trusted certificate as HTTPS requests (see
 [HTTPS certificate errors](#https-certificate-errors)).
 
-A connection shows in the request log as a `PROXY` request with status `101`,
-which finishes when the connection closes. Another status means the upstream
-server refused the handshake, and the client got its response as is: check the
-upstream logs and the `Origin` it received (UNCORS rewrites it to the upstream
-host). `MOCK` or `SCRPT` means a mock or a script route matches the WebSocket
-path and answers the handshake instead.
-
-[`allowed-origins`](Configuration#allowed-origins) does not refuse WebSocket
-connections: a page from an origin outside the list still connects. Only the
-upstream server can refuse it, by checking `Origin`.
+A working connection shows in the request log as `PROXY` with status `101`.
+Another status means the upstream server refused the handshake: check its logs
+and the `Origin` it received (UNCORS rewrites it to the upstream host). `MOCK`
+or `SCRPT` means a mock or a script matches the WebSocket path.
 
 Open connections are closed when UNCORS stops or reloads its configuration,
 for example after the configuration file changes. Clients have to reconnect.
@@ -457,28 +415,14 @@ mappings:
       - /api/**
 ```
 
-To compare, time the upstream server directly:
-
-```bash
-time curl https://api.example.com/endpoint
-```
-
-A request fails if the upstream server does not start its response within 5
-minutes. Once it has started, the body is forwarded for as long as the upstream
-server sends it, so server-sent events and long downloads are not cut off.
-
-If memory use is high, lower `cache-config.max-size` (100 MB by default) or
-`expiration-time`, or narrow the `cache` globs so large responses aren't
-cached:
+If memory use is high, lower `cache-config.max-size` (100 MiB by default) or
+`expiration-time`, or narrow the `cache` globs:
 
 ```yaml
 cache-config:
   expiration-time: 5m
-  max-size: 52428800 # 50 MB
+  max-size: 52428800 # 50 MiB
 ```
-
-HAR recording keeps all entries of the current run in memory. For long
-sessions with heavy traffic, turn it off when you don't need it.
 
 ## Getting more help
 
@@ -487,7 +431,7 @@ Capture traces and diagnostic logs with a local collector (see
 
 ```bash
 docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/jaeger
-UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none uncors --config .uncors.yaml
+UNCORS_TRACE=true OTEL_LOGS_EXPORTER=none OTEL_METRICS_EXPORTER=none uncors --config .uncors.yaml
 ```
 
 Check your version:
