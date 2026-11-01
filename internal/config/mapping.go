@@ -51,21 +51,6 @@ func isShorthandMapping(value *yaml.Node) bool {
 	return strings.ContainsAny(key, ".:") || strings.EqualFold(key, "localhost")
 }
 
-func (m *Mapping) Clone() Mapping {
-	return Mapping{
-		From:            m.From,
-		To:              m.To,
-		Statics:         m.Statics.Clone(),
-		Mocks:           m.Mocks.Clone(),
-		Scripts:         m.Scripts.Clone(),
-		Cache:           m.Cache.Clone(),
-		Rewrites:        m.Rewrites.Clone(),
-		OptionsHandling: m.OptionsHandling.Clone(),
-		AllowedOrigins:  m.AllowedOrigins.Clone(),
-		HAR:             m.HAR.Clone(),
-	}
-}
-
 func ValidateProxy(field, value string) error {
 	if value == "" {
 		return nil

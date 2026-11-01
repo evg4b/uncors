@@ -1,12 +1,10 @@
 package config_test
 
 import (
-	"net/http"
 	"testing"
 	"time"
 
 	"github.com/evg4b/uncors/internal/config"
-	"github.com/evg4b/uncors/internal/headers"
 	"github.com/evg4b/uncors/testing/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,43 +62,6 @@ file: ./body.json
 		var actual config.Response
 
 		assert.Error(t, yaml.Unmarshal([]byte(input), &actual))
-	})
-}
-
-func TestResponseClone(t *testing.T) {
-	response := config.Response{
-		Code: http.StatusOK,
-		Headers: map[string]string{
-			headers.ContentType:  "plain/text",
-			headers.CacheControl: "none",
-		},
-		Raw:   "this is plain text",
-		File:  "~/projects/uncors/response/demo.json",
-		Delay: time.Hour,
-	}
-
-	clonedResponse := response.Clone()
-
-	t.Run("not same", func(t *testing.T) {
-		assert.NotSame(t, &response, &clonedResponse)
-	})
-
-	t.Run("equals values", func(t *testing.T) {
-		assert.Equal(t, response, clonedResponse)
-	})
-
-	t.Run("not same Headers map", func(t *testing.T) {
-		assert.NotSame(t, &response.Headers, &clonedResponse.Headers)
-	})
-
-	t.Run("response type", func(t *testing.T) {
-		raw := config.Response{Code: http.StatusOK, Raw: "this is plain text"}
-		file := config.Response{Code: http.StatusOK, File: "~/projects/uncors/response/demo.json"}
-
-		assert.True(t, raw.IsRaw())
-		assert.False(t, raw.IsFile())
-		assert.False(t, file.IsRaw())
-		assert.True(t, file.IsFile())
 	})
 }
 

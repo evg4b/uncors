@@ -74,9 +74,8 @@ func NormaliseMappings(mappings Mappings) Mappings {
 	processedMappings := make(Mappings, 0, len(mappings))
 
 	for _, mapping := range mappings {
-		normalizedMapping := mapping.Clone()
-		normalizedMapping.From = normalizeHost(mapping.From)
-		processedMappings = append(processedMappings, normalizedMapping)
+		mapping.From = normalizeHost(mapping.From)
+		processedMappings = append(processedMappings, mapping)
 	}
 
 	return processedMappings

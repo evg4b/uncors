@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"slices"
 
 	"github.com/evg4b/uncors/pkg/urlt"
 )
@@ -13,15 +12,7 @@ type RewritingOption struct {
 	Host urlt.Host `yaml:"host,omitempty"`
 }
 
-func (r RewritingOption) Clone() RewritingOption {
-	return r
-}
-
 type RewriteOptions []RewritingOption
-
-func (r RewriteOptions) Clone() RewriteOptions {
-	return slices.Clone(r)
-}
 
 func (r RewritingOption) Validate(field string) error {
 	var errs []error

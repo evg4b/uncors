@@ -17,8 +17,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var localhostSecure = hosts.Localhost.HTTPSPort(9090)
-
 func TestMappingUnmarshalYAML(t *testing.T) {
 	t.Run("positive cases", func(t *testing.T) {
 		tests := []struct {
@@ -74,59 +72,6 @@ har: ./recordings/api.har
 			assert.Error(t, err)
 		})
 	})
-}
-
-func TestURLMappingClone(t *testing.T) {
-	tests := []struct {
-		name     string
-		expected config.Mapping
-	}{
-		{
-			name:     "empty structure",
-			expected: config.Mapping{},
-		},
-		{
-			name: "structure with 1 field",
-			expected: config.Mapping{
-				From: hosts.Localhost.HTTP(),
-			},
-		},
-		{
-			name: "structure with 2 field",
-			expected: config.Mapping{
-				From: hosts.Localhost.HTTP(),
-				To:   localhostSecure,
-			},
-		},
-		{
-			name: "structure with inner collections",
-			expected: config.Mapping{
-				From: hosts.Localhost.HTTP(),
-				To:   localhostSecure,
-				Statics: []config.StaticDirectory{
-					{Path: "/cc", Dir: "cc"},
-				},
-			},
-		},
-		{
-			name: "structure with allowed origins",
-			expected: config.Mapping{
-				From:           hosts.Localhost.HTTP(),
-				To:             localhostSecure,
-				AllowedOrigins: config.AllowedOrigins{"http://localhost:*"},
-			},
-		},
-	}
-
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			actual := testCase.expected.Clone()
-
-			assert.NotSame(t, &testCase.expected, &actual)
-			assert.Equal(t, testCase.expected, actual)
-			assert.NotSame(t, &testCase.expected.Statics, &actual.Statics)
-		})
-	}
 }
 
 func TestMappingValidator(t *testing.T) {

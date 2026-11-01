@@ -18,13 +18,6 @@ func (h *HARConfig) Enabled() bool {
 	return h.File != ""
 }
 
-func (h *HARConfig) Clone() HARConfig {
-	return HARConfig{
-		File:                 h.File,
-		CaptureSecureHeaders: h.CaptureSecureHeaders,
-	}
-}
-
 type harConfigAlias HARConfig
 
 func (h *HARConfig) UnmarshalYAML(value *yaml.Node) error {

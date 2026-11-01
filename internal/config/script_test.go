@@ -12,67 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestRequestMatcher_Clone(t *testing.T) {
-	original := config.RequestMatcher{
-		Path:   "/api/test",
-		Method: "POST",
-		Queries: map[string]string{
-			"key1": "value1",
-			"key2": "value2",
-		},
-		Headers: map[string]string{
-			headers.ContentType:   "application/json",
-			headers.Authorization: "Bearer token",
-		},
-	}
-
-	cloned := original.Clone()
-
-	assert.Equal(t, original.Path, cloned.Path)
-	assert.Equal(t, original.Method, cloned.Method)
-	assert.Equal(t, original.Queries, cloned.Queries)
-	assert.Equal(t, original.Headers, cloned.Headers)
-
-	cloned.Queries["key1"] = "modified"
-	assert.NotEqual(t, original.Queries["key1"], cloned.Queries["key1"])
-
-	cloned.Headers[headers.ContentType] = "text/html"
-	assert.NotEqual(t, original.Headers[headers.ContentType], cloned.Headers[headers.ContentType])
-}
-
-func TestScript_Clone(t *testing.T) {
-	original := config.Script{
-		Matcher: config.RequestMatcher{
-			Path:   "/api/script",
-			Method: "GET",
-			Queries: map[string]string{
-				"param": "value",
-			},
-			Headers: map[string]string{
-				"X-Custom": "header",
-			},
-		},
-		Script:      "print('hello')",
-		File:        "/path/to/script.lua",
-		Timeout:     2 * time.Minute,
-		MaxBodySize: 1024,
-	}
-
-	cloned := original.Clone()
-
-	assert.Equal(t, original.Timeout, cloned.Timeout)
-	assert.Equal(t, original.MaxBodySize, cloned.MaxBodySize)
-	assert.Equal(t, original.Matcher.Path, cloned.Matcher.Path)
-	assert.Equal(t, original.Matcher.Method, cloned.Matcher.Method)
-	assert.Equal(t, original.Script, cloned.Script)
-	assert.Equal(t, original.File, cloned.File)
-	assert.Equal(t, original.Matcher.Queries, cloned.Matcher.Queries)
-	assert.Equal(t, original.Matcher.Headers, cloned.Matcher.Headers)
-
-	cloned.Matcher.Queries["param"] = "modified"
-	assert.NotEqual(t, original.Matcher.Queries["param"], cloned.Matcher.Queries["param"])
-}
-
 func TestScriptUnmarshalYAML(t *testing.T) {
 	t.Run("decodes limits", func(t *testing.T) {
 		const input = `
@@ -172,50 +111,6 @@ func TestScript_String(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-func TestScripts_Clone(t *testing.T) {
-	t.Run("non-nil scripts", func(t *testing.T) {
-		original := config.Scripts{
-			{
-				Matcher: config.RequestMatcher{
-					Path:   "/api/one",
-					Method: "GET",
-				},
-				Script: "script1",
-			},
-			{
-				Matcher: config.RequestMatcher{
-					Path:   "/api/two",
-					Method: "POST",
-				},
-				File: "/scripts/two.lua",
-			},
-		}
-
-		cloned := original.Clone()
-
-		assert.Len(t, cloned, len(original))
-		assert.Equal(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
-		assert.Equal(t, original[1].Matcher.Path, cloned[1].Matcher.Path)
-
-		cloned[0].Matcher.Path = "/modified"
-		assert.NotEqual(t, original[0].Matcher.Path, cloned[0].Matcher.Path)
-	})
-
-	t.Run("nil scripts", func(t *testing.T) {
-		var original config.Scripts
-
-		cloned := original.Clone()
-		assert.Nil(t, cloned)
-	})
-
-	t.Run("empty scripts", func(t *testing.T) {
-		original := config.Scripts{}
-		cloned := original.Clone()
-		assert.Empty(t, cloned)
-		assert.NotNil(t, cloned)
-	})
 }
 
 const (

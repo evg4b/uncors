@@ -4,20 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/samber/lo"
 	"github.com/spf13/afero"
 )
 
 type Mock struct {
 	Matcher  RequestMatcher `yaml:",inline"`
 	Response Response       `yaml:"response"`
-}
-
-func (m *Mock) Clone() Mock {
-	return Mock{
-		Matcher:  m.Matcher.Clone(),
-		Response: m.Response.Clone(),
-	}
 }
 
 func (m *Mock) String() string {
@@ -30,16 +22,6 @@ func (m *Mock) String() string {
 }
 
 type Mocks []Mock
-
-func (m Mocks) Clone() Mocks {
-	if m == nil {
-		return nil
-	}
-
-	return lo.Map(m, func(item Mock, _ int) Mock {
-		return item.Clone()
-	})
-}
 
 func (m *Mock) Validate(field string, fs afero.Fs) error {
 	return errors.Join(

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -202,7 +203,7 @@ func marshalConfig(t *testing.T, cfg *config.UncorsConfig) []byte {
 	normalised.Mappings = make(config.Mappings, 0, len(cfg.Mappings))
 
 	for _, mapping := range cfg.Mappings {
-		mapping = mapping.Clone()
+		mapping.Scripts = slices.Clone(mapping.Scripts)
 		for i := range mapping.Scripts {
 			mapping.Scripts[i].Script = strings.TrimSpace(mapping.Scripts[i].Script)
 		}

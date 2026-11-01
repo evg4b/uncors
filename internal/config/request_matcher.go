@@ -2,8 +2,6 @@ package config
 
 import (
 	"errors"
-
-	"github.com/evg4b/uncors/internal/helpers"
 )
 
 type RequestMatcher struct {
@@ -11,15 +9,6 @@ type RequestMatcher struct {
 	Method  string            `yaml:"method"`
 	Queries map[string]string `yaml:"queries"`
 	Headers map[string]string `yaml:"headers"`
-}
-
-func (r *RequestMatcher) Clone() RequestMatcher {
-	return RequestMatcher{
-		Path:    r.Path,
-		Method:  r.Method,
-		Queries: helpers.CloneMap(r.Queries),
-		Headers: helpers.CloneMap(r.Headers),
-	}
 }
 
 func (r *RequestMatcher) IsPathOnly() bool {

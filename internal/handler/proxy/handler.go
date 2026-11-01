@@ -117,7 +117,7 @@ func (h *Handler) makeOriginalRequest(
 
 	removeHopByHopHeaders(originalRequest.Header)
 
-	if hasToken(req.Header.Values(headers.TE), "trailers") {
+	if infra.HasToken(req.Header.Values(headers.TE), "trailers") {
 		originalRequest.Header.Set(headers.TE, "trailers")
 	}
 
@@ -135,14 +135,10 @@ func (h *Handler) makeUncorsResponse(
 	replacer *urlreplacer.Replacer,
 	req *http.Request,
 ) error {
-	err := copyCookiesToSource(original, replacer, target)
+	err := copyResponseHeaders(original, target, replacer)
 	if err != nil {
 		return err
 	}
-
-	copyHeaders(original.Header, target.Header(), modificationsMap{
-		headers.Location: replacer.ReplaceSoft,
-	})
 
 	removeHopByHopHeaders(target.Header())
 
@@ -233,15 +229,10 @@ func copyBody(ctx context.Context, target io.Writer, body io.Reader) error {
 }
 
 func (h *Handler) createReplacers(req *http.Request) (*urlreplacer.Replacer, *urlreplacer.Replacer, error) {
-	rewriteHost, err := rewrite.GetRewriteHost(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get rewrite host: %w", err)
-	}
+	rewriteHost := rewrite.GetRewriteHost(req)
 
 	if rewriteHost == "" {
-		var targetReplacer, sourceReplacer *urlreplacer.Replacer
-
-		targetReplacer, sourceReplacer, err = h.replacers.Make(req.URL)
+		targetReplacer, sourceReplacer, err := h.replacers.Make(req.URL)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to transform general url: %w", err)
 		}
@@ -286,7 +277,7 @@ func recordTarget(source, target *http.Request, targetURL string) {
 			attribute.String("uncors.proxy.target_host", target.URL.Host),
 		}
 
-		if rewriteHost, _ := rewrite.GetRewriteHost(source); rewriteHost != "" {
+		if rewriteHost := rewrite.GetRewriteHost(source); rewriteHost != "" {
 			attrs = append(attrs, attribute.String("uncors.proxy.rewrite_host", rewriteHost))
 		}
 

@@ -28,6 +28,4 @@ type Output interface {
 
 	Print(msg any)
 	Printf(msg string, args ...any)
-
-	NewPrefixOutput(prefix string) Output
 }

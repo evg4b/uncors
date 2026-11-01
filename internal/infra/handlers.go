@@ -14,12 +14,6 @@ import (
 
 var ErrResponseNotCasted = errors.New("received incorrect response writer type")
 
-type MiddlewareFunc func(contracts.Handler) contracts.Handler
-
-func (f MiddlewareFunc) Wrap(next contracts.Handler) contracts.Handler {
-	return f(next)
-}
-
 type HandlerFunc func(contracts.ResponseWriter, *contracts.Request) error
 
 func (f HandlerFunc) ServeHTTP(w contracts.ResponseWriter, r *contracts.Request) error {

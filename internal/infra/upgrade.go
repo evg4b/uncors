@@ -2,19 +2,20 @@ package infra
 
 import (
 	"net/http"
+	"net/textproto"
 	"strings"
 
 	"github.com/evg4b/uncors/internal/headers"
 )
 
 func IsUpgrade(header http.Header) bool {
-	if header.Get(headers.Upgrade) == "" {
-		return false
-	}
+	return header.Get(headers.Upgrade) != "" && HasToken(header.Values("Connection"), "upgrade")
+}
 
-	for _, value := range header.Values("Connection") {
-		for token := range strings.SplitSeq(value, ",") {
-			if strings.EqualFold(strings.TrimSpace(token), "upgrade") {
+func HasToken(values []string, token string) bool {
+	for _, value := range values {
+		for item := range strings.SplitSeq(value, ",") {
+			if strings.EqualFold(textproto.TrimString(item), token) {
 				return true
 			}
 		}

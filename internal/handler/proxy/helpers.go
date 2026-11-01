@@ -61,16 +61,17 @@ func removeHopByHopHeaders(header http.Header) {
 	}
 }
 
-func hasToken(values []string, token string) bool {
-	for _, value := range values {
-		for item := range strings.SplitSeq(value, ",") {
-			if strings.EqualFold(textproto.TrimString(item), token) {
-				return true
-			}
-		}
+func copyResponseHeaders(original *http.Response, target http.ResponseWriter, replacer *urlreplacer.Replacer) error {
+	err := copyCookiesToSource(original, replacer, target)
+	if err != nil {
+		return err
 	}
 
-	return false
+	copyHeaders(original.Header, target.Header(), modificationsMap{
+		headers.Location: replacer.ReplaceSoft,
+	})
+
+	return nil
 }
 
 func copyCookiesToSource(target *http.Response, replacer *urlreplacer.Replacer, source http.ResponseWriter) error {

@@ -1,31 +1,15 @@
 package rewrite
 
 import (
-	"errors"
-
 	"github.com/evg4b/uncors/internal/contracts"
 )
-
-var ErrInvalidHost = errors.New("rewrite host has invalid type")
 
 type rewriteKeyType string
 
 const RewriteHostKey rewriteKeyType = "__uncors_rewrite_host"
 
-func GetRewriteHost(request *contracts.Request) (string, error) {
-	value := request.Context().Value(RewriteHostKey)
+func GetRewriteHost(request *contracts.Request) string {
+	host, _ := request.Context().Value(RewriteHostKey).(string)
 
-	if value == nil {
-		return "", nil
-	}
-
-	if host, ok := value.(string); ok {
-		return host, nil
-	}
-
-	return "", ErrInvalidHost
-}
-
-func IsRewriteRequest(request *contracts.Request) bool {
-	return request.Context().Value(RewriteHostKey) != nil
+	return host
 }
